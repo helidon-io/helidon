@@ -20,6 +20,7 @@ import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import io.helidon.common.metrics.InternalBridge;
 import io.helidon.config.Config;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -43,7 +44,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
-public final class RegistryFactory {
+public final class RegistryFactory implements InternalBridge.RegistryFactory {
     private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
@@ -148,13 +149,18 @@ public final class RegistryFactory {
      * returns a final registry (cannot register new metrics).
      *
      * @param type type of registry
-     * @return Registry for the type defined.
+     * @return MetricRegistry for the type defined.
      */
     public MetricRegistry getRegistry(Type type) {
         if (type == Type.BASE) {
             ensureBase();
         }
         return publicRegistries.get(type);
+    }
+
+    @Override
+    public InternalBridge.MetricRegistry getBridgeRegistry(Type type) {
+        return InternalBridge.MetricRegistry.class.cast(getRegistry(type));
     }
 
     private void update(Config config) {

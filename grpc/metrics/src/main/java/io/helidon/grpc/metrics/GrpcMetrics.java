@@ -16,6 +16,7 @@
 
 package io.helidon.grpc.metrics;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -23,11 +24,12 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.MetadataBuilder;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
-import io.helidon.metrics.RegistryFactory;
 
 import io.grpc.Context;
 import io.grpc.ForwardingServerCall;
@@ -38,7 +40,6 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -54,14 +55,14 @@ public class GrpcMetrics
     /**
      * The registry of vendor metrics.
      */
-    private static final MetricRegistry VENDOR_REGISTRY =
-            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
+    private static final InternalBridge.MetricRegistry VENDOR_REGISTRY =
+            InternalBridge.INSTANCE.registryFactoryInstance().getBridgeRegistry(MetricRegistry.Type.VENDOR);
 
     /**
      * The registry of application metrics.
      */
-    private static final MetricRegistry APP_REGISTRY =
-            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+    private static final InternalBridge.MetricRegistry APP_REGISTRY =
+            InternalBridge.INSTANCE.registryFactoryInstance().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
 
     /**
      * The context key name to use to obtain rules to use when applying metrics.
@@ -197,16 +198,20 @@ public class GrpcMetrics
 
         switch (type) {
             case COUNTER:
-                serverCall = new CountedServerCall<>(APP_REGISTRY.counter(rules.metadata(service, methodName)), call);
+                serverCall = new CountedServerCall<>(APP_REGISTRY.counter(
+                        rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case METERED:
-                serverCall = new MeteredServerCall<>(APP_REGISTRY.meter(rules.metadata(service, methodName)), call);
+                serverCall = new MeteredServerCall<>(APP_REGISTRY.meter(
+                        rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case HISTOGRAM:
-                serverCall = new HistogramServerCall<>(APP_REGISTRY.histogram(rules.metadata(service, methodName)), call);
+                serverCall = new HistogramServerCall<>(APP_REGISTRY.histogram(
+                        rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case TIMER:
-                serverCall = new TimedServerCall<>(APP_REGISTRY.timer(rules.metadata(service, methodName)), call);
+                serverCall = new TimedServerCall<>(APP_REGISTRY.timer(
+                        rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case GAUGE:
             case INVALID:
@@ -462,11 +467,10 @@ public class GrpcMetrics
          * @param method the method name
          * @return  the metrics metadata
          */
-        org.eclipse.microprofile.metrics.Metadata metadata(ServiceDescriptor service, String method) {
+        InternalBridge.Metadata metadata(ServiceDescriptor service, String method) {
             String name = nameFunction.orElse(this::defaultName).createName(service, method, type);
             MetadataBuilder builder = new MetadataBuilder().withName(name).withType(type);
 
-            // this.tags.ifPresent(builder::setTags);      // TODO
             this.description.ifPresent(builder::withDescription);
             this.units.ifPresent(builder::withUnit);
 
@@ -499,6 +503,10 @@ public class GrpcMetrics
             MetricsRules rules = new MetricsRules(this);
             rules.units = Optional.of(units);
             return rules;
+        }
+
+        private Map<String, String> toTags() {
+            return tags.isPresent() ? tags.get() : Collections.emptyMap();
         }
     }
 }

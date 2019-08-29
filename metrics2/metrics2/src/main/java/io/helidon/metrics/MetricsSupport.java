@@ -45,6 +45,7 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.metrics.InternalBridge;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Handler;
@@ -206,6 +207,10 @@ public final class MetricsSupport implements Service {
         final StringBuilder sb = new StringBuilder();
         checkMetricTypeThenRun(sb, metricID, metric);
         return sb.toString();
+    }
+
+    public static String toPrometheusData(String name, Metric metric) {
+        return toPrometheusData(new MetricID(name), metric);
     }
 
     /**

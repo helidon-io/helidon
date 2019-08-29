@@ -53,15 +53,16 @@ public class ProducerBean {
             count += n;
         }
 
-        @Override
-        public void dec() {
-            count--;
-        }
-
-        @Override
-        public void dec(long n) {
-            count -= n;
-        }
+        // TODO -- 1.1-2.0 incompatibility: Counter
+//        @Override
+//        public void dec() {
+//            count--;
+//        }
+//
+//        @Override
+//        public void dec(long n) {
+//            count -= n;
+//        }
 
         @Override
         public long getCount() {

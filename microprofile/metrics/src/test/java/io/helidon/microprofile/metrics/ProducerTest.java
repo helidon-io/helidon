@@ -18,6 +18,8 @@ package io.helidon.microprofile.metrics;
 
 import org.junit.jupiter.api.Test;
 
+import io.helidon.common.metrics.InternalBridge.MetricID;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -29,14 +31,16 @@ public class ProducerTest extends MetricsBaseTest {
     @Test
     public void testFieldProducer() throws Exception {
         ProducerBean bean = newBean(ProducerBean.class);
-        assertThat(getMetricRegistry().getCounters().keySet().contains("counter1"), is(true));
-        assertThat(getMetricRegistry().getCounters().get("counter1").getCount(), is(0L));
+        MetricID metricID = new MetricID("counter1");
+        assertThat(getMetricRegistry().getBridgeCounters().keySet().contains(metricID), is(true));
+        assertThat(getMetricRegistry().getBridgeCounters().get(metricID).getCount(), is(0L));
     }
 
     @Test
     public void testMethodProducer() throws Exception {
         ProducerBean bean = newBean(ProducerBean.class);
-        assertThat(getMetricRegistry().getCounters().keySet().contains("counter2"), is(true));
-        assertThat(getMetricRegistry().getCounters().get("counter2").getCount(), is(1L));
+        MetricID metricID = new MetricID("counter2");
+        assertThat(getMetricRegistry().getBridgeCounters().keySet().contains(metricID), is(true));
+        assertThat(getMetricRegistry().getBridgeCounters().get(metricID).getCount(), is(1L));
     }
 }

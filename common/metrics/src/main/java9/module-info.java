@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,25 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-/**
- * Microprofile configuration module.
- */
-module io.helidon.metrics {
-    requires java.logging;
+module io.helidon.common.metrics {
 
-    requires io.helidon.common;
-    requires io.helidon.common.metrics;
-
+    requires io.helidon.config;
     requires transitive microprofile.metrics.api;
-    requires java.management;
-    requires io.helidon.webserver;
-    requires io.helidon.media.jsonp.server;
-    requires java.json;
 
-    provides io.helidon.common.metrics.InternalBridge
-            with io.helidon.metrics.InternalBridgeImpl;
+    exports io.helidon.common.metrics;
 
-    exports io.helidon.metrics;
+    uses io.helidon.common.metrics.InternalBridge;
+
+
 }

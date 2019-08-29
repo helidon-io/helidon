@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import io.helidon.common.metrics.InternalBridge;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
@@ -29,8 +30,10 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
+import io.helidon.common.metrics.InternalBridge.MetricID;
+import io.helidon.common.metrics.InternalBridge.MetricRegistry;
+
 import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
@@ -76,13 +79,13 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
     private final Class<A> annotationClass;
     private final Function<A, String> nameFunction;
     private final Function<A, Boolean> isAbsoluteFunction;
-    private final Function<MetricRegistry, SortedMap<String, T>> metricsMapFunction;
+    private final Function<MetricRegistry, SortedMap<MetricID, T>> metricsMapFunction;
     private final String metricTypeName;
     InterceptorBase(MetricRegistry registry,
                     Class<A> annotationClass,
                     Function<A, String> nameFunction,
                     Function<A, Boolean> isAbsoluteFunction,
-                    Function<MetricRegistry, SortedMap<String, T>> metricsMapFunction,
+                    Function<MetricRegistry, SortedMap<MetricID, T>> metricsMapFunction,
                     String metricTypeName) {
         this.registry = registry;
         this.annotationClass = annotationClass;
@@ -92,8 +95,8 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
         this.metricTypeName = metricTypeName;
     }
 
-    protected <T> Optional<T> getMetric(Map<String, T> metricMap, String metricName) {
-        return Optional.ofNullable(metricMap.get(metricName));
+    protected <T> Optional<T> getMetric(Map<MetricID, T> metricMap, String metricName) {
+        return Optional.ofNullable(metricMap.get(new MetricID(metricName)));
     }
 
     @AroundConstruct

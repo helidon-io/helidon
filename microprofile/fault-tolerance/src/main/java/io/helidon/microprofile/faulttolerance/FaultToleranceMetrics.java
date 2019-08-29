@@ -20,14 +20,14 @@ import java.lang.reflect.Method;
 
 import javax.enterprise.inject.spi.CDI;
 
+import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
+import io.helidon.common.metrics.InternalBridge.MetricID;
+import io.helidon.common.metrics.InternalBridge.MetricRegistry;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
@@ -59,10 +59,10 @@ class FaultToleranceMetrics {
 
     @SuppressWarnings("unchecked")
     static <T extends Metric> T getMetric(Method method, String name) {
-        MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+        MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
                 method.getDeclaringClass().getName(),
                 method.getName(), name));
-        return (T) getMetricRegistry().getMetrics().get(metricName);
+        return (T) getMetricRegistry().getBridgeMetrics().get(metricID);
     }
 
     static Counter getCounter(Method method, String name) {
@@ -328,27 +328,17 @@ class FaultToleranceMetrics {
      */
     @SuppressWarnings("unchecked")
     static synchronized <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
-        MetricID id = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+        MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
                 method.getDeclaringClass().getName(),
                 method.getName(),
                 metricName));
-        Gauge<T> existing = getMetricRegistry().getGauges().get(id);
+        Gauge<T> existing = getMetricRegistry().getBridgeGauges().get(metricID);
         if (existing == null) {
             getMetricRegistry().register(
-                    newMetadata(id.getName(), id.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS),
+                    newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS),
                     gauge);
         }
         return existing;
     }
 
-    private static Metadata newMetadata(String name, String displayName, String description,
-                                        MetricType type, String unit) {
-        return new MetadataBuilder()
-                .withName(name)
-                .withDisplayName(displayName)
-                .withDescription(description)
-                .withType(type)
-                .withUnit(unit)
-                .build();
-    }
 }

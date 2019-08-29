@@ -22,10 +22,12 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,11 +51,15 @@ import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.interceptor.Interceptor;
 
+import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.Metadata;
+import io.helidon.common.metrics.InternalBridge.MetricID;
+
+import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -61,6 +67,8 @@ import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+
+import io.helidon.common.metrics.InternalBridge.MetricRegistry;
 
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
@@ -92,34 +100,34 @@ public class MetricsCdiExtension implements Extension {
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name(), counted.absolute());
-            Metadata meta = new Metadata(metricName,
+            Metadata meta = InternalBridge.Metadata.newMetadata(metricName,
                                          counted.displayName(),
                                          counted.description(),
                                          MetricType.COUNTER,
                                          counted.unit(),
-                                         toTags(counted.tags()));
+                                         toTagsMap(counted.tags()));
             registry.counter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name(), metered.absolute());
-            Metadata meta = new Metadata(metricName,
+            Metadata meta = InternalBridge.Metadata.newMetadata(metricName,
                                          metered.displayName(),
                                          metered.description(),
                                          MetricType.METERED,
                                          metered.unit(),
-                                         toTags(metered.tags()));
+                                         toTagsMap(metered.tags()));
             registry.meter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name(), timed.absolute());
-            Metadata meta = new Metadata(metricName,
+            Metadata meta = InternalBridge.Metadata.newMetadata(metricName,
                                          timed.displayName(),
                                          timed.description(),
                                          MetricType.TIMER,
                                          timed.unit(),
-                                         toTags(timed.tags()));
+                                         toTagsMap(timed.tags()));
             registry.timer(meta);
             LOGGER.log(Level.FINE, () -> "### Registered timer " + metricName);
         }
@@ -130,6 +138,24 @@ public class MetricsCdiExtension implements Extension {
             return "";
         }
         return String.join(",", tags);
+    }
+
+    static Map<String, String> toTagsMap(String[] tags) {
+        return Arrays.stream(tags)
+                .map(expr -> {
+                    final int eq = expr.indexOf("=");
+                    if (eq <= 0) {
+                        return null;
+                    }
+                    return new AbstractMap.SimpleEntry<>(
+                        expr.substring(0, eq), expr.substring(eq + 1));
+
+                })
+                .filter(Objects::nonNull)
+                .collect(HashMap::new,
+                        (map, entry) -> map.put(entry.getKey(), entry.getValue()),
+                        Map::putAll);
+
     }
 
     /**
@@ -292,7 +318,9 @@ public class MetricsCdiExtension implements Extension {
                                                   entry.getValue().getDeclaringType().getJavaClass(),
                                                   MetricUtil.MatchingType.METHOD,
                                                   metric.name(), metric.absolute());
-                registry.register(metricName, getReference(bm, entry.getValue().getBaseType(), entry.getKey()));
+                MetricID metricID = new MetricID(metricName,
+                        toTagsMap(metric.tags()));
+                registry.register(metricID, getReference(bm, entry.getValue().getBaseType(), entry.getKey()));
             }
         });
         producers.clear();
@@ -341,12 +369,12 @@ public class MetricsCdiExtension implements Extension {
             AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
             DelegatingGauge<?> dg = buildDelegatingGauge(gaugeName, site, bm);
             Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
-            Metadata md = new Metadata(gaugeName,
+            Metadata md = newMetadata(gaugeName,
                     gaugeAnnotation.displayName(),
                     gaugeAnnotation.description(),
                     MetricType.GAUGE,
                     gaugeAnnotation.unit(),
-                    toTags(gaugeAnnotation.tags()));
+                    toTagsMap(gaugeAnnotation.tags()));
             LOGGER.log(Level.FINE, () -> String.format("### Registering gauge with metadata %s", md.toString()));
             registry.register(md, dg);
         });
