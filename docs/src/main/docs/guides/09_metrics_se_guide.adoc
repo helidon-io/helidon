@@ -836,7 +836,7 @@ kubectl delete -f ./metrics.yaml
 This guide demonstrated how to use metrics in a Helidon SE application using various combinations of
 metrics and scopes.
 
-* Access metrics for all 3 scopes: base, vendor, and application
+* Access metrics for all three scopes: base, vendor, and application
 * Configure metrics that are updated by the application when an application REST endpoint is invoked.
 * Configure a `Gauge` metric
 * Integrate Helidon metrics with Kubernetes and Prometheus
