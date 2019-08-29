@@ -59,7 +59,18 @@ NOTE: The `/metrics` endpoint will return data for all scopes.
 
 The following example will demonstrate how to use the built-in metrics.  All examples are executed
 from the root directory of your project (helidon-quickstart-se).  The generated source code is
-already configured to metrics and health-checks, but we will remove health-checks to simplify this example.
+already configured for metrics and health-checks, but you will remove health-checks to simplify this example.
+
+
+[source,xml]
+.Notice that the metrics dependency is already in the project's pom.xml file:
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics</artifactId>
+</dependency>
+----
+
 
 [source,java]
 .Replace the `Main.createRouting` method with the following code:
@@ -75,7 +86,7 @@ already configured to metrics and health-checks, but we will remove health-check
           .build();
     }
 ----
-<1> Register base and vendor metrics.
+<1> Register the built-in base and vendor metrics.
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -228,18 +239,17 @@ You can get the metadata for any scope, such as `/metrics/base`, as shown below:
 
 You can create application-specific metrics and integrate them with Helidon. The application has complete
 control over each metric, so it is the application's responsibility to create and update the metrics.  For example,
-an application may use the same counter for multple methods, or one counter per method.
-Helidon maintains an application `MetricRegistry` which is used to managed all of the application metrics.
-Helidon returns these metrics in reponse to a call to `/metrics/application`.
+an application may use the same counter for multiple methods, or one counter per method.
+Helidon maintains an application `MetricRegistry` which is used to manage all of the application metrics.
+Helidon returns these metrics in response to a `/metrics/application` REST request.
 
-This section demonstrates how to use Helidon metrics in your application.  In all of these example, the scope and lifetime
-of the metric is at the application-level.
+This section demonstrates how to use Helidon metrics in your application.  In all of these examples, the scope and lifetime
+of the metric is at the application-level, even when it is updated in response to a REST request.
 
 ==== Counter metric
 
-The `Counter` metric is a monotonically increasing or decreasing numeric value. Typically, a counter is updated
-in response to a REST API call.  The following example will demonstrate how to use a `Counter` to track the number of
-times the `/cards` endpoint is called.
+The `Counter` metric is a monotonically increasing or decreasing numeric value. The following example
+will demonstrate how to use a `Counter` to track the number of times the `/cards` endpoint is called.
 
 [source,java]
 .Create a new class named `GreetingCards` with the following code:
@@ -286,7 +296,7 @@ public class GreetingCards implements Service {
 }
 ----
 <1> Import metrics classes.
-<2> Declare a `Counter` member variable to hold the counter.
+<2> Declare a `Counter` member variable.
 <3> Create and register the `Counter` metric in the `MetricRegistry`.  This `Counter` will exist for the lifetime of
 the application.
 <4> Increment the count.
@@ -301,9 +311,9 @@ the application.
 
         return Routing.builder()
                 .register(JsonSupport.create())
-                .register(metrics)                  // Metrics at "/metrics"
+                .register(metrics)
                 .register("/greet", greetService)
-                .register("/cards", new GreetingCards())
+                .register("/cards", new GreetingCards()) //<1>
             .build();
     }
 ----
@@ -312,7 +322,7 @@ the `/cards` root path to the `GreetingCards` service.
 
 
 [source,bash]
-.Build and run the application, then invoke the application endpoints below:
+.Build and run the application, then invoke the endpoints below:
 ----
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
@@ -325,13 +335,13 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   "cardCount": 1 // <1>
 }
 ----
-<1> The count is one since the method was called once.
+<1> The count value is one since the method was called once.
 
 
 ==== Meter metric
 
 The `Meter` metric is used to measure the how many times an event occurs within a certain time period.  As soon as a `Meter` object
-is created, the internal clock, used to calculate the rates, starts running. This metric also includes the field from the
+is created, an internal clock used to calculate the rates, starts running. This metric also includes the `count` field from the
 `Counter` metric.
 
 The following example marks an event each time the `/cards` endpoint is called.
@@ -388,7 +398,7 @@ public class GreetingCards implements Service {
 TIP:  Note: you can specify a count parameter such as `mark(100)` to mark multiple events.
 
 [source,bash]
-.Build and run the application, then invoke the application endpoints below:
+.Build and run the application, then invoke the endpoints below:
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
@@ -409,15 +419,16 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   }
 }
 ----
-<1> These are the `Meter` metric with a set of rate fields along with the count.
-<2> The `/cards` endpoint was called 3 times
+<1> The `Meter` metric has a set of fields to show various rates, along with the count.
+<2> The `/cards` endpoint was called three times.
 
 
 ==== Timer metric
 
-A `Timer` metric aggregates timing durations and provides statistics.  It also includes throughput statistics using
-an internal `Meter` metric. The timer measures duration in nanoseconds.  In the following example, a `Timer` metric is used to
-measure the duration of a method's execution.
+The `Timer` metric aggregates durations across multiple REST requests and provides timing statistics.
+It also includes throughput statistics using an internal `Meter` metric. The `Timer` measures duration in nanoseconds.
+In the following example, a `Timer` metric is used to measure the duration of a method's execution.
+Whenever the REST `/cards` endpoint is called, the `Timer` will be updated with additional timing information.
 
 [source,java]
 .Update the `GreetingCards` class with the following code:
@@ -465,14 +476,14 @@ public class GreetingCards implements Service {
 }
 ----
 <1> Import metrics classes.
-<2> Declare a `Timer` member variable to hold the counter.
+<2> Declare a `Timer` member variable.
 <3> Create and register the `Timer` metric in the `MetricRegistry`.
 <4> Start the timer.
 <5> Stop the timer.
 
 
 [source,bash]
-.Build and run the application, then invoke the application endpoints below:
+.Build and run the application, then invoke the endpoints below:
 ----
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
@@ -502,8 +513,8 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   }
 }
 ----
-<1> These are the same fiels used by  `Meter`
-<2> These are the `Timer` fields that measure how long it took to execute the `getDefaultMessageHandler` method. These values
+<1> These are the same fields used by `Meter`.
+<2> These are the `Timer` fields that measure the duration of the `getDefaultMessageHandler` method. These values
 will change each time you invoke the `/cards` endpoint.
 
 
@@ -564,14 +575,14 @@ public class GreetingCards implements Service {
 
 ----
 <1> Import metrics classes.
-<2> Declare a `Histogram` member variable to hold the histogram.
+<2> Declare a `Histogram` member variable.
 <3> Create and register the `Histogram` metric in the `MetricRegistry`.
 <5> Loop, loading the histogram with numbers.
 <4> Update the `Histogram` metric with a random number.
 
 
 [source,bash]
-.Build and run the application, then invoke the application endpoints below:
+.Build and run the application, then invoke the endpoints below:
 ----
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
@@ -602,10 +613,10 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 ==== Gauge metric
 
-The `Gauge` metric measures a discreet value at a point in time, such as a temperature.  The metric is normally
-not tied to a REST endpoint, rather it should be registered during application startup.  When the `/metrics/application` endpoint
+The `Gauge` metric measures a discreet value at a point in time, such as a temperature.  The metric is not normally
+tied to a REST endpoint, rather it should be registered during application startup.  When the `/metrics/application` endpoint
 is invoked, Helidon will call the `getValue` method of each registered `Gauge`.  The following example demonstrates
-how a gauge is used to get the current temperature.
+how a `Gauge` is used to get the current temperature.
 
 [source,java]
 .Replace `Main.createRouting` method with the following code:
@@ -630,7 +641,7 @@ how a gauge is used to get the current temperature.
 <1> Register the `Gauge`, providing a lambda function that will return a random temperature.
 
 [source,java]
-.Update the `GreetingCards` class with the following code to use the `Counter` metric which will simplfy the JSON output:
+.Update the `GreetingCards` class with the following code to use the `Counter` metric which will simplify the JSON output:
 ----
 package io.helidon.examples.quickstart.se;
 
@@ -675,7 +686,7 @@ public class GreetingCards implements Service {
 ----
 
 [source,bash]
-.Build and run the application, then invoke the application metrics endpoint:
+.Build and run the application, then invoke the endpoints below:
 ----
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
