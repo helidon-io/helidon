@@ -245,7 +245,7 @@ same counter for multiple methods, or one counter per method.  Helidon maintains
 Helidon returns these metrics in response to a `/metrics/application` REST request.
 
 In all of these examples, the scope and lifetime of the metric is at the application-level.
-Each metric, except `Gauge`, is updated in response to a REST request so the contents of the
+Each metric, except `Gauge`, is updated in response to a REST request and the contents of the
 metric is cumulative.
 
 ==== Counter metric
