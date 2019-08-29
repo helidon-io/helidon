@@ -49,8 +49,8 @@ mvn archetype:generate -DinteractiveMode=false \
 
 === Using the built-in metrics
 
-Helidon provides three scopes of metrics: base, vendor, and application.  Helidon automatically provides built-in base and vendor metrics,
-there is no configuration or code required by the application.  Here are the metric endpoints:
+Helidon provides three scopes of metrics: base, vendor, and application.  Helidon automatically provides built-in base and vendor metrics.
+Applications can use these metrics without additional configuration or code changes.  Here are the metric endpoints:
 
 1. `/metrics/base` - Base metrics data as specified by the MicroProfile Metrics specification.
 2. `/metrics/vendor` - Helidon-specific metrics data.
@@ -215,8 +215,8 @@ To add a new metric, simply annotate the JAX-RS resource with one of the metric 
 be injected at the class, method, and field-levels.  This document shows examples of all three.
 
 Helidon will automatically create and register annotated application metrics and store them in the application `MetricRegistry`, which
-also contains the metric metadata. The metrics will exist for the lifetime of the application. Each metric annotation has a set of fields,
-where some are optional and others are mandatory. For example, `name` is an optional metric field.
+also contains the metric metadata. The metrics will exist for the lifetime of the application.
+Each metric annotation has mandatory and optional fields. The name field, for example, is optional.
 
 ==== Method level metrics
 
