@@ -27,7 +27,7 @@ module io.helidon.microprofile.metrics {
 
     requires io.helidon.microprofile.server;
     requires transitive io.helidon.metrics;
-    requires transitive io.helidon.common.metrics;
+    requires io.helidon.common.metrics;
 
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;

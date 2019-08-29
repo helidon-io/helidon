@@ -20,11 +20,8 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 
-import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.MetricID;
-import io.helidon.common.metrics.InternalBridge.MetricRegistry;
-
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -69,8 +66,7 @@ public class MetricsBaseTest {
         String metricName = String.format(METRIC_NAME_TEMPLATE,
                                           MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
                                           name);
-        MetricID metricID = new MetricID(metricName);
-        return (T) getMetricRegistry().getBridgeMetrics().get(metricID);
+        return (T) getMetricRegistry().getMetrics().get(metricName);
     }
 
     <T> T newBean(Class<T> beanClass) {

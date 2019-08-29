@@ -19,9 +19,8 @@ package io.helidon.microprofile.metrics;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
-import io.helidon.common.metrics.InternalBridge;
 import io.helidon.common.metrics.InternalBridge.MetricRegistry;
-import io.helidon.common.metrics.InternalBridge.RegistryFactory;
+import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
@@ -31,32 +30,56 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
  */
 @ApplicationScoped
 public final class RegistryProducer {
-    private static final RegistryFactory REGISTRY_FACTORY = InternalBridge.INSTANCE.registryFactoryInstance();
+    private static final RegistryFactory REGISTRY_FACTORY =
+            io.helidon.metrics.RegistryFactory.getInstance();
 
     private RegistryProducer() {
     }
 
     @Produces
-    public static MetricRegistry getDefaultRegistry() {
-        return getApplicationRegistry();
+    public static MetricRegistry getDefaultRegistryInternal() {
+        return getApplicationRegistryInternal();
     }
 
     @Produces
     @RegistryType(type = Type.APPLICATION)
-    public static MetricRegistry getApplicationRegistry() {
+    public static MetricRegistry getApplicationRegistryInternal() {
         return REGISTRY_FACTORY.getBridgeRegistry(Type.APPLICATION);
     }
 
     @Produces
     @RegistryType(type = Type.BASE)
-    public static MetricRegistry getBaseRegistry() {
+    public static MetricRegistry getBaseRegistryInternal() {
         return REGISTRY_FACTORY.getBridgeRegistry(Type.BASE);
     }
 
     @Produces
     @RegistryType(type = Type.VENDOR)
-    public static MetricRegistry getVendorRegistry() {
+    public static MetricRegistry getVendorRegistryInternal() {
         return REGISTRY_FACTORY.getBridgeRegistry(Type.VENDOR);
+    }
+
+    @Produces
+    public static org.eclipse.microprofile.metrics.MetricRegistry getDefaultRegistry() {
+        return getApplicationRegistry();
+    }
+
+    @Produces
+    @RegistryType(type = Type.APPLICATION)
+    public static org.eclipse.microprofile.metrics.MetricRegistry getApplicationRegistry() {
+        return REGISTRY_FACTORY.getRegistry(Type.APPLICATION);
+    }
+
+    @Produces
+    @RegistryType(type = Type.BASE)
+    public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
+        return REGISTRY_FACTORY.getRegistry(Type.BASE);
+    }
+
+    @Produces
+    @RegistryType(type = Type.VENDOR)
+    public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
+        return REGISTRY_FACTORY.getRegistry(Type.VENDOR);
     }
 
     /**
@@ -64,7 +87,7 @@ public final class RegistryProducer {
      * all run on the same VM and must not interfere with each other.
      */
     static void clearApplicationRegistry() {
-        MetricRegistry applicationRegistry = getApplicationRegistry();
+        MetricRegistry applicationRegistry = getApplicationRegistryInternal();
         applicationRegistry.getNames().forEach(applicationRegistry::remove);
     }
 }

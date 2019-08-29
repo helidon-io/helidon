@@ -20,8 +20,7 @@ import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-
-import io.helidon.common.metrics.InternalBridge.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -40,7 +39,7 @@ final class InterceptorTimed extends InterceptorBase<Timer, Timed> {
               Timed.class,
               Timed::name,
               Timed::absolute,
-              MetricRegistry::getBridgeTimers,
+              MetricRegistry::getTimers,
               "timer");
     }
 

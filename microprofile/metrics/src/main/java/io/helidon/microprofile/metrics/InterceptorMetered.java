@@ -21,9 +21,9 @@ import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 
-import io.helidon.common.metrics.InternalBridge.MetricRegistry;
 
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 /**
@@ -40,7 +40,7 @@ final class InterceptorMetered extends InterceptorBase<Meter, Metered> {
               Metered.class,
               Metered::name,
               Metered::absolute,
-              MetricRegistry::getBridgeMeters,
+              MetricRegistry::getMeters,
               "meter");
     }
 

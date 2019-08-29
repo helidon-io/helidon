@@ -17,26 +17,17 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.reflect.Constructor;
-import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
-import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.Metadata;
-import io.helidon.common.metrics.InternalBridge.MetricID;
-import io.helidon.common.metrics.InternalBridge.MetricRegistry;
-
-
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
@@ -49,12 +40,12 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 public class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
-        return metric == null ? InternalBridge.Metadata.newMetadata(getName(ip),
+        return metric == null ? new Metadata(getName(ip),
                                              "",
                                              "",
                                              metricType,
                                              MetricUnits.NONE)
-                : InternalBridge.Metadata.newMetadata(getName(metric, ip),
+                : new Metadata(getName(metric, ip),
                                metric.displayName(),
                                metric.description(),
                                metricType,
@@ -62,21 +53,8 @@ public class MetricProducer {
                                toTags(metric.tags()));
     }
 
-    static Map<String, String> toTags(String[] tags) {
-        return Arrays.stream(tags)
-                .map(expr -> {
-                    final int eq = expr.indexOf("=");
-                    if (eq <= 0) {
-                        return null;
-                    }
-                    return new AbstractMap.SimpleEntry<>(expr.substring(0, eq),
-                                expr.substring(eq + 1));
-                })
-                .filter(Objects::isNull)
-                .collect(HashMap::new,
-                     (map, entry) -> map.put(entry.getKey(), entry.getValue()),
-                     Map::putAll);
-
+    private static String toTags(String[] tags) {
+        return tags.length == 0 ? "" : String.join(",", tags);
     }
 
     private static String getName(InjectionPoint ip) {
@@ -164,15 +142,13 @@ public class MetricProducer {
     @VendorDefined
     @SuppressWarnings("unchecked")
     private <T> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
-        String metricName = getName(ip);
-        // TODO - need to get tags from anno and add to MetricID
-        MetricID metricID = new MetricID(metricName);
-        Gauge<T> result = (Gauge<T>) registry.getBridgeGauges().get(metricID);
-        if (result == null) {
-            throw new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString());
+        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
+        return (Gauge<T>) registry.getGauges().entrySet().stream()
+                .filter(entry -> entry.getKey().equals(metric.name()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString()))
+                .getValue();
         }
-        return result;
-    }
 
     /**
      * Returns the default {@link Gauge} matching the criteria.

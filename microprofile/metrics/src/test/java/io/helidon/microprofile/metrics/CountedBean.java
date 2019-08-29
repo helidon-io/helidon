@@ -24,10 +24,10 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
  * Class CountedBean.
  */
 @Dependent
-@Counted
+@Counted(monotonic = true)
 public class CountedBean {
 
-    @Counted
+    @Counted(monotonic = true)
     public void method1() {
     }
 
