@@ -271,7 +271,8 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     @Override
     public Map<InternalBridge.MetricID, Metric> getBridgeMetrics(Predicate<? super Map.Entry<? extends InternalBridge.MetricID, ? extends Metric>> predicate) {
         return allMetrics.entrySet().stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(new MetricID(entry.getKey()), entry.getValue()))
+                .map(entry -> new AbstractMap.SimpleEntry<>(
+                        new MetricID(entry.getKey(), entry.getValue().getTags()), entry.getValue()))
                 .filter(predicate)
                 .collect(HashMap::new,
                         (map, entry) -> map.put(entry.getKey(), entry.getValue()),
