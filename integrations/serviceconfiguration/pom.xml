@@ -17,8 +17,8 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -38,10 +38,18 @@
         <module>serviceconfiguration-hikaricp</module>
         <module>serviceconfiguration-hikaricp-accs</module>
         <module>serviceconfiguration-hikaricp-localhost</module>
-        <module>serviceconfiguration-ucp</module>
-        <module>serviceconfiguration-ucp-accs</module>
-        <module>serviceconfiguration-ucp-localhost</module>
         <module>serviceconfiguration-system-kubernetes</module>
         <module>serviceconfiguration-system-oracle-accs</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>integrations</id>
+            <modules>
+                <module>serviceconfiguration-ucp</module>
+                <module>serviceconfiguration-ucp-accs</module>
+                <module>serviceconfiguration-ucp-localhost</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

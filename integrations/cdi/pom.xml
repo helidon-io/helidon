@@ -35,7 +35,6 @@
         <module>common-cdi</module>
         <module>datasource</module>
         <module>datasource-hikaricp</module>
-        <module>datasource-ucp</module>
         <module>eclipselink-cdi</module>
         <module>jedis-cdi</module>
         <module>jpa-cdi</module>
@@ -44,4 +43,14 @@
         <module>jta-weld</module>
         <module>oci-objectstorage-cdi</module>
     </modules>
+
+
+    <profiles>
+        <profile>
+            <id>integrations</id>
+            <modules>
+                <module>datasource-ucp</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
