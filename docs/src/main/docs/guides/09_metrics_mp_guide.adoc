@@ -754,7 +754,7 @@ docker build -t helidon-metrics-mp .
 ----
 
 [source,yaml]
-.Create the Kubernetes YAML specification, named metrics.yaml, with the following content:
+.Create the Kubernetes YAML specification, named `metrics.yaml`, with the following content:
 ----
 kind: Service
 apiVersion: v1
