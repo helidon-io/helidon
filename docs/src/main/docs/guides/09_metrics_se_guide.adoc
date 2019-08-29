@@ -20,8 +20,8 @@
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
 
-This guide describes how to create a sample MicroProfile (SE) project
-that can be used to run some basic examples using both built-in and custom metrics with Helidon SE.
+This guide describes how to create a sample Helidon SE project
+that can be used to run some basic examples using both built-in and custom metrics.
 
 == What you need
 
