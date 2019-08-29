@@ -22,4 +22,4 @@ MODULE_DIR=$1
 cd "$MODULE_DIR"
 
 echo GRAALVM_HOME="${GRAALVM_HOME}"
-mvn package -P native-image
+mvn package -B -P native-image

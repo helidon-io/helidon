@@ -33,7 +33,7 @@ jobs:
         with:
           java-version: 1.8
       - name: Build helidon
-        run: mvn install -DskipTests
+        run: mvn install -B -DskipTests
       - name: Install native image
         run: ./etc/scripts/native-image/install.sh https://github.com/oracle/graal/releases/download/vm-19.2.0/graalvm-ce-darwin-amd64-19.2.0.tar.gz graalvm-ce-darwin-amd64-19.2.0 graalvm-ce-19.2.0/Contents/Home/bin
       - name: Build native image
