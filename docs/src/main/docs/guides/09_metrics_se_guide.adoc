@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Metrics  SE Guide
-:description: Helidon metrics s
+:description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
 
 This guide describes how to create a sample MicroProfile (SE) project
@@ -59,7 +59,7 @@ NOTE: The `/metrics` endpoint will return data for all scopes.
 
 The following example will demonstrate how to use the built-in metrics.  All examples are executed
 from the root directory of your project (helidon-quickstart-se).  The generated source code is
-already configured for both metrics and health-checks, but you will remove health-checks to simplify this example.
+already configured for both metrics and health-checks, but the following example removes health-checks.
 
 
 [source,xml]
@@ -237,19 +237,20 @@ You can get the metadata for any scope, such as `/metrics/base`, as shown below:
 
 === Application-specific metrics data
 
-This section demonstrates how to use Helidon metrics in your application.  You can create
-application-specific metrics and integrate them with Helidon. The application has complete
-control over each metric, so it is the application's responsibility to create and update the metrics.
-For example, an application may use the same counter for multiple methods, or one counter per method.
-Helidon maintains an application `MetricRegistry` which is used to manage all of the application metrics.
+This section demonstrates how to use application-specific metrics and integrate them with Helidon.
+It is the application's responsibility to create and update the metrics at runtime.  The application has
+complete control over when and how each metric is used. For example, an application may use the
+same counter for multiple methods, or one counter per method.  Helidon maintains an application
+`MetricRegistry` which is used to manage all of the application metrics.
 Helidon returns these metrics in response to a `/metrics/application` REST request.
 
-In all of these examples, the scope and lifetime of the metric is at the application-level,
-even when it is updated in response to a REST request.
+In all of these examples, the scope and lifetime of the metric is at the application-level.
+Each metric, except `Gauge`, is updated in response to a REST request so the contents of the
+metric is cumulative.
 
 ==== Counter metric
 
-The `Counter` metric is a monotonically increasing or decreasing numeric value. The following example
+The `Counter` metric is a monotonically increasing or decreasing number. The following example
 will demonstrate how to use a `Counter` to track the number of times the `/cards` endpoint is called.
 
 [source,java]
@@ -321,7 +322,6 @@ the application.
 <1> Add the `GreetingCards` service to the `Routing.builder`.  Helidon will route any REST requests with
 the `/cards` root path to the `GreetingCards` service.
 
-
 [source,bash]
 .Build and run the application, then invoke the endpoints below:
 ----
@@ -341,9 +341,10 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 ==== Meter metric
 
-The `Meter` metric is used to measure the how many times an event occurs within a certain time period.  As soon as a `Meter` object
-is created, an internal clock used to calculate the rates, starts running. This metric also includes the `count` field from the
-`Counter` metric.
+The `Meter` metric is used to measure throughput, the number of times an event occurs within a certain time period.
+When a `Meter` object is created, its internal clock starts running.  That clock is used to calculate the various rates
+stored this metric.  The `Meter` also includes the `count` field from the `Counter` metric.  When you mark an event,
+the count is incremented.
 
 The following example marks an event each time the `/cards` endpoint is called.
 
@@ -426,10 +427,10 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 ==== Timer metric
 
-The `Timer` metric aggregates durations across multiple REST requests and provides timing statistics.
-It also includes throughput statistics using an internal `Meter` metric. The `Timer` measures duration in nanoseconds.
-In the following example, a `Timer` metric is used to measure the duration of a method's execution.
-Whenever the REST `/cards` endpoint is called, the `Timer` will be updated with additional timing information.
+The `Timer` metric aggregates durations, provides timing statistics, and includes throughput statistics
+using an internal `Meter` metric. The `Timer` measures duration in nanoseconds. In the following example,
+a `Timer` metric is used to measure the duration of a method's execution.  Whenever the REST `/cards`
+endpoint is called, the `Timer` will be updated with additional timing information.
 
 [source,java]
 .Update the `GreetingCards` class with the following code:
@@ -515,7 +516,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 }
 ----
 <1> These are the same fields used by `Meter`.
-<2> These are the `Timer` fields that measure the duration of the `getDefaultMessageHandler` method. These values
+<2> These are the `Timer` fields that measure the duration of the `getDefaultMessageHandler` method. Some of these values
 will change each time you invoke the `/cards` endpoint.
 
 
@@ -609,7 +610,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   }
 }
 ----
-<1> This is the histogram data.  If you invoke the `/cards` endpoint again, you will see some numbers change such as `count`, `mean`, and `stddev`.
+<1> This is the histogram data.  Some of these values will change each time you invoke the `/cards` endpoint.
 
 
 ==== Gauge metric
@@ -795,9 +796,9 @@ NOTE: Leave the application running in Kubernetes since it will be used for Prom
 
 ==== Prometheus integration
 
-The metrics services that you just deployed into Kubernetes is already annotated with `prometheus.io/scrape:`.  This will allow
+The metrics service that you just deployed into Kubernetes is already annotated with `prometheus.io/scrape:`.  This will allow
 Prometheus to discover the service and scrape the metrics.  In this exercise, you will install Prometheus
-into Kubernetes, then verify it discovered the Helidon metrics in your application.
+into Kubernetes, then verify that it discovered the Helidon metrics in your application.
 
 [source,bash]
 .Install Prometheus and wait until the pod is ready:
@@ -845,7 +846,7 @@ This guide demonstrated how to use metrics in a Helidon SE application using var
 metrics and scopes.
 
 * Access metrics for all three scopes: base, vendor, and application
-* Configure metrics that are updated by the application when an application REST endpoint is invoked.
+* Configure metrics that are updated by the application when an application REST endpoint is invoked
 * Configure a `Gauge` metric
 * Integrate Helidon metrics with Kubernetes and Prometheus
 
