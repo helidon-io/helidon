@@ -32,6 +32,5 @@
     <modules>
         <module>metrics2</module>
         <module>prometheus2</module>
-        <module>bridge2/helidon-metrics-bridge2</module>
     </modules>
 </project>
