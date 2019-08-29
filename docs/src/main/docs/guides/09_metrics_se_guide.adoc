@@ -59,7 +59,7 @@ NOTE: The `/metrics` endpoint will return data for all scopes.
 
 The following example will demonstrate how to use the built-in metrics.  All examples are executed
 from the root directory of your project (helidon-quickstart-se).  The generated source code is
-already configured for metrics and health-checks, but you will remove health-checks to simplify this example.
+already configured for both metrics and health-checks, but you will remove health-checks to simplify this example.
 
 
 [source,xml]
@@ -237,14 +237,15 @@ You can get the metadata for any scope, such as `/metrics/base`, as shown below:
 
 === Application-specific metrics data
 
-You can create application-specific metrics and integrate them with Helidon. The application has complete
-control over each metric, so it is the application's responsibility to create and update the metrics.  For example,
-an application may use the same counter for multiple methods, or one counter per method.
+This section demonstrates how to use Helidon metrics in your application.  You can create
+application-specific metrics and integrate them with Helidon. The application has complete
+control over each metric, so it is the application's responsibility to create and update the metrics.
+For example, an application may use the same counter for multiple methods, or one counter per method.
 Helidon maintains an application `MetricRegistry` which is used to manage all of the application metrics.
 Helidon returns these metrics in response to a `/metrics/application` REST request.
 
-This section demonstrates how to use Helidon metrics in your application.  In all of these examples, the scope and lifetime
-of the metric is at the application-level, even when it is updated in response to a REST request.
+In all of these examples, the scope and lifetime of the metric is at the application-level,
+even when it is updated in response to a REST request.
 
 ==== Counter metric
 
@@ -705,7 +706,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 === Integration with Kubernetes and Prometheus
 
-The following example shows how to integrate the Helidon SE applcation with Kubernetes.
+The following example shows how to integrate the Helidon SE application with Kubernetes.
 
 [source,bash]
 .Stop the application and build the docker image:
@@ -836,7 +837,7 @@ This guide demonstrated how to use metrics in a Helidon SE application using var
 metrics and scopes.
 
 * Access metrics for all 3 scopes: base, vendor, and application
-* Configure metrics that are updated by the applicaiton when an application REST endpoint is invoked.
+* Configure metrics that are updated by the application when an application REST endpoint is invoked.
 * Configure a `Gauge` metric
 * Integrate Helidon metrics with Kubernetes and Prometheus
 
