@@ -22,10 +22,11 @@ def resourcesDir = new File(rootDir, "src/main/resources")
 def testResourcesDir = new File(rootDir, "src/test/resources")
 
 def optionalFiles = [
-  restResource: [ "${javaPkgDir}/__applicationName__.java", "${javaPkgDir}/__restResourceName__.java" ],
-  unitTest: [ "${testJavaPkgDir}/MainTest.java", "${testResourcesDir}/microprofile-config.properties" ],
-  loggingConfig: [ "${resourcesDir}/logging.properties" ],
-  applicationYaml: [ "${resourcesDir}/application.yaml" ]
+  mainClass: [ "${javaPkgDir}/Main.java.vm" ],
+  restResource: [ "${javaPkgDir}/__applicationName__.java.vm", "${javaPkgDir}/__restResourceName__.java.vm" ],
+  unitTest: [ "${testJavaPkgDir}/MainTest.java.vm", "${testResourcesDir}/microprofile-config.properties.vm" ],
+  loggingConfig: [ "${resourcesDir}/logging.properties.vm" ],
+  applicationYaml: [ "${resourcesDir}/application.yaml.vm" ]
 ]
 
 // remove optional files that should not be included

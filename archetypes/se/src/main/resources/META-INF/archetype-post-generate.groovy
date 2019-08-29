@@ -21,10 +21,12 @@ def testJavaPkgDir = new File(rootDir, "src/test/java/" + javaPackage.replace('.
 def resourcesDir = new File(rootDir, "src/main/resources")
 
 def optionalFiles = [
-  restService: [ "${javaPkgDir}/__restServiceName__.java" ],
-  unitTest: [ "${testJavaPkgDir}/MainTest.java" ],
-  loggingConfig: [ "${resourcesDir}/logging.properties" ],
-  applicationYaml: [ "${resourcesDir}/application.yaml" ]
+  restService: [ "${javaPkgDir}/__restServiceName__.java.vm" ],
+  unitTest: [ "${testJavaPkgDir}/MainTest.java.vm" ],
+  loggingConfig: [ "${resourcesDir}/logging.properties.vm" ],
+  applicationYaml: [ "${resourcesDir}/application.yaml.vm" ],
+  nativeImageSupport: [ "${resourcesDir}/META-INF/native-image/native-image.properties.vm",
+    "${resourcesDir}/META-INF/native-image/helidon-example-reflection-config.json" ]
 ]
 
 // remove optional files that should not be included
