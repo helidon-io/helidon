@@ -826,9 +826,9 @@ NOTE: Leave the application running in Kubernetes since it will be used for Prom
 
 ==== Prometheus integration
 
-The metrics services that you just deployed into Kubernetes is already annotated with `prometheus.io/scrape:`.  This will allow
+The metrics service that you just deployed into Kubernetes is already annotated with `prometheus.io/scrape:`.  This will allow
 Prometheus to discover the service and scrape the metrics.  In this exercise, you will install Prometheus
-into Kubernetes, then verify it discovered the Helidon metrics in your application.
+into Kubernetes, then verify that it discovered the Helidon metrics in your application.
 
 [source,bash]
 .Install Prometheus and wait until the pod is ready:
