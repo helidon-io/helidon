@@ -23,7 +23,7 @@
 
 <suppressions>
     <suppress checks="FileLength"
-            files="config/config/src/main/java/io/helidon/config/Config.java"
+            files="config/config/src/main/java/io/helidon/config/Config.java|integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
             lines="1"/>
 
         <!-- Java comments with AsciiDoc tag:: and end:: in import section incorrectly flagged

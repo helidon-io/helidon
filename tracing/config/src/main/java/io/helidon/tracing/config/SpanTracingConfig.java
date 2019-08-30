@@ -44,6 +44,11 @@ public abstract class SpanTracingConfig extends Traceable {
         super(name);
     }
 
+    @Override
+    public String toString() {
+        return "SpanTracingConfig(" + name() + ")";
+    }
+
     /**
      * Merge configuration of two traced spans.
      *

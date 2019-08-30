@@ -24,10 +24,17 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
     <name>Helidon CDI Integrations JPA Weld</name>
+
+    <!--
+        This project is deprecated and slated for eventual removal
+        from Helidon.
+
+        Please see the ../jpa-cdi project instead.
+    -->
 
     <properties>
       <show>package</show>

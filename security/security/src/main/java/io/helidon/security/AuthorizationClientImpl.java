@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
                             "Provider %s, Description %s, Request %s. Subject %s. %s: %s")
                                           .addParam(AuditEvent.AuditParam
                                                             .plain("provider", providerInstance.getClass().getName()))
+                                          .addParam(AuditEvent.AuditParam.plain("description", "Audit failure"))
                                           .addParam(AuditEvent.AuditParam.plain("request", this))
                                           .addParam(AuditEvent.AuditParam.plain("subject",
                                                                                 context.user()

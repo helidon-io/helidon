@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
     <name>Helidon CDI Integrations UCP DataSource</name>
@@ -108,11 +108,34 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>io.helidon.serviceconfiguration:helidon-serviceconfiguration-hikaricp-accs</classpathDependencyExclude>
+                        <classpathDependencyExclude>io.helidon.serviceconfiguration:helidon-serviceconfiguration-hikaricp-localhost</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <repositories>
         <repository>

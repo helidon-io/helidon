@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -292,7 +293,9 @@ class RequestRouting implements Routing {
                     LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing next: " + nextItem.path);
                     Span span = span();
                     if (null != span) {
-                        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig("web-server", "HTTP Request");
+                        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig("web-server",
+                                                                                    "HTTP Request",
+                                                                                    context());
                         if (spanConfig.spanLog("handler.class").enabled()) {
                             span.log(nextItem.handlerRoute.diagnosticEvent());
                         }
@@ -361,6 +364,11 @@ class RequestRouting implements Routing {
             try {
                 if (t instanceof HttpException) {
                     response.status(((HttpException) t).status());
+                } else if (t.getCause() instanceof HttpException) {
+                    response.status(((HttpException) t.getCause()).status());
+                } else if (t instanceof RejectedExecutionException
+                           || t.getCause() instanceof RejectedExecutionException) {
+                    response.status(Http.Status.SERVICE_UNAVAILABLE_503);
                 } else {
                     LOGGER.log(t instanceof Error ? Level.SEVERE : Level.WARNING,
                                "Default error handler: Unhandled exception encountered.",

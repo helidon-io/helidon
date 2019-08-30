@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.bundles</groupId>
         <artifactId>bundles-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-1.2</artifactId>
     <name>Helidon Microprofile Bundles 1.2</name>
@@ -58,6 +58,11 @@
         <dependency>
             <groupId>io.helidon.microprofile.jwt</groupId>
             <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-jersey-client</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

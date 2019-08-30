@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.integration</groupId>
         <artifactId>helidon-security-integration-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-integration-jersey</artifactId>
     <name>Helidon Security Integration Jersey</name>
@@ -79,6 +79,11 @@
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-client</artifactId>
             <scope>provided</scope>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-jaxrs</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

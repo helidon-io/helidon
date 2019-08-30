@@ -13,6 +13,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixes
 
+## [1.2.1] - 2019-08-21
+
+### Notes
+
+This release contains bug and performance fixes as well as support for
+the latest releases of GraalVM (19.1.1 and 19.2.0)
+
+### Fixes
+
+- Tracing: Zipkin integration no longer fails in MP due to class cast exception. [901](https://github.com/oracle/helidon/pull/901)
+- Jersey client to automatically propagate context when using asynchronous operations. [905](https://github.com/oracle/helidon/pull/905)
+- Smart resizing of Jersey thread pool [871](https://github.com/oracle/helidon/pull/871)
+- WebServer: Upgrade Netty to 4.1.39 [899](https://github.com/oracle/helidon/pull/899)
+- WebServer: Change Netty workers default to equal available processors. [874](https://github.com/oracle/helidon/pull/874)
+- JPA: Add support for unitName-less PersistenceContext injection points [914](https://github.com/oracle/helidon/pull/914)
+- JPA: Promoting JPA integration to supported status [908](https://github.com/oracle/helidon/pull/908)
+- Health: Healthchecks moved to liveness checks. [903](https://github.com/oracle/helidon/pull/903)
+- MP Server: Logging a warning when more than one MP server is started. [902](https://github.com/oracle/helidon/pull/902)
+- GraalVM: Changes for Zipkin and Netty to run with latest Graal VM native-image [915](https://github.com/oracle/helidon/pull/915)
+- Security: Properly log audit event [886](https://github.com/oracle/helidon/pull/886)
+- OpenAPI: Allow different servers within an app to report different OpenAPI doc [883](Allow different servers within an app to report different OpenAPI doc)
+- Correct erroneous assert statement in JedisExtension [917](https://github.com/oracle/helidon/pull/917)
+- UCP Unit test [889](https://github.com/oracle/helidon/pull/889)
+- Examples: Add H2-based example for the Hikari connection pool [898](https://github.com/oracle/helidon/pull/898)
+- Documentation fixes [892](https://github.com/oracle/helidon/pull/892) [898](https://github.com/oracle/helidon/pull/898) [906](https://github.com/oracle/helidon/pull/906)
+
+
 ## [1.2.0] - 2019-07-29
 
 ### Notes
@@ -307,6 +334,12 @@ wanted to get these changes in before 1.0. For details see
 - Fault Tolerance: Memory improvement [180](https://github.com/oracle/helidon/pull/180) 
 - Build: fails when compiling with Java 11 [225](https://github.com/oracle/helidon/issues/225)
 
+## [0.10.6] - 2019-08-07
+
+### Fixes
+
+- WebServer (backport): Remove the channel closed listener in BareResponseImpl when request completes. [695](https://github.com/oracle/helidon/pull/695)
+
 ## [0.10.5] - 2018-11-06
 
 ### Fixes
@@ -391,7 +424,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.2.0...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/1.2.1...HEAD
+[1.2.1]: https://github.com/oracle/helidon/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/oracle/helidon/compare/1.1.2...1.2.0
 [1.1.2]: https://github.com/oracle/helidon/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/oracle/helidon/compare/1.1.0...1.1.1
@@ -402,6 +436,7 @@ for details.
 [1.0.0]: https://github.com/oracle/helidon/compare/0.11.0...1.0.0
 [0.11.1]: https://github.com/oracle/helidon/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/oracle/helidon/compare/0.10.5...0.11.0
+[0.10.6]: https://github.com/oracle/helidon/compare/0.10.5...0.10.6
 [0.10.5]: https://github.com/oracle/helidon/compare/0.10.4...0.10.5
 [0.10.4]: https://github.com/oracle/helidon/compare/0.10.3...0.10.4
 [0.10.3]: https://github.com/oracle/helidon/compare/0.10.2...0.10.3

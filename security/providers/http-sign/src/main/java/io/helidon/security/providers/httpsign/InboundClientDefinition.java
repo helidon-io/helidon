@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -267,8 +267,8 @@ public class InboundClientDefinition {
         public Builder config(Config config) {
             keyId(config.get("key-id").asString().get());
             config.get("principal-name").asString().ifPresent(this::principalName);
-            config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
-            config.get("public-key").as(KeyConfig.class).ifPresent(this::publicKeyConfig);
+            config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
+            config.get("public-key").as(KeyConfig::create).ifPresent(this::publicKeyConfig);
             config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
             config.get("algorithm").asString().ifPresent(this::algorithm);
 

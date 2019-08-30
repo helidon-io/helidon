@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,8 +72,7 @@ class ServerImplTest {
 
             assertThat(first, startsWith("test1: helidon-"));
             assertThat(second, startsWith("test2: custom-2-"));
-        }
-        finally {
+        } finally {
             server.stop();
         }
     }
@@ -103,8 +102,7 @@ class ServerImplTest {
 
             assertThat(first, startsWith("test1: helidon-"));
             assertThat(second, startsWith("test2: helidon-"));
-        }
-        finally {
+        } finally {
             server.stop();
         }
     }

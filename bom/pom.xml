@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
@@ -55,6 +55,12 @@
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-test-support</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- WebClient -->
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-jaxrs</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- gRPC server -->
@@ -203,6 +209,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
+                <artifactId>helidon-security-integration-jersey-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-webserver</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -347,6 +358,11 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-reactive</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-mapper</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

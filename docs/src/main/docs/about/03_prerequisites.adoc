@@ -24,19 +24,18 @@ Everything you need to use Helidon is listed here.
 
 == Prerequisites
 
-Helidon requires Java 8 (or greater) and Maven. You need Docker if you
+Helidon requires Java 8 or Java 11 and Maven. You need Docker if you
 want to build and deploy Docker containers. If you want to
 deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
-<<getting-started/04_kubernetes.adoc,install one on your desktop>>). 
-
-The following list shows the minimum versions.
+<<about/05_kubernetes.adoc,install one on your desktop>>).
 
 [role="flex, sm7"]
 |=======
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}8] or http://jdk.java.net[Open{nbsp}JDK{nbsp}8] | {nbsp}
-|https://maven.apache.org/download.cgi[Maven 3.5] | {nbsp}
-|https://docs.docker.com/install/[Docker 18.02] | Use the Edge channel to run Kubernetes on your desktop
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.7.4] | {nbsp}
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}8] (http://jdk.java.net[Open{nbsp}JDK{nbsp}8])
+ or https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11])
+|https://maven.apache.org/download.cgi[Maven 3.5+]
+|https://docs.docker.com/install/[Docker 18.06+]
+|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.11.9+]
 |=======
 
 

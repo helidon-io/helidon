@@ -58,7 +58,7 @@ else
 fi
 readonly MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
 
-readonly GRAALVM_VERSION=19.0.0
+readonly GRAALVM_VERSION=19.2.0
 
 docker build -f ${MY_DIR}/Dockerfile.jdk8-graalvm -t helidon/jdk8-graalvm:${GRAALVM_VERSION} ${MY_DIR}
 docker build -f ${MY_DIR}/Dockerfile.jdk8-graalvm-maven -t helidon/jdk8-graalvm-maven:${GRAALVM_VERSION} ${MY_DIR}

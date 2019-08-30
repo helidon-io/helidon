@@ -123,8 +123,9 @@ public final class TodosHandler implements Service {
     private void create(final ServerRequest req, final ServerResponse res) {
         secure(req, res, sc -> json(req, res, json -> {
             createCounter.inc();
-            sendResponse(res, bsc.create(sc, req.spanContext(), json),
-                         Http.Status.INTERNAL_SERVER_ERROR_500);
+            bsc.create(json)
+                    .thenAccept(created -> sendResponse(res, created, Http.Status.INTERNAL_SERVER_ERROR_500))
+                    .exceptionally(t -> sendError(t, res));
         }));
     }
 
@@ -135,7 +136,13 @@ public final class TodosHandler implements Service {
      * @param res the server response
      */
     private void getAll(final ServerRequest req, final ServerResponse res) {
-        secure(req, res, sc -> res.send(bsc.getAll(sc, req.spanContext())));
+        secure(req,
+               res,
+               securityContext -> {
+                   bsc.getAll(req.spanContext())
+                           .thenAccept(res::send)
+                           .exceptionally(t -> sendError(t, res));
+               });
     }
 
     /**
@@ -145,12 +152,14 @@ public final class TodosHandler implements Service {
      * @param res the server response
      */
     private void update(final ServerRequest req, final ServerResponse res) {
-        secure(req, res, sc -> json(req, res, json -> {
-            updateCounter.inc();
-            // example of asynchronous processing
-            bsc.update(sc, req.spanContext(),
-                       req.path().param("id"), json, res);
-        }));
+        secure(req,
+               res,
+               securityContext -> json(req, res, json -> {
+                   updateCounter.inc();
+                   // example of asynchronous processing
+                   bsc.update(securityContext,
+                              req.path().param("id"), json, res);
+               }));
     }
 
     /**
@@ -162,10 +171,9 @@ public final class TodosHandler implements Service {
     private void delete(final ServerRequest req, final ServerResponse res) {
         secure(req, res, sc -> {
             deleteCounter.inc();
-            sendResponse(res,
-                         bsc.deleteSingle(sc, req.spanContext(),
-                                          req.path().param("id")),
-                         Http.Status.NOT_FOUND_404);
+            bsc.deleteSingle(req.path().param("id"))
+                    .thenAccept(json -> sendResponse(res, json, Http.Status.NOT_FOUND_404))
+                    .exceptionally(throwable -> sendError(throwable, res));
         });
     }
 
@@ -177,10 +185,9 @@ public final class TodosHandler implements Service {
      */
     private void getSingle(final ServerRequest req, final ServerResponse res) {
         secure(req, res, sc -> {
-            sendResponse(res,
-                         bsc.getSingle(sc, req.spanContext(),
-                                       req.path().param("id")),
-                         Http.Status.NOT_FOUND_404);
+            bsc.getSingle(req.path().param("id"))
+                    .thenAccept(found -> sendResponse(res, found, Http.Status.NOT_FOUND_404))
+                    .exceptionally(throwable -> sendError(throwable, res));
         });
     }
 
@@ -226,12 +233,7 @@ public final class TodosHandler implements Service {
         req.content()
                 .as(JsonObject.class)
                 .thenAccept(json)
-                .exceptionally(throwable -> {
-                    res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-                    res.send(throwable.getClass().getName()
-                                     + ": " + throwable.getMessage());
-                    return null;
-                });
+                .exceptionally(throwable -> sendError(throwable, res));
     }
 
     /**
@@ -250,5 +252,12 @@ public final class TodosHandler implements Service {
         OptionalHelper.from(req.context()
                                     .get(SecurityContext.class))
                 .ifPresentOrElse(ctx, () -> noSecurityContext(res));
+    }
+
+    private static Void sendError(Throwable throwable, ServerResponse res) {
+        res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+        res.send(throwable.getClass().getName()
+                         + ": " + throwable.getMessage());
+        return null;
     }
 }

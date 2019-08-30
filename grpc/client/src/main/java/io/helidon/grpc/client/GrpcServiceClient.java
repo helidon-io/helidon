@@ -26,8 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.concurrent.ThreadSafe;
-
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
 
@@ -42,7 +40,6 @@ import io.grpc.stub.StreamObserver;
 /**
  * A gRPC Client for a specific gRPC service.
  */
-@ThreadSafe
 public class GrpcServiceClient {
 
     private final HashMap<String, GrpcMethodStub> methodStubs;

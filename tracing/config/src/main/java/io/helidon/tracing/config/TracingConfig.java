@@ -84,6 +84,11 @@ public abstract class TracingConfig extends Traceable {
         return ComponentTracingConfig.DISABLED;
     }
 
+    @Override
+    public String toString() {
+        return "TracingConfig(" + name() + ")";
+    }
+
     /**
      * Create new tracing configuration based on the provided config.
      *
@@ -166,21 +171,7 @@ public abstract class TracingConfig extends Traceable {
 
         @Override
         public TracingConfig build() {
-            // immutability
-            final Map<String, ComponentTracingConfig> finalComponents = new HashMap<>(components);
-            final Optional<Boolean> finalEnabled = enabled;
-
-            return new TracingConfig("helidon") {
-                @Override
-                public Optional<ComponentTracingConfig> getComponent(String componentName) {
-                    return Optional.ofNullable(finalComponents.get(componentName));
-                }
-
-                @Override
-                public Optional<Boolean> isEnabled() {
-                    return finalEnabled;
-                }
-            };
+            return new RootTracingConfig("helidon", new HashMap<>(components), enabled);
         }
 
         /**
@@ -224,5 +215,29 @@ public abstract class TracingConfig extends Traceable {
             this.enabled = Optional.of(enabled);
             return this;
         }
+    }
+
+    static final class RootTracingConfig extends TracingConfig {
+        private final Map<String, ComponentTracingConfig> components;
+        private final Optional<Boolean> enabled;
+
+        RootTracingConfig(String name,
+                          Map<String, ComponentTracingConfig> components,
+                          Optional<Boolean> enabled) {
+            super(name);
+            this.components = components;
+            this.enabled = enabled;
+        }
+
+        @Override
+        public Optional<ComponentTracingConfig> getComponent(String componentName) {
+            return Optional.ofNullable(components.get(componentName));
+        }
+
+        @Override
+        public Optional<Boolean> isEnabled() {
+            return enabled;
+        }
+
     }
 }
