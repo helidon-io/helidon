@@ -80,4 +80,11 @@ Learn how to use Helidon MP built-in and custom health checks.
 Learn how to use Helidon SE built-in and custom health checks.
 --
 
+[CARD]
+.Build Native Images with GraalVM
+[link=guides/15_graalnative.adoc]
+--
+Learn how to use GraalVM to build a native executable for your Helidon SE application.
+--
+
 ====
