@@ -29,6 +29,7 @@ that can be used to run some basic examples using both built-in and custom metri
 |===
 |About 30 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|https://github.com/helm/helm[Helm]
 |===
 
 === Create a sample Helidon SE project
@@ -787,7 +788,7 @@ helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // 
 <1> A service of type `NodePort` that serves the default routes on port `31143`
 
 [source,bash]
-.Verify the metrics endpoint using port `30116`, your port will likely be different:
+.Verify the metrics endpoint using port `31143`, your port will likely be different:
 ----
 curl http://localhost:31143/metrics
 ----
