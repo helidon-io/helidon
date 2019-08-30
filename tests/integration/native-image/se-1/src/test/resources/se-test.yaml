@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+app.greeting: "Hello"
 
-#
-# Graal native image supports additional configuration from this property file.
-# Security Subject requires this to work
-# The `all-security-services` is to support encryption algorithms, intermediate solution until we can figure out
-# how to do a fine-grained algorithm support
-#
-Args=-H:IncludeResourceBundles=sun.security.util.Resources \
-  --enable-all-security-services
+server:
+  port: -1
+  host: localhost
+
+tracing:
+  service: "se-unit-test"
+
+security:
+  providers:
+  web-server:
+    paths:
+      - path: "/greet/{*}"
+        authenticate: false
+        roles-allowed: []
+      - path: "/outbound"
+        authenticate: false

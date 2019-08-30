@@ -21,28 +21,24 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.helidon.tests</groupId>
-        <artifactId>helidon-tests-project</artifactId>
+        <groupId>io.helidon.tests.integration</groupId>
+        <artifactId>helidon-tests-integration</artifactId>
         <version>1.2.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.tests.integration</groupId>
-    <artifactId>helidon-tests-integration</artifactId>
     <packaging>pom</packaging>
 
-    <name>Integration Tests</name>
+    <artifactId>helidon-tests-integration-native-image</artifactId>
+    <name>Helidon Tests GraalVM Native image</name>
+
+    <description>
+        A set of tests that make sure various Helidon modules can compile with native-image.
+    </description>
 
     <modules>
-        <module>zipkin-mp-2.2</module>
-        <module>mp-security-client</module>
+        <module>se-1</module>
+        <module>static-content</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>native-image</id>
-            <modules>
-                <module>native-image</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>
