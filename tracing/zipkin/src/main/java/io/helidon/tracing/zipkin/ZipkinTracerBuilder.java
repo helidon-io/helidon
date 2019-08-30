@@ -106,7 +106,7 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
+public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(ZipkinTracerBuilder.class.getName());
     static final String DEFAULT_PROTOCOL = "http";
     static final int DEFAULT_ZIPKIN_PORT = 9411;
@@ -126,7 +126,10 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
     private boolean enabled = DEFAULT_ENABLED;
     private boolean global = true;
 
-    private ZipkinTracerBuilder() {
+    /**
+     * Default constructor, does not modify state.
+     */
+    protected ZipkinTracerBuilder() {
     }
 
     /**
