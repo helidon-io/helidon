@@ -736,29 +736,28 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         final Collection<String> managedClasses = persistenceUnit.getClazz();
         assert managedClasses != null;
         String name = persistenceUnit.getName();
-        if (name == null) {
-            name = "";
+        if (name == null || name.isEmpty()) {
+            name = JpaExtension.DEFAULT_PERSISTENCE_UNIT_NAME;
         }
+
         final Boolean excludeUnlistedClasses = persistenceUnit.isExcludeUnlistedClasses();
-        if (!Boolean.TRUE.equals(excludeUnlistedClasses)) {
-            if (unlistedClasses != null && !unlistedClasses.isEmpty()) {
-                Collection<? extends Class<?>> myUnlistedClasses = unlistedClasses.get(name);
-                if (myUnlistedClasses != null && !myUnlistedClasses.isEmpty()) {
-                    for (final Class<?> unlistedClass : myUnlistedClasses) {
-                        if (unlistedClass != null) {
-                            managedClasses.add(unlistedClass.getName());
-                        }
+        if (!Boolean.TRUE.equals(excludeUnlistedClasses)
+            && !unlistedClasses.isEmpty()
+            && !Boolean.TRUE.equals(persistenceUnit.isExcludeUnlistedClasses())) {
+            Set<? extends Class<?>> myUnlistedClasses = unlistedClasses.get(name);
+            if (myUnlistedClasses != null && !myUnlistedClasses.isEmpty()) {
+                for (final Class<?> unlistedClass : myUnlistedClasses) {
+                    if (unlistedClass != null) {
+                        managedClasses.add(unlistedClass.getName());
                     }
                 }
-                // Also add "default" ones
-                if (!name.isEmpty()) {
-                    myUnlistedClasses = unlistedClasses.get("");
-                    if (myUnlistedClasses != null && !myUnlistedClasses.isEmpty()) {
-                        for (final Class<?> unlistedClass : myUnlistedClasses) {
-                            if (unlistedClass != null) {
-                                managedClasses.add(unlistedClass.getName());
-                            }
-                        }
+            }
+            // Also add "default" ones
+            myUnlistedClasses = unlistedClasses.get(JpaExtension.DEFAULT_PERSISTENCE_UNIT_NAME);
+            if (myUnlistedClasses != null && !myUnlistedClasses.isEmpty()) {
+                for (final Class<?> unlistedClass : myUnlistedClasses) {
+                    if (unlistedClass != null) {
+                        managedClasses.add(unlistedClass.getName());
                     }
                 }
             }
@@ -776,7 +775,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         final io.helidon.integrations.cdi.jpa.jaxb.PersistenceUnitTransactionType persistenceUnitTransactionType =
             persistenceUnit.getTransactionType();
         if (persistenceUnitTransactionType == null) {
-            transactionType = PersistenceUnitTransactionType.JTA; // I guess
+            transactionType = PersistenceUnitTransactionType.JTA;
         } else {
             transactionType = PersistenceUnitTransactionType.valueOf(persistenceUnitTransactionType.name());
         }
