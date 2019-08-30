@@ -137,6 +137,9 @@ public interface ServerRequest extends HttpRequest {
      * {@code SpanContext} is a tracing component from <a href="http://opentracing.io">opentracing.io</a> standard.
      *
      * @return the related span context, may be null if not enabled
+     * @deprecated this method will have a different return type in next backward incompatible version
+     *  of Helidon. It will return {@code Optional<SpanContext>}. All methods that can return null will use
+     *  {@link java.util.Optional}
      */
     SpanContext spanContext();
 

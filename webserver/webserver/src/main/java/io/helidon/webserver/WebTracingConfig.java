@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import io.helidon.tracing.config.TracingConfigUtil;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import io.opentracing.noop.NoopSpanBuilder;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapExtractAdapter;
 import io.opentracing.tag.Tags;
@@ -221,10 +223,10 @@ public abstract class WebTracingConfig {
         }
     }
 
-    private static final class RequestSpanHandler implements Handler {
+    static final class RequestSpanHandler implements Handler {
         private static final String TRACING_SPAN_HTTP_REQUEST = "HTTP Request";
 
-        private RequestSpanHandler() {
+        RequestSpanHandler() {
         }
 
         @Override
@@ -237,21 +239,45 @@ public abstract class WebTracingConfig {
             Tracer tracer = req.tracer();
 
             // must run in context
-            Context context = Contexts.context().orElseThrow(() -> new IllegalStateException("Context must be available"));
+            Context context = req.context();
 
             SpanTracingConfig spanConfig = TracingConfigUtil
-                    .spanConfig(NettyWebServer.TRACING_COMPONENT, TRACING_SPAN_HTTP_REQUEST);
+                    .spanConfig(NettyWebServer.TRACING_COMPONENT, TRACING_SPAN_HTTP_REQUEST, context);
 
-            // even if we disable tracing for web server, we still need to configure parent span from inbound headers
-            Map<String, String> headersMap = req.headers()
-                    .toMap()
-                    .entrySet()
-                    .stream()
-                    .filter(entry -> !entry.getValue().isEmpty())
-                    .collect(Collectors.toMap(Map.Entry::getKey,
-                                              entry -> entry.getValue().get(0)));
-            SpanContext inboundSpanContext = tracer
-                    .extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
+            // convert to a simple map
+            Map<String, List<String>> multiMap = req.headers().toMap();
+            Map<String, String> headersMap = new HashMap<>();
+
+            for (Map.Entry<String, List<String>> entry : multiMap.entrySet()) {
+                List<String> value = entry.getValue();
+                if (!value.isEmpty()) {
+                    headersMap.put(entry.getKey(), value.get(0));
+                }
+            }
+
+            SpanContext inboundSpanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
+
+            if (inboundSpanContext instanceof NoopSpanBuilder) {
+                // this is all a noop stuff, does not matter what I do here - this is to prevent null pointers
+                // when span is used
+                // TODO once we return Optional from ServerRequest.spanContext(), we can also remove the
+                // following codeblock and we do not need to create teh span and register it with context
+                Span span = tracer.buildSpan("helidon-webserver")
+                        .asChildOf(inboundSpanContext)
+                        .start();
+
+                context.register(span);
+                context.register(span.context());
+                context.register(ServerRequest.class, span);
+                context.register(ServerRequest.class, span.context());
+
+                res.whenSent()
+                        .thenRun(span::finish);
+
+                // no tracing
+                return;
+            }
+
             if (null != inboundSpanContext) {
                 // register as parent span
                 context.register(inboundSpanContext);
