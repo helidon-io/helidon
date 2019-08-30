@@ -27,7 +27,7 @@
         <version>1.2.1-SNAPSHOT</version>
     </parent>
     <artifactId>tck-metrics2</artifactId>
-    <name>Helidon Microprofile Tests TCK Metrics</name>
+    <name>Helidon Microprofile Tests TCK Metrics 2</name>
 
     <dependencies>
         <dependency>
@@ -35,17 +35,11 @@
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.helidon.microprofile.bundles</groupId>
-                    <artifactId>helidon-microprofile-2.2</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-3.0</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <version>${version.lib.microprofile-metrics2-api}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

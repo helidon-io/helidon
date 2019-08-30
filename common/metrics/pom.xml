@@ -36,12 +36,11 @@
             <artifactId>helidon-config</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
-        <!-- The following dependency is intentionally on the 1.1 API -->
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
             <version>${version.lib.microprofile-metrics-api}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
