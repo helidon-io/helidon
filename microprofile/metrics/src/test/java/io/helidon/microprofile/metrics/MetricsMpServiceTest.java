@@ -16,14 +16,11 @@
 
 package io.helidon.microprofile.metrics;
 
-import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.Metadata;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.common.metrics.InternalBridge.MetricRegistry;
 import io.helidon.config.Config;
-import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
@@ -56,7 +53,8 @@ public class MetricsMpServiceTest {
                 .build();
         server.start();
 
-        registry = InternalBridge.INSTANCE.registryFactoryInstance().getBridgeRegistry(Type.APPLICATION);
+        registry = io.helidon.common.metrics.InternalBridge.INSTANCE
+                .getRegistryFactory().getBridgeRegistry(Type.APPLICATION);
 
         port = server.port();
         baseUri = "http://localhost:" + port;
@@ -72,7 +70,8 @@ public class MetricsMpServiceTest {
     }
 
     protected static void registerCounter(String name) {
-        Metadata meta = InternalBridge.Metadata.newMetadata(name,
+        io.helidon.common.metrics.InternalBridge.Metadata meta =
+                io.helidon.common.metrics.InternalBridge.Metadata.newMetadata(name,
                                      name,
                                      name,
                                      MetricType.COUNTER,

@@ -16,9 +16,8 @@
  */
 package io.helidon.metrics;
 
-import java.util.Collections;
-
 import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 import io.helidon.config.Config;
 
 /**
@@ -29,7 +28,7 @@ public class InternalBridgeImpl implements InternalBridge {
     public InternalBridgeImpl() {}
 
     @Override
-    public RegistryFactory registryFactoryInstance() {
+    public RegistryFactory getRegistryFactory() {
         return io.helidon.metrics.RegistryFactory.getInstance();
     }
 
@@ -43,8 +42,14 @@ public class InternalBridgeImpl implements InternalBridge {
         return io.helidon.metrics.RegistryFactory.create(config);
     }
 
-    static MetricID newMetricID(org.eclipse.microprofile.metrics.MetricID mpMetricID) {
-        return new MetricID(mpMetricID.getName(), Collections.unmodifiableMap(mpMetricID.getTags()));
+    @Override
+    public MetricID.Factory getMetricIDFactory() {
+        return new InternalMetricIDImpl.FactoryImpl();
+    }
+
+    @Override
+    public MetadataBuilder.Factory getMetadataBuilderFactory() {
+        return new InternalMetadataBuilderImpl.FactoryImpl();
     }
 
 }

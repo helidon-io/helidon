@@ -48,7 +48,7 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Metrics registry.
  */
-class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
+class Registry extends MetricRegistry implements io.helidon.common.metrics.InternalBridge.MetricRegistry {
     private final Type type;
     private final Map<String, MetricImpl> allMetrics = new ConcurrentHashMap<>();
 
@@ -60,11 +60,11 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
         return new Registry(type);
     }
 
-    static Metadata toMetadata(InternalBridge.Metadata metadata) {
+    static Metadata toMetadata(io.helidon.common.metrics.InternalBridge.Metadata metadata) {
         return toMetadata(metadata, metadata.getTags());
     }
 
-    static Metadata toMetadata(InternalBridge.Metadata metadata, Map<String, String> tags) {
+    static Metadata toMetadata(io.helidon.common.metrics.InternalBridge.Metadata metadata, Map<String, String> tags) {
         return new Metadata(metadata.getName(), metadata.getDisplayName(),
         metadata.getDescription().orElse(null), metadata.getTypeRaw(),
                 metadata.getUnit().orElse(null), tagsAsString(tags));
@@ -123,12 +123,12 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     }
 
     @Override
-    public Counter counter(InternalBridge.Metadata metadata) {
+    public Counter counter(io.helidon.common.metrics.InternalBridge.Metadata metadata) {
         return counter(toMetadata(metadata));
     }
 
     @Override
-    public Counter counter(InternalBridge.Metadata metadata, Map<String, String> tags) {
+    public Counter counter(io.helidon.common.metrics.InternalBridge.Metadata metadata, Map<String, String> tags) {
         return counter(toMetadata(metadata, tags));
     }
 
@@ -143,12 +143,12 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     }
 
     @Override
-    public Histogram histogram(InternalBridge.Metadata metadata) {
+    public Histogram histogram(io.helidon.common.metrics.InternalBridge.Metadata metadata) {
         return histogram(toMetadata(metadata));
     }
 
     @Override
-    public Histogram histogram(InternalBridge.Metadata metadata, Map<String, String> tags) {
+    public Histogram histogram(io.helidon.common.metrics.InternalBridge.Metadata metadata, Map<String, String> tags) {
         return histogram(toMetadata(metadata, tags));
     }
 
@@ -163,12 +163,12 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     }
 
     @Override
-    public Meter meter(InternalBridge.Metadata metadata) {
+    public Meter meter(io.helidon.common.metrics.InternalBridge.Metadata metadata) {
         return meter(toMetadata(metadata));
     }
 
     @Override
-    public Meter meter(InternalBridge.Metadata metadata, Map<String, String> tags) {
+    public Meter meter(io.helidon.common.metrics.InternalBridge.Metadata metadata, Map<String, String> tags) {
         return meter(toMetadata(metadata, tags));
     }
 
@@ -183,12 +183,12 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     }
 
     @Override
-    public Timer timer(InternalBridge.Metadata metadata) {
+    public Timer timer(io.helidon.common.metrics.InternalBridge.Metadata metadata) {
         return timer(toMetadata(metadata));
     }
 
     @Override
-    public Timer timer(InternalBridge.Metadata metadata, Map<String, String> tags) {
+    public Timer timer(io.helidon.common.metrics.InternalBridge.Metadata metadata, Map<String, String> tags) {
         return timer(toMetadata(metadata, tags));
     }
 
@@ -269,10 +269,10 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     }
 
     @Override
-    public Map<InternalBridge.MetricID, Metric> getBridgeMetrics(Predicate<? super Map.Entry<? extends InternalBridge.MetricID, ? extends Metric>> predicate) {
+    public Map<InternalBridge.MetricID, Metric> getBridgeMetrics(
+            Predicate<? super Map.Entry<? extends InternalBridge.MetricID, ? extends Metric>> predicate) {
         return allMetrics.entrySet().stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(
-                        new MetricID(entry.getKey(), entry.getValue().getTags()), entry.getValue()))
+                .map(Registry::toBridgeEntry)
                 .filter(predicate)
                 .collect(HashMap::new,
                         (map, entry) -> map.put(entry.getKey(), entry.getValue()),
@@ -280,7 +280,7 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     }
 
     @Override
-    public Map<MetricID, Metric> getBridgeMetrics() {
+    public Map<InternalBridge.MetricID, Metric> getBridgeMetrics() {
         return getBridgeMetrics(entry -> true);
     }
 
@@ -290,41 +290,54 @@ class Registry extends MetricRegistry implements InternalBridge.MetricRegistry {
     }
 
     @Override
-    public SortedMap<MetricID, Gauge> getBridgeGauges() {
+    public SortedMap<InternalBridge.MetricID, Gauge> getBridgeGauges() {
         return getBridgeMetrics(getGauges(), Gauge.class);
     }
 
     @Override
-    public SortedMap<MetricID, Histogram> getBridgeHistograms() {
+    public SortedMap<InternalBridge.MetricID, Histogram> getBridgeHistograms() {
         return getBridgeMetrics(getHistograms(), Histogram.class);
     }
 
     @Override
-    public SortedMap<MetricID, Meter> getBridgeMeters() {
+    public SortedMap<io.helidon.common.metrics.InternalBridge.MetricID, Meter> getBridgeMeters() {
         return getBridgeMetrics(getMeters(), Meter.class);
     }
 
     @Override
-    public SortedMap<MetricID, Timer> getBridgeTimers() {
+    public SortedMap<io.helidon.common.metrics.InternalBridge.MetricID, Timer> getBridgeTimers() {
         return getBridgeMetrics(getTimers(), Timer.class);
     }
 
     @Override
-    public Optional<Metric> getBridgeMetric(String metricName) {
-        return Optional.ofNullable(allMetrics.get(metricName));
+    public Optional<Map.Entry<? extends MetricID, ? extends Metric>> getBridgeMetric(String metricName) {
+        return Optional.ofNullable(allMetrics.get(metricName))
+                .map(Registry::toBridgeEntry);
     }
 
-    private static <T extends Metric> SortedMap<InternalBridge.MetricID, T> getBridgeMetrics(
-            SortedMap<String, T> metrics, Class<T> clazz) {
+    private static <T extends Metric> SortedMap<MetricID, T>
+            getBridgeMetrics(SortedMap<String, T> metrics, Class<T> clazz) {
         return metrics.entrySet().stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(new MetricID(entry.getKey()),
-                                    entry.getValue()))
+                .map(Registry::toBridgeEntry)
                 .filter(entry -> clazz.isAssignableFrom(entry.getValue().getClass()))
                 .collect(TreeMap::new,(map, entry) -> map.put(entry.getKey(), clazz.cast(entry.getValue())),
                         Map::putAll);
     }
 
+    private static Map.Entry<? extends MetricID,
+                        ? extends Metric> toBridgeEntry(
+            Map.Entry<String, ? extends Metric> entry) {
+        /*
+         * Copy the tags from the metric into the neutral key's tags.
+         */
+        MetricImpl metricImpl = MetricImpl.class.cast(entry.getValue());
+        return new AbstractMap.SimpleEntry<>(new InternalMetricIDImpl(
+                    entry.getKey(), metricImpl.getTags()), metricImpl);
+    }
 
+    private static <T extends MetricImpl> Map.Entry<? extends MetricID, T> toBridgeEntry(T metric) {
+        return new AbstractMap.SimpleEntry<>(new InternalMetricIDImpl(metric.getName(), metric.getTags()), metric);
+    }
 
     public Stream<? extends HelidonMetric> stream() {
         return allMetrics.values().stream();

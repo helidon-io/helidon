@@ -19,7 +19,7 @@ package io.helidon.grpc.metrics;
 import java.util.Map;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -67,9 +67,9 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("unchecked")
 public class GrpcMetricsInterceptorIT {
 
-    private static InternalBridge.MetricRegistry vendorRegsistry;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry vendorRegsistry;
 
-    private static InternalBridge.MetricRegistry appRegistry;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry appRegistry;
 
     private static Meter vendorMeter;
 
@@ -84,8 +84,8 @@ public class GrpcMetricsInterceptorIT {
         Routing.Rules rules = Routing.builder().get("metrics");
         MetricsSupport.create().update(rules);
 
-        vendorRegsistry = InternalBridge.INSTANCE.registryFactoryInstance().getBridgeRegistry(MetricRegistry.Type.VENDOR);
-        appRegistry = InternalBridge.INSTANCE.registryFactoryInstance().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
+        vendorRegsistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.VENDOR);
+        appRegistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
         vendorMeter = vendorRegsistry.meter("grpc.requests.meter");
         vendorCounter = vendorRegsistry.counter("grpc.requests.count");
     }
@@ -174,7 +174,6 @@ public class GrpcMetricsInterceptorIT {
         assertThat(appTimer.getCount(), is(1L));
     }
 
-    //@Disabled // TODO need a different way to check that tags are correct
     @Test
     public void shouldApplyTags() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
@@ -189,11 +188,12 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Map<InternalBridge.MetricID, Metric> matchingMetrics =
-                appRegistry.getBridgeMetrics(entry -> entry.getKey().getName().equals("Foo.barTags"));
+        Map<MetricID, Metric> matchingMetrics =
+                appRegistry.getBridgeMetrics(
+                        entry -> entry.getKey().getName().equals("Foo.barTags"));
 
         assertThat(matchingMetrics.size(), not(0));
-        Map.Entry<InternalBridge.MetricID, Metric> match = matchingMetrics.entrySet().stream()
+        Map.Entry<MetricID, Metric> match = matchingMetrics.entrySet().stream()
                 .findFirst()
                 .orElse(null);
 
@@ -202,6 +202,10 @@ public class GrpcMetricsInterceptorIT {
         expected.put("one", "t1");
         expected.put("two", "t2");
 
+        /*
+         * We expect the tags to be on the ID in the version-neutral (and 2.0)
+         * metrics programming model.
+         */
         assertThat(match.getKey().getTags(), is(expected));
     }
 

@@ -17,8 +17,6 @@
 package io.helidon.common.metrics;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -52,16 +50,25 @@ public interface InternalBridge {
     /**
      * Returns the singleton instance of the bridge.
      */
-    InternalBridge INSTANCE = Loader.loadInternalBridge();
+    InternalBridge INSTANCE = Loader.internalBridge();
 
-    /**
-     * Returns the singleton instance of the {@code RegistryFactory} as exposed
-     * through the {@code InternalBridge.RegistryFactory} interface.
-     *
-     * @return the {@code RegistryFactory}
-     */
-    RegistryFactory registryFactoryInstance();
+    MetricID.Factory getMetricIDFactory();
 
+    Metadata.MetadataBuilder.Factory getMetadataBuilderFactory();
+
+    RegistryFactory getRegistryFactory();
+
+    static Metadata.MetadataBuilder newMetadataBuilder() {
+        return INSTANCE.getMetadataBuilderFactory().newMetadataBuilder();
+    }
+
+//    /**
+//     * Returns the singleton instance of the {@code RegistryFactory} as exposed
+//     * through the {@code InternalBridge.RegistryFactory} interface.
+//     *
+//     * @return the {@code RegistryFactory}
+//     */
+//    RegistryFactory registryFactoryInstance();
     /**
      * Creates a new {@code RegistryFactory} with the default configuration, as
      * exposed through the {@code InternalBridge.RegistryFactory} interface.
@@ -85,6 +92,8 @@ public interface InternalBridge {
      * Helidon clients.
      */
     public interface RegistryFactory {
+
+        static RegistryFactory INSTANCE = Loader.registryFactory();
 
         /**
          * Returns the MicroProfile metric {@code MetricRegistry} of the
@@ -233,18 +242,20 @@ public interface InternalBridge {
          * @param predicate for selecting which metrics to include in the result
          * @return the metrics matching the criteria expressed in the predicate
          */
-        Map<MetricID, Metric> getBridgeMetrics(Predicate<? super Map.Entry<? extends MetricID, ? extends Metric>> predicate);
+        Map<MetricID, Metric> getBridgeMetrics(
+                Predicate<? super Map.Entry<? extends MetricID, ? extends Metric>> predicate);
 
         /**
-         * Returns an {@link Optional} of the {@link Metric} of the given name.
-         * If multiple metrics match on the name (this can happen in MP Metrics
-         * 2.0 if the metrics were created with different tags) then the method
-         * returns the first metric with that name, if any.
+         * Returns an {@link Optional} of the {@code MetricID} and
+         * {@link Metric} of the metric matching the given name. If multiple
+         * metrics match on the name (this can happen in MP Metrics 2.0 if the
+         * metrics were created with different tags) then the method returns the
+         * first metric with that name, if any.
          *
          * @param metricName name of the metric to find
-         * @return {@code Optional} of the matching {@code Metric}
+         * @return {@code Optional} of a {@code Map.Entry} for the matching ID and metric
          */
-        Optional<Metric> getBridgeMetric(String metricName);
+        Optional<Map.Entry<? extends MetricID, ? extends Metric>> getBridgeMetric(String metricName);
 
         /**
          * Returns the names of all metrics in the registry.
@@ -329,6 +340,101 @@ public interface InternalBridge {
     }
 
     /**
+     * Version-neutral abstraction of a metric identifier.
+     * <p>
+     * Note that for a metric with tags, the tags are ALWAYS present in the
+     * neutral {@code MetricID}. We want to encourage the internal clients to
+     * use the newer programming style, retrieving tags from the ID rather than
+     * the metadata (where it was stored in MP Metrics 1.1).
+     */
+    public interface MetricID extends Comparable<MetricID> {
+
+        /**
+         *
+         * @return the name from the identifier
+         */
+        public String getName();
+
+        /**
+         *
+         * @return the tags from the identifier, as a {@code Map}
+         */
+        public Map<String, String> getTags();
+
+        /**
+         * Provides the tags as a {@code List}. The returned {@code Tag} objects
+         * are separate from those associated with the ID so changes to the tags
+         * made by the caller do not perturb the original ID.
+         *
+         * @return the {@code Tag}s
+         */
+        default List<Tag> getTagsAsList() {
+            return getTags().entrySet().stream()
+                    .collect(ArrayList::new,
+                            (list, entry) -> list.add(
+                                    new InternalTagImpl(entry.getKey(), entry.getValue())),
+                            List::addAll);
+        }
+
+        /**
+         * Describes the tags as a single string: name1=value1,name2=value2,...
+         *
+         * @return {@code String} containing the tags
+         */
+        default String getTagsAsString() {
+            return getTags().entrySet().stream()
+                    .map((entry) -> String.format("%s=%s", entry.getKey(), entry.getValue()))
+                    .collect(Collectors.joining(","));
+        }
+
+        /**
+         * Compares this instance to another object (per {@code Comparable}.
+         *
+         * @param o the other object to compare to
+         * @return -1, 0, +1 depending on whether this instance is less than,
+         * equal to, or greater than the other object.
+         */
+        @Override
+        default int compareTo(MetricID o) {
+            int result = getName().compareTo(Objects.requireNonNull(o).getName());
+            if (result != 0) {
+                return result;
+            }
+            result = getTags().size() - o.getTags().size();
+            if (result == 0) {
+                Iterator<Map.Entry<String, String>> thisIterator = getTags().entrySet().iterator();
+                Iterator<Map.Entry<String, String>> otherIterator = o.getTags().entrySet().iterator();
+                while (thisIterator.hasNext() && otherIterator.hasNext()) {
+                    Map.Entry<String, String> thisEntry = thisIterator.next();
+                    Map.Entry<String, String> otherEntry = otherIterator.next();
+                    result = thisEntry.getKey().compareTo(otherEntry.getKey());
+                    if (result != 0) {
+                        return result;
+                    } else {
+                        result = thisEntry.getValue().compareTo(otherEntry.getValue());
+                        if (result != 0) {
+                            return result;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        /**
+         *
+         */
+        public interface Factory {
+
+            static Factory INSTANCE = Loader.metricIDFactory();
+
+            InternalBridge.MetricID newMetricID(String name);
+
+            InternalBridge.MetricID newMetricID(String name, Map<String, String> tags);
+        }
+    }
+
+    /**
      * Version-neutral abstraction of metric metadata.
      * <p>
      * Although this interface supports tags, if you are using MicroProfile
@@ -390,24 +496,6 @@ public interface InternalBridge {
         Map<String, String> getTags();
 
         /**
-         *
-         * @return a builder for version-neutral {@link Metadata}
-         */
-        static MetadataBuilder builder() {
-            return new MetadataBuilder();
-        }
-
-        /**
-         *
-         * @param metadata to be used to initialize the builder
-         * @return a pre-initialized builder for version-neutral
-         * {@link Metadata}
-         */
-        static MetadataBuilder builder(Metadata metadata) {
-            return new MetadataBuilder(Objects.requireNonNull(metadata, "metadata cannot be null"));
-        }
-
-        /**
          * Prepares a version-neutral {@link Metadata} instance using the
          * specified values, avoiding the need to create and act on a builder.
          * <p>
@@ -425,23 +513,16 @@ public interface InternalBridge {
          * @param tags name/value pairs representing tags
          * @return the prepared version-neutral {@code Metadata}
          */
-        static Metadata newMetadata(String name,
-                String displayName,
-                String description,
-                MetricType type,
-                String unit,
-                boolean isReusable,
-                Map<String, String> tags) {
-
-            final MetadataBuilder builder = new MetadataBuilder()
+        static InternalBridge.Metadata newMetadata(String name, String displayName, String description,
+                MetricType type, String unit, boolean isReusable, Map<String, String> tags) {
+            final MetadataBuilder builder = MetadataBuilder.Factory.INSTANCE.newMetadataBuilder()
                     .withName(name)
-                    .withDisplayName(displayName)
                     .withDescription(description)
+                    .withDisplayName(displayName)
                     .withType(type)
-                    .withUnit(unit)
-                    .withTags(tags);
-            return (isReusable ? builder.reusable() : builder.notReusable())
-                    .build();
+                    .withTags(tags)
+                    .withUnit(unit);
+            return (isReusable ? builder.reusable() : builder.notReusable()).build();
         }
 
         /**
@@ -463,20 +544,15 @@ public interface InternalBridge {
          * @param tags name/value pairs representing tags
          * @return the prepared version-neutral {@code Metadata}
          */
-        static Metadata newMetadata(String name,
-                String displayName,
-                String description,
-                MetricType type,
-                String unit,
-                Map<String, String> tags) {
-
-            return new MetadataBuilder()
+        static InternalBridge.Metadata newMetadata(String name, String displayName, String description,
+                MetricType type, String unit, Map<String, String> tags) {
+            return MetadataBuilder.Factory.INSTANCE.newMetadataBuilder()
                     .withName(name)
-                    .withDisplayName(displayName)
                     .withDescription(description)
+                    .withDisplayName(displayName)
                     .withType(type)
-                    .withUnit(unit)
                     .withTags(tags)
+                    .withUnit(unit)
                     .build();
         }
 
@@ -494,363 +570,131 @@ public interface InternalBridge {
          * @param unit unit that applies to the metric
          * @return the prepared version-neutral {@code Metadata}
          */
-        static Metadata newMetadata(String name,
-                String displayName,
-                String description,
-                MetricType type,
-                String unit) {
-            return new MetadataBuilder()
+        static InternalBridge.Metadata newMetadata(String name, String displayName, String description,
+                MetricType type, String unit) {
+            return MetadataBuilder.Factory.INSTANCE.newMetadataBuilder()
                     .withName(name)
+                    .withDescription(description)
                     .withDisplayName(displayName)
                     .withType(type)
                     .withUnit(unit)
                     .build();
         }
 
+        /**
+         * Fluent-style builder for version-neutral {@link Metadata}.
+         *
+         */
+        public interface MetadataBuilder {
+
+            /**
+             * Sets the name.
+             *
+             * @param name name to be used in the metadata; cannot be null
+             * @return the same builder
+             */
+            public MetadataBuilder withName(String name);
+
+            /**
+             * Sets the display name.
+             *
+             * @param displayName display name to be used in the metadata;
+             * cannot be null
+             * @return the same builder
+             */
+            public MetadataBuilder withDisplayName(String displayName);
+
+            /**
+             * Sets the description.
+             *
+             * @param description description to be used in the metadata; cannot
+             * be null
+             * @return the same builder
+             */
+            public MetadataBuilder withDescription(String description);
+
+            /**
+             * Sets the metric type.
+             *
+             * @param type {@link MetricType} to be used in the metadata; cannot
+             * be null
+             * @return the same builder
+             */
+            public MetadataBuilder withType(MetricType type);
+
+            /**
+             * Sets the unit.
+             *
+             * @param unit unit to be used in the metadata; cannot be null
+             * @return the same builder
+             */
+            public MetadataBuilder withUnit(String unit);
+
+            /**
+             * Sets that the resulting metadata will be reusable.
+             *
+             * @return the same builder
+             */
+            public MetadataBuilder reusable();
+
+            /**
+             * Sets that the resulting metadata will not be reusable.
+             *
+             * @return the same builder
+             */
+            public MetadataBuilder notReusable();
+
+            /**
+             * Sets the tags.
+             * <p>
+             * Note that when you use MicroProfile Metrics 2.0 or later, tags
+             * associated with metadata are ignored except within the metadata
+             * itself.
+             *
+             * @param tags map conveying the tags to be used in the metadata;
+             * @return the same builder
+             */
+            public MetadataBuilder withTags(Map<String, String> tags);
+
+            /**
+             * Creates a {@link Metadata} instance using the values set by
+             * invocations of the various {@code withXXX} methods.
+             *
+             * @return the version-neutral {@code Metadata}
+             * @throws IllegalStateException if the name was never set
+             */
+            public InternalBridge.Metadata build();
+
+            public interface Factory {
+
+                static final Factory INSTANCE = Loader.metadataBuilderFactory();
+
+                MetadataBuilder newMetadataBuilder();
+            }
+        }
+
     }
 
     /**
-     * Version-neutral implementation of {@code Tag} expressing a name/value
-     * pair.
+     * Version-neutral representation of a tag.
      */
-    class Tag {
+    public interface Tag {
 
-        private final String name;
-        private final String value;
-
-        /**
-         * Creates a new tag.
-         *
-         * @param name used for the tag
-         * @param value used for the tag
-         */
-        public Tag(String name, String value) {
-            this.name = name;
-            this.value = value;
+        static Tag newTag(String name, String value) {
+            return new InternalTagImpl(name, value);
         }
+        
+        /**
+         *
+         * @return the tag's name
+         */
+        String getTagName();
 
         /**
          *
-         * @return the name of the tag
+         * @return the tag's value
          */
-        public String getTagName() {
-            return name;
-        }
-
-        /**
-         *
-         * @return the value of the tag
-         */
-        public String getTagValue() {
-            return value;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 59 * hash + Objects.hashCode(this.name);
-            hash = 59 * hash + Objects.hashCode(this.value);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Tag other = (Tag) obj;
-            if (!Objects.equals(this.name, other.name)) {
-                return false;
-            }
-            if (!Objects.equals(this.value, other.value)) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Tag{%s=%s}", name, value);
-        }
+        String getTagValue();
     }
 
-    // TODO - do we need to delegate this to the impls for auto-tag creation?
-    /**
-     * Version-neutral implementation of a metric identifier, consisting of a
-     * name and possibly tags.
-     */
-    class MetricID implements Comparable<MetricID> {
-
-        private final String name;
-        private final Map<String, String> tags;
-
-        /**
-         * Creates a new instance using a name (no tags).
-         *
-         * @param name the name for the identifier
-         */
-        public MetricID(String name) {
-            this.name = name;
-            tags = Collections.emptyMap();
-        }
-
-        /**
-         * Creates a new instance using a name and tags.
-         *
-         * @param name the name for the identifier
-         * @param tags tags to be associated with the identifier
-         */
-        public MetricID(String name, Map<String, String> tags) {
-            this.name = name;
-            this.tags = Collections.unmodifiableMap(tags);
-        }
-
-        /**
-         *
-         * @return the name from the identifier
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         *
-         * @return the tags from the identifier, as a {@code Map}
-         */
-        public Map<String, String> getTags() {
-            return Collections.unmodifiableMap(tags);
-        }
-
-        /**
-         * Provides the tags as a {@code List}. The returned {@code Tag} objects
-         * are separate from those associated with the ID so changes to the tags
-         * made by the caller do not perturb the original ID.
-         *
-         * @return the {@code Tag}s
-         */
-        public List<Tag> getTagsAsList() {
-            return tags.entrySet().stream()
-                    .collect(ArrayList::new,
-                            (list, entry) -> list.add(new Tag(entry.getKey(), entry.getValue())),
-                            List::addAll);
-        }
-
-        /**
-         * Describes the tags as a single string: name1=value1,name2=value2,...
-         *
-         * @return {@code String} containing the tags
-         */
-        public String getTagsAsString() {
-            return tags.entrySet().stream()
-                    .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
-                    .collect(Collectors.joining(","));
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 29 * hash + Objects.hashCode(this.name);
-            hash = 29 * hash + Objects.hashCode(this.tags);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final MetricID other = (MetricID) obj;
-            if (!Objects.equals(this.name, other.name)) {
-                return false;
-            }
-            if (!Objects.equals(this.tags, other.tags)) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("MetricID{name='%s', tags=[%s]}", name, getTags());
-        }
-
-        @Override
-        public int compareTo(MetricID o) {
-            int result = name.compareTo(Objects.requireNonNull(o).getName());
-            if (result != 0) {
-                return result;
-            }
-            result = tags.size() - o.getTags().size();
-            if (result == 0) {
-                Iterator<Map.Entry<String, String>> thisIterator = tags.entrySet().iterator();
-                Iterator<Map.Entry<String, String>> otherIterator = o.getTags().entrySet().iterator();
-                while (thisIterator.hasNext() && otherIterator.hasNext()) {
-                    Map.Entry<String, String> thisEntry = thisIterator.next();
-                    Map.Entry<String, String> otherEntry = otherIterator.next();
-                    result = thisEntry.getKey().compareTo(otherEntry.getKey());
-                    if (result != 0) {
-                        return result;
-                    } else {
-                        result = thisEntry.getValue().compareTo(otherEntry.getValue());
-                        if (result != 0) {
-                            return result;
-                        }
-                    }
-                }
-            }
-            return result;
-        }
-    }
-
-    /**
-     * Fluent-style builder for version-neutral {@link Metadata}.
-     *
-     */
-    class MetadataBuilder {
-
-        private String name;
-        private String displayName;
-        private String description;
-        private MetricType type;
-        private String unit;
-        private boolean reusable;
-        private Map<String, String> tags;
-
-        /**
-         * Creates a new builder.
-         */
-        public MetadataBuilder() {
-            super();
-        }
-
-        MetadataBuilder(Metadata metadata) {
-            super();
-            this.name = metadata.getName();
-            this.type = metadata.getTypeRaw();
-            this.reusable = metadata.isReusable();
-            this.displayName = metadata.getDisplayName();
-            metadata.getDescription().ifPresent(this::withDescription);
-            metadata.getUnit().ifPresent(this::withUnit);
-            this.tags = new HashMap<>(Optional.ofNullable(metadata.getTags()).orElse(Collections.emptyMap()));
-        }
-
-        /**
-         * Sets the name.
-         *
-         * @param name name to be used in the metadata; cannot be null
-         * @return the same builder
-         */
-        public MetadataBuilder withName(String name) {
-            this.name = Objects.requireNonNull(name, "name cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the display name.
-         *
-         * @param displayName display name to be used in the metadata; cannot be
-         * null
-         * @return the same builder
-         */
-        public MetadataBuilder withDisplayName(String displayName) {
-            this.displayName = Objects.requireNonNull(displayName, "displayName cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the description.
-         *
-         * @param description description to be used in the metadata; cannot be
-         * null
-         * @return the same builder
-         */
-        public MetadataBuilder withDescription(String description) {
-            this.description = Objects.requireNonNull(description, "description cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the metric type.
-         *
-         * @param type {@link MetricType} to be used in the metadata; cannot be
-         * null
-         * @return the same builder
-         */
-        public MetadataBuilder withType(MetricType type) {
-            this.type = Objects.requireNonNull(type, "type cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the unit.
-         *
-         * @param unit unit to be used in the metadata; cannot be null
-         * @return the same builder
-         */
-        public MetadataBuilder withUnit(String unit) {
-            this.unit = Objects.requireNonNull(unit, "unit cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets that the resulting metadata will be reusable.
-         *
-         * @return the same builder
-         */
-        public MetadataBuilder reusable() {
-            this.reusable = true;
-            return this;
-        }
-
-        /**
-         * Sets that the resulting metadata will not be reusable.
-         *
-         * @return the same builder
-         */
-        public MetadataBuilder notReusable() {
-            this.reusable = false;
-            return this;
-        }
-
-        /**
-         * Sets the tags.
-         * <p>
-         * Note that when you use MicroProfile Metrics 2.0 or later, tags
-         * associated with metadata are ignored except within the metadata
-         * itself.
-         *
-         * @param tags map conveying the tags to be used in the metadata;
-         * @return the same builder
-         */
-        public MetadataBuilder withTags(Map<String, String> tags) {
-            this.tags = new HashMap<>(tags);
-            return this;
-        }
-
-        /**
-         * Creates a {@link Metadata} instance using the values set by
-         * invocations of the various {@code withXXX} methods.
-         *
-         * @return the version-neutral {@code Metadata}
-         * @throws IllegalStateException if the name was never set
-         */
-        public Metadata build() {
-            if (name == null) {
-                throw new IllegalStateException("name must be assigned");
-            }
-            return new MetadataImpl(name, displayName, description, type, unit, reusable, tags);
-        }
-    }
 }

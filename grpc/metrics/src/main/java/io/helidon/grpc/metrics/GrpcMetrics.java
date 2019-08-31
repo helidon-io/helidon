@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Priority;
 
 import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.MetadataBuilder;
+import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.MethodDescriptor;
@@ -56,14 +56,14 @@ public class GrpcMetrics
     /**
      * The registry of vendor metrics.
      */
-    private static final InternalBridge.MetricRegistry VENDOR_REGISTRY =
-            InternalBridge.INSTANCE.registryFactoryInstance().getBridgeRegistry(MetricRegistry.Type.VENDOR);
+    private static final io.helidon.common.metrics.InternalBridge.MetricRegistry VENDOR_REGISTRY =
+            InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.VENDOR);
 
     /**
      * The registry of application metrics.
      */
-    private static final InternalBridge.MetricRegistry APP_REGISTRY =
-            InternalBridge.INSTANCE.registryFactoryInstance().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
+    private static final io.helidon.common.metrics.InternalBridge.MetricRegistry APP_REGISTRY =
+            InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
 
     /**
      * The context key name to use to obtain rules to use when applying metrics.
@@ -468,9 +468,9 @@ public class GrpcMetrics
          * @param method the method name
          * @return  the metrics metadata
          */
-        InternalBridge.Metadata metadata(ServiceDescriptor service, String method) {
+        io.helidon.common.metrics.InternalBridge.Metadata metadata(ServiceDescriptor service, String method) {
             String name = nameFunction.orElse(this::defaultName).createName(service, method, type);
-            MetadataBuilder builder = new MetadataBuilder().withName(name).withType(type);
+            MetadataBuilder builder = InternalBridge.newMetadataBuilder().withName(name).withType(type);
 
             this.description.ifPresent(builder::withDescription);
             this.units.ifPresent(builder::withUnit);

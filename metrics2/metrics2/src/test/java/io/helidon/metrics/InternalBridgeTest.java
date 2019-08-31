@@ -16,7 +16,6 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.common.metrics.InternalBridge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import org.junit.jupiter.api.Test;
@@ -28,10 +27,10 @@ import org.junit.jupiter.api.BeforeAll;
  */
 public class InternalBridgeTest {
 
-    private static InternalBridge ib;
-    private static InternalBridge.RegistryFactory ibFactory;
+    private static io.helidon.common.metrics.InternalBridge ib;
+    private static io.helidon.common.metrics.InternalBridge.RegistryFactory ibFactory;
     private static RegistryFactory factory;
-    private static InternalBridge.MetricRegistry ibVendor;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry ibVendor;
     private static MetricRegistry vendor;
 
     public InternalBridgeTest() {
@@ -39,8 +38,8 @@ public class InternalBridgeTest {
 
     @BeforeAll
     private static void loadFactory() {
-        ib = InternalBridge.INSTANCE;
-        ibFactory = ib.registryFactoryInstance();
+        ib = io.helidon.common.metrics.InternalBridge.INSTANCE;
+        ibFactory = ib.getRegistryFactory();
         factory = RegistryFactory.getInstance();
         ibVendor = ibFactory.getBridgeRegistry(MetricRegistry.Type.VENDOR);
         vendor = factory.getRegistry(MetricRegistry.Type.VENDOR);

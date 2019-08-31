@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 import io.helidon.common.metrics.InternalBridge.MetricRegistry;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -80,7 +81,7 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testInjectCounterProgrammatically() {
         MetricRegistry metricRegistry = getMetricRegistry();
-        metricRegistry.counter(new InternalBridge.MetadataBuilder()
+        metricRegistry.counter(newMetadataBuilder()
                 .withName("dcounter")
                 .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
@@ -305,5 +306,9 @@ public class MetricsTest extends FaultToleranceTest {
         assertThat(getHistogram(bean, "concurrentAsync",
                                   BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
                    is((long)BulkheadBean.MAX_CONCURRENT_CALLS));
+    }
+
+    private static MetadataBuilder newMetadataBuilder() {
+        return  InternalBridge.newMetadataBuilder();
     }
 }

@@ -20,9 +20,9 @@ import java.lang.reflect.Method;
 
 import javax.enterprise.inject.spi.CDI;
 
-import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
 import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.common.metrics.InternalBridge.MetricRegistry;
+import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -59,7 +59,7 @@ class FaultToleranceMetrics {
 
     @SuppressWarnings("unchecked")
     static <T extends Metric> T getMetric(Method method, String name) {
-        MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+        MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
                 method.getDeclaringClass().getName(),
                 method.getName(), name));
         return (T) getMetricRegistry().getBridgeMetrics().get(metricID);
@@ -328,7 +328,7 @@ class FaultToleranceMetrics {
      */
     @SuppressWarnings("unchecked")
     static synchronized <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
-        MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+        MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
                 method.getDeclaringClass().getName(),
                 method.getName(),
                 metricName));
@@ -339,6 +339,10 @@ class FaultToleranceMetrics {
                     gauge);
         }
         return existing;
+    }
+
+    private static MetricID newMetricID(String name) {
+        return MetricID.Factory.INSTANCE.newMetricID(name);
     }
 
 }

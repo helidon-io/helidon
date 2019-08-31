@@ -21,16 +21,36 @@ import java.util.ServiceLoader;
 
 /**
  * Uses the Java service loader mechanism to find an implementation of the
- * internal bridge.
+ * internal bridge and offer access to the various factories that implementation
+ * provides.
  */
 class Loader {
+    private static final io.helidon.common.metrics.InternalBridge BRIDGE = loadInternalBridge();
 
-    static InternalBridge loadInternalBridge() {
-        for (Iterator<InternalBridge> it = ServiceLoader.load(InternalBridge.class).iterator(); it.hasNext();) {
+    static io.helidon.common.metrics.InternalBridge internalBridge() {
+        return BRIDGE;
+    }
+
+    static io.helidon.common.metrics.InternalBridge.RegistryFactory registryFactory() {
+        return BRIDGE.getRegistryFactory();
+    }
+
+    static io.helidon.common.metrics.InternalBridge.MetricID.Factory metricIDFactory() {
+        return BRIDGE.getMetricIDFactory();
+    }
+
+    static io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder.Factory metadataBuilderFactory() {
+        return BRIDGE.getMetadataBuilderFactory();
+    }
+
+    private static io.helidon.common.metrics.InternalBridge loadInternalBridge() {
+        for (Iterator<io.helidon.common.metrics.InternalBridge> it =
+                ServiceLoader.load(io.helidon.common.metrics.InternalBridge.class).iterator();
+                it.hasNext();) {
             return it.next();
         }
         throw new RuntimeException("Could not find implementation of bridge "
-                + InternalBridge.class.getName() + " to load");
+                + io.helidon.common.metrics.InternalBridge.class.getName() + " to load");
     }
 
     private Loader() {}
