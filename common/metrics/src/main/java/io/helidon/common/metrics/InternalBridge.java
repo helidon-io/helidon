@@ -43,7 +43,20 @@ import org.eclipse.microprofile.metrics.Timer;
  * Only Helidon internal clients of metrics should use this interface. Other
  * clients should use Helidon BOMs or bundles which will use the appropriate
  * versions of Helidon metrics and MicroProfile Metrics.
- *
+ * <p>
+ * Implementations provide for getting instances of these features:
+ * <ul>
+ * <li>registry factory
+ * <li>metric registry
+ * <li>metric ID
+ * <li>metadata builder
+ * <li>metadata
+ * </ul>
+ * This interface is organized accordingly. Each of these exposes a factory and
+ * an instance of that factory. (The metadata builder from MP Metrics 2.0 is the
+ * factory for metadata, and therefore is nested under metadata in this
+ * interface. ) The top level of the bridge also exposes a few convenience
+ * methods for getting new instances of a few of the types.
  */
 public interface InternalBridge {
 
@@ -253,7 +266,8 @@ public interface InternalBridge {
          * first metric with that name, if any.
          *
          * @param metricName name of the metric to find
-         * @return {@code Optional} of a {@code Map.Entry} for the matching ID and metric
+         * @return {@code Optional} of a {@code Map.Entry} for the matching ID
+         * and metric
          */
         Optional<Map.Entry<? extends MetricID, ? extends Metric>> getBridgeMetric(String metricName);
 
@@ -683,7 +697,7 @@ public interface InternalBridge {
         static Tag newTag(String name, String value) {
             return new InternalTagImpl(name, value);
         }
-        
+
         /**
          *
          * @return the tag's name
