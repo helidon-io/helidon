@@ -16,9 +16,8 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.common.metrics.InternalBridge.Metadata;
+import io.helidon.common.metrics.AbstractInternalMetadata;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.microprofile.metrics.MetricType;
@@ -26,87 +25,40 @@ import org.eclipse.microprofile.metrics.MetricType;
 /**
  *
  */
-class InternalMetadataImpl implements Metadata {
-
-    private final org.eclipse.microprofile.metrics.Metadata delegate;
+class InternalMetadataImpl extends AbstractInternalMetadata {
 
     InternalMetadataImpl(String name, String displayName, String description,
             MetricType type, String unit) {
-        delegate = new org.eclipse.microprofile.metrics.Metadata(
-                name, displayName, description, type, unit);
+        super(new org.eclipse.microprofile.metrics.Metadata(
+                name, displayName, description, type, unit));
     }
 
     InternalMetadataImpl(String name, String displayName, String description,
             MetricType type, String unit, String tags) {
-        delegate = new org.eclipse.microprofile.metrics.Metadata(
-                name, displayName, description, type, unit, tags);
+        super(new org.eclipse.microprofile.metrics.Metadata(
+                name, displayName, description, type, unit, tags));
     }
 
     InternalMetadataImpl(String name, String displayName, String description,
             MetricType type, String unit, boolean isReusable, String tags) {
-        delegate = new org.eclipse.microprofile.metrics.Metadata(
-                name, displayName, description, type, unit, tags);
-        delegate.setReusable(isReusable);
-    }
-
-    @Override
-    public String getName() {
-        return delegate.getName();
-    }
-
-    @Override
-    public String getDisplayName() {
-        return delegate.getDisplayName();
+        super(new org.eclipse.microprofile.metrics.Metadata(
+                name, displayName, description, type, unit, tags));
+        delegate().setReusable(isReusable);
     }
 
     @Override
     public Optional<String> getDescription() {
-        return Optional.ofNullable(delegate.getDescription());
-    }
-
-    @Override
-    public String getType() {
-        return delegate.getType();
-    }
-
-    @Override
-    public MetricType getTypeRaw() {
-        return delegate.getTypeRaw();
+        return Optional.ofNullable(delegate().getDescription());
     }
 
     @Override
     public Optional<String> getUnit() {
-        return Optional.ofNullable(delegate.getUnit());
-    }
-
-    @Override
-    public boolean isReusable() {
-        return delegate.isReusable();
+        return Optional.ofNullable(delegate().getUnit());
     }
 
     @Override
     public HashMap<String, String> getTags() {
-        return delegate.getTags();
-    }
-
-    @Override
-    public int hashCode() {
-        return delegate.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return delegate.toString();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!InternalMetadataImpl.class.isAssignableFrom(Objects.requireNonNull(obj).getClass())) {
-            throw new IllegalArgumentException("Expected argument of type "
-                + InternalMetadataImpl.class.getName() + " but received "
-                + obj.getClass().getName());
-        }
-        return delegate.equals(obj);
+        return delegate().getTags();
     }
 
 }
