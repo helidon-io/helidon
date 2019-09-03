@@ -22,7 +22,6 @@ import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.common.metrics.InternalBridge.MetricRegistry;
-import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -31,6 +30,7 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
+import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 
