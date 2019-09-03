@@ -25,7 +25,6 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
