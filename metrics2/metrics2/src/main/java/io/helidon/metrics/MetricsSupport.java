@@ -208,6 +208,13 @@ public final class MetricsSupport implements Service {
         return sb.toString();
     }
 
+    /**
+     * Formats a metric in Prometheus format.
+     *
+     * @param name the name of the metric
+     * @param metric the {@code Metric} containing the data to be formatted
+     * @return metric info in Prometheus format
+     */
     public static String toPrometheusData(String name, Metric metric) {
         return toPrometheusData(new MetricID(name), metric);
     }

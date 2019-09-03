@@ -37,6 +37,31 @@
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
     
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>InternalBridgeTest with global tags set</id>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration>
+                                <includes>
+                                <include>**/InternalBridgeTest.java</include>
+                            </includes>
+                            <environmentVariables>
+                                <MP_METRICS_TAGS>globalTag1=gVal1,globalTag2=gVal2</MP_METRICS_TAGS>
+                            </environmentVariables>
+                            </configuration>
+                        </execution>
+                    </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>

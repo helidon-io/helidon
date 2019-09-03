@@ -20,34 +20,78 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.metrics.AbstractInternalMetadata;
+import io.helidon.common.metrics.InternalBridge.Metadata;
+
+import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- *
+ * Metrics 2.0-based implementation of the version-neutral {@code Metadata} interface.
  */
-class InternalMetadataImpl extends AbstractInternalMetadata {
+class InternalMetadataImpl implements Metadata {
 
-    InternalMetadataImpl(org.eclipse.microprofile.metrics.Metadata metadata) {
-        super(metadata);
+    private final org.eclipse.microprofile.metrics.Metadata delegate;
+
+    /**
+     * Creates a new metadata instance, delegating to the specified 2.0 metadata.
+     * @param delegate
+     */
+    InternalMetadataImpl(org.eclipse.microprofile.metrics.Metadata delegate) {
+        this.delegate = delegate;
     }
-    
+
+    @Override
+    public String getName() {
+        return delegate.getName();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return delegate.getDisplayName();
+    }
+
     @Override
     public Optional<String> getDescription() {
-        return delegate().getDescription();
+        return delegate.getDescription();
     }
 
     @Override
     public String getType() {
-        return delegate().getType();
+        return delegate.getType();
+    }
+
+    @Override
+    public MetricType getTypeRaw() {
+        return delegate.getTypeRaw();
     }
 
     @Override
     public Optional<String> getUnit() {
-        return delegate().getUnit();
+        return delegate.getUnit();
+    }
+
+    @Override
+    public boolean isReusable() {
+        return delegate.isReusable();
     }
 
     @Override
     public Map<String, String> getTags() {
         return Collections.emptyMap();
     }
+
+    @Override
+    public int hashCode() {
+        return delegate.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return delegate.equals(obj);
+    }
+
+    @Override
+    public String toString() {
+        return delegate.toString();
+    }
+
 }

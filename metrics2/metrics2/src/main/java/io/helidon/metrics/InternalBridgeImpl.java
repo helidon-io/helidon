@@ -21,11 +21,9 @@ import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 import io.helidon.config.Config;
 
 /**
- *
+ * Implements the metrics bridge interface based on MP Metrics 2.0
  */
 public class InternalBridgeImpl implements InternalBridge {
-
-    public InternalBridgeImpl() {}
 
     @Override
     public RegistryFactory getRegistryFactory() {
