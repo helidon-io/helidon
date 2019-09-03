@@ -11,8 +11,9 @@ To function properly, this project also requires:
 * a JPA-provider-specific library to assist the JPA provider in
   determining what kind of environment it is running in, such as the
   link:../eclipselink-cdi[`eclipselink-cdi` project]
-* a library capable of integrating `DataSource`s into CDI, such as the
-  link:../datasource-hikaricp[`datasource-hikaricp` project]
+* a library capable of integrating `DataSource` instances into CDI,
+  such as the link:../datasource-hikaricp[`datasource-hikaricp`
+  project]
 * a suitable JDBC-compliant database driver library
 
 == Installation

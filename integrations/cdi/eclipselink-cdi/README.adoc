@@ -1,6 +1,6 @@
-= Helidon Eclipselink CDI Integration
+= Helidon EclipseLink CDI Integration
 
-The Helidon Eclipselink Integration project contains a
+The Helidon EclipseLink Integration project contains a
 https://www.eclipse.org/eclipselink/api/2.7/org/eclipse/persistence/platform/server/ServerPlatform.html[`ServerPlatform`]
 implementation for use with Helidon's link:../jpa-cdi[JPA CDI integration].
 
