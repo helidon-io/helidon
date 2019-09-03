@@ -1,0 +1,39 @@
+table.config {
+    border-collapse: collapse;
+    margin-top: 30px;
+}
+
+table.config caption {
+    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: left;
+    margin-bottom: 12px;
+}
+
+table.config th {
+    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+    text-transform: capitalize;
+    white-space: nowrap;
+    padding: 6px;
+    background: #dee3e9;
+}
+
+table.config tr:nth-child(odd) {
+    background: #eeeeef;
+}
+
+table.config tr:hover {
+    background: rgba(159, 201, 233, 0.74) /* lightgrey #dee3e9 */;
+}
+
+table.config td {
+    vertical-align: top;
+    padding: 6px;
+}
+
+table.config td:first-child {
+    white-space: nowrap;
+    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+    color: darkblue;
+}

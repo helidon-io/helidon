@@ -56,7 +56,7 @@ public interface RetryPolicy extends Supplier<RetryPolicy> {
      * {@code retry-policy} using the following nested {@code properties}:
      * <ul>
      * <li>{@code type} - name of the retry policy implementation.
-     * <table>
+     * <table class="config">
      * <caption>Built-in Retry Policies</caption>
      * <tr>
      * <th>Name</th>

@@ -49,7 +49,7 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  * use {@link TracerBuilder#create(String)} or {@link TracerBuilder#create(Config)} that is abstracted.</b>
  * <p>
  * The following table lists zipkin specific defaults and configuration options.
- * <table>
+ * <table class="config">
  *     <caption>Tracer Configuration Options</caption>
  *     <tr>
  *         <th>option</th>

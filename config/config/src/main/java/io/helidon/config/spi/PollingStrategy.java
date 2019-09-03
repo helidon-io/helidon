@@ -67,7 +67,7 @@ import io.helidon.config.PollingStrategies;
  * {@code polling-strategy} using the following nested {@code properties}:
  * <ul>
  * <li>{@code type} - name of the polling strategy implementation.
- * <table>
+ * <table class="config">
  * <caption>Built-in Polling Strategies</caption>
  * <tr>
  * <th>Name</th>

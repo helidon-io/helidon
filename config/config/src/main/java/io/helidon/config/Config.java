@@ -52,7 +52,7 @@ import io.helidon.config.spi.OverrideSource;
  * implementing interfaces defined in the SPI, by explicitly constructing the
  * {@link Builder} which assembles the {@code Config}, and by using other
  * classes provided by the config system that influence loading.
- * <table>
+ * <table class="config">
  * <caption><b>Some Config SPI Interfaces</b></caption>
  * <tr>
  * <th>Class.Method</th>

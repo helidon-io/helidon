@@ -18,7 +18,7 @@
  * Configuration SPI that defines the behavior developers can implement to extend the config system.
  * <p>
  * The most likely developer-implemented extension points:
- * <table>
+ * <table class="config">
  * <caption>Common Extension Points</caption>
  * <tr>
  * <th>Interface</th>
