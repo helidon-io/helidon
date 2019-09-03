@@ -95,7 +95,9 @@ class InternalMetadataBuilderImpl implements MetadataBuilder {
 
     @Override
     public boolean equals(Object obj) {
-        return delegate.equals(obj);
+        return (obj != null)
+                && (this.getClass().isAssignableFrom(obj.getClass()))
+                && delegate.equals(((InternalMetadataBuilderImpl) obj).delegate);
     }
 
     @Override

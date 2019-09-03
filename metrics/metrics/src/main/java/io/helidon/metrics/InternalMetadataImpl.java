@@ -17,7 +17,6 @@
 package io.helidon.metrics;
 
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.metrics.InternalBridge.Metadata;
@@ -135,12 +134,9 @@ class InternalMetadataImpl implements Metadata {
 
     @Override
     public boolean equals(Object obj) {
-        if (!InternalMetadataImpl.class.isAssignableFrom(Objects.requireNonNull(obj).getClass())) {
-            throw new IllegalArgumentException("Expected argument of type "
-                + InternalMetadataImpl.class.getName() + " but received "
-                + obj.getClass().getName());
-        }
-        return delegate.equals(obj);
+        return (obj != null)
+                && (this.getClass().isAssignableFrom(obj.getClass()))
+                && delegate.equals(((InternalMetadataImpl) obj).delegate);
     }
 
 }

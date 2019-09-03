@@ -86,7 +86,9 @@ class InternalMetadataImpl implements Metadata {
 
     @Override
     public boolean equals(Object obj) {
-        return delegate.equals(obj);
+        return (obj != null)
+                && (this.getClass().isAssignableFrom(obj.getClass()))
+                && delegate.equals(((InternalMetadataImpl) obj).delegate);
     }
 
     @Override

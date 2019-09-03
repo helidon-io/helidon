@@ -36,7 +36,6 @@ class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBui
     private MetricType type;
     private String unit;
     private boolean reusable;
-    private Map<String, String> tags;
 
     InternalMetadataBuilderImpl() {
     }
@@ -50,26 +49,31 @@ class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBui
         metadata.getUnit().ifPresent(this::withUnit);
     }
 
+    @Override
     public InternalMetadataBuilderImpl withName(String name) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         return this;
     }
 
+    @Override
     public InternalMetadataBuilderImpl withDisplayName(String displayName) {
         this.displayName = Objects.requireNonNull(displayName, "displayName cannot be null");
         return this;
     }
 
+    @Override
     public InternalMetadataBuilderImpl withDescription(String description) {
         this.description = Objects.requireNonNull(description, "description cannot be null");
         return this;
     }
 
+    @Override
     public InternalMetadataBuilderImpl withType(MetricType type) {
         this.type = Objects.requireNonNull(type, "type cannot be null");
         return this;
     }
 
+    @Override
     public InternalMetadataBuilderImpl withUnit(String unit) {
         this.unit = Objects.requireNonNull(unit, "unit cannot be null");
         return this;
@@ -77,15 +81,16 @@ class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBui
 
     @Override
     public Metadata.MetadataBuilder withTags(Map<String, String> tags) {
-        this.tags = Collections.unmodifiableMap(tags);
         return this;
     }
 
+    @Override
     public InternalMetadataBuilderImpl reusable() {
         this.reusable = true;
         return this;
     }
 
+    @Override
     public InternalMetadataBuilderImpl notReusable() {
         this.reusable = false;
         return this;
@@ -95,6 +100,7 @@ class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBui
         return reusable;
     }
 
+    @Override
     public Metadata build() {
         if (name == null) {
             throw new IllegalStateException("name must be assigned");
