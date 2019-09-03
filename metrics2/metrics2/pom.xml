@@ -64,11 +64,6 @@
     
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-api</artifactId>
-            <version>${version.lib.microprofile-metrics2-api}</version>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
             <version>${project.version}</version>
@@ -77,6 +72,11 @@
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-metrics</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <version>${version.lib.microprofile-metrics2-api}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
