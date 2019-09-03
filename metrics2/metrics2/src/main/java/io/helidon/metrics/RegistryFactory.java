@@ -39,7 +39,6 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  *     new instance of a registry factory (in case multiple instances are desired), independent on the singleton instance
  *     and on other instances provided by these methods.</li>
  * </ol>
- * <p>
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
