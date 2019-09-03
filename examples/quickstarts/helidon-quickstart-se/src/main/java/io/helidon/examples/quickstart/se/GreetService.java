@@ -107,6 +107,7 @@ public class GreetService implements Service {
     }
 
     private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
+
          if (ex.getCause() instanceof JsonParsingException) {
 
             LOGGER.log(Level.FINE, "Error parsing JSON body", ex);
@@ -121,6 +122,20 @@ public class GreetService implements Service {
                 .add("error", "Empty request body")
                 .build();
             response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+        } else if (ex.getCause() instanceof ClassCastException){
+
+            LOGGER.log(Level.FINE, "Invalid JSON type", ex);
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                .add("error", "Invalid JSON type")
+                .build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
+        } else {
+
+            LOGGER.log(Level.FINE, "Unexpected server error processing request", ex);
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                .add("error", "Unexpected server error processing request")
+                .build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
         }
 
         return null;
