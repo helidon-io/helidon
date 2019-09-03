@@ -108,41 +108,18 @@ public class GreetService implements Service {
 
     private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
 
-         if (ex.getCause() instanceof JsonParsingException
-             && ex.getMessage().contains("Invalid token")) {
+         if (ex.getCause() instanceof JsonException){
 
-            LOGGER.log(Level.FINE, "Invalid type in JSON object", ex);
+            LOGGER.log(Level.FINE, "Invalid JSON", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                .add("error", "Invalid type in JSON object")
-                .build();
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
-         } else if (ex.getCause() instanceof JsonParsingException
-             && ex.getMessage().contains("Unexpected char")) {
-
-            LOGGER.log(Level.FINE, "Invalid JSON format", ex);
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                .add("error", "Invalid JSON format")
-                .build();
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
-        } else if (ex.getCause() instanceof JsonException){
-
-            LOGGER.log(Level.FINE, "Empty request body", ex);
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                .add("error", "Empty request body")
+                .add("error", "Invalid JSON")
                 .build();
             response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
-        } else if (ex.getCause() instanceof ClassCastException){
+        }  else {
 
-            LOGGER.log(Level.FINE, "Invalid JSON type", ex);
+            LOGGER.log(Level.FINE, "Internal error", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                .add("error", "Invalid JSON type")
-                .build();
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
-        } else {
-
-            LOGGER.log(Level.FINE, "Unexpected server error processing request", ex);
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                .add("error", "Unexpected server error processing request")
+                .add("error", "Internal error")
                 .build();
             response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
         }
