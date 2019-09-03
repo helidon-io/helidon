@@ -108,16 +108,16 @@ public class GreetService implements Service {
 
     private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
 
-         if (ex.getCause() instanceof JsonParsingException && 
-             ex.getMessage().contains("Invalid token")) {
+         if (ex.getCause() instanceof JsonParsingException
+             && ex.getMessage().contains("Invalid token")) {
 
             LOGGER.log(Level.FINE, "Invalid type in JSON object", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                 .add("error", "Invalid type in JSON object")
                 .build();
             response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
-         } else if (ex.getCause() instanceof JsonParsingException && 
-             ex.getMessage().contains("Unexpected char")) {
+         } else if (ex.getCause() instanceof JsonParsingException
+             && ex.getMessage().contains("Unexpected char")) {
 
             LOGGER.log(Level.FINE, "Invalid JSON format", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
