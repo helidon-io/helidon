@@ -370,7 +370,8 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
 
     @Override
     public Map<io.helidon.common.metrics.InternalBridge.MetricID, Metric> getBridgeMetrics(
-            Predicate<? super Map.Entry<? extends io.helidon.common.metrics.InternalBridge.MetricID, ? extends Metric>> predicate) {
+            Predicate<? super Map.Entry<? extends io.helidon.common.metrics.InternalBridge.MetricID,
+                                        ? extends Metric>> predicate) {
 
         final Map<io.helidon.common.metrics.InternalBridge.MetricID, Metric> result = new HashMap<>();
 
@@ -416,7 +417,8 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return metrics.entrySet().stream()
                 .map(Registry::toBridgeEntry)
                 .filter(entry -> clazz.isAssignableFrom(entry.getValue().getClass()))
-                .collect(TreeMap::new,(map, entry) -> map.put(entry.getKey(), clazz.cast(entry.getValue())),
+                .collect(TreeMap::new,
+                        (map, entry) -> map.put(entry.getKey(), clazz.cast(entry.getValue())),
                         Map::putAll);
     }
 
@@ -632,7 +634,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return tags.toArray(new Tag[0]);
     }
 
-    private static Tag[] toTags(Map<String, String>tags) {
+    private static Tag[] toTags(Map<String, String> tags) {
 
         return tags.entrySet().stream()
                 .map(entry -> new Tag(entry.getKey(), entry.getValue()))

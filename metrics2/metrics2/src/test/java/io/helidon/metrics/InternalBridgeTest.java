@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 public class InternalBridgeTest {
 
     private static io.helidon.common.metrics.InternalBridge ib;
-    private static io.helidon.common.metrics.InternalBridge.RegistryFactory ibFactory;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry.RegistryFactory ibFactory;
     private static RegistryFactory factory;
     private static io.helidon.common.metrics.InternalBridge.MetricRegistry ibVendor;
     private static MetricRegistry vendor;

@@ -16,17 +16,8 @@
  */
 package io.helidon.metrics;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.config.Config;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * Implements the metrics bridge interface.

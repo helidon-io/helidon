@@ -56,7 +56,7 @@ import org.eclipse.microprofile.metrics.Timer;
  * an instance of that factory. (The metadata builder from MP Metrics 2.0 is the
  * factory for metadata, and therefore is nested under metadata in this
  * interface. ) The top level of the bridge also exposes a few convenience
- * methods for getting new instances of a few of the types.
+ * methods for getting new instances of a version-specific implementations of the types.
  */
 public interface InternalBridge {
 
@@ -65,30 +65,39 @@ public interface InternalBridge {
      */
     InternalBridge INSTANCE = Loader.internalBridge();
 
+    /**
+     *
+     * @return the singleton metric ID factory
+     */
     MetricID.Factory getMetricIDFactory();
 
+    /**
+     *
+     * @return the singleton metadata builder factory
+     */
     Metadata.MetadataBuilder.Factory getMetadataBuilderFactory();
 
-    RegistryFactory getRegistryFactory();
+    /**
+     *
+     * @return the singleton registry factory
+     */
+    MetricRegistry.RegistryFactory getRegistryFactory();
 
+    /**
+     *
+     * @return a metadata builder
+     */
     static Metadata.MetadataBuilder newMetadataBuilder() {
         return INSTANCE.getMetadataBuilderFactory().newMetadataBuilder();
     }
 
-//    /**
-//     * Returns the singleton instance of the {@code RegistryFactory} as exposed
-//     * through the {@code InternalBridge.RegistryFactory} interface.
-//     *
-//     * @return the {@code RegistryFactory}
-//     */
-//    RegistryFactory registryFactoryInstance();
     /**
      * Creates a new {@code RegistryFactory} with the default configuration, as
      * exposed through the {@code InternalBridge.RegistryFactory} interface.
      *
      * @return the new {@code RegistryFactory}
      */
-    RegistryFactory createRegistryFactory();
+    MetricRegistry.RegistryFactory createRegistryFactory();
 
     /**
      * Creates a new {@code RegistryFactory} with the specified configuration,
@@ -98,25 +107,7 @@ public interface InternalBridge {
      * factory.
      * @return the new {@code RegistryFactory}
      */
-    RegistryFactory createRegistryFactory(Config config);
-
-    /**
-     * Abstraction of the {@code RegistryFactory} behavior used by internal
-     * Helidon clients.
-     */
-    public interface RegistryFactory {
-
-        static RegistryFactory INSTANCE = Loader.registryFactory();
-
-        /**
-         * Returns the MicroProfile metric {@code MetricRegistry} of the
-         * indicated registry type typed as the internal abstraction.
-         *
-         * @param type registry type selected
-         * @return {@code MetricRegistry} of the selected type
-         */
-        MetricRegistry getBridgeRegistry(org.eclipse.microprofile.metrics.MetricRegistry.Type type);
-    }
+    MetricRegistry.RegistryFactory createRegistryFactory(Config config);
 
     /**
      * Abstraction of the {@code MetricRegistry} behavior used by internal
@@ -351,6 +342,31 @@ public interface InternalBridge {
          * @return true if a matching metric was removed; false otherwise
          */
         boolean remove(String name);
+
+        /**
+         * Abstraction of the {@code RegistryFactory} behavior used by internal
+         * Helidon clients.
+         * <p>
+         * Using the name {@code RegistryFactory} here instead of just {@code Factory}
+         * should simply changing the client code to use only the MP Metrics 2.0
+         * implementation later.
+         */
+        public interface RegistryFactory {
+
+            /**
+             * The factory's singleton instance.
+             */
+            RegistryFactory INSTANCE = Loader.registryFactory();
+
+            /**
+             * Returns the MicroProfile metric {@code MetricRegistry} of the
+             * indicated registry type typed as the internal abstraction.
+             *
+             * @param type registry type selected
+             * @return {@code MetricRegistry} of the selected type
+             */
+            MetricRegistry getBridgeRegistry(org.eclipse.microprofile.metrics.MetricRegistry.Type type);
+        }
     }
 
     /**
@@ -367,13 +383,13 @@ public interface InternalBridge {
          *
          * @return the name from the identifier
          */
-        public String getName();
+        String getName();
 
         /**
          *
          * @return the tags from the identifier, as a {@code Map}
          */
-        public Map<String, String> getTags();
+        Map<String, String> getTags();
 
         /**
          * Provides the tags as a {@code List}. The returned {@code Tag} objects
@@ -436,14 +452,32 @@ public interface InternalBridge {
         }
 
         /**
-         *
+         * Creates new {@code MetricID} instances.
          */
         public interface Factory {
 
-            static Factory INSTANCE = Loader.metricIDFactory();
+            /**
+             * Singleton instance of the factory.
+             */
+            Factory INSTANCE = Loader.metricIDFactory();
 
+            /**
+             * Creates a version-neutral {@code MetricID} initialized with the
+             * specified name and any global tags.
+             *
+             * @param name name of the metric to create
+             * @return the new {@code MetricID}
+             */
             InternalBridge.MetricID newMetricID(String name);
 
+            /**
+             * Creates a version-neutral {@code MetricID} initializes with the
+             * specified name and tags.
+             *
+             * @param name name of the metric to create
+             * @param tags tags to associated with the new ID
+             * @return the new {@code MetricID}
+             */
             InternalBridge.MetricID newMetricID(String name, Map<String, String> tags);
         }
     }
@@ -597,6 +631,9 @@ public interface InternalBridge {
 
         /**
          * Fluent-style builder for version-neutral {@link Metadata}.
+         * <p>
+         * The name is from MP Metrics but is actually the factory for {@code Metadata}
+         * in the design of the bridge.
          *
          */
         public interface MetadataBuilder {
@@ -607,7 +644,7 @@ public interface InternalBridge {
              * @param name name to be used in the metadata; cannot be null
              * @return the same builder
              */
-            public MetadataBuilder withName(String name);
+            MetadataBuilder withName(String name);
 
             /**
              * Sets the display name.
@@ -616,7 +653,7 @@ public interface InternalBridge {
              * cannot be null
              * @return the same builder
              */
-            public MetadataBuilder withDisplayName(String displayName);
+            MetadataBuilder withDisplayName(String displayName);
 
             /**
              * Sets the description.
@@ -625,7 +662,7 @@ public interface InternalBridge {
              * be null
              * @return the same builder
              */
-            public MetadataBuilder withDescription(String description);
+            MetadataBuilder withDescription(String description);
 
             /**
              * Sets the metric type.
@@ -634,7 +671,7 @@ public interface InternalBridge {
              * be null
              * @return the same builder
              */
-            public MetadataBuilder withType(MetricType type);
+            MetadataBuilder withType(MetricType type);
 
             /**
              * Sets the unit.
@@ -642,21 +679,21 @@ public interface InternalBridge {
              * @param unit unit to be used in the metadata; cannot be null
              * @return the same builder
              */
-            public MetadataBuilder withUnit(String unit);
+            MetadataBuilder withUnit(String unit);
 
             /**
              * Sets that the resulting metadata will be reusable.
              *
              * @return the same builder
              */
-            public MetadataBuilder reusable();
+            MetadataBuilder reusable();
 
             /**
              * Sets that the resulting metadata will not be reusable.
              *
              * @return the same builder
              */
-            public MetadataBuilder notReusable();
+            MetadataBuilder notReusable();
 
             /**
              * Sets the tags.
@@ -668,7 +705,7 @@ public interface InternalBridge {
              * @param tags map conveying the tags to be used in the metadata;
              * @return the same builder
              */
-            public MetadataBuilder withTags(Map<String, String> tags);
+            MetadataBuilder withTags(Map<String, String> tags);
 
             /**
              * Creates a {@link Metadata} instance using the values set by
@@ -677,12 +714,24 @@ public interface InternalBridge {
              * @return the version-neutral {@code Metadata}
              * @throws IllegalStateException if the name was never set
              */
-            public InternalBridge.Metadata build();
+            InternalBridge.Metadata build();
 
+            /**
+             * Factory for {@code MetadataBuilder} instances.
+             */
             public interface Factory {
 
-                static final Factory INSTANCE = Loader.metadataBuilderFactory();
+                /**
+                 * The factory's singleton instance.
+                 */
+                Factory INSTANCE = Loader.metadataBuilderFactory();
 
+                /**
+                 * Returns a new version-specific {@code MetadataBuilder} that
+                 * implements the neutral interface.
+                 *
+                 * @return the builder
+                 */
                 MetadataBuilder newMetadataBuilder();
             }
         }
@@ -694,6 +743,13 @@ public interface InternalBridge {
      */
     public interface Tag {
 
+        /**
+         * Creates a new version-neutral tag with the specified name and value.
+         *
+         * @param name name for the new tag
+         * @param value value for the new tag
+         * @return the new version-neutral tag
+         */
         static Tag newTag(String name, String value) {
             return new InternalTagImpl(name, value);
         }

@@ -16,9 +16,10 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.common.metrics.AbstractInternalMetadata;
 import java.util.HashMap;
 import java.util.Optional;
+
+import io.helidon.common.metrics.AbstractInternalMetadata;
 
 import org.eclipse.microprofile.metrics.MetricType;
 

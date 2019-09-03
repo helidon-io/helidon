@@ -320,7 +320,8 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
         return metrics.entrySet().stream()
                 .map(Registry::toBridgeEntry)
                 .filter(entry -> clazz.isAssignableFrom(entry.getValue().getClass()))
-                .collect(TreeMap::new,(map, entry) -> map.put(entry.getKey(), clazz.cast(entry.getValue())),
+                .collect(TreeMap::new,
+                        (map, entry) -> map.put(entry.getKey(), clazz.cast(entry.getValue())),
                         Map::putAll);
     }
 

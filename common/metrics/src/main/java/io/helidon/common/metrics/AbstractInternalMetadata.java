@@ -23,17 +23,30 @@ import java.util.Optional;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * Elements common to both concrete implementations.
+ * Version-neutral implementation of the common elements of the bridge metadata
+ * interface.
+ * <p>
+ * This implementation delegates to a version-specific delegate.
  */
 public abstract class AbstractInternalMetadata implements InternalBridge.Metadata {
 
 
     private final org.eclipse.microprofile.metrics.Metadata delegate;
 
+    /**
+     * Instantiates a new version-neutral metadata instance using the specified
+     * version-specific delegate.
+     *
+     * @param delegate the version-specific delegate
+     */
     public AbstractInternalMetadata(org.eclipse.microprofile.metrics.Metadata delegate) {
         this.delegate = delegate;
     }
 
+    /**
+     *
+     * @return the version-specific delegate
+     */
     protected final org.eclipse.microprofile.metrics.Metadata delegate() {
         return delegate;
     }

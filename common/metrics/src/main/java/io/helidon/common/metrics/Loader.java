@@ -31,7 +31,7 @@ class Loader {
         return BRIDGE;
     }
 
-    static io.helidon.common.metrics.InternalBridge.RegistryFactory registryFactory() {
+    static io.helidon.common.metrics.InternalBridge.MetricRegistry.RegistryFactory registryFactory() {
         return BRIDGE.getRegistryFactory();
     }
 

@@ -17,15 +17,16 @@
 package io.helidon.metrics;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.common.metrics.InternalBridge.Tag;
-import java.util.HashMap;
-import java.util.stream.Collectors;
+
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
@@ -49,7 +50,7 @@ class InternalMetricIDImpl implements InternalBridge.MetricID, Comparable<Metric
      *
      * @param name the name for the identifier
      */
-    public InternalMetricIDImpl(String name) {
+    InternalMetricIDImpl(String name) {
         this.name = name;
         tags = GLOBAL_TAGS; // No need to copy it; it's already immutable.
     }
@@ -60,7 +61,7 @@ class InternalMetricIDImpl implements InternalBridge.MetricID, Comparable<Metric
      * @param name the name for the identifier
      * @param tags tags to be associated with the identifier
      */
-    public InternalMetricIDImpl(String name, Map<String, String> tags) {
+    InternalMetricIDImpl(String name, Map<String, String> tags) {
         this.name = name;
         this.tags = Collections.unmodifiableMap(augmentedTags(tags));
     }

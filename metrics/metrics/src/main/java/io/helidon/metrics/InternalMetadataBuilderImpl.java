@@ -16,10 +16,9 @@
  */
 package io.helidon.metrics;
 
-import java.util.Objects;
-
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.common.metrics.InternalBridge.Metadata;
@@ -39,7 +38,7 @@ class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBui
     private boolean reusable;
     private Map<String, String> tags;
 
-    public InternalMetadataBuilderImpl() {
+    InternalMetadataBuilderImpl() {
     }
 
     InternalMetadataBuilderImpl(Metadata metadata) {

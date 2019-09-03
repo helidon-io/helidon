@@ -31,7 +31,6 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 /**
  *
@@ -39,7 +38,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 public class InternalBridgeTest {
 
     private static InternalBridge ib;
-    private static InternalBridge.RegistryFactory ibFactory;
+    private static InternalBridge.MetricRegistry.RegistryFactory ibFactory;
     private static RegistryFactory factory;
     private static InternalBridge.MetricRegistry ibVendor;
     private static MetricRegistry vendor;
