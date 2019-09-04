@@ -23,7 +23,7 @@ import javax.enterprise.inject.spi.Extension;
 /**
  * Extension to register bean {@link io.helidon.microprofile.security.SecurityContextProvider}.
  */
-class SecurityCdiExtension implements Extension {
+public class SecurityCdiExtension implements Extension {
     void registerBean(@Observes BeforeBeanDiscovery abd) {
         abd.addAnnotatedType(SecurityContextProvider.class, "helidon-security-context-provider")
                 .add(new RequestScoped.Literal());

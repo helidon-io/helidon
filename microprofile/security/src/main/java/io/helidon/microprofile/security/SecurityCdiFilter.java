@@ -18,9 +18,7 @@ package io.helidon.microprofile.security;
 import javax.annotation.Priority;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.Priorities;
-import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 
