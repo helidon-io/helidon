@@ -357,11 +357,10 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          *     <li>there are no idle threads, and</li>
          *     <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
          *     </ul>
-         *     For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
+         *     <p>For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
          *     tasks.
          *     <p>A rate of 0 selects the default {@link ThreadPoolExecutor} growth behavior: a thread is added only when a
-         *     submitted task is rejected because the queue is full.
-         *     </td>
+         *     submitted task is rejected because the queue is full.</td>
          * </tr>
          * </table>
          *

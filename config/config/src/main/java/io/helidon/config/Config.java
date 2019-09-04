@@ -81,7 +81,7 @@ import io.helidon.config.spi.OverrideSource;
  * sources.</td>
  * </tr>
  * <tr>
- * <td>{@link OverrideSources} methods</td>
+ * <td>{@link OverrideSources}</td>
  * <td></td>
  * <td>Replaces config {@code String} values during loading based on their keys.
  * Programs provide overrides in Java property file format on the classpath, at

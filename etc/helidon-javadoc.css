@@ -1,14 +1,15 @@
 table.config {
     border-collapse: collapse;
     margin-top: 30px;
+    text-align: left;
 }
 
 table.config caption {
     font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
     font-size: 16px;
     font-weight: bold;
-    text-align: left;
     margin-bottom: 12px;
+    text-align: left;
 }
 
 table.config th {
@@ -24,7 +25,7 @@ table.config tr:nth-child(odd) {
 }
 
 table.config tr:hover {
-    background: rgba(159, 201, 233, 0.74) /* lightgrey #dee3e9 */;
+    background: rgba(159, 201, 233, 0.74);
 }
 
 table.config td {
@@ -35,5 +36,9 @@ table.config td {
 table.config td:first-child {
     white-space: nowrap;
     font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-    color: darkblue;
+    color: #0072d4;
+}
+
+table.config td:nth-child(n+2) {
+    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
 }
