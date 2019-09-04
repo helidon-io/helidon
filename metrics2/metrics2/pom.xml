@@ -27,7 +27,7 @@
         <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics2</artifactId>
-    <name>Helidon Metrics</name>
+    <name>Helidon Metrics2</name>
 
     <description>
         Metrics APIs and implementation necessary for Java SE using Helidon Web Server

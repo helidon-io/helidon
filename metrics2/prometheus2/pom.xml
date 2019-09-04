@@ -27,7 +27,7 @@
         <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics2-prometheus</artifactId>
-    <name>Helidon Metrics Prometheus</name>
+    <name>Helidon Metrics2 Prometheus</name>
 
     <dependencies>
         <dependency>
