@@ -17,10 +17,10 @@
 package io.helidon.metrics;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.helidon.common.metrics.InternalBridge;
-import java.util.Objects;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Tag;
