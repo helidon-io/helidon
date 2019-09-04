@@ -27,6 +27,7 @@ module io.helidon.microprofile.security {
     requires io.helidon.microprofile.server;
 
     provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.security.SecurityMpService;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.security.SecurityCdiExtension;
 
     uses org.eclipse.microprofile.config.spi.ConfigSource;
     uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;

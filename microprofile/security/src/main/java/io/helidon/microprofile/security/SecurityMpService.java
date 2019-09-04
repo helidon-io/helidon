@@ -64,7 +64,12 @@ public class SecurityMpService implements MpService {
                     .config(jerseyConfig)
                     .build();
 
-            context.applications().forEach(app -> app.register(feature));
+            SecurityCdiFilter cdiFilter = new SecurityCdiFilter();
+
+            context.applications().forEach(app -> {
+                app.register(feature);
+                app.register(cdiFilter);
+            });
         }
 
         Config webServerConfig = config.get("security.web-server");
