@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,22 @@
 package io.helidon.security.examples.outbound;
 
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.jwt.JwtProvider;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.WebServer;
+
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.createConfig;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.getSecurityContext;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.sendError;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.startServer;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.webTarget;
 
 /**
  * Creates two services. First service invokes the second with outbound security. There are two endpoints - one that
@@ -50,7 +48,6 @@ import io.helidon.webserver.WebServer;
 public final class OutboundOverrideJwtExample {
     private static volatile int clientPort;
     private static volatile int servingPort;
-    private static Client client;
 
     private OutboundOverrideJwtExample() {
     }
@@ -66,10 +63,6 @@ public final class OutboundOverrideJwtExample {
 
         first.toCompletableFuture().join();
         second.toCompletableFuture().join();
-
-        client = ClientBuilder.newBuilder()
-                .register(new ClientSecurityFeature())
-                .build();
 
         System.out.println("Started services. Main endpoints:");
         System.out.println("http://localhost:" + clientPort + "/propagate");
@@ -108,43 +101,25 @@ public final class OutboundOverrideJwtExample {
     }
 
     private static void override(ServerRequest req, ServerResponse res) {
-        SecurityContext context = getContext(req);
+        SecurityContext context = getSecurityContext(req);
 
-        String result = webTarget().request()
+        webTarget(servingPort)
+                .request()
                 .property(JwtProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
-                .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
-                .get(String.class);
-
-        res.send("You are: " + context.userName() + ", backend service returned: " + result);
+                .rx()
+                .get(String.class)
+                .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result))
+                .exceptionally(throwable -> sendError(throwable, res));
     }
 
     private static void propagate(ServerRequest req, ServerResponse res) {
-        SecurityContext context = getContext(req);
-        String result = webTarget().request()
-                .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
-                .get(String.class);
+        SecurityContext context = getSecurityContext(req);
 
-        res.send("You are: " + context.userName() + ", backend service returned: " + result);
-    }
-
-    private static WebTarget webTarget() {
-        return client.target("http://localhost:" + servingPort + "/hello");
-    }
-
-    private static SecurityContext getContext(ServerRequest req) {
-        return req.context().get(SecurityContext.class)
-                .orElseThrow(() -> new RuntimeException("Failed to get security context from request, security not configured"));
-    }
-
-    private static CompletionStage<Void> startServer(Routing.Builder builder, Consumer<WebServer> callback) {
-        return WebServer.create(builder)
-                .start()
-                .thenAccept(callback);
-    }
-
-    private static Config createConfig(String fileName) {
-        return Config.builder()
-                .sources(ConfigSources.classpath(fileName + ".yaml"))
-                .build();
+        webTarget(servingPort)
+                .request()
+                .rx()
+                .get(String.class)
+                .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result))
+                .exceptionally(throwable -> sendError(throwable, res));
     }
 }

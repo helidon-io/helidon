@@ -63,10 +63,7 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
              Map<Class<?>, Converter<?>> converters) {
 
         final AtomicReference<Config> ref = new AtomicReference<>(config);
-        config.onChange(newConfig -> {
-            ref.set(newConfig);
-            return true;
-        });
+        config.onChange(ref::set);
 
         this.config = ref::get;
 
@@ -316,12 +313,7 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
      * @return config instance that has the same properties as this instance
      */
     public Config helidonConfig() {
-        // I need to create a config based on this config instance
-        return Config.builder()
-                .disableSystemPropertiesSource()
-                .disableEnvironmentVariablesSource()
-                .sources(ConfigSources.create(asMap()))
-                .build();
+        return this.config.get();
     }
 
     /**

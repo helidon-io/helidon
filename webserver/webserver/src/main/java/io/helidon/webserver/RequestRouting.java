@@ -293,7 +293,9 @@ class RequestRouting implements Routing {
                     LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing next: " + nextItem.path);
                     Span span = span();
                     if (null != span) {
-                        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig("web-server", "HTTP Request");
+                        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig("web-server",
+                                                                                    "HTTP Request",
+                                                                                    context());
                         if (spanConfig.spanLog("handler.class").enabled()) {
                             span.log(nextItem.handlerRoute.diagnosticEvent());
                         }

@@ -62,7 +62,8 @@ Fat Jars are jar files that contain the application and its dependencies ; they
 == Creating a Java 8 Based Docker Image
 
 This section describes the Dockerfile provided by the
- <<getting-started/02_base-example.adoc, quickstarts>>.
+Helidon <<guides/02_quickstart-se.adoc, SE>> and
+ <<guides/03_quickstart-mp.adoc, MP>> quickstarts.
 
 The Dockerfile is located at `./Dockerfile` and contains the following:
 

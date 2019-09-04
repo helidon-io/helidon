@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package io.helidon.demo.todos.frontend;
 
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.InvocationCallback;
@@ -41,9 +41,7 @@ import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
-import static io.helidon.security.integration.jersey.ClientSecurityFeature.PROPERTY_CONTEXT;
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
-import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
 
 /**
  * Client to invoke the TODO backend service.
@@ -85,131 +83,103 @@ public final class BackendServiceClient {
 
     /**
      * Retrieve all TODO entries from the backend.
-     * @param sc {@code SecurityContext} to use
+     *
      * @param spanContext {@code SpanContext} to use
-     * @return retrieved entries as a {@code JsonArray}
+     * @return future with all records
      */
-    public JsonArray getAll(final SecurityContext sc,
-                     final SpanContext spanContext) {
+    public CompletionStage<JsonArray> getAll(final SpanContext spanContext) {
 
         Span span = tracer.buildSpan("todos.get-all")
                 .asChildOf(spanContext)
                 .start();
 
-        try {
-            Response response = client.target(serviceEndpoint + "/api/backend")
-                    .request()
-                    .property(PROPERTY_CONTEXT, sc)
-                    .property(TRACER_PROPERTY_NAME, tracer)
-                    .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-                    .get();
+        CompletionStage<JsonArray> result = client.target(serviceEndpoint + "/api/backend")
+                .request()
+                .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
+                .rx()
+                .get(JsonArray.class);
 
-            return response.readEntity(JsonArray.class);
-        } catch (ProcessingException e) {
-            Tags.ERROR.set(span, true);
-            span.log(CollectionsHelper.mapOf("event", "error",
-                                             "error.object", e));
-            LOGGER.log(Level.WARNING,
-                    "Failed to invoke getAll() on "
-                            + serviceEndpoint + "/api/backend", e);
-            throw e;
-        } finally {
-            span.finish();
-        }
+        // I want to finish my span once the result is received, and report error if failed
+        result.thenAccept(ignored -> span.finish())
+                .exceptionally(t -> {
+                    Tags.ERROR.set(span, true);
+                    span.log(CollectionsHelper.mapOf("event", "error",
+                                                     "error.object", t));
+                    LOGGER.log(Level.WARNING,
+                               "Failed to invoke getAll() on "
+                                       + serviceEndpoint + "/api/backend", t);
+                    span.finish();
+                    return null;
+                });
+        return result;
     }
 
     /**
      * Retrieve the TODO entry identified by the given ID.
-     * @param sc {@code SecurityContext} to use
-     * @param spanContext {@code SpanContext} to use
+     *
      * @param id the ID identifying the entry to retrieve
      * @return retrieved entry as a {@code JsonObject}
      */
-    public Optional<JsonObject> getSingle(final SecurityContext sc,
-                                   final SpanContext spanContext,
-                                   final String id) {
+    public CompletionStage<Optional<JsonObject>> getSingle(final String id) {
 
-        Response response = client
-                .target(serviceEndpoint + "/api/backend/" + id)
+        return client.target(serviceEndpoint + "/api/backend/" + id)
                 .request()
-                .property(PROPERTY_CONTEXT, sc)
-                .property(TRACER_PROPERTY_NAME, tracer)
-                .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-                .get();
-
-        return processSingleEntityResponse(response);
+                .rx()
+                .get()
+                .thenApply(this::processSingleEntityResponse);
     }
 
     /**
      * Delete the TODO entry identified by the given ID.
-     * @param sc {@code SecurityContext} to use
-     * @param spanContext {@code SpanContext} to use
+     *
      * @param id the ID identifying the entry to delete
      * @return deleted entry as a {@code JsonObject}
      */
-    public Optional<JsonObject> deleteSingle(final SecurityContext sc,
-                                      final SpanContext spanContext,
-                                      final String id) {
+    public CompletionStage<Optional<JsonObject>> deleteSingle(final String id) {
 
-        Response response = client
+        return client
                 .target(serviceEndpoint + "/api/backend/" + id)
                 .request()
-                .property(PROPERTY_CONTEXT, sc)
-                .property(TRACER_PROPERTY_NAME, tracer)
-                .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-                .delete();
-
-        return processSingleEntityResponse(response);
+                .rx()
+                .delete()
+                .thenApply(this::processSingleEntityResponse);
     }
 
     /**
      * Create a new TODO entry.
-     * @param sc {@code SecurityContext} to use
-     * @param spanContext {@code SpanContext} to use
+     *
      * @param json the new entry value to create as {@code JsonObject}
      * @return created entry as {@code JsonObject}
      */
-    public Optional<JsonObject> create(final SecurityContext sc,
-                                final SpanContext spanContext,
-                                final JsonObject json) {
+    public CompletionStage<Optional<JsonObject>> create(final JsonObject json) {
 
-        Response response = client
+        return client
                 .target(serviceEndpoint + "/api/backend/")
                 .request()
-                .buildPost(Entity.json(json))
-                .property(PROPERTY_CONTEXT, sc)
-                .property(TRACER_PROPERTY_NAME, tracer)
-                .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-                .invoke();
-
-        return processSingleEntityResponse(response);
+                .rx()
+                .post(Entity.json(json))
+                .thenApply(this::processSingleEntityResponse);
     }
 
     /**
      * Update a TODO entry identifying by the given ID.
      * @param sc {@code SecurityContext} to use
-     * @param spanContext {@code SpanContext} to use
      * @param id the ID identifying the entry to update
      * @param json the update entry value as {@code JsonObject}
      * @param res updated entry as {@code JsonObject}
      */
     public void update(final SecurityContext sc,
-                final SpanContext spanContext,
-                final String id,
-                final JsonObject json,
-                final ServerResponse res) {
+                       final String id,
+                       final JsonObject json,
+                       final ServerResponse res) {
 
         client.target(serviceEndpoint + "/api/backend/" + id)
                 .request()
                 .buildPut(Entity.json(json))
-                .property(PROPERTY_CONTEXT, sc)
-                .property(TRACER_PROPERTY_NAME, tracer)
-                .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
                 .submit(new InvocationCallback<Response>() {
                     @Override
                     public void completed(final Response response) {
-                        if (response.getStatusInfo().getFamily()
-                                .equals(Response.Status.Family.SUCCESSFUL)) {
+                        if (response.getStatusInfo().getFamily() == Status.Family.SUCCESSFUL) {
                             res.send(response.readEntity(JsonObject.class));
                         } else {
                             res.status(response.getStatus());
@@ -231,8 +201,7 @@ public final class BackendServiceClient {
      * @return empty optional if response status is {@code 404}, optional of
      * the response entity otherwise
      */
-    private Optional<JsonObject> processSingleEntityResponse(
-            final Response response) {
+    private Optional<JsonObject> processSingleEntityResponse(final Response response) {
 
         if (response.getStatusInfo().toEnum() == Status.NOT_FOUND) {
             return Optional.empty();

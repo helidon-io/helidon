@@ -130,7 +130,7 @@ public final class Main {
      */
     private static Routing createRouting(Config config) {
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
         JsonLibrary jsonLibrary = getJsonLibrary(config);
