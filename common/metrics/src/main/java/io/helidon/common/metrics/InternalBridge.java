@@ -16,7 +16,6 @@
  */
 package io.helidon.common.metrics;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +114,11 @@ public interface InternalBridge {
      * <p>
      * The exposed methods use version-neutral abstractions for
      * {@code Metadata}, {@code MetricID}, and {@code Tag} which are used by
-     * MicroProfile Metrics.
+     * MicroProfile Metrics. Some methods have {@code bridge} in their names because
+     * the corresponding MicroProfile Metrics methods changed return type but
+     * kept the same signature from 1.1 to 2.0, so here they need distinct names
+     * to distinguish them from the spec-prescribed methods (that do not use the
+     * version-neutral constructs).
      */
     public interface MetricRegistry {
 
@@ -348,7 +351,7 @@ public interface InternalBridge {
          * Helidon clients.
          * <p>
          * Using the name {@code RegistryFactory} here instead of just {@code Factory}
-         * should simply changing the client code to use only the MP Metrics 2.0
+         * should simplify changing the client code to use only the MP Metrics 2.0
          * implementation later.
          */
         public interface RegistryFactory {
@@ -400,10 +403,8 @@ public interface InternalBridge {
          */
         default List<Tag> getTagsAsList() {
             return getTags().entrySet().stream()
-                    .collect(ArrayList::new,
-                            (list, entry) -> list.add(
-                                    new InternalTagImpl(entry.getKey(), entry.getValue())),
-                            List::addAll);
+                    .map(entry -> Tag.newTag(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList());
         }
 
         /**

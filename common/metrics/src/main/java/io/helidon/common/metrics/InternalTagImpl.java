@@ -19,10 +19,12 @@ package io.helidon.common.metrics;
 import java.util.Objects;
 
 /**
- * Version-neutral implementation of {@code Tag} expressing a name/value
- * pair.
+ * Version-neutral implementation of {@code Tag} expressing a name/value pair.
+ * <p>
+ * To create a new instance of this class, use the
+ * {@link InternalBridge.Tag#newTag(java.lang.String, java.lang.String)} method.
  */
-public class InternalTagImpl implements InternalBridge.Tag {
+class InternalTagImpl implements InternalBridge.Tag {
 
     private final String name;
     private final String value;
@@ -33,7 +35,7 @@ public class InternalTagImpl implements InternalBridge.Tag {
      * @param name used for the tag
      * @param value used for the tag
      */
-    public InternalTagImpl(String name, String value) {
+    InternalTagImpl(String name, String value) {
         this.name = name;
         this.value = value;
     }
