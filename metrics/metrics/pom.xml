@@ -57,20 +57,12 @@
             </plugin>
         </plugins>
     </build>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.eclipse.microprofile.metrics</groupId>
-                <artifactId>microprofile-metrics-api</artifactId>
-                <!-- specify older version because this artifact relies on it -->
-                <version>${version.lib.microprofile-metrics-api}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
+            <!-- specify older version because this artifact relies on it -->
+            <version>${version.lib.microprofile-metrics-api}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
