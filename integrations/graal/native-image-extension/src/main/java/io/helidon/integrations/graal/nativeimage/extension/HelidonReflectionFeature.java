@@ -35,14 +35,15 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
  */
 @AutomaticFeature
 public class HelidonReflectionFeature implements Feature {
-    private final boolean enabled = true;
-    private final boolean trace = false;
-    private final boolean traceParsing = false;
-    private final Set<String> exclusions = new HashSet<>();
+    // The following options should be configurable. Now cannot use the native-image configuraiton options
+    private static final boolean ENABLED = true;
+    private static final boolean TRACE = false;
+    private static final boolean TRACE_PARSING = false;
+    private static final Set<String> EXCLUSIONS = new HashSet<>();
 
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
-        return enabled;
+        return ENABLED;
     }
 
     @Override
@@ -106,13 +107,13 @@ public class HelidonReflectionFeature implements Feature {
 
         // register for reflection
         for (Class<?> aClass : toRegister) {
-            if (exclusions.contains(aClass.getName())) {
-                if (trace) {
+            if (EXCLUSIONS.contains(aClass.getName())) {
+                if (TRACE) {
                     System.out.println("Not registering " + aClass.getName() + " for reflection (excluded)");
                 }
                 continue;
             }
-            if (trace) {
+            if (TRACE) {
                 System.out.println("Registering " + aClass.getName() + " for reflection");
             }
             RuntimeReflection.register(aClass);
@@ -128,7 +129,7 @@ public class HelidonReflectionFeature implements Feature {
 
             for (Constructor<?> constructor : constructors) {
                 RuntimeReflection.register(constructor);
-                if (trace) {
+                if (TRACE) {
                     System.out.println("    " + constructor);
                 }
             }
@@ -149,7 +150,7 @@ public class HelidonReflectionFeature implements Feature {
                 }
             }
         } catch (NoClassDefFoundError e) {
-            if (trace) {
+            if (TRACE) {
                 System.out.println("Fields of "
                                            + aClass.getName()
                                            + " not added to reflection, as a type is not on classpath: "
@@ -164,7 +165,7 @@ public class HelidonReflectionFeature implements Feature {
                                        String superclassName) {
         Class<?> superclass = access.findClassByName(superclassName);
         if (null == superclass) {
-            if (traceParsing) {
+            if (TRACE_PARSING) {
                 System.out.println("Class " + superclassName + " is not on classpath");
             }
             return;
@@ -174,7 +175,7 @@ public class HelidonReflectionFeature implements Feature {
             toRegister.add(superclass);
         }
 
-        if (traceParsing) {
+        if (TRACE_PARSING) {
             System.out.println("Looking up implementors of " + superclassName);
         }
         findSubclasses(access, toRegister, processed, superclass);
@@ -188,12 +189,12 @@ public class HelidonReflectionFeature implements Feature {
         Class<? extends Annotation> annotationClass = (Class<? extends Annotation>) access.findClassByName(annotationClassName);
 
         if (null == annotationClass) {
-            if (traceParsing) {
+            if (TRACE_PARSING) {
                 System.out.println("Annotation " + annotationClassName + " is not on classpath");
             }
             return;
         }
-        if (traceParsing) {
+        if (TRACE_PARSING) {
             System.out.println("Looking up annotated by " + annotationClassName);
         }
         List<Class<?>> annotatedList = access.findAnnotatedClasses(annotationClass);
@@ -226,12 +227,12 @@ public class HelidonReflectionFeature implements Feature {
             }
             processed.add(aClass);
 
-            if (traceParsing) {
+            if (TRACE_PARSING) {
                 System.out.println("    " + aClass.getName());
             }
             int modifiers = aClass.getModifiers();
             if (!Modifier.isInterface(modifiers)) {
-                if (traceParsing) {
+                if (TRACE_PARSING) {
                     System.out.println("        Added for registration");
                 }
                 toRegister.add(aClass);
