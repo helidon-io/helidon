@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.helidon.common.metrics.InternalBridge;
+import java.util.Objects;
 
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Tag;
@@ -54,6 +55,31 @@ class InternalMetricIDImpl implements InternalBridge.MetricID {
     @Override
     public Map<String, String> getTags() {
         return delegate.getTags();
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 37 * hash + Objects.hashCode(this.delegate);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final InternalMetricIDImpl other = (InternalMetricIDImpl) obj;
+        if (!Objects.equals(this.delegate, other.delegate)) {
+            return false;
+        }
+        return true;
     }
 
     static class FactoryImpl implements Factory {
