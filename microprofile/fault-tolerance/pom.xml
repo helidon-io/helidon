@@ -66,6 +66,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
+            <!-- specify older version for internal version-neutral client -->
             <version>${version.lib.microprofile-metrics-api}</version>
             <scope>provided</scope>
         </dependency>

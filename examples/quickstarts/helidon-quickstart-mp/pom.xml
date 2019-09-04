@@ -145,6 +145,11 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>io.helidon.microprofile.bundles</groupId>
+                <artifactId>helidon-microprofile-3.0</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss</groupId>
                 <artifactId>jandex</artifactId>
                 <version>2.1.1.Final</version>
@@ -180,7 +185,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-2.2</artifactId>
+            <artifactId>helidon-microprofile-3.0</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>

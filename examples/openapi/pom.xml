@@ -79,11 +79,6 @@
             <artifactId>helidon-metrics2</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-api</artifactId>
-            <version>${version.lib.microprofile-metrics2-api}</version>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
         </dependency>
