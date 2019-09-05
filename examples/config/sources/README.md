@@ -1,4 +1,3 @@
-
 # Helidon Config Sources Example
 
 This example shows how to load configuration from multiple 

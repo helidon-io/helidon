@@ -1,4 +1,3 @@
-
 # Helidon Config Git Example
 
 This example shows how to load configuration from a Git repository

@@ -1,4 +1,3 @@
-
 # Helidon Config Overrides Example
 
 This example shows how to load configuration from multiple 

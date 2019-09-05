@@ -1,4 +1,3 @@
-
 # Helidon Config Basic Example
 
 This example shows the basics of using Helidon SE Config. The

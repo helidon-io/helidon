@@ -1,4 +1,3 @@
-
 # Helidon Config Changes Example
 
 This example shows how an application can deal with changes to 

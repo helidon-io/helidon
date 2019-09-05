@@ -1,4 +1,3 @@
-
 # Helidon Health Basic Example
 
 This example shows the basics of using Helidon SE Health. It uses the
