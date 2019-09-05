@@ -16,10 +16,10 @@
 
 package io.helidon.demo.todos.frontend;
 
-import javax.json.JsonObject;
-
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import javax.json.JsonObject;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
