@@ -227,23 +227,26 @@ app.greeting=HelloFrom-config.properties
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new imports and 2) Replace the `startServer` method:
+.Update the `Main` class; 1) Add new imports, 2) Replace the `startServer` method, 3) Add `buildConfig` method:
 ----
 import io.helidon.config.Config; //<1>
 import static io.helidon.config.ConfigSources.classpath;
 ...
 
   static Server startServer() {
-    return Server.builder()
-        .config(
-            Config.builder()  //<2>
-                .disableEnvironmentVariablesSource() // <3>
-                .sources(
-                    classpath("config.properties"),  //<4>
-                    classpath("META-INF/microprofile-config.properties"))  //<5>
-                .build())
-        .build()
-        .start();
+        return Server.builder()
+            .config(buildConfig()) // <2>
+            .build()
+            .start();
+    }
+
+  private static Config buildConfig() {
+    return Config.builder()
+        .disableEnvironmentVariablesSource() // <3>
+        .sources(
+            classpath("config.properties"), // <4>
+            classpath("META-INF/microprofile-config.properties")) // <5>
+        .build();
   }
 ----
 <1> Import config classes.
@@ -271,19 +274,15 @@ This is true even the same property comes from sources with different formats.
 Swap the source order and run the test again.
 
 [source,java]
-.Update the `Main` class and replace the `startServer` method:
+.Update the `Main` class and replace the 'buildConfig` method:
 ----
-  static Server startServer() {
-    return Server.builder()
-        .config(
-            Config.builder()
-                .disableEnvironmentVariablesSource()
-                .sources(
-                    classpath("META-INF/microprofile-config.properties"), // <1>
-                    classpath("config.properties"))
-                .build())
-        .build()
-        .start();
+  private static Config buildConfig() {
+      return Config.builder()
+          .disableEnvironmentVariablesSource()
+          .sources(
+              classpath("META-INF/microprofile-config.properties"), // <1>
+              classpath("config.properties"))
+          .build();
   }
 ----
 <1> Swap the source order, putting `META-INF/microprofile-config.properties` first.
@@ -318,21 +317,17 @@ app.greeting=HelloFromConfigFile
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the `startServer` method:
+.Update the `Main` class; 1) Add new import and 2) Replace the 'buildConfig` method:
 ----
 import static io.helidon.config.ConfigSources.file;
 ...
 
-  static Server startServer() {
-    return Server.builder()
-        .config(
-            Config.builder()
-                .sources(
-                    file("config-file.properties"), // <1>
-                    classpath("META-INF/microprofile-config.properties"))
-                .build())
-        .build()
-        .start();
+  private static Config buildConfig() {
+      return Config.builder()
+          .sources(
+              file("config-file.properties"), // <1>
+              classpath("META-INF/microprofile-config.properties"))
+          .build();
   }
 ----
 <1> Add mandatory configuration file.
@@ -353,18 +348,14 @@ otherwise Helidon will generate an error during startup as shown below.  This is
 `classpath` sources.  By default these sources are mandatory.
 
 [source,java]
-.Update the `Main` class and replace the `startServer` method:
+.Update the `Main` class and replace the 'buildConfig` method:
 ----
-  static Server startServer() {
-    return Server.builder()
-        .config(
-            Config.builder()
-                .sources(
-                    file("missing-file"), // <1>
-                    classpath("META-INF/microprofile-config.properties"))
-                .build())
-        .build()
-        .start();
+  private static Config buildConfig() {
+      return Config.builder()
+          .sources(
+              file("missing-file"), // <1>
+              classpath("META-INF/microprofile-config.properties"))
+          .build();
   }
 ----
 <1> Specify a file that doesn't exist.
@@ -396,22 +387,18 @@ HelloFromFileInDirectoryConf
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the `startServer` method:
+.Update the `Main` class; 1) Add new import and 2) Replace the 'buildConfig` method:
 ----
 import static io.helidon.config.ConfigSources.directory;
 ...
 
-  static Server startServer() {
-    return Server.builder()
-        .config(
-            Config.builder()
-                .sources(
-                    directory("conf"), // <1>
-                    classpath("config.properties").optional(),
-                    classpath("META-INF/microprofile-config.properties"))
-                .build())
-        .build()
-        .start();
+  private static Config buildConfig() {
+      return Config.builder()
+          .sources(
+              directory("conf"), // <1>
+              classpath("config.properties").optional(),
+              classpath("META-INF/microprofile-config.properties"))
+          .build();
   }
 ----
 <1> Add mandatory configuration directory.
@@ -433,23 +420,19 @@ If you have more than three sources, you need to use a `ConfigSources` class to 
 custom source list as shown below.
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the `startServer` method:
+.Update the `Main` class; 1) Add new import and 2) Replace the 'buildConfig` method:
 ----
 import io.helidon.config.ConfigSources;
 ...
 
-  static Server startServer() {
-      return Server.builder()
-          .config(
-              Config.builder()
-                  .sources(ConfigSources.create(   // <1>
-                      directory("conf"),
-                      file("config-file.properties"),
-                      classpath("config.properties").optional(),
-                      classpath("META-INF/microprofile-config.properties")))
-                  .build())
-          .build()
-          .start();
+  private static Config buildConfig() {
+      return Config.builder()
+          .sources(ConfigSources.create(   // <1>
+              directory("conf"),
+              file("config-file.properties"),
+              classpath("config.properties").optional(),
+              classpath("META-INF/microprofile-config.properties")))
+          .build();
   }
 ----
 <1> Create a list of four sources using `ConfigSources.create` method.
@@ -484,14 +467,11 @@ sources:
 
 
 [source,java]
-.Update the `Main` class and replace the `startServer` method:
+.Update the `Main` class and replace the 'buildConfig` method:
 ----
-      static Server startServer() {
-          return Server.builder()
-              .config(Config.loadSourcesFrom( file("meta-config.yaml")))  // <1>
-              .build()
-              .start();
-      }
+  private static Config buildConfig() {
+      return Config.loadSourcesFrom( file("meta-config.yaml")); // <1>
+  }
 ----
 <1> Specify the meta-configuration file, which contains a single configuration source.
 
@@ -660,7 +640,8 @@ use.
 [source,java]
 .Update the `GreetingProvider.java` file; 1) Add new imports and 2) Replace the `GreetingProvider` class:
 ----
-import io.helidon.config.Config; // <1>
+ // <1>
+import io.helidon.config.Config;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 ...
@@ -776,18 +757,14 @@ When the pod is created, Kubernetes will automatically create a local file withi
 configuration file that is used for the ConfigMap.  This example will create the file at `/etc/config/config-file.properties`.
 
 [source,java]
-.Update the `Main` class and replace the `startServer` method:
+.Update the `Main` class and replace the 'buildConfig` method:
 ----
-  static Server startServer() {
-    return Server.builder()
-        .config(
-            Config.builder()
-                .sources(
-                    file("/etc/config/config-file.properties").optional(), // <1>
-                    classpath("META-INF/microprofile-config.properties")) // <2>
-                .build())
-        .build()
-        .start();
+  private static Config buildConfig() {
+      return Config.builder()
+          .sources(
+              file("/etc/config/config-file.properties").optional(), // <1>
+              classpath("META-INF/microprofile-config.properties")) // <2>
+          .build();
   }
 ----
 <1> The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
