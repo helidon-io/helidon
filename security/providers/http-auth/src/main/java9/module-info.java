@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ module io.helidon.security.providers.httpauth {
 
     exports io.helidon.security.providers.httpauth;
 
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.httpauth.HttpBasicAuthService, io.helidon
-            .security.providers.httpauth.HttpDigestAuthService;
+    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.httpauth.HttpBasicAuthService,
+                io.helidon.security.providers.httpauth.HttpDigestAuthService;
 
+    uses io.helidon.security.providers.httpauth.spi.UserStoreService;
 }
