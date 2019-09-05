@@ -248,7 +248,7 @@ public final class HealthSupport implements Service {
         private final Set<String> includedHealthChecks = new HashSet<>();
         private final Set<String> excludedHealthChecks = new HashSet<>();
         private String webContext = DEFAULT_WEB_CONTEXT;
-        private boolean enabled;
+        private boolean enabled = true;
 
         private Builder() {
         }
