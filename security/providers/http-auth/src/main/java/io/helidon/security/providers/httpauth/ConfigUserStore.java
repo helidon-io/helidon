@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.httpauth;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -28,8 +29,8 @@ import io.helidon.config.Config;
 /**
  * User store loaded from configuration.
  */
-public class ConfigUserStore implements UserStore {
-    private final Map<String, User> users = new HashMap<>();
+public class ConfigUserStore implements SecureUserStore {
+    private final Map<String, ConfigUser> users = new HashMap<>();
 
     /**
      * Create an instance from config. Expects key "users" to be the current key.
@@ -57,7 +58,7 @@ public class ConfigUserStore implements UserStore {
         ConfigUserStore store = new ConfigUserStore();
 
         config.asNodeList().ifPresent(configs -> configs.forEach(config1 -> {
-            User user = config1.as(ConfigUser::create).get();
+            ConfigUser user = config1.as(ConfigUser::create).get();
             store.users.put(user.login(), user);
         }));
 
@@ -69,7 +70,11 @@ public class ConfigUserStore implements UserStore {
         return Optional.ofNullable(users.get(login));
     }
 
-    private static class ConfigUser implements User {
+    Optional<ConfigUser> configUser(String login) {
+        return Optional.ofNullable(users.get(login));
+    }
+
+    static class ConfigUser implements User {
         private final Set<String> roles = new LinkedHashSet<>();
         private String login;
         private char[] password;
@@ -84,14 +89,22 @@ public class ConfigUserStore implements UserStore {
             return cu;
         }
 
+        /**
+         * @deprecated this is needed (for now) for digest authentication.
+         */
+        @Deprecated
+        char[] password() {
+            return password;
+        }
+
         @Override
         public String login() {
             return login;
         }
 
         @Override
-        public char[] password() {
-            return password;
+        public boolean isPasswordValid(char[] password) {
+            return Arrays.equals(this.password, password);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,12 @@ import io.helidon.common.CollectionsHelper;
 
 /**
  * Store of users for resolving httpauth and digest authentication.
- *
- * @deprecated This store is designed for POC - e.g. no need for better security. You can use
- * {@link io.helidon.security.providers.httpauth.SecureUserStore} instead.
+ * This implementation does not require to provide passwords. This is a more secure approach.
+ * Keep in mind that HTTP Basic authentication is an unsafe protection, and even when combined with SSL, it still has some
+ * severe issues.
  */
 @FunctionalInterface
-@Deprecated
-public interface UserStore {
+public interface SecureUserStore {
     /**
      * Get user based on login.
      *
@@ -50,13 +49,12 @@ public interface UserStore {
         String login();
 
         /**
-         * Get password of the user.
-         * The password must be provided in clear text, as we may need to create a digest based on the password
-         * and other (variable) values for digest authentication.
+         * Check if the password is valid.
          *
-         * @return password
+         * @param password password of the user as obtained via basic authentication
+         * @return {@code true} if password is valid for this user, {@code false} otherwise
          */
-        char[] password();
+        boolean isPasswordValid(char[] password);
 
         /**
          * Get set of roles the user is in.
@@ -66,16 +64,5 @@ public interface UserStore {
         default Collection<String> roles() {
             return CollectionsHelper.setOf();
         }
-    }
-
-    /**
-     * Create a {@link io.helidon.security.providers.httpauth.SecureUserStore} out of this user store to use with the new
-     * APIs.
-     *
-     * @param store user store to wrap
-     * @return a new {@link io.helidon.security.providers.httpauth.SecureUserStore}
-     */
-    static SecureUserStore wrap(UserStore store) {
-        return login -> store.user(login).map(LegacyUser::new);
     }
 }

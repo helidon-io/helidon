@@ -54,7 +54,7 @@ public class BasicAuthOutboundOverrideTest {
 
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder()
-                                     .userStore(login -> Optional.empty())
+                                     .userStore((SecureUserStore) login -> Optional.empty())
                                      .build(), "http-basic-auth")
                 .build();
         SecurityContext context = security.createContext(getClass().getName() + ".testSecureClientOverride()");

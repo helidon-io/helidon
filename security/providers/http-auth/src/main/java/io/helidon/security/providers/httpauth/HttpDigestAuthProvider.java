@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -350,6 +351,41 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         public Builder userStore(UserStore store) {
             this.userStore = store;
             return this;
+        }
+
+        /**
+         * Used specifically for configuration based user store.
+         *
+         * @param store store from configuration
+         * @return updated builder instance
+         */
+        public Builder userStore(ConfigUserStore store) {
+            // backward compatibility, until this provider is refactored
+            return userStore(new UserStore() {
+                @Override
+                public Optional<User> user(String login) {
+                    return store.configUser(login).map(this::toLegacyUser);
+                }
+
+                private UserStore.User toLegacyUser(ConfigUserStore.ConfigUser user) {
+                    return new User() {
+                        @Override
+                        public String login() {
+                            return user.login();
+                        }
+
+                        @Override
+                        public char[] password() {
+                            return user.password();
+                        }
+
+                        @Override
+                        public Collection<String> roles() {
+                            return user.roles();
+                        }
+                    };
+                }
+            });
         }
 
         /**
