@@ -19,9 +19,6 @@ FROM maven:3.5.4-jdk-9 as build
 
 WORKDIR /helidon
 
-ARG X_REPO
-ADD settings.xml /usr/share/maven/conf/
-
 # Create a first layer to cache the "Maven World" in the local repository.
 # Incremental docker builds will always resume after that, unless you update
 # the pom
