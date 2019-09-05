@@ -238,6 +238,7 @@
     </properties>
 
     <modules>
+        <module>applications</module>
         <module>common</module>
         <module>config</module>
         <module>media</module>

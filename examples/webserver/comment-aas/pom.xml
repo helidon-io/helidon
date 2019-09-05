@@ -22,10 +22,12 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.examples.webserver</groupId>
-        <artifactId>helidon-examples-webserver-project</artifactId>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-se</artifactId>
         <version>1.2.2-SNAPSHOT</version>
+        <relativePath/>
     </parent>
+    <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-comment-aas</artifactId>
     <name>Helidon WebServer Examples CommentsAAS</name>
 
@@ -39,12 +41,10 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>
@@ -53,12 +53,10 @@
         <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-etcd</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -73,7 +71,6 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-test-support</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -82,4 +79,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

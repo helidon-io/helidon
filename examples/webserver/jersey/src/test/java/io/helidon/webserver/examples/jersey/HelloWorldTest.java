@@ -33,10 +33,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The Jersey Client based example that tests the {@link HelloWorld} resource
- * that gets served by running {@link WebServerJerseyMain#startServer(ServerConfiguration)}
+ * that gets served by running {@link Main#startServer(ServerConfiguration)}
  *
  * @see HelloWorld
- * @see WebServerJerseyMain
+ * @see Main
  */
 public class HelloWorldTest {
 
@@ -44,7 +44,7 @@ public class HelloWorldTest {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = WebServerJerseyMain.startServer(null)
+        webServer = Main.startServer(null)
                                        .toCompletableFuture()
                                        .get(10, TimeUnit.SECONDS);
     }

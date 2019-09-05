@@ -1,0 +1,47 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <localRepository>/tmp/repository</localRepository>
+    <profiles>
+        <!--
+            A profile that configure an additional repository and pluginRepository
+            when X_REPO is set in the environment.
+        -->
+        <profile>
+            <id>x-repo</id>
+            <activation>
+                <property>
+                    <name>env.X_REPO</name>
+                </property>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>x-repo</id>
+                    <url>${env.X_REPO}</url>
+                    <snapshots>
+                        <updatePolicy>never</updatePolicy>
+                        <enabled>true</enabled>
+                    </snapshots>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>x-repo</id>
+                    <url>${env.X_REPO}</url>
+                    <snapshots>
+                        <updatePolicy>never</updatePolicy>
+                        <enabled>true</enabled>
+                    </snapshots>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+</settings>

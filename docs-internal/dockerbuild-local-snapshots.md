@@ -91,10 +91,8 @@ Update the `Dockerfile` and add the following lines:
 # A build time argument that can be used to configure an extra Maven repository.
 # E.g. --build-arg X_REPO=my-repo-url
 ARG X_REPO
-ADD settings.xml /
+ADD settings.xml /usr/share/maven/conf/
 ```
-
-Then add `-s /settings.xml` to all Maven commands.
 
 ## Build your image
 
