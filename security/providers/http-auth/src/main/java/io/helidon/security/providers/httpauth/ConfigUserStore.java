@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,9 @@ public class ConfigUserStore implements SecureUserStore {
      * </pre>
      *
      * @param config to load this user store from
-     * @return {@link UserStore} instance
+     * @return {@link io.helidon.security.providers.httpauth.SecureUserStore} instance
      */
-    public static ConfigUserStore create(Config config) {
+    public static SecureUserStore create(Config config) {
         ConfigUserStore store = new ConfigUserStore();
 
         config.asNodeList().ifPresent(configs -> configs.forEach(config1 -> {
@@ -67,10 +67,6 @@ public class ConfigUserStore implements SecureUserStore {
 
     @Override
     public Optional<User> user(String login) {
-        return Optional.ofNullable(users.get(login));
-    }
-
-    Optional<ConfigUser> configUser(String login) {
         return Optional.ofNullable(users.get(login));
     }
 
@@ -110,6 +106,11 @@ public class ConfigUserStore implements SecureUserStore {
         @Override
         public Set<String> roles() {
             return roles;
+        }
+
+        @Override
+        public Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
+            return Optional.of(DigestToken.ha1(algorithm, realm, login(), password()));
         }
 
         @Override

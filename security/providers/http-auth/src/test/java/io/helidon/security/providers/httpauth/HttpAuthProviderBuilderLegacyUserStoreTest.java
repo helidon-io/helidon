@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
 
 import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
@@ -46,20 +46,20 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link HttpBasicAuthProvider} and {@link HttpDigestAuthProvider}.
+ * Unit test for {@link io.helidon.security.providers.httpauth.HttpBasicAuthProvider} and
+ * {@link io.helidon.security.providers.httpauth.HttpDigestAuthProvider}.
+ * Todo remove this once UserStore is removed.
  */
-public class HttpAuthProviderBuilderTest {
-    private static final AtomicInteger COUNTER = new AtomicInteger();
+public class HttpAuthProviderBuilderLegacyUserStoreTest {
     private static final String QUOTE = "\"";
-
     private static Security security;
-
+    private volatile static int counter = 0;
     private final Random random = new Random();
     private SecurityContext context;
 
     @BeforeAll
     public static void initClass() {
-        SecureUserStore us = userStore();
+        UserStore us = userStore();
 
         security = Security.builder()
                 .addAuthenticationProvider(basicAuthProvider(us), "basic")
@@ -68,30 +68,56 @@ public class HttpAuthProviderBuilderTest {
                 .build();
     }
 
-    private static SecureUserStore userStore() {
+    private static UserStore userStore() {
         return login -> {
-            if ("jack".equals(login)) {
-                return Optional.of(new TestUser("jack",
-                                                "jackIsGreat".toCharArray(),
-                                                CollectionsHelper.setOf("user", "admin")));
+            if (login.equals("jack")) {
+                return Optional.of(new UserStore.User() {
+                    @Override
+                    public String login() {
+                        return "jack";
+                    }
+
+                    @Override
+                    public char[] password() {
+                        return "jackIsGreat".toCharArray();
+                    }
+
+                    @Override
+                    public Set<String> roles() {
+                        return CollectionsHelper.setOf("user", "admin");
+                    }
+                });
             }
-            if ("jill".equals(login)) {
-                return Optional.of(new TestUser("jill",
-                                                "password".toCharArray(),
-                                                CollectionsHelper.setOf("user")));
+            if (login.equals("jill")) {
+                return Optional.of(new UserStore.User() {
+                    @Override
+                    public String login() {
+                        return "jill";
+                    }
+
+                    @Override
+                    public char[] password() {
+                        return "password".toCharArray();
+                    }
+
+                    @Override
+                    public Set<String> roles() {
+                        return CollectionsHelper.setOf("user");
+                    }
+                });
             }
 
             return Optional.empty();
         };
     }
 
-    private static Builder<? extends AuthenticationProvider> basicAuthProvider(SecureUserStore us) {
+    private static Builder<? extends AuthenticationProvider> basicAuthProvider(UserStore us) {
         return HttpBasicAuthProvider.builder()
                 .realm("mic")
                 .userStore(us);
     }
 
-    private static Builder<? extends AuthenticationProvider> digestAuthProvider(boolean old, SecureUserStore us) {
+    private static Builder<? extends AuthenticationProvider> digestAuthProvider(boolean old, UserStore us) {
         HttpDigestAuthProvider.Builder builder = HttpDigestAuthProvider.builder()
                 .realm("mic")
                 .digestServerSecret("pwd".toCharArray())
@@ -106,7 +132,7 @@ public class HttpAuthProviderBuilderTest {
 
     @BeforeEach
     public void init() {
-        context = security.contextBuilder(String.valueOf(COUNTER.getAndIncrement()))
+        context = security.contextBuilder(String.valueOf(counter++))
                 .build();
     }
 

@@ -31,6 +31,11 @@ import io.helidon.common.CollectionsHelper;
 public interface SecureUserStore {
     /**
      * Get user based on login.
+     * The returned user may not be populated - {@link User#roles()}
+     * is never called before {@link User#isPasswordValid(char[])}.
+     * Also the missing user and user with wrong password are treated the same - so if your implementation
+     * cannot decide whether a user exists until the password is checked, you can delay that decision and just
+     * return {@code false} from {@link User#isPasswordValid(char[])} for both cases (e.g. invalid user and invalid password).
      *
      * @param login login of the user (as obtained from request)
      * @return User information (empty if user is not found)
@@ -50,6 +55,7 @@ public interface SecureUserStore {
 
         /**
          * Check if the password is valid.
+         * Used by basic authentication.
          *
          * @param password password of the user as obtained via basic authentication
          * @return {@code true} if password is valid for this user, {@code false} otherwise
@@ -63,6 +69,25 @@ public interface SecureUserStore {
          */
         default Collection<String> roles() {
             return CollectionsHelper.setOf();
+        }
+
+        /**
+         * Digest authentication requires a hash of username, realm and password.
+         * As password should not be revealed by systems, this is to provide the HA1 (from Digest Auth terminology)
+         * based on the known (public) information combined with the secret information available to user store only (password).
+         * <p>
+         * ha1 algorithm ({@code unq} stands for "unquoted value")
+         * <pre>
+         *    ha1 = md5(a1);
+         *    a1 = unq(username-value) ":" unq(realm-value) ":" passwd
+         * </pre>
+         *
+         * @param realm configured realm
+         * @param algorithm algorithm of the hash (current only MD5 supported by Helidon)
+         * @return a digest to use for validation of incoming request
+         */
+        default Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
+            return Optional.empty();
         }
     }
 }

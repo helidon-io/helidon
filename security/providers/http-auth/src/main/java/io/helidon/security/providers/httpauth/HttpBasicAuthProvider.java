@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     private final String realm;
     private final SubjectType subjectType;
 
-    private HttpBasicAuthProvider(Builder builder) {
+    HttpBasicAuthProvider(Builder builder) {
         this.userStores = new LinkedList<>(builder.userStores);
         this.realm = builder.realm;
         this.subjectType = builder.subjectType;
@@ -120,10 +120,12 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         SecurityContext secContext = providerRequest.securityContext();
 
         boolean userSupported = secContext.user()
-                .map(user -> user.privateCredential(UserStore.User.class).isPresent()).orElse(false);
+                .flatMap(user -> user.privateCredential(BasicPrivateCredentials.class))
+                .isPresent();
 
         boolean serviceSupported = secContext.service()
-                .map(user -> user.privateCredential(UserStore.User.class).isPresent()).orElse(false);
+                .map(user -> user.privateCredential(BasicPrivateCredentials.class))
+                .isPresent();
 
         return userSupported || serviceSupported;
     }
@@ -357,21 +359,6 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         }
 
         /**
-         * Set user store to obtain passwords and roles based on logins.
-         * Removes any other stores added through {@link #addUserStore(SecureUserStore)}.
-         *
-         * @param store User store to use
-         * @return updated builder instance
-         * @deprecated please use  {@link #userStore(SecureUserStore)} insteadd
-         */
-        @Deprecated
-        public Builder userStore(UserStore store) {
-            userStores.clear();
-            userStores.add(UserStore.wrap(store));
-            return this;
-        }
-
-        /**
          * Set user store to validate users.
          * Removes any other stores added through {@link #addUserStore(SecureUserStore)}.
          * @param store User store to use
@@ -396,7 +383,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     }
 
     // need to store this information to be able to propagate to outbound
-    private static class BasicPrivateCredentials {
+    private static final class BasicPrivateCredentials {
         private final String username;
         private final char[] password;
 

@@ -43,7 +43,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * TODO javadoc.
+ * Unit test for basic authentication overrides for outbound calls.
  */
 public class BasicAuthOutboundOverrideTest {
     @Test
