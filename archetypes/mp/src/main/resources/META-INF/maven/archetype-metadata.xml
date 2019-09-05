@@ -27,6 +27,9 @@
         <requiredProperty key="artifactId"/>
         <requiredProperty key="version"/>
         <requiredProperty key="package"/>
+        <requiredProperty key="mainClass">
+            <defaultValue>no</defaultValue>
+        </requiredProperty>
         <requiredProperty key="applicationName">
             <defaultValue>ExampleApplication</defaultValue>
             <validationRegex>([$_a-zA-Z][$_a-zA-Z0-9]*)</validationRegex>
