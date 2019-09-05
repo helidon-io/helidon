@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests</groupId>
@@ -42,6 +42,7 @@
     <modules>
         <module>apps</module>
         <module>functional</module>
+        <module>integration</module>
     </modules>
 
     <build>

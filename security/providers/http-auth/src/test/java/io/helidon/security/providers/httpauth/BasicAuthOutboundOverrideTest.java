@@ -30,8 +30,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
-import io.helidon.security.integration.jersey.ClientSecurityFilter;
+import io.helidon.security.integration.jersey.client.ClientSecurity;
+import io.helidon.security.integration.jersey.client.ClientSecurityFilter;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,6 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -68,16 +67,16 @@ public class BasicAuthOutboundOverrideTest {
         when(configuration.getPropertyNames()).thenReturn(Collections.emptyList());
 
         when(requestContext.getConfiguration()).thenReturn(configuration);
-        when(requestContext.getProperty(ClientSecurityFeature.PROPERTY_CONTEXT)).thenReturn(context);
-        when(requestContext.getProperty(ClientSecurityFeature.PROPERTY_PROVIDER)).thenReturn("http-basic-auth");
+        when(requestContext.getProperty(ClientSecurity.PROPERTY_CONTEXT)).thenReturn(context);
+        when(requestContext.getProperty(ClientSecurity.PROPERTY_PROVIDER)).thenReturn("http-basic-auth");
         when(requestContext.getProperty(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER)).thenReturn(user);
         when(requestContext.getProperty(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD)).thenReturn(password);
         when(requestContext.getUri()).thenReturn(URI.create("http://localhost:7070/test"));
         when(requestContext.getStringHeaders()).thenReturn(new MultivaluedHashMap<>());
         when(requestContext.getHeaders()).thenReturn(jerseyHeaders);
         when(requestContext.getPropertyNames()).thenReturn(CollectionsHelper.listOf(
-                ClientSecurityFeature.PROPERTY_CONTEXT,
-                ClientSecurityFeature.PROPERTY_PROVIDER,
+                ClientSecurity.PROPERTY_CONTEXT,
+                ClientSecurity.PROPERTY_PROVIDER,
                 HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER,
                 HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD
         ));

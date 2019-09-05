@@ -19,8 +19,11 @@ package io.helidon.webserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,86 +33,201 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Flow;
 
 /**
  * Handles static content from the classpath.
  */
-class ClassPathContentHandler extends FileSystemContentHandler {
+class ClassPathContentHandler extends StaticContentHandler {
+    private static final Logger LOGGER = Logger.getLogger(ClassPathContentHandler.class.getName());
 
     private final ClassLoader classLoader;
     // URL's hash code and equal are not suitable for map or set
-    private final Map<Path, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
+    private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
+    private final String root;
+    private final String rootWithTrailingSlash;
 
     ClassPathContentHandler(String welcomeFilename,
                             ContentTypeSelector contentTypeSelector,
                             String root,
                             ClassLoader classLoader) {
-        super(welcomeFilename, contentTypeSelector, Paths.get(root));
-        this.classLoader = classLoader == null ? this.getClass().getClassLoader() : classLoader;
+        super(welcomeFilename, contentTypeSelector);
+
+        this.classLoader = (classLoader == null) ? this.getClass().getClassLoader() : classLoader;
+        this.root = root;
+        this.rootWithTrailingSlash = root + '/';
     }
 
+    public static StaticContentHandler create(String welcomeFileName,
+                                              ContentTypeSelector selector,
+                                              String clRoot,
+                                              ClassLoader classLoader) {
+        ClassLoader contentClassloader = (classLoader == null)
+                ? ClassPathContentHandler.class.getClassLoader()
+                : classLoader;
+
+        String cleanRoot = clRoot;
+
+        while (cleanRoot.endsWith("/")) {
+            cleanRoot = clRoot.substring(0, cleanRoot.length() - 1);
+        }
+
+        if (cleanRoot.isEmpty()) {
+            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
+        }
+
+        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, contentClassloader);
+    }
+
+    @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     @Override
-    boolean doHandle(Http.RequestMethod method, Path path, ServerRequest request, ServerResponse response) throws IOException {
-        //Backwards slash replacement is workaround used because of windows compatibility.
-        //It will be changed in upcoming refactor of this method: https://github.com/oracle/helidon/issues/256
-        URL url = classLoader.getResource(path.toString().replace('\\', '/'));
+    boolean doHandle(Http.RequestMethod method, String requestedPath, ServerRequest request, ServerResponse response)
+            throws IOException, URISyntaxException {
+
+        String resource = requestedPath.isEmpty() ? root : (rootWithTrailingSlash + requestedPath);
+
+        LOGGER.finest(() -> "Requested class path resource: " + resource);
+
+        // this MUST be done, so we do not escape the bounds of configured directory
+        String requestedResource = URI.create(resource).normalize().toString();
+
+        if (!requestedResource.equals(root) && !requestedResource.startsWith(rootWithTrailingSlash)) {
+            return false;
+        }
+
+        // try to find the resource on classpath (cannot use root URL and then resolve, as root and sub-resource
+        // may be from different jar files/directories
+        URL url = classLoader.getResource(resource);
         if (url == null) {
             return false;
         }
 
-        // If URL exists then it can be directory and we have to try locate a welcome page
-        String welcomePageName = welcomePageName();
-        if ((welcomePageName != null) && !welcomePageName.isEmpty()) {
-            //Backwards slash replacement is workaround used because of windows compatibility.
-            //It will be changed in upcoming refactor of this method: https://github.com/oracle/helidon/issues/256
-            URL welcomeUrl = classLoader.getResource(path.resolve(welcomePageName).toString().replace('\\', '/'));
-            if (welcomeUrl != null) {
-                // we must redirect to this endpoint, as otherwise we may have invalid relative references from the welcome file
+        String welcomeFileName = welcomePageName();
+        if (null != welcomeFileName) {
+            String welcomeFileResource = requestedResource + "/" + welcomeFileName;
+            URL welcomeUrl = classLoader.getResource(welcomeFileResource);
+            if (null != welcomeUrl) {
+                // there is a welcome file under requested resource, ergo requested resource was a directory
                 String rawFullPath = request.uri().getRawPath();
                 if (rawFullPath.endsWith("/")) {
+                    // this is OK, as the path ends with a forward slash
                     url = welcomeUrl;
                 } else {
+                    // must redirect
                     redirect(response, rawFullPath + "/");
                     return true;
                 }
             }
         }
 
-        String protocol = url.getProtocol();
-        if ("file".equals(protocol)) {
-            // If it is not a common file, then tryProcess it as a common file
-            try {
-                return super.doHandle(method, Paths.get(url.toURI()), request, response);
-            } catch (URISyntaxException e) {
-                throw new HttpException("ClassLoader resolves to invalid URI!", Http.Status.INTERNAL_SERVER_ERROR_500);
-            }
-        } else if ("jar".equals(protocol)) {
-            URL theUrl = url;
-            ExtractedJarEntry extrEntry = extracted.computeIfAbsent(path, thePath -> extractJarEntry(theUrl));
-            if (extrEntry.tempFile == null) {
-                return false;
-            }
-            if (extrEntry.lastModified != null) {
-                processEtag(String.valueOf(extrEntry.lastModified.toEpochMilli()), request.headers(), response.headers());
-                processModifyHeaders(extrEntry.lastModified, request.headers(), response.headers());
-            }
-
-            String entryName = extrEntry.entryName == null ? fileName(path) : extrEntry.entryName;
-
-            processContentType(entryName,
-                               request.headers(),
-                               response.headers());
-            if (method == Http.Method.HEAD) {
-                response.send();
-            } else {
-                response.send(extrEntry.tempFile);
-            }
-            return true;
-        } else {
-            throw new HttpException("Static content supports only JAR and File!", Http.Status.INTERNAL_SERVER_ERROR_500);
+        // now read the URL - we have direct support for files and jar files, others are handled by stream only
+        switch (url.getProtocol()) {
+        case "file":
+            FileSystemContentHandler
+                    .sendFile(method, Paths.get(url.toURI()), request, response, contentTypeSelector(), welcomePageName());
+            break;
+        case "jar":
+            return sendJar(method, requestedResource, url, request, response);
+        default:
+            sendUrlStream(method, url, request, response);
+            break;
         }
+
+        return true;
+    }
+
+    private boolean sendJar(Http.RequestMethod method,
+                            String requestedResource,
+                            URL url,
+                            ServerRequest request,
+                            ServerResponse response) throws URISyntaxException {
+
+        ExtractedJarEntry extrEntry = extracted.computeIfAbsent(requestedResource, thePath -> extractJarEntry(url));
+        if (extrEntry.tempFile == null) {
+            return false;
+        }
+        if (extrEntry.lastModified != null) {
+            processEtag(String.valueOf(extrEntry.lastModified.toEpochMilli()), request.headers(), response.headers());
+            processModifyHeaders(extrEntry.lastModified, request.headers(), response.headers());
+        }
+
+        String entryName = (extrEntry.entryName == null) ? fileName(url) : extrEntry.entryName;
+
+        processContentType(entryName,
+                           request.headers(),
+                           response.headers(),
+                           contentTypeSelector());
+
+        if (method == Http.Method.HEAD) {
+            response.send();
+        } else {
+            response.send(extrEntry.tempFile);
+        }
+
+        return true;
+    }
+
+    private void sendUrlStream(Http.RequestMethod method, URL url, ServerRequest request, ServerResponse response)
+            throws IOException {
+
+        URLConnection urlConnection = url.openConnection();
+        long lastModified = urlConnection.getLastModified();
+
+        if (lastModified != 0) {
+            processEtag(String.valueOf(lastModified), request.headers(), response.headers());
+            processModifyHeaders(Instant.ofEpochMilli(lastModified), request.headers(), response.headers());
+        }
+
+        processContentType(fileName(url), request.headers(), response.headers(), contentTypeSelector());
+
+        if (method == Http.Method.HEAD) {
+            response.send();
+            return;
+        }
+
+        InputStream in = url.openStream();
+        InputStreamPublisher byteBufPublisher = new InputStreamPublisher(in, 2048);
+        Flow.Publisher<DataChunk> dataChunkPublisher = new Flow.Publisher<DataChunk>() {
+            @Override
+            public void subscribe(Flow.Subscriber<? super DataChunk> s) {
+                byteBufPublisher.subscribe(new Flow.Subscriber<ByteBuffer>() {
+                    @Override
+                    public void onSubscribe(Flow.Subscription subscription) {
+                        s.onSubscribe(subscription);
+                    }
+
+                    @Override
+                    public void onNext(ByteBuffer item) {
+                        s.onNext(DataChunk.create(item));
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        s.onError(throwable);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        s.onComplete();
+                    }
+                });
+            }
+        };
+        response.send(dataChunkPublisher);
+    }
+
+    static String fileName(URL url) {
+        String path = url.getPath();
+        int index = path.lastIndexOf('/');
+        if (index > -1) {
+            return path.substring(index + 1);
+        }
+
+        return path;
     }
 
     private ExtractedJarEntry extractJarEntry(URL url) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.webserver.Routing;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Status.SERVICE_UNAVAILABLE_503;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -185,15 +186,24 @@ public class TestClientTest {
     public void exceptionalDefaultErrorHandling() throws Exception {
         errorHandling(new RuntimeException("test-exception"), Http.Status.INTERNAL_SERVER_ERROR_500, true);
     }
+
     @Test
     public void exceptionalNotFoundErrorHandling() throws Exception {
         errorHandling(new NotFoundException("test-exception"), Http.Status.NOT_FOUND_404, true);
     }
 
     @Test
+    public void exceptionalNestedHttpExceptionHandling() throws Exception {
+        Http.Status status = SERVICE_UNAVAILABLE_503;
+        Exception nested = new HttpException(status.reasonPhrase(), status);
+        errorHandling(new RuntimeException("test", nested), status, true);
+    }
+
+    @Test
     public void explicitDefaultErrorHandling() throws Exception {
         errorHandling(new RuntimeException("test-exception"), Http.Status.INTERNAL_SERVER_ERROR_500, false);
     }
+
     @Test
     public void explicitNotFoundErrorHandling() throws Exception {
         errorHandling(new NotFoundException("test-exception"), Http.Status.NOT_FOUND_404, false);
@@ -315,6 +325,7 @@ public class TestClientTest {
     @Test
     public void throwingExceptionInErrorHandler() throws Exception {
         StringBuffer sb = new StringBuffer();
+        Http.ResponseStatus expected = Http.ResponseStatus.create(888);
 
         Routing routing = Routing.builder()
                 .any((req, res) -> {
@@ -323,7 +334,7 @@ public class TestClientTest {
                 })
                 .error(HttpException.class, (req, res, ex) -> {
                     sb.append("httpExceptionHandler-");
-                    throw new HttpException("unexpected-exception", Http.ResponseStatus.create(888));
+                    throw new HttpException("unexpected-exception", expected);
                 })
                 .error(Throwable.class, (req, res, ex) -> {
                     fail("The rest of the handlers were supposed to be skipped due to an unexpected exception being thrown "
@@ -338,7 +349,7 @@ public class TestClientTest {
                 .get();
 
         assertThat(sb.toString(), is("any-httpExceptionHandler-"));
-        assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
+        assertThat(response.status(), is(expected));
     }
 
     @Test

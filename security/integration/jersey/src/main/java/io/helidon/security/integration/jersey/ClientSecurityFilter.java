@@ -45,9 +45,13 @@ import io.helidon.security.integration.common.SecurityTracing;
  * <p>
  * Only works as part of integration with Security component.
  * This class is public to allow unit testing from providers (without invoking an HTTP request)
+ *
+ * @deprecated This class should not be used directly anyway, yet if you needed it, it is available in
+ *  the new {@code helidon-security-integration-jersey-client} module.
  */
 @Provider
 @ConstrainedTo(RuntimeType.CLIENT)
+@Deprecated
 public class ClientSecurityFilter implements ClientRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());

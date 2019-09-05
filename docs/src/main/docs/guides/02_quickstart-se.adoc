@@ -97,6 +97,28 @@ curl -X GET http://localhost:8080/greet/Jose
 {"message":"Hola Jose!"}
 ----
 
+== Health and Metrics
+
+Helidon provides built-in support for health and metrics endpoints.
+
+[source,bash]
+.Health
+----
+curl -s -X GET http://localhost:8080/health
+----
+
+[source,bash]
+.Metrics in Prometheus Format
+----
+curl -s -X GET http://localhost:8080/metrics
+----
+
+[source,bash]
+.Metrics in JSON Format
+----
+curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+----
+
 == Build a Docker Image
 
 The project also contains a Dockerfile so that you can easily build and run a

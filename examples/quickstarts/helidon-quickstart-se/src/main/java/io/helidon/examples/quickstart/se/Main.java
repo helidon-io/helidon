@@ -17,6 +17,7 @@
 package io.helidon.examples.quickstart.se;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
@@ -29,7 +30,7 @@ import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
- * Simple Hello World rest application.
+ * The application main class.
  */
 public final class Main {
 
@@ -55,8 +56,7 @@ public final class Main {
     static WebServer startServer() throws IOException {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        setupLogging();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
@@ -98,7 +98,7 @@ public final class Main {
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
         return Routing.builder()
@@ -107,6 +107,15 @@ public final class Main {
                 .register(metrics)                  // Metrics at "/metrics"
                 .register("/greet", greetService)
                 .build();
+    }
+
+    /**
+     * Configure logging from logging.properties file.
+     */
+    private static void setupLogging() throws IOException {
+        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
+            LogManager.getLogManager().readConfiguration(is);
+        }
     }
 
 }

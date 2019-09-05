@@ -22,10 +22,11 @@
     <parent>
         <groupId>io.helidon.jersey</groupId>
         <artifactId>helidon-jersey-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-jersey-server</artifactId>
+    <name>Helidon Jersey Server</name>
 
     <dependencies>
         <dependency>

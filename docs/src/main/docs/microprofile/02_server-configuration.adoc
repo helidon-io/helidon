@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,8 +27,9 @@ By default, the server uses the MicroProfile Config, but you may also want to us
 There are 3 default MicroProfile Config sources:
 
 * `System.getProperties()`
-* `System.getenv()` 
+* `System.getenv()`
 * all `META-INF/microprofile-config.properties` files on the class path
+* `application.yaml` on the classpath (read by default by Helidon Config)
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
 
@@ -48,7 +49,7 @@ server.backlog: 512
 server.receive-buffer: 256
 # Socket timeout milliseconds - defaults to 0 (infinite)
 server.timeout: 30000
-# Default is CPU_COUNT * 2
+# Defaults to Runtime.availableProcessors()
 server.workers=4
 # Default is not to use SSL
 ssl:
@@ -57,23 +58,34 @@ ssl:
     keystore-passphrase: "abcd"
 ----
 
+== Configuring additional ports
+Helidon MP can expose multiple ports, with the following limitations:
 
-For Helidon config, the default file is `application.yaml` on the classpath
- (e.g. src/main/resources/application.yaml).
+- The default port is the port that serves your application (JAX-RS applications and resources)
+- Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
+    currently supported by MP Health and MP Metrics
+
+For this example, we will use a `yaml` file:
+
+- The port `7011` is the default port and will serve your application
+- The port `8011` is named "admin" (this is an arbitrary name)
+- MP Metrics are configured to use the "admin" port through the `routing` configuration (reference is by name)
+- MP Health is configured the same way to reference the "admin" port
 
 [source,yaml]
 .application.yaml - Server configuration
 ----
 server:
+  port: 7011
+  host: "some.host"
   sockets:
-    - secure:
-        port: 443
-        # supports all socket related properties of server
-        backlog: 1024
-        receive-buffer: 0
-        timeout: 60000
-        ssl:
-          ....
-    - another:
-        port: 12041
+    admin:
+      port: 8011
+      bind-address: "some.host"
+
+metrics:
+  routing: "admin"
+
+health:
+  routing: "admin"
 ----

@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.config;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
 /**
@@ -42,6 +43,21 @@ public final class TracingConfigUtil {
     public static SpanTracingConfig spanConfig(String component, String spanName) {
         return Contexts.context()
                 .flatMap(ctx -> ctx.get(TracingConfig.class))
+                .map(tracedConfig -> tracedConfig.spanConfig(component, spanName))
+                .orElse(SpanTracingConfig.ENABLED);
+    }
+
+    /**
+     * Get the configuration of a single span from the provided {@link io.helidon.common.context.Context}.
+     *
+     * @param component component tracing this span
+     * @param spanName name of the span to trace
+     * @param context context to get tracing configuration from
+     *
+     * @return span configuration, including configuration of span logs
+     */
+    public static SpanTracingConfig spanConfig(String component, String spanName, Context context) {
+        return context.get(TracingConfig.class)
                 .map(tracedConfig -> tracedConfig.spanConfig(component, spanName))
                 .orElse(SpanTracingConfig.ENABLED);
     }

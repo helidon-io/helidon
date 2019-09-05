@@ -125,16 +125,20 @@ public class MpConfigBuilder implements ConfigBuilder {
     public ConfigBuilder addDefaultSources() {
         // system properties
         mpConfigSources.add(new MpcSourceSystemProperties());
+        helidonConfigSources.add(ConfigSources.systemProperties());
 
         // environment variables
         mpConfigSources.add(new MpcSourceEnvironmentVariables());
+        helidonConfigSources.add(ConfigSources.environmentVariables());
 
         // /META-INF/microprofile-config.properties
         try {
             Enumeration<URL> resources = getClassLoader().getResources("META-INF/microprofile-config.properties");
 
             while (resources.hasMoreElements()) {
-                mpConfigSources.add(MpcSourceUrl.create(resources.nextElement()));
+                URL url = resources.nextElement();
+                mpConfigSources.add(MpcSourceUrl.create(url));
+                helidonConfigSources.add(ConfigSources.url(url).build());
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Failed to read microprofile-config.properties", e);

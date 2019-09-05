@@ -21,6 +21,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Objects;
@@ -90,29 +92,47 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
 
     @Override
     protected ConfigParser.Content<Instant> content() throws ConfigException {
+        // assumption about HTTP URL connection is wrong here
         try {
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod(GET_METHOD);
+            URLConnection urlConnection = url.openConnection();
 
-            final String mediaType = mediaType(connection.getContentType());
-            final Optional<Instant> timestamp;
-            if (connection.getLastModified() != 0) {
-                timestamp = Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+            if (urlConnection instanceof HttpURLConnection) {
+                return httpContent((HttpURLConnection) urlConnection);
             } else {
-                timestamp = Optional.of(Instant.now());
-                LOGGER.fine("Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
-                                    + timestamp + "' as a content timestamp.");
+                return genericContent(urlConnection);
             }
-
-            Reader reader = new InputStreamReader(connection.getInputStream(),
-                                                  ConfigUtils.getContentCharset(connection.getContentEncoding()));
-
-            return ConfigParser.Content.create(reader, mediaType, timestamp);
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
             throw new ConfigException("Configuration at url '" + url + "' GET is not accessible.", ex);
         }
+    }
+
+    private ConfigParser.Content<Instant> genericContent(URLConnection urlConnection) throws IOException {
+        final String mediaType = mediaType(null);
+        Reader reader = new InputStreamReader(urlConnection.getInputStream(),
+                                              StandardCharsets.UTF_8);
+
+        return ConfigParser.Content.create(reader, mediaType, Optional.of(Instant.now()));
+    }
+
+    private ConfigParser.Content<Instant> httpContent(HttpURLConnection connection) throws IOException {
+        connection.setRequestMethod(GET_METHOD);
+
+        final String mediaType = mediaType(connection.getContentType());
+        final Optional<Instant> timestamp;
+        if (connection.getLastModified() != 0) {
+            timestamp = Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+        } else {
+            timestamp = Optional.of(Instant.now());
+            LOGGER.fine("Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
+                                + timestamp + "' as a content timestamp.");
+        }
+
+        Reader reader = new InputStreamReader(connection.getInputStream(),
+                                              ConfigUtils.getContentCharset(connection.getContentEncoding()));
+
+        return ConfigParser.Content.create(reader, mediaType, timestamp);
     }
 
     @Override
@@ -142,16 +162,25 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
 
     @Override
     protected Optional<Instant> dataStamp() {
+        // the URL may not be an HTTP URL
         try {
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod(HEAD_METHOD);
+            URLConnection urlConnection = url.openConnection();
+            if (urlConnection instanceof HttpURLConnection) {
+                HttpURLConnection connection = (HttpURLConnection) urlConnection;
+                try {
+                    connection.setRequestMethod(HEAD_METHOD);
 
-            if (connection.getLastModified() != 0) {
-                return Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+                    if (connection.getLastModified() != 0) {
+                        return Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+                    }
+                } finally {
+                    connection.disconnect();
+                }
             }
         } catch (IOException ex) {
             LOGGER.log(Level.FINE, ex, () -> "Configuration at url '" + url + "' HEAD is not accessible.");
         }
+
         Optional<Instant> timestamp = Optional.of(Instant.MAX);
         LOGGER.finer("Missing HEAD '" + url + "' response header 'Last-Modified'. Used time '"
                              + timestamp + "' as a content timestamp.");

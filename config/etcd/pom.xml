@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-etcd</artifactId>
     <name>Helidon Config Etcd</name>
@@ -55,8 +55,9 @@
         </dependency>
         <!-- etcd v3 -->
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-core</artifactId>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>io.grpc</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -66,10 +67,6 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>

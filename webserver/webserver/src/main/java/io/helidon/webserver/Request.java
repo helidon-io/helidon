@@ -334,7 +334,9 @@ abstract class Request implements ServerRequest {
             }
 
             SpanTracingConfig spanConfig = TracingConfigUtil
-                    .spanConfig(NettyWebServer.TRACING_COMPONENT, TRACING_CONTENT_READ_NAME);
+                    .spanConfig(NettyWebServer.TRACING_COMPONENT,
+                                TRACING_CONTENT_READ_NAME,
+                                context());
 
             String spanName = spanConfig.newName().orElse(TRACING_CONTENT_READ_NAME);
 

@@ -49,16 +49,17 @@ import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
+import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.jboss.jandex.IndexView;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
- * that describes the endpoints handled by the application.
+ * that describes the endpoints handled by the server.
  * <p>
- * The application can use the {@link Builder} to set OpenAPI-related
- * attributes. If the application uses none of these builder methods and does
- * not provide a static {@code openapi} file, then the {@code /openapi} endpoint
- * responds with a nearly-empty OpenAPI document.
+ * The server can use the {@link Builder} to set OpenAPI-related attributes. If
+ * the server uses none of these builder methods and does not provide a static
+ * {@code openapi} file, then the {@code /openapi} endpoint responds with a
+ * nearly-empty OpenAPI document.
  */
 public class OpenAPISupport implements Service {
 
@@ -83,19 +84,17 @@ public class OpenAPISupport implements Service {
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
 
     private final String webContext;
-    private final Builder builder;
-    private final OpenApiConfig openAPIConfig;
 
+    private final OpenAPI model;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
 
-    private OpenAPISupport(final Builder builder) {
+    private OpenAPISupport(Builder builder) {
         webContext = builder.webContext();
-        this.builder = builder;
-        this.openAPIConfig = builder.openAPIConfig();
+        model = prepareModel(builder.openAPIConfig(), builder.indexView(), builder.staticFile());
     }
 
     @Override
-    public void update(final Routing.Rules rules) {
+    public void update(Routing.Rules rules) {
         configureEndpoint(rules);
     }
 
@@ -106,38 +105,39 @@ public class OpenAPISupport implements Service {
      * @param rules routing rules to be augmented with OpenAPI endpoint
      */
     public void configureEndpoint(Routing.Rules rules) {
-        try {
-            initializeOpenAPIDocument(openAPIConfig);
-        } catch (IOException ex) {
-            throw new RuntimeException("Error initializing OpenAPI information", ex);
-        }
 
         rules.get(JsonSupport.create())
                 .get(webContext, this::prepareResponse);
     }
 
     /**
-     * Prepares the information used to create the OpenAPI document for
-     * endpoints in this application.
+     * Prepares the OpenAPI model that later will be used to create the OpenAPI
+     * document for endpoints in this application.
      *
      * @param config {@code OpenApiConfig} object describing paths, servers,
      * etc.
-     * @throws IOException in case of errors reading any existing static OpenAPI
-     * document
+     * @return the OpenAPI model
+     * @throws RuntimeException in case of errors reading any existing static
+     * OpenAPI document
      */
-    void initializeOpenAPIDocument(final OpenApiConfig config) throws IOException {
-        try (OpenApiStaticFile staticFile = buildOpenAPIStaticFile()) {
-            OpenApiDocument.INSTANCE.reset();
-            OpenApiDocument.INSTANCE.config(config);
-            OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
-            OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
-            if (isAnnotationProcessingEnabled(config)) {
-                expandModelUsingAnnotations(config);
-            } else {
-                LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
+    private OpenAPI prepareModel(OpenApiConfig config, IndexView indexView, OpenApiStaticFile staticFile) {
+        try {
+            synchronized (OpenApiDocument.INSTANCE) {
+                OpenApiDocument.INSTANCE.reset();
+                OpenApiDocument.INSTANCE.config(config);
+                OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
+                OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
+                if (isAnnotationProcessingEnabled(config)) {
+                    expandModelUsingAnnotations(config, indexView);
+                } else {
+                    LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
+                }
+                OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
+                OpenApiDocument.INSTANCE.initialize();
+                return OpenApiDocument.INSTANCE.get();
             }
-            OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
-            OpenApiDocument.INSTANCE.initialize();
+        } catch (IOException ex) {
+            throw new RuntimeException("Error initializing OpenAPI information", ex);
         }
     }
 
@@ -145,19 +145,15 @@ public class OpenAPISupport implements Service {
         return !config.scanDisable();
     }
 
-    private void expandModelUsingAnnotations(final OpenApiConfig config) throws IOException {
-        if (builder.indexView() != null) {
+    private void expandModelUsingAnnotations(OpenApiConfig config, IndexView indexView) throws IOException {
+        if (indexView != null) {
             OpenApiDocument.INSTANCE.modelFromAnnotations(
-                    OpenApiProcessor.modelFromAnnotations(config, new FilteredIndexView(builder.indexView(), config)));
+                    OpenApiProcessor.modelFromAnnotations(config, new FilteredIndexView(indexView, config)));
         }
     }
 
     private static ClassLoader getContextClassLoader() {
         return Thread.currentThread().getContextClassLoader();
-    }
-
-    private OpenApiStaticFile buildOpenAPIStaticFile() {
-        return builder.staticFile();
     }
 
     private static String typeFromPath(Path path) {
@@ -196,19 +192,19 @@ public class OpenAPISupport implements Service {
      * from its underlying data
      */
     String prepareDocument(MediaType resultMediaType) throws IOException {
-        if (!OpenApiDocument.INSTANCE.isSet()) {
-            throw new IllegalStateException("OpenApiDocument used but has not been initialized");
+        if (model == null) {
+            throw new IllegalStateException("OpenAPI model used but has not been initialized");
         }
 
-        OpenAPIMediaTypes matchingOpenAPIMediaType =
-                OpenAPIMediaTypes.byMediaType(resultMediaType)
-                .orElseGet(() -> {
-                    LOGGER.log(Level.FINER,
-                    () -> String.format(
-                            "Requested media type %s not supported; using default",
-                            resultMediaType.toString()));
-                    return OpenAPIMediaTypes.DEFAULT_TYPE;
-                });
+        OpenAPIMediaTypes matchingOpenAPIMediaType
+                = OpenAPIMediaTypes.byMediaType(resultMediaType)
+                        .orElseGet(() -> {
+                            LOGGER.log(Level.FINER,
+                                    () -> String.format(
+                                            "Requested media type %s not supported; using default",
+                                            resultMediaType.toString()));
+                            return OpenAPIMediaTypes.DEFAULT_TYPE;
+                        });
 
         final Format resultFormat = matchingOpenAPIMediaType.format();
 
@@ -225,8 +221,7 @@ public class OpenAPISupport implements Service {
 
     private String formatDocument(Format fmt) {
         try {
-            return OpenApiSerializer.serialize(
-                    OpenApiDocument.INSTANCE.get(), fmt);
+            return OpenApiSerializer.serialize(model, fmt);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -247,7 +242,7 @@ public class OpenAPISupport implements Service {
                                     req.headers().acceptedTypes(),
                                     DEFAULT_RESPONSE_MEDIA_TYPE.toString()));
                     return DEFAULT_RESPONSE_MEDIA_TYPE;
-                        });
+                });
         return resultMediaType;
     }
 
@@ -264,15 +259,15 @@ public class OpenAPISupport implements Service {
 
         JSON(Format.JSON,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_JSON,
-                                MediaType.APPLICATION_JSON},
+                    MediaType.APPLICATION_JSON},
                 "json"),
         YAML(Format.YAML,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML,
-                                MediaType.APPLICATION_X_YAML,
-                                MediaType.APPLICATION_YAML,
-                                MediaType.TEXT_PLAIN,
-                                MediaType.TEXT_X_YAML,
-                                MediaType.TEXT_YAML},
+                    MediaType.APPLICATION_X_YAML,
+                    MediaType.APPLICATION_YAML,
+                    MediaType.TEXT_PLAIN,
+                    MediaType.TEXT_X_YAML,
+                    MediaType.TEXT_YAML},
                 "yaml", "yml");
 
         private static final OpenAPIMediaTypes DEFAULT_TYPE = YAML;
@@ -366,7 +361,7 @@ public class OpenAPISupport implements Service {
      * @return new {@code OpenAPISupport} instance created using the
      * helidonConfig settings
      */
-    public static OpenAPISupport create(final Config config) {
+    public static OpenAPISupport create(Config config) {
         return builderSE().helidonConfig(config).build();
     }
 
