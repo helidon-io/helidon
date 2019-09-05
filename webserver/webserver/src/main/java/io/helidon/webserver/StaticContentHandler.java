@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.helidon.webserver;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
@@ -34,25 +34,23 @@ abstract class StaticContentHandler {
 
     private final String welcomeFilename;
     private final ContentTypeSelector contentTypeSelector;
-    private final Path root;
 
     /**
      * Creates new instance.
      *
      * @param welcomeFilename     a welcome filename
      * @param contentTypeSelector a selector for content type
-     * @param root                static content root in path format
      */
-    StaticContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root) {
+    StaticContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector) {
         this.welcomeFilename = welcomeFilename;
         this.contentTypeSelector = contentTypeSelector;
-        this.root = root;
     }
 
     /**
      * Should release cache (if any exists).
      */
-    void releaseCache() {}
+    void releaseCache() {
+    }
 
     /**
      * Do handle for GET and HEAD HTTP methods. It is filtering implementation, prefers {@code response.next()} before NOT_FOUND.
@@ -60,11 +58,10 @@ abstract class StaticContentHandler {
      * @param method   an HTTP method
      * @param request  an HTTP request
      * @param response an HTTP response
-     * @throws IOException if resource is not acceptable
      */
     void handle(Http.RequestMethod method, ServerRequest request, ServerResponse response) {
         // Check method
-        if (method != Http.Method.GET && method != Http.Method.HEAD) {
+        if ((method != Http.Method.GET) && (method != Http.Method.HEAD)) {
             request.next();
             return;
         }
@@ -73,46 +70,41 @@ abstract class StaticContentHandler {
         if (requestPath.startsWith("/")) {
             requestPath = requestPath.substring(1);
         }
-        Path resolved;
-        if (requestPath.isEmpty()) {
-            resolved = root;
-        } else {
-            resolved = root.resolve(Paths.get(requestPath)).normalize();
-            if (!resolved.startsWith(root)) {
-                request.next();
-                return;
-            }
-        }
+
         // Call doHandle
         try {
-            if (!doHandle(method, resolved, request, response)) {
+            if (!doHandle(method, requestPath, request, response)) {
                 request.next();
             }
-        } catch (IOException e) {
-            throw new HttpException("Cannot access static resource!", Http.Status.INTERNAL_SERVER_ERROR_500, e);
         } catch (HttpException httpException) {
             if (httpException.status().code() == Http.Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND
                 request.next();
             } else {
-                throw  httpException;
+                throw httpException;
             }
+        } catch (Exception e) {
+            throw new HttpException("Cannot access static resource!", Http.Status.INTERNAL_SERVER_ERROR_500, e);
         }
+    }
+
+    ContentTypeSelector contentTypeSelector() {
+        return contentTypeSelector;
     }
 
     /**
      * Do handle for GET and HEAD HTTP methods.
      *
      * @param method   GET or HEAD HTTP method
-     * @param path     a resolved path to static content resource - can be invalid
+     * @param requestedPath path to the requested resource
      * @param request  an HTTP request
      * @param response an HTTP response
      * @return {@code true} only if static content was found and processed.
      * @throws IOException   if resource is not acceptable
      * @throws HttpException if some known WEB error
      */
-    abstract boolean doHandle(Http.RequestMethod method, Path path, ServerRequest request, ServerResponse response)
-            throws IOException;
+    abstract boolean doHandle(Http.RequestMethod method, String requestedPath, ServerRequest request, ServerResponse response)
+            throws IOException, URISyntaxException;
 
     /**
      * Put {@code etag} parameter (if provided ) into the response headers, than validates {@code If-Match} and
@@ -223,37 +215,6 @@ abstract class StaticContentHandler {
         response.send();
     }
 
-    String welcomePageName() {
-        return welcomeFilename;
-    }
-
-    /**
-     * Determines and set a Content-Type header based on filename extension.
-     *
-     * @param path            a path to the file
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     */
-    void processContentType(Path path, RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
-        processContentType(fileName(path), requestHeaders, responseHeaders);
-    }
-
-    /**
-     * Determines and set a Content-Type header based on filename extension.
-     *
-     * @param filename        a filename
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     */
-    void processContentType(String filename, RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
-        // Try to get Content-Type
-        MediaType type = contentTypeSelector.determine(filename, requestHeaders);
-        if (type != null) {
-            responseHeaders.contentType(type);
-        }
-    }
-
-    // spotbugs... path.getFileName may return null :(
     static String fileName(Path path) {
         Path fileName = path.getFileName();
 
@@ -262,5 +223,28 @@ abstract class StaticContentHandler {
         }
 
         return fileName.toString();
+    }
+
+    String welcomePageName() {
+        return welcomeFilename;
+    }
+
+    /**
+     * Determines and set a Content-Type header based on filename extension.
+     *
+     * @param filename        a filename
+     * @param requestHeaders  an HTTP request headers
+     * @param responseHeaders an HTTP response headers
+     * @param contentTypeSelector selector of content types
+     */
+    static void processContentType(String filename,
+                                   RequestHeaders requestHeaders,
+                                   ResponseHeaders responseHeaders,
+                                   ContentTypeSelector contentTypeSelector) {
+        // Try to get Content-Type
+        MediaType type = contentTypeSelector.determine(filename, requestHeaders);
+        if (type != null) {
+            responseHeaders.contentType(type);
+        }
     }
 }

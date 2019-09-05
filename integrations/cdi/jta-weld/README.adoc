@@ -8,16 +8,15 @@ overall JTA support for standalone CDI applications.
 
 To function properly, this project also requires:
 
-* a CDI-provider-agnostic counterpart, such as the `jta-cdi` project
-  found elsewhere in this git repository
-
-IMPORTANT: Please note that this feature is currently experimental and
-           not suitable for production use.
+* a CDI-provider-agnostic counterpart, such as the
+  link:../jta-cdi[`jta-cdi` project]
 
 == Installation
 
 Ensure that the Helidon JTA Weld Integration project and its runtime
 dependencies are present on your application's runtime classpath.
 
-Please see the `examples/integrations/cdi/jpa` project found elsewhere
-in this git repository for a working `pom.xml` file that uses this project.
+Please see the
+link:../../../examples/integrations/cdi/jpa/[`examples/integrations/cdi/jpa`]
+project for a working `pom.xml` file that uses this project.
+

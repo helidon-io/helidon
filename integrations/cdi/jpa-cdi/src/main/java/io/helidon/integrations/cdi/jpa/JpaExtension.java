@@ -158,7 +158,7 @@ public class JpaExtension implements Extension {
      * point rewriting are also subject to change without prior notice
      * at any point.</p>
      */
-    private static final String DEFAULT_PERSISTENCE_UNIT_NAME = "__DEFAULT__";
+    static final String DEFAULT_PERSISTENCE_UNIT_NAME = "__DEFAULT__";
 
 
     /*
@@ -310,8 +310,21 @@ public class JpaExtension implements Extension {
      */
     private final Set<Set<Annotation>> containerManagedEntityManagerFactoryQualifiers;
 
+    /**
+     * Indicates whether an injection point has called for the default
+     * persistence unit.  This has implications on how beans are
+     * installed.
+     *
+     * @see #validate(AfterDeploymentValidation)
+     */
     private boolean defaultPersistenceUnitInEffect;
 
+    /**
+     * Indicates whether a bean for the default persistence unit
+     * has been added.
+     *
+     * @see #validate(AfterDeploymentValidation)
+     */
     private boolean addedDefaultPersistenceUnit;
 
 
@@ -368,7 +381,10 @@ public class JpaExtension implements Extension {
      * @param event a {@link ProcessAnnotatedType
      * ProcessAnnotatedType<}{@link NoTransactionSupport
      * NoTransactionSupport>} whose presence indicates that JTA
-     * support is not available; will never be {@code null}
+     * support is not available; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code event} is {@code
+     * null}
      *
      * @see #transactionsSupported
      *
@@ -382,6 +398,8 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, event);
         }
+
+        Objects.requireNonNull(event);
 
         // If we receive an event of this type, then beans.xml
         // exclusions have fired such that it has been determined that
@@ -408,15 +426,22 @@ public class JpaExtension implements Extension {
      *
      * @param event the {@link ProcessAnnotatedType} container
      * lifecycle event being observed; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code event} is {@code null}
      */
     private <T> void rewriteJpaAnnotations(@Observes
-                                           @WithAnnotations(PersistenceContext.class)
+                                           @WithAnnotations({
+                                               PersistenceContext.class,
+                                               PersistenceUnit.class
+                                           })
                                            final ProcessAnnotatedType<T> event) {
         final String cn = JpaExtension.class.getName();
         final String mn = "rewriteJpaAnnotations";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, event);
         }
+
+        Objects.requireNonNull(event);
 
         final AnnotatedTypeConfigurator<T> atc = event.configureAnnotatedType();
         atc.filterFields(JpaExtension::isEligiblePersistenceContextField)
@@ -442,10 +467,13 @@ public class JpaExtension implements Extension {
      * processing.
      *
      * @param event the {@link ProcessAnnotatedType} event occurring;
-     * may be {@code null} in which case no action will be taken
+     * must not be {@code null}
      *
-     * @param beanManager the {@link BeanManager} in effect; may be
-     * {@code null} in which case no action will be taken
+     * @param beanManager the {@link BeanManager} in effect; must not
+     * be {@code null}
+     *
+     * @exception NullPointerException if either {@code event} or
+     * {@code beanManager} is {@code null}
      *
      * @see PersistenceContext
      *
@@ -464,56 +492,57 @@ public class JpaExtension implements Extension {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
 
-        if (event != null && beanManager != null) {
-            final AnnotatedType<?> annotatedType = event.getAnnotatedType();
-            if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
-                final Set<? extends PersistenceContext> persistenceContexts =
-                    annotatedType.getAnnotations(PersistenceContext.class);
-                if (persistenceContexts != null && !persistenceContexts.isEmpty()) {
-                    for (final PersistenceContext persistenceContext : persistenceContexts) {
-                        if (LOGGER.isLoggable(Level.INFO)) {
-                            final String name = persistenceContext.name().trim();
-                            if (!name.isEmpty()) {
-                                LOGGER.logp(Level.INFO, cn, mn,
-                                            "persistenceContextNameIgnored", new Object[] {annotatedType, name});
-                            }
+        Objects.requireNonNull(event);
+        Objects.requireNonNull(beanManager);
+
+        final AnnotatedType<?> annotatedType = event.getAnnotatedType();
+        if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
+            final Set<? extends PersistenceContext> persistenceContexts =
+                annotatedType.getAnnotations(PersistenceContext.class);
+            if (persistenceContexts != null && !persistenceContexts.isEmpty()) {
+                for (final PersistenceContext persistenceContext : persistenceContexts) {
+                    if (LOGGER.isLoggable(Level.INFO)) {
+                        final String name = persistenceContext.name().trim();
+                        if (!name.isEmpty()) {
+                            LOGGER.logp(Level.INFO, cn, mn,
+                                        "persistenceContextNameIgnored", new Object[] {annotatedType, name});
                         }
-                        final PersistenceProperty[] persistenceProperties = persistenceContext.properties();
-                        if (persistenceProperties != null && persistenceProperties.length > 0) {
-                            final String persistenceUnitName = persistenceContext.unitName();
-                            assert persistenceUnitName != null;
-                            PersistenceUnitInfoBean persistenceUnit = this.implicitPersistenceUnits.get(persistenceUnitName);
-                            if (persistenceUnit == null) {
-                                final String jtaDataSourceName;
-                                if (persistenceUnitName.isEmpty()) {
-                                    jtaDataSourceName = null;
-                                } else {
-                                    jtaDataSourceName = persistenceUnitName;
-                                }
-                                final Class<?> javaClass = annotatedType.getJavaClass();
-                                URL persistenceUnitRoot = null;
-                                final ProtectionDomain pd = javaClass.getProtectionDomain();
-                                if (pd != null) {
-                                    final CodeSource cs = pd.getCodeSource();
-                                    if (cs != null) {
-                                        persistenceUnitRoot = cs.getLocation();
-                                    }
-                                }
-                                final Properties properties = new Properties();
-                                for (final PersistenceProperty persistenceProperty : persistenceProperties) {
-                                    final String persistencePropertyName = persistenceProperty.name();
-                                    if (!persistencePropertyName.isEmpty()) {
-                                        properties.setProperty(persistencePropertyName, persistenceProperty.value());
-                                    }
-                                }
-                                persistenceUnit =
-                                    new PersistenceUnitInfoBean(persistenceUnitName,
-                                                                persistenceUnitRoot,
-                                                                null,
-                                                                new BeanManagerBackedDataSourceProvider(beanManager),
-                                                                properties);
-                                this.implicitPersistenceUnits.put(persistenceUnitName, persistenceUnit);
+                    }
+                    final PersistenceProperty[] persistenceProperties = persistenceContext.properties();
+                    if (persistenceProperties != null && persistenceProperties.length > 0) {
+                        final String persistenceUnitName = persistenceContext.unitName();
+                        assert persistenceUnitName != null;
+                        PersistenceUnitInfoBean persistenceUnit = this.implicitPersistenceUnits.get(persistenceUnitName);
+                        if (persistenceUnit == null) {
+                            final String jtaDataSourceName;
+                            if (persistenceUnitName.isEmpty()) {
+                                jtaDataSourceName = null;
+                            } else {
+                                jtaDataSourceName = persistenceUnitName;
                             }
+                            final Class<?> javaClass = annotatedType.getJavaClass();
+                            URL persistenceUnitRoot = null;
+                            final ProtectionDomain pd = javaClass.getProtectionDomain();
+                            if (pd != null) {
+                                final CodeSource cs = pd.getCodeSource();
+                                if (cs != null) {
+                                    persistenceUnitRoot = cs.getLocation();
+                                }
+                            }
+                            final Properties properties = new Properties();
+                            for (final PersistenceProperty persistenceProperty : persistenceProperties) {
+                                final String persistencePropertyName = persistenceProperty.name();
+                                if (!persistencePropertyName.isEmpty()) {
+                                    properties.setProperty(persistencePropertyName, persistenceProperty.value());
+                                }
+                            }
+                            persistenceUnit =
+                                new PersistenceUnitInfoBean(persistenceUnitName,
+                                                            persistenceUnitRoot,
+                                                            null,
+                                                            new BeanManagerBackedDataSourceProvider(beanManager),
+                                                            properties);
+                            this.implicitPersistenceUnits.put(persistenceUnitName, persistenceUnit);
                         }
                     }
                 }
@@ -540,8 +569,10 @@ public class JpaExtension implements Extension {
      * {@code false}.</p>
      *
      * @param event the event describing the {@link AnnotatedType}
-     * being processed; may be {@code null} in which case no action
-     * will be taken
+     * being processed; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code event} is {@code
+     * null}
      *
      * @see Converter
      *
@@ -567,14 +598,14 @@ public class JpaExtension implements Extension {
             LOGGER.entering(cn, mn, event);
         }
 
-        if (event != null) {
-            final AnnotatedType<?> annotatedType = event.getAnnotatedType();
-            if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
-                this.assignManagedClassToPersistenceUnit(annotatedType.getAnnotations(PersistenceContext.class),
-                                                         annotatedType.getAnnotations(PersistenceUnit.class),
-                                                         annotatedType.getJavaClass());
-                event.veto(); // managed classes can't be beans
-            }
+        Objects.requireNonNull(event);
+
+        final AnnotatedType<?> annotatedType = event.getAnnotatedType();
+        if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
+            this.assignManagedClassToPersistenceUnit(annotatedType.getAnnotations(PersistenceContext.class),
+                                                     annotatedType.getAnnotations(PersistenceUnit.class),
+                                                     annotatedType.getJavaClass());
+            event.veto(); // managed classes can't be beans
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -712,6 +743,8 @@ public class JpaExtension implements Extension {
             LOGGER.entering(cn, mn, event);
         }
 
+        Objects.requireNonNull(event);
+
         final InjectionPoint injectionPoint = event.getInjectionPoint();
         assert injectionPoint != null;
 
@@ -742,6 +775,8 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, event);
         }
+
+        Objects.requireNonNull(event);
 
         final InjectionPoint injectionPoint = event.getInjectionPoint();
         assert injectionPoint != null;
@@ -899,6 +934,19 @@ public class JpaExtension implements Extension {
         }
     }
 
+    /**
+     * Ensures that {@link PersistenceUnitInfo}-typed injection points
+     * are satisfied.
+     *
+     * @param event the {@link AfterDeploymentValidation} container
+     * lifecycle event; must not be {@code null}
+     *
+     * @param beanManager the {@link BeanManager} currently in effect;
+     * must not be {@code null}
+     *
+     * @exception NullPointerException if either {@code event} or
+     * {@code beanManager} is {@code null}
+     */
     private void validate(@Observes final AfterDeploymentValidation event, final BeanManager beanManager) {
         final String cn = JpaExtension.class.getName();
         final String mn = "validateJpaInjectionPoints";
@@ -906,13 +954,19 @@ public class JpaExtension implements Extension {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
 
+        Objects.requireNonNull(event);
+        Objects.requireNonNull(beanManager);
+
         if (this.defaultPersistenceUnitInEffect && !this.addedDefaultPersistenceUnit) {
             // The user had originally specified something like
             // just @PersistenceContext (instead
             // of @PersistenceContext(unitName = "something")), but
-            // there was more than one PersistenceUnitInfo in the
-            // world.
+            // for whatever reason a default PersistenceUnitInfo bean
+            // was not added.  This will only ever be the case if
+            // multiple persistence units are present.
             final Set<Bean<?>> persistenceUnitInfoBeans = beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
+            assert persistenceUnitInfoBeans != null;
+            assert persistenceUnitInfoBeans.size() > 1 : "Unexpected persistenceUnitInfoBeans: " + persistenceUnitInfoBeans;
             try {
                 beanManager.resolve(persistenceUnitInfoBeans);
             } catch (final AmbiguousResolutionException expected) {
@@ -927,9 +981,9 @@ public class JpaExtension implements Extension {
                         }
                     }
                 }
-                final Throwable problem = new AmbiguousResolutionException(Messages.format("ambiguousPersistenceUnitInfo", names),
-                                                                           expected);
-                event.addDeploymentProblem(problem);
+                event.addDeploymentProblem(new AmbiguousResolutionException(Messages.format("ambiguousPersistenceUnitInfo",
+                                                                                            names),
+                                                                            expected));
             }
         }
 
@@ -976,6 +1030,9 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
+
+        Objects.requireNonNull(event);
+        Objects.requireNonNull(beanManager);
 
         for (final Set<Annotation> qualifiers : this.persistenceUnitQualifiers) {
             addContainerManagedEntityManagerFactoryBeans(event, qualifiers, beanManager);
