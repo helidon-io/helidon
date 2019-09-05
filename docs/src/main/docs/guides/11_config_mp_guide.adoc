@@ -122,7 +122,7 @@ Change a configuration parameter in the default configuration resource file, `ME
 There are no environment variable or system property overrides defined.
 
 [source,bash]
-.Change `app.greeting` in the META-INF/microprofile-config.properties` from `Hello` to `HelloFromMPConfig`:
+.Change `app.greeting` in the `META-INF/microprofile-config.properties` from `Hello` to `HelloFromMPConfig`:
 ----
 app.greeting=HelloFromMPConfig
 ----
@@ -274,7 +274,7 @@ This is true even the same property comes from sources with different formats.
 Swap the source order and run the test again.
 
 [source,java]
-.Update the `Main` class and replace the 'buildConfig` method:
+.Update the `Main` class and replace the `buildConfig` method:
 ----
   private static Config buildConfig() {
       return Config.builder()
@@ -317,7 +317,7 @@ app.greeting=HelloFromConfigFile
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the 'buildConfig` method:
+.Update the `Main` class; 1) Add new import and 2) Replace the `buildConfig` method:
 ----
 import static io.helidon.config.ConfigSources.file;
 ...
@@ -348,7 +348,7 @@ otherwise Helidon will generate an error during startup as shown below.  This is
 `classpath` sources.  By default these sources are mandatory.
 
 [source,java]
-.Update the `Main` class and replace the 'buildConfig` method:
+.Update the `Main` class and replace the `buildConfig` method:
 ----
   private static Config buildConfig() {
       return Config.builder()
@@ -387,7 +387,7 @@ HelloFromFileInDirectoryConf
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the 'buildConfig` method:
+.Update the `Main` class; 1) Add new import and 2) Replace the `buildConfig` method:
 ----
 import static io.helidon.config.ConfigSources.directory;
 ...
@@ -420,7 +420,7 @@ If you have more than three sources, you need to use a `ConfigSources` class to 
 custom source list as shown below.
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the 'buildConfig` method:
+.Update the `Main` class; 1) Add new import and 2) Replace the `buildConfig` method:
 ----
 import io.helidon.config.ConfigSources;
 ...
@@ -467,7 +467,7 @@ sources:
 
 
 [source,java]
-.Update the `Main` class and replace the 'buildConfig` method:
+.Update the `Main` class and replace the `buildConfig` method:
 ----
   private static Config buildConfig() {
       return Config.loadSourcesFrom( file("meta-config.yaml")); // <1>
@@ -547,7 +547,7 @@ the precedence change.  Be sure to unset APP_GREETING after you finish testing.
 You have used Helidon to customize configuration behavior from your code using the `Config` and
 `Config.Builder` classes.  The examples in this section will demonstrate how to access that config data
 at runtime.  As discussed previously, Helidon reads configuration from a config source, which uses a config parser
-to translate the source into an in-memory tree which represents the configuration’s structure and values.
+to translate the source into an in-memory tree representing the configuration’s structure and values.
 Your application uses the `Config` object to access the in-memory tree, retrieving config data.
 
 An in-memory config tree, once loaded, is immutable, even though the data in the underlying config sources can
@@ -757,7 +757,7 @@ When the pod is created, Kubernetes will automatically create a local file withi
 configuration file that is used for the ConfigMap.  This example will create the file at `/etc/config/config-file.properties`.
 
 [source,java]
-.Update the `Main` class and replace the 'buildConfig` method:
+.Update the `Main` class and replace the `buildConfig` method:
 ----
   private static Config buildConfig() {
       return Config.builder()
