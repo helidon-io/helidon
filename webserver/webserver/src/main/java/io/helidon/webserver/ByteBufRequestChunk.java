@@ -111,7 +111,7 @@ class ByteBufRequestChunk implements DataChunk {
         }
 
         static void logOnce() {
-            // noop by design; the only purpose of this method is t;o request an initialization of this class
+            // noop by design; the only purpose of this method is to request an initialization of this class
             // and a consequent call of the static initializer
             if (IS_GRAAL_VM) {
                 if (LOGGED.compareAndSet(false, true)) {
