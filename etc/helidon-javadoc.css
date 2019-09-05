@@ -29,16 +29,12 @@ table.config tr:hover {
 }
 
 table.config td {
+    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
     vertical-align: top;
     padding: 6px;
 }
 
 table.config td:first-child {
     white-space: nowrap;
-    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
     color: #0072d4;
-}
-
-table.config td:nth-child(n+2) {
-    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
 }
