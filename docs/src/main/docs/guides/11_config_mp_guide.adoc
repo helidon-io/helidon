@@ -547,12 +547,8 @@ the precedence change.  Be sure to unset APP_GREETING after you finish testing.
 You have used Helidon to customize configuration behavior from your code using the `Config` and
 `Config.Builder` classes.  The examples in this section will demonstrate how to access that config data
 at runtime.  As discussed previously, Helidon reads configuration from a config source, which uses a config parser
-to translate the source into an in-memory tree representing the configuration’s structure and values.
+to translate the source into an immutable in-memory tree representing the configuration’s structure and values.
 Your application uses the `Config` object to access the in-memory tree, retrieving config data.
-
-An in-memory config tree, once loaded, is immutable, even though the data in the underlying config sources can
-change over time.  Your application can find out metadata about a loaded in-memory config and can track changes
-in config sources
 
 The generated project already accesses configuration data in the `GreetingProvider` class  as  follows:
 
@@ -578,15 +574,15 @@ public class GreetingProvider {
 }
 ----
 <1> This class is application scoped so a single instance of `GreetingProvider` will be shared across the entire application.
-<2> Define a thread safe reference that will refer to the message member variable.
+<2> Define a thread-safe reference that will refer to the message member variable.
 <3> The value of the configuration property `app.greeting` is injected into the `GreetingProvider`.
 constructor as a `String` parameter named `message`.
 
 
 ===== Injecting at field level
 
-You can inject configuration at the field level as shown below.  Use the `volatile` keyword to make
-this field thread safe since you cannot use `AtomicReference` with field level injection.
+You can inject configuration at the field level as shown below.  Use the `volatile` keyword
+since you cannot use `AtomicReference` with field level injection.
 
 [source,yaml]
 .Update the  `meta-config.yaml` with the following contents:
@@ -634,7 +630,7 @@ curl http://localhost:8080/greet
 
 You can inject the `Config` object into the class and access it directly as shown below.
 This object is not initialized when the `GreetingProvider` constructor is called, so you need to provide
-a method (`onStartup`) that observes `@Initialized` so you know the object is ready for
+a method (`onStartup`) that observes `@Initialized`.  This method will be called when the object is ready for
 use.
 
 [source,java]
