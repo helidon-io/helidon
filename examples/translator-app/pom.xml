@@ -26,18 +26,17 @@
         <artifactId>helidon-examples-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.examples.webserver</groupId>
-    <artifactId>helidon-examples-webserver-project</artifactId>
-    <name>Helidon WebServer Examples</name>
+    <groupId>io.helidon.examples.translator</groupId>
+    <artifactId>helidon-examples-translator-project</artifactId>
     <packaging>pom</packaging>
+    <name>Helidon Examples Translator</name>
+
+    <description>
+        A translator example app.
+    </description>
 
     <modules>
-        <module>basics</module>
-        <module>tutorial</module>
-        <module>comment-aas</module>
-        <module>static-content</module>
-        <module>jersey</module>
-        <module>opentracing</module>
-        <module>streaming</module>
+        <module>backend</module>
+        <module>frontend</module>
     </modules>
 </project>
