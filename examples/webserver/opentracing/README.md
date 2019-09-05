@@ -28,7 +28,7 @@ mvn package
 java -jar target/helidon-examples-webserver-opentracing.jar
 ```
 
-Make an HTTP request to application:
+Try the endpoint:
 ```bash
 curl http://localhost:8080/test
 ```

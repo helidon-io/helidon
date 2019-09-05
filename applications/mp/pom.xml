@@ -33,6 +33,7 @@
 
     <properties>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
+        <version.lib.microprofile-openapi-api>1.1.2</version.lib.microprofile-openapi-api>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.lib.jersey>2.29</version.lib.jersey>
     </properties>
@@ -60,6 +61,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.eclipse.microprofile.openapi</groupId>
+                <artifactId>microprofile-openapi-api</artifactId>
+                <version>${version.lib.microprofile-openapi-api}</version>
+            </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
                 <artifactId>jandex</artifactId>

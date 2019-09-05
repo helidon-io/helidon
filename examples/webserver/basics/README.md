@@ -6,18 +6,17 @@ at runtime. Each method illustrates a different WebServer concept.
 See the comments in `Main.java` for a description of the various
 methods.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
 ```
 
-## Run
-
 To see the list of methods that are available run:
 
-```
-mvn -DexampleName=help exec:java
+```bash
+java -DexampleName=help -jar target/helidon-examples-webserver-basics.jar
 ```
 
 You should see output like:
@@ -41,8 +40,7 @@ Example method names:
 You can then choose the method to execute by setting the `exampleName` system property:
 
 ```
-mvn -DexampleName=firstRouting exec:java
+java -DexampleName=firstRouting -jar target/helidon-examples-webserver-basics.jar
 ```
 
 This will start the Helidon SE WebServer using the method indicated.
-

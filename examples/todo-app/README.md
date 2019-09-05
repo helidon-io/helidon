@@ -1,5 +1,4 @@
-TODOs Demo Application
-=====================
+# TODOs Demo Application
 
 If you want to run behind a proxy, you need to configure the following in application.yaml of both services (find appropriate
 existing google-login provider configuration):
@@ -17,6 +16,7 @@ mvn -f demo-frontend/pom.xml  generate-resources docker:build
 mvn -f demo-backend/pom.xml  generate-resources docker:build
 mvn -f demo-backend/cassandra/pom.xml generate-resources docker:build
 ```
+
 and then
 ```bash
 docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin

@@ -7,5 +7,5 @@ This application demonstrates various WebServer use cases together and in its co
 With JDK8+
 ```bash
 mvn package
-java -jar helidon-examples-webserver-tutorial.jar
+java -jar target/helidon-examples-webserver-tutorial.jar
 ```

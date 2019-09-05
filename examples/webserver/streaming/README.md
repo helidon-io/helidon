@@ -10,10 +10,10 @@ to the size of the file being uploaded or downloaded.
 With JDK8+
 ```bash
 mvn package
-java -jar helidon-examples-webserver-streaming.jar
+java -jar target/helidon-examples-webserver-streaming.jar
 ```
 
-Upload a file and download it back using curl
+Upload a file and download it back with `curl`:
 ```bash
 curl --data-binary "@target/classes/large-file.bin" http://localhost:8080/upload
 curl http://localhost:8080/download

@@ -45,7 +45,7 @@ java -jar backend/target/helidon-examples-translator-backend.jar &
 java -jar frontend/target/helidon-examples-translator-frontend.jar
 ```
 
-Make an HTTP request to application:
+Try the endpoint:
 ```bash
 curl "http://localhost:8080?q=cloud&lang=czech"
 curl "http://localhost:8080?q=cloud&lang=french"
@@ -62,7 +62,7 @@ docker build -t helidon-examples-translator-frontend frontend/
 kubectl apply -f backend/app.yaml -f frontend/app.yaml
 ```
 
-Make an HTTP request to application:
+Try the endpoint:
 ```bash
 curl "http://localhost/translator?q=cloud&lang=czech"
 curl "http://localhost/translator?q=cloud&lang=french"

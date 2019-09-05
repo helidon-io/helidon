@@ -10,7 +10,7 @@ and `GET` the `Hello World!` response by accessing `http://localhost:8080/jersey
 With JDK8+
 ```bash
 mvn package
-java -jar helidon-examples-webserver-jersey.jar
+java -jar target/helidon-examples-webserver-jersey.jar
 ```
 
 Make an HTTP request to application:

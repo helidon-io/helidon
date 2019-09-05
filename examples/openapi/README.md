@@ -7,16 +7,12 @@ Helidon SE QuickStart, enhanced with OpenAPI support.
 Most of the OpenAPI document in this example comes from a static file packaged
 with the application.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar helidon-examples-openapi.jar
 ```
 
 Try the endpoints:
@@ -36,5 +32,6 @@ curl -X GET http://localhost:8080/greet/Jose
 curl -X GET http://localhost:8080/openapi
 [lengthy OpenAPI document]
 ```
+
 The output describes not only then endpoints in `GreetService` as described in
 the static file but also an endpoint contributed by the `SimpleAPIModelReader`.

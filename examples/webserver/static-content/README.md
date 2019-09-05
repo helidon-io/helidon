@@ -8,7 +8,7 @@ This application demonstrates use of the StaticContentSupport to serve static fi
 With JDK8+
 ```bash
 mvn package
-java -jar helidon-examples-webserver-static-content.jar
+java -jar target/helidon-examples-webserver-static-content.jar
 ```
 
 Open http://localhost:8080 in your browser.

@@ -7,16 +7,12 @@ sharing a common resource accessed through different context roots.
 The resource has multiple endpoints, protected with different
 levels of security.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-microprofile-mp1_1-security.jar
 ```
 
 ## Endpoints

@@ -21,10 +21,12 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-applications-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
+        <relativePath>../applications/pom.xml</relativePath>
     </parent>
+    <groupId>io.helidon</groupId>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
     <name>Helidon BOM POM</name>
@@ -292,6 +294,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
                 <artifactId>helidon-microprofile-2.2</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.bundles</groupId>
+                <artifactId>internal-test-libs</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
