@@ -37,7 +37,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
@@ -45,7 +45,6 @@ import io.helidon.tracing.config.TracingConfigUtil;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
-import reactor.core.publisher.Mono;
 
 /**
  * The basic implementation of {@link ServerResponse}.
@@ -180,8 +179,7 @@ abstract class Response implements ServerResponse {
         Span writeSpan = createWriteSpan(content);
         try {
             Flow.Publisher<DataChunk> publisher = (content == null)
-                    ? ReactiveStreamsAdapter.publisherToFlow(Mono.empty())
-                    : content;
+                    ? Single.empty() : content;
             sendLockSupport.execute(() -> {
                 Flow.Publisher<DataChunk> p = applyFilters(publisher, writeSpan);
                 sendLockSupport.contentSend = true;
@@ -204,7 +202,7 @@ abstract class Response implements ServerResponse {
     @SuppressWarnings("unchecked")
     <T> Flow.Publisher<DataChunk> createPublisherUsingWriter(T content) {
         if (content == null) {
-            return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            return Single.empty();
         }
 
         // Try to get a publisher from registered writers

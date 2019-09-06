@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import java.util.List;
 /**
  * A dummy subscriber for testing purpose.
  */
-public class TestSubscriber implements Flow.Subscriber<String> {
+class TestSubscriber<T> implements Flow.Subscriber<T> {
 
     private Flow.Subscription subcription = null;
-    private final List<String> items = new LinkedList<>();
-    private String lastItem = null;
+    private final List<T> items = new LinkedList<>();
+    private T lastItem = null;
     private Throwable lastError = null;
     private boolean complete = false;
 
@@ -50,7 +50,7 @@ public class TestSubscriber implements Flow.Subscriber<String> {
     }
 
     @Override
-    public void onNext(String item) {
+    public void onNext(T item) {
         items.add(item);
         lastItem = item;
     }
@@ -77,7 +77,7 @@ public class TestSubscriber implements Flow.Subscriber<String> {
      * Get the items accumulated by this subscriber.
      * @return list of items
      */
-    public List<String> getItems() {
+    public List<T> getItems() {
         return items;
     }
 
@@ -86,7 +86,7 @@ public class TestSubscriber implements Flow.Subscriber<String> {
      * @return last item, or {@code null} or this subscriber has not
      * received any items yet
      */
-    public String getLastItem() {
+    public T getLastItem() {
         return lastItem;
     }
 

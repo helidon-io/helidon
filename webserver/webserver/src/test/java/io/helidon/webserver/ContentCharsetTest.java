@@ -24,7 +24,6 @@ import java.util.Map;
 
 import io.helidon.common.CollectionsHelper;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.CollectionsHelper.listOf;
@@ -43,28 +42,28 @@ public class ContentCharsetTest {
     public void requestContentCharset() {
         RequestTestStub request = charset(mapOf("content-type", listOf("application/json; charset=cp1250")));
 
-        assertThat(Request.requestContentCharset(request), is(Charset.forName("cp1250")));
+        assertThat(Request.contentCharset(request), is(Charset.forName("cp1250")));
     }
 
     @Test
     public void invalidRequestContentCharset() {
         RequestTestStub request = charset(mapOf("content-type", listOf("application/json; charset=invalid-charset-name")));
 
-        assertThrows(UnsupportedCharsetException.class, () -> Request.requestContentCharset(request));
+        assertThrows(UnsupportedCharsetException.class, () -> Request.contentCharset(request));
     }
 
     @Test
     public void nonexistentCharset() {
         RequestTestStub request = charset(mapOf("content-type", listOf("application/json")));
 
-        assertThat(Request.requestContentCharset(request), is(Request.DEFAULT_CHARSET));
+        assertThat(Request.contentCharset(request), is(Request.DEFAULT_CHARSET));
     }
 
     @Test
     public void missingContentType() {
         RequestTestStub request = charset(CollectionsHelper.mapOf());
 
-        assertThat(Request.requestContentCharset(request), is(Request.DEFAULT_CHARSET));
+        assertThat(Request.contentCharset(request), is(Request.DEFAULT_CHARSET));
     }
 
     private RequestTestStub charset(Map<String, List<String>> map) {

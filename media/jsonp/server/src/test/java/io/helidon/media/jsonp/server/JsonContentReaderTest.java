@@ -25,12 +25,12 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.common.reactive.Flow.Publisher;
+import io.helidon.common.reactive.Multi;
 
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -44,11 +44,11 @@ public class JsonContentReaderTest {
 
     @Test
     public void simpleJsonObject() throws Exception {
-        Flux<DataChunk> flux = Flux.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonObject> stage = JsonSupport.create()
-                                                                 .reader()
-                                                                 .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonObject.class);
+                .reader()
+                .applyAndCast(chunks, JsonObject.class);
 
         JsonObject jsonObject = stage.toCompletableFuture().get(10, TimeUnit.SECONDS);
         assertThat(jsonObject.getJsonString("p").getString(), Is.is("val"));
@@ -56,11 +56,11 @@ public class JsonContentReaderTest {
 
     @Test
     public void incompatibleTypes() throws Exception {
-        Flux<DataChunk> flux = Flux.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonArray> stage = JsonSupport.create()
                 .reader()
-                .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonArray.class);
+                .applyAndCast(chunks, JsonArray.class);
 
         try {
             JsonArray array = stage.thenApply(o -> {
@@ -75,11 +75,11 @@ public class JsonContentReaderTest {
 
     @Test
     public void simpleJsonArray() throws Exception {
-        Flux<DataChunk> flux = Flux.just("[ \"val\" ]").map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("[ \"val\" ]").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonArray> stage = JsonSupport.create()
                 .reader()
-                .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonArray.class);
+                .applyAndCast(chunks, JsonArray.class);
 
         JsonArray array = stage.toCompletableFuture().get(10, TimeUnit.SECONDS);
         assertThat(array.getString(0), Is.is("val"));
@@ -87,11 +87,11 @@ public class JsonContentReaderTest {
 
     @Test
     public void invalidJson() throws Exception {
-        Flux<DataChunk> flux = Flux.just("{ \"p\" : \"val\" ").map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" ").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonObject> stage = JsonSupport.create()
                 .reader()
-                .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonObject.class);
+                .applyAndCast(chunks, JsonObject.class);
         try {
             stage.toCompletableFuture().get(10, TimeUnit.SECONDS);
             fail("Should have thrown an exception");

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.reactive;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,10 +26,13 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @see <a href="https://github.com/reactive-streams/reactive-streams-jvm#3.17">Reactive Streams 3.17</a>
  */
-class UnboundedSemaphore {
+public final class UnboundedSemaphore {
 
     // a synchronization primitive used to implement a semaphore logic
     private final AtomicLong atomicLong = new AtomicLong();
+
+    private UnboundedSemaphore() {
+    }
 
     /**
      * Releases {@code n} permits. If the cumulative value of the current total permits
@@ -61,7 +64,7 @@ class UnboundedSemaphore {
      * the requester is informed that this semaphore is unbounded and that any further
      * acquire will be always successful.
      */
-    long tryAcquire() {
+    public long tryAcquire() {
         return atomicLong.getAndUpdate(original -> {
             if (original == Long.MAX_VALUE) {
                 // unbounded
@@ -83,5 +86,13 @@ class UnboundedSemaphore {
      */
     long availablePermits() {
         return atomicLong.get();
+    }
+
+    /**
+     * Create a new instance.
+     * @return UnboundedSemaphore
+     */
+    public static UnboundedSemaphore create() {
+        return new UnboundedSemaphore();
     }
 }
