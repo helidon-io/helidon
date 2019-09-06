@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -50,7 +51,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private final SslContext sslContext;
     private final NettyWebServer webServer;
     private final Routing routing;
-    private final Queue<ReferenceHoldingQueue<ByteBufRequestChunk>> queues = new ConcurrentLinkedQueue<>();
+    private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
 
     HttpInitializer(SslContext sslContext, Routing routing, NettyWebServer webServer) {
         this.routing = routing;

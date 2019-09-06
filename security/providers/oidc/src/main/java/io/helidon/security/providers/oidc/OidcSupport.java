@@ -53,7 +53,7 @@ import io.helidon.webserver.Service;
  * (that contains security.providers). This class then reads the configuration for provider
  * named "oidc" or (if mutliples are configured) for the name specified.
  * Configuration options used by this class are (under security.providers[].${name}):
- * <table>
+ * <table class="config">
  * <caption>Configuration parameters</caption>
  * <tr>
  *     <th>key</th>

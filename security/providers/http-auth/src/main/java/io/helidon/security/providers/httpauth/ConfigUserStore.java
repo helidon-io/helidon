@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.httpauth;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -28,8 +29,8 @@ import io.helidon.config.Config;
 /**
  * User store loaded from configuration.
  */
-public class ConfigUserStore implements UserStore {
-    private final Map<String, User> users = new HashMap<>();
+public class ConfigUserStore implements SecureUserStore {
+    private final Map<String, ConfigUser> users = new HashMap<>();
 
     /**
      * Create an instance from config. Expects key "users" to be the current key.
@@ -51,13 +52,13 @@ public class ConfigUserStore implements UserStore {
      * </pre>
      *
      * @param config to load this user store from
-     * @return {@link UserStore} instance
+     * @return {@link io.helidon.security.providers.httpauth.SecureUserStore} instance
      */
-    public static ConfigUserStore create(Config config) {
+    public static SecureUserStore create(Config config) {
         ConfigUserStore store = new ConfigUserStore();
 
         config.asNodeList().ifPresent(configs -> configs.forEach(config1 -> {
-            User user = config1.as(ConfigUser::create).get();
+            ConfigUser user = config1.as(ConfigUser::create).get();
             store.users.put(user.login(), user);
         }));
 
@@ -69,7 +70,7 @@ public class ConfigUserStore implements UserStore {
         return Optional.ofNullable(users.get(login));
     }
 
-    private static class ConfigUser implements User {
+    static class ConfigUser implements User {
         private final Set<String> roles = new LinkedHashSet<>();
         private String login;
         private char[] password;
@@ -84,19 +85,32 @@ public class ConfigUserStore implements UserStore {
             return cu;
         }
 
+        /**
+         * @deprecated this is needed (for now) for digest authentication.
+         */
+        @Deprecated
+        char[] password() {
+            return password;
+        }
+
         @Override
         public String login() {
             return login;
         }
 
         @Override
-        public char[] password() {
-            return password;
+        public boolean isPasswordValid(char[] password) {
+            return Arrays.equals(this.password, password);
         }
 
         @Override
         public Set<String> roles() {
             return roles;
+        }
+
+        @Override
+        public Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
+            return Optional.of(DigestToken.ha1(algorithm, realm, login(), password()));
         }
 
         @Override

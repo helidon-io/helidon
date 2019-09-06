@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -234,14 +234,16 @@ class DigestToken {
         this.method = method;
     }
 
-    boolean validateLogin(char[] password) {
-        String digest = digest(password);
-
-        return digest.equals(response);
+    boolean validateLogin(SecureUserStore.User user) {
+        return user.digestHa1(realm, algorithm)
+                .map(ha1 -> {
+                    String digest = digestFromHa1(ha1);
+                    return digest.equals(response);
+                })
+                .orElse(false);
     }
 
-    String digest(char[] password) {
-        String ha1 = ha1(password);
+    String digestFromHa1(String ha1) {
         String ha2 = ha2();
 
         switch (qop) {
@@ -255,14 +257,23 @@ class DigestToken {
 
     }
 
+    String digest(char[] password) {
+        String ha1 = ha1(password);
+        return digestFromHa1(ha1);
+    }
+
     private String ha2() {
         return md5(a2());
     }
 
-    private String ha1(char[] password) {
+    static String ha1(HttpDigest.Algorithm algorithm,
+                      String realm,
+                      String username,
+                      char[] password) {
+
         switch (algorithm) {
         case MD5:
-            return md5(a1(password));
+            return md5(a1(algorithm, realm, username, password));
         //        case MD5_SESS:
         //            return md5(md5(a1(password) + ":" + nonce + ":" + cnonce));
         default:
@@ -271,14 +282,16 @@ class DigestToken {
 
     }
 
-    private String a1(char[] password) {
-        switch (algorithm) {
-        case MD5:
+    private String ha1(char[] password) {
+        return ha1(algorithm, realm, username, password);
+    }
+
+    private static String a1(HttpDigest.Algorithm algorithm, String realm, String username, char[] password) {
+        if (algorithm == HttpDigest.Algorithm.MD5) {
             //A1       = unq(username-value) ":" unq(realm-value) ":" passwd
             return username + ":" + realm + ":" + new String(password);
-        default:
-            throw new IllegalArgumentException("Only MD5 algorithm is supported");
         }
+        throw new IllegalArgumentException("Only MD5 algorithm is supported");
 
     }
 

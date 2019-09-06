@@ -73,7 +73,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * available properties for types other than {@code system-properties} and
      * {@code environment-variables} (which do not support {@code properties}
      * settings).
-     * <table>
+     * <table class="config">
      * <caption><b>Predefined Configuration Source Types</b></caption>
      * <tr>
      * <th>Source Type</th>
