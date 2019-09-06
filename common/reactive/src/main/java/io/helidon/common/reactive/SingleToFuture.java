@@ -85,9 +85,4 @@ final class SingleToFuture<T> extends CompletableFuture<T> implements Subscriber
     public boolean completeExceptionally(Throwable ex) {
         throw new UnsupportedOperationException("This future cannot be completed manually");
     }
-
-    @Override
-    public CompletableFuture<T> toCompletableFuture() {
-        return this;
-    }
 }
