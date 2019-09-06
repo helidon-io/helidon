@@ -97,7 +97,7 @@ class ByteBufRequestChunk implements DataChunk {
                                + "strongly advised to release all the RequestChunk instances "
                                + "explicitly when they're not needed.");
     }
-  
+
     /**
      * An implementation of {@link ReferenceHoldingQueue} that logs a warning
      * message once and only once.
@@ -110,10 +110,10 @@ class ByteBufRequestChunk implements DataChunk {
         }
     }
 
-  
     // one time logger is designed to produce a warning only and only once in the JVM run
     static class OneTimeLoggerHolder {
         private static final AtomicBoolean LOGGED = new AtomicBoolean();
+
         static {
             if (!IS_GRAAL_VM) {
                 logLeak();
