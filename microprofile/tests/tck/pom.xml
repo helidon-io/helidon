@@ -42,6 +42,15 @@
         <module>tck-rest-client</module>
     </modules>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api</artifactId>
+                <version>${version.lib.microprofile-metrics2-api}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
          <dependency>
             <groupId>org.testng</groupId>

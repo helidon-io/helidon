@@ -53,6 +53,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
+            <version>${version.lib.microprofile-metrics2-api}</version>
         </dependency>
     </dependencies>
 </project>

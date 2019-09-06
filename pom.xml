@@ -1074,11 +1074,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.microprofile.metrics</groupId>
-                <artifactId>microprofile-metrics-api</artifactId>
-                <version>${version.lib.microprofile-metrics2-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
                 <artifactId>microprofile-fault-tolerance-api</artifactId>
                 <version>${version.lib.microprofile-fault-tolerance-api}</version>
