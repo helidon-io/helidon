@@ -19,6 +19,7 @@ package io.helidon.microprofile.security;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
@@ -58,17 +59,16 @@ public class SecurityMpService implements MpService {
                     .build();
         }
 
+        Contexts.context().ifPresent(ctx -> ctx.register(security));
+
         Config jerseyConfig = config.get("security.jersey");
         if (jerseyConfig.get("enabled").asBoolean().orElse(true)) {
             SecurityFeature feature = SecurityFeature.builder(security)
                     .config(jerseyConfig)
                     .build();
 
-            SecurityCdiFilter cdiFilter = new SecurityCdiFilter();
-
             context.applications().forEach(app -> {
                 app.register(feature);
-                app.register(cdiFilter);
             });
         }
 

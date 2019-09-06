@@ -15,17 +15,17 @@
  */
 package io.helidon.microprofile.security;
 
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 
 /**
- * Extension to register bean {@link io.helidon.microprofile.security.SecurityContextProvider}.
+ * Extension to register bean {@link SecurityProducer}.
  */
 public class SecurityCdiExtension implements Extension {
     void registerBean(@Observes BeforeBeanDiscovery abd) {
-        abd.addAnnotatedType(SecurityContextProvider.class, "helidon-security-context-provider")
-                .add(new RequestScoped.Literal());
+        abd.addAnnotatedType(SecurityProducer.class, "helidon-security-producer")
+                .add(ApplicationScoped.Literal.INSTANCE);
     }
 }
