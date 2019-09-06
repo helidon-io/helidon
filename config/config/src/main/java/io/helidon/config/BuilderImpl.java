@@ -39,6 +39,7 @@ import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.internal.ConfigThreadFactory;
 import io.helidon.config.internal.ConfigUtils;
+import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
@@ -312,13 +313,19 @@ class BuilderImpl implements Config.Builder {
 
     private ConfigSource targetConfigSource(ConfigContext context) {
         List<ConfigSource> targetSources = new LinkedList<>();
-        if (environmentVariablesSourceEnabled) {
+
+        if (hasMapSource(ConfigSources.ENV_VARS_NAME)) {
+            envVarAliasGeneratorEnabled = true;
+        } else if (environmentVariablesSourceEnabled) {
             targetSources.add(ConfigSources.environmentVariables());
             envVarAliasGeneratorEnabled = true;
         }
-        if (systemPropertiesSourceEnabled) {
+
+        if (systemPropertiesSourceEnabled
+            && !hasMapSource(ConfigSources.SYS_PROPS_NAME)) {
             targetSources.add(ConfigSources.systemProperties());
         }
+
         if (sources != null) {
             targetSources.addAll(sources);
         } else {
@@ -333,6 +340,19 @@ class BuilderImpl implements Config.Builder {
         }
         targetConfigSource.init(context);
         return targetConfigSource;
+    }
+
+    private boolean hasMapSource(String name) {
+        if (sources != null) {
+            String qualifiedName = "[" + name + "]";
+            for (ConfigSource source : sources) {
+                if (source instanceof MapConfigSource
+                    && source.description().contains(qualifiedName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("ParameterNumber")
