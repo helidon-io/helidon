@@ -16,10 +16,11 @@
  */
 package io.helidon.microprofile.server;
 
+import java.util.Optional;
+
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.webserver.Routing;
-import java.util.Optional;
 
 /**
  * Provides {@link Routing.Builder} instances (for the default and the actual)
