@@ -112,7 +112,7 @@ hyphenated keys to be overriden.  For example, this mapping allows an environmen
 an entry key named "app.greeting".  In the same way, an environment variable named "APP_dash_GREETING" will map to
 "app-greeting".  See <<config/06_advanced-configuration.adoc,Advanced Config>> for more information.
 
-The following examples will demonstrate this precedence order.
+The following examples will demonstrate the default precedence order.
 
 ==== Default configuration resource
 
@@ -225,7 +225,7 @@ app.greeting=HelloFrom-config.properties
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new imports, 2) Replace the `Config.create()` call with `buildConfig()` , 3) Add `buildConfig` method:
+.Update the `Main` class; 1) Add new imports, 2) Replace the `Config.create()` call with `buildConfig()`, and 3) Add `buildConfig` method:
 ----
 import static io.helidon.config.ConfigSources.classpath; // <1>
 ...
@@ -263,7 +263,7 @@ curl http://localhost:8080/greet
 <1> The greeting was picked up from `config.properties`, overriding the value in `application.yaml`.
 
 NOTE: It is important to remember that configuration from all sources get merged internally.  If you have the same
-configuration property in multiple sources then only the one with highest precedence will be used at runtime.
+configuration property in multiple sources, then only the one with highest precedence will be used at runtime.
 This is true even the same property comes from sources with different formats.
 
 Swap the source order and run the test again.
@@ -325,7 +325,7 @@ import static io.helidon.config.ConfigSources.file;
           .build();
   }
 ----
-<1> Add mandatory configuration file.
+<1> Add a mandatory configuration file.
 
 [source,bash]
 .Build and run the application, then invoke the endpoint and check the response:
@@ -373,7 +373,7 @@ To fix this, use the `optional` method as shown below, then rerun the test.
 === Directory source
 
 A directory source treats every file in the directory as a key, and the file contents as the value.  The
-following example include a directory source as highest precedence.
+following example includes a directory source as highest precedence.
 
 [source,bash]
 .Create a new directory `helidon-quickstart-se/conf` then create a file named `app.greeting` in that directory with the following contents:
@@ -396,7 +396,7 @@ import static io.helidon.config.ConfigSources.directory;
           .build();
   }
 ----
-<1> Add mandatory configuration directory.
+<1> Add a mandatory configuration directory.
 
 [source,bash]
 .Build and run the application, then invoke the endpoint and check the response:
@@ -715,7 +715,7 @@ curl http://localhost:8080/greet
 
 The following example uses a Kubernetes ConfigMap to pass the configuration data to your Helidon application deployed to Kubernetes.
 When the pod is created, Kubernetes will automatically create a local file within the container that has the contents of the
-configuration file that is used for the ConfigMap.  This example will create the file at `/etc/config/config-file.properties`.
+configuration file used for the ConfigMap.  This example will create the file at `/etc/config/config-file.properties`.
 
 [source,bash]
 .Replace the app section of the `application.yaml` resource file:
