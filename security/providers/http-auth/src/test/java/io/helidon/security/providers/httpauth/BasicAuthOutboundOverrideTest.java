@@ -43,7 +43,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * TODO javadoc.
+ * Unit test for basic authentication overrides for outbound calls.
  */
 public class BasicAuthOutboundOverrideTest {
     @Test
@@ -54,7 +54,7 @@ public class BasicAuthOutboundOverrideTest {
 
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder()
-                                     .userStore(login -> Optional.empty())
+                                     .userStore((SecureUserStore) login -> Optional.empty())
                                      .build(), "http-basic-auth")
                 .build();
         SecurityContext context = security.createContext(getClass().getName() + ".testSecureClientOverride()");
