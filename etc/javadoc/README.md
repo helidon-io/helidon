@@ -32,7 +32,7 @@ OK, so if you need to add a new link to external javadocs this is what you do
    
 2. Add a new `<offlineLink>` to the javadoc plugin configuration. It should reference the property
    you just created in step 1 for the link `<url>`. The `<location>` is this directory
-   (using a convenient property) followed by the short name you used after the suffix for
+   (using a convenient property) followed by the short name you used after the prefix for
    the property defined in step #1. Following this naming convention is important! For example:
    ```
                             <offlineLink>
