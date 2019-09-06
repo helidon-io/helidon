@@ -103,7 +103,7 @@ public class MetricsCdiExtension implements Extension {
                                          counted.description(),
                                          MetricType.COUNTER,
                                          counted.unit(),
-                                         false);
+                                         counted.reusable());
             registry.counter(meta, tags(counted.tags()));
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -125,7 +125,7 @@ public class MetricsCdiExtension implements Extension {
                                          timed.description(),
                                          MetricType.TIMER,
                                          timed.unit(),
-                                        false);
+                                         timed.reusable());
             registry.timer(meta, tags(timed.tags()));
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
@@ -137,7 +137,7 @@ public class MetricsCdiExtension implements Extension {
                     concurrentGauge.description(),
                     MetricType.CONCURRENT_GAUGE,
                     concurrentGauge.unit(),
-                    false);
+                    concurrentGauge.reusable());
             registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         }

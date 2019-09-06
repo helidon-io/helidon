@@ -122,7 +122,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
               metadata.getDescription().orElse(null),
               metadata.getTypeRaw(),
               metadata.getUnit().orElse(null),
-              true);
+              metadata.isReusable());
         this.registryType = registryType;
     }
 

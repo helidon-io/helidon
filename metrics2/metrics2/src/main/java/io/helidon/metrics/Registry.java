@@ -534,7 +534,11 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
             if (!m.isReusable()) {
                 throw new IllegalArgumentException("A metric of name '" + metadata.getName()
                         + "' already registered with non-reusable metadata");
+            } else if (!metadata.isReusable()) {
+                throw new IllegalArgumentException("A metric of name '" + metadata.getName()
+                        + "' already registered with reusable metadata but a new registration requires non-reusable");
             }
+
             // Check that metadata is compatible
             if (!m.getTypeRaw().equals(metadata.getTypeRaw())) {
                 throw new IllegalArgumentException("A metric of name '" + metadata.getName()
