@@ -34,7 +34,7 @@ import io.opentracing.util.GlobalTracer;
  * and sampler-type for Jaeger).
  * <p>
  * The following table lists common configuration options that must be honored by each integration (if supported by it).
- * <table>
+ * <table class="config">
  *     <caption>Tracer Configuration Options</caption>
  *     <tr>
  *         <th>option</th>

@@ -316,6 +316,9 @@
                         <additionalJOptions combine.children="append">
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                         </additionalJOptions>
+                        <additionalOptions>
+                            <option>--add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</option>
+                        </additionalOptions>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>
@@ -1201,7 +1204,7 @@
                 <artifactId>microprofile-openapi-api</artifactId>
                 <version>${version.lib.microprofile-openapi-api}</version>
             </dependency>
-            
+
 
             <!-- Integrations related -->
             <dependency>

@@ -255,7 +255,7 @@ public final class AccessLogSupport implements Service {
 
         /**
          * The format for log entries (similar to the Apache {@code LogFormat}).
-         * <table>
+         * <table class="config">
          *     <caption>Log format elements</caption>
          *     <tr>
          *         <td>%h</td>

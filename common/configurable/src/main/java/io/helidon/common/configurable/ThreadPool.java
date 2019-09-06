@@ -92,14 +92,15 @@ public class ThreadPool extends ThreadPoolExecutor {
      * @param maxPoolSize The maximum number of threads to allow in the pool
      * @param growthThreshold The queue size above which pool growth should be considered if the pool is not fixed size.
      * @param growthRate The percentage of task submissions that should result in adding threads, expressed as a value
-     * from 0 to 100. A rate of 0 means that the pool will never grow; for all other values the rate applies only when
-     * all of the following are true:
+     * from 0 to 100. For non-zero values the rate is applied when all of the following are true:
      * <ul>
      * <li>the pool size is below the maximum, and</li>
      * <li>there are no idle threads, and</li>
      * <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
      * </ul>
-     * For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted tasks.
+     * <p></p>For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted tasks.
+     * <p>A rate of 0 selects the default {@link ThreadPoolExecutor} growth behavior: a thread is added only when a submitted
+     * task is rejected because the queue is full.
      * @param keepAliveTime When the number of threads is greater than the core, this is the maximum time that excess idle
      * threads will wait for new tasks before terminating.
      * @param keepAliveTimeUnits The units for {@code keepAliveTime}.
