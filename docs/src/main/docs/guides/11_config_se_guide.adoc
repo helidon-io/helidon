@@ -120,7 +120,7 @@ Change a configuration parameter in the default configuration resource file, `ap
 There are no environment variable or system property overrides defined.
 
 [source,bash]
-.Change `app.greeting` in `application.yaml` as follows:
+.Change `app.greeting` in `resources/application.yaml` as follows:
 ----
 app:
   greeting: HelloFrom-application.yaml
@@ -198,7 +198,7 @@ This section will show you how to use a custom configuration with various source
 
 === Full list of configuration sources
 
-Here is the full list of external config sources that use can use programmatically.
+Here is the full list of external config sources that you can use programmatically.
 
 1. Environment variables - the property is a name/value pair.
 2. Java system properties - the property is a name/value pair.
