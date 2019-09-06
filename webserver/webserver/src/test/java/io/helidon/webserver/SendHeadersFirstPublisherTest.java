@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,19 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.common.reactive.Multi;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import org.hamcrest.core.IsCollectionContaining;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import io.helidon.common.reactive.Single;
 
 /**
  * Tests {@link SendHeadersFirstPublisher}.
@@ -46,7 +45,7 @@ public class SendHeadersFirstPublisherTest {
     @Disabled // see JC-368
     @Test
     public void subscribeUnbounded() throws Exception {
-        Flow.Publisher<String> stringPublisher = ReactiveStreamsAdapter.publisherToFlow(Flux.just("a", "b", "c"));
+        Flow.Publisher<String> stringPublisher = Multi.just("a", "b", "c");
         MockTracer tracer = new MockTracer();
         MockSpan span = tracer.buildSpan("write").start();
         HashResponseHeaders headers = mock(HashResponseHeaders.class);
@@ -66,7 +65,7 @@ public class SendHeadersFirstPublisherTest {
     @Disabled // see JC-403
     @Test
     public void subscribeOnEmpty() throws Exception {
-        Flow.Publisher<String> stringPublisher = ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+        Flow.Publisher<String> stringPublisher = Single.empty();
         MockTracer tracer = new MockTracer();
         MockSpan span = tracer.buildSpan("write").start();
         HashResponseHeaders headers = mock(HashResponseHeaders.class);
@@ -85,7 +84,7 @@ public class SendHeadersFirstPublisherTest {
 
     @Test
     public void rejectSecondSubscriber() throws Exception {
-        Flow.Publisher<String> stringPublisher = ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+        Flow.Publisher<String> stringPublisher = Single.empty();
         MockTracer tracer = new MockTracer();
         MockSpan span = tracer.buildSpan("write").start();
         HashResponseHeaders headers = mock(HashResponseHeaders.class);

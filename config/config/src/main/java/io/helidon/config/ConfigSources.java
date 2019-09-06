@@ -519,7 +519,7 @@ public final class ConfigSources {
      * <p>
      * The {@code CompositeBuilder} also supports change monitoring. The
      * application can control these aspects:
-     * <table>
+     * <table class="config">
      * <caption>Application Control of Change Monitoring</caption>
      * <tr>
      * <th>Change Support Behavior</th>

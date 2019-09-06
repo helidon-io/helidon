@@ -40,7 +40,7 @@ public final class JaxRsClient {
      * Configure defaults for all clients created.
      * Configuration options:
      *
-     * <table>
+     * <table class="config">
      * <caption>Configuration parameters</caption>
      * <tr>
      *     <th>key</th>

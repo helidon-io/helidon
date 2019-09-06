@@ -64,6 +64,7 @@
                                 <dependencySourceExclude>javax.interceptor:*</dependencySourceExclude>
                                 <dependencySourceExclude>javax.enterprise.concurrent:*</dependencySourceExclude>
                                 <dependencySourceExclude>javax.el:*</dependencySourceExclude>
+                                <dependencySourceExclude>io.helidon.grpc:io.grpc</dependencySourceExclude>
                             </dependencySourceExcludes>
                             <dependencySourceIncludes>
                                 <dependencySourceInclude>io.helidon.*:*</dependencySourceInclude>
@@ -79,28 +80,52 @@
                                     <packages>io.helidon.microprofile*</packages>
                                 </group>
                                 <group>
-                                    <title>Common APIs</title>
+                                    <title>Common</title>
                                     <packages>io.helidon.common*:io.helidon.common.reactive*</packages>
                                 </group>
                                 <group>
-                                    <title>Configuration API</title>
+                                    <title>Configuration</title>
                                     <packages>io.helidon.config*</packages>
                                 </group>
                                 <group>
-                                    <title>Media Support APIs</title>
+                                    <title>Media Support</title>
                                     <packages>io.helidon.media*</packages>
                                 </group>
                                 <group>
-                                    <title>Security API</title>
+                                    <title>Security</title>
                                     <packages>io.helidon.security*</packages>
                                 </group>
                                 <group>
-                                    <title>Reactive Web Server API</title>
+                                    <title>Reactive Web Server</title>
                                     <packages>io.helidon.webserver*</packages>
                                 </group>
                                 <group>
                                     <title>Integrations</title>
                                     <packages>io.helidon.integrations*:io.helidon.service.configuration*</packages>
+                                </group>
+                                <group>
+                                    <title>gRPC</title>
+                                    <packages>io.helidon.grpc*</packages>
+                                </group>
+                                <group>
+                                    <title>Health</title>
+                                    <packages>io.helidon.health*</packages>
+                                </group>
+                                <group>
+                                    <title>Metrics</title>
+                                    <packages>io.helidon.metrics*</packages>
+                                </group>
+                                <group>
+                                    <title>Tracing</title>
+                                    <packages>io.helidon.tracing*</packages>
+                                </group>
+                                <group>
+                                    <title>Web Client</title>
+                                    <packages>io.helidon.webclient.jaxrs*</packages>
+                                </group>
+                                <group>
+                                    <title>Open API</title>
+                                    <packages>io.helidon.openapi*</packages>
                                 </group>
                             </groups>
                             <includeDependencySources>true</includeDependencySources>
@@ -133,6 +158,11 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-access-log</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -307,6 +337,11 @@
             <artifactId>helidon-tracing-jersey</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-jaeger</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- microprofile -->
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -316,6 +351,33 @@
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- gRPC -->
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-metrics</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Open API -->
+        <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -397,6 +459,11 @@
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>
                     <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-hibernate</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

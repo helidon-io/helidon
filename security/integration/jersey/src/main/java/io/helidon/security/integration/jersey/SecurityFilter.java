@@ -44,6 +44,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.reactive.OutputStreamPublisher;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.jersey.common.InvokedResource;

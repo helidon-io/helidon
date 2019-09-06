@@ -145,7 +145,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      * The caller can set values individually by invoking the method
      * corresponding to each value, or by passing a {@link Config} object with
      * keys as follows:
-     * <table>
+     * <table class="config">
      * <caption>Configuration for Setting OpenAPIConfig</caption>
      * <tr>
      * <th>Key</th>

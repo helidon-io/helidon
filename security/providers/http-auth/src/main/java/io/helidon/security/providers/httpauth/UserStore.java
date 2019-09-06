@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,22 @@
 
 package io.helidon.security.providers.httpauth;
 
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Optional;
-
-import io.helidon.common.CollectionsHelper;
 
 /**
  * Store of users for resolving httpauth and digest authentication.
+ *
+ * @deprecated This store is designed for POC - e.g. no need for better security. You can use
+ * {@link io.helidon.security.providers.httpauth.SecureUserStore} instead.
  */
 @FunctionalInterface
-public interface UserStore {
-    /**
-     * Get user based on login.
-     *
-     * @param login login of the user (as obtained from request)
-     * @return User information (empty if user is not found)
-     */
-    Optional<User> user(String login);
-
+@Deprecated
+public interface UserStore extends SecureUserStore {
     /**
      * Representation of a single user.
      */
-    interface User {
-        /**
-         * Get login name.
-         *
-         * @return login of the user
-         */
-        String login();
-
+    interface User extends SecureUserStore.User {
         /**
          * Get password of the user.
          * The password must be provided in clear text, as we may need to create a digest based on the password
@@ -54,13 +41,14 @@ public interface UserStore {
          */
         char[] password();
 
-        /**
-         * Get set of roles the user is in.
-         *
-         * @return roles of this user (or empty if not supported).
-         */
-        default Collection<String> roles() {
-            return CollectionsHelper.setOf();
+        @Override
+        default boolean isPasswordValid(char[] password) {
+            return Arrays.equals(password, password());
+        }
+
+        @Override
+        default Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
+            return Optional.of(DigestToken.ha1(algorithm, realm, login(), password()));
         }
     }
 }

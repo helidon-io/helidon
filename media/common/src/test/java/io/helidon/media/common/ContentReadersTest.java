@@ -24,10 +24,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.common.reactive.Multi;
 
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,15 +37,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ContentReadersTest {
     @Test
     void testStringReader() throws Exception {
-        Flux<DataChunk> flux = Flux.just(DataChunk.create(new byte[] {(byte) 225, (byte) 226, (byte) 227}));
+        Multi<DataChunk> chunks = Multi.just(DataChunk.create(new byte[] {(byte) 225, (byte) 226, (byte) 227}));
 
         CompletableFuture<? extends String> future =
                 ContentReaders.stringReader(Charset.forName("cp1250"))
-                        .apply(ReactiveStreamsAdapter.publisherToFlow(flux))
+                        .apply(chunks)
                         .toCompletableFuture();
 
         String s = future.get(10, TimeUnit.SECONDS);
-
         assertThat(s, is("áâă"));
     }
 
@@ -56,11 +54,10 @@ class ContentReadersTest {
         byte[] bytes = original.getBytes(StandardCharsets.UTF_8);
 
         CompletableFuture<? extends byte[]> future = ContentReaders.byteArrayReader()
-                .apply(ReactiveStreamsAdapter.publisherToFlow(Flux.just(DataChunk.create(bytes))))
+                .apply(Multi.just(DataChunk.create(bytes)))
                 .toCompletableFuture();
 
         byte[] actualBytes = future.get(10, TimeUnit.SECONDS);
-
         assertThat(actualBytes, is(bytes));
     }
 
@@ -70,13 +67,11 @@ class ContentReadersTest {
         byte[] bytes = original.getBytes(StandardCharsets.UTF_8);
 
         CompletableFuture<? extends InputStream> future = ContentReaders.inputStreamReader()
-                .apply(ReactiveStreamsAdapter.publisherToFlow(Flux.just(DataChunk.create(bytes))))
+                .apply(Multi.just(DataChunk.create(bytes)))
                 .toCompletableFuture();
 
         InputStream inputStream = future.get(10, TimeUnit.SECONDS);
-
         byte[] actualBytes = InputStreamHelper.readAllBytes(inputStream);
-
         assertThat(actualBytes, is(bytes));
     }
 }
