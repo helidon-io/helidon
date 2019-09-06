@@ -267,8 +267,8 @@ curl http://localhost:8080/greet
 ----
 <1> The greeting was picked up from `config.properties`, overriding the value in `META-INF/microprofile-config.properties`.
 
-NOTE: It is important to remember that configuration from all sources get merged internally.  If you have the same
-configuration property in multiple sources then only the one with highest precedence will be used at runtime.
+NOTE: It is important to remember that configuration from all sources is merged internally.  If you have the same
+configuration property in multiple sources, then only the one with highest precedence will be used at runtime.
 This is true even the same property comes from sources with different formats.
 
 Swap the source order and run the test again.
@@ -345,7 +345,7 @@ curl http://localhost:8080/greet
 
 NOTE: If you want the configuration file to be optional, you must use the `optional` method with `sources`,
 otherwise Helidon will generate an error during startup as shown below.  This is true for both `file` and
-`classpath` sources.  By default these sources are mandatory.
+`classpath` sources.  By default, these sources are mandatory.
 
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
