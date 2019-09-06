@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -30,7 +31,7 @@ import io.netty.buffer.ByteBuf;
  * {@link ByteBuf#release()} during {@link DataChunk#release()}.
  */
 class ByteBufRequestChunk implements DataChunk {
-
+    private static final boolean IS_GRAAL_VM = Boolean.getBoolean("com.oracle.graalvm.isaot");
     private static final Logger LOGGER = Logger.getLogger(ByteBufRequestChunk.class.getName());
     private static final AtomicLong ID_INCREMENTER = new AtomicLong(1);
 
@@ -85,6 +86,18 @@ class ByteBufRequestChunk implements DataChunk {
         }
     }
 
+    private static void logLeak() {
+        // TODO add a link to a website that explains the problem
+        LOGGER.warning("LEAK: RequestChunk.release() was not called before it was garbage collected. "
+                               + "While the Reactive WebServer is "
+                               + "designed to automatically release all the RequestChunks, it still "
+                               + "comes with a considerable performance penalty and a demand for a large "
+                               + "memory space (depending on expected throughput, it might require even more than 2GB). "
+                               + "As such the users are "
+                               + "strongly advised to release all the RequestChunk instances "
+                               + "explicitly when they're not needed.");
+    }
+
     /**
      * An implementation of {@link ReferenceHoldingQueue} that logs a warning
      * message once and only once.
@@ -97,22 +110,17 @@ class ByteBufRequestChunk implements DataChunk {
         }
     }
 
-    /**
-     * Holder class used to produce a warning log message only once in per JVM
-     * run.
-     */
-    private static class OneTimeLoggerHolder {
+    // one time logger is designed to produce a warning only and only once in the JVM run
+    static class OneTimeLoggerHolder {
+        private static final AtomicBoolean LOGGED = new AtomicBoolean();
 
         static {
-            // TODO add a link to a website that explains the problem
-            LOGGER.warning("LEAK: DataChunk.release() was not called before it was garbage collected. "
-                    + "While the Reactive WebServer is "
-                    + "designed to automatically release all the data chunks, it still "
-                    + "comes with a considerable performance penalty and a demand for a large "
-                    + "memory space (depending on expected throughput, it might require even more than 2GB). "
-                    + "As such the users are "
-                    + "strongly advised to release all the RequestChunk instances "
-                    + "explicitly when they're not needed.");
+            if (!IS_GRAAL_VM) {
+                logLeak();
+            }
+        }
+
+        private OneTimeLoggerHolder() {
         }
 
         /**
@@ -120,6 +128,13 @@ class ByteBufRequestChunk implements DataChunk {
          * static constructor that produces the log message.
          */
         static void logOnce() {
+            // noop by design; the only purpose of this method is to request an initialization of this class
+            // and a consequent call of the static initializer
+            if (IS_GRAAL_VM) {
+                if (LOGGED.compareAndSet(false, true)) {
+                    logLeak();
+                }
+            }
         }
     }
 }
