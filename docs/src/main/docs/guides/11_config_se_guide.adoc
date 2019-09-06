@@ -262,7 +262,7 @@ curl http://localhost:8080/greet
 ----
 <1> The greeting was picked up from `config.properties`, overriding the value in `application.yaml`.
 
-NOTE: It is important to remember that configuration from all sources get merged internally.  If you have the same
+NOTE: It is important to remember that configuration from all sources is merged internally.  If you have the same
 configuration property in multiple sources, then only the one with highest precedence will be used at runtime.
 This is true even the same property comes from sources with different formats.
 
@@ -340,7 +340,7 @@ curl http://localhost:8080/greet
 
 NOTE: If you want the configuration file to be optional, you must use the `optional` method with `sources`,
 otherwise Helidon will generate an error during startup as shown below.  This is true for both `file` and
-`classpath` sources.  By default these sources are mandatory.
+`classpath` sources.  By default, these sources are mandatory.
 
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
@@ -647,7 +647,7 @@ curl http://localhost:8080/greet
 Even though in-memory config trees are immutable, the config system internally records configuration source metadata that
 allows it to watch sources for changes. Your application listens for updates to the underlying config sources and
 reacts to the changes.
-See <<config/05_mutability-support, Config Mutability Support>> for a full discussion on this topic.
+See <<config/05_mutability-support.adoc,Config Mutability Support>> for a full discussion on this topic.
 The following example demonstrates how to listen and react to configuration changes.
 
 [source,bash]
@@ -880,7 +880,7 @@ kubectl delete configmap  helidon-configmap
 == Summary
 
 This guide has demonstrated how to use basic Helidon configuration features. The full configuration documentation, starting with the
-introduction section at <<config/01_introduction.adoc, Helidon Config>> has much more information including
+introduction section at <<config/01_introduction.adoc,Helidon Config>> has much more information including
 the following:
 
 - Architecture
