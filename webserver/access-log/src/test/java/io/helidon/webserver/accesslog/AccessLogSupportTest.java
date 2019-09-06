@@ -68,6 +68,10 @@ class AccessLogSupportTest {
         ServerResponse response = mock(ServerResponse.class);
         when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT);
 
+        AccessLogContext accessLogContext = mock(AccessLogContext.class);
+        when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
+        String expectedTimestamp = TimestampLogEntry.create().doApply(accessLogContext);
+
         String logRecord = accessLog.createLogRecord(request,
                                                      response,
                                                      BEGIN_TIME,
@@ -77,7 +81,7 @@ class AccessLogSupportTest {
 
         //192.168.0.104 - [18/Jun/2019:23:10:44 +0200] "GET /greet/test HTTP/1.1" 200 55 2248
 
-        String expected = REMOTE_IP + " - [03/Dec/2007:10:15:30 +0000] \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
+        String expected = REMOTE_IP + " - " + expectedTimestamp + " \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
                 STATUS_CODE + " " + CONTENT_LENGTH + " " + TIME_TAKEN_MICROS;
 
         assertThat(logRecord, is(expected));
@@ -102,6 +106,10 @@ class AccessLogSupportTest {
         ServerResponse response = mock(ServerResponse.class);
         when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT);
 
+        AccessLogContext accessLogContext = mock(AccessLogContext.class);
+        when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
+        String expectedTimestamp = TimestampLogEntry.create().doApply(accessLogContext);
+
         String logRecord = accessLog.createLogRecord(request,
                                                      response,
                                                      BEGIN_TIME,
@@ -111,7 +119,7 @@ class AccessLogSupportTest {
 
         //192.168.0.104 - [18/Jun/2019:23:10:44 +0200] "GET /greet/test HTTP/1.1" 200 55 2248
 
-        String expected = REMOTE_IP + " - - [03/Dec/2007:10:15:30 +0000] \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
+        String expected = REMOTE_IP + " - - " + expectedTimestamp + " \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
                 STATUS_CODE + " " + CONTENT_LENGTH;
 
         assertThat(logRecord, is(expected));
