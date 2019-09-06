@@ -77,7 +77,7 @@ The remainder of this document will use these formats in examples and show you h
 
 === Default configuration
 
-Helidon has an internal configuration, so you are not required to provide any configure data for your application,
+Helidon has an internal configuration, so you are not required to provide any configuration data for your application,
 though in practice you most likely would.  By default, that configuration can be overridden from three sources:
 system properties, environment variables, and  the contents of `application.yaml` in the classpath.
 For example, if you specify a custom server port in `application.yaml` then your server will listen on that port.
