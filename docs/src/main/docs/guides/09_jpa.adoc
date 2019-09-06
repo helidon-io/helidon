@@ -365,20 +365,17 @@ fully supported.
 https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm[EclipseLink
 properties].  Many are optional, but a few (detailed below) are required.
 
-<6>
-https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#target-database[This
+<6> https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#target-database[This
 property] is required when EclipseLink is the JPA provider.  It is set
 to `org.eclipse.persistence.platform.database.H2Platform` because this
 example uses the H2 database.
 
-<7>
-https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#target-server[This
+<7> https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#target-server[This
 property] is required, and when EclipseLink is the JPA provider must
 have the value
 `io.helidon.integrations.cdi.eclipselink.CDISEPlatform`.
 
-<8>
-https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#weaving[This
+<8> https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#weaving[This
 property] is required when EclipseLink is the JPA provider and must be
 set to `false`.
 
