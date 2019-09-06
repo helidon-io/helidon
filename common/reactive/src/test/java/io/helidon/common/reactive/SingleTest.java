@@ -15,15 +15,17 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
-import static org.hamcrest.CoreMatchers.equalTo;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -289,33 +291,31 @@ public class SingleTest {
     }
 
     @Test
-    public void testBadSingleToFuture() {
+    public void testBadSingleToFuture() throws InterruptedException, TimeoutException {
         Single<String> single = new Single<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 throw new IllegalStateException("foo!");
             }
         };
-        CompletableFuture<String> future = single.toFuture();
-        assertThat(future.isCompletedExceptionally(), is(equalTo(true)));
-        future.exceptionally((ex) -> {
-            assertThat(ex, is(instanceOf(IllegalStateException.class)));
-            return null;
-        });
+        try {
+            single.get(1, TimeUnit.SECONDS);
+        } catch(ExecutionException ex) {
+           assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
+        }
     }
 
     @Test
-    public void testEmptyToFuture() {
-        CompletableFuture<Object> future = Single.<Object>empty().toFuture();
-        assertThat(future.isCompletedExceptionally(), is(equalTo(true)));
-        future.exceptionally((ex) -> {
-           assertThat(ex, is(instanceOf(IllegalStateException.class)));
-           return null;
-        });
+    public void testEmptyToFuture() throws InterruptedException, TimeoutException {
+        try {
+            Single.<Object>empty().get(1, TimeUnit.SECONDS);
+        } catch(ExecutionException ex) {
+           assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
+        }
     }
 
     @Test
-    public void testToFutureDoubleOnError() throws InterruptedException, ExecutionException {
+    public void testToFutureDoubleOnError() throws InterruptedException, TimeoutException {
         Single<String> single = new Single<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
@@ -332,12 +332,11 @@ public class SingleTest {
                 });
             }
         };
-        CompletableFuture<String> future = single.toFuture();
-        assertThat(future.isCompletedExceptionally(), is(equalTo(true)));
-        future.exceptionally((ex) -> {
-            assertThat(ex, is(instanceOf(IllegalStateException.class)));
-           return null;
-        });
+        try {
+            single.get(1, TimeUnit.SECONDS);
+        } catch(ExecutionException ex) {
+           assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
+        }
     }
 
     @Test
@@ -359,28 +358,28 @@ public class SingleTest {
                 });
             }
         };
-        CompletableFuture<String> future = single.toFuture();
+        Future<String> future = single.toFuture().toCompletableFuture();
         assertThat(future.isDone(), is(equalTo(true)));
         assertThat(future.get(), is(equalTo("foo")));
     }
 
     @Test
     public void testToFutureCancel() throws InterruptedException, ExecutionException {
-        CompletableFuture<String> future = Single.just("foo").toFuture();
+        Future<String> future = Single.just("foo").toFuture().toCompletableFuture();
         assertThat(future.cancel(true), is(equalTo(false)));
         assertThat(future.get(), is(equalTo("foo")));
     }
 
     @Test
     public void testNeverToFutureCancel() throws InterruptedException, ExecutionException {
-        CompletableFuture<String> future = Single.<String>never().toFuture();
+        Future<String> future = Single.<String>never().toFuture().toCompletableFuture();
         assertThat(future.cancel(true), is(equalTo(true)));
         assertThat(future.isCancelled(), is(equalTo(true)));
     }
 
     @Test
     public void testNeverToFutureDoubleCancel() throws InterruptedException, ExecutionException {
-        CompletableFuture<String> future = Single.<String>never().toFuture();
+        Future<String> future = Single.<String>never().toFuture().toCompletableFuture();
         assertThat(future.cancel(true), is(equalTo(true)));
         assertThat(future.cancel(true), is(equalTo(true)));
         assertThat(future.isCancelled(), is(equalTo(true)));
@@ -397,9 +396,8 @@ public class SingleTest {
                 subscriber.onSubscribe(subscription2);
             }
         };
-        CompletableFuture<String> future = single.toFuture();
+        Future<String> future = single.toFuture().toCompletableFuture();
         assertThat(future.isDone(), is(equalTo(false)));
-        assertThat(future.isCompletedExceptionally(), is(equalTo(false)));
         assertThat(subscription1.canceled, is(equalTo(true)));
         assertThat(subscription2.canceled, is(equalTo(true)));
     }

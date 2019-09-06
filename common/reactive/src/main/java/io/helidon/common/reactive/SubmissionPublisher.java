@@ -35,8 +35,8 @@ import reactor.core.scheduler.Schedulers;
  * @param <T> the published item type
  * @deprecated This class will be removed in the next major release.
  */
-public class SubmissionPublisher<T> implements Flow.Publisher<T>,
-        AutoCloseable {
+@Deprecated
+public class SubmissionPublisher<T> implements Flow.Publisher<T>, AutoCloseable {
 
     private final Flux<T> flux;
     private final FluxSink<T> sink;

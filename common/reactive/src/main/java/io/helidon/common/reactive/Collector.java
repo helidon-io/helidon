@@ -34,7 +34,7 @@ public interface Collector<T, U> {
     /**
      * Get the collected items container.
      *
-     * @return T
+     * @return U
      */
     U value();
 }

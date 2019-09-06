@@ -221,7 +221,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
         if (!hasSingleSubscriber.get() && !(completed && queue.isEmpty())) {
             System.out.println("LEAK: no one registered to consume request");
 
-            // now if anyone races and wins, this subscriber is going to receive onError, and be done
+            // if anyone races and wins, this subscriber is going to receive onError, and be done
             // otherwise, this subscriber is going to release all the chunks, and anyone who
             // attempts to subscribe is going to receive onError.
             subscribe(new Subscriber<T>() {
@@ -296,37 +296,6 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
         } finally {
             reentrantLock.unlock();
         }
-    }
-
-    /**
-     * If not subscribed to, consume all the items from this publisher.
-     */
-    void drain() {
-       if (!hasSingleSubscriber.get() && !(completed && queue.isEmpty())) {
-
-          // now if anyone races and wins, this subscriber is going to receive onError, and be done
-          // otherwise, this subscriber is going to release all the chunks, and anyone who
-          // attempts to subscribe is going to receive onError.
-          subscribe(new Flow.Subscriber<DataChunk>() {
-             @Override
-             public void onSubscribe(Flow.Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-             }
-
-             @Override
-             public void onNext(DataChunk item) {
-                item.release();
-             }
-
-             @Override
-             public void onError(Throwable throwable) {
-             }
-
-             @Override
-             public void onComplete() {
-             }
-          });
-       }
     }
 
     /**

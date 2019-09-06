@@ -25,7 +25,7 @@ import io.helidon.common.reactive.Flow.Subscription;
 /**
  * {@link Single} exposed as a {@link CompletableFuture}.
  */
-final class SingleToCompletableFuture<T> extends CompletableFuture<T> implements Subscriber<T> {
+final class SingleToFuture<T> extends CompletableFuture<T> implements Subscriber<T> {
 
     private final AtomicReference<Subscription> ref = new AtomicReference<>();
 
@@ -57,7 +57,7 @@ final class SingleToCompletableFuture<T> extends CompletableFuture<T> implements
     public void onNext(T item) {
         Subscription s = ref.getAndSet(null);
         if (s != null) {
-            complete(item);
+            super.complete(item);
             s.cancel();
         }
     }
@@ -65,14 +65,29 @@ final class SingleToCompletableFuture<T> extends CompletableFuture<T> implements
     @Override
     public void onError(Throwable ex) {
         if (ref.getAndSet(null) != null) {
-            completeExceptionally(ex);
+            super.completeExceptionally(ex);
         }
     }
 
     @Override
     public void onComplete() {
         if (ref.getAndSet(null) != null) {
-            completeExceptionally(new IllegalStateException("Completed without value"));
+            super.completeExceptionally(new IllegalStateException("Completed without value"));
         }
+    }
+
+    @Override
+    public boolean complete(T value) {
+        throw new UnsupportedOperationException("This future cannot be completed manually");
+    }
+
+    @Override
+    public boolean completeExceptionally(Throwable ex) {
+        throw new UnsupportedOperationException("This future cannot be completed manually");
+    }
+
+    @Override
+    public CompletableFuture<T> toCompletableFuture() {
+        return this;
     }
 }

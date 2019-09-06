@@ -17,6 +17,10 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
@@ -57,14 +61,14 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
-     * Exposes this {@link Single} instance as a {@link CompletableFuture}. Note that if this {@link Single} completes without a
-     * value, the resulting {@link CompletableFuture} will be completed exceptionally with an {@link IllegalStateException}
+     * Exposes this {@link Single} instance as a {@link CompletionStage}. Note that if this {@link Single} completes without a
+     * value, the resulting {@link CompletionStage} will be completed exceptionally with an {@link IllegalStateException}
      *
-     * @return CompletableFuture
+     * @return CompletionStage
      */
-    default CompletableFuture<T> toFuture() {
+    default CompletionStage<T> toFuture() {
         try {
-            SingleToCompletableFuture<T> subscriber = new SingleToCompletableFuture<>();
+            SingleToFuture<T> subscriber = new SingleToFuture<>();
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {
@@ -72,6 +76,29 @@ public interface Single<T> extends Subscribable<T> {
             future.completeExceptionally(ex);
             return future;
         }
+    }
+
+    /**
+     * Short-hand for {@code  toFuture().toCompletableFuture().get()}.
+     * @return T
+     * @throws InterruptedException if the current thread was interrupted while waiting
+     * @throws ExecutionException if the future completed exceptionally
+     */
+    default T get() throws InterruptedException, ExecutionException {
+        return toFuture().toCompletableFuture().get();
+    }
+
+    /**
+     * Short-hand for {@code toFuture().toCompletableFuture().get()}.
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @return T
+     * @throws InterruptedException if the current thread was interrupted while waiting
+     * @throws ExecutionException if the future completed exceptionally
+     * @throws TimeoutException if the wait timed out
+     */
+    default T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return toFuture().toCompletableFuture().get(timeout, unit);
     }
 
     /**

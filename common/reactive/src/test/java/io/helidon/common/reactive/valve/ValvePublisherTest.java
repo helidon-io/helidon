@@ -18,6 +18,7 @@ package io.helidon.common.reactive.valve;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.reactive.Collector;
@@ -45,7 +46,7 @@ class ValvePublisherTest {
     void simpleTest() throws Exception {
         List<Integer> list = Multi.from(Valves.from(1, 2, 3, 4).toPublisher())
                 .collectList()
-                .toFuture().get();
+                .get(10, TimeUnit.SECONDS);
 
         assertThat(list, hasItems(1, 2, 3, 4));
     }
@@ -172,10 +173,10 @@ class ValvePublisherTest {
         stringTank.close();
 
         Multi<String> multi = Multi.from(stringTank.toPublisher());
-        assertThat(multi.collect(new StringCollector<>()).toFuture().get(), is("123"));
+        assertThat(multi.collect(new StringCollector<>()).get(10, TimeUnit.SECONDS), is("123"));
 
         try {
-            multi.collect(new StringCollector<>()).toFuture().get();
+            multi.collect(new StringCollector<>()).get(10, TimeUnit.SECONDS);
             fail("Should have thrown an exception!");
         } catch (ExecutionException e) {
             assertThat(e.getCause(), is(notNullValue()));
@@ -191,10 +192,10 @@ class ValvePublisherTest {
         stringTank.addAll(listOf("1", "2", "3"));
         stringTank.close();
 
-        assertThat(Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).toFuture().get(), is("123"));
+        assertThat(Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).get(10, TimeUnit.SECONDS), is("123"));
 
         try {
-            Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).toFuture().get();
+            Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).get(10, TimeUnit.SECONDS);
             fail("Should have thrown an exception!");
         } catch (ExecutionException e) {
             assertThat(e.getCause(), is(notNullValue()));
