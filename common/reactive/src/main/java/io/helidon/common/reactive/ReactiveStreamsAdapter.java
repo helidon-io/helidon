@@ -28,6 +28,7 @@ import reactor.core.publisher.Flux;
  *
  * @deprecated This class will be removed in the next major release.
  */
+@Deprecated
 public final class ReactiveStreamsAdapter {
 
     private ReactiveStreamsAdapter() {} // uninstantiable

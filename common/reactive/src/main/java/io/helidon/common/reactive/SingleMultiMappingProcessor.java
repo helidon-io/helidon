@@ -17,6 +17,7 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 
+import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Flow.Publisher;
 
 /**

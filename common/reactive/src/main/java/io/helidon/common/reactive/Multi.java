@@ -18,6 +18,7 @@ package io.helidon.common.reactive;
 import java.util.Collection;
 import java.util.List;
 
+import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
