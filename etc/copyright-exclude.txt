@@ -35,6 +35,7 @@ jaxb.index
 .vm
 src/main/proto/
 src/test/resources/keystore/
+etc/javadoc/
 conf/secrets/
 .dockerignore
 empty_file

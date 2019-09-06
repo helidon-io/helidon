@@ -214,7 +214,7 @@
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.1.0</version.plugin.javadoc>
+        <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>

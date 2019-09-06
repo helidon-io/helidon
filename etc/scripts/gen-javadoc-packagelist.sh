@@ -1,14 +1,33 @@
 #!/bin/bash -e
 #
-# This script parses the Helidon pom.xml, and extracts informtion about external javadoc links.
-# It then downloads the package-list files for those external javadocs so that we can
-# use offlineLink instead of link in the javadoc configuration. 
+# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 #
-# When you add a new external javadoc link to the Helidon pom, you run this script to
-# generate new package-list files. You then check in the new one for your new external link.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# Why jump through these hoops? Because we want building the javadocs to run offline, and
-# not go fetching these package-list files at build time. Hopefully this makes the build
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# This script parses the Helidon pom.xml, and extracts informtion about
+# external javadoc links. It then downloads the package-list files for
+# those external javadocs so that we can use offlineLink instead of
+# link in the javadoc configuration. 
+#
+# When you add a new external javadoc link to the Helidon pom, you
+# run this script to generate new package-list files. You then check
+# in the new one for your new external link.
+#
+# Why jump through these hoops? Because we want building the
+# javadocs to run offline, and  not go fetching these package-list
+# files at build time. Hopefully this makes the build
 # faster and more sable. And helps us catch errors sooner.
 #
 
