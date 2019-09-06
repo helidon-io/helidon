@@ -22,6 +22,7 @@ module io.helidon.common.reactive {
     requires org.reactivestreams;
     requires reactor.core;
     requires io.helidon.common;
+    requires io.helidon.common.mapper;
 
     exports io.helidon.common.reactive;
     exports io.helidon.common.reactive.valve;

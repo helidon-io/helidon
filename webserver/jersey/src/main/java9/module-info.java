@@ -25,6 +25,7 @@ module io.helidon.webserver.jersey {
     requires transitive io.helidon.jersey.server;
 
     requires io.helidon.common.context;
+    requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
     requires java.logging;
     requires hk2.api;
