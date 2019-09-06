@@ -200,7 +200,7 @@ This section will show you how to use a custom configuration with various source
 
 === Full list of configuration sources
 
-Here is the full list of external config sources that use can use programmatically.
+Here is the full list of external config sources that you can use programmatically.
 
 1. Java system properties - the property is a name/value pair.
 2. Environment variables - the property is a name/value pair.
