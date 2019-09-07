@@ -19,6 +19,10 @@ package io.helidon.microprofile.metrics;
 import io.helidon.config.Config;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
+
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
+
 import org.jboss.weld.exceptions.DefinitionException;
 
 import org.junit.jupiter.api.Test;
@@ -42,11 +46,11 @@ public class ReusabilityMpServiceTest {
     @Test
     public void tryToStartServerWithIllegalAnnotationReuse() throws Exception {
 
-        DefinitionException ex = assertThrows(DefinitionException.class, () -> {
+        final DefinitionException ex = assertThrows(DefinitionException.class, () -> {
             initServer(ResourceWithIllegallyReusedMetrics.class);;
         });
-
-        assertTrue(ex.getCause().getMessage().contains("already registered"));
+        assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        assertThat(ex.getCause().getMessage(), containsString("already registered"));
     }
 
     @Test
@@ -65,7 +69,8 @@ public class ReusabilityMpServiceTest {
             initServer(ResourceWithMixedReusability.class);;
         });
 
-        assertTrue(ex.getCause().getMessage().contains("already registered"));
+        assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        assertThat(ex.getCause().getMessage(), containsString("already registered"));
     }
 
 }
