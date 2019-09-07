@@ -24,7 +24,6 @@ import java.util.logging.LogManager;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import java.io.IOException;
 

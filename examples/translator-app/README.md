@@ -5,7 +5,7 @@ This application demonstrates a pseudo application composed of two microservices
 
 ## Start Zipkin
 
-In Docker:
+With Docker:
 ```bash
 docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
 ```
@@ -18,7 +18,7 @@ java -jar zipkin.jar
 
 With Kubernetes:
 ```bash
-kubectl apply -f ingress.yaml -f zipkin.yaml
+kubectl apply -f ../k8s/ingress.yaml -f ../k8s/zipkin.yaml
 ```
 
 ## Build and run
@@ -64,9 +64,9 @@ kubectl apply -f backend/app.yaml -f frontend/app.yaml
 
 Try the endpoint:
 ```bash
-curl "http://localhost/translator?q=cloud&lang=czech"
-curl "http://localhost/translator?q=cloud&lang=french"
-curl "http://localhost/translator?q=cloud&lang=italian"
+curl "http://localhost:8080/translator?q=cloud&lang=czech"
+curl "http://localhost:8080/translator?q=cloud&lang=french"
+curl "http://localhost:8080/translator?q=cloud&lang=italian"
 ```
 
-Then check out the traces at http://localhost/zipkin.
+Then check out the traces at http://localhost:8080/zipkin.

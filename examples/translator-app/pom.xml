@@ -29,7 +29,7 @@
     <groupId>io.helidon.examples.translator</groupId>
     <artifactId>helidon-examples-translator-project</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon Examples Translator</name>
+    <name>Helidon Examples Translator Demo</name>
 
     <description>
         A translator example app.

@@ -43,12 +43,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile-1.1</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-oidc</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>

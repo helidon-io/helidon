@@ -42,12 +42,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile-2.2</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>

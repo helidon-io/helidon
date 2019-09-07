@@ -17,8 +17,8 @@
 
 -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -27,32 +27,62 @@
         <version>1.2.2-SNAPSHOT</version>
         <relativePath/>
     </parent>
-    <groupId>io.helidon.examples.microprofile</groupId>
-    <artifactId>helidon-examples-microprofile-mp1_1-security</artifactId>
-    <name>Helidon Microprofile Examples MP 1.1 Security</name>
+    <groupId>io.helidon.examples.todos</groupId>
+    <artifactId>helidon-examples-todo-backend</artifactId>
+    <name>Helidon Examples TODO Demo Backend</name>
 
     <description>
-        Microprofile 1.1 example with security
+        Back-end part of the application uses Helidon MP
     </description>
 
     <properties>
-        <mainClass>io.helidon.microprofile.example.security.Main</mainClass>
+        <mainClass>io.helidon.demo.todos.backend.Main</mainClass>
+        <version.lib.cassandra>3.4.0</version.lib.cassandra>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${version.lib.cassandra}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-1.1</artifactId>
+            <artifactId>helidon-microprofile-2.2</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jandex</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-google-login</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tracing</groupId>
+            <artifactId>helidon-microprofile-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-zipkin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+        </dependency>
+        <!-- needed by cassandra -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
     </dependencies>
 

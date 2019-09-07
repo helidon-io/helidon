@@ -17,20 +17,20 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: translator-backend
+  name: helidon-examples-translator-backend
   labels:
-    app: translator-backend
+    app: helidon-examples-translator-backend
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: translator-backend
+        app: helidon-examples-translator-backend
     spec:
       containers:
       - image: helidon-examples-translator-backend:latest
         imagePullPolicy: IfNotPresent
-        name: translator-backend
+        name: helidon-examples-translator-backend
         ports:
         - containerPort: 9080
         env:
@@ -42,13 +42,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: translator-backend
+  name: helidon-examples-translator-backend
   labels:
-    app: translator-backend
+    app: helidon-examples-translator-backend
 spec:
   type: ClusterIP
   selector:
-    app: translator-backend
+    app: helidon-examples-translator-backend
   ports:
   - port: 9080
     targetPort: 9080
