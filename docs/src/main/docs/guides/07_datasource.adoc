@@ -64,9 +64,10 @@ relative paths are relative to this directory.
 
 In this guide, we'll use the H2 database.
 
-Add the following dependency to your `pom.xml`:
+Add the following dependency in your `pom.xml`:
 
 [source,xml]
+.`pom.xml`
 ----
 <dependency>
     <groupId>com.h2database</groupId>
@@ -97,9 +98,9 @@ database connections:
    Universal Connection Pool] into Helidon MP applications
 
 Each connection pool offers tradeoffs in terms of size, efficiency and
-features.  You need to pick one to use.
+features.  **You need to pick _one_ to use.**
 
-=== Add the Hikari Connection Pool to the Runtime Classpath
+=== Add the Hikari Connection Pool to the Runtime Classpath…
 
 If you choose to integrate the Hikari connection pool into your
 Helidon MP application, then add an appropriate `<dependency>`
@@ -115,7 +116,7 @@ element as a child element of the `<dependencies>` element in your
 </dependency>
 ----
 
-=== Add the Oracle Universal Connection Pool to the Runtime Classpath
+=== …Or Add the Oracle Universal Connection Pool to the Runtime Classpath
 
 If, instead, you choose to integrate the Oracle Universal Connection
 Pool into your Helidon MP application, then add an appropriate
@@ -147,7 +148,7 @@ implementation], but the principles described below are the same.  You
 can see <<microprofile/06_configuration.adoc,the Helidon MP
 configuration documentation>> for more details.
 
-=== Configure the Hikari Connection Pool
+=== Configure the Hikari Connection Pool…
 
 If you have chosen to integrate the Hikari connection pool into your
 Helidon MP application, then ensure the following YAML is present in
@@ -156,6 +157,7 @@ on the runtime classpath of your Helidon MP application by creating it
 in `src/main/resources`:
 
 [source,yaml]
+.`src/main/resources/application.yaml`
 ----
 javax:
   sql:
@@ -205,7 +207,7 @@ class] will be set to `jdbc:h2:mem:test`.  See the
 https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#initialization[HikariCP
 documentation for more details].
 
-=== Configure the Oracle Universal Connection Pool
+=== …Or Configure the Oracle Universal Connection Pool
 
 If instead you have chosen to integrate the Oracle Universal
 Connection Pool into your Helidon MP application, then ensure the
@@ -214,6 +216,7 @@ following YAML is present in your `application.yaml`, and that your
 MP application:
 
 [source,yaml]
+.`src/main/resources/application.yaml`
 ----
 javax:
   sql:
@@ -257,13 +260,14 @@ https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbc
 Now that you've included the relevant libraries and configured them
 appropriately you can use the features they enable.
 
-First, ensure your resource class imports
+First, ensure the `io.helidon.example.ds.ExampleResource` resource class imports
 http://javax-inject.github.io/javax-inject/api/javax/inject/Inject.html[`javax.inject.Inject`],
 http://javax-inject.github.io/javax-inject/api/javax/inject/Named.html[`javax.inject.Named`]
 and
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`]:
 
 [source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
 ----
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -274,6 +278,7 @@ To inject the `test` data source configured in the examples above, add
 a `DataSource` field annotated with both `@Inject` and `@Named("test")` as follows:
 
 [source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
 ----
 @Inject <1>
 @Named("test") <2>
@@ -303,9 +308,11 @@ by the `@Named` annotation, and will set this field's value to it.
 
 Now that you have a `DataSource`, you'll use it to connect to the database.
 
-First, ensure your resource class imports various `java.sql` classes:
+First, ensure the `io.heldion.example.ds.ExampleResource` resource
+class imports various `java.sql` classes:
 
 [source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
 ----
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -316,6 +323,7 @@ import java.sql.SQLException;
 Next, add a resource method that will return some text from the database:
 
 [source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
 ----
 @GET
 @Path("tables")
@@ -360,7 +368,7 @@ execute the following:
 
 [source,sh]
 ----
-java -jar target/archetype-application-name-here.jar
+java -jar target/helidon-ds.jar
 ----
 
 == Use the Application
@@ -369,7 +377,7 @@ From a command line execute the following:
 
 [source,sh]
 ----
-curl http://localhost:7001/tables
+curl http://localhost:8080/example/tables
 ----
 
 Observe that the result will be a list of database table names.
