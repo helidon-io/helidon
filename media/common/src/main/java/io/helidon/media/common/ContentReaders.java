@@ -72,7 +72,7 @@ public final class ContentReaders {
      * @return a string content reader
      */
     public static Reader<String> stringReader(Charset charset) {
-        return (chunks, type) -> readString(chunks, charset).toFuture();
+        return (chunks, type) -> readString(chunks, charset).toStage();
     }
 
     /**
@@ -83,7 +83,7 @@ public final class ContentReaders {
      * completion stage that might end exceptionally with
      */
     public static Reader<byte[]> byteArrayReader() {
-        return (publisher, clazz) -> readBytes(publisher).toFuture();
+        return (publisher, clazz) -> readBytes(publisher).toStage();
     }
 
     /**

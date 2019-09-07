@@ -43,7 +43,7 @@ public class ServerRequestReaderTest {
     public void test1() throws Exception {
         Reader<B> reader = (publisher, clazz) -> Multi.from(publisher)
                 .collectList()
-                .toFuture()
+                .toStage()
                 .thenApply(byteBuffers -> new B());
 
         CompletionStage<? extends B> apply = reader.apply(Multi.empty());
