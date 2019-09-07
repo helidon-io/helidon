@@ -288,7 +288,7 @@ public class RequestContentTest {
         request.content().registerReader(LocalDate.class,
                 (publisher, clazz) -> ContentReaders
                         .readString(publisher, Request.contentCharset(request))
-                        .toFuture()
+                        .toStage()
                         .thenApply(LocalDate::parse));
 
         CompletionStage<String> complete = request.content().as(LocalDate.class)
@@ -328,7 +328,7 @@ public class RequestContentTest {
                     .map(String::toUpperCase)
                     .collectList()
                     .map((strings -> strings.get(0)))
-                    .toFuture();
+                    .toStage();
         });
 
         CompletionStage<? extends String> complete = request.content().as(String.class);
