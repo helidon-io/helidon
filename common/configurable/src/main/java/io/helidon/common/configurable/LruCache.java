@@ -83,8 +83,12 @@ public final class LruCache<K, V> {
     public Optional<V> get(K key) {
         readLock.lock();
 
-        V value = backingMap.get(key);
-        readLock.unlock();
+        V value;
+        try {
+            value = backingMap.get(key);
+        } finally {
+            readLock.unlock();
+        }
 
         if (null == value) {
             return Optional.empty();
