@@ -19,18 +19,13 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>helidon-dbclient-project</artifactId>
-        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-examples-db-project</artifactId>
+        <groupId>io.helidon.examples.db</groupId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-dbclient-mongodb</artifactId>
-    <name>Helidon DB Client MongoDB</name>
-
-    <description>
-        Integration with MongoDB
-    </description>
+    <artifactId>helidon-examples-dbclient-common</artifactId>
 
     <dependencies>
         <dependency>
@@ -39,18 +34,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-common</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-reactivestreams</artifactId>
-            <version>1.11.0</version>
+            <groupId>io.helidon.media.jsonp</groupId>
+            <artifactId>helidon-media-jsonp-server</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

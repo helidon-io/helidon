@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.db.mongo;
+package io.helidon.examples.dbclient.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +25,7 @@ import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
 
 /**
- * Maps database statements to {@link Pokemon} class.
+ * Maps database statements to {@link io.helidon.examples.dbclient.common.Pokemon} class.
  */
 public class PokemonMapper implements DbMapper<Pokemon> {
 

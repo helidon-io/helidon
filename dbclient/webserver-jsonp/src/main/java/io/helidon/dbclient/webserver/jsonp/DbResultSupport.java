@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.db.mongo;
+package io.helidon.dbclient.webserver.jsonp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,7 +43,7 @@ import io.helidon.webserver.Service;
  * Support to write {@link io.helidon.dbclient.DbRows} directly to webserver.
  * This result support creates an array of json objects and writes them to the response entity.
  */
-public class DbResultSupport implements Service, Handler {
+public final class DbResultSupport implements Service, Handler {
 
     /** Local logger instance. */
     private static final Logger LOG = Logger.getLogger(DbResultSupport.class.getName());
@@ -51,15 +51,15 @@ public class DbResultSupport implements Service, Handler {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonWriterFactory WRITER_FACTORY = Json.createWriterFactory(Collections.emptyMap());
 
+    private DbResultSupport() {
+    }
+
     /**
      * Create a new instance to register with a webserver.
      * @return {@link io.helidon.webserver.WebServer} {@link io.helidon.webserver.Service}
      */
     public static DbResultSupport create() {
         return new DbResultSupport();
-    }
-
-    private DbResultSupport() {
     }
 
     @Override
