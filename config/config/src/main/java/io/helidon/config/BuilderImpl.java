@@ -39,7 +39,6 @@ import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.internal.ConfigThreadFactory;
 import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
@@ -48,7 +47,6 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 
-import static io.helidon.config.ConfigSources.ENV_VARS_NAME;
 import static io.helidon.config.ConfigSources.classpath;
 
 /**
@@ -98,7 +96,7 @@ class BuilderImpl implements Config.Builder {
         sources = new ArrayList<>(sourceSuppliers.size());
         sourceSuppliers.stream().map(Supplier::get).forEach(source -> {
             sources.add(source);
-            if (source.description().contains(ENV_VARS_NAME)) {
+            if (source instanceof ConfigSources.EnvironmentVariablesConfigSource) {
                 envVarAliasGeneratorEnabled = true;
             }
         });
@@ -314,7 +312,7 @@ class BuilderImpl implements Config.Builder {
     private ConfigSource targetConfigSource(ConfigContext context) {
         List<ConfigSource> targetSources = new LinkedList<>();
 
-        if (hasMapSource(ConfigSources.ENV_VARS_NAME)) {
+        if (hasSourceType(ConfigSources.EnvironmentVariablesConfigSource.class)) {
             envVarAliasGeneratorEnabled = true;
         } else if (environmentVariablesSourceEnabled) {
             targetSources.add(ConfigSources.environmentVariables());
@@ -322,7 +320,7 @@ class BuilderImpl implements Config.Builder {
         }
 
         if (systemPropertiesSourceEnabled
-            && !hasMapSource(ConfigSources.SYS_PROPS_NAME)) {
+            && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
             targetSources.add(ConfigSources.systemProperties());
         }
 
@@ -342,12 +340,10 @@ class BuilderImpl implements Config.Builder {
         return targetConfigSource;
     }
 
-    private boolean hasMapSource(String name) {
+    private boolean hasSourceType(Class<?> sourceType) {
         if (sources != null) {
-            String qualifiedName = "[" + name + "]";
             for (ConfigSource source : sources) {
-                if (source instanceof MapConfigSource
-                    && source.description().contains(qualifiedName)) {
+                if (sourceType.isAssignableFrom(source.getClass())) {
                     return true;
                 }
             }
