@@ -22,6 +22,7 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.media.jsonp.server.JsonSupport;
@@ -105,7 +106,7 @@ public final class Main {
                 .build();
 
         HealthSupport health = HealthSupport.builder()
-                .add(DbClientHealthCheck.create(dbClient))
+                .addLiveness(DbClientHealthCheck.create(dbClient))
                 .build();
 
         return Routing.builder()

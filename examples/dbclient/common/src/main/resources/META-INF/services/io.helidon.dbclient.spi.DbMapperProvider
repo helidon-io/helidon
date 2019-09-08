@@ -14,5 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.examples.db.jdbc.PokemonMapperProvider
-io.helidon.dbclient.jsonp.JsonProcessingMapperProvider
+io.helidon.examples.dbclient.common.PokemonMapperProvider
