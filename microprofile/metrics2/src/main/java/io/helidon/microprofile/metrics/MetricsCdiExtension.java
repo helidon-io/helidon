@@ -114,7 +114,7 @@ public class MetricsCdiExtension implements Extension {
                                          metered.description(),
                                          MetricType.METERED,
                                          metered.unit(),
-                                        false);
+                                         metered.reusable());
             registry.meter(meta, tags(metered.tags()));
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
