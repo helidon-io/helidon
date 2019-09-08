@@ -39,6 +39,11 @@ public abstract class AbstractPokemonService implements Service {
 
     private final DbClient dbClient;
 
+    /**
+     * Create a new pokemon service with a DB client.
+     *
+     * @param dbClient DB client to use for database operations
+     */
     protected AbstractPokemonService(DbClient dbClient) {
         this.dbClient = dbClient;
     }
@@ -62,10 +67,21 @@ public abstract class AbstractPokemonService implements Service {
                 .put("/{name}/type/{type}", this::updatePokemonType);
     }
 
+    /**
+     * The DB client associated with this service.
+     *
+     * @return DB client instance
+     */
     protected DbClient dbClient() {
         return dbClient;
     }
 
+    /**
+     * This method is left unimplemented to show differences between native statements that can be used.
+     *
+     * @param request Server request
+     * @param response Server response
+     */
     protected abstract void deleteAllPokemons(ServerRequest request, ServerResponse response);
 
     /**
@@ -180,15 +196,35 @@ public abstract class AbstractPokemonService implements Service {
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
+    /**
+     * Send a 404 status code.
+     *
+     * @param response the server response
+     * @param message entity content
+     */
     protected void sendNotFound(ServerResponse response, String message) {
         response.status(Http.Status.NOT_FOUND_404);
         response.send(message);
     }
 
+    /**
+     * Send a single DB row as JSON object.
+     *
+     * @param row row as read from the database
+     * @param response server response
+     */
     protected void sendRow(DbRow row, ServerResponse response) {
         response.send(row.as(JsonObject.class));
     }
 
+    /**
+     * Send a 500 response code and a few details.
+     *
+     * @param throwable throwable that caused the issue
+     * @param response server response
+     * @return {@code Void} so this method can be registered as a lambda
+     *      with {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}
+     */
     protected Void sendError(Throwable throwable, ServerResponse response) {
         Throwable realCause = throwable;
         if (throwable instanceof CompletionException) {
@@ -199,6 +235,5 @@ public abstract class AbstractPokemonService implements Service {
         LOGGER.log(Level.WARNING, "Failed to process request", throwable);
         return null;
     }
-
 
 }
