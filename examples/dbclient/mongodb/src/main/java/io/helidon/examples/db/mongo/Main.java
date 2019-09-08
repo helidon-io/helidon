@@ -26,6 +26,7 @@ import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.dbclient.metrics.DbCounter;
 import io.helidon.dbclient.metrics.DbTimer;
 import io.helidon.dbclient.tracing.DbClientTracing;
+import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.media.jsonp.server.JsonSupport;
@@ -74,7 +75,7 @@ public final class Main {
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =
                 ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create("mongo-db").buildAndRegister())
+                        .tracer(TracerBuilder.create("mongo-db").build())
                         .build();
 
         WebServer server = WebServer.create(serverConfig, createRouting(config));
@@ -110,7 +111,7 @@ public final class Main {
                 .build();
 
         HealthSupport health = HealthSupport.builder()
-                .add(DbClientHealthCheck.create(dbClient))
+                .addLiveness(DbClientHealthCheck.create(dbClient))
                 .build();
 
         return Routing.builder()
