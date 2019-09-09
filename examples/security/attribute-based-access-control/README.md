@@ -1,16 +1,11 @@
-
 # Helidon Security ABAC Example
 
 JAX-RS (Jersey) example for attribute based access control.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-security-abac.jar
 ```

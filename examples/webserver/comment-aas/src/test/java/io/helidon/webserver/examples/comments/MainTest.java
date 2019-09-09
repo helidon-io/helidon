@@ -28,27 +28,11 @@ import io.helidon.webserver.testsupport.TestResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link Main} class.
  */
 public class MainTest {
-
-    @Test
-    public void testShutDown() throws Exception {
-        TestResponse response = TestClient.create(Main.createRouting(true))
-                .path("/mgmt/shutdown")
-                .post();
-
-        assertEquals(Http.Status.OK_200, response.status());
-
-        CountDownLatch latch = new CountDownLatch(1);
-        response.webServer()
-                .whenShutdown()
-                .thenRun(latch::countDown);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-    }
 
     @Test
     public void argot() throws Exception {

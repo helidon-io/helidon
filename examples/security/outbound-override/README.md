@@ -4,14 +4,10 @@
 Example that propagates identity, and on one endpoint explicitly
 sets the username and password.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-security-outbound-override.jar
 ```

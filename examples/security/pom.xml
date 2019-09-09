@@ -47,5 +47,4 @@
         <module>outbound-override</module>
         <module>oidc</module>
     </modules>
-
 </project>

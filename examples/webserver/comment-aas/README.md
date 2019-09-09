@@ -11,4 +11,11 @@ mvn package
 java -jar target/helidon-examples-webserver-comment-aas.jar
 ```
 
-TODO document the try-out steps.
+Try the application:
+
+```bash
+curl http://localhost:8080/comments/java -d "I use Helidon!"
+curl http://localhost:8080/comments/java -d "I use vertx"
+curl http://localhost:8080/comments/java -d "I use spring"
+curl http://localhost:8080/comments/java
+```

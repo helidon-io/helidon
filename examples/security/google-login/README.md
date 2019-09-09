@@ -1,10 +1,9 @@
-Integration with Google login button
-===================
+# Integration with Google login button
 
 This example demonstrates Integration with Google login button on a web page.
 
-Contents
---------
+## Contents
+
 There are two examples with exactly the same behavior
 1. builder - shows how to programmatically secure application
 2. config - shows how to secure application with configuration
@@ -18,13 +17,10 @@ Update the following files with your client id (it should support http://localho
 2. src/main/resources/WEB/index.html - update the meta tag in header with name "google-signin-client_id"
 3. src/main/java/io/helidon/security/examples/google/GoogleBuilderMain.java - update the client id in builder of provider
 
+## Build and run
 
-Running the Example
--------------------
-
-1. Clone the repository
-2. If you cloned a snapshot, please run `mvn clean install -Dmaven.test.skip=true` in project root
-3. Go to the directory of example you want to run
-    - And run `mvn exec:exec` to run the default example (config based)
-    - or  run `mvn exec:exec -Dexample.main-class="io.helidon.security.examples.google.GoogleBuilderMain"` 
-    to run builder based example
+With JDK8+
+```bash
+mvn package
+java -jar target/helidon-examples-security-google-login.jar
+```
