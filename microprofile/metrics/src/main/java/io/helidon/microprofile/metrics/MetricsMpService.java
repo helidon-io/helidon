@@ -45,7 +45,7 @@ public class MetricsMpService implements MpService {
 
         MetricsSupport metricsSupport = MetricsSupport.create(metricsConfig);
 
-        RoutingBuilders routingBuilders = RoutingBuilders.createRoutingBuilders(
+        RoutingBuilders routingBuilders = RoutingBuilders.create(
                 serviceContext, metricsConfig);
 
         metricsSupport.configureVendorMetrics(null, routingBuilders.defaultRoutingBuilder());

@@ -94,7 +94,7 @@ public class HealthMpService implements MpService {
                     healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
                 });
 
-        RoutingBuilders.createRoutingBuilders(mpServiceContext, healthConfig)
+        RoutingBuilders.create(mpServiceContext, healthConfig)
                 .routingBuilder()
                 .register(builder.build());
     }

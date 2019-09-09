@@ -49,8 +49,8 @@ public interface RoutingBuilders {
      * @param componentName config key under which "routing" config might exist for the component of interest
      * @return {@code RoutingBuilders} based on the named config (or default)
      */
-    static RoutingBuilders createRoutingBuilders(MpServiceContext context, String componentName) {
-        return createRoutingBuilders(context, context.helidonConfig().get(componentName));
+    static RoutingBuilders create(MpServiceContext context, String componentName) {
+        return create(context, context.helidonConfig().get(componentName));
     }
 
     /**
@@ -61,7 +61,7 @@ public interface RoutingBuilders {
      * @param componentConfig the configuration for the calling service
      * @return {@code RoutingBuilders} based on the config (or default)
      */
-    static RoutingBuilders createRoutingBuilders(MpServiceContext context, Config componentConfig) {
+    static RoutingBuilders create(MpServiceContext context, Config componentConfig) {
         final Routing.Builder defaultRoutingBuilder = context.serverRoutingBuilder();
         final Routing.Builder actualRoutingBuilder
                 = componentConfig.get("routing")
