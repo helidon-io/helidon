@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
@@ -38,6 +39,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @RequestScoped
 public class HelloWorldResource {
     @Inject
+    private Security security;
+    @Inject
+    private SecurityContext securityContext;
+
+    @Inject
     @ConfigProperty(name = "server.static.classpath.context")
     private String context;
 
@@ -45,13 +51,12 @@ public class HelloWorldResource {
      * Public page (does not require authentication).
      * If there is pre-emptive basic auth, it will run within a user context.
      *
-     * @param securityContext Helidon security context
      * @return web page with links to other resources
      */
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Authenticated(optional = true)
-    public String getPublic(@Context SecurityContext securityContext) {
+    public String getPublic() {
         return "<html><head/><body>Hello World. This is a public page with no security "
                 + "<a href=\"helloworld/admin\">Allowed for admin only</a><br>"
                 + "<a href=\"helloworld/user\">Allowed for user only</a><br>"

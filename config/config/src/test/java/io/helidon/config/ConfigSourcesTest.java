@@ -32,13 +32,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static io.helidon.common.CollectionsHelper.mapOf;
 import static io.helidon.config.ConfigSources.DEFAULT_MAP_NAME;
 import static io.helidon.config.ConfigSources.DEFAULT_PROPERTIES_NAME;
-import static io.helidon.config.ConfigSources.ENV_VARS_NAME;
-import static io.helidon.config.ConfigSources.SYS_PROPS_NAME;
 import static io.helidon.config.ConfigSources.prefixed;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -186,13 +185,17 @@ public class ConfigSourcesTest {
     }
 
     @Test
-    public void testSystemPropertiesSourceName() {
-        assertThat(ConfigSources.systemProperties().get().description(), containsString(SYS_PROPS_NAME));
+    public void testSystemPropertiesSourceType() {
+        ConfigSource source = ConfigSources.systemProperties();
+        assertThat(source, is(instanceOf(ConfigSources.SystemPropertiesConfigSource.class)));
+        assertThat(source.description(), is("SystemPropertiesConfig"));
     }
 
     @Test
-    public void testEnvironmentVariablesSourceName() {
-        assertThat(ConfigSources.environmentVariables().get().description(), containsString(ENV_VARS_NAME));
+    public void testEnvironmentVariablesSourceType() {
+        ConfigSource source = ConfigSources.environmentVariables();
+        assertThat(source, is(instanceOf(ConfigSources.EnvironmentVariablesConfigSource.class)));
+        assertThat(source.description(), is("EnvironmentVariablesConfig"));
     }
 
     @Test

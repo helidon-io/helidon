@@ -37,7 +37,8 @@ import io.opentracing.util.GlobalTracer;
  * The JaegerTracerBuilder is a convenience builder for {@link io.opentracing.Tracer} to use with Jaeger.
  * <p>
  * <b>Unless You want to explicitly depend on Jaeger in Your code, please
- * use {@link io.helidon.tracing.TracerBuilder#create(String)} or {@link io.helidon.tracing.TracerBuilder#create(io.helidon.config.Config)} that is abstracted.</b>
+ * use {@link io.helidon.tracing.TracerBuilder#create(String)} or
+ * {@link io.helidon.tracing.TracerBuilder#create(io.helidon.config.Config)} that is abstracted.</b>
  * <p>
  * The Jaeger tracer uses environment variables and system properties to override the defaults.
  * Except for {@code protocol} and {@code service} these are honored, unless overridden in configuration
@@ -46,7 +47,7 @@ import io.opentracing.util.GlobalTracer;
  *  for details.
  * <p>
  * The following table lists jaeger specific defaults and configuration options.
- * <table>
+ * <table class="config">
  *     <caption>Tracer Configuration Options</caption>
  *     <tr>
  *         <th>option</th>
@@ -148,7 +149,7 @@ import io.opentracing.util.GlobalTracer;
  *
  * @see <a href="https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md">Jaeger configuration</a>
  */
-public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
+public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(JaegerTracerBuilder.class.getName());
 
     static final boolean DEFAULT_ENABLED = true;
@@ -175,7 +176,10 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
     private boolean enabled = DEFAULT_ENABLED;
     private boolean global = true;
 
-    private JaegerTracerBuilder() {
+    /**
+     * Default constructor, does not modify any state.
+     */
+    protected JaegerTracerBuilder() {
     }
 
     /**
@@ -328,7 +332,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
         config.get("flush-interval-ms").asLong().ifPresent(this::flushIntervalMs);
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
         config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
-        config.get("sampler-manager").asString().ifPresent(this::samplerMananger);
+        config.get("sampler-manager").asString().ifPresent(this::samplerManager);
 
         config.get("tags").detach()
                 .asMap()
@@ -351,7 +355,6 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
                     });
                 });
 
-
         config.get("global").asBoolean().ifPresent(this::registerGlobal);
 
         return this;
@@ -362,8 +365,21 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
      *
      * @param samplerManagerHostPort host and port of the sampler manager
      * @return updated builder instance
+     * @deprecated typo, please use {@link #samplerManager(String)}
      */
+    @Deprecated
     public JaegerTracerBuilder samplerMananger(String samplerManagerHostPort) {
+        this.samplerManager = samplerManagerHostPort;
+        return this;
+    }
+
+    /**
+     * The host name and port when using the remote controlled sampler.
+     *
+     * @param samplerManagerHostPort host and port of the sampler manager
+     * @return updated builder instance
+     */
+    public JaegerTracerBuilder samplerManager(String samplerManagerHostPort) {
         this.samplerManager = samplerManagerHostPort;
         return this;
     }

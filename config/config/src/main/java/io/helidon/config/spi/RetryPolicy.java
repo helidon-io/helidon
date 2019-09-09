@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public interface RetryPolicy extends Supplier<RetryPolicy> {
      * {@code retry-policy} using the following nested {@code properties}:
      * <ul>
      * <li>{@code type} - name of the retry policy implementation.
-     * <table>
+     * <table class="config">
      * <caption>Built-in Retry Policies</caption>
      * <tr>
      * <th>Name</th>

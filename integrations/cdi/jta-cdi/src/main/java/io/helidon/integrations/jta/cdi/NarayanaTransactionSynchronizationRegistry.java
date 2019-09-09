@@ -67,7 +67,7 @@ class NarayanaTransactionSynchronizationRegistry extends DelegatingTransactionSy
      * @see JTAEnvironmentBean#getTransactionSynchronizationRegistry()
      */
     @Inject
-    private NarayanaTransactionSynchronizationRegistry(final JTAEnvironmentBean jtaEnvironmentBean) {
+    NarayanaTransactionSynchronizationRegistry(final JTAEnvironmentBean jtaEnvironmentBean) {
         super(jtaEnvironmentBean == null ? null : jtaEnvironmentBean.getTransactionSynchronizationRegistry());
     }
 

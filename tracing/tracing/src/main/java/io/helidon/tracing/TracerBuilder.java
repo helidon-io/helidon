@@ -16,13 +16,10 @@
 package io.helidon.tracing;
 
 import java.net.URI;
-import java.util.Iterator;
 import java.util.Objects;
-import java.util.ServiceLoader;
 
 import io.helidon.common.Builder;
 import io.helidon.config.Config;
-import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -37,7 +34,7 @@ import io.opentracing.util.GlobalTracer;
  * and sampler-type for Jaeger).
  * <p>
  * The following table lists common configuration options that must be honored by each integration (if supported by it).
- * <table>
+ * <table class="config">
  *     <caption>Tracer Configuration Options</caption>
  *     <tr>
  *         <th>option</th>
@@ -99,7 +96,7 @@ import io.opentracing.util.GlobalTracer;
  * </pre>
  *
  * @param <T> type of the builder, used so that inherited builders returned by methods
- *           are of the correct type and contain all methods, even those not inheritec from this
+ *           are of the correct type and contain all methods, even those not inherited from this
  *           interface
  */
 @SuppressWarnings("rawtypes")
@@ -111,12 +108,8 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @return a new builder instance
      */
     static TracerBuilder<?> create(String serviceName) {
-        Iterator<TracerProvider> iterator = ServiceLoader.load(TracerProvider.class).iterator();
-        if (iterator.hasNext()) {
-            return iterator.next().createBuilder().serviceName(serviceName);
-        } else {
-            return NoOpBuilder.create().serviceName(serviceName);
-        }
+        return TracerProviderHelper.findTracerBuilder()
+                .serviceName(serviceName);
     }
 
     /**
@@ -126,12 +119,8 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @return a new builder instance
      */
     static TracerBuilder<?> create(Config config) {
-        Iterator<TracerProvider> iterator = ServiceLoader.load(TracerProvider.class).iterator();
-        if (iterator.hasNext()) {
-            return iterator.next().createBuilder().config(config);
-        } else {
-            return NoOpBuilder.create().config(config);
-        }
+        return TracerProviderHelper.findTracerBuilder()
+                .config(config);
     }
 
     /**
@@ -282,7 +271,10 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * Build and register as a global tracer.
      *
      * @return The {@link Tracer} built and registered
+     * @deprecated Use {@link #registerGlobal(boolean)} to control whether the resulting instance is
+     * registered as a {@link io.opentracing.util.GlobalTracer}.
      */
+    @Deprecated
     default Tracer buildAndRegister() {
         Tracer result = build();
         GlobalTracer.register(result);

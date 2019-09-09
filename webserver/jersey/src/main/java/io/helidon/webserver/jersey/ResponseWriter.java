@@ -29,8 +29,8 @@ import javax.ws.rs.core.MediaType;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.OutputStreamPublisher;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.ConnectionClosedException;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -77,6 +77,7 @@ class ResponseWriter implements ContainerResponseWriter {
         @Override
         public void close() throws IOException {
             try {
+                super.signalCloseComplete(null);
                 super.close();
             } catch (ConnectionClosedException e) {
                 throw new IOException("Cannot close the connection because it's already closed.", e);
@@ -134,9 +135,8 @@ class ResponseWriter implements ContainerResponseWriter {
             res.headers().put(entry.getKey(), entry.getValue());
         }
 
-        res.send(ReactiveStreamsAdapter.publisherToFlow(
-                    ReactiveStreamsAdapter.publisherFromFlow(publisher)
-                        .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), byteBuffer, true))));
+        res.send(Multi.from(publisher)
+                .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), byteBuffer, true)));
 
         return publisher;
     }

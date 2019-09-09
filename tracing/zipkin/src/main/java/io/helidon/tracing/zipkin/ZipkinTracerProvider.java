@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
+
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.Prioritized;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
 
@@ -33,6 +36,7 @@ import static io.helidon.common.CollectionsHelper.listOf;
 /**
  * Zipkin java service.
  */
+@Priority(Prioritized.DEFAULT_PRIORITY)
 public class ZipkinTracerProvider implements TracerProvider {
     // original Zipkin headers (comes from old name of Zipkin - "BigBrotherBird", or "B3")
     static final String X_B3_TRACE_ID = "x-b3-traceid";

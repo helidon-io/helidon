@@ -1,0 +1,3 @@
+org.eclipse.microprofile.config
+org.eclipse.microprofile.config.inject
+org.eclipse.microprofile.config.spi

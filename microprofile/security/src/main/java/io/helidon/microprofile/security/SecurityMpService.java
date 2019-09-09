@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.security;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
@@ -58,13 +59,17 @@ public class SecurityMpService implements MpService {
                     .build();
         }
 
+        Contexts.context().ifPresent(ctx -> ctx.register(security));
+
         Config jerseyConfig = config.get("security.jersey");
         if (jerseyConfig.get("enabled").asBoolean().orElse(true)) {
             SecurityFeature feature = SecurityFeature.builder(security)
                     .config(jerseyConfig)
                     .build();
 
-            context.applications().forEach(app -> app.register(feature));
+            context.applications().forEach(app -> {
+                app.register(feature);
+            });
         }
 
         Config webServerConfig = config.get("security.web-server");

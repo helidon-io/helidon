@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,20 +24,29 @@ import javax.ws.rs.core.FeatureContext;
  * Integration of Security module with Jersey clients.
  * If you want to use this class, please inject it as a context and then
  * register it on your {@link javax.ws.rs.client.Client}.
+ *
+ * @deprecated replaced with {@code io.helidon.security.integration.jersey.client.ClientSecurity} for constants
+ *      the feature is no longer needed to configure security
  */
+@Deprecated
 public final class ClientSecurityFeature implements Feature {
 
     /**
      * Property name for security context. Set this with
      * {@link javax.ws.rs.client.Invocation.Builder#property(String, Object)}, obtained
      * through {@link javax.ws.rs.client.WebTarget#request()}
+     *
+     * @deprecated use {@code ClientSecurity} constants instead
      */
+    @Deprecated
     public static final String PROPERTY_CONTEXT = "io.helidon.security.jersey.SecureClient.context";
     /**
      * Property name for outbound security provider name. Set this with
      * {@link javax.ws.rs.client.Invocation.Builder#property(String, Object)},
      * obtained
      * through {@link javax.ws.rs.client.WebTarget#request()}
+     *
+     * @deprecated use {@code ClientSecurity} constants instead
      */
     public static final String PROPERTY_PROVIDER = "io.helidon.security.jersey.SecureClient.explicitProvider";
 

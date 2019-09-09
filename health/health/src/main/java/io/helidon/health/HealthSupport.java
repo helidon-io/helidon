@@ -61,6 +61,7 @@ public final class HealthSupport implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
+    private final boolean enabled;
     private final String webContext;
     private final List<HealthCheck> allChecks = new LinkedList<>();
     private final List<HealthCheck> livenessChecks = new LinkedList<>();
@@ -70,30 +71,42 @@ public final class HealthSupport implements Service {
     private final Set<String> excludedHealthChecks;
 
     private HealthSupport(Builder builder) {
+        this.enabled = builder.enabled;
         this.webContext = builder.webContext;
-        builder.allChecks
-                .stream()
-                .filter(health -> !builder.excludedClasses.contains(health.getClass()))
-                .forEach(allChecks::add);
 
-        builder.readinessChecks
-                .stream()
-                .filter(health -> !builder.excludedClasses.contains(health.getClass()))
-                .forEach(readinessChecks::add);
+        if (enabled) {
+            builder.allChecks
+                    .stream()
+                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
+                    .forEach(allChecks::add);
 
-        builder.livenessChecks
-                .stream()
-                .filter(health -> !builder.excludedClasses.contains(health.getClass()))
-                .forEach(livenessChecks::add);
+            builder.readinessChecks
+                    .stream()
+                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
+                    .forEach(readinessChecks::add);
 
-        this.includedHealthChecks = new HashSet<>(builder.includedHealthChecks);
-        this.excludedHealthChecks = new HashSet<>(builder.excludedHealthChecks);
+            builder.livenessChecks
+                    .stream()
+                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
+                    .forEach(livenessChecks::add);
 
-        includeAll = includedHealthChecks.isEmpty();
+            this.includedHealthChecks = new HashSet<>(builder.includedHealthChecks);
+            this.excludedHealthChecks = new HashSet<>(builder.excludedHealthChecks);
+
+            includeAll = includedHealthChecks.isEmpty();
+        } else {
+            this.includeAll = true;
+            this.includedHealthChecks = Collections.emptySet();
+            this.excludedHealthChecks = Collections.emptySet();
+        }
     }
 
     @Override
     public void update(Routing.Rules rules) {
+        if (!enabled) {
+            // do not register anything if health check is disabled
+            return;
+        }
         rules.get(webContext + "[/{*}]", JsonSupport.create())
                 .get(webContext, this::callAll)
                 .get(webContext + "/live", this::callLiveness)
@@ -235,6 +248,7 @@ public final class HealthSupport implements Service {
         private final Set<String> includedHealthChecks = new HashSet<>();
         private final Set<String> excludedHealthChecks = new HashSet<>();
         private String webContext = DEFAULT_WEB_CONTEXT;
+        private boolean enabled = true;
 
         private Builder() {
         }
@@ -352,6 +366,7 @@ public final class HealthSupport implements Service {
          * @return updated builder instance
          */
         public Builder config(Config config) {
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("web-context").asString().ifPresent(this::webContext);
             config.get("include").asList(String.class).ifPresent(list -> {
                 list.forEach(this::addIncluded);
@@ -404,6 +419,17 @@ public final class HealthSupport implements Service {
                 this.readinessChecks.add(check);
             }
 
+            return this;
+        }
+
+        /**
+         * HealthSupport can be disabled by invoking this method.
+         *
+         * @param enabled whether to enable the health support (defaults to {@code true})
+         * @return updated builder instance
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
             return this;
         }
     }

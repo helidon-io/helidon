@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,8 @@ import io.opentracing.Tracer;
  * @see #builder()
  * @see #create(Config)
  */
-public final class Security {
+// class cannot be final, so CDI can create a proxy for it
+public class Security {
     /**
      * Integration should add a special header to each request. The value will contain the original
      * URI as was issued - for HTTP this is the relative URI including query parameters.
