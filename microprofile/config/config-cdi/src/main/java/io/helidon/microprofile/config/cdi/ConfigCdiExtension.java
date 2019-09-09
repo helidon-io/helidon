@@ -165,19 +165,21 @@ public class ConfigCdiExtension implements Extension {
     private <X> void harvestConfigPropertyInjectionPointsFromEnabledObserverMethod(@Observes ProcessObserverMethod<?, X> event,
                                                                                    BeanManager beanManager) {
         AnnotatedMethod<X> annotatedMethod = event.getAnnotatedMethod();
-        List<AnnotatedParameter<X>> annotatedParameters = annotatedMethod.getParameters();
-        if (annotatedParameters != null && annotatedParameters.size() > 1) {
-            for (AnnotatedParameter<?> annotatedParameter : annotatedParameters) {
-                if (annotatedParameter != null
-                    && !annotatedParameter.isAnnotationPresent(Observes.class)) {
-                    InjectionPoint injectionPoint = beanManager.createInjectionPoint(annotatedParameter);
-                    Type type = injectionPoint.getType();
-                    Set<Annotation> qualifiers = injectionPoint.getQualifiers();
-                    assert qualifiers != null;
-                    for (Annotation qualifier : qualifiers) {
-                        if (qualifier instanceof ConfigQualifier) {
-                            ipConfigs.add(new IpConfig((ConfigQualifier) qualifier, type));
-                            break;
+        if (annotatedMethod != null) {
+            List<AnnotatedParameter<X>> annotatedParameters = annotatedMethod.getParameters();
+            if (annotatedParameters != null && annotatedParameters.size() > 1) {
+                for (AnnotatedParameter<?> annotatedParameter : annotatedParameters) {
+                    if (annotatedParameter != null
+                        && !annotatedParameter.isAnnotationPresent(Observes.class)) {
+                        InjectionPoint injectionPoint = beanManager.createInjectionPoint(annotatedParameter);
+                        Type type = injectionPoint.getType();
+                        Set<Annotation> qualifiers = injectionPoint.getQualifiers();
+                        assert qualifiers != null;
+                        for (Annotation qualifier : qualifiers) {
+                            if (qualifier instanceof ConfigQualifier) {
+                                ipConfigs.add(new IpConfig((ConfigQualifier) qualifier, type));
+                                break;
+                            }
                         }
                     }
                 }
