@@ -17,6 +17,7 @@ package io.helidon.dbclient.webserver.jsonp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -50,6 +51,10 @@ public final class DbResultSupport implements Service, Handler {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonWriterFactory WRITER_FACTORY = Json.createWriterFactory(Collections.emptyMap());
+    private static final byte[] EMPTY_JSON_BYTES = "[]".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] ARRAY_JSON_END_BYTES = "]".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] ARRAY_JSON_BEGIN_BYTES = "[".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] COMMA_BYTES = ",".getBytes(StandardCharsets.UTF_8);
 
     private DbResultSupport() {
     }
@@ -140,13 +145,13 @@ public final class DbResultSupport implements Service, Handler {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         if (first) {
                             try {
-                                baos.write("[".getBytes());
+                                baos.write(ARRAY_JSON_BEGIN_BYTES);
                             } catch (IOException ignored) {
                             }
                             first = false;
                         } else {
                             try {
-                                baos.write(",".getBytes());
+                                baos.write(COMMA_BYTES);
                             } catch (IOException ignored) {
                             }
                         }
@@ -166,9 +171,9 @@ public final class DbResultSupport implements Service, Handler {
                         LOG.info("onComplete");
 
                         if (first) {
-                            subscriber.onNext(DataChunk.create("[]".getBytes()));
+                            subscriber.onNext(DataChunk.create(EMPTY_JSON_BYTES));
                         } else {
-                            subscriber.onNext(DataChunk.create("]".getBytes()));
+                            subscriber.onNext(DataChunk.create(ARRAY_JSON_END_BYTES));
                         }
                         subscriber.onComplete();
                     }
