@@ -33,13 +33,13 @@ public interface RoutingBuilders {
      *
      * @return the default {@code Routing.Builder} for the component
      */
-    Routing.Builder defaultBuilder();
+    Routing.Builder defaultRoutingBuilder();
 
     /**
      *
      * @return the actual {@code Routing.Builder} for the component; might be the default
      */
-    Routing.Builder builder();
+    Routing.Builder routingBuilder();
 
     /**
      * Prepares the default and actual {@link Routing.Builder} instances based
@@ -49,8 +49,8 @@ public interface RoutingBuilders {
      * @param componentName config key under which "routing" config might exist for the component of interest
      * @return {@code RoutingBuilders} based on the named config (or default)
      */
-    static RoutingBuilders newRoutingBuilders(MpServiceContext context, String componentName) {
-        return newRoutingBuilders(context, context.helidonConfig().get(componentName));
+    static RoutingBuilders createRoutingBuilders(MpServiceContext context, String componentName) {
+        return createRoutingBuilders(context, context.helidonConfig().get(componentName));
     }
 
     /**
@@ -61,7 +61,7 @@ public interface RoutingBuilders {
      * @param componentConfig the configuration for the calling service
      * @return {@code RoutingBuilders} based on the config (or default)
      */
-    static RoutingBuilders newRoutingBuilders(MpServiceContext context, Config componentConfig) {
+    static RoutingBuilders createRoutingBuilders(MpServiceContext context, Config componentConfig) {
         final Routing.Builder defaultRoutingBuilder = context.serverRoutingBuilder();
         final Routing.Builder actualRoutingBuilder
                 = componentConfig.get("routing")
@@ -79,30 +79,5 @@ public interface RoutingBuilders {
                         // use default server routing
                         .orElse(defaultRoutingBuilder);
         return new RoutingBuildersImpl(defaultRoutingBuilder, actualRoutingBuilder);
-    }
-
-    /**
-     * Package-private implementation of the {@code RoutingBuilders} interface.
-     */
-    class RoutingBuildersImpl implements RoutingBuilders {
-
-        private final Routing.Builder defaultBuilder;
-        private final Routing.Builder effectiveBuilder;
-
-        private RoutingBuildersImpl(Routing.Builder defaultBuilder,
-                Routing.Builder effectiveBuilder) {
-            this.defaultBuilder = defaultBuilder;
-            this.effectiveBuilder = effectiveBuilder;
-        }
-
-        @Override
-        public Routing.Builder defaultBuilder() {
-            return defaultBuilder;
-        }
-
-        @Override
-        public Routing.Builder builder() {
-            return effectiveBuilder;
-        }
     }
 }

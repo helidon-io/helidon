@@ -45,6 +45,6 @@ public class OpenAPIMpService implements MpService {
             throw new RuntimeException(ex);
         }
 
-        openAPISupport.configureEndpoint(RoutingBuilders.newRoutingBuilders(context, "openapi").builder());
+        openAPISupport.configureEndpoint(RoutingBuilders.createRoutingBuilders(context, "openapi").routingBuilder());
     }
 }

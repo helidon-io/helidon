@@ -45,12 +45,12 @@ public class MetricsMpService implements MpService {
 
         MetricsSupport metricsSupport = MetricsSupport.create(metricsConfig);
 
-        RoutingBuilders routingBuilders = RoutingBuilders.newRoutingBuilders(
+        RoutingBuilders routingBuilders = RoutingBuilders.createRoutingBuilders(
                 serviceContext, metricsConfig);
 
-        metricsSupport.configureVendorMetrics(null, routingBuilders.defaultBuilder());
+        metricsSupport.configureVendorMetrics(null, routingBuilders.defaultRoutingBuilder());
         vendorMetricsAdded.add("@default");
-        metricsSupport.configureEndpoint(routingBuilders.builder());
+        metricsSupport.configureEndpoint(routingBuilders.routingBuilder());
 
         // now we may have additional sockets we want to add vendor metrics to
         metricsConfig.get("vendor-metrics-routings")
