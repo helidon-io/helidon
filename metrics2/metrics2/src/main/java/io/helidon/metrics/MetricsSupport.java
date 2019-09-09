@@ -265,7 +265,7 @@ public final class MetricsSupport implements Service {
     static JsonObject toJsonMeta(Registry registry) {
         return toJson((builder, entry) -> {
             final MetricID metricID = entry.getKey();
-            final MetricImpl metric = entry.getValue();
+            final HelidonMetric metric = entry.getValue();
             final List<MetricID> sameNamedIDs = registry.metricIDsForName(metricID.getName());
             metric.jsonMeta(builder, sameNamedIDs);
                 }, registry);
@@ -286,7 +286,7 @@ public final class MetricsSupport implements Service {
     }
 
     private static JsonObject toJson(
-            BiConsumer<JsonObjectBuilder, ? super Map.Entry<MetricID, MetricImpl>> accumulator,
+            BiConsumer<JsonObjectBuilder, ? super Map.Entry<MetricID, HelidonMetric>> accumulator,
             Registry registry) {
 
         return registry.stream()

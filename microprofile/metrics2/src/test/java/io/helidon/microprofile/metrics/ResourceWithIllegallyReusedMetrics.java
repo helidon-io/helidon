@@ -21,7 +21,8 @@ import javax.ws.rs.Path;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 /**
- *
+ * Test class that should trigger failures due to trying to reuse an otherwise
+ * consistent metric that forbids reuse. Annotations have reuse disabled by default.
  */
 public class ResourceWithIllegallyReusedMetrics {
 

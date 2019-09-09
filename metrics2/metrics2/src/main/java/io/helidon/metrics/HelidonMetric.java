@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.json.JsonObjectBuilder;
 
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 
@@ -65,4 +66,11 @@ interface HelidonMetric extends Metric {
      * @return Name for metric.
      */
     String prometheusNameWithUnits(MetricID metricID);
+
+    /**
+     * Returns the metadata associated with this metric.
+     *
+     * @return the metric's {@link Metadata}
+     */
+    Metadata metadata();
 }

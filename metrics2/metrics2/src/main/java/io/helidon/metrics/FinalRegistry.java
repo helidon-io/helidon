@@ -83,8 +83,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Counter counter(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
-                .map(Counter.class::cast)
+        return delegate.getOptionalMetric(name, HelidonCounter.class, tags)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
@@ -105,8 +104,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Histogram histogram(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
-                .map(Histogram.class::cast)
+        return delegate.getOptionalMetric(name, HelidonHistogram.class, tags)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
@@ -127,9 +125,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Meter meter(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
-                .map(Meter.class::cast)
-                .orElseThrow(() -> cannotRegister(name));
+        return delegate.meter(name, tags);
     }
 
     @Override
@@ -149,8 +145,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Timer timer(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
-                .map(Timer.class::cast)
+        return delegate.getOptionalMetric(name, HelidonTimer.class, tags)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
@@ -171,8 +166,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
-                .map(ConcurrentGauge.class::cast)
+        return delegate.getOptionalMetric(name, HelidonConcurrentGauge.class, tags)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
@@ -272,7 +266,7 @@ final class FinalRegistry extends Registry {
     }
 
     @Override
-    public Stream<Map.Entry<MetricID, MetricImpl>> stream() {
+    public Stream<Map.Entry<MetricID, HelidonMetric>> stream() {
         return delegate.stream();
     }
 

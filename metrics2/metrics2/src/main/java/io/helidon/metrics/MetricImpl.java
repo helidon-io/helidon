@@ -43,7 +43,7 @@ import org.eclipse.microprofile.metrics.Tag;
 /**
  * Base for our implementations of various metrics.
  */
-abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
+abstract class MetricImpl implements HelidonMetric {
     static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
@@ -115,14 +115,10 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     }
 
     private final String registryType;
+    private final Metadata metadata;
 
     MetricImpl(String registryType, Metadata metadata) {
-        super(metadata.getName(),
-              metadata.getDisplayName(),
-              metadata.getDescription().orElse(null),
-              metadata.getTypeRaw(),
-              metadata.getUnit().orElse(null),
-              metadata.isReusable());
+        this.metadata = metadata;
         this.registryType = registryType;
     }
 
@@ -141,14 +137,24 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     }
 
     @Override
+    public String getName() {
+        return metadata.getName();
+    }
+
+    @Override
+    public Metadata metadata() {
+        return metadata;
+    }
+
+    @Override
     public void jsonMeta(JsonObjectBuilder builder, List<MetricID> metricIDs) {
         JsonObjectBuilder metaBuilder =
                 new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());
 
-        addNonEmpty(metaBuilder, "unit", getUnit().orElse(null));
-        addNonEmpty(metaBuilder, "type", getType());
-        addNonEmpty(metaBuilder, "description", getDescription().orElse(null));
-        addNonEmpty(metaBuilder, "displayName", getDisplayName());
+        addNonEmpty(metaBuilder, "unit", metadata.getUnit().orElse(null));
+        addNonEmpty(metaBuilder, "type", metadata.getType());
+        addNonEmpty(metaBuilder, "description", metadata.getDescription().orElse(null));
+        addNonEmpty(metaBuilder, "displayName", metadata.getDisplayName());
         if (metricIDs != null) {
             for (MetricID metricID : metricIDs) {
                 boolean tagAdded = false;
@@ -203,14 +209,14 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         sb.append("# HELP ")
                 .append(nameWithUnits)
                 .append(" ")
-                .append(getDescription().orElse(""))
+                .append(metadata.getDescription().orElse(""))
                 .append('\n');
     }
 
     @Override
     public void prometheusData(StringBuilder sb, MetricID metricID) {
         String nameWithUnits = prometheusNameWithUnits(metricID);
-        prometheusType(sb, nameWithUnits, getType());
+        prometheusType(sb, nameWithUnits, metadata.getType());
         prometheusHelp(sb, nameWithUnits);
         sb.append(nameWithUnits).append(prometheusTags(metricID.getTags())).append(" ").append(prometheusValue()).append('\n');
     }
@@ -301,7 +307,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
 
     // for Gauge and Histogram - must convert
     Units getUnits() {
-        String unit = getUnit().get();
+        String unit = metadata.getUnit().get();
         if ((null == unit) || unit.isEmpty() || MetricUnits.NONE.equals(unit)) {
             return new Units(null);
         }

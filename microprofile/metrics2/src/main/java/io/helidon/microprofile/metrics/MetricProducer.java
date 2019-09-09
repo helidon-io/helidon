@@ -46,16 +46,33 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 public class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
-        return metric == null ? new HelidonMetadata(getName(ip),
+        return metric == null ? HelidonMetadata.newFlexible(getName(ip),
                                              "",
                                              "",
                                              metricType,
-                                             MetricUnits.NONE)
-                : new HelidonMetadata(getName(metric, ip),
+                                             chooseDefaultUnit(metricType))
+                : HelidonMetadata.newFlexible(getName(metric, ip),
                                metric.displayName(),
                                metric.description(),
                                metricType,
                                metric.unit());
+    }
+
+    private static String chooseDefaultUnit(MetricType metricType) {
+        String result;
+        switch (metricType) {
+            case METERED:
+                result = MetricUnits.PER_SECOND;
+                break;
+
+            case TIMER:
+                result = MetricUnits.NANOSECONDS;
+                break;
+
+            default:
+                result = MetricUnits.NONE;
+        }
+        return result;
     }
 
     private static Tag[] tags(Metric metric) {
