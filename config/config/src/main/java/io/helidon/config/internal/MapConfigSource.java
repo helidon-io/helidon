@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,12 +55,11 @@ public class MapConfigSource implements ConfigSource {
 
     @Override
     public String description() {
-        return ConfigSource.super.description() + "[" + mapSourceName + "]";
+        return ConfigSource.super.description() + (mapSourceName.isEmpty() ? "" : "[" + mapSourceName + "]");
     }
 
     @Override
     public Optional<ObjectNode> load() {
         return Optional.of(ConfigUtils.mapToObjectNode(map, strict));
     }
-
 }

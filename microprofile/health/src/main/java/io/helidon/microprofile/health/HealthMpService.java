@@ -19,6 +19,7 @@ package io.helidon.microprofile.health;
 import java.lang.annotation.Annotation;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
 
@@ -37,6 +38,8 @@ import org.eclipse.microprofile.health.Readiness;
  * Helidon Microprofile Server extension for Health checks.
  */
 public class HealthMpService implements MpService {
+    private static final Logger LOGGER = Logger.getLogger(HealthMpService.class.getName());
+
     private static final Health HEALTH_LITERAL = new Health() {
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -61,6 +64,12 @@ public class HealthMpService implements MpService {
     @Override
     public void configure(MpServiceContext mpServiceContext) {
         Config healthConfig = mpServiceContext.helidonConfig().get("health");
+
+        if (!healthConfig.get("enabled").asBoolean().orElse(true)) {
+            LOGGER.finest("Health support is disabled in configuration");
+            return;
+        }
+
         HealthSupport.Builder builder = HealthSupport.builder()
                 .config(healthConfig);
 

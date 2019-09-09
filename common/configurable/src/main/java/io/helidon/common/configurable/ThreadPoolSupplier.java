@@ -290,9 +290,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         /**
          * Load all properties for this thread pool from configuration.
          * <p>
-         * <table>
-         * <caption style="text-align: left; font-weight: bold; font-size:16px; margin-bottom: 12px;">
-         *     Optional Configuration Parameters</caption>
+         * <table class="config">
+         * <caption>Optional Configuration Parameters</caption>
          * <tr>
          *     <th>key</th>
          *     <th>default value</th>
@@ -336,9 +335,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * </tr>
          * </table>
          * <p>
-         * <table>
-         * <caption style="text-align: left; font-weight: bold; font-size:16px; margin-bottom: 12px;">Experimental Configuration
-         * Parameters (<em>subject to change</em>)</caption>
+         * <table class="config">
+         * <caption>Experimental Configuration Parameters (<em>subject to change</em>)</caption>
          * <tr>
          *     <th>key</th>
          *     <th>default value</th>
@@ -350,17 +348,19 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          *     <td>The queue size above which pool growth will be considered if the pool is not fixed size.</td>
          * </tr>
          * <tr>
-         *     <td style="vertical-align: top;">growth-rate</td>
-         *     <td style="vertical-align: top;">5</td>
-         *     <td>The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100.
-         *     This rate applies only when all of the following are true:
+         *     <td>growth-rate</td>
+         *     <td>5</td>
+         *     <td>The percentage of task submissions that should result in adding a thread, expressed as a value from 0 to 100.
+         *     For non-zero values the rate is applied when all of the following are true:
          *     <ul>
          *     <li>the pool size is below the maximum, and</li>
          *     <li>there are no idle threads, and</li>
          *     <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
          *     </ul>
-         *     For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
-         *     tasks.</td>
+         *     <p>For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
+         *     tasks.
+         *     <p>A rate of 0 selects the default {@link ThreadPoolExecutor} growth behavior: a thread is added only when a
+         *     submitted task is rejected because the queue is full.</td>
          * </tr>
          * </table>
          *

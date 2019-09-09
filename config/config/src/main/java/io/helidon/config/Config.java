@@ -52,7 +52,7 @@ import io.helidon.config.spi.OverrideSource;
  * implementing interfaces defined in the SPI, by explicitly constructing the
  * {@link Builder} which assembles the {@code Config}, and by using other
  * classes provided by the config system that influence loading.
- * <table>
+ * <table class="config">
  * <caption><b>Some Config SPI Interfaces</b></caption>
  * <tr>
  * <th>Class.Method</th>
@@ -81,7 +81,7 @@ import io.helidon.config.spi.OverrideSource;
  * sources.</td>
  * </tr>
  * <tr>
- * <td>{@link OverrideSources} methods</td>
+ * <td>{@link OverrideSources}</td>
  * <td></td>
  * <td>Replaces config {@code String} values during loading based on their keys.
  * Programs provide overrides in Java property file format on the classpath, at

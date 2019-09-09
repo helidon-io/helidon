@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,10 @@ public class DigestTokenTest {
         assertThat(dt.getNonce(), is("dcd98b7102dd2f0e8b11d0f600bfb0c093"));
 
         assertThat(dt.digest(password), is("6629fae49393a05397450978507c4ef1"));
-        assertThat(dt.validateLogin(password), is(true));
+
+        TestUser user = new TestUser("Mufasa", password);
+
+        assertThat(dt.validateLogin(user), is(true));
     }
 
     @Test
@@ -78,8 +81,13 @@ public class DigestTokenTest {
         assertThat(dt.getNonce(), is("ADm0cNeFcVZBE4el5LHrXD1VGvw3f7XgFsQEk0sLa2A="));
 
         // user's password
-        assertThat(dt.digest("kleslo".toCharArray()), is("943217664b97f16ddbde11c44f0ee980"));
-        assertThat(dt.validateLogin("kleslo".toCharArray()), is(true));
-        assertThat(dt.validateLogin("other".toCharArray()), is(false));
+        char[] goodPassword = "kleslo".toCharArray();
+        TestUser goodUser = new TestUser("jack", goodPassword);
+
+        assertThat(dt.digest(goodPassword), is("943217664b97f16ddbde11c44f0ee980"));
+        assertThat(dt.validateLogin(goodUser), is(true));
+
+        TestUser badUser =new TestUser("jack", "other".toCharArray());
+        assertThat(dt.validateLogin(badUser), is(false));
     }
 }

@@ -8,23 +8,20 @@ standalone CDI applications.
 
 To function properly, this project also requires:
 
-* a CDI-provider-specific counterpart, such as the `jpa-weld` project
-  found elsewhere in this git repository
-* a JPA provider implementation, such as Eclipselink
 * a JPA-provider-specific library to assist the JPA provider in
   determining what kind of environment it is running in, such as the
-  `eclipselink-cdi` project found elsewhere in this git repository
-* a library capable of integrating `DataSource`s into CDI, such as the
-  `datasource-hikaricp` project found elsewhere in this git repository
+  link:../eclipselink-cdi[`eclipselink-cdi` project]
+* a library capable of integrating `DataSource` instances into CDI,
+  such as the link:../datasource-hikaricp[`datasource-hikaricp`
+  project]
 * a suitable JDBC-compliant database driver library
-
-IMPORTANT: Please note that this feature is currently experimental and
-           not suitable for production use.
 
 == Installation
 
 Ensure that the Helidon JPA CDI Integration project and its runtime
 dependencies are present on your application's runtime classpath.
 
-Please see the `examples/integrations/cdi/jpa` project found elsewhere
-in this git repository for a working `pom.xml` file.
+Please see the
+link:../../../examples/integrations/cdi/jpa/[`examples/integrations/cdi/jpa`]
+project for a working `pom.xml` file that uses this project.
+

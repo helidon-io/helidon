@@ -23,6 +23,8 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
+import io.helidon.common.http.DataChunk;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -54,7 +56,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private final Routing routing;
     private final NettyWebServer webServer;
     private final SSLEngine sslEngine;
-    private final Queue<ReferenceHoldingQueue<ByteBufRequestChunk>> queues;
+    private final Queue<ReferenceHoldingQueue<DataChunk>> queues;
 
     // this field is always accessed by the very same thread; as such, it doesn't need to be
     // concurrency aware
@@ -63,7 +65,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
-                      Queue<ReferenceHoldingQueue<ByteBufRequestChunk>> queues) {
+                      Queue<ReferenceHoldingQueue<DataChunk>> queues) {
         this.routing = routing;
         this.webServer = webServer;
         this.sslEngine = sslEngine;
@@ -94,7 +96,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             ctx.channel().config().setAutoRead(false);
 
             HttpRequest request = (HttpRequest) msg;
-            ReferenceHoldingQueue<ByteBufRequestChunk> queue = new ReferenceHoldingQueue<>();
+            ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
             requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
             // the only reason we have the 'ref' here is that the field might get assigned with null

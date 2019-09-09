@@ -60,7 +60,9 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         Context context = Contexts.context().orElseThrow(() -> new IllegalStateException("Context must be available in Jersey"));
 
         String spanName = spanName(requestContext);
-        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(ClientTracingFilter.JAX_RS_TRACING_COMPONENT, spanName);
+        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(ClientTracingFilter.JAX_RS_TRACING_COMPONENT,
+                                                                    spanName,
+                                                                    context);
 
         if (spanConfig.enabled()) {
             spanName = spanConfig.newName().orElse(spanName);

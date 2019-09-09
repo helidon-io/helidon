@@ -63,7 +63,7 @@ class TestAnnotationRewriting {
     @PersistenceUnit(unitName = "test")
     private EntityManagerFactory emf;
     
-    @PersistenceContext(unitName = "test")
+    @PersistenceContext(name = "bogus", unitName = "test")
     private EntityManager em;
 
     @PersistenceContext(unitName = "test", type = PersistenceContextType.EXTENDED)
@@ -91,9 +91,9 @@ class TestAnnotationRewriting {
         }
     }
 
-  private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event,
-                          final TransactionManager tm) throws SystemException {
-    // If an assertion fails, or some other error happens in the
+    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event,
+                            final TransactionManager tm) throws SystemException {
+        // If an assertion fails, or some other error happens in the
         // CDI container, there may be a current transaction that has
         // neither been committed nor rolled back.  Because the
         // Narayana transaction engine is fundamentally static, this

@@ -47,7 +47,6 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 
-import static io.helidon.config.ConfigSources.ENV_VARS_NAME;
 import static io.helidon.config.ConfigSources.classpath;
 
 /**
@@ -97,7 +96,7 @@ class BuilderImpl implements Config.Builder {
         sources = new ArrayList<>(sourceSuppliers.size());
         sourceSuppliers.stream().map(Supplier::get).forEach(source -> {
             sources.add(source);
-            if (source.description().contains(ENV_VARS_NAME)) {
+            if (source instanceof ConfigSources.EnvironmentVariablesConfigSource) {
                 envVarAliasGeneratorEnabled = true;
             }
         });
@@ -312,13 +311,19 @@ class BuilderImpl implements Config.Builder {
 
     private ConfigSource targetConfigSource(ConfigContext context) {
         List<ConfigSource> targetSources = new LinkedList<>();
-        if (environmentVariablesSourceEnabled) {
+
+        if (hasSourceType(ConfigSources.EnvironmentVariablesConfigSource.class)) {
+            envVarAliasGeneratorEnabled = true;
+        } else if (environmentVariablesSourceEnabled) {
             targetSources.add(ConfigSources.environmentVariables());
             envVarAliasGeneratorEnabled = true;
         }
-        if (systemPropertiesSourceEnabled) {
+
+        if (systemPropertiesSourceEnabled
+            && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
             targetSources.add(ConfigSources.systemProperties());
         }
+
         if (sources != null) {
             targetSources.addAll(sources);
         } else {
@@ -333,6 +338,17 @@ class BuilderImpl implements Config.Builder {
         }
         targetConfigSource.init(context);
         return targetConfigSource;
+    }
+
+    private boolean hasSourceType(Class<?> sourceType) {
+        if (sources != null) {
+            for (ConfigSource source : sources) {
+                if (sourceType.isAssignableFrom(source.getClass())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("ParameterNumber")

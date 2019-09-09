@@ -58,8 +58,6 @@ import static java.util.Objects.requireNonNull;
 public final class ConfigSources {
 
     private static final String SOURCES_KEY = "sources";
-    static final String ENV_VARS_NAME = "env-vars";
-    static final String SYS_PROPS_NAME = "sys-props";
     static final String DEFAULT_MAP_NAME = "map";
     static final String DEFAULT_PROPERTIES_NAME = "properties";
 
@@ -221,7 +219,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for config derived from system properties
      */
     public static ConfigSource systemProperties() {
-        return create(System.getProperties(), SYS_PROPS_NAME).lax().build();
+        return new SystemPropertiesConfigSource();
     }
 
     /**
@@ -231,7 +229,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for config derived from environment variables
      */
     public static ConfigSource environmentVariables() {
-        return create(EnvironmentVariables.expand(), ENV_VARS_NAME).lax().build();
+        return new EnvironmentVariablesConfigSource();
     }
 
     /**
@@ -519,7 +517,7 @@ public final class ConfigSources {
      * <p>
      * The {@code CompositeBuilder} also supports change monitoring. The
      * application can control these aspects:
-     * <table>
+     * <table class="config">
      * <caption>Application Control of Change Monitoring</caption>
      * <tr>
      * <th>Change Support Behavior</th>
@@ -766,4 +764,27 @@ public final class ConfigSources {
         };
     }
 
+    /**
+     * Environment variables config source.
+     */
+    static final class EnvironmentVariablesConfigSource extends MapConfigSource {
+        /**
+         * Constructor.
+         */
+        EnvironmentVariablesConfigSource() {
+            super(EnvironmentVariables.expand(), false, "");
+        }
+    }
+
+    /**
+     * System properties config source.
+     */
+    static final class SystemPropertiesConfigSource extends MapConfigSource {
+        /**
+         * Constructor.
+         */
+        SystemPropertiesConfigSource() {
+            super(ConfigUtils.propertiesToMap(System.getProperties()), false, "");
+        }
+    }
 }

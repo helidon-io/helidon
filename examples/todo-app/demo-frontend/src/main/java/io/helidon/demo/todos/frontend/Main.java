@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,8 @@ import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.Security;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
@@ -78,10 +76,7 @@ public final class Main {
 
         // build a client (Jersey)
         // and apply security and tracing features on it
-        Client client = ClientBuilder.newBuilder()
-                .register(new ClientSecurityFeature())
-                .register(ClientTracingFilter.class)
-                .build();
+        Client client = ClientBuilder.newClient();
 
         BackendServiceClient bsc = new BackendServiceClient(client, config);
 
