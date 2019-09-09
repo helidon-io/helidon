@@ -29,6 +29,7 @@ that can be used to run some basic examples using both built-in and custom metri
 |===
 |About 30 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|https://github.com/helm/helm[Helm]
 |===
 
 === Create a sample Helidon MP project
