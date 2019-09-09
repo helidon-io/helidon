@@ -117,11 +117,11 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
      * @see #rollback()
      */
     @Inject
-    private NarayanaTransactionManager(final JTAEnvironmentBean jtaEnvironmentBean,
-                                       @Initialized(TransactionScoped.class)
-                                       final Event<Transaction> transactionScopeInitializedBroadcaster,
-                                       @Destroyed(TransactionScoped.class)
-                                       final Event<Object> transactionScopeDestroyedBroadcaster) {
+    NarayanaTransactionManager(final JTAEnvironmentBean jtaEnvironmentBean,
+                               @Initialized(TransactionScoped.class)
+                               final Event<Transaction> transactionScopeInitializedBroadcaster,
+                               @Destroyed(TransactionScoped.class)
+                               final Event<Object> transactionScopeDestroyedBroadcaster) {
         super(jtaEnvironmentBean == null ? null : jtaEnvironmentBean.getTransactionManager());
         this.transactionScopeInitializedBroadcaster = transactionScopeInitializedBroadcaster;
         this.transactionScopeDestroyedBroadcaster = transactionScopeDestroyedBroadcaster;

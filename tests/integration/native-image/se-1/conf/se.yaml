@@ -1,0 +1,41 @@
+app:
+  greeting: "SE Hallo"
+
+security:
+  provider-policy:
+    type: "COMPOSITE"
+    authentication:
+      - name: "http-signatures"
+        flag: "OPTIONAL"
+      - name: "http-basic-auth"
+  providers:
+    # enable the "ABAC" security provider (also handles RBAC)
+    - abac:
+    # enabled the HTTP Basic authentication provider
+    - http-basic-auth:
+        realm: "helidon"
+        users:
+          - login: "jack"
+            password: "password"
+            roles: ["admin"]
+          - login: "jill"
+            password: "password"
+            roles: ["user"]
+          - login: "joe"
+            password: "password"
+    - http-signatures:
+        optional: true
+        sign-headers:
+          - method: "get"
+            always: ["date", "(request-target)", "host"]
+            if-present: []
+        inbound.keys:
+          - key-id: "helidon-mp"
+            principal-name: "MP Service"
+            principal-type: "SERVICE"
+            hmac.secret: "badIdeaClearTextPassword!"
+  web-server:
+    paths:
+      - path: "/greet/{*}"
+        authenticate: true
+        roles-allowed: ["user", "admin"]

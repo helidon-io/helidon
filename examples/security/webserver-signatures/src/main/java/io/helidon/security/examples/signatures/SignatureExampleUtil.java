@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,10 @@ import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -37,9 +35,7 @@ import io.helidon.webserver.WebServer;
  * Common code for both examples (builder and config based).
  */
 final class SignatureExampleUtil {
-    private static final Client CLIENT = ClientBuilder.newBuilder()
-            .register(new ClientSecurityFeature())
-            .build();
+    private static final Client CLIENT = ClientBuilder.newClient();
 
     private static final int START_TIMEOUT_SECONDS = 10;
 
@@ -83,17 +79,18 @@ final class SignatureExampleUtil {
         res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
 
         OptionalHelper.from(securityContext).ifPresentOrElse(context -> {
-            Response response = CLIENT
-                    .target("http://localhost:" + svc2port + path)
+            CLIENT.target("http://localhost:" + svc2port + path)
                     .request()
-                    .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
-                    .get();
+                    .rx()
+                    .get()
+                    .thenAccept(response -> {
+                        if (response.getStatus() == 200) {
+                            res.send(response.readEntity(String.class));
+                        } else {
+                            res.send("Request failed, status: " + response.getStatus());
+                        }
+                    });
 
-            if (response.getStatus() == 200) {
-                res.send(response.readEntity(String.class));
-            } else {
-                res.send("Request failed, status: " + response.getStatus());
-            }
         }, () -> res.send("Security context is null"));
     }
 }

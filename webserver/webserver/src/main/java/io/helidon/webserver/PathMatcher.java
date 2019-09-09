@@ -28,7 +28,7 @@ import java.util.Map;
  * While user can implement this interface to implement any specific needs the primary construction method is
  * {@link #create(String)} factory method. The method accepts <i>Web Server Path Pattern</i> format.
  *
- * <table>
+ * <table class="config">
  * <caption><b>Web Server path pattern description</b></caption>
  *
  * <tr>

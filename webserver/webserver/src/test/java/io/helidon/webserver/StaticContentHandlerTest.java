@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ public class StaticContentHandlerTest {
         Mockito.doReturn(Optional.of(modified.minusSeconds(60))).when(req).ifUnmodifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
         ResponseHeaders res = mock(ResponseHeaders.class);
-        assertHttpException(() ->  StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
+        assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
                             Http.Status.PRECONDITION_FAILED_412);
     }
 
@@ -156,7 +156,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler(null, selector, Paths.get("/root"), false);
         RequestHeaders req = mock(RequestHeaders.class);
         ResponseHeaders res = mock(ResponseHeaders.class);
-        handler.processContentType(Paths.get("/root/index.html"), req, res);
+        StaticContentHandler.processContentType(StaticContentHandler.fileName(Paths.get("/root/index.html")), req, res, selector);
         verify(res).contentType(MediaType.TEXT_HTML);
     }
 
@@ -218,7 +218,7 @@ public class StaticContentHandlerTest {
         assertThat(handler.counter.get(), is(1));
     }
 
-    static class TestContentHandler extends StaticContentHandler {
+    static class TestContentHandler extends FileSystemContentHandler {
 
         final AtomicInteger counter = new AtomicInteger(0);
         final boolean returnValue;

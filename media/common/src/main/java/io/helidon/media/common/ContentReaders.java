@@ -19,136 +19,131 @@ package io.helidon.media.common;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
 import io.helidon.common.http.Utils;
-import io.helidon.common.reactive.Flow;
+import io.helidon.common.mapper.Mapper;
+import io.helidon.common.reactive.Collector;
+import io.helidon.common.reactive.Flow.Publisher;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 /**
- * The ContentReaders.
+ * Utility class that provides standalone mechanisms for reading message body
+ * content.
  */
 public final class ContentReaders {
 
-    private static final Map<String, StringContentReader> CACHED_READERS = new ConcurrentHashMap<>();
-
-    static {
-        addReader(StandardCharsets.UTF_8);
-        addReader(StandardCharsets.UTF_16);
-        addReader(StandardCharsets.ISO_8859_1);
-        addReader(StandardCharsets.US_ASCII);
-
-        // try to register another common charset readers
-        addReader("cp1252");
-        addReader("cp1250");
-        addReader("ISO-8859-2");
-    }
-
-    private static void addReader(Charset charset) {
-        StringContentReader reader = new StringContentReader(charset);
-        CACHED_READERS.put(charset.name(), reader);
-    }
-
-    private static void addReader(String charset) {
-        try {
-            addReader(Charset.forName(charset));
-        } catch (Exception ignored) {
-            // ignored
-        }
-    }
-
+    /**
+     * A utility class constructor.
+     */
     private ContentReaders() {
     }
 
     /**
-     * For basic charsets, returns a cached {@link StringContentReader} instance
-     * or create a new instance otherwise.
+     * Collect the {@link DataChunk} of the given publisher into a single byte
+     * array.
+     *
+     * @param chunks source publisher
+     * @return Single
+     */
+    public static Single<byte[]> readBytes(Publisher<DataChunk> chunks) {
+        return Multi.from(chunks).collect(new BytesCollector());
+    }
+
+    /**
+     * Convert the given publisher of {@link DataChunk} into a {@link String}.
+     * @param chunks source publisher
+     * @param charset charset to use for decoding the bytes
+     * @return Single
+     */
+    public static Single<String> readString(Publisher<DataChunk> chunks, Charset charset) {
+        return readBytes(chunks).map(new BytesToString(charset));
+    }
+
+    /**
+     * Get a reader that converts a {@link DataChunk} publisher to a
+     * {@link String}.
      *
      * @param charset the charset to use with the returned string content reader
      * @return a string content reader
      */
     public static Reader<String> stringReader(Charset charset) {
-        StringContentReader reader = CACHED_READERS.computeIfAbsent(charset.name(),
-                                                                    key -> new StringContentReader(charset));
-
-        return (reader != null) ? reader : new StringContentReader(charset);
+        return (chunks, type) -> readString(chunks, charset).toStage();
     }
 
     /**
-     * Obtain a lazily initialized cached String content reader or {@code null}.
+     * Get a reader that converts a {@link DataChunk} publisher to an array of
+     * bytes.
      *
-     * @param charset the charset to obtain the reader for
-     * @return a cached String content reader or {@code null}
-     */
-    static Reader<String> cachedStringReader(String charset) {
-        return CACHED_READERS.get(charset);
-    }
-
-    /**
-     * The returned reader provides means to convert a {@link ByteBuffer} publisher to
-     * an array of bytes.
-     * <p>
-     * Returns a lazily initialized classloader-scoped singleton.
-     * <p>
-     * Note that the singleton aspect is not guarantied by all JVMs. Although, Oracle JVM
-     * does create a singleton because the lambda does not capture values.
-     *
-     * @return the byte array content reader singleton that transforms a publisher of
-     *         byte buffers to a completion stage that might end exceptionally with
-     *         {@link IllegalArgumentException} if it wasn't possible to convert the byte buffer
-     *         to an array of bytes
+     * @return reader that transforms a publisher of byte buffers to a
+     * completion stage that might end exceptionally with
      */
     public static Reader<byte[]> byteArrayReader() {
-        return (publisher, clazz) -> {
-            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            CompletableFuture<byte[]> future = new CompletableFuture<>();
-            publisher.subscribe(new Flow.Subscriber<DataChunk>() {
-                @Override
-                public void onSubscribe(Flow.Subscription subscription) {
-                    subscription.request(Long.MAX_VALUE);
-                }
-
-                @Override
-                public void onNext(DataChunk item) {
-                    try {
-                        Utils.write(item.data(), bytes);
-                    } catch (IOException e) {
-                        onError(new IllegalArgumentException("Cannot convert byte buffer to a byte array!", e));
-                    } finally {
-                        item.release();
-                    }
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    future.completeExceptionally(throwable);
-                }
-
-                @Override
-                public void onComplete() {
-                    future.complete(bytes.toByteArray());
-                }
-            });
-
-            return future;
-        };
+        return (publisher, clazz) -> readBytes(publisher).toStage();
     }
 
     /**
-     * Creates a reader that bridges Flow API IO to a blocking Java {@link InputStream}.
-     * The resulting {@link java.util.concurrent.CompletionStage} is already completed;
-     * however, the referenced {@link InputStream} in it may not already have all the data
-     * available; in such case, the read method (e.g., {@link InputStream#read()}) block.
+     * Get a reader that converts a {@link DataChunk} publisher to a blocking
+     * Java {@link InputStream}. The resulting
+     * {@link java.util.concurrent.CompletionStage} is already completed;
+     * however, the referenced {@link InputStream} in it may not already have
+     * all the data available; in such case, the read method (e.g.,
+     * {@link InputStream#read()}) block.
      *
      * @return a input stream content reader
      */
     public static Reader<InputStream> inputStreamReader() {
         return (publisher, clazz) -> CompletableFuture.completedFuture(new PublisherInputStream(publisher));
+    }
+
+    /**
+     * Implementation of {@link Mapper} that converts a {@code byte[]} into
+     * a {@link String} using a given {@link Charset}.
+     */
+    private static final class BytesToString implements Mapper<byte[], String> {
+
+        private final Charset charset;
+
+        BytesToString(Charset charset) {
+            this.charset = charset;
+        }
+
+        @Override
+        public String map(byte[] bytes) {
+            return new String(bytes, charset);
+        }
+    }
+
+    /**
+     * Implementation of {@link Collector} that collects chunks into a single
+     * {@code byte[]}.
+     */
+    private static final class BytesCollector implements Collector<DataChunk, byte[]> {
+
+        private final ByteArrayOutputStream baos;
+
+        BytesCollector() {
+            this.baos = new ByteArrayOutputStream();
+        }
+
+        @Override
+        public void collect(DataChunk chunk) {
+            try {
+                Utils.write(chunk.data(), baos);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Cannot convert byte buffer to a byte array!", e);
+            } finally {
+                chunk.release();
+            }
+        }
+
+        @Override
+        public byte[] value() {
+            return baos.toByteArray();
+        }
     }
 }

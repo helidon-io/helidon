@@ -19,14 +19,11 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <modules>
-        <module>zipkin-mp-2.2</module>
-    </modules>
 
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
@@ -35,4 +32,18 @@
 
     <name>Integration Tests</name>
 
+    <modules>
+        <module>zipkin-mp-2.2</module>
+        <module>mp-security-client</module>
+        <module>health</module>
+    </modules>
+
+    <profiles>
+        <profile>
+            <id>native-image</id>
+            <modules>
+                <module>native-image</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
