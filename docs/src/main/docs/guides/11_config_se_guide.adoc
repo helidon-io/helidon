@@ -699,7 +699,7 @@ app.greeting=Updated HelloFrom-config-file.properties
 
 
 [source,bash]
-.After a few seconds and check the response:
+.After a few seconds, check the response:
 ----
 curl http://localhost:8080/greet
 ...
