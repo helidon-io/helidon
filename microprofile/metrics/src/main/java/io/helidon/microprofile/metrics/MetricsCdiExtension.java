@@ -98,6 +98,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.COUNTER,
                                          counted.unit(),
                                          toTags(counted.tags()));
+            meta.setReusable(counted.reusable());
             registry.counter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -109,6 +110,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.METERED,
                                          metered.unit(),
                                          toTags(metered.tags()));
+            meta.setReusable(metered.reusable());
             registry.meter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
@@ -120,6 +122,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.TIMER,
                                          timed.unit(),
                                          toTags(timed.tags()));
+            meta.setReusable(timed.reusable());
             registry.timer(meta);
             LOGGER.log(Level.FINE, () -> "### Registered timer " + metricName);
         }
