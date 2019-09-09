@@ -122,8 +122,6 @@ public final class DbResultSupport implements Service, Handler {
 
                     @Override
                     public void onSubscribe(Flow.Subscription subscription) {
-                        this.subscription = subscription;
-
                         Flow.Subscription mySubscription = new Flow.Subscription() {
                             @Override
                             public void request(long l) {
