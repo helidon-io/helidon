@@ -67,6 +67,13 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
 --
 
 [CARD]
+.SE Metrics Guide
+[link=guides/09_metrics_se_guide.adoc]
+--
+Learn how to use Helidon SE built-in and application metrics.
+--
+
+[CARD]
 .MP Health Check Guide
 [link=guides/07_health_mp_guide.adoc]
 --
@@ -101,4 +108,3 @@ Learn how to use GraalVM to build a native executable for your Helidon SE applic
 Learn how to build an Helidon MicroProfile (MP) application from scratch.
 --
 ====
-
