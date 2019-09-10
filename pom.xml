@@ -1069,7 +1069,6 @@
                 <artifactId>microprofile-jwt-auth-tck</artifactId>
                 <version>${version.lib.microprofile-jwt}</version>
                 <type>test-jar</type>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.metrics</groupId>
@@ -1241,7 +1240,6 @@
                 <groupId>com.oracle.jdbc</groupId>
                 <artifactId>ucp</artifactId>
                 <version>${version.lib.ucp}</version>
-                <type>jar</type>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>

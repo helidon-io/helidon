@@ -17,3 +17,14 @@ With JDK8+
 mvn package
 java -jar target/helidon-examples-security-webserver-digest-auth.jar
 ```
+
+Try the application:
+
+```bash
+curl http://localhost:56551/public
+curl --digest -u "jill:password" http://localhost:56551/noRoles
+curl --digest -u "john:password" http://localhost:56551/user
+curl --digest -u "jack:password" http://localhost:56551/admin
+curl -v --digest -u "john:password" http://localhost:56551/deny
+curl --digest -u "jack:password" http://localhost:56551/noAuthn
+```

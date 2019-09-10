@@ -64,9 +64,9 @@ kubectl apply -f backend/app.yaml -f frontend/app.yaml
 
 Try the endpoint:
 ```bash
-curl "http://localhost:8080/translator?q=cloud&lang=czech"
-curl "http://localhost:8080/translator?q=cloud&lang=french"
-curl "http://localhost:8080/translator?q=cloud&lang=italian"
+curl "http://localhost/translator?q=cloud&lang=czech"
+curl "http://localhost/translator?q=cloud&lang=french"
+curl "http://localhost/translator?q=cloud&lang=italian"
 ```
 
-Then check out the traces at http://localhost:8080/zipkin.
+Then check out the traces at http://localhost/zipkin.

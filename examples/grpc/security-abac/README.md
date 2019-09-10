@@ -1,16 +1,11 @@
-
 # Helidon gRPC Security ABAC Example
 
 An example gRPC server for attribute based access control.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-grpc-security-abac.jar
 ```

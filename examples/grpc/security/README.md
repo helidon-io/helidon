@@ -1,16 +1,11 @@
-
 # Helidon gRPC Security Example
 
 An example gRPC server using basic auth security.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-grpc-security.jar
 ```

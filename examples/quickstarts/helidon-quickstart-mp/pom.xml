@@ -27,6 +27,7 @@
         <version>1.2.2-SNAPSHOT</version>
         <relativePath/>
     </parent>
+    <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-quickstart-mp</artifactId>
     <name>Helidon Quickstart MP Example</name>
 

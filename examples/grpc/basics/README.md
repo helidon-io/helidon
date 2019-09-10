@@ -3,14 +3,10 @@
 
 A basic example gRPC server.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-grpc-basics.jar
 ```

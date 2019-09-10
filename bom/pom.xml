@@ -65,7 +65,7 @@
                 <artifactId>helidon-webclient-jaxrs</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- gRPC server -->
+            <!-- gRPC -->
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
                 <artifactId>helidon-grpc-client</artifactId>
@@ -73,7 +73,17 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
                 <artifactId>helidon-grpc-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- media -->

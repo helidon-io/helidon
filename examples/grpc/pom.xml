@@ -24,11 +24,10 @@
         <artifactId>helidon-examples-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
-
     <groupId>io.helidon.examples.grpc</groupId>
     <artifactId>helidon-examples-grpc-project</artifactId>
-    <name>Helidon gRPC Examples</name>
     <packaging>pom</packaging>
+    <name>Helidon gRPC Examples</name>
 
     <modules>
         <module>common</module>
@@ -39,5 +38,4 @@
         <module>security-abac</module>
         <module>security-outbound</module>
     </modules>
-
 </project>
