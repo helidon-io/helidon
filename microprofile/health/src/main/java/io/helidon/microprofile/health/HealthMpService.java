@@ -17,7 +17,6 @@
 package io.helidon.microprofile.health;
 
 import java.lang.annotation.Annotation;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
@@ -26,6 +25,7 @@ import javax.enterprise.inject.se.SeContainer;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
+import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 
@@ -94,22 +94,8 @@ public class HealthMpService implements MpService {
                     healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
                 });
 
-        healthConfig.get("routing")
-                .asString()
-                .flatMap(routeName -> {
-                    // support for overriding the routing back to default port using config
-                    if ("@default".equals(routeName)) {
-                        return Optional.empty();
-                    } else {
-                        return Optional.of(routeName);
-                    }
-                })
-                // use named routing
-                .map(mpServiceContext::serverNamedRoutingBuilder)
-                // use default server routing
-                .orElseGet(mpServiceContext::serverRoutingBuilder)
-                // register health support
+        RoutingBuilders.create(mpServiceContext, healthConfig)
+                .routingBuilder()
                 .register(builder.build());
-
     }
 }
