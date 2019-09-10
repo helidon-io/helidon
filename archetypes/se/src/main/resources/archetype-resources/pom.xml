@@ -26,6 +26,7 @@
 #if( $unitTest.matches("y|yes|true") )
         <argLine>-Dfile.encoding=UTF-8</argLine>
 #end
+
     </properties>
 
     <build>
@@ -154,7 +155,7 @@
 #if( $metricsSupport.matches("y|yes|true") )
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-metrics2</artifactId>
         </dependency>
 #end
 #if( $unitTest.matches("y|yes|true") )

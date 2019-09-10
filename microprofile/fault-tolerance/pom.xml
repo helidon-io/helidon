@@ -59,8 +59,16 @@
             <artifactId>microprofile-fault-tolerance-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-metrics</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
+            <!-- specify older version for internal version-neutral client -->
+            <version>${version.lib.microprofile-metrics-api}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.netflix.hystrix</groupId>
@@ -110,7 +118,7 @@
             <groupId>io.helidon.microprofile.metrics</groupId>
             <artifactId>helidon-microprofile-metrics</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

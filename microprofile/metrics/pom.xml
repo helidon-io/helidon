@@ -18,8 +18,8 @@
 -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.microprofile</groupId>
@@ -31,7 +31,7 @@
     <name>Helidon Microprofile Metrics</name>
 
     <description>
-        Helidon Microprofile Metrics
+        Helidon Microprofile Metrics 1.1
     </description>
 
     <dependencies>
@@ -51,9 +51,19 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-metrics</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <version>${version.lib.microprofile-metrics-api}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

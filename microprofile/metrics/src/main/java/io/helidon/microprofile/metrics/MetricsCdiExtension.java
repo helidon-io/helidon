@@ -98,6 +98,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.COUNTER,
                                          counted.unit(),
                                          toTags(counted.tags()));
+            meta.setReusable(counted.reusable());
             registry.counter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -109,6 +110,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.METERED,
                                          metered.unit(),
                                          toTags(metered.tags()));
+            meta.setReusable(metered.reusable());
             registry.meter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
@@ -120,6 +122,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.TIMER,
                                          timed.unit(),
                                          toTags(timed.tags()));
+            meta.setReusable(timed.reusable());
             registry.timer(meta);
             LOGGER.log(Level.FINE, () -> "### Registered timer " + metricName);
         }
@@ -147,7 +150,7 @@ public class MetricsCdiExtension implements Extension {
     }
 
     private static MetricRegistry getMetricRegistry() {
-        return RegistryProducer.getDefaultRegistry();
+        return MetricRegistry.class.cast(RegistryProducer.getDefaultRegistry());
     }
 
     /**
@@ -319,10 +322,12 @@ public class MetricsCdiExtension implements Extension {
                 && method.isAnnotationPresent(Gauge.class))
                 .forEach(method -> {
                     Method javaMethod = method.getAnnotated().getJavaMember();
-                    String explicitGaugeName = method.getAnnotated().getAnnotation(Gauge.class).name();
-                    String gaugeName = String.format("%s.%s", clazz.getName(),
-                                                     explicitGaugeName != null && explicitGaugeName.length() > 0
-                                                             ? explicitGaugeName : javaMethod.getName());
+                    Gauge gaugeAnnotation = method.getAnnotated().getAnnotation(Gauge.class);
+                    String explicitGaugeName = gaugeAnnotation.name();
+                    String gaugeNameSuffix = (explicitGaugeName.length() > 0 ? explicitGaugeName
+                            : javaMethod.getName());
+                    String gaugeName = (gaugeAnnotation.absolute() ? gaugeNameSuffix
+                            : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
                     annotatedGaugeSites.put(gaugeName, method);
                     LOGGER.log(Level.FINE, () -> String.format("### Recorded annotated gauge with name %s", gaugeName));
                 });

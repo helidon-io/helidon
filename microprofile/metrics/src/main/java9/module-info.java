@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,10 @@ module io.helidon.microprofile.metrics {
 
     requires io.helidon.microprofile.server;
     requires transitive io.helidon.metrics;
+    requires io.helidon.common.metrics;
 
     requires transitive microprofile.config.api;
+    requires microprofile.metrics.api;
 
 
     exports io.helidon.microprofile.metrics;

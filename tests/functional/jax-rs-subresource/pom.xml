@@ -31,7 +31,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-1.2</artifactId>
+            <artifactId>helidon-microprofile-3.0</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -53,6 +53,12 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <version>${version.lib.microprofile-metrics2-api}</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>

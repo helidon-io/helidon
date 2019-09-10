@@ -39,11 +39,10 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  *     new instance of a registry factory (in case multiple instances are desired), independent on the singleton instance
  *     and on other instances provided by these methods.</li>
  * </ol>
- * <p>
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
-public final class RegistryFactory {
+public final class RegistryFactory implements io.helidon.common.metrics.InternalBridge.MetricRegistry.RegistryFactory {
     private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
@@ -155,6 +154,11 @@ public final class RegistryFactory {
             ensureBase();
         }
         return publicRegistries.get(type);
+    }
+
+    @Override
+    public io.helidon.common.metrics.InternalBridge.MetricRegistry getBridgeRegistry(Type type) {
+        return io.helidon.common.metrics.InternalBridge.MetricRegistry.class.cast(getRegistry(type));
     }
 
     private void update(Config config) {

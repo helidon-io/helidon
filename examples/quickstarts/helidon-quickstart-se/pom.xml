@@ -39,6 +39,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <argLine>-Dfile.encoding=UTF-8</argLine>
+        <version.lib.microprofile-metrics2-api>2.0.1</version.lib.microprofile-metrics2-api>
     </properties>
 
     <build>
@@ -141,6 +142,11 @@
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>5.1.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api</artifactId>
+                <version>${version.lib.microprofile-metrics2-api}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -163,7 +169,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-metrics2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

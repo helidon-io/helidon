@@ -19,9 +19,11 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
+import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
+import io.helidon.common.metrics.InternalBridge.MetricRegistry;
+
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.Test;
@@ -79,11 +81,11 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testInjectCounterProgrammatically() {
         MetricRegistry metricRegistry = getMetricRegistry();
-        metricRegistry.counter(new Metadata("dcounter",
-                                            "",
-                                            "",
-                                            MetricType.COUNTER,
-                                            MetricUnits.NONE));
+        metricRegistry.counter(newMetadataBuilder()
+                .withName("dcounter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build());
         metricRegistry.counter("dcounter").inc();
         assertThat(metricRegistry.counter("dcounter").getCount(), is(1L));
     }
@@ -304,5 +306,9 @@ public class MetricsTest extends FaultToleranceTest {
         assertThat(getHistogram(bean, "concurrentAsync",
                                   BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
                    is((long)BulkheadBean.MAX_CONCURRENT_CALLS));
+    }
+
+    private static MetadataBuilder newMetadataBuilder() {
+        return  InternalBridge.newMetadataBuilder();
     }
 }

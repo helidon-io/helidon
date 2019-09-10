@@ -63,6 +63,8 @@
         <docker.image.version>${project.version}</docker.image.version>
 
         <checkstyle.config.location>etc/checkstyle.xml</checkstyle.config.location>
+
+        <version.lib.microprofile-metrics2-api>2.0.1</version.lib.microprofile-metrics2-api>
     </properties>
 
     <dependencyManagement>

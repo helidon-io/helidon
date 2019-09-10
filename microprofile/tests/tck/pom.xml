@@ -34,6 +34,7 @@
         <module>tck-config</module>
         <module>tck-health</module>
         <module>tck-metrics</module>
+        <module>tck-metrics2</module>
         <module>tck-fault-tolerance</module>
         <module>tck-jwt-auth</module>
         <module>tck-openapi</module>
@@ -41,10 +42,24 @@
         <module>tck-rest-client</module>
     </modules>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api</artifactId>
+                <version>${version.lib.microprofile-metrics2-api}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
          <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

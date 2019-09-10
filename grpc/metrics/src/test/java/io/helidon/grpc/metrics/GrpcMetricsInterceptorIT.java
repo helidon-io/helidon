@@ -19,11 +19,11 @@ package io.helidon.grpc.metrics;
 import java.util.Map;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.metrics.MetricsSupport;
-import io.helidon.metrics.RegistryFactory;
 import io.helidon.webserver.Routing;
 
 import io.grpc.Context;
@@ -32,9 +32,11 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.HashMap;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
@@ -45,6 +47,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,9 +67,9 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("unchecked")
 public class GrpcMetricsInterceptorIT {
 
-    private static MetricRegistry vendorRegsistry;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry vendorRegsistry;
 
-    private static MetricRegistry appRegistry;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry appRegistry;
 
     private static Meter vendorMeter;
 
@@ -81,8 +84,8 @@ public class GrpcMetricsInterceptorIT {
         Routing.Rules rules = Routing.builder().get("metrics");
         MetricsSupport.create().update(rules);
 
-        vendorRegsistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
-        appRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        vendorRegsistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.VENDOR);
+        appRegistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
         vendorMeter = vendorRegsistry.meter("grpc.requests.meter");
         vendorCounter = vendorRegsistry.counter("grpc.requests.count");
     }
@@ -185,10 +188,25 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("Foo.barTags");
+        Map<MetricID, Metric> matchingMetrics =
+                appRegistry.getBridgeMetrics(
+                        entry -> entry.getKey().getName().equals("Foo.barTags"));
+
+        assertThat(matchingMetrics.size(), not(0));
+        Map.Entry<MetricID, Metric> match = matchingMetrics.entrySet().stream()
+                .findFirst()
+                .orElse(null);
 
         assertVendorMetrics();
-        assertThat(appCounter.toString(), containsString("tags='{one=t1, two=t2}'"));
+        Map<String, String> expected = new HashMap<>();
+        expected.put("one", "t1");
+        expected.put("two", "t2");
+
+        /*
+         * We expect the tags to be on the ID in the version-neutral (and 2.0)
+         * metrics programming model.
+         */
+        assertThat(match.getKey().getTags(), is(expected));
     }
 
     @Test

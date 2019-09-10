@@ -42,13 +42,24 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <!-- specify older version for internal version-neutral client -->
+            <version>${version.lib.microprofile-metrics-api}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-metrics</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
