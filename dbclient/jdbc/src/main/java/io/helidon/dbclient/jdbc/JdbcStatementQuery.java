@@ -40,7 +40,7 @@ import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.CollectingSubscriber;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.MappingProcessor;
+import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbInterceptorContext;
@@ -295,12 +295,14 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                                                             mapperManager);
             }
 
-            Flow.Publisher<?> parentPublisher = parent.publisher();
             Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
-            // otherwise we must apply mapping
-            MappingProcessor<Object, T> processor = MappingProcessor.create(mappingFunction);
-            parentPublisher.subscribe(processor);
-            return processor;
+            Multi<Object> parentMulti = (Multi<Object>) parent.multi();
+
+            return parentMulti.map(mappingFunction::apply);
+        }
+
+        private Multi<T> multi() {
+            return Multi.from(publisher());
         }
 
         private CompletionStage<List<T>> toFuture() {
@@ -316,6 +318,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
             resultRequested.set(true);
         }
     }
+
 
     private static final class RowPublisher implements Flow.Publisher<DbRow> {
         private final ExecutorService executorService;
