@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ public class SubmissionPublisherTest {
     @Test
     public void testMultipleSubscribers() throws InterruptedException{
         SubmissionPublisher<String> publisher = new SubmissionPublisher<>();
-        TestSubscriber s1 = new TestSubscriber();
+        TestSubscriber<String> s1 = new TestSubscriber<>();
         publisher.subscribe(s1);
         s1.request1();
-        TestSubscriber s2 = new TestSubscriber();
+        TestSubscriber<String> s2 = new TestSubscriber<>();
         publisher.subscribe(s2);
         s2.request1();
         publisher.submit("hello");
@@ -48,13 +48,13 @@ public class SubmissionPublisherTest {
     @Test
     public void testNoReplayElements() throws InterruptedException{
         SubmissionPublisher<String> publisher = new SubmissionPublisher<>();
-        TestSubscriber s1 = new TestSubscriber();
+        TestSubscriber<String> s1 = new TestSubscriber<>();
         publisher.subscribe(s1);
         s1.request1();
         publisher.submit("hello");
         Thread.sleep(1000);
         assertThat(s1.getItems().size(), is(1));
-        TestSubscriber s2 = new TestSubscriber();
+        TestSubscriber<String> s2 = new TestSubscriber<>();
         publisher.subscribe(s2);
         s2.request1();
         Thread.sleep(1000);
@@ -65,13 +65,13 @@ public class SubmissionPublisherTest {
     @Test
     public void testNoReplayElementsWithParallePublisher() throws InterruptedException{
         SubmissionPublisher<String> publisher = new SubmissionPublisher<>(ForkJoinPool.commonPool(), 256);
-        TestSubscriber s1 = new TestSubscriber();
+        TestSubscriber<String> s1 = new TestSubscriber<>();
         publisher.subscribe(s1);
         s1.request1();
         publisher.submit("hello");
         Thread.sleep(1000);
         assertThat(s1.getItems().size(), is(1));
-        TestSubscriber s2 = new TestSubscriber();
+        TestSubscriber<String> s2 = new TestSubscriber<>();
         publisher.subscribe(s2);
         s2.request1();
         Thread.sleep(1000);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@
 package io.helidon.security.providers.httpauth;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Base64;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -39,6 +40,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
+import io.helidon.security.providers.httpauth.spi.UserStoreService;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
@@ -66,12 +68,12 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     private static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*):(.*)");
     private static final char[] EMPTY_PASSWORD = new char[0];
 
-    private final UserStore userStore;
+    private final List<SecureUserStore> userStores;
     private final String realm;
     private final SubjectType subjectType;
 
-    private HttpBasicAuthProvider(Builder builder) {
-        this.userStore = builder.userStore;
+    HttpBasicAuthProvider(Builder builder) {
+        this.userStores = new LinkedList<>(builder.userStores);
         this.realm = builder.realm;
         this.subjectType = builder.subjectType;
     }
@@ -97,9 +99,9 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         return builder().config(config).build();
     }
 
-    private static OutboundSecurityResponse toBasicAuthOutbound(UserStore.User user) {
+    private static OutboundSecurityResponse toBasicAuthOutbound(String username, char[] password) {
         String b64 = Base64.getEncoder()
-                .encodeToString((user.login() + ":" + new String(user.password())).getBytes(StandardCharsets.UTF_8));
+                .encodeToString((username + ":" + new String(password)).getBytes(StandardCharsets.UTF_8));
         String basicAuthB64 = "basic " + b64;
         return OutboundSecurityResponse
                 .withHeaders(CollectionsHelper.mapOf("Authorization", CollectionsHelper.listOf(basicAuthB64)));
@@ -118,10 +120,12 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         SecurityContext secContext = providerRequest.securityContext();
 
         boolean userSupported = secContext.user()
-                .map(user -> user.privateCredential(UserStore.User.class).isPresent()).orElse(false);
+                .flatMap(user -> user.privateCredential(BasicPrivateCredentials.class))
+                .isPresent();
 
         boolean serviceSupported = secContext.service()
-                .map(user -> user.privateCredential(UserStore.User.class).isPresent()).orElse(false);
+                .map(user -> user.privateCredential(BasicPrivateCredentials.class))
+                .isPresent();
 
         return userSupported || serviceSupported;
     }
@@ -135,55 +139,43 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         Optional<Object> maybeUsername = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         if (maybeUsername.isPresent()) {
             String username = maybeUsername.get().toString();
+            char[] password = passwordFromEndpoint(outboundEp);
 
-            UserStore.User user = userStore.user(username).orElseGet(() -> userFromEndpoint(username, outboundEp));
-
-            return toBasicAuthOutbound(user);
+            return toBasicAuthOutbound(username, password);
         }
 
         // and if not present, use the one from request
         SecurityContext secContext = providerRequest.securityContext();
 
-        return OptionalHelper.from(secContext.user()
-                                           .flatMap(user -> user.privateCredential(UserStore.User.class)))
-                .or(() -> secContext.service().flatMap(service -> service.privateCredential(UserStore.User.class)))
-                .asOptional()
-                .map(user -> {
-                    Optional<Object> password = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD);
-                    if (password.isPresent()) {
-                        return toBasicAuthOutbound(new UserStore.User() {
-                            @Override
-                            public String login() {
-                                return user.login();
-                            }
+        // first try user
+        Optional<BasicPrivateCredentials> creds = secContext.user()
+                .flatMap(this::credentialsFromSubject);
 
-                            @Override
-                            public char[] password() {
-                                return password.map(String::valueOf).map(String::toCharArray).orElse(EMPTY_PASSWORD);
-                            }
-                        });
-                    } else {
-                        return toBasicAuthOutbound(user);
-                    }
-                })
-                .orElseGet(OutboundSecurityResponse::abstain);
+        if (!creds.isPresent()) {
+            // if not present, try service
+            creds = secContext.service()
+                    .flatMap(this::credentialsFromSubject);
+        }
+
+        Optional<char[]> overridePassword = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+                .map(String::valueOf)
+                .map(String::toCharArray);
+
+        return creds.map(credentials -> {
+            char[] password = overridePassword.orElse(credentials.password);
+            return toBasicAuthOutbound(credentials.username, password);
+        }).orElseGet(OutboundSecurityResponse::abstain);
     }
 
-    private UserStore.User userFromEndpoint(String username, EndpointConfig outboundEp) {
-        return new UserStore.User() {
-            @Override
-            public String login() {
-                return username;
-            }
+    private Optional<BasicPrivateCredentials> credentialsFromSubject(Subject subject) {
+        return subject.privateCredential(BasicPrivateCredentials.class);
+    }
 
-            @Override
-            public char[] password() {
-                return outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
-                        .map(String::valueOf)
-                        .map(String::toCharArray)
-                        .orElse(EMPTY_PASSWORD);
-            }
-        };
+    private char[] passwordFromEndpoint(EndpointConfig outboundEp) {
+        return outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+                .map(String::valueOf)
+                .map(String::toCharArray)
+                .orElse(EMPTY_PASSWORD);
     }
 
     @Override
@@ -222,20 +214,32 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         final String username = matcher.group(1);
         final char[] password = matcher.group(2).toCharArray();
 
-        return userStore.user(username)
-                .map(user -> {
-                    if (Arrays.equals(password, user.password())) {
-                        // yay, correct user and password!!!
-                        if (subjectType == SubjectType.USER) {
-                            return AuthenticationResponse.success(buildSubject(user));
-                        } else {
-                            return AuthenticationResponse.successService(buildSubject(user));
-                        }
-                    } else {
-                        return fail("Invalid username or password");
-                    }
-                })
-                .orElse(fail("Invalid username or password"));
+        Optional<SecureUserStore.User> foundUser = Optional.empty();
+        for (SecureUserStore userStore : userStores) {
+            foundUser = userStore.user(username);
+            if (foundUser.isPresent()) {
+                // find first user from stores
+                break;
+            }
+        }
+
+        return foundUser.map(user -> {
+            if (user.isPasswordValid(password)) {
+                if (subjectType == SubjectType.USER) {
+                    return AuthenticationResponse.success(buildSubject(user, password));
+                }
+                return AuthenticationResponse.successService(buildSubject(user, password));
+            } else {
+                return invalidUser();
+            }
+        }).orElseGet(this::invalidUser);
+    }
+
+    private AuthenticationResponse invalidUser() {
+        // extracted to method to make sure we return the same message for invalid user and password
+        // DO NOT change this - it is a security problem if the message differs, as it gives too much information
+        // to potential attacker
+        return fail("Invalid username or password");
     }
 
     private AuthenticationResponse fail(String message) {
@@ -251,12 +255,12 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         return "Basic realm=\"" + realm + "\"";
     }
 
-    private Subject buildSubject(UserStore.User user) {
+    private Subject buildSubject(SecureUserStore.User user, char[] password) {
         Subject.Builder builder = Subject.builder()
                 .principal(Principal.builder()
                                    .name(user.login())
                                    .build())
-                .addPrivateCredential(UserStore.User.class, user);
+                .addPrivateCredential(BasicPrivateCredentials.class, new BasicPrivateCredentials(user.login(), password));
 
         user.roles()
                 .forEach(role -> builder.addGrant(Role.create(role)));
@@ -268,8 +272,8 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
      * {@link HttpBasicAuthProvider} fluent API builder.
      */
     public static final class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
-        private static final UserStore EMPTY_STORE = login -> Optional.empty();
-        private UserStore userStore = EMPTY_STORE;
+        private List<SecureUserStore> userStores = new LinkedList<>();
+
         private String realm = "helidon";
         private SubjectType subjectType = SubjectType.USER;
 
@@ -285,26 +289,41 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             config.get("realm").asString().ifPresent(this::realm);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
 
+            HelidonServiceLoader.Builder<UserStoreService> loader =
+                    HelidonServiceLoader.builder(ServiceLoader.load(UserStoreService.class));
+
             // now users may not be configured at all
             Config usersConfig = config.get("users");
             if (usersConfig.exists()) {
                 // or it may be jst an empty list (e.g. users: with no subnodes).
                 if (!usersConfig.isLeaf()) {
-                    userStore(usersConfig.as(ConfigUserStore::create)
-                                              .orElseThrow(() -> new HttpAuthException(
-                                                      "No users configured! Key \"users\" must be in configuration")));
+                    loader.addService(new UserStoreService() {
+                        @Override
+                        public String configKey() {
+                            return "users";
+                        }
+
+                        @Override
+                        public SecureUserStore create(Config config) {
+                            return usersConfig.as(ConfigUserStore::create)
+                                    .orElseThrow(() -> new HttpAuthException(
+                                            "No users configured! Key \"users\" must be in configuration"));
+                        }
+                    });
                 }
             }
+
+            // when creating an instance from configuration, we also want to load user stores from service loader
+            loader.build()
+                    .forEach(userStoreService -> {
+                        addUserStore(userStoreService.create(config.get(userStoreService.configKey())));
+                    });
+
             return this;
         }
 
         @Override
         public HttpBasicAuthProvider build() {
-            // intentional instance equality
-            if (userStore == EMPTY_STORE) {
-                LOGGER.info("Basic authentication configured with no users. Inbound will always fail, outbound would work"
-                                    + "only with explicit username and password");
-            }
             return new HttpBasicAuthProvider(this);
         }
 
@@ -329,13 +348,25 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         }
 
         /**
-         * Set user store to obtain passwords and roles based on logins.
+         * Add a user store to the list of stores used by this provider.
          *
+         * @param store user store to add
+         * @return updated builder instance
+         */
+        public Builder addUserStore(SecureUserStore store) {
+            userStores.add(store);
+            return this;
+        }
+
+        /**
+         * Set user store to validate users.
+         * Removes any other stores added through {@link #addUserStore(SecureUserStore)}.
          * @param store User store to use
          * @return updated builder instance
          */
-        public Builder userStore(UserStore store) {
-            this.userStore = store;
+        public Builder userStore(SecureUserStore store) {
+            userStores.clear();
+            userStores.add(store);
             return this;
         }
 
@@ -348,6 +379,17 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         public Builder realm(String realm) {
             this.realm = realm;
             return this;
+        }
+    }
+
+    // need to store this information to be able to propagate to outbound
+    private static final class BasicPrivateCredentials {
+        private final String username;
+        private final char[] password;
+
+        private BasicPrivateCredentials(String username, char[] password) {
+            this.username = username;
+            this.password = password;
         }
     }
 }

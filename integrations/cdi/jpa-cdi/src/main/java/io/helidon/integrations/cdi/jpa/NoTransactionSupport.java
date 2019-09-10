@@ -39,7 +39,7 @@ final class NoTransactionSupport implements TransactionSupport {
     /**
      * Creates a new {@link NoTransactionSupport}.
      */
-    private NoTransactionSupport() {
+    NoTransactionSupport() {
         super();
         final String cn = this.getClass().getName();
         final String mn = "<init>";

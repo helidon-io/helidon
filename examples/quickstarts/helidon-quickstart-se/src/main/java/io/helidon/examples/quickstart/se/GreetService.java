@@ -18,9 +18,12 @@ package io.helidon.examples.quickstart.se;
 
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
@@ -53,6 +56,8 @@ public class GreetService implements Service {
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    private static final Logger LOGGER = Logger.getLogger(GreetService.class.getName());
 
     GreetService(Config config) {
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
@@ -100,6 +105,27 @@ public class GreetService implements Service {
         response.send(returnObject);
     }
 
+    private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
+
+         if (ex.getCause() instanceof JsonException){
+
+            LOGGER.log(Level.FINE, "Invalid JSON", ex);
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                .add("error", "Invalid JSON")
+                .build();
+            response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+        }  else {
+
+            LOGGER.log(Level.FINE, "Internal error", ex);
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                .add("error", "Internal error")
+                .build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
+        }
+
+        return null;
+    }
+
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
 
         if (!jo.containsKey("greeting")) {
@@ -122,7 +148,9 @@ public class GreetService implements Service {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
+        request.content().as(JsonObject.class)
+            .thenAccept(jo -> updateGreetingFromJson(jo, response))
+            .exceptionally(ex -> processErrors(ex, request, response));
     }
 
 }

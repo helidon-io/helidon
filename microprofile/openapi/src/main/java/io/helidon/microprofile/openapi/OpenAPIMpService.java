@@ -18,6 +18,7 @@ package io.helidon.microprofile.openapi;
 
 import java.io.IOException;
 
+import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.openapi.OpenAPISupport;
@@ -44,6 +45,6 @@ public class OpenAPIMpService implements MpService {
             throw new RuntimeException(ex);
         }
 
-        openAPISupport.configureEndpoint(context.serverRoutingBuilder());
+        openAPISupport.configureEndpoint(RoutingBuilders.create(context, "openapi").routingBuilder());
     }
 }

@@ -21,12 +21,11 @@ import java.util.Set;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.metrics.RegistryFactory;
+import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
-import io.helidon.webserver.Routing;
 
 /**
  * Extension of microprofile {@link io.helidon.microprofile.server.Server} to enable support for metrics
@@ -46,22 +45,12 @@ public class MetricsMpService implements MpService {
 
         MetricsSupport metricsSupport = MetricsSupport.create(metricsConfig);
 
-        ConfigValue<String> routingNameConfig = metricsConfig.get("routing").asString();
-        Routing.Builder defaultRouting = serviceContext.serverRoutingBuilder();
+        RoutingBuilders routingBuilders = RoutingBuilders.create(
+                serviceContext, metricsConfig);
 
-        Routing.Builder endpointRouting = defaultRouting;
-
-        if (routingNameConfig.isPresent()) {
-            String routingName = routingNameConfig.get();
-            // support for overriding this back to default routing using config
-            if (!"@default".equals(routingName)) {
-                endpointRouting = serviceContext.serverNamedRoutingBuilder(routingName);
-            }
-        }
-
-        metricsSupport.configureVendorMetrics(null, defaultRouting);
+        metricsSupport.configureVendorMetrics(null, routingBuilders.defaultRoutingBuilder());
         vendorMetricsAdded.add("@default");
-        metricsSupport.configureEndpoint(endpointRouting);
+        metricsSupport.configureEndpoint(routingBuilders.routingBuilder());
 
         // now we may have additional sockets we want to add vendor metrics to
         metricsConfig.get("vendor-metrics-routings")

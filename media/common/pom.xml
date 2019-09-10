@@ -26,11 +26,22 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-media-common</artifactId>
+    <name>Helidon Media Common</name>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-http</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-mapper</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -51,7 +51,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * }
  * <p>
  * Configuration options required (under security.providers[].${name}):
- * <table>
+ * <table class="config">
  * <caption>Mandatory configuration parameters</caption>
  * <tr>
  *     <th>key</th>
@@ -75,7 +75,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * </tr>
  * </table>
  *
- * <table>
+ * <table class="config">
  * <caption>Optional configuration parameters</caption>
  * <tr>
  *     <th>key</th>
