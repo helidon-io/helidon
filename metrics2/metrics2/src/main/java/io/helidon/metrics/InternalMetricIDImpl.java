@@ -76,10 +76,7 @@ class InternalMetricIDImpl implements InternalBridge.MetricID {
             return false;
         }
         final InternalMetricIDImpl other = (InternalMetricIDImpl) obj;
-        if (!Objects.equals(this.delegate, other.delegate)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.delegate, other.delegate);
     }
 
     static class FactoryImpl implements Factory {
