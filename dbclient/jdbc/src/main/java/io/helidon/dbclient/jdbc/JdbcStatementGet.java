@@ -18,12 +18,10 @@ package io.helidon.dbclient.jdbc;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.reactive.GetSubscriber;
+import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementGet;
 
 /**
@@ -79,19 +77,8 @@ class JdbcStatementGet implements DbStatementGet {
 
     @Override
     public CompletionStage<Optional<DbRow>> execute() {
-        CompletableFuture<Optional<DbRow>> result = new CompletableFuture<>();
-
-        query.execute()
-                .thenApply(DbRows::publisher)
-                .thenAccept(publisher -> {
-                    publisher.subscribe(GetSubscriber.create(result, "Received more than one results for query "
-                            + query.name()));
-                })
-                .exceptionally(throwable -> {
-                    result.completeExceptionally(throwable);
-                    return null;
-                });
-
-        return result;
+        return query.execute()
+                .thenApply(dbRows -> Single.from(dbRows.publisher()))
+                .thenCompose(Single::toOptionalStage);
     }
 }

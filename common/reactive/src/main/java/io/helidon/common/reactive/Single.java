@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -74,6 +75,18 @@ public interface Single<T> extends Subscribable<T> {
             return subscriber;
         } catch (Throwable ex) {
             CompletableFuture<T> future = new CompletableFuture<>();
+            future.completeExceptionally(ex);
+            return future;
+        }
+    }
+
+    default CompletionStage<Optional<T>> toOptionalStage() {
+        try {
+            SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();
+            this.subscribe(subscriber);
+            return subscriber;
+        } catch (Throwable ex) {
+            CompletableFuture<Optional<T>> future = new CompletableFuture<>();
             future.completeExceptionally(ex);
             return future;
         }
