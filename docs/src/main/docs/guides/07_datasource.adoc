@@ -141,6 +141,7 @@ imports:
 [source,java]
 .`src/main/java/io/helidon/example/ds/ExampleResource.java`
 ----
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.sql.DataSource;
