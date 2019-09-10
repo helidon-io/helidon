@@ -102,6 +102,13 @@ Learn how to configure a Helidon MP application.
 --
 
 [CARD]
+.SE Config Guide
+[link=guides/11_config_se_guide.adoc]
+--
+Learn how to configure a Helidon SE application.
+--
+
+[CARD]
 .Build Native Images with GraalVM
 [link=guides/15_graalnative.adoc]
 --
