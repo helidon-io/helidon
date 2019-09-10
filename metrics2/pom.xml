@@ -31,6 +31,5 @@
 
     <modules>
         <module>metrics2</module>
-        <module>prometheus2</module>
     </modules>
 </project>
