@@ -1,0 +1,400 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Setting Up Data Sources
+:description: Helidon MP Data Source Guide
+:keywords: helidon, guide, datasource, microprofile
+
+This guide shows how to configure and use named
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`]s
+in your Helidon MP application.
+
+== What You Need
+
+|===
+|About 20 minutes
+|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|`curl` (for testing)
+|===
+
+== What You'll Do
+
+By following this guide, you'll enhance a bare-bones Helidon MP
+application to access a database.  You'll see how to install the
+relevant dependencies, set up and configure the datasource, and add
+datasource-related code to your application.
+
+== Use the Maven Archetype to Generate a Helidon MP Application
+
+In a shell, `cd` into an empty directory and run this:
+
+[source,bash,subs="attributes+"]
+----
+mvn archetype:generate \
+    -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-mp \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.example \
+    -DartifactId=helidon-ds \
+    -Dpackage=io.helidon.example.ds \
+    -DrestResourceName=ExampleResource \
+    -DapplicationName=ExampleApplication
+----
+
+Now `cd` into `helidon-ds`.  The rest of this guide will assume all
+relative paths are relative to this directory.
+
+== Add Your Database Driver to Your Helidon MP Application's Runtime Classpath
+
+In this guide, we'll use the H2 database.
+
+Add the following dependency in your `pom.xml`:
+
+[source,xml]
+.`pom.xml`
+----
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <version>1.4.199</version>
+    <scope>runtime</scope>
+</dependency>
+----
+
+In a production application, you may use a different database, so in
+that case you may add a different database driver dependency here
+instead.
+
+== Add a Helidon Connection Pool Extension to Your Helidon MP Application's Runtime Classpath
+
+Helidon contains two <<extensions/01_overview.adoc,extensions>> that
+supply _connection pools_, infrastructure that allows efficient use of
+database connections:
+
+1. <<extensions/02_cdi_datasource-hikaricp.adoc,HikariCP extension>>:
+   an extension that integrates the
+   https://github.com/brettwooldridge/HikariCP[Hikari connection pool]
+   into Helidon MP applications
+
+2. <<extensions/02_cdi_datasource-ucp.adoc,Oracle Universal Connection
+   Pool extension>>: an extension that integrates
+   https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/index.html[Oracle's
+   Universal Connection Pool] into Helidon MP applications
+
+Each connection pool offers tradeoffs in terms of size, efficiency and
+features.  **You need to pick _one_ to use.**
+
+=== Add the Hikari Connection Pool to the Runtime Classpath…
+
+If you choose to integrate the Hikari connection pool into your
+Helidon MP application, then add an appropriate `<dependency>`
+element as a child element of the `<dependencies>` element in your
+`pom.xml`, referencing the HikariCP extension:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+=== …Or Add the Oracle Universal Connection Pool to the Runtime Classpath
+
+If, instead, you choose to integrate the Oracle Universal Connection
+Pool into your Helidon MP application, then add an appropriate
+`<dependency>` element as a child element of the `<dependencies>`
+element in your `pom.xml`, referencing the Oracle Universal Connection
+Pool extension:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+== Configure the Connection Pool
+
+Regardless of which connection pool you integrate into your Helidon MP
+application, you will need to tell it how many data sources to set up,
+what to name each of them so you can refer to them inside your code,
+and how each of them should connect to a database.
+
+In this guide, we'll set up configuration in an `application.yaml`
+classpath resource.  Different syntax may apply if you use a different
+MicroProfile Config
+https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#configsources[`ConfigSource`
+implementation], but the principles described below are the same.  You
+can see <<microprofile/06_configuration.adoc,the Helidon MP
+configuration documentation>> for more details.
+
+=== Configure the Hikari Connection Pool…
+
+If you have chosen to integrate the Hikari connection pool into your
+Helidon MP application, then ensure the following YAML is present in
+your `application.yaml`, and that your `application.yaml` is present
+on the runtime classpath of your Helidon MP application by creating it
+in `src/main/resources`:
+
+[source,yaml]
+.`src/main/resources/application.yaml`
+----
+javax:
+  sql:
+    DataSource: <1>
+      test: <2>
+        dataSourceClassName: org.h2.jdbcx.JdbcDataSource <3>
+        dataSource: <4>
+          password: ""
+          url: jdbc:h2:mem:test
+          user: sa
+----
+
+<1> The YAML consisting of a top level `javax`
+https://yaml.org/spec/1.1/current.html#key/information%20model[mapping]
+whose sole element is a `sql` mapping whose sole mapping is a
+`DataSource` mapping corresponds to the Java type of
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`].
+This preamble specifies the type of Java object that will supply
+database connections in your code.  Its sole element is a mapping
+whose key is the name of the data source in question.  This
+`javax:` / `sql:` / `DataSource:` preamble is required.
+
+<2> This mapping's key is the name of your data source (`test` in this
+case), and will be referenced in your application code.  Its elements
+are
+https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby[Hikari
+connection pool properties].  The data source name may be anything you
+like.  By convention, data source names are usually single words
+consisting of alphanumeric characters only.
+
+<3> This is the class name of the actual
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`]
+implementation provided by your database vendor.  In this example,
+which uses the https://www.h2database.com/html/main.html[H2 database],
+the class name in question is
+https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbcx.JdbcDataSource`].
+
+<4> The Hikari connection pool reserves the keyword `dataSource` as an
+indicator that the property names that follow are
+https://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html[Java
+Bean properties] of the class denoted by the value of the
+`dataSourceClassName` property.  In this example, the
+https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html#setUrl_String[`url`
+Java Bean property] of the
+https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbcx.JdbcDataSource`
+class] will be set to `jdbc:h2:mem:test`.  See the
+https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#initialization[HikariCP
+documentation for more details].
+
+=== …Or Configure the Oracle Universal Connection Pool
+
+If instead you have chosen to integrate the Oracle Universal
+Connection Pool into your Helidon MP application, then ensure the
+following YAML is present in your `application.yaml`, and that your
+`application.yaml` is present on the runtime classpath of your Helidon
+MP application:
+
+[source,yaml]
+.`src/main/resources/application.yaml`
+----
+javax:
+  sql:
+    DataSource: <1>
+      test: <2>
+        connectionFactoryClassName: org.h2.jdbcx.JdbcDataSource <3>
+        URL: jdbc:h2:mem:test
+        user: sa
+        password: ""
+----
+
+<1> The YAML consisting of a top level `javax` mapping whose sole
+element is a `sql` mapping whose sole mapping is a `DataSource`
+mapping corresponds to the Java type of
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`].
+This preamble specifies the type of Java object that will supply
+database connections in your code.  Its sole element is a mapping
+whose key is the name of the data source in question.  This
+`javax:` / `sql:` / `DataSource:` preamble is required.
+
+<2> This mapping's key will be the name of your data source (`test` in
+this case), and will be referenced in your application code.  Each of
+its elements' keys are
+https://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html[Java
+Bean properties] of the
+https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`oracle.ucp.jdbc.PoolDataSource`]
+class.  By convention, data source names are usually single words
+consisting of alphanumeric characters only.
+
+<3> If your database vendor provides a
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`]
+implementation class, then specify its name as the value of the
+https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html#setConnectionFactoryClassName_java_lang_String_[`connectionFactoryClassName`
+Java Bean property].  In this example, which uses the
+https://www.h2database.com/html/main.html[H2 database], the class name
+in question is
+https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbcx.JdbcDataSource`].
+
+== Inject a https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`] in Your Application Code
+
+Now that you've included the relevant libraries and configured them
+appropriately you can use the features they enable.
+
+First, ensure the `io.helidon.example.ds.ExampleResource` resource class imports
+http://javax-inject.github.io/javax-inject/api/javax/inject/Inject.html[`javax.inject.Inject`],
+http://javax-inject.github.io/javax-inject/api/javax/inject/Named.html[`javax.inject.Named`]
+and
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`]:
+
+[source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+----
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.sql.DataSource;
+----
+
+To inject the `test` data source configured in the examples above, add
+a `DataSource` field annotated with both `@Inject` and `@Named("test")` as follows:
+
+[source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+----
+@Inject <1>
+@Named("test") <2>
+private DataSource testDataSource; <3>
+----
+
+<1> The
+http://javax-inject.github.io/javax-inject/api/javax/inject/Inject.html[`@Inject`
+annotation] is used to indicate that the CDI container should set the
+annotated field automatically.
+
+<2> The
+http://javax-inject.github.io/javax-inject/api/javax/inject/Named.html[`@Named`
+annotation] is used to select which of several potentially configured
+data sources should be injected.  Here, the `test` data source is
+requested.
+
+<3> The `testDataSource` field, whose name is arbitrary, is typed with
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`].
+Its protection level, `private` in this case, is immaterial, following
+CDI rules.  Helidon MP's CDI container will use the configuration
+described elsewhere in this document to create a new or retrieve an
+existing `DataSource` implementation instance whose name is specified
+by the `@Named` annotation, and will set this field's value to it.
+
+== Use The Injected `DataSource`
+
+Now that you have a `DataSource`, you'll use it to connect to the database.
+
+First, ensure the `io.heldion.example.ds.ExampleResource` resource
+class imports various `java.sql` classes:
+
+[source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+----
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+----
+
+Next, add a resource method that will return some text from the database:
+
+[source,java]
+.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+----
+@GET
+@Path("tables")
+@Produces("text/plain")
+public String getTableNames() throws SQLException { <1>
+    StringBuilder sb = new StringBuilder();
+    try (Connection connection = this.testDataSource.getConnection(); <2>
+         PreparedStatement ps =
+           connection.prepareStatement(" SELECT TABLE_NAME" <3>
+                                       + " FROM INFORMATION_SCHEMA.TABLES "
+                                       + "ORDER BY TABLE_NAME ASC");
+         ResultSet rs = ps.executeQuery()) {
+      while (rs.next()) {
+        sb.append(rs.getString(1)).append("\n");
+      }
+    }
+    return sb.toString();
+}
+----
+
+<1> Database interactions can throw `SQLException`.
+
+<2> We acquire a `Connection`, a `PreparedStatement` and a `ResultSet`
+in a try-with-resources block.
+
+<3> This SQL statement returns a list of all table names in the database.
+
+== Build the Application
+
+From the command line in the root directory of your application,
+execute the following:
+
+[source,sh]
+----
+mvn clean package
+----
+
+== Run the Application
+
+From the command line in the root directory of your application,
+execute the following:
+
+[source,sh]
+----
+java -jar target/helidon-ds.jar
+----
+
+== Use the Application
+
+From a command line execute the following:
+
+[source,sh]
+----
+curl http://localhost:8080/example/tables
+----
+
+Observe that the result will be a list of database table names.
+
+== Examples
+
+Helidon features a few examples of projects that use data sources.
+
+* https://github.com/oracle/helidon/tree/{helidon-version}/examples/integrations/cdi/datasource-hikaricp-h2[An
+  example showing a Hikari connection pool data source connected to an
+  H2 database]
+
+* https://github.com/oracle/helidon/tree/{helidon-version}/examples/integrations/cdi/datasource-hikaricp-mysql[An
+  example showing a Hikari connection pool data source connected to a
+  MySQL database]
+
+Some examples' configurations can be found in their
+`META-INF/microprofile-config.properties` resources instead of in an
+`application.yaml` file as described above.  Though the syntax is
+different, the same principles as those described above still apply.

@@ -66,6 +66,18 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).
 --
 
+.Setting Up Data Sources
+[link=guides/07_datasource.adoc]
+--
+Learn how to configure and use data sources from your Helidon MP application.
+--
+
+[CARD]
+.JPA Guide
+[link=guides/09_jpa.adoc]
+--
+Learn how to use JPA from your Helidon MP application.
+
 [CARD]
 .MP Metrics Guide
 [link=guides/09_metrics_mp_guide.adoc]
@@ -114,7 +126,6 @@ Learn how to configure a Helidon SE application.
 --
 Learn how to use GraalVM to build a native executable for your Helidon SE application.
 --
-
 ====
 
 == Tutorials

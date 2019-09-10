@@ -79,8 +79,9 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-In a production application, you may use a different database, so you
-may add a different database driver dependency here instead.
+In a production application, you may use a different database, so in
+that case you may add a different database driver dependency here
+instead.
 
 == Add the Hikari Connection Pool Extension to the Runtime Classpath
 

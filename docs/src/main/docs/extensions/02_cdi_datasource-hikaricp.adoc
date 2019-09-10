@@ -26,8 +26,8 @@
 :cdi-applicationscoped-api-url: http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html
 
 This link:{cdi-extension-api-url}[CDI portable extension] provides support for
- injecting link:{hikaricp-project-url}[HikariCP data sources] in your Helidon
- MicroProfile applications.
+injecting link:{hikaricp-project-url}[HikariCP data sources] in your Helidon
+MicroProfile applications.
 
 == Prerequisites
 
@@ -44,7 +44,7 @@ Declare the following dependency in your project:
 == Injecting a HikariCP data source
 
 The following examples show how to create a `DataSource` named `orders` in your
- application.
+application.
 
 [source,java]
 .Field-injection example
@@ -66,12 +66,12 @@ The following examples show how to create a `DataSource` named `orders` in your
 ----
 
 The extension implements this injection point by creating a
- link:{hikaricp-datasource-api-url}[HikariDataSource] object in the
- link:{cdi-applicationscoped-api-url}[application scope].
+link:{hikaricp-datasource-api-url}[HikariDataSource] object in the
+link:{cdi-applicationscoped-api-url}[application scope].
 
 You can configure the object using
- <<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example,
- the data source created above can be configured as follows:
+<<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example,
+the data source created above can be configured as follows:
 
 [source, properties]
 .META-INF/microprofile-config.properties
@@ -83,5 +83,5 @@ javax.sql.DataSource.orders.dataSource.password = Oracle
 ----
 
 Property names that start with `javax.sql.DataSource.dataSourceName.` are parsed,
- and the remaining portion of each name is treated as a
- link:{hikaricp-props-url}[Hikari connection pool property].
+and the remaining portion of each name is treated as a
+link:{hikaricp-props-url}[Hikari connection pool property].
