@@ -95,6 +95,13 @@ Learn how to use Helidon SE built-in and custom health checks.
 --
 
 [CARD]
+.MP Config Guide
+[link=guides/11_config_mp_guide.adoc]
+--
+Learn how to configure a Helidon MP application.
+--
+
+[CARD]
 .Build Native Images with GraalVM
 [link=guides/15_graalnative.adoc]
 --
