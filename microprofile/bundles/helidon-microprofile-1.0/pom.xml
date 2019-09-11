@@ -33,7 +33,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

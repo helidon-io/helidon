@@ -24,7 +24,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.security</groupId>
     <modelVersion>4.0.0</modelVersion>
@@ -68,7 +68,6 @@
         <dependency>
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-jersey-client</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

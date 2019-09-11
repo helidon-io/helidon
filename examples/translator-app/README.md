@@ -70,3 +70,15 @@ curl "http://localhost/translator?q=cloud&lang=italian"
 ```
 
 Then check out the traces at http://localhost/zipkin.
+
+Stop the docker containers:
+```bash
+docker stop zipkin \
+    helidon-examples-translator-backend \
+    helidon-examples-translator-frontend
+```
+
+Delete the Kubernetes resources:
+```bash
+kubectl delete -f backend/app.yaml -f frontend/app.yaml
+```

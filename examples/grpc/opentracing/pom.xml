@@ -22,9 +22,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-applications-common</artifactId>
+        <artifactId>helidon-se</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.grpc</groupId>
     <artifactId>helidon-examples-grpc-opentracing</artifactId>

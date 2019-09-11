@@ -33,7 +33,6 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.prometheus</groupId>
@@ -57,7 +56,6 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-test-support</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

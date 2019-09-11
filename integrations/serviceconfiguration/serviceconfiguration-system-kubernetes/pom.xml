@@ -38,7 +38,6 @@
         <dependency>
             <groupId>io.helidon.serviceconfiguration</groupId>
             <artifactId>helidon-serviceconfiguration-api</artifactId>
-            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

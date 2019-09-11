@@ -65,3 +65,20 @@ kubectl apply -f cassandra.yaml -f backend/app.yaml -f frontend/app.yaml
 
 Open http://localhost/todo/ in your browser, add some TODO entries, then
  check out the traces at http://localhost/zipkin.
+
+Stop the docker containers:
+```bash
+docker stop zipkin \
+    helidon-examples-todo-backend \
+    helidon-examples-todo-frontend
+```
+
+Delete the Kubernetes resources:
+```bash
+kubectl delete \
+    -f ../k8s/ingress.yaml \
+    -f ../k8s/zipkin.yaml \
+    -f cassandra.yaml \
+    -f backend/app.yaml \
+    -f frontend/app.yaml
+```

@@ -61,3 +61,13 @@ Try the endpoint:
 ```bash
 curl http://localhost/oci-objectstorage/logo/{namespaceName}/{bucketName}/{objectName}
 ```
+
+Stop the docker containers:
+```bash
+docker stop helidon-examples-integrations-cdi-oci-objectstorage
+```
+
+Delete the Kubernetes resources:
+```bash
+kubectl delete -f ../../../k8s/ingress.yaml -f app.yaml
+```

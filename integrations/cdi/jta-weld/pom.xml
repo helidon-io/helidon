@@ -62,7 +62,6 @@
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-jta</artifactId>
-            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <!--

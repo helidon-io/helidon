@@ -123,7 +123,6 @@
             <dependency>
                 <groupId>io.helidon</groupId>
                 <artifactId>helidon-bom</artifactId>
-                <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -154,17 +153,14 @@
         <dependency>
             <groupId>io.helidon.media.jsonb</groupId>
             <artifactId>helidon-media-jsonb-server</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.media.jackson</groupId>
             <artifactId>helidon-media-jackson-server</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.common</groupId>
             <artifactId>helidon-tests-apps-bookstore-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

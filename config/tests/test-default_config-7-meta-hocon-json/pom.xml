@@ -37,12 +37,10 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-hocon</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

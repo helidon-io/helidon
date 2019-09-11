@@ -51,6 +51,11 @@ Try the endpoint:
 curl http://localhost:8080/tables
 ```
 
+Stop the docker container:
+```bash
+docker stop mysql
+```
+
 ## References
 
 - [MySQL Docker documentation](https://hub.docker.com/_/mysql?tab=description)

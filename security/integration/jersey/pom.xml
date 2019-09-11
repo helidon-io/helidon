@@ -33,42 +33,34 @@
         <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-annotations</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-util</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-service-loader</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>
@@ -79,18 +71,15 @@
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-client</artifactId>
             <scope>provided</scope>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-jaxrs</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-server</artifactId>
             <scope>provided</scope>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.opentracing</groupId>
@@ -104,7 +93,6 @@
         <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-config</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -136,13 +124,11 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-jersey</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

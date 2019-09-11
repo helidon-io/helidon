@@ -37,13 +37,11 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <!-- uses annotation Value -->
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-object-mapping</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -34,3 +34,8 @@ curl http://localhost:8080/test
 ```
 
 Then check out the traces at http://localhost:9411.
+
+Stop the docker containers:
+```bash
+docker stop zipkin helidon-webserver-opentracing-example
+```

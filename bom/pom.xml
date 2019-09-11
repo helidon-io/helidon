@@ -21,10 +21,10 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-applications-project</artifactId>
+        <groupId>io.helidon</groupId>
+        <artifactId>helidon-parent</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath>../applications/pom.xml</relativePath>
+        <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-bom</artifactId>
@@ -59,6 +59,27 @@
                 <artifactId>helidon-webserver-test-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- Helidon Jersey -->
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-media-jsonp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- WebClient -->
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
@@ -69,6 +90,11 @@
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
                 <artifactId>helidon-grpc-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>io.grpc</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -176,12 +202,22 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-header</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
                 <artifactId>helidon-security-providers-google-login</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.security.providers</groupId>
                 <artifactId>helidon-security-providers-oidc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-oidc-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -267,6 +303,11 @@
             <dependency>
                 <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-jwt</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security</groupId>
+                <artifactId>helidon-security-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- SE Bundles -->
@@ -390,6 +431,11 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-http</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -527,12 +573,12 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-common-delegates</artifactId>
+                <artifactId>helidon-integrations-cdi-delegates</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-common-reference-counted-context</artifactId>
+                <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

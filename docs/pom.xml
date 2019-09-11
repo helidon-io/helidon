@@ -50,7 +50,6 @@
                                 <artifactItem>
                                     <groupId>io.helidon</groupId>
                                     <artifactId>helidon-javadocs</artifactId>
-                                    <version>${project.version}</version>
                                     <outputDirectory>${site.output.dir}/apidocs</outputDirectory>
                                     <excludes>META-INF/**</excludes>
                                 </artifactItem>

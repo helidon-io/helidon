@@ -39,7 +39,6 @@
         <dependency>
             <groupId>io.helidon.serviceconfiguration</groupId>
             <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
-            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

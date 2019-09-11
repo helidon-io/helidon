@@ -25,7 +25,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-examples-microprofile-hello-world-explicit</artifactId>
     <name>Helidon Microprofile Examples Explicit Hello World</name>

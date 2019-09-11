@@ -32,7 +32,8 @@ named `oracle` that publishes ports 1521 and 5500 to
 the host while relying on the defaults for all other settings:
 
 ```bash
-docker container run --name oracle -d -it -p 1521:1521 -p 5500:5500 --shm-size=3g \
+docker container run -d -it -p 1521:1521 -p 5500:5500 --shm-size=3g \
+    --name oracle \
     container-registry.oracle.com/database/standard:latest
 ```
 
@@ -75,4 +76,9 @@ java -jar target/helidon-examples-integrations-datasource-hikaricp.jar
 Try the endpoint:
 ```bash
 curl http://localhost:8080/tables
+```
+
+Stop the docker containers:
+```bash
+docker stop oracle helidon-examples-integrations-datasource-hikaricp
 ```

@@ -25,7 +25,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.security</groupId>
     <artifactId>helidon-examples-security-webserver-digest-auth</artifactId>

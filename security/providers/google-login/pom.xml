@@ -37,12 +37,10 @@
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-util</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.api-client</groupId>
@@ -67,13 +65,11 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-encryption</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-config</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

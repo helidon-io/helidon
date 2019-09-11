@@ -154,7 +154,6 @@
             <dependency>
                 <groupId>io.helidon</groupId>
                 <artifactId>helidon-bom</artifactId>
-                <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -223,7 +222,6 @@
         <dependency>
             <groupId>io.helidon.tests.integration</groupId>
             <artifactId>helidon-tests-native-image-static-content</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

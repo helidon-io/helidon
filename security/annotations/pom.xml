@@ -33,7 +33,6 @@
         <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

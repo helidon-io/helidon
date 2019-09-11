@@ -33,37 +33,30 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile-1.1</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.health</groupId>
             <artifactId>helidon-microprofile-health</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.metrics</groupId>
             <artifactId>helidon-microprofile-metrics</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-fault-tolerance</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.jwt</groupId>
             <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-jersey-client</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

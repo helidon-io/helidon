@@ -25,7 +25,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-mp1_1-static-content</artifactId>
@@ -43,21 +43,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile-1.1</artifactId>
-            <!-- TODO figure out what to do with these exclusions -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.spec.javax.el</groupId>
-                    <artifactId>jboss.el.api.3.0.spec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jboss.spec.javax.interceptor</groupId>
-                    <artifactId>jboss.interceptors.api.1.2.spec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.hk2.external</groupId>
-                    <artifactId>javax.inject</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

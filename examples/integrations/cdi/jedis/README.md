@@ -41,3 +41,13 @@ Try the endpoint:
 curl -X PUT -H "Content-Type: text/plain" http://localhost/helidon-cdi-jedis/jedis/foo -d 'bar'
 curl http://localhost/helidon-cdi-jedis/jedis/foo
 ```
+
+Stop the docker containers:
+```bash
+docker stop redis helidon-examples-integrations-cdi-jedis
+```
+
+Delete the Kubernetes resources:
+```bash
+kubectl delete -f ../../k8s/ingress.yaml -f app.yaml
+```

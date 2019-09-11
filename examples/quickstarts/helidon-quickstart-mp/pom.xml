@@ -25,7 +25,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-quickstart-mp</artifactId>

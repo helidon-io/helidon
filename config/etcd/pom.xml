@@ -40,12 +40,10 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- etcd v2 -->
@@ -57,7 +55,6 @@
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>io.grpc</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -83,19 +80,16 @@
             -->
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-object-mapping</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-testing</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-hocon</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

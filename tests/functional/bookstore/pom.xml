@@ -64,19 +64,16 @@
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
             <artifactId>bookstore-se</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.bookstore-mp</groupId>
             <artifactId>bookstore-mp</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.media.jsonp</groupId>
             <artifactId>helidon-media-jsonp-server</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
