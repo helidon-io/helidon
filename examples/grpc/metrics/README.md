@@ -9,3 +9,9 @@ With JDK8+
 mvn package
 java -jar target/helidon-examples-grpc-metrics.jar
 ```
+
+Exercise the example:
+```bash
+java -cp target/helidon-examples-grpc-metrics.jar \
+    io.helidon.grpc.examples.metrics.SecureStringClient
+```

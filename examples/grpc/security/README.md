@@ -6,6 +6,14 @@ An example gRPC server using basic auth security.
 
 With JDK8+
 ```bash
-mvn package
+mvn -f ../pom.xml -pl common/security package
 java -jar target/helidon-examples-grpc-security.jar
+```
+
+Exercise the example:
+```bash
+java -cp target/helidon-examples-grpc-security.jar \
+    io.helidon.grpc.examples.security.SecureGreetClient
+java -cp target/helidon-examples-grpc-security.jar \
+    io.helidon.grpc.examples.security.SecureStringClient
 ```

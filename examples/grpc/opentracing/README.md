@@ -17,20 +17,23 @@ java -jar zipkin.jar
 
 With Docker:
 ```bash
-docker build -t helidon-examples-grpc-opentracing .
-docker run --rm -d --link zipkin --name helidon-examples-grpc-opentracing \
-    -p 8080:8080 helidon-examples-grpc-opentracing:latest
+docker build -t helidon-examples-grpc-opentracing -f ./Dockerfile ..
+docker run --rm -d -p 1408:1408 \
+    --link zipkin \
+    --name helidon-examples-grpc-opentracing \
+    helidon-examples-grpc-opentracing:latest
 ```
 
 With Java 8+:
 ```bash
-mvn package
+mvn -f ../pom.xml -pl common/security package
 java -jar target/helidon-examples-grpc-opentracing.jar
 ```
 
 Try the endpoint:
 ```bash
-curl http://localhost:8080/test
+java -cp target/helidon-examples-grpc-opentracing.jar io.helidon.grpc.examples.common.GreetClient
+java -cp target/helidon-examples-grpc-opentracing.jar io.helidon.grpc.examples.common.StringClient
 ```
 
 Then check out the traces at http://localhost:9411.

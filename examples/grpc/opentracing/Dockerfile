@@ -19,20 +19,22 @@ FROM maven:3.5.4-jdk-9 as build
 
 WORKDIR /helidon
 
-# Create a first layer to cache the "Maven World" in the local repository.
+# Create a first set of layers to cache the "Maven World" in the local repository.
 # Incremental docker builds will always resume after that, unless you update
 # the pom
-RUN mkdir opentracing common
-ADD pom.xml .
-ADD opentracing/pom.xml .
-ADD common/pom.xml .
-RUN mvn package -DskipTests
+RUN mkdir common
+ADD common/pom.xml common/pom.xml
+RUN mvn -f common/pom.xml install -DskipTests
+RUN mkdir opentracing
+ADD opentracing/pom.xml opentracing/pom.xml
+RUN mvn -f opentracing/pom.xml package -DskipTests
 
 # Do the Maven build!
 # Incremental docker builds will resume here when you change sources
 ADD common/src ./common/src
+RUN mvn -f common/pom.xml install -DskipTests
 ADD opentracing/src ./opentracing/src
-RUN mvn -pl common,opentracing package -DskipTests
+RUN mvn -f opentracing/pom.xml package -DskipTests
 RUN echo "done!"
 
 # 2nd stage, build the runtime image
@@ -43,6 +45,7 @@ WORKDIR /helidon
 COPY --from=build /helidon/opentracing/target/helidon-examples-grpc-opentracing.jar ./
 COPY --from=build /helidon/opentracing/target/libs ./libs
 
+ENV tracing.host="zipkin"
 CMD [ "java",  "-jar", "helidon-examples-grpc-opentracing.jar" ]
 
-EXPOSE 8080
+EXPOSE 1408
