@@ -137,6 +137,9 @@ public class GrpcServiceClient {
      */
     Object invoke(String name, Object[] args) {
         GrpcMethodStub stub = methodStubs.get(name);
+        if (stub == null) {
+            throw Status.INTERNAL.withDescription("gRPC method '" + name + "' does not exist").asRuntimeException();
+        }
         ClientMethodDescriptor descriptor = stub.descriptor();
         MethodHandler methodHandler = descriptor.methodHandler();
 
