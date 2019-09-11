@@ -502,7 +502,6 @@ call it.
 ----
 package io.helidon.examples.quickstart.mp;
 
-import io.helidon.security.integration.jersey.SecureClient;
 import java.util.Collections;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
