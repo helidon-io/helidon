@@ -71,7 +71,7 @@ public class JerseyConfigMain {
         Routing.Builder routing = Routing.builder()
                 .register("/rest", buildJersey());
 
-        server = JerseyUtil.startIt(routing);
+        server = JerseyUtil.startIt(routing, 8080);
 
         JerseyResources.setPort(server.port());
     }

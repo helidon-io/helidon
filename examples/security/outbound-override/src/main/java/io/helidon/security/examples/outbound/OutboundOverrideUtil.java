@@ -27,6 +27,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.WebServer;
@@ -61,8 +62,10 @@ public final class OutboundOverrideUtil {
                 .orElseThrow(() -> new RuntimeException("Failed to get security context from request, security not configured"));
     }
 
-    static CompletionStage<Void> startServer(Routing.Builder builder, Consumer<WebServer> callback) {
-        return WebServer.create(builder)
+    static CompletionStage<Void> startServer(Routing routing, int port, Consumer<WebServer> callback) {
+        return WebServer.builder(routing)
+                .config(ServerConfiguration.builder().port(port))
+                .build()
                 .start()
                 .thenAccept(callback);
     }

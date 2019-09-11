@@ -98,8 +98,8 @@ public class SignatureExampleBuilderMain {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 
         // start service 2 first, as it is required by service 1
-        service2Server = SignatureExampleUtil.startServer(routing2());
-        service1Server = SignatureExampleUtil.startServer(routing1());
+        service2Server = SignatureExampleUtil.startServer(routing2(), 9080);
+        service1Server = SignatureExampleUtil.startServer(routing1(), 8080);
 
         System.out.println("Signature example: from builder");
         System.out.println();

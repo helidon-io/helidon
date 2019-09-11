@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -33,8 +34,11 @@ class JerseyUtil {
     private JerseyUtil() {
     }
 
-    static WebServer startIt(Supplier<? extends Routing> routing) {
-        WebServer server = WebServer.create(routing);
+    static WebServer startIt(Supplier<? extends Routing> routing, int port) {
+        WebServer server = WebServer.builder(routing)
+                .config(ServerConfiguration.builder()
+                        .port(port))
+                .build();
 
         long t = System.nanoTime();
 
