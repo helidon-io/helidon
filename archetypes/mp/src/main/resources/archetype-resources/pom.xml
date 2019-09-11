@@ -11,7 +11,7 @@
     <name>${artifactId}</name>
 
     <properties>
-        <helidon.version>1.2.2-SNAPSHOT</helidon.version>
+        <helidon.version>@project.version@</helidon.version>
 #if( $mainClass.matches("y|yes|true") )
         <mainClass>${package}.Main</mainClass>
 #else
