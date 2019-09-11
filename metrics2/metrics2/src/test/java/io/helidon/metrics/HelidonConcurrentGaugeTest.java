@@ -39,7 +39,7 @@ import static org.hamcrest.core.Is.is;
  * message so that info is available easily in the test output.
  */
 public class HelidonConcurrentGaugeTest {
-    private static final long MIN_REQUIRED_SECONDS = Integer.getInteger("concurrentGauge.minRequiredSeconds", 10);
+    private static final long MIN_REQUIRED_SECONDS = Integer.getInteger("helidon.concurrentGauge.minRequiredSeconds", 10);
     private static final long SECONDS_THRESHOLD = 60 - MIN_REQUIRED_SECONDS;
 
     /*
@@ -51,7 +51,7 @@ public class HelidonConcurrentGaugeTest {
      * the final test of max and min to fail because the gauge will not have had
      * time to gather the info about the prev. minute.
      */
-    private static final boolean SHOULD_WAIT = Boolean.valueOf(System.getProperty("shouldWait", "true"));
+    private static final boolean SHOULD_WAIT = Boolean.valueOf(System.getProperty("helidon.concurrentGauge.shouldWait", "true"));
 
     private static Metadata meta;
 

@@ -29,7 +29,7 @@ import org.hamcrest.TypeSafeMatcher;
  */
 class HelidonMetricsMatcher {
 
-    static final Double VARIANCE = Double.valueOf(System.getProperty("histogram.tolerance", "0.001"));
+    static final Double VARIANCE = Double.valueOf(System.getProperty("helidon.histogram.tolerance", "0.001"));
 
     static TypeSafeMatcher<Number> withinTolerance(final Number expected) {
         return new TypeSafeMatcher<Number>() {

@@ -47,8 +47,8 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <concurrentGauge.minRequiredSeconds>45</concurrentGauge.minRequiredSeconds>
-                                    <histogram.tolerance>0.01</histogram.tolerance>
+                                    <helidon.concurrentGauge.minRequiredSeconds>45</helidon.concurrentGauge.minRequiredSeconds>
+                                    <helidon.histogram.tolerance>0.01</helidon.histogram.tolerance>
                                 </systemPropertyVariables>
                             </configuration>
                     </plugin>
