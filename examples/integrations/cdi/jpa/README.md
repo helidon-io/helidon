@@ -3,11 +3,11 @@
 With Java 8+:
 ```bash
 mvn package
-java -jar helidon-integrations-examples-jpa
+java -jar target/helidon-integrations-examples-jpa.jar
 ```
 
 Try the endpoint:
 ```bash
-curl -X POST -d 'bar' http://localhost:8080/foo
+curl -X POST -H "Content-Type: text/plain" http://localhost:8080/foo -d 'bar'
 curl http://localhost:8080/foo
 ```

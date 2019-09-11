@@ -31,10 +31,6 @@
     <artifactId>helidon-integrations-examples-jpa</artifactId>
     <name>Helidon CDI Extensions Examples JPA</name>
 
-    <properties>
-        <dependenciesDirectory>libs</dependenciesDirectory>
-    </properties>
-
     <dependencies>
         <!-- Test-scoped dependencies. -->
         <dependency>

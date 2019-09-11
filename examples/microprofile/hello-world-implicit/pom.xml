@@ -35,10 +35,6 @@
         Microprofile 2.2 example with implicit bootstrapping (server.Main(new String[0])
     </description>
 
-    <properties>
-        <mainClass>io.helidon.microprofile.server.Main</mainClass>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

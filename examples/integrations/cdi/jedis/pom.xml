@@ -30,10 +30,6 @@
     <artifactId>helidon-examples-integrations-cdi-jedis</artifactId>
     <name>Helidon CDI Extensions Examples Jedis</name>
 
-    <properties>
-        <mainClass>io.helidon.microprofile.server.Main</mainClass>
-    </properties>
-
     <dependencies>
         <!-- Compile-scoped dependencies. -->
         <dependency>

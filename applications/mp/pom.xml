@@ -61,6 +61,7 @@
         <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
+        <mainClass>io.helidon.microprofile.server.Main</mainClass>
     </properties>
 
     <build>

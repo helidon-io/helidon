@@ -31,10 +31,6 @@
     <artifactId>helidon-integrations-examples-datasource-hikaricp-h2</artifactId>
     <name>Helidon CDI Extensions Examples DataSource/HikariCP H2</name>
 
-    <properties>
-        <mainClass>io.helidon.microprofile.server.Main</mainClass>
-    </properties>
-
     <dependencies>
         <!-- Compile-scoped dependencies. -->
         <dependency>

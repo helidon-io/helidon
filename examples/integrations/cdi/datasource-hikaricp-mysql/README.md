@@ -14,8 +14,9 @@ and uses `tiger` as the MySQL root password and that will
 automatically be removed when it is stopped:
 
 ```sh
-docker container run --rm --name mysql --d --p 3306:3306 \
+docker container run --rm -d -p 3306:3306 \
     --env MYSQL_ROOT_PASSWORD=tiger \
+    --name mysql \
     mysql:8
 ```
 
@@ -52,6 +53,4 @@ curl http://localhost:8080/tables
 
 ## References
 
-MySQL Docker documentation:
-
-https://hub.docker.com/_/mysql?tab=description
+- [MySQL Docker documentation](https://hub.docker.com/_/mysql?tab=description)
