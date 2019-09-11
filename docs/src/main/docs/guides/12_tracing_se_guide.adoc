@@ -122,8 +122,12 @@ section (*not* `<dependencyManagement>`).
 .Add the following dependency to `pom.xml`:
 ----
 <dependency>
-  <groupId>io.helidon.tracing</groupId>
-  <artifactId>helidon-tracing-zipkin</artifactId>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing-zipkin</artifactId>
 </dependency>
 ----
 
@@ -135,6 +139,56 @@ All spans sent by Helidon to Zipkin need to be associated with a service.  Speci
 tracing:
   service: helidon-se-1
 ----
+
+[source,java]
+.Update the `Main` class; 1) Add new import, 2) call with `buildServerConfig()`, and 3) Add `buildServerConfig` method:
+----
+import io.helidon.tracing.TracerBuilder; // <1>
+...
+    ServerConfiguration serverConfig = buildServerConfig(config); // <2>
+...
+
+  private static ServerConfiguration buildServerConfig(Config config) {  // <3>
+    return ServerConfiguration.builder()
+        .config(config.get("server"))
+        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister()) // <4>
+        .build();
+  }
+
+----
+<1> Add new import statement.
+<2> Call the new `buildConfig` method to build a `Config` object.
+<3> Build the `ServerConfiguration` object.
+<3> Build and register a `Tracer` object using the tracing configuration.
+
+[source,java]
+.Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
+----
+import io.opentracing.Span;; // <1>
+...
+    private void getDefaultMessageHandler(ServerRequest request,
+                                   ServerResponse response) {
+
+        Span span = request.tracer()  // <2>
+            .buildSpan("getDefaultMessageHandler")  // <3>
+            .asChildOf(request.spanContext())  // <4>
+            .start(); // <5>
+
+        try{
+            sendResponse(response, "World1");
+        }
+        finally{
+            span.finish();  // <6>
+        }
+    }
+----
+<1> Add new import statement.
+<2> Get the `Tracer` object from the request.
+<3> Build a new span named `getDefaultMessageHandler`.
+<4> Make the a new span a child of the current span.
+<5> Start the span.  The current timestamp will used as the starting time for the span.
+<6> Finish the span.  The current timestamp will used as the ending time for the span.
+
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -266,173 +320,6 @@ You can see times for each space relative to the root span.  These rows are anno
 
 .Span detail page
 image::guides/12_tracing_span_detail.png[Span Details]
-
-
-=== Enabling Tracing on CDI beans
-
-So far, you have used tracing with JAX-RS without needing to annotate.  You can enable tracing on other CDI beans, either at the class level
-or at the method level, as shown by the following examples.
-
-==== Tracing at the method level
-
-To trace at the method level, you just annotate a method with @Traced.
-
-[source,java]
-.Update the `GreetingProvider` class; 1) Add a new import and 2) Add the @Traced annotation to the `getMessage` method:
-----
-import org.eclipse.microprofile.opentracing.Traced; // <1>
-...
-    @Traced  // <2>
-    String getMessage() {
-        return message.get();
-    }
-...
-----
-<1> Import the `Traced` annotation.
-<1> Enable tracing for getMessage.
-
-[source,bash]
-.Build and run the application, then invoke the endpoints and check the response:
-----
-curl http://localhost:8080/greet
-curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json" // <1>
-...
-[
-  "content-read",
-  "content-write",
-  "dosomework",
-  "get:io.helidon.examples.quickstart.se.greetresource.getdefaultmessage",
-  "io.helidon.examples.quickstart.se.greetingprovider.getmessage", // <2>
-  "security",
-  "security:atn",
-  "security:atz",
-  "security:response"
-]
-----
-<1> Get the span names.
-<2> There is new span name for the `getmessage` method, since your code called that method during the
-invocation of `/greet`.
-
-Click the back button on your browser, then click on the UI refresh button to see the new trace.  Select the newest trace
-in the list to see the trace detail page like the one below.
-Notice the new span named `io.helidon.examples.quickstart.se.greetingprovider.getmessage`.
-
-.Trace detail page with new span `getmessage`
-image::guides/12_tracing_getmessage.png[Trace getmessage]
-
-
-==== Tracing at the class level
-
-To trace at the class level, annotate the class with @Traced. This will enable tracing for all class methods,
-except for the constructor and private methods.
-
-[source,java]
-.Update the `GreetingProvider` class; 1) Add @Traced to the `GreetingProvider` class and 2) Remove @Traced from the `getMessage` method:
-----
-@Traced // <1>
-@ApplicationScoped
-public class GreetingProvider {
-...
-
-    String getMessage() { // <2>
-        return message.get();
-    }
-----
-<1> This will enable tracing for all class methods, except for the constructor and methods that are private.
-<2> Remove @Traced for the `getMessage` method.
-
-[source,bash]
-.Build and run the application, then invoke the endpoints and check the response:
-----
-curl http://localhost:8080/greet
-curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json"
-[
-...
-  "io.helidon.examples.quickstart.se.greetingprovider.getmessage", // <1>
-...
-]
-----
-<1> The service has the same set of span names as above, since `getmessage` was the only method called in this bean.
-
-Next, invoke HTTP PUT to change the greeting, which will cause `setMessage` to be called.
-
-[source,bash]
-Invoke the endpoints and check the response:
-----
-curl -i -X PUT -H "Content-Type: application/json" -d '{"greeting": "Hi"}'  http://localhost:8080/greet/greeting // <1>
-curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json"
-...
-[
-  "content-read",
-  "content-write",
-  "get:io.helidon.examples.quickstart.se.greetresource.getdefaultmessage",
-  "io.helidon.examples.quickstart.se.greetingprovider.getmessage",
-  "io.helidon.examples.quickstart.se.greetingprovider.setmessage", // <2>
-  "put:io.helidon.examples.quickstart.se.greetresource.updategreeting", // <3>
-  "security",
-  "security:atn",
-  "security:atz",
-  "security:response"
-]
-----
-<1> Invoke the endpoint to change the greeting.
-<2> The `GreetingProvider.setmessage` method was traced since you enabled class level tracing.
-<3> The JAX-RS method `GreetResource.updategreeting` was traced automatically by Helidon.
-
-You can refresh the UI view and drill down the trace to see the new spans.
-
-NOTE: Methods invoked directly by your code are not enabled for tracing, even if you explicitly annotate them with @Traced.
-Tracing only works for methods invoked on CDI beans. See the example below.
-
-[source,java]
-.Update the `GreetingProvider` class with the following code:
-----
-@ApplicationScoped
-public class GreetingProvider {
-    private final AtomicReference<String> message = new AtomicReference<>();
-
-    /**
-     * Create a new greeting provider, reading the message from configuration.
-     *
-     * @param message greeting to use
-     */
-    @Inject
-    public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {
-        this.message.set(message);
-    }
-
-    @Traced // <1>
-    String getMessage() {
-        return getMessage2();
-    }
-
-    @Traced  // <2>
-    String getMessage2() {
-        return message.get();
-    }
-
-    void setMessage(String message) {
-        this.message.set(message);
-    }
-}
-----
-<1> The `getMessage` method will be traced since it is externally invoked by `GreetingResource`.
-<2> The `getMessage2` method will not be traced, even with the @Traced annotation, since it is called internally by `getMessage`.
-
-[source,bash]
-.Build and run the application, then invoke the endpoints and check the response:
-----
-curl http://localhost:8080/greet
-curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json"
-...
-[
-...
-  "io.helidon.examples.quickstart.se.greetingprovider.getmessage", // <1>
-...
-]
-----
-<1> The `getMessage` method is traced, but `getMessage2` is not.
-
 === Tracing across services
 
 Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Zipkin.
@@ -443,6 +330,8 @@ internally call OpenTracing APIs to propagate the `SpanContext`. There is nothin
 To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
 what you did at the start of this guide:
+
+=== Create the second service
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype:
@@ -466,20 +355,65 @@ cd helidon-quickstart-se
 .Add the following dependency to `pom.xml`:
 ----
 <dependency>
-  <groupId>io.helidon.tracing</groupId>
-  <artifactId>helidon-tracing-zipkin</artifactId>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing-zipkin</artifactId>
 </dependency>
 ----
 
 [source,bash]
 .Replace `application.yaml` with the following:
 ----
-app.greeting=Hello From SE-2
-tracing.service=helidon-se-2
+app:
+  greeting: "Hello From SE-2"
 
-# Microprofile server properties
-server.port=8081
-server.host=0.0.0.0
+tracing:
+  service: "helidon-se-2"
+
+server:
+  port: 8080
+  host: 0.0.0.0
+----
+
+[source,java]
+.Update the `Main` class; 1) Add new import, 2) call with `buildServerConfig()`, and 3) Add `buildServerConfig` method:
+----
+import io.helidon.tracing.TracerBuilder;
+...
+    ServerConfiguration serverConfig = buildServerConfig(config);
+...
+
+  private static ServerConfiguration buildServerConfig(Config config) {
+    return ServerConfiguration.builder()
+        .config(config.get("server"))
+        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister())
+        .build();
+  }
+----
+
+[source,java]
+.Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
+----
+import io.opentracing.Span;;
+...
+    private void getDefaultMessageHandler(ServerRequest request,
+                                   ServerResponse response) {
+
+        Span span = request.tracer()
+            .buildSpan("getDefaultMessageHandler")
+            .asChildOf(request.spanContext())
+            .start();
+
+        try{
+            sendResponse(response, "World");
+        }
+        finally{
+            span.finish();
+        }
+    }
 ----
 
 [source,bash]
@@ -499,67 +433,145 @@ curl http://localhost:8081/greet
 }
 ----
 
+=== Modify the first service
 
 Once you have validated that the second service is running correctly, you need to modify the original application to
 call it.
+
+[source,xml]
+.Add the following dependency to `pom.xml`:
+----
+<dependency>
+    <groupId>io.helidon.security.integration</groupId>
+    <artifactId>helidon-security-integration-jersey</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing-jersey-client</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jersey.core</groupId>
+    <artifactId>jersey-client</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jersey.inject</groupId>
+    <artifactId>jersey-hk2</artifactId>
+</dependency>
+----
+
 
 [source,java]
 .Update the `GreetResource` class with the following code:
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.security.integration.jersey.SecureClient;
+import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.tracing.jersey.client.ClientTracingFilter;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import io.opentracing.Span;
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import org.glassfish.jersey.server.Uri;
 
-@Path("/greet")
-@RequestScoped
-public class GreetResource {
+public class GreetService implements Service {
 
-  @Uri("http://localhost:8081/greet")
-  @SecureClient
-  private WebTarget target; // <1>
-
+  private final AtomicReference<String> greeting = new AtomicReference<>();
+  private WebTarget webTarget;
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-  private final GreetingProvider greetingProvider;
 
-  @Inject
-  public GreetResource(GreetingProvider greetingConfig) {
-    this.greetingProvider = greetingConfig;
+  GreetService(Config config) {
+    greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
+
+    Client jaxRsClient = ClientBuilder.newBuilder().build();
+
+    webTarget = jaxRsClient.target("http://localhost:8081/greet");
   }
 
-  @SuppressWarnings("checkstyle:designforextension")
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  public JsonObject getDefaultMessage() {
-    return createResponse("World");
+  @Override
+  public void update(Routing.Rules rules) {
+    rules
+        .get("/", this::getDefaultMessageHandler)
+        .get("/{name}", this::getMessageHandler)
+        .get("/outbound", this::outbound)
+        .put("/greeting", this::updateGreetingHandler);
   }
 
-  @GET
-  @Path("/outbound") // <2>
-  public JsonObject outbound() {
-    return target.request().accept(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+
+    Span span = request.tracer().buildSpan("my-operation").asChildOf(request.spanContext()).start();
+
+    try {
+      sendResponse(response, "World1");
+    } finally {
+      span.finish();
+    }
   }
 
-  private JsonObject createResponse(String who) {
-    String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
+  private void getMessageHandler(ServerRequest request, ServerResponse response) {
+    String name = request.path().param("name");
+    sendResponse(response, name);
+  }
 
-    return JSON.createObjectBuilder().add("message", msg).build();
+  private void sendResponse(ServerResponse response, String name) {
+    String msg = String.format("%s %s!", greeting.get(), name);
+
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+
+  private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
+
+    if (!jo.containsKey("greeting")) {
+      JsonObject jsonErrorObject =
+          JSON.createObjectBuilder().add("error", "No greeting provided").build();
+      response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+      return;
+    }
+
+    greeting.set(jo.getString("greeting"));
+    response.status(Http.Status.NO_CONTENT_204).send();
+  }
+
+  private void outbound(ServerRequest request, ServerResponse response) {
+    Invocation.Builder requestBuilder = webTarget.request();
+
+    requestBuilder.property(
+        ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext());
+
+    requestBuilder
+        .rx()
+        .get(String.class)
+        .thenAccept(response::send)
+        .exceptionally(
+            throwable -> {
+              // process exception
+              response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+              response.send("Failed with: " + throwable);
+              return null;
+            });
+  }
+
+  /**
+   * Set the greeting to use in future messages.
+   *
+   * @param request the server request
+   * @param response the server response
+   */
+  private void updateGreetingHandler(ServerRequest request, ServerResponse response) {
+    request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
   }
 }
 ----
-<1> This is the `WebTarget` needed to send a request to the second service at port `8081`.
-<2> This is the new endpoint that will call the second service.
 
 
 [source,bash]
