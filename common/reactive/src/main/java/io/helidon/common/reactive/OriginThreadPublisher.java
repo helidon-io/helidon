@@ -219,7 +219,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
      */
     public void drain() {
         if (!hasSingleSubscriber.get() && !(completed && queue.isEmpty())) {
-            System.out.println("LEAK: no one registered to consume request");
+            LOGGER.fine(() -> "No one registered to consumer request");
 
             // if anyone races and wins, this subscriber is going to receive onError, and be done
             // otherwise, this subscriber is going to release all the chunks, and anyone who

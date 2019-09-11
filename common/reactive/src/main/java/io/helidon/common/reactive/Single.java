@@ -67,7 +67,7 @@ public interface Single<T> extends Subscribable<T> {
      *
      * @return CompletionStage
      */
-    default CompletionStage<T> toFuture() {
+    default CompletionStage<T> toStage() {
         try {
             SingleToFuture<T> subscriber = new SingleToFuture<>();
             this.subscribe(subscriber);
@@ -86,7 +86,7 @@ public interface Single<T> extends Subscribable<T> {
      * @throws ExecutionException if the future completed exceptionally
      */
     default T get() throws InterruptedException, ExecutionException {
-        return toFuture().toCompletableFuture().get();
+        return toStage().toCompletableFuture().get();
     }
 
     /**
@@ -99,7 +99,7 @@ public interface Single<T> extends Subscribable<T> {
      * @throws TimeoutException if the wait timed out
      */
     default T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return toFuture().toCompletableFuture().get(timeout, unit);
+        return toStage().toCompletableFuture().get(timeout, unit);
     }
 
     /**

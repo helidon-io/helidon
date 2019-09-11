@@ -308,7 +308,7 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
 Helidon MP applications are packaged into a JAR file and the dependencies
  are copied into a `libs` directory.  A detailed explanation of 
  why this particular packaging approach is recommended is provided on the 
- <<guides/04_dockerfile,Creating Docker Images>> page. 
+ <<guides/30_dockerfile,Creating Docker Images>> page. 
  Update the Maven POM file to create the correct packaging.  Here is 
  the updated file:
 
@@ -1181,7 +1181,7 @@ curl http://localhost:8080/health/ready
 ----
 
 Learn more about creating Docker images for Helidon applications at
- <<guides/04_dockerfile.adoc,Creating Docker Images>>.
+ <<guides/30_dockerfile.adoc,Creating Docker Images>>.
 
 == Deploy the application to Kubernetes
 

@@ -358,28 +358,28 @@ public class SingleTest {
                 });
             }
         };
-        Future<String> future = single.toFuture().toCompletableFuture();
+        Future<String> future = single.toStage().toCompletableFuture();
         assertThat(future.isDone(), is(equalTo(true)));
         assertThat(future.get(), is(equalTo("foo")));
     }
 
     @Test
     public void testToFutureCancel() throws InterruptedException, ExecutionException {
-        Future<String> future = Single.just("foo").toFuture().toCompletableFuture();
+        Future<String> future = Single.just("foo").toStage().toCompletableFuture();
         assertThat(future.cancel(true), is(equalTo(false)));
         assertThat(future.get(), is(equalTo("foo")));
     }
 
     @Test
     public void testNeverToFutureCancel() throws InterruptedException, ExecutionException {
-        Future<String> future = Single.<String>never().toFuture().toCompletableFuture();
+        Future<String> future = Single.<String>never().toStage().toCompletableFuture();
         assertThat(future.cancel(true), is(equalTo(true)));
         assertThat(future.isCancelled(), is(equalTo(true)));
     }
 
     @Test
     public void testNeverToFutureDoubleCancel() throws InterruptedException, ExecutionException {
-        Future<String> future = Single.<String>never().toFuture().toCompletableFuture();
+        Future<String> future = Single.<String>never().toStage().toCompletableFuture();
         assertThat(future.cancel(true), is(equalTo(true)));
         assertThat(future.cancel(true), is(equalTo(true)));
         assertThat(future.isCancelled(), is(equalTo(true)));
@@ -396,7 +396,7 @@ public class SingleTest {
                 subscriber.onSubscribe(subscription2);
             }
         };
-        Future<String> future = single.toFuture().toCompletableFuture();
+        Future<String> future = single.toStage().toCompletableFuture();
         assertThat(future.isDone(), is(equalTo(false)));
         assertThat(subscription1.canceled, is(equalTo(true)));
         assertThat(subscription2.canceled, is(equalTo(true)));
