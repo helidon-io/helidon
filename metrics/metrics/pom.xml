@@ -33,6 +33,25 @@
         Metrics APIs and implementation necessary for Java SE using Helidon Web Server
     </description>
 
+    <profiles>
+        <profile>
+            <id>pipeline</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <helidon.histogram.tolerance>0.01</helidon.histogram.tolerance>
+                                </systemPropertyVariables>
+                            </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+    
     <build>
         <plugins>
             <plugin>
@@ -40,7 +59,8 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>InternalBridgeTest with global tags set</id>
+                            <!-- Run this test in default-test and also here with an env var set -->
+                            <id>metrics-global-tags-set</id>
                             <goals>
                                 <goal>test</goal>
                             </goals>
