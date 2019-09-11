@@ -30,6 +30,7 @@ module io.helidon.microprofile.grpc.core {
 
     requires java.logging;
     requires javax.inject;
+    requires weld.core.impl;
 
     uses io.helidon.microprofile.grpc.core.model.MethodHandlerSupplier;
 

@@ -30,10 +30,14 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Named;
 
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
+
+import org.jboss.weld.literal.NamedLiteral;
 
 /**
  * Common model helper methods.
@@ -236,11 +240,19 @@ public final class ModelHelper {
     public static MarshallerSupplier getMarshallerSupplier(GrpcMarshaller annotation) {
         String name = annotation == null ? MarshallerSupplier.DEFAULT : annotation.value();
 
-        return StreamSupport.stream(ServiceLoader.load(MarshallerSupplier.class).spliterator(), false)
-                .filter(s -> hasName(s, name))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Could not load MarshallerSupplier from annotation "
-                                                                + annotation));
+        Instance<MarshallerSupplier> instance = CDI.current().select(MarshallerSupplier.class, new NamedLiteral(name));
+        if (instance.isUnsatisfied()) {
+            // fall back to service loader discovery
+            return StreamSupport.stream(ServiceLoader.load(MarshallerSupplier.class).spliterator(), false)
+                    .filter(s -> hasName(s, name))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Could not load MarshallerSupplier from annotation "
+                                                                    + annotation));
+        } else if (instance.isAmbiguous()) {
+            throw new IllegalArgumentException("There are multiple MarshallerSupplier beans with name '" + name + "'");
+        }
+
+        return instance.get();
     }
 
     private static boolean hasName(MarshallerSupplier supplier, String name) {
