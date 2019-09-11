@@ -37,6 +37,26 @@
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
     
+    <profiles>
+        <profile>
+            <id>pipeline</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <concurrentGauge.minRequiredSeconds>45</concurrentGauge.minRequiredSeconds>
+                                    <histogram.tolerance>0.01</histogram.tolerance>
+                                </systemPropertyVariables>
+                            </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+    
     <build>
         <plugins>
             <plugin>
@@ -44,7 +64,8 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>InternalBridgeTest with global tags set</id>
+                            <!-- Run this test in default-test and also here with an env var set -->
+                            <id>metrics-global-tags-set</id>
                             <goals>
                                 <goal>test</goal>
                             </goals>
