@@ -18,21 +18,22 @@ package io.helidon.service.configuration.hikaricp;
 import java.util.Properties;
 import java.util.Set;
 
-import io.helidon.service.configuration.api.ServiceConfiguration;
-import io.helidon.service.configuration.api.ServiceConfigurationProvider; // for javadoc only
-import io.helidon.service.configuration.api.System;
-
 /**
- * An abstract {@link ServiceConfiguration} implementation that
- * provides configuration information for <a
+ * An abstract {@link
+ * io.helidon.service.configuration.api.ServiceConfiguration}
+ * implementation that provides configuration information for <a
  * href="https://github.com/brettwooldridge/HikariCP">Hikari
  * connection pool</a> componentry.
  *
- * @see #HikariCPServiceConfiguration(Properties, System, Properties)
+ * @see #HikariCPServiceConfiguration(Properties,
+ * io.helidon.service.configuration.api.System, Properties)
  *
  * @see HikariCPServiceConfigurationProvider
+ *
+ * @deprecated This class is slated for removal.
  */
-public class HikariCPServiceConfiguration extends ServiceConfiguration {
+@Deprecated
+public class HikariCPServiceConfiguration extends io.helidon.service.configuration.api.ServiceConfiguration {
 
 
   /*
@@ -41,7 +42,8 @@ public class HikariCPServiceConfiguration extends ServiceConfiguration {
 
   /**
    * A {@link Properties} instance supplied {@linkplain
-   * #HikariCPServiceConfiguration(Properties, System, Properties) at
+   * #HikariCPServiceConfiguration(Properties,
+   * io.helidon.service.configuration.api.System, Properties) at
    * construction time} containing the property values that will
    * ultimately be returned by the default implementation of the
    * {@link #getPropertyNames()} and {@link #getProperty(String,
@@ -49,41 +51,48 @@ public class HikariCPServiceConfiguration extends ServiceConfiguration {
    *
    * <p>This field is never {@code null}.</p>
    *
-   * @see #HikariCPServiceConfiguration(Properties, System,
-   * Properties)
+   * @see #HikariCPServiceConfiguration(Properties,
+   * io.helidon.service.configuration.api.System, Properties)
    */
   @SuppressWarnings("checkstyle:VisibilityModifier")
   protected final Properties properties;
 
   /**
-   * The {@link System} that was determined to be the authoritative
-   * {@link System} at the time this {@link
-   * HikariCPServiceConfiguration} was {@linkplain
-   * #HikariCPServiceConfiguration(Properties, System, Properties)
+   * The {@link io.helidon.service.configuration.api.System} that was
+   * determined to be the authoritative {@link
+   * io.helidon.service.configuration.api.System} at the time this
+   * {@link HikariCPServiceConfiguration} was {@linkplain
+   * #HikariCPServiceConfiguration(Properties,
+   * io.helidon.service.configuration.api.System, Properties)
    * constructed}.
    *
    * <p>This field may be {@code null}.</p>
    *
-   * @see #HikariCPServiceConfiguration(Properties, System,
-   * Properties)
+   * @see #HikariCPServiceConfiguration(Properties,
+   * io.helidon.service.configuration.api.System, Properties)
    *
-   * @see ServiceConfigurationProvider#buildFor(Set, Properties)
+   * @see
+   * io.helidon.service.configuration.api.ServiceConfigurationProvider#buildFor(Set,
+   * Properties)
    */
   @SuppressWarnings("checkstyle:VisibilityModifier")
-  protected final System system;
+  protected final io.helidon.service.configuration.api.System system;
 
   /**
    * A {@link Properties} instance representing the meta-properties in
    * effect at the time this {@link HikariCPServiceConfiguration} was
-   * {@linkplain #HikariCPServiceConfiguration(Properties, System,
-   * Properties) constructed}.
+   * {@linkplain #HikariCPServiceConfiguration(Properties,
+   * io.helidon.service.configuration.api.System, Properties)
+   * constructed}.
    *
    * <p>This field may be {@code null}.</p>
    *
-   * @see #HikariCPServiceConfiguration(Properties, System,
-   * Properties)
+   * @see #HikariCPServiceConfiguration(Properties,
+   * io.helidon.service.configuration.api.System, Properties)
    *
-   * @see ServiceConfigurationProvider#buildFor(Set, Properties)
+   * @see
+   * io.helidon.service.configuration.api.ServiceConfigurationProvider#buildFor(Set,
+   * Properties)
    */
   @SuppressWarnings("checkstyle:VisibilityModifier")
   protected final Properties coordinates;
@@ -102,17 +111,25 @@ public class HikariCPServiceConfiguration extends ServiceConfiguration {
    * implementation of the {@link #getPropertyNames()} and {@link
    * #getProperty(String, String)} methods; may be {@code null}
    *
-   * @param system the {@link System} that was determined to be the
-   * authoritative {@link System}; may be {@code null}
+   * @param system the {@link
+   * io.helidon.service.configuration.api.System} that was determined
+   * to be the authoritative {@link
+   * io.helidon.service.configuration.api.System}; may be {@code null}
    *
    * @param coordinates a {@link Properties} instance representing the
    * meta-properties in effect; may be {@code null}
    *
-   * @see ServiceConfigurationProvider#buildFor(Set, Properties)
+   * @see
+   * io.helidon.service.configuration.api.ServiceConfigurationProvider#buildFor(Set,
+   * Properties)
    *
-   * @see ServiceConfigurationProvider#getAuthoritativeSystem(Set, Properties)
+   * @see
+   * io.helidon.service.configuration.api.ServiceConfigurationProvider#getAuthoritativeSystem(Set,
+   * Properties)
    */
-  protected HikariCPServiceConfiguration(final Properties properties, final System system, final Properties coordinates) {
+  protected HikariCPServiceConfiguration(final Properties properties,
+                                         final io.helidon.service.configuration.api.System system,
+                                         final Properties coordinates) {
     super("hikaricp");
     if (properties == null) {
       this.properties = new Properties();

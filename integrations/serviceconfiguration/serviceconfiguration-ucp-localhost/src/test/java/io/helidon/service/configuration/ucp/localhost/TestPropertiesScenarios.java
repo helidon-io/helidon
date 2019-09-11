@@ -15,31 +15,32 @@
  */
 package io.helidon.service.configuration.ucp.localhost;
 
-import io.helidon.service.configuration.api.ServiceConfiguration;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@Deprecated
 public class TestPropertiesScenarios {
 
-  public TestPropertiesScenarios() {
-    super();
-  }
+    public TestPropertiesScenarios() {
+        super();
+    }
 
-  @Test
-  public void testBareBones() {
-    final ServiceConfiguration sc = ServiceConfiguration.getInstance("ucp");
-    assertNotNull(sc);
-    assertEquals("jdbc:h2:mem:test", sc.getProperty("javax.sql.DataSource.dataSource.url"));
-  }
+    @Test
+    public void testBareBones() {
+        final io.helidon.service.configuration.api.ServiceConfiguration sc =
+            io.helidon.service.configuration.api.ServiceConfiguration.getInstance("ucp");
+        assertNotNull(sc);
+        assertEquals("jdbc:h2:mem:test", sc.getProperty("javax.sql.DataSource.dataSource.url"));
+    }
 
-  @Test
-  public void testJustInTimePropertyCreation() {
-    final ServiceConfiguration sc = ServiceConfiguration.getInstance("ucp");
-    assertNotNull(sc);
-    assertEquals("jdbc:h2:mem:fred", sc.getProperty("javax.sql.DataSource.fred.dataSource.url"));
-  }
+    @Test
+    public void testJustInTimePropertyCreation() {
+        final io.helidon.service.configuration.api.ServiceConfiguration sc =
+            io.helidon.service.configuration.api.ServiceConfiguration.getInstance("ucp");
+        assertNotNull(sc);
+        assertEquals("jdbc:h2:mem:fred", sc.getProperty("javax.sql.DataSource.fred.dataSource.url"));
+    }
   
 }

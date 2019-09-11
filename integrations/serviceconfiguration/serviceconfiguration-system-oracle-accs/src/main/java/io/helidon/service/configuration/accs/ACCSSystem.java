@@ -17,66 +17,68 @@ package io.helidon.service.configuration.accs;
 
 import java.util.Map;
 
-import io.helidon.service.configuration.api.System;
-
 /**
- * A {@link System} implementation that represents the <a
+ * A {@link io.helidon.service.configuration.api.System}
+ * implementation that represents the <a
  * href="https://docs.oracle.com/en/cloud/paas/app-container-cloud/csjse/getting-started-oracle-application-container-cloud-service.html">Oracle
  * Application Container Cloud Service</a> system.
  *
- * <p>This {@link System} is {@linkplain #isEnabled() enabled} when
- * {@linkplain #getenv() its environment} {@linkplain
- * Map#containsKey(Object) contains the <code>String</code> key}
- * {@code ORA_APP_NAME}.</p>
+ * <p>This {@link io.helidon.service.configuration.api.System} is
+ * {@linkplain #isEnabled() enabled} when {@linkplain #getenv() its
+ * environment} {@linkplain Map#containsKey(Object) contains the
+ * <code>String</code> key} {@code ORA_APP_NAME}.</p>
  *
  * @see #isEnabled()
  *
- * @see System
+ * @see io.helidon.service.configuration.api.System
+ *
+ * @deprecated This class is slated for removal.
  */
-public final class ACCSSystem extends System {
+@Deprecated
+public final class ACCSSystem extends io.helidon.service.configuration.api.System {
 
 
-  /*
-   * Constructors.
-   */
+    /*
+     * Constructors.
+     */
 
 
-  /**
-   * Creates a new {@link ACCSSystem} whose {@link #getName() name} is
-   * {@code accs} and whose {@linkplain #isAuthoritative()
-   * authoritative status} is {@code true}.
-   *
-   * @see #isAuthoritative()
-   */
-  public ACCSSystem() {
-    super("accs", true);
-  }
+    /**
+     * Creates a new {@link ACCSSystem} whose {@link #getName() name} is
+     * {@code accs} and whose {@linkplain #isAuthoritative()
+     * authoritative status} is {@code true}.
+     *
+     * @see #isAuthoritative()
+     */
+    public ACCSSystem() {
+        super("accs", true);
+    }
 
 
-  /*
-   * Instance methods.
-   */
+    /*
+     * Instance methods.
+     */
 
 
-  /**
-   * Returns {@code true} if this {@link ACCSSystem}'s {@linkplain
-   * #getenv() environment} {@linkplain Map#containsKey(Object)
-   * contains the <code>String</code> key} {@code ORA_APP_NAME}.
-   *
-   * @return {@code true} if this {@link ACCSSystem} is enabled;
-   * {@code false} otherwise
-   *
-   * @see <a
-   * href="https://docs.oracle.com/en/cloud/paas/app-container-cloud/csjse/exploring-application-deployments-page.html#GUID-843F7013-B6FA-45E0-A9D3-29A0EFD53E11">Configuring
-   * Environment Variables in the Oracle Application Container Cloud
-   * Service documentation</a>
-   *
-   * @see System#isEnabled()
-   */
-  @Override
-  public boolean isEnabled() {
-    final Map<?, ?> env = this.getenv();
-    return env != null && env.containsKey("ORA_APP_NAME");
-  }
+    /**
+     * Returns {@code true} if this {@link ACCSSystem}'s {@linkplain
+     * #getenv() environment} {@linkplain Map#containsKey(Object)
+     * contains the <code>String</code> key} {@code ORA_APP_NAME}.
+     *
+     * @return {@code true} if this {@link ACCSSystem} is enabled;
+     * {@code false} otherwise
+     *
+     * @see <a
+     * href="https://docs.oracle.com/en/cloud/paas/app-container-cloud/csjse/exploring-application-deployments-page.html#GUID-843F7013-B6FA-45E0-A9D3-29A0EFD53E11">Configuring
+     * Environment Variables in the Oracle Application Container Cloud
+     * Service documentation</a>
+     *
+     * @see io.helidon.service.configuration.api.System#isEnabled()
+     */
+    @Override
+    public boolean isEnabled() {
+        final Map<?, ?> env = this.getenv();
+        return env != null && env.containsKey("ORA_APP_NAME");
+    }
 
 }

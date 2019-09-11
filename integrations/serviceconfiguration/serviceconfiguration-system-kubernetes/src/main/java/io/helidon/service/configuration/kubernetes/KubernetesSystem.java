@@ -20,67 +20,70 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import io.helidon.service.configuration.api.System;
-
 /**
- * A non-{@linkplain System#isAuthoritative() authoritative} {@link
- * System} implementation that {@linkplain #isEnabled() is enabled}
- * when running on any of several possible <a
+ * A non-{@linkplain
+ * io.helidon.service.configuration.api.System#isAuthoritative()
+ * authoritative} {@link io.helidon.service.configuration.api.System}
+ * implementation that {@linkplain #isEnabled() is enabled} when
+ * running on any of several possible <a
  * href="https://kubernetes.io/">Kubernetes</a> systems.
  *
  * @see #isEnabled()
  *
  * @see <a href="https://kubernetes.io/">Kubernetes</a>
+ *
+ * @deprecated This class is slated for removal.
  */
-public final class KubernetesSystem extends System {
+@Deprecated
+public final class KubernetesSystem extends io.helidon.service.configuration.api.System {
 
 
-  /*
-   * Constructors.
-   */
+    /*
+     * Constructors.
+     */
 
 
-  /**
-   * Creates a new {@link KubernetesSystem} whose {@linkplain
-   * #getName() name} is {@code kubernetes} and whose {@linkplain
-   * #isAuthoritative() authoritative status} is {@code false}.
-   *
-   * @see System#System(String, boolean)
-   */
-  public KubernetesSystem() {
-    super("kubernetes", false /* not authoritative; don't know if it's minikube, GKE, AKS, etc. */);
-  }
-
-
-  /*
-   * Instance methods.
-   */
-
-
-  /**
-   * Returns {@code true} if there is a file named {@code
-   * /proc/1/cpuset} that contains at least one line starting with
-   * {@code /kubepods/}.
-   *
-   * @return {@code true} if the caller is running on any of several
-   * possible <a href="https://kubernetes.io/">Kubernetes</a> systems;
-   * {@code false} otherwise
-   *
-   * @see System#isEnabled()
-   *
-   * @see <a href="https://kubernetes.io/">Kubernetes</a>
-   */
-  @Override
-  public boolean isEnabled() {
-    try {
-      return
-        Files.lines(Paths.get("/proc/1/cpuset"), StandardCharsets.UTF_8)
-        .filter(l -> l.startsWith("/kubepods/"))
-        .findAny()
-        .isPresent();
-    } catch (final IOException ioException) {
-      return false;
+    /**
+     * Creates a new {@link KubernetesSystem} whose {@linkplain
+     * #getName() name} is {@code kubernetes} and whose {@linkplain
+     * #isAuthoritative() authoritative status} is {@code false}.
+     *
+     * @see io.helidon.service.configuration.api.System#System(String, boolean)
+     */
+    public KubernetesSystem() {
+        super("kubernetes", false /* not authoritative; don't know if it's minikube, GKE, AKS, etc. */);
     }
-  }
+
+
+    /*
+     * Instance methods.
+     */
+
+
+    /**
+     * Returns {@code true} if there is a file named {@code
+     * /proc/1/cpuset} that contains at least one line starting with
+     * {@code /kubepods/}.
+     *
+     * @return {@code true} if the caller is running on any of several
+     * possible <a href="https://kubernetes.io/">Kubernetes</a>
+     * systems; {@code false} otherwise
+     *
+     * @see io.helidon.service.configuration.api.System#isEnabled()
+     *
+     * @see <a href="https://kubernetes.io/">Kubernetes</a>
+     */
+    @Override
+    public boolean isEnabled() {
+        try {
+            return
+                Files.lines(Paths.get("/proc/1/cpuset"), StandardCharsets.UTF_8)
+                .filter(l -> l.startsWith("/kubepods/"))
+                .findAny()
+                .isPresent();
+        } catch (final IOException ioException) {
+            return false;
+        }
+    }
 
 }

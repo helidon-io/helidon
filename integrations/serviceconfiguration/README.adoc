@@ -1,5 +1,8 @@
 = Helidon Service Configuration Framework
 
+NOTE: All projects under this directory are deprecated and are slated
+for removal.
+
 The Helidon Service Configuration Framework abstracts the
 configuration of a Java object or set of objects (a service) from the
 system-dependent configuration sources it might otherwise need, like particular environment

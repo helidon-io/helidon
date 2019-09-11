@@ -15,15 +15,17 @@
  */
 package io.helidon.integrations.datasource.ucp.cdi.config;
 
-import io.helidon.service.configuration.api.ServiceConfiguration;
-import io.helidon.service.configuration.microprofile.config.ServiceConfigurationConfigSource;
-
 /**
- * A {@link ServiceConfigurationConfigSource} that sits atop the
- * {@code ucp} {@link ServiceConfiguration} in effect (if there
- * is one).
+ * A {@link
+ * io.helidon.service.configuration.microprofile.config.ServiceConfigurationConfigSource}
+ * that sits atop the {@code ucp} {@link
+ * io.helidon.service.configuration.api.ServiceConfiguration} in
+ * effect (if there is one).
+ *
+ * @deprecated This class is slated for removal.
  */
-public final class UCP extends ServiceConfigurationConfigSource {
+@Deprecated
+public final class UCP extends io.helidon.service.configuration.microprofile.config.ServiceConfigurationConfigSource {
 
     /**
      * Creates a new {@link UCP}.
