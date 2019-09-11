@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,28 +27,29 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Deprecated
 public class TestKubernetesSystem {
 
-  public TestKubernetesSystem() {
-    super();
-  }
-
-  @Test
-  public void testEnabled() throws IOException {
-    final KubernetesSystem system = new KubernetesSystem();
-    final Path proc1CpuSet = Paths.get("/proc/1/cpuset"); 
-
-    if (Files.exists(proc1CpuSet)) {
-      final String singleLine = Files.lines(proc1CpuSet).findAny().get();
-      assertNotNull(singleLine);
-      if (singleLine.startsWith("/kubepods/")) {
-        assertTrue(system.isEnabled());
-      } else {
-        assertFalse(system.isEnabled());
-      }
-    } else {
-      assertFalse(system.isEnabled());
+    public TestKubernetesSystem() {
+        super();
     }
-  }
+
+    @Test
+    public void testEnabled() throws IOException {
+        final KubernetesSystem system = new KubernetesSystem();
+        final Path proc1CpuSet = Paths.get("/proc/1/cpuset"); 
+
+        if (Files.exists(proc1CpuSet)) {
+            final String singleLine = Files.lines(proc1CpuSet).findAny().get();
+            assertNotNull(singleLine);
+            if (singleLine.startsWith("/kubepods/")) {
+                assertTrue(system.isEnabled());
+            } else {
+                assertFalse(system.isEnabled());
+            }
+        } else {
+            assertFalse(system.isEnabled());
+        }
+    }
   
 }

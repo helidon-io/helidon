@@ -24,5 +24,7 @@
  *
  * @see
  * io.helidon.service.configuration.hikaricp.accs.HikariCPServiceConfigurationACCSProvider
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.hikaricp.accs;

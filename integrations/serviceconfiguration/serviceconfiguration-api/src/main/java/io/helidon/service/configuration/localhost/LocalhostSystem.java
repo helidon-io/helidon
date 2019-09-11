@@ -15,15 +15,18 @@
  */
 package io.helidon.service.configuration.localhost;
 
-import io.helidon.service.configuration.api.System;
-
 /**
- * A {@linkplain System#isAuthoritative() non-authoritative} {@link
- * System} implementation describing the current local host.
+ * A {@linkplain
+ * io.helidon.service.configuration.api.System#isAuthoritative()
+ * non-authoritative} {@link System} implementation describing the
+ * current local host.
  *
- * @see System
+ * @see io.helidon.service.configuration.api.System
+ *
+ * @deprecated This class is slated for removal.
  */
-public final class LocalhostSystem extends System {
+@Deprecated
+public final class LocalhostSystem extends io.helidon.service.configuration.api.System {
 
 
   /*
@@ -40,7 +43,7 @@ public final class LocalhostSystem extends System {
    *
    * @see #isAuthoritative()
    *
-   * @see System
+   * @see io.helidon.service.configuration.api.System
    */
   public LocalhostSystem() {
     super("localhost", false);
@@ -57,7 +60,7 @@ public final class LocalhostSystem extends System {
    *
    * @return {@code true} when invoked
    *
-   * @see System#isEnabled()
+   * @see io.helidon.service.configuration.api.System#isEnabled()
    */
   @Override
   public boolean isEnabled() {

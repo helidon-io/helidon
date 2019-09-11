@@ -21,8 +21,12 @@
  * target="_parent">Oracle Universal Connection Pool</a> componentry
  * suitable for local testing environments.
  *
- * @see io.helidon.service.configuration.ucp.localhost.UCPServiceConfigurationLocalhost
+ * @see
+ * io.helidon.service.configuration.ucp.localhost.UCPServiceConfigurationLocalhost
  *
- * @see io.helidon.service.configuration.ucp.localhost.UCPServiceConfigurationLocalhostProvider
+ * @see
+ * io.helidon.service.configuration.ucp.localhost.UCPServiceConfigurationLocalhostProvider
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.ucp.localhost;

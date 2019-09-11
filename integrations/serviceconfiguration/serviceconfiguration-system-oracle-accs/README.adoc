@@ -1,5 +1,7 @@
 = Oracle ACCS System Implementation
 
+NOTE: This project is deprecated and slated for removal.
+
 This project provides a `System` implementation for Oracle's
 https://cloud.oracle.com/acc[Application Container Cloud Service].
 

@@ -21,5 +21,7 @@
  * target="_parent">Oracle Universal Connection Pool</a> componentry.
  *
  * @see io.helidon.service.configuration.ucp.UCPServiceConfiguration
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.ucp;
