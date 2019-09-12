@@ -232,7 +232,8 @@ of names.
 [source,bash]
 .Invoke the endpoint below and check the response:
 ----
-curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json" // <1>
+// <1>
+curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json"
 ...
 [ // <2>
   "content-write",
@@ -251,10 +252,11 @@ which is the root.
 [source,bash]
 .Invoke the endpoint below and check the response:
 ----
-curl -X GET "http://localhost:9411/api/v2/traces?serviceName=helidon-se-1&limit=1" -H "accept: application/json"  // <1>
+// <1>
+curl -X GET "http://localhost:9411/api/v2/traces?serviceName=helidon-se-1&limit=1" -H "accept: application/json"
 ...
 [
-  [
+  [ // <2>
     {
       "traceId": "f193adb3f2bab3b3",
       "parentId": "f193adb3f2bab3b3",
@@ -660,11 +662,10 @@ kubectl apply -f ./zipkin.yaml
 ----
 
 [source,bash]
-.Create a Zipkin external server and expose it on port 9142:
+.Create a Zipkin external server to view the UI and expose it on port 9142:
 ----
-kubectl expose pod  zipkin --name=zipkin-external --port=9412 --target-port=9411 --type=LoadBalancer // <1>
+kubectl expose pod  zipkin --name=zipkin-external --port=9412 --target-port=9411 --type=LoadBalancer
 ----
-<1> Create a service so that you can access the Zipkin UI.
 
 Navigate to http://localhost:9412/zipkin to validate that you can access Zipkin running in Kubernetes.  It may
 take a few seconds before it is ready.
