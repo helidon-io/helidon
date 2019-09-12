@@ -35,8 +35,9 @@ in a future release. Please see the Deprecations section below.
 - JPA: Add Hibernate support [894](https://github.com/oracle/helidon/pull/894)
 - OpenAPI: Support admin port [999](https://github.com/oracle/helidon/pull/999)
 - Health check endpoint can now be disabled [990](https://github.com/oracle/helidon/pull/990)
+- Introduce parent poms for applications to reduce Maven boilerplate [1022](https://github.com/oracle/helidon/pull/1022)
 - Documentation: new guides [898](https://github.com/oracle/helidon/pull/898) [890](https://github.com/oracle/helidon/pull/890) [918](https://github.com/oracle/helidon/pull/918) [925](https://github.com/oracle/helidon/pull/925) [942](https://github.com/oracle/helidon/pull/942) [959](https://github.com/oracle/helidon/pull/959) [961](https://github.com/oracle/helidon/pull/961) [974](https://github.com/oracle/helidon/pull/974) [987](https://github.com/oracle/helidon/pull/987) [996](https://github.com/oracle/helidon/pull/996) [1011](https://github.com/oracle/helidon/pull/892) [1008](https://github.com/oracle/helidon/pull/1008)
-- Helidon bare archtypes [950](https://github.com/oracle/helidon/pull/950) [995](https://github.com/oracle/helidon/pull/995)
+- Helidon bare archetypes [950](https://github.com/oracle/helidon/pull/950) [995](https://github.com/oracle/helidon/pull/995)
 
 ### Fixes
 
