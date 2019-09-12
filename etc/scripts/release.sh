@@ -96,6 +96,7 @@ for ((i=0;i<${#ARGS[@]};i++))
 
 if [ -z "${COMMAND}" ] ; then
   echo "ERROR: no command provided"
+  usage
   exit 1
 fi
 
@@ -166,7 +167,7 @@ printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 
 update_version(){
   # Update version
-  mvn -f ${WS_DIR}/pom.xml versions:set versions:set-property \
+  mvn -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
     -DgenerateBackupPoms=false \
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
