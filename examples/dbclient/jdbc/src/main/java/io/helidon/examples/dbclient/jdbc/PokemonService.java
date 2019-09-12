@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.db.jdbc;
+package io.helidon.examples.dbclient.jdbc;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

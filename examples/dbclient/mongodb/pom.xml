@@ -18,17 +18,27 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>helidon-examples-db-project</artifactId>
-        <groupId>io.helidon.examples.db</groupId>
+        <groupId>io.helidon.examples.dbclient</groupId>
+        <artifactId>helidon-examples-dbclient-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-examples-db-mongodb</artifactId>
+    <artifactId>helidon-examples-dbclient-mongodb</artifactId>
     <name>Helidon Examples DB Mongo</name>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-mapper</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-mongodb</artifactId>
@@ -90,7 +100,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.examples.db</groupId>
+            <groupId>io.helidon.examples.dbclient</groupId>
             <artifactId>helidon-examples-dbclient-common</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -17,4 +17,4 @@
 /**
  * Quick start demo application.
  */
-package io.helidon.examples.db.jdbc;
+package io.helidon.examples.dbclient.jdbc;

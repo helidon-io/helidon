@@ -140,23 +140,20 @@ class DbMapperManagerImpl implements DbMapperManager {
     }
 
     private static <T> DbMapper<T> notFoundMapper(GenericType<T> type) {
-        MapperException rowException = new MapperException(TYPE_DB_ROW, type, ERROR_NO_MAPPER_FOUND);
-        MapperException namedParamsException = new MapperException(type, TYPE_NAMED_PARAMS, ERROR_NO_MAPPER_FOUND);
-        MapperException indexedParamsException = new MapperException(type, TYPE_INDEXED_PARAMS, ERROR_NO_MAPPER_FOUND);
         return new DbMapper<T>() {
             @Override
             public T read(DbRow row) {
-                throw rowException;
+                throw new MapperException(TYPE_DB_ROW, type, ERROR_NO_MAPPER_FOUND);
             }
 
             @Override
             public Map<String, ?> toNamedParameters(T value) {
-                throw namedParamsException;
+                throw new MapperException(type, TYPE_NAMED_PARAMS, ERROR_NO_MAPPER_FOUND);
             }
 
             @Override
             public List<?> toIndexedParameters(T value) {
-                throw indexedParamsException;
+                throw new MapperException(type, TYPE_INDEXED_PARAMS, ERROR_NO_MAPPER_FOUND);
             }
         };
     }

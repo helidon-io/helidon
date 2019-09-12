@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.db.mongo;
+package io.helidon.examples.dbclient.mongo;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.examples.dbclient.common.AbstractPokemonService;
