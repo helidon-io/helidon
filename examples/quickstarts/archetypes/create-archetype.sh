@@ -185,7 +185,6 @@ cat ${MY_DIR}/templates/pom.xml | sed \
     -e s@__VERSION__@"${VERSION}"@g \
     -e s@__NAME__@"${ARCHETYPE_NAME}"@g \
     -e s@__DESCRIPTION__@"${ARCHETYPE_DESCRIPTION}"@g \
-    -e s@'<relativePath>.*</relativePath>'@'<relativePath/>'@g
     > ${ARCHETYPE_DIR}/pom.xml
 
 # Process a java file into a template.
@@ -275,6 +274,7 @@ processProjectPom(){
         -e s@"<artifactId>${ARTIFACTID}</artifactId>"@'<artifactId>${artifactId}</artifactId>'@g \
         -e s@"^    <version>${VERSION}</version>"@'    <version>${version}</version>'@g \
         -e s@"<name>${NAME}</name>"@'<name>${project.artifactId}</name>'@g \
+        -e s@'<relativePath>.*</relativePath>'@'<relativePath/>'@g \
         > ${outputfile}
 }
 
