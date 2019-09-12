@@ -84,6 +84,13 @@ Learn how to configure a Helidon MP application.
 --
 Learn how to configure a Helidon SE application.
 --
+
+[CARD]
+.SE Tracing Guide
+[link=guides/12_tracing_se_guide.adoc]
+--
+Learn how to trace a Helidon SE application.
+--
 ====
 
 == Persistence
