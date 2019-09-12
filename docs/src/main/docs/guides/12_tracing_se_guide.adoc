@@ -292,7 +292,7 @@ Click on the UI refresh button (the search icon) as shown in the image below.  N
 to restrict the trace list.
 
 .Trace refresh
-image::guides/12_tracing_refresh.png[Trace Refresh]
+image::guides/12_tracing_se_refresh.png[Trace Refresh]
 
 The image below shows the trace summary, including start time and duration of each trace. There are two traces,
 each one generated in response to a `curl http://localhost:8080/greet` invocation.  The oldest trace will have a much
