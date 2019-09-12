@@ -134,14 +134,14 @@ section (*not* `<dependencyManagement>`).
 All spans sent by Helidon to Zipkin need to be associated with a service.  Specify the service name below.
 
 [source,bash]
-.Add the following line to `application.yaml`:
+.Add the following line to `resources/application.yaml`:
 ----
 tracing:
   service: helidon-se-1
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import, 2) call with `buildServerConfig()`, and 3) Add `buildServerConfig` method:
+.Update the `Main` class; 1) Add a new import, 2) call the `buildServerConfig` method, and 3) Add the `buildServerConfig` method:
 ----
 import io.helidon.tracing.TracerBuilder; // <1>
 ...
@@ -156,13 +156,13 @@ import io.helidon.tracing.TracerBuilder; // <1>
   }
 
 ----
-<1> Add new import statement.
-<2> Call the new `buildConfig` method to build a `Config` object.
+<1> Add a new import statement.
+<2> Call the new `buildServerConfig` method to build a `ServerConfiguration` object.
 <3> Build the `ServerConfiguration` object.
 <3> Build and register a `Tracer` object using the tracing configuration.
 
 [source,java]
-.Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
 ----
 import io.opentracing.Span;; // <1>
 ...
@@ -175,7 +175,7 @@ import io.opentracing.Span;; // <1>
             .start(); // <5>
 
         try{
-            sendResponse(response, "World1");
+            sendResponse(response, "World");
         }
         finally{
             span.finish();  // <6>
@@ -186,8 +186,8 @@ import io.opentracing.Span;; // <1>
 <2> Get the `Tracer` object from the request.
 <3> Build a new span named `getDefaultMessageHandler`.
 <4> Make the a new span a child of the current span.
-<5> Start the span.  The current timestamp will used as the starting time for the span.
-<6> Finish the span.  The current timestamp will used as the ending time for the span.
+<5> Start the span.  The current timestamp is used as the starting time for the span.
+<6> Finish the span.  The current timestamp is used as the ending time for the span.
 
 
 [source,bash]
@@ -213,7 +213,8 @@ curl http://localhost:8080/greet
 Because you had tracing enabled, the previous `/greet` endpoint invocation resulted in a new trace being created.
 Let's get the trace data that was generated using the Zipkin API.  First, get the service information.
 
-NOTE: Helidon automatically enables tracing for JAX-RS resources methods so you don't need to use annotations with JAX-RS.
+NOTE: If you enable tracing then Helidon automatically creates spans for JAX-RS resources methods.
+See https://github.com/eclipse/microprofile-opentracing/releases/tag/1.3[MicroProfile OpenTracing] for more details.
 
 [source,bash]
 .Run the curl command and check the response:
@@ -222,7 +223,7 @@ curl http://localhost:9411/api/v2/services
 ...
 ["helidon-se-1"] // <1>
 ----
-<1> This is the tracing service name specified in `application.yaml`.
+<1> This is the tracing service name specified in `resources/application.yaml`.
 
 Each span used by a service has a name, which is unique within a trace. If you
 invoke the `/greet` endpoint multiple times, you will still get the same set
@@ -234,13 +235,9 @@ of names.
 curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json" // <1>
 ...
 [ // <2>
-  "content-read",
   "content-write",
-  "get:io.helidon.examples.quickstart.se.greetresource.getdefaultmessage",
-  "security",
-  "security:atn",
-  "security:atz",
-  "security:response"
+  "getdefaultmessagehandler",
+  "http request"
 ]
 ----
 <1> Get the span names for the `helidon-se-1` service.
@@ -257,21 +254,21 @@ which is the root.
 curl -X GET "http://localhost:9411/api/v2/traces?serviceName=helidon-se-1&limit=1" -H "accept: application/json"  // <1>
 ...
 [
-  [ // <2>
+  [
     {
-      "traceId": "2e0af8866efdef35",
-      "parentId": "2e0af8866efdef35",
-      "id": "b5d61690f230fde4",
+      "traceId": "f193adb3f2bab3b3",
+      "parentId": "f193adb3f2bab3b3",
+      "id": "1536021daf3845e1",
       "kind": "SERVER",
-      "name": "content-read",
-      "timestamp": 1568077339998659,
-      "duration": 41,
+      "name": "content-write",
+      "timestamp": 1568245972222815,
+      "duration": 527,
       "localEndpoint": {
         "serviceName": "helidon-se-1",
         "ipv4": "192.168.1.115"
       },
       "tags": {
-        "requested.type": "java.io.InputStream"
+        "response.type": "org.glassfish.json.JsonObjectBuilderImpl$JsonObjectImpl"
       }
     },
 ...
@@ -281,8 +278,7 @@ curl -X GET "http://localhost:9411/api/v2/traces?serviceName=helidon-se-1&limit=
 ----
 <1> Get the newest trace only, using the `limit=1` query param.  There are other query params that let you restrict
 results to a specific time window.
-<2> The request will return seven spans, one for each name, along with an unnamed JSON node, which
-has the status.
+<2> The request will return 3 spans, one for each name.
 
 === Viewing tracing using Zipkin UI
 
@@ -303,23 +299,22 @@ each one generated in response to a `curl http://localhost:8080/greet` invocatio
 longer duration since there is one-time initialization that occurs.
 
 .Tracing list view
-image::guides/12_tracing_top.png[Traces]
+image::guides/12_tracing_se_top.png[Traces]
 
 Click on a trace and you will see the trace detail page where the spans are listed.  You can clearly
 see the root span and the relationship among all the spans in the trace, along with timing information.
 
 .Trace detail page
-image::guides/12_tracing_detail.png[Trace Detail]
+image::guides/12_tracing_se_detail.png[Trace Detail]
 
 NOTE: A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
-https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].  Notice, the
-last span which writes the response after the root span ends, falls into this category.
+https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].
 
-You can examine span details by clicking on the span row.  Refer to the image below, which shows the `security` span details, including timing information.
+You can examine span details by clicking on the span row.  Refer to the image below, which shows the span details, including timing information.
 You can see times for each space relative to the root span.  These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
 
 .Span detail page
-image::guides/12_tracing_span_detail.png[Span Details]
+image::guides/12_tracing_se_span_detail.png[Span Details]
 === Tracing across services
 
 Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Zipkin.
@@ -365,7 +360,7 @@ cd helidon-quickstart-se
 ----
 
 [source,bash]
-.Replace `application.yaml` with the following:
+.Replace `resources/application.yaml` with the following:
 ----
 app:
   greeting: "Hello From SE-2"
@@ -374,12 +369,12 @@ tracing:
   service: "helidon-se-2"
 
 server:
-  port: 8080
+  port: 8081
   host: 0.0.0.0
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import, 2) call with `buildServerConfig()`, and 3) Add `buildServerConfig` method:
+.Update the `Main` class; 1) Add a new import, 2) call the `buildServerConfig()` method, and 3) Add the `buildServerConfig` method:
 ----
 import io.helidon.tracing.TracerBuilder;
 ...
@@ -501,25 +496,24 @@ public class GreetService implements Service {
   public void update(Routing.Rules rules) {
     rules
         .get("/", this::getDefaultMessageHandler)
-        .get("/{name}", this::getMessageHandler)
-        .get("/outbound", this::outbound)
+        .get("/outbound", this::outboundMessageHandler) // <1>
         .put("/greeting", this::updateGreetingHandler);
   }
 
   private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
 
-    Span span = request.tracer().buildSpan("my-operation").asChildOf(request.spanContext()).start();
+    Span span =
+        request
+            .tracer()
+            .buildSpan("getDefaultMessageHandler")
+            .asChildOf(request.spanContext())
+            .start();
 
     try {
-      sendResponse(response, "World1");
+      sendResponse(response, "World");
     } finally {
       span.finish();
     }
-  }
-
-  private void getMessageHandler(ServerRequest request, ServerResponse response) {
-    String name = request.path().param("name");
-    sendResponse(response, name);
   }
 
   private void sendResponse(ServerResponse response, String name) {
@@ -542,37 +536,47 @@ public class GreetService implements Service {
     response.status(Http.Status.NO_CONTENT_204).send();
   }
 
-  private void outbound(ServerRequest request, ServerResponse response) {
+  private void outboundMessageHandler(ServerRequest request, ServerResponse response) {
     Invocation.Builder requestBuilder = webTarget.request();
 
-    requestBuilder.property(
-        ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext());
+    // <2>
+    Span span =
+        request
+            .tracer()
+            .buildSpan("outboundMessageHandler")
+            .asChildOf(request.spanContext())
+            .start();
 
-    requestBuilder
-        .rx()
-        .get(String.class)
-        .thenAccept(response::send)
-        .exceptionally(
-            throwable -> {
-              // process exception
-              response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-              response.send("Failed with: " + throwable);
-              return null;
-            });
+    try {
+      requestBuilder.property(
+          ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext());  // <3>
+
+      requestBuilder   // <4>
+          .rx()
+          .get(String.class)
+          .thenAccept(response::send)
+          .exceptionally(
+              throwable -> {
+                // process exception
+                response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                response.send("Failed with: " + throwable);
+                return null;
+              });
+    } finally {
+      span.finish();   // <5>
+    }
   }
 
-  /**
-   * Set the greeting to use in future messages.
-   *
-   * @param request the server request
-   * @param response the server response
-   */
   private void updateGreetingHandler(ServerRequest request, ServerResponse response) {
     request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
   }
 }
 ----
-
+<1> Add `outboundMessageHandler` to the routing rules.
+<2> Create and start a span that is a child of the current span.
+<3> Set a property with the `SpanContext`.
+<4> Invoke the second service.
+<5> Stop the span.
 
 [source,bash]
 .Build and run the application, then invoke the endpoint and check the response:
@@ -589,12 +593,12 @@ curl -i http://localhost:8080/greet/outbound // <1>
 Refresh the Zipkin UI trace listing page and notice that there is a trace across two services.
 
 .Tracing multiple service list view
-image::guides/12_tracing_top_2_services.png[Traces]
+image::guides/12_tracing_se_top_2_services.png[Traces]
 
 Click on the trace with two services to see the detail view.
 
 .Tracing across multiple services detail view
-image::guides/12_tracing_detail_2_services.png[Traces]
+image::guides/12_tracing_se_detail_2_services.png[Traces]
 
 In the image above, you can see that the trace includes spans from two services. You will notice there is a gap before the sixth span,
 which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
@@ -607,7 +611,7 @@ You can now stop your second service, it is not longer used in this guide.
 The following example demonstrate how to use Zipkin from a Helidon application running in Kubernetes.
 
 [source,bash]
-.Add the following line to `application.yaml`:
+.Add the following line to `resources/application.yaml`:
 ----
 tracing.host=zipkin
 ----
