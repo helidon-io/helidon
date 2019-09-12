@@ -69,9 +69,8 @@
 
         <!-- Compile-scoped dependencies. -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-delegates</artifactId>
-            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
 

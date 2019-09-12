@@ -1,34 +1,12 @@
-
 # Helidon Quickstart SE Example
 
 This project implements a simple Hello World REST service using Helidon SE.
 
-## Prerequisites
+## Build and run
 
-1. Maven 3.5 or newer
-2. Java SE 8 or newer
-3. Docker 17 or newer to build and run docker images
-4. Kubernetes minikube v0.24 or newer to deploy to Kubernetes (or access to a K8s 1.7.4 or newer cluster)
-5. Kubectl 1.7.4 or newer to deploy to Kubernetes
-
-Verify prerequisites
-```
-java -version
-mvn --version
-docker --version
-minikube version
-kubectl version --short
-```
-
-## Build
-
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Start the application
-
-```
 java -jar target/helidon-quickstart-se.jar
 ```
 

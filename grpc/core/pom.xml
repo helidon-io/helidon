@@ -35,7 +35,6 @@
       <dependency>
           <groupId>io.helidon.grpc</groupId>
           <artifactId>io.grpc</artifactId>
-          <version>${project.version}</version>
       </dependency>
 
       <dependency>
@@ -72,18 +71,15 @@
       <dependency>
           <groupId>io.helidon.config</groupId>
           <artifactId>helidon-config-object-mapping</artifactId>
-          <version>${project.version}</version>
       </dependency>
       <dependency>
           <groupId>io.helidon.config</groupId>
           <artifactId>helidon-config-yaml</artifactId>
-          <version>${project.version}</version>
           <scope>test</scope>
       </dependency>
       <dependency>
           <groupId>io.helidon.common</groupId>
           <artifactId>helidon-common-http</artifactId>
-          <version>${project.version}</version>
       </dependency>
 
       <dependency>

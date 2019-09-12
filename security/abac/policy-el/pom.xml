@@ -37,7 +37,6 @@
         <dependency>
             <groupId>io.helidon.security.abac</groupId>
             <artifactId>helidon-security-abac-policy</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.el</groupId>

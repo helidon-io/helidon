@@ -43,6 +43,7 @@ public final class AbacJerseyMain {
 
         Server server = Server.builder()
                 .config(config)
+                .port(8080)
                 .build()
                 .start();
 

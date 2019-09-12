@@ -45,7 +45,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile-2.2</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -61,13 +60,13 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
-            <version>${version.lib.microprofile-metrics-api}</version>
+            <version>${version.lib.microprofile-metrics1-api}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-rest-tck</artifactId>
-            <version>${version.lib.microprofile-metrics-api}</version>
+            <version>${version.lib.microprofile-metrics1-api}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -79,7 +78,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api-tck</artifactId>
-            <version>${version.lib.microprofile-metrics-api}</version>
+            <version>${version.lib.microprofile-metrics1-api}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>

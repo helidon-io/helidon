@@ -39,14 +39,15 @@
 
     <modules>
         <module>config</module>
-        <module>webserver</module>
-        <module>security</module>
-        <module>microprofile</module>
-        <module>todo-app</module>
-        <module>quickstarts</module>
-        <module>health</module>
         <module>grpc</module>
+        <module>health</module>
+        <module>quickstarts</module>
+        <module>microprofile</module>
         <module>openapi</module>
+        <module>security</module>
+        <module>todo-app</module>
+        <module>translator-app</module>
+        <module>webserver</module>
     </modules>
 
     <build>

@@ -274,6 +274,7 @@ processProjectPom(){
         -e s@"<artifactId>${ARTIFACTID}</artifactId>"@'<artifactId>${artifactId}</artifactId>'@g \
         -e s@"^    <version>${VERSION}</version>"@'    <version>${version}</version>'@g \
         -e s@"<name>${NAME}</name>"@'<name>${project.artifactId}</name>'@g \
+        -e s@'<relativePath>.*</relativePath>'@'<relativePath/>'@g \
         > ${outputfile}
 }
 

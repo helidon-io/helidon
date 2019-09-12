@@ -1,4 +1,3 @@
-
 # Helidon Config Overrides Example
 
 This example shows how to load configuration from multiple 
@@ -20,16 +19,10 @@ _override_ config
 source. This file contains key _expressions_ (including wildcards) and values which
 take precedence over the settings in the original config sources.
 
+## Build and run
 
-## Build
-
-```
+With JDK8+
+```bash
 mvn package
+java -jar target/helidon-examples-config-overrides.jar
 ```
-
-## Run
-
-```
-mvn exec:java
-```
-

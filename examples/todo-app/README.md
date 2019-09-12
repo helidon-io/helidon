@@ -1,62 +1,84 @@
-TODOs Demo Application
-=====================
+# TODO Demo Application
 
-If you want to run behind a proxy, you need to configure the following in application.yaml of both services (find appropriate
-existing google-login provider configuration):
+This application implements todomvc[http://todomvc.com] with two microservices
+implements with Helidon MP and Helidon SE.
+
+## HTTP proxy
+
+If you want to run behind a proxy, you need to configure the config key
+ `security.providers.google-login.proxy-host`. You can do that by updating
+ `frontend/src/main/resources/application.yaml` and
+ `backend/src/main/resources/application.yaml` with the following content:
 ```yaml
-providers:
+security:
+  providers:
     - google-login:
         proxy-host: "proxy.host"
-        client-id: "1048216952820-6a6ke9vrbjlhngbc0al0dkj9qs9tqbk2.apps.googleusercontent.com"
 ```
 
-Build and start the applications:
+## Start Zipkin
+
+With Docker:
 ```bash
-mvn clean install
-mvn -f demo-frontend/pom.xml  generate-resources docker:build
-mvn -f demo-backend/pom.xml  generate-resources docker:build
-mvn -f demo-backend/cassandra/pom.xml generate-resources docker:build
+docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
 ```
-and then
+
+With Kubernetes:
 ```bash
-docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin
-docker run -d --name helidon-todos-cassandra -p 9042:9042 --link zipkin helidon.demos/io/helidon/demo/helidon-todos-cassandra
-docker run -d --name helidon-todos-backend -p 8854:8854 --link zipkin --link helidon-todos-cassandra helidon.demos/io/helidon/demo/helidon-todos-backend
-docker run -d --name helidon-todos-frontend -p 8080:8080 --link zipkin --link helidon-todos-backend helidon.demos/io/helidon/demo/helidon-todos-frontend
+kubectl apply -f ../k8s/ingress.yaml -f ../k8s/zipkin.yaml
 ```
-or
+
+## Build and run
+
+### With Docker:
 ```bash
-docker-compose up
+docker build -t helidon-examples-todo-cassandra cassandra/
+docker build -t helidon-examples-todo-backend backend/
+docker build -t helidon-examples-todo-frontend frontend/
+docker run --rm -d -p 9042:9042 \
+    --link zipkin \
+    --name helidon-examples-todo-cassandra \
+    helidon-examples-todo-cassandra
+docker run --rm -d -p 8854:8854 \
+    --link zipkin \
+    --link helidon-examples-todo-cassandra \
+    --name helidon-examples-todo-backend \
+    helidon-examples-todo-backend
+docker run --rm -d -p 8080:8080 \
+    --link zipkin \
+    --link helidon-examples-todo-backend \
+    --name helidon-examples-todo-frontend \
+    helidon-examples-todo-frontend
 ```
 
-Link map:
+Open http://localhost:8080 in your browser, add some TODO entries, then check
+ out the traces at http://localhost:9411.
 
-| URL | Description |
-| --- | ----------- |
-| http://localhost:8080/index.html | Main page of the demo |
-| http://localhost:8080/metrics | Prometheus metrics (frontend metrics) |
-| http://localhost:8080/env | Environment name (from configuration) |
-| http://localhost:9411/zipkin/ | Tracing page for Zipkin (served from docker started above) |
-
-Kubernetes setup: This assumes that the cluster is running DNS for services and pods. This
-is required for pods to find services by name as shown in the configuration.
+### With Kubernetes (docker for desktop)
 
 ```bash
-export KUBECONFIG=./path/to/admin.conf
-
-# From application root
-cd k8s
-
-# Create or update deployments and services for demo
-kubectl apply -f k8s-deployment.yml
+docker build -t helidon-examples-todo-cassandra cassandra/
+docker build -t helidon-examples-todo-backend backend/
+docker build -t helidon-examples-todo-frontend frontend/
+kubectl apply -f cassandra.yaml -f backend/app.yaml -f frontend/app.yaml
 ```
 
-It takes a few minutes for all containers to start when running in Kubernetes. After all 
-containers are started, use these URLs:
+Open http://localhost/todo/ in your browser, add some TODO entries, then
+ check out the traces at http://localhost/zipkin.
 
-| URL | Description |
-| --- | ----------- |
-| http://localhost:30080/index.html | Main page of the demo |
-| http://localhost:30080/metrics | Prometheus metrics (frontend metrics) |
-| http://localhost:30080/env | Environment name (from configuration) |
-| http://localhost:30011/zipkin | Tracing page for Zipkin (served from docker started above) |
+Stop the docker containers:
+```bash
+docker stop zipkin \
+    helidon-examples-todo-backend \
+    helidon-examples-todo-frontend
+```
+
+Delete the Kubernetes resources:
+```bash
+kubectl delete \
+    -f ../k8s/ingress.yaml \
+    -f ../k8s/zipkin.yaml \
+    -f cassandra.yaml \
+    -f backend/app.yaml \
+    -f frontend/app.yaml
+```

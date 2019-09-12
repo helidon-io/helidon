@@ -4,14 +4,18 @@
 Example that propagates identity, and on one endpoint explicitly
 sets the username and password.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
+java -jar target/helidon-examples-security-outbound-override.jar
 ```
 
-## Run
-
-```
-mvn exec:java
+Try the endpoints:
+```bash
+curl -u "jack:password" http://localhost:8080/propagate
+curl -u "jack:password" http://localhost:8080/override
+curl -u "jill:anotherPassword" http://localhost:8080/propagate
+curl -u "jill:anotherPassword" http://localhost:8080/override
 ```

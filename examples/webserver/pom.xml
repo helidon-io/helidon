@@ -26,10 +26,9 @@
         <artifactId>helidon-examples-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
-
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-project</artifactId>
-    <name>Helidon WebServer Examples Parent</name>
+    <name>Helidon WebServer Examples</name>
     <packaging>pom</packaging>
 
     <modules>
@@ -39,9 +38,6 @@
         <module>static-content</module>
         <module>jersey</module>
         <module>opentracing</module>
-        <module>demo-translator-frontend</module>
-        <module>demo-translator-backend</module>
         <module>streaming</module>
     </modules>
-
 </project>

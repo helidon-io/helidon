@@ -36,7 +36,6 @@
         <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <!-- only needed for compilation, not required in runtime -->
