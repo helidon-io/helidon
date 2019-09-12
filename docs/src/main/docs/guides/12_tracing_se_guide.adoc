@@ -284,15 +284,13 @@ results to a specific time window.
 
 The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents
 a structure of spans.  Zipkin provides a web-based UI at http://localhost:9411/zipkin, where you can see a visual
-representation of the same data and the relationship between spans within a trace.  If you see a `Lens UI` button at the top center then
-click on it and it will take you to the specific UI used by this guide.
+representation of the same data and the relationship between spans within a trace.
 
 Click on the UI refresh button (the search icon) as shown in the image below.  Notice that you can change the look-back time
 to restrict the trace list.
 
 .Trace refresh
 image::guides/12_tracing_refresh.png[Trace Refresh]
-
 
 The image below shows the trace summary, including start time and duration of each trace. There are two traces,
 each one generated in response to a `curl http://localhost:8080/greet` invocation.  The oldest trace will have a much
@@ -315,6 +313,8 @@ You can see times for each space relative to the root span.  These rows are anno
 
 .Span detail page
 image::guides/12_tracing_se_span_detail.png[Span Details]
+
+
 === Tracing across services
 
 Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Zipkin.
@@ -764,7 +764,7 @@ docker rm -f zipkin
 This guide has demonstrated how to use the Helidon SE tracing feature with Zipkin.  You have learned to do the following:
 
 - Enable tracing within a service
-- Use tracing with JAX-RS and CDI beans
+- Use tracing with JAX-RS
 - Use the Zipkin REST API and UI
 - Use tracing across multiple services
 - Integrate tracing with Kubernetes
@@ -773,7 +773,6 @@ This guide has demonstrated how to use the Helidon SE tracing feature with Zipki
 Refer to the following references for additional information:
 
 - MicroProfile OpenTracing specification at https://github.com/eclipse/microprofile-opentracing/releases/tag/1.3
-- MicroProfile OpenTracing Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.opentracing/microprofile-opentracing-api/1.3
 - Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
 
 
