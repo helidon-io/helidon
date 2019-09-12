@@ -111,7 +111,7 @@ fi
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 # Hooks for version substitution work
-readonly PREPARE_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/set-version.sh )
+readonly PREPARE_HOOKS=( )
 
 # Hooks for deployment work
 readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
@@ -172,6 +172,15 @@ update_version(){
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
     -DprocessAllModules=true
+
+  # Hack to update helidon.version
+  for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
+  do
+      cat ${pom} | \
+          sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
+          > ${pom}.tmp
+      mv ${pom}.tmp ${pom}
+  done
 
   # Invoke prepare hook
   if [ -n "${PREPARE_HOOKS}" ]; then
