@@ -205,9 +205,10 @@ release_build(){
     mvn nexus-staging:rc-open \
       -DstagingProfileId=6026dab46eed94 \
       -DstagingDescription="${STAGING_DESC}"
+
     export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
-      egrep "^\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-      awk '{print $2}' | head -1)
+      egrep "\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+      sed -E s@'.*(iohelidon-[0-9]*).*'@'\1'@g | head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
