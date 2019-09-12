@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 
+## [1.3.0] 
 
 ### Notes
 
@@ -21,6 +21,8 @@ likely need to change code that uses the MicroProfile Metrics API. For more
 information see sections 6.5 and Chapter 7 of
 [microprofile-metrics-spec-2.0.pdf](https://github.com/eclipse/microprofile-metrics/releases/download/2.0/microprofile-metrics-spec-2.0.pdf)
 
+As part of this release we are also deprecating APIs for possible removal
+in a future release. Please see the Deprecations section below.
 
 ### Improvements
 
@@ -477,7 +479,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.2.1...HEAD
+[1.3.0]: https://github.com/oracle/helidon/compare/1.2.1...1.3.0
 [1.2.1]: https://github.com/oracle/helidon/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/oracle/helidon/compare/1.1.2...1.2.0
 [1.1.2]: https://github.com/oracle/helidon/compare/1.1.1...1.1.2
