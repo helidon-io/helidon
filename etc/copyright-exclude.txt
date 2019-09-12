@@ -39,5 +39,6 @@ etc/javadoc/
 conf/secrets/
 .dockerignore
 empty_file
-src/main/resources/WEB/node
+frontend/node
+node_modules
 archetype-resources/pom.xml

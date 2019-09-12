@@ -17,8 +17,8 @@
 package io.helidon.demo.todos.frontend;
 
 import java.io.IOException;
-import java.util.logging.LogManager;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
@@ -39,12 +39,12 @@ import io.helidon.webserver.accesslog.AccessLogSupport;
 import io.opentracing.Tracer;
 import org.glassfish.jersey.logging.LoggingFeature;
 
-import static java.time.Duration.ofSeconds;
 import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
 import static io.helidon.config.ConfigSources.file;
 import static io.helidon.config.PollingStrategies.regular;
+import static java.time.Duration.ofSeconds;
 
 /**
  * Main class to start the service.

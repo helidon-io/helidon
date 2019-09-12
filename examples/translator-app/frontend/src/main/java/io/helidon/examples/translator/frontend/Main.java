@@ -16,16 +16,16 @@
 
 package io.helidon.examples.translator.frontend;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
+import java.io.IOException;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.LogManager;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import java.io.IOException;
 
 /**
  * Translator application frontend main class.

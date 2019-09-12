@@ -17,6 +17,7 @@ package io.helidon.examples.translator.frontend;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
