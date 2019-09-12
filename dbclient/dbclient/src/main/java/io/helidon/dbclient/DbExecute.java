@@ -18,6 +18,8 @@ package io.helidon.dbclient;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.reactive.OptionalCompletionStage;
+
 /**
  * Database executor.
  * <p>The database executor provides methods to create {@link DbStatement} instances for different types
@@ -128,8 +130,8 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return database query execution result which can contain single row
      */
-    default CompletionStage<Optional<DbRow>> namedGet(String statementName, Object... parameters) {
-        return createNamedGet(statementName).params(parameters).execute();
+    default OptionalCompletionStage<DbRow> namedGet(String statementName, Object... parameters) {
+        return OptionalCompletionStage.create(createNamedGet(statementName).params(parameters).execute());
     }
 
     /**

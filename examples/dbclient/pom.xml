@@ -20,19 +20,19 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>helidon-examples-project</artifactId>
         <groupId>io.helidon.examples</groupId>
+        <artifactId>helidon-examples-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
 
-    <groupId>io.helidon.examples.db</groupId>
-    <artifactId>helidon-examples-db-project</artifactId>
-    <name>Helidon Examples DB</name>
+    <groupId>io.helidon.examples.dbclient</groupId>
+    <artifactId>helidon-examples-dbclient-project</artifactId>
+    <name>Helidon Examples DB Client</name>
 
     <description>
-        Examples of Helidon DB
+        Examples of Helidon DB Client
     </description>
 
     <modules>

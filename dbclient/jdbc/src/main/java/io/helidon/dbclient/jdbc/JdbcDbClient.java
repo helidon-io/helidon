@@ -85,7 +85,7 @@ class JdbcDbClient implements DbClient {
     }
 
     @Override
-    public <T> CompletionStage<T> execute(Function<DbExecute, CompletionStage<T>> executor) {
+    public <T extends CompletionStage<?>> T execute(Function<DbExecute, T> executor) {
         JdbcExecute execute = new JdbcExecute(statements,
                                               executorService,
                                               interceptors,
@@ -93,7 +93,7 @@ class JdbcDbClient implements DbClient {
                                               dbMapperManager,
                                               mapperManager);
 
-        CompletionStage<T> resultFuture = executor.apply(execute);
+        T resultFuture = executor.apply(execute);
         resultFuture
                 .handle((t, throwable) -> {
                     execute.context()

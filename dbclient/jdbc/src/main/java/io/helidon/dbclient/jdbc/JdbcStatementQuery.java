@@ -360,6 +360,11 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                 }
             });
 
+            // TODO
+            // we should only use a thread to read data that was actually requested
+            // I would prefer to use the same thread to process a single query (to make sure we honor thread locals
+            // that may be used by the database)
+
             // and now we can process the data from the database
             executorService.submit(() -> {
                 //now we have a subscriber, we can handle the processing of result set
