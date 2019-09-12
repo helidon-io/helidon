@@ -187,7 +187,10 @@ public final class OciConfigConfigSource implements ConfigSource {
     } else {
       final Map<String, String> properties = new HashMap<>();
       properties.put("oci.auth.fingerprint", provider.getFingerprint());
-      properties.put("oci.auth.passphraseCharacters", String.valueOf(provider.getPassphraseCharacters()));
+      char[] passphrase = provider.getPassphraseCharacters();
+      if (passphrase != null) {
+        properties.put("oci.auth.passphraseCharacters", String.valueOf(passphrase));
+      }
       properties.put("oci.auth.tenancy", provider.getTenantId());
       properties.put("oci.auth.user", provider.getUserId());
       returnValue = Collections.unmodifiableMap(properties);
