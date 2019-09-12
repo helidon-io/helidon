@@ -53,7 +53,8 @@ public abstract class AbstractPokemonService implements Service {
         rules
                 .get("/", this::listPokemons)
                 // create new
-                .post("/", Handler.create(Pokemon.class, this::insertPokemon))
+                .put("/", Handler.create(Pokemon.class, this::insertPokemon))
+                // update existing
                 .post("/{name}/type/{type}", this::insertPokemonSimple)
                 // delete all
                 .delete("/", this::deleteAllPokemons)
@@ -127,13 +128,8 @@ public abstract class AbstractPokemonService implements Service {
         String pokemonName = request.path().param("name");
 
         dbClient.execute(exec -> exec.namedGet("select-one", pokemonName))
-                .thenAccept(maybeRow -> {
-                    if (maybeRow.isPresent()) {
-                        sendRow(maybeRow.get(), response);
-                    } else {
-                        sendNotFound(response, "Pokemon " + pokemonName + " not found");
-                    }
-                })
+                .onEmpty(() -> sendNotFound(response, "Pokemon " + pokemonName + " not found"))
+                .onValue(row -> sendRow(row, response))
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
@@ -175,6 +171,7 @@ public abstract class AbstractPokemonService implements Service {
                 .createNamedGet("select-for-update")
                 .namedParam(pokemon)
                 .execute()
+                // TODO use onPresent/onEmpty
                 .thenCompose(maybeRow -> maybeRow.map(dbRow -> tx.createNamedUpdate("update")
                         .namedParam(pokemon).execute())
                         .orElseGet(() -> CompletableFuture.completedFuture(0L)))
@@ -222,10 +219,11 @@ public abstract class AbstractPokemonService implements Service {
      *
      * @param throwable throwable that caused the issue
      * @param response server response
+     * @param <T> type of expected response, will be always {@code null}
      * @return {@code Void} so this method can be registered as a lambda
      *      with {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}
      */
-    protected Void sendError(Throwable throwable, ServerResponse response) {
+    protected <T> T sendError(Throwable throwable, ServerResponse response) {
         Throwable realCause = throwable;
         if (throwable instanceof CompletionException) {
             realCause = throwable.getCause();

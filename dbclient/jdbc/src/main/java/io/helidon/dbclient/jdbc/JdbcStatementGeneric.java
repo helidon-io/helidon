@@ -109,7 +109,7 @@ class JdbcStatementGeneric extends JdbcStatement<DbStatementGeneric, DbResult> i
 
 
         /*
-        TODO Too many future
+        TODO Too many futures
         Futures:
         interceptorStatementFuture - completed once we call the statement
         interceptorQueryFuture - completed once we read all records from a query (or finish a DML) - requires count

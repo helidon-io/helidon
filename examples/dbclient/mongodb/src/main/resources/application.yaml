@@ -23,7 +23,7 @@ db:
   source: "mongoDb"
   url: "mongodb://127.0.0.1:27017/pokemon"
   statements:
-    # Insert operation contains collection name, opertion type and data to be inserted.
+    # Insert operation contains collection name, operation type and data to be inserted.
     # Name variable is stored as MongoDB primary key attribute _id
     insert2: '{
             "collection": "pokemons",
@@ -39,7 +39,7 @@ db:
     select-one: '{
             "collection": "pokemons",
             "query": {
-              "_id": $name
+              "_id": ?
             }
         }'
     delete-all: '{

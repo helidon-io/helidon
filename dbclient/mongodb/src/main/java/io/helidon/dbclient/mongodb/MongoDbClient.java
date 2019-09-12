@@ -64,7 +64,7 @@ public class MongoDbClient implements DbClient {
     }
 
     @Override
-    public <T> CompletionStage<T> execute(Function<DbExecute, CompletionStage<T>> executor) {
+    public <T extends CompletionStage<?>> T execute(Function<DbExecute, T> executor) {
         return executor.apply(new MongoDbExecute(db, statements, dbMapperManager, mapperManager, interceptors));
     }
 

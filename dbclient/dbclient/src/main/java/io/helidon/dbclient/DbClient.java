@@ -51,7 +51,7 @@ public interface DbClient {
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> CompletionStage<T> execute(Function<DbExecute, CompletionStage<T>> executor);
+    <T extends CompletionStage<?>> T execute(Function<DbExecute, T> executor);
 
     /**
      * Pings the database, completes when DB is up and ready, completes exceptionally if not.
