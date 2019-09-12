@@ -34,13 +34,13 @@
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
             <exclusions>
                 <exclusion>
                     <groupId>io.helidon.microprofile.bundles</groupId>
                     <artifactId>helidon-microprofile-3.0</artifactId>
                 </exclusion>
             </exclusions>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

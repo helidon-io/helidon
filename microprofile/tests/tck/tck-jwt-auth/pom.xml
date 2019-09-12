@@ -41,6 +41,7 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -51,7 +52,7 @@
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-test-spi</artifactId>
-            <version>1.4.0.Final</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

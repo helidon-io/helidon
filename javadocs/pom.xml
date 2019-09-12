@@ -162,7 +162,6 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-access-log</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.media.jackson</groupId>
@@ -307,7 +306,6 @@
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-jaeger</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <!-- microprofile -->
         <dependency>
@@ -322,28 +320,23 @@
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-client</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-metrics</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-server</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <!-- Open API -->
         <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -414,7 +407,6 @@
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>
                     <artifactId>helidon-integrations-cdi-hibernate</artifactId>
-                    <version>${project.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>

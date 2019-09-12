@@ -23,7 +23,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
         <version>1.2.2-SNAPSHOT</version>
-        <relativePath>../../../../../applications/se/pom.xml</relativePath>
+        <relativePath>../../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
     <artifactId>bookstore-se</artifactId>
@@ -80,6 +80,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
+            <version>3.14.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

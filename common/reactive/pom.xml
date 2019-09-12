@@ -65,12 +65,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-mapper</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>

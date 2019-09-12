@@ -32,6 +32,11 @@
     <name>Helidon Applications Project</name>
     <description>Maven boilerplate for Helidon applications</description>
 
+    <modules>
+        <module>se</module>
+        <module>mp</module>
+    </modules>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

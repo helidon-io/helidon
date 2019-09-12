@@ -34,6 +34,7 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -50,11 +51,13 @@
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
             <version>${version.lib.microprofile-openapi-api}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-tck</artifactId>
             <version>${version.lib.microprofile-openapi-api}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>

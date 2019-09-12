@@ -51,7 +51,7 @@
             </build>
         </profile>
     </profiles>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -77,11 +77,11 @@
             </plugin>
         </plugins>
     </build>
+
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
-            <!-- specify older version because this artifact relies on it -->
             <version>${version.lib.microprofile-metrics1-api}</version>
         </dependency>
         <dependency>

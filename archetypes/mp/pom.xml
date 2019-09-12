@@ -36,14 +36,4 @@
             </extension>
         </extensions>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.applications</groupId>
-            <artifactId>helidon-mp</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
 </project>

@@ -27,6 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration.health</groupId>
     <artifactId>heldion-tests-integration-health-disabled</artifactId>
+    <name>Helidon Integration Test Health Disabled</name>
 
     <dependencies>
         <dependency>
