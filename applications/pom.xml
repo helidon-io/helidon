@@ -132,7 +132,6 @@
                                 <overWriteIfNewer>true</overWriteIfNewer>
                                 <includeScope>runtime</includeScope>
                                 <excludeScope>test</excludeScope>
-                                <useBaseVersion>false</useBaseVersion>
                             </configuration>
                         </execution>
                     </executions>
