@@ -164,7 +164,7 @@ import io.helidon.tracing.TracerBuilder; // <1>
 [source,java]
 .Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span;; // <1>
+import io.opentracing.Span; // <1>
 ...
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
@@ -245,9 +245,8 @@ curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "ac
 <2> These are the span names.  If you invoke the `/greet` endpoint again, then
 invoke the `/spans` endpoint, you will get the same response.
 
-Next, get the contents of the trace as shown below.  Notice that each span has a `parentId` field,
-except the `get:io.helidon.examples.quickstart.se.greetresource.getdefaultmessage` span,
-which is the root.
+
+Next, get the spans in the trace as shown below.
 
 [source,bash]
 .Invoke the endpoint below and check the response:
@@ -259,7 +258,7 @@ curl -X GET "http://localhost:9411/api/v2/traces?serviceName=helidon-se-1&limit=
   [ // <2>
     {
       "traceId": "f193adb3f2bab3b3",
-      "parentId": "f193adb3f2bab3b3",
+      "parentId": "f193adb3f2bab3b3", // <3>
       "id": "1536021daf3845e1",
       "kind": "SERVER",
       "name": "content-write",
@@ -281,6 +280,7 @@ curl -X GET "http://localhost:9411/api/v2/traces?serviceName=helidon-se-1&limit=
 <1> Get the newest trace only, using the `limit=1` query param.  There are other query params that let you restrict
 results to a specific time window.
 <2> The request will return 3 spans, one for each name.
+<3> Each span has a `parentId` field, except the `http request` span, which is the root.
 
 === Viewing tracing using Zipkin UI
 
@@ -394,7 +394,7 @@ import io.helidon.tracing.TracerBuilder;
 [source,java]
 .Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span;;
+import io.opentracing.Span;
 ...
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
@@ -458,7 +458,7 @@ call it.
 
 
 [source,java]
-.Update the `GreetResource` class with the following code:
+.Update the `GreetService` class with the following code:
 ----
 package io.helidon.examples.quickstart.se;
 
@@ -613,10 +613,14 @@ You can now stop your second service, it is not longer used in this guide.
 The following example demonstrate how to use Zipkin from a Helidon application running in Kubernetes.
 
 [source,bash]
-.Add the following line to `resources/application.yaml`:
+.Replace the tracing configuration in `resources/application.yaml` with the following:
 ----
-tracing.host=zipkin
+// <1>
+tracing:
+  service: helidon-se-1
+  host: zipkin
 ----
+<1> Helidon service `helidon-se-1` will connect to the Zipkin server at host name `zipkin`.
 
 [source,bash]
 .Stop the application and build the docker image for your application:
