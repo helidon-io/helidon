@@ -33,14 +33,64 @@
         Metrics APIs and implementation necessary for Java SE using Helidon Web Server
     </description>
 
+    <profiles>
+        <profile>
+            <id>pipeline</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <helidon.histogram.tolerance>0.01</helidon.histogram.tolerance>
+                                </systemPropertyVariables>
+                            </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <!-- Run this test in default-test and also here with an env var set -->
+                            <id>metrics-global-tags-set</id>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration>
+                                <includes>
+                                <include>**/InternalBridgeTest.java</include>
+                            </includes>
+                            <environmentVariables>
+                                <MP_METRICS_TAGS>globalTag1=gVal1,globalTag2=gVal2</MP_METRICS_TAGS>
+                            </environmentVariables>
+                            </configuration>
+                        </execution>
+                    </executions>
+            </plugin>
+        </plugins>
+    </build>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
+            <!-- specify older version because this artifact relies on it -->
+            <version>${version.lib.microprofile-metrics1-api}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

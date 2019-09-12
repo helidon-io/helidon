@@ -47,7 +47,7 @@ import io.opentracing.util.GlobalTracer;
  *  for details.
  * <p>
  * The following table lists jaeger specific defaults and configuration options.
- * <table>
+ * <table class="config">
  *     <caption>Tracer Configuration Options</caption>
  *     <tr>
  *         <th>option</th>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package io.helidon.microprofile.metrics;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.helidon.metrics.MetricsSupport;
@@ -29,6 +31,7 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -153,6 +156,12 @@ public class MetricsTest extends MetricsBaseTest {
 application:io_helidon_microprofile_metrics_cdi_gauged_bean_gauge_for_injection_test_seconds{tag1="valA",tag2="valB"} 2520
          *
          */
+    }
+
+    @Test
+    public void testAbsoluteGaugeBeanName() {
+        Set<String> gauges =  getMetricRegistry().getGauges().keySet();
+        assertThat(gauges, CoreMatchers.hasItem("secondsSinceBeginningOfTime"));
     }
 
     /**

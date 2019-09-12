@@ -31,7 +31,7 @@
     <name>Helidon Microprofile Examples Explicit Hello World</name>
 
     <description>
-        Microprofile 2.2 example with explicit bootstrapping (Server.create(Application.class).start())
+        Microprofile example with explicit bootstrapping (Server.create(Application.class).start())
     </description>
 
     <properties>
@@ -41,7 +41,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-2.2</artifactId>
+            <artifactId>helidon-microprofile-3.0</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

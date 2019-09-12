@@ -33,9 +33,20 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.helidon.microprofile.bundles</groupId>
+                    <artifactId>helidon-microprofile-3.0</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
         </dependency>
-        <!-- To keep HK2 from complaining when run with Java9+ -->
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-2.2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>javax.activation</groupId>
             <artifactId>javax.activation-api</artifactId>

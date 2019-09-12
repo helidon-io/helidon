@@ -19,50 +19,50 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.service.configuration.api.ServiceConfiguration;
-import io.helidon.service.configuration.api.System;
-import io.helidon.service.configuration.ucp.UCPServiceConfiguration;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@Deprecated
 public class TestPropertiesScenarios {
 
-  public TestPropertiesScenarios() {
-    super();
-  }
+    public TestPropertiesScenarios() {
+        super();
+    }
 
-  @Test
-  public void testBareBones() {
-    final ServiceConfiguration sc = ServiceConfiguration.getInstance("ucp");
-    assertNull(sc);
-  }
+    @Test
+    public void testBareBones() {
+        final io.helidon.service.configuration.api.ServiceConfiguration sc =
+            io.helidon.service.configuration.api.ServiceConfiguration.getInstance("ucp");
+        assertNull(sc);
+    }
 
-  @Test
-  public void testACCSSystem() {
-    final Map<String, String> env = new HashMap<>();
-    env.put("MYSQLCS_CONNECT_STRING", "TODO");
-    env.put("MYSQLCS_USER_NAME", "sa");
-    env.put("MYSQLCS_USER_PASSWORD", "sa");
-    final System dummyAccsSystem = new System("accs", true) {
-        @Override
-        public final boolean isEnabled() {
-          return true;
-        }
+    @Test
+    public void testACCSSystem() {
+        final Map<String, String> env = new HashMap<>();
+        env.put("MYSQLCS_CONNECT_STRING", "TODO");
+        env.put("MYSQLCS_USER_NAME", "sa");
+        env.put("MYSQLCS_USER_PASSWORD", "sa");
+        final io.helidon.service.configuration.api.System dummyAccsSystem =
+            new io.helidon.service.configuration.api.System("accs", true) {
+                @Override
+                public final boolean isEnabled() {
+                    return true;
+                }
 
-        @Override
-        public final Map<String, String> getenv() {
-          return env;
-        }
-      };
-    final UCPServiceConfigurationACCSProvider provider = new UCPServiceConfigurationACCSProvider();
-    final ServiceConfiguration sc = provider.buildFor(Collections.singleton(dummyAccsSystem), null);
-    assertNotNull(sc);
-    assertEquals("jdbc:mysql://TODO", sc.getProperty("javax.sql.DataSource.dataSource.url"));
+                @Override
+                public final Map<String, String> getenv() {
+                    return env;
+                }
+            };
+        final UCPServiceConfigurationACCSProvider provider = new UCPServiceConfigurationACCSProvider();
+        final io.helidon.service.configuration.api.ServiceConfiguration sc =
+            provider.buildFor(Collections.singleton(dummyAccsSystem), null);
+        assertNotNull(sc);
+        assertEquals("jdbc:mysql://TODO", sc.getProperty("javax.sql.DataSource.dataSource.url"));
     
-  }
+    }
   
 }

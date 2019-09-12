@@ -1,5 +1,7 @@
 # Kubernetes System Implementation
 
+NOTE: This project is deprecated and slated for removal.
+
 This project provides a `System` implementation for Kubernetes
 platforms.
 

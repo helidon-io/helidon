@@ -40,7 +40,10 @@ import java.util.Set;
  * @see #getInstance(String)
  *
  * @see ServiceConfigurationProvider
+ *
+ * @deprecated This class is slated for removal.
  */
+@Deprecated
 public abstract class ServiceConfiguration {
 
 

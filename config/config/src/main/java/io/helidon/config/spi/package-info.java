@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * Configuration SPI that defines the behavior developers can implement to extend the config system.
  * <p>
  * The most likely developer-implemented extension points:
- * <table>
+ * <table class="config">
  * <caption>Common Extension Points</caption>
  * <tr>
  * <th>Interface</th>

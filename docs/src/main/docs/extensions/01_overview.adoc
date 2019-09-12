@@ -38,6 +38,14 @@ Create and inject a HikariCP data source in your application code.
 --
 
 [CARD]
+.Oracle UCP data sources
+[link=extensions/02_cdi_datasource-ucp.adoc]
+--
+Create and inject an Oracle Universal Connection Pool data source in
+your application code.
+--
+
+[CARD]
 .Jedis clients
 [link=extensions/03_cdi_jedis.adoc]
 --

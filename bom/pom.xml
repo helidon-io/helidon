@@ -349,6 +349,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
+                <artifactId>helidon-microprofile-3.0</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.bundles</groupId>
                 <artifactId>internal-test-libs</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -365,6 +370,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.metrics</groupId>
                 <artifactId>helidon-microprofile-metrics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.metrics</groupId>
+                <artifactId>helidon-microprofile-metrics2</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -401,6 +411,11 @@
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics2</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- health checks -->
@@ -466,6 +481,11 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-context</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -599,6 +619,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-hibernate</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -128,6 +128,10 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     /**
      * Throws an {@link IllegalArgumentException} when invoked.
      *
+     * @param injectionPoint ignored
+     *
+     * @return nothing
+     *
      * @exception IllegalArgumentException when invoked
      *
      * @see #registerPersistenceContextInjectionPoint(InjectionPoint)}
@@ -142,6 +146,10 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
     /**
      * Throws an {@link IllegalArgumentException} when invoked.
+     *
+     * @param injectionPoint ignored
+     *
+     * @return nothing
      *
      * @exception IllegalArgumentException when invoked
      *

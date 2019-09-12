@@ -1,5 +1,7 @@
 # Service Configuration for HikariCP on `localhost`
 
+NOTE: This project is deprecated and slated for removal.
+
 This project implements a Helidon Service Configuration Framework
 `ServiceConfiguration` that exposes configuration information suitable
 for the [Hikari connection pool](http://brettwooldridge.github.io/HikariCP/)

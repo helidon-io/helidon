@@ -57,6 +57,10 @@
             <artifactId>helidon-bundles-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics2</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-client</artifactId>
         </dependency>

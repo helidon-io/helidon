@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ module io.helidon.microprofile.security {
     requires io.helidon.microprofile.server;
 
     provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.security.SecurityMpService;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.security.SecurityCdiExtension;
 
     uses org.eclipse.microprofile.config.spi.ConfigSource;
     uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;

@@ -28,11 +28,9 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
 
 import io.opentracing.SpanContext;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Mono;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -40,6 +38,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import io.helidon.common.reactive.Single;
 
 /**
  * Tests {@link Response}.
@@ -119,7 +118,7 @@ public class ResponseTest {
         assertThat(response.createPublisherUsingWriter(Duration.of(1, ChronoUnit.MINUTES)), nullValue());
         response.registerWriter(CharSequence.class, o -> {
             sb.append("1");
-            return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            return Single.empty();
         });
         assertThat(response.createPublisherUsingWriter("foo"), notNullValue());
         assertThat(sb.toString(), is("1"));
@@ -131,7 +130,7 @@ public class ResponseTest {
         sb.setLength(0);
         response.registerWriter(String.class, o -> {
             sb.append("2");
-            return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            return Single.empty();
         });
         assertThat(response.createPublisherUsingWriter("foo"), notNullValue());
         assertThat(sb.toString(), is("2"));
@@ -143,7 +142,7 @@ public class ResponseTest {
         sb.setLength(0);
         response.registerWriter((Class<Object>) null, o -> {
             sb.append("3");
-            return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            return Single.empty();
         });
         assertThat(response.createPublisherUsingWriter(1), notNullValue());
         assertThat(sb.toString(), is("3"));
@@ -156,12 +155,12 @@ public class ResponseTest {
         response.registerWriter(o -> "1".equals(String.valueOf(o)),
                                 o -> {
                                     sb.append("1");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+                                    return Single.empty();
                                 });
         response.registerWriter(o -> "2".equals(String.valueOf(o)),
                                 o -> {
                                     sb.append("2");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+                                    return Single.empty();
                                 });
         assertThat(response.createPublisherUsingWriter(1), notNullValue());
         assertThat(sb.toString(), is("1"));
@@ -183,13 +182,13 @@ public class ResponseTest {
                                 MediaType.TEXT_PLAIN,
                                 o -> {
                                     sb.append("A");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+                                    return Single.empty();
                                 });
         response.registerWriter(o -> o instanceof Number,
                                 MediaType.APPLICATION_JSON,
                                 o -> {
                                     sb.append("B");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+                                    return Single.empty();
                                 });
         assertThat(response.createPublisherUsingWriter("foo"), notNullValue());
         assertThat(sb.toString(), is("A"));
@@ -230,7 +229,7 @@ public class ResponseTest {
             sb.append("C");
             return p;
         });
-        assertThat(response.applyFilters(ReactiveStreamsAdapter.publisherToFlow(Mono.empty()), null), notNullValue());
+        assertThat(response.applyFilters(Single.empty(), null), notNullValue());
         assertThat(sb.toString(), is("ABC"));
     }
 

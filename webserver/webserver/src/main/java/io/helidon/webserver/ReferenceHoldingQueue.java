@@ -20,22 +20,32 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-import io.netty.util.internal.ConcurrentSet;
-
 /**
- * The ReferenceHoldingQueue is an enhanced reference queue that allows a post morten execution
- * such as a releasing of memory that would otherwise cause a memory leak.
+ * The ReferenceHoldingQueue is an enhanced reference queue that allows a post
+ * mortem execution such as a releasing of memory that would otherwise cause a
+ * memory leak.
  *
+ * @param <T> the referent type
  * @see ReferenceHoldingQueue.ReleasableReference
  */
 class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
 
+    /**
+     * Logger.
+     */
     private static final Logger LOGGER = Logger.getLogger(ReferenceHoldingQueue.class.getName());
 
-    private final Set<ReleasableReference<T>> set = new ConcurrentSet<>();
+    /**
+     * This set is used to keep references on the {@code ReleasableReference}
+     * references. I.e, the items of this set are effectively "phantom
+     * reachable", meaning that when the GC runs, the references will be added
+     * to the actual reference queue.
+     */
+    private final Set<ReleasableReference<T>> set = ConcurrentHashMap.newKeySet();
     private volatile boolean down = false;
 
     /**
@@ -43,8 +53,8 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
      * added into this reference queue when their associated objects were
      * garbage collected.
      *
-     * @return whether all the associated objects with this reference holding queue
-     * were released and there is nothing else to release left
+     * @return whether all the associated objects with this reference holding
+     * queue were released and there is nothing else to release left
      */
     boolean release() {
         while (true) {
@@ -53,7 +63,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
                 break;
             }
 
-            ByteBufRequestChunk.OneTimeLoggerHolder.logOnce();
+            hookOnAutoRelease();
 
             if (poll instanceof ReleasableReference) {
                 ((ReleasableReference) poll).release();
@@ -61,15 +71,24 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
                 LOGGER.warning(() -> "Unexpected type detected: " + poll.getClass());
             }
         }
-
         return set.isEmpty();
     }
 
     /**
-     * Shutdown this reference queue. Once shut down, all the managed references are forcibly cleared
-     * and no more items are accepted to be managed by this queue.
+     * Hook invoked before invoking {@link ReleasableReference#release()}
+     * for each object referenced by a {@link ReleasableReference} that
+     * was garbage collected where {@link ReleasableReference#release()} was
+     * not invoked.
      */
-    void shutdown() {
+    protected void hookOnAutoRelease() {
+    }
+
+    /**
+     * Shutdown this reference queue. Once shut down, all the managed references
+     * are forcibly cleared and no more items are accepted to be managed by this
+     * queue.
+     */
+    public void shutdown() {
         down = true;
         for (ReleasableReference<T> reference : set) {
             reference.release();
@@ -77,12 +96,13 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
     }
 
     /**
-     * Links a reference with this reference queue so that there is at least one hard
-     * reference to the linked reference. If not linked, this queue wouldn't be able
-     * to release the GCed object that is referenced by this reference.
+     * Link the specified reference with this reference queue.
+     * This keeps at least one hard reference to the linked reference
+     * in order to have added to the reference queue during the next GC cycle.
      *
      * @param reference the reference to link
-     * @throws IllegalStateException if shutdown was requested an this queue must not be used
+     * @throws IllegalStateException if shutdown was requested an this queue
+     * must not be used
      */
     private void link(ReleasableReference<T> reference) {
         if (down) {
@@ -92,41 +112,59 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
     }
 
     /**
-     * Unlinks the reference in order to clear all the residue objects from the memory.
+     * Unlink the specified reference from this reference queue.
+     * This removes the hard reference to the linked reference, thus the GC
+     * will not add it to the reference queue during the next GC cycle.
      *
      * @param reference the reference to unlink
      */
-    private void unlink(Reference<T> reference) {
+    private void unlink(ReleasableReference<T> reference) {
         set.remove(reference);
     }
 
     /**
-     * This class holds a reference to a {@link Runnable} that will be executed the latest when its
-     * referent (the {@link T} instance) is garbage collected. It is however
-     * strongly recommended to call the {@link #release()} method explicitly due to a performance impact
-     * and a large memory demand.
+     * This class holds a reference to a {@link Runnable} that will be executed
+     * the latest when its referent (the {@link T} instance) is garbage
+     * collected. It is however strongly recommended to call the
+     * {@link #release()} method explicitly due to
+     * a performance impact and a large memory demand.
      *
      * @param <T> the referent type
      */
-    static class ReleasableReference<T> extends PhantomReference<T> {
+    static final class ReleasableReference<T> extends PhantomReference<T> {
 
         private final AtomicBoolean released = new AtomicBoolean(false);
         private final ReferenceHoldingQueue<T> queue;
         private final Runnable r;
 
-        ReleasableReference(T referent, ReferenceHoldingQueue<T> q, Runnable r) {
-            super(referent, q);
+        /**
+         * Create a new {@code ReleasableReference}.
+         *
+         * @param referent the referenced object
+         * @param q the reference holding queue
+         * @param r the release callback
+         */
+        ReleasableReference(T referent, ReferenceHoldingQueue<T> q,
+                Runnable r) {
 
+            super(referent, q);
             this.queue = q;
             this.r = r;
-
             queue.link(this);
         }
 
+        /**
+         * Indicate if {@link #release()} was invoked.
+         *
+         * @return {@code true} if released was invoked, {@code false} otherwise
+         */
         boolean isReleased() {
             return released.get();
         }
 
+        /**
+         * Unlink this reference from the queue and invoke the associated release callback.
+         */
         void release() {
             if (!released.getAndSet(true)) {
                 queue.unlink(this);

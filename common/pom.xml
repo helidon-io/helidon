@@ -39,5 +39,6 @@
         <module>service-loader</module>
         <module>context</module>
         <module>mapper</module>
+        <module>metrics</module>
     </modules>
 </project>

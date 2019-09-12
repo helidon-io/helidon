@@ -18,13 +18,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>helidon-microprofile-project</artifactId>
         <groupId>io.helidon.microprofile</groupId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-
     <groupId>io.helidon.microprofile.tracing</groupId>
     <artifactId>helidon-microprofile-tracing</artifactId>
     <name>Helidon Microprofile Tracing</name>

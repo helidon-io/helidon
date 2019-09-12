@@ -13,50 +13,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.webserver;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.OriginThreadPublisher;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
  * This publisher is always associated with a single http request. Additionally,
- * it is associated with the connection context handler and it maintains
- * a fine control of the associated context handler to perform Netty push-backing.
+ * it is associated with the connection context handler and it maintains a fine
+ * control of the associated context handler to perform Netty push-backing.
  */
-class HttpRequestScopedPublisher extends OriginThreadPublisher {
+class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBuf> {
 
     private static final Logger LOGGER = Logger.getLogger(HttpRequestScopedPublisher.class.getName());
 
     private volatile boolean suspended = false;
     private final ChannelHandlerContext ctx;
     private final ReentrantReadWriteLock.WriteLock lock = new ReentrantReadWriteLock().writeLock();
+    private final ReferenceHoldingQueue<DataChunk> referenceQueue;
 
-    HttpRequestScopedPublisher(ChannelHandlerContext ctx, ReferenceHoldingQueue<ByteBufRequestChunk> referenceQueue) {
-        super(referenceQueue);
+    HttpRequestScopedPublisher(ChannelHandlerContext ctx, ReferenceHoldingQueue<DataChunk> referenceQueue) {
+        super();
+        this.referenceQueue = referenceQueue;
         this.ctx = ctx;
     }
 
     @Override
-    void hookOnCancel() {
+    protected void hookOnCancel() {
         ctx.close();
     }
 
     /**
-     * This method is called whenever {@link io.helidon.common.reactive.Flow.Subscription#request(long)}
-     * is called on the very one associated subscription with this publisher in order to trigger next
-     * channel read on the associated {@link ChannelHandlerContext}.
+     * This method is called whenever
+     * {@link io.helidon.common.reactive.Flow.Subscription#request(long)} is
+     * called on the very one associated subscription with this publisher in
+     * order to trigger next channel read on the associated
+     * {@link ChannelHandlerContext}.
      * <p>
      * This method can be called by any thread.
      *
-     * @param n      the requested count
-     * @param result the current total cumulative requested count; ranges between [0, {@link Long#MAX_VALUE}]
-     *               where the max indicates that this publisher is unbounded
+     * @param n the requested count
+     * @param result the current total cumulative requested count; ranges
+     * between [0, {@link Long#MAX_VALUE}] where the max indicates that this
+     * publisher is unbounded
      */
     @Override
-    void hookOnRequested(long n, long result) {
+    protected void hookOnRequested(long n, long result) {
         if (result == Long.MAX_VALUE) {
             LOGGER.finest("Netty autoread: true");
             ctx.channel().config().setAutoRead(true);
@@ -81,19 +89,10 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher {
         }
     }
 
-    /**
-     * In a non-blocking manner, try to acquire an allowance to publish next item.
-     * If nothing is acquired, this publisher becomes suspended.
-     *
-     * @return original number of requests on the very one associated subscriber's subscription;
-     * if {@code 0} is returned, the requester didn't obtain a permit to publish
-     * next item. In case a {@link Long#MAX_VALUE} is returned,
-     * the requester is informed that unlimited number of items can be published.
-     */
-    long tryAcquire() {
+    @Override
+    public long tryAcquire() {
         try {
             lock.lock();
-
             long l = super.tryAcquire();
             if (l <= 0) {
                 suspended = true;
@@ -102,5 +101,42 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher {
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public void submit(ByteBuf data) {
+        try {
+            super.submit(data);
+        } finally {
+            referenceQueue.release();
+        }
+    }
+
+    @Override
+    public void complete() {
+        try {
+            super.complete();
+        } finally {
+            referenceQueue.release();
+        }
+    }
+
+    @Override
+    public void error(Throwable throwable) {
+        try {
+            super.error(throwable);
+        } finally {
+            referenceQueue.release();
+        }
+    }
+
+    @Override
+    protected DataChunk wrap(ByteBuf data) {
+        return new ByteBufRequestChunk(data, referenceQueue);
+    }
+
+    @Override
+    protected void drain(DataChunk item) {
+        item.release();
     }
 }

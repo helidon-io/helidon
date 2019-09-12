@@ -76,18 +76,6 @@
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
@@ -101,6 +89,11 @@
         </dependency>
 
         <!-- Test-scoped dependencies. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

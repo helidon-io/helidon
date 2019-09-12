@@ -92,6 +92,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
               metadata.getTypeRaw(),
               metadata.getUnit(),
               tagsToSimpleString(metadata));
+        super.setReusable(metadata.isReusable());
         this.registryType = registryType;
     }
 

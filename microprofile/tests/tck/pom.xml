@@ -34,6 +34,7 @@
         <module>tck-config</module>
         <module>tck-health</module>
         <module>tck-metrics</module>
+        <module>tck-metrics2</module>
         <module>tck-fault-tolerance</module>
         <module>tck-jwt-auth</module>
         <module>tck-openapi</module>

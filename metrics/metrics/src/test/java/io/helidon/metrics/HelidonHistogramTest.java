@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,19 @@
 
 package io.helidon.metrics;
 
+import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.StringReader;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -27,11 +37,11 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -78,11 +88,37 @@ class HelidonHistogramTest {
             + "application:file_sizes_bytes{quantile=\"0.99\"} 98000\n"
             + "application:file_sizes_bytes{quantile=\"0.999\"} 99000\n";
 
+    /**
+     * Parses a {@code Stream| of text lines (presumably in Prometheus/OpenMetrics format) into a {@code Stream}
+     * of {@code Map.Entry}, with the key the value name and the value a {@code Number}
+     * representing the converted value.
+     *
+     * @param lines Prometheus-format text as a stream of lines
+     * @return stream of name/value pairs
+     */
+    private static Stream<Map.Entry<String, Number>> parsePrometheusText(Stream<String> lines) {
+        return lines
+                .filter(line -> !line.startsWith("#") && line.length() > 0)
+                .map(line -> {
+                    final int space = line.indexOf(" ");
+                    return new AbstractMap.SimpleImmutableEntry<String, Number>(
+                            line.substring(0, space),
+                            parseNumber(line.substring(space + 1)));
+                });
+    }
+
+    private static Stream<Map.Entry<String, Number>> parsePrometheusText(String promText) {
+        return parsePrometheusText(Arrays.stream(promText.split("\n")));
+    }
+
+    private static Map<String, Number> EXPECTED_PROMETHEUS_RESULTS;
+
     private static Metadata meta;
     private static HelidonHistogram histoInt;
     private static HelidonHistogram delegatingHistoInt;
     private static HelidonHistogram histoLong;
     private static HelidonHistogram delegatingHistoLong;
+    private static final NumberFormat NUMBER_FORMATTER = DecimalFormat.getNumberInstance();
 
     @BeforeAll
     static void initClass() {
@@ -108,8 +144,20 @@ class HelidonHistogramTest {
             histoLong.getDelegate().update(dato, now);
             delegatingHistoLong.getDelegate().update(dato, now);
         }
+
+        EXPECTED_PROMETHEUS_RESULTS = parsePrometheusText(EXPECTED_PROMETHEUS_OUTPUT)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    // Deals with the exception so this is usable from inside a stream.
+    private static Number parseNumber(String value) {
+        try {
+            return NUMBER_FORMATTER.parse(value);
+        } catch (ParseException ex) {
+            fail("Unable to parse value as Number", ex);
+            return null; // never executed - the preceding fail will see to that
+        }
+    }
     @Test
     void testCounts() {
         assertAll("All counts must be 200",
@@ -157,7 +205,11 @@ class HelidonHistogramTest {
 
     @Test
     void testPrometheus() {
-        assertThat(histoInt.prometheusData(), is(EXPECTED_PROMETHEUS_OUTPUT));
+        final StringBuilder sb = new StringBuilder();
+        parsePrometheusText(new LineNumberReader(new StringReader(histoInt.prometheusData())).lines())
+                .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
+                                    EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),
+                                    is(withinTolerance(entry.getValue()))));
     }
 
     @Test
@@ -185,11 +237,6 @@ class HelidonHistogramTest {
     }
 
     private void withTolerance(String field, double actual, double expectedValue) {
-        double min = expectedValue * 0.999;
-        double max = expectedValue * 1.001;
-
-        if ((actual < min) || (actual > max)) {
-            fail(field + ": expected: <" + expectedValue + ">, but actual value was: <" + actual + ">");
-        }
+        assertThat(field, expectedValue, is(withinTolerance(actual)));
     }
 }

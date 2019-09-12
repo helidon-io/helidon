@@ -23,5 +23,7 @@
  * @see io.helidon.service.configuration.api.ServiceConfigurationProvider
  *
  * @see io.helidon.service.configuration.api.System
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.api;

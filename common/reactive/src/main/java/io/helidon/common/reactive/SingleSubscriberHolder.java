@@ -95,7 +95,7 @@ public class SingleSubscriberHolder<T> {
     }
 
     /**
-     * Hard cancel - nothing is send to the subscriber but subscription is considered as canceled.
+     * Hard cancel - nothing is sent to the subscriber but subscription is considered as canceled.
      */
     public void cancel() {
         subscriber.completeExceptionally(CANCELLED);

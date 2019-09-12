@@ -19,13 +19,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>io.helidon.tests.functional</groupId>
         <artifactId>helidon-tests-functional-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
-
     <groupId>io.helidon.tests.functional.bookstore</groupId>
     <artifactId>helidon-tests-functional-bookstore</artifactId>
 
@@ -64,11 +62,13 @@
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
             <artifactId>bookstore-se</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.bookstore-mp</groupId>
             <artifactId>bookstore-mp</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

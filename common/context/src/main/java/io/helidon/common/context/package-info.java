@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * Support fo context propagation across executor boundaries.
+ * Support for context propagation across executor boundaries.
  */
 package io.helidon.common.context;

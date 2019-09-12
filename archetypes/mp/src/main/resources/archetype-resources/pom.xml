@@ -166,7 +166,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-2.2</artifactId>
+            <artifactId>helidon-microprofile-3.0</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>

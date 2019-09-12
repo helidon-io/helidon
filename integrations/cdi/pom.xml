@@ -37,6 +37,7 @@
         <module>datasource-hikaricp</module>
         <module>datasource-ucp</module>
         <module>eclipselink-cdi</module>
+        <module>hibernate-cdi</module>
         <module>jedis-cdi</module>
         <module>jpa-cdi</module>
         <module>jpa-weld</module> <!-- Deprecated and slated for eventual removal. -->

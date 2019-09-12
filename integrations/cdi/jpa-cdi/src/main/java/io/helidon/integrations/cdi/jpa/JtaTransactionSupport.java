@@ -63,7 +63,7 @@ final class JtaTransactionSupport implements TransactionSupport {
      * @exception NullPointerException
      */
     @Inject
-    private JtaTransactionSupport(final Provider<BeanManager> beanManagerProvider) {
+    JtaTransactionSupport(final Provider<BeanManager> beanManagerProvider) {
         super();
         this.beanManagerProvider = Objects.requireNonNull(beanManagerProvider);
     }
