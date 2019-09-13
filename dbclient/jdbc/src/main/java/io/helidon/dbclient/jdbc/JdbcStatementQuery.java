@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.common.reactive.CollectingSubscriber;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbClientException;
@@ -306,9 +305,10 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
         }
 
         private CompletionStage<List<T>> toFuture() {
-            CompletableFuture<List<T>> result = new CompletableFuture<>();
-            toPublisher().subscribe(CollectingSubscriber.create(result));
-            return result;
+
+            return Multi.from(toPublisher())
+                    .collectList()
+                    .toStage();
         }
 
         private void checkResult() {

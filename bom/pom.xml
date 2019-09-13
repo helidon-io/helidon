@@ -538,15 +538,50 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- db -->
+            <!-- db client -->
             <dependency>
-                <groupId>io.helidon.db</groupId>
-                <artifactId>helidon-db</artifactId>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.db</groupId>
-                <artifactId>helidon-db-jdbc</artifactId>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-mongodb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-mongodb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-health</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-jsonp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-metrics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-tracing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-webserver-jsonp</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
