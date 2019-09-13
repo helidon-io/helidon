@@ -202,6 +202,12 @@ release_build(){
     # Invoke update_version
     update_version
 
+    # Update scm/tag entry in the parent pom
+    cat parent/pom.xml | \
+        sed -i s@'<tag>HEAD</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
+        > parent/pom.xml.tmp
+    mv parent/pom.xml.tmp parent/pom.xml
+
     # Git user info
     git config user.email || git config --global user.email "info@helidon.io"
     git config user.name || git config --global user.name "Helidon Robot"
