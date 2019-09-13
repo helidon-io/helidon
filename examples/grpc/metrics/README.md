@@ -10,8 +10,7 @@ mvn package
 java -jar target/helidon-examples-grpc-metrics.jar
 ```
 
-Exercise the example:
+Try the metrics:
 ```bash
-java -cp target/helidon-examples-grpc-metrics.jar \
-    io.helidon.grpc.examples.metrics.SecureStringClient
+curl http://localhost:8080/metrics
 ```
