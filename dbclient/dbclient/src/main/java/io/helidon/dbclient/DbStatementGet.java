@@ -23,4 +23,5 @@ import java.util.Optional;
  * {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}.
  */
 public interface DbStatementGet extends DbStatement<DbStatementGet, Optional<DbRow>> {
+    // TODO this could use Single<DbRow> instead of CompletionStage<Optional<DbRow>>
 }
