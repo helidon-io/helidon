@@ -25,6 +25,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.CollectionsHelper;
+
 import com.oracle.svm.core.annotate.AutomaticFeature;
 import com.oracle.svm.hosted.FeatureImpl;
 import org.graalvm.nativeimage.hosted.Feature;
@@ -35,11 +37,12 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
  */
 @AutomaticFeature
 public class HelidonReflectionFeature implements Feature {
-    // The following options should be configurable. Now cannot use the native-image configuraiton options
+    // The following options should be configurable. Now cannot use the native-image configuration options
     private static final boolean ENABLED = true;
     private static final boolean TRACE = false;
     private static final boolean TRACE_PARSING = false;
-    private static final Set<String> EXCLUSIONS = new HashSet<>();
+    private static final Set<String> EXCLUSIONS =
+            CollectionsHelper.setOf("org.glassfish.jersey.message.internal.RenderedImageProvider");
 
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
