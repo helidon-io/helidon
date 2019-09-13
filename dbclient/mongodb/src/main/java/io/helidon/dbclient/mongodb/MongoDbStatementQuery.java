@@ -30,9 +30,9 @@ import java.util.logging.Logger;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.common.reactive.CollectingSubscriber;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.MappingProcessor;
+import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbMapperManager;
@@ -437,12 +437,9 @@ class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, DbRows<Db
         public CompletionStage<List<T>> collect() {
             checkResult();
 
-            CompletableFuture<List<T>> result = new CompletableFuture<>();
-
-            // this is a simple subscriber - I want all the records
-            // and as fast as possible
-            toPublisher().subscribe(CollectingSubscriber.create(result));
-            return result;
+            return Multi.from(toPublisher())
+                    .collectList()
+                    .toStage();
         }
 
         private Flow.Publisher<DbRow> toDbPublisher() {
