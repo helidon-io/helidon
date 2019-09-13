@@ -577,11 +577,6 @@
                     </dependencies>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.archetype</groupId>
-                    <artifactId>archetype-packaging</artifactId>
-                    <version>${version.plugin.archetype-packaging}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-archetype-plugin</artifactId>
                     <version>${version.plugin.archetype}</version>

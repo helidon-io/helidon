@@ -36,6 +36,13 @@
     </modules>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.archetype</groupId>
+                <artifactId>archetype-packaging</artifactId>
+                <version>${version.plugin.archetype-packaging}</version>
+            </extension>
+        </extensions>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -61,6 +68,7 @@
                         <execution>
                             <id>default-resources</id>
                             <configuration>
+                                <useDefaultDelimiters>false</useDefaultDelimiters>
                                 <delimiters>
                                     <delimiter>@</delimiter>
                                 </delimiters>
