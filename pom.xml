@@ -22,9 +22,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon</groupId>
-        <artifactId>helidon-3rdparty</artifactId>
+        <artifactId>helidon-world</artifactId>
         <version>1.3.1-SNAPSHOT</version>
-        <relativePath>./3rdparty/pom.xml</relativePath>
+        <relativePath>./world/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
     <packaging>pom</packaging>
@@ -144,7 +144,7 @@
 
     <modules>
         <module>parent</module>
-        <module>3rdparty</module>
+        <module>world</module>
         <module>bom</module>
         <module>applications</module>
         <module>common</module>
