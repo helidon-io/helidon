@@ -96,6 +96,7 @@ for ((i=0;i<${#ARGS[@]};i++))
 
 if [ -z "${COMMAND}" ] ; then
   echo "ERROR: no command provided"
+  usage
   exit 1
 fi
 
@@ -110,7 +111,7 @@ fi
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 # Hooks for version substitution work
-readonly PREPARE_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/set-version.sh )
+readonly PREPARE_HOOKS=( )
 
 # Hooks for deployment work
 readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
@@ -166,11 +167,20 @@ printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 
 update_version(){
   # Update version
-  mvn -f ${WS_DIR}/pom.xml versions:set versions:set-property \
+  mvn -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
     -DgenerateBackupPoms=false \
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
     -DprocessAllModules=true
+
+  # Hack to update helidon.version
+  for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
+  do
+      cat ${pom} | \
+          sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
+          > ${pom}.tmp
+      mv ${pom}.tmp ${pom}
+  done
 
   # Invoke prepare hook
   if [ -n "${PREPARE_HOOKS}" ]; then
@@ -204,9 +214,10 @@ release_build(){
     mvn nexus-staging:rc-open \
       -DstagingProfileId=6026dab46eed94 \
       -DstagingDescription="${STAGING_DESC}"
+
     export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
-      egrep "^\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-      awk '{print $2}' | head -1)
+      egrep "\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+      sed -E s@'.*(iohelidon-[0-9]*).*'@'\1'@g | head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
