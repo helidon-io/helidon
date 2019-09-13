@@ -52,9 +52,14 @@
     </scm>
 
     <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh-snapshots</id>
+            <name>Helidon Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
         <repository>
             <id>ossrh</id>
-            <name>Internal Helidon Release Repository</name>
+            <name>Helidon Release Repository</name>
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
@@ -105,11 +110,17 @@
             <email>dmitry.kornilov@oracle.com</email>
             <organization>Oracle Corporation</organization>
         </developer>
+        <developer>
+            <name>David Kral</name>
+            <email>david.k.kral@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
     </developers>
 
     <properties>
         <version.plugin.clean>3.1.0</version.plugin.clean>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
+        <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.install>3.0.0-M1</version.plugin.install>
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
     </properties>
@@ -133,6 +144,11 @@
                     <version>${version.plugin.install}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${version.plugin.gpg}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${version.plugin.nexus-staging}</version>
@@ -147,4 +163,53 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>staging</id>
+            <repositories>
+                <repository>
+                    <id>ossrh-staging</id>
+                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>ossrh-staging</id>
+                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
 </project>
