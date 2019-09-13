@@ -27,7 +27,7 @@
     <groupId>io.helidon.tests.functional.bookstore</groupId>
     <artifactId>helidon-tests-functional-bookstore</artifactId>
 
-    <name>Functional Test: Bookstore</name>
+    <name>Helidon Functional Test: Bookstore</name>
 
     <properties>
         <appJarPathSE>${top.parent.basedir}/tests/apps/bookstore/bookstore-se/target/bookstore-se.jar</appJarPathSE>

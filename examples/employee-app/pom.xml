@@ -28,9 +28,9 @@
         <version>1.3.1-SNAPSHOT</version>
         <relativePath>../../applications/se/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.service.employee</groupId>
-    <artifactId>employee-app</artifactId>
-    <name>Employee App Example</name>
+    <groupId>io.helidon.examples.employee</groupId>
+    <artifactId>helidon-examples-employee-app</artifactId>
+    <name>Helidon Examples Employee App</name>
 
     <properties>
         <mainClass>io.helidon.service.employee.Main</mainClass>

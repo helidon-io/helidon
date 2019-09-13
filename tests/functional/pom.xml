@@ -31,7 +31,7 @@
     <artifactId>helidon-tests-functional-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Functional Tests</name>
+    <name>Helidon Functional Tests</name>
 
     <modules>
         <module>bookstore</module>
