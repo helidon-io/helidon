@@ -38,6 +38,11 @@ import reactor.core.scheduler.Schedulers;
 @Deprecated
 public class SubmissionPublisher<T> implements Flow.Publisher<T>, AutoCloseable {
 
+    static {
+        // prevent reactor from using "console" logging
+        System.setProperty("reactor.logging.fallback", "JDK");
+    }
+
     private final Flux<T> flux;
     private final FluxSink<T> sink;
     private final AtomicInteger numberOfSubscribers;

@@ -36,7 +36,7 @@
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
-    
+
     <profiles>
         <profile>
             <id>pipeline</id>
@@ -56,7 +56,7 @@
             </build>
         </profile>
     </profiles>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -96,6 +96,12 @@
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
             <version>${version.lib.microprofile-metrics2-api}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.osgi</groupId>
+                    <artifactId>org.osgi.annotation.versioning</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

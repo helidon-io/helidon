@@ -31,7 +31,7 @@
     <artifactId>helidon-tests-apps-bookstore-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Bookstore Application</name>
+    <name>Helidon Test Applications Bookstore Project</name>
 
     <modules>
         <module>common</module>
