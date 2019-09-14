@@ -29,7 +29,7 @@
     <artifactId>helidon-dependencies</artifactId>
     <packaging>pom</packaging>
 
-    <name>Helidon World</name>
+    <name>Helidon Dependencies</name>
     <description>Maven dependency management for Helidon applications</description>
 
     <properties>
