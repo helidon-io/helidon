@@ -27,6 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-native-image-static-content</artifactId>
+    <name>Helidon Integration Tests GraalVM Native image Static Content</name>
 
     <description>
         Static content jar file to use in other tests (to make sure we access a jar file and not a path).

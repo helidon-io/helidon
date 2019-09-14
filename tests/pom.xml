@@ -30,7 +30,7 @@
     <artifactId>helidon-tests-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Helidon Tests</name>
+    <name>Helidon Tests Project</name>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>

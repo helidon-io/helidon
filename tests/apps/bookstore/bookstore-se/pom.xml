@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
     <artifactId>bookstore-se</artifactId>
-    <name>Helidon SE Bookstore</name>
+    <name>Helidon Test Applications Bookstore SE</name>
 
     <properties>
         <mainClass>io.helidon.tests.apps.bookstore.se.Main</mainClass>

@@ -27,6 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-native-image-se-1</artifactId>
+    <name>Helidon Integration Tests GraalVM Native image SE1</name>
 
     <description>
         This test makes sure the following helidon modules can be compiled into native image:
