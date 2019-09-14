@@ -26,7 +26,7 @@
         <version>1.3.1-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
-    <artifactId>helidon-world</artifactId>
+    <artifactId>helidon-dependencies</artifactId>
     <packaging>pom</packaging>
 
     <name>Helidon World</name>

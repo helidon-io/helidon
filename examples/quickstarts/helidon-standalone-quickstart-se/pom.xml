@@ -55,7 +55,7 @@
         <dependencies>
             <dependency>
                 <groupId>io.helidon</groupId>
-                <artifactId>helidon-world</artifactId>
+                <artifactId>helidon-dependencies</artifactId>
                 <version>${helidon.version}</version>
                 <type>pom</type>
                 <scope>import</scope>

@@ -22,9 +22,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon</groupId>
-        <artifactId>helidon-world</artifactId>
+        <artifactId>helidon-dependencies</artifactId>
         <version>1.3.1-SNAPSHOT</version>
-        <relativePath>../world/pom.xml</relativePath>
+        <relativePath>../dependencies/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.applications</groupId>
     <artifactId>helidon-applications-project</artifactId>
