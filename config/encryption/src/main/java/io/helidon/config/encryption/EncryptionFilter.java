@@ -59,9 +59,10 @@ import io.helidon.config.spi.ConfigFilter;
  * @see ConfigProperties#REQUIRE_ENCRYPTION_ENV_VARIABLE
  */
 public final class EncryptionFilter implements ConfigFilter {
-    static final String PREFIX_LEGACY_AES = "${AES=";
+    private static final String PREFIX_LEGACY_AES = "${AES=";
+    private static final String PREFIX_LEGACY_RSA = "${RSA=";
     static final String PREFIX_GCM = "${GCM=";
-    static final String PREFIX_RSA = "${RSA=";
+    static final String PREFIX_RSA = "${RSA-P=";
     private static final Logger LOGGER = Logger.getLogger(EncryptionFilter.class.getName());
     private static final String PREFIX_ALIAS = "${ALIAS=";
     private static final String PREFIX_CLEAR = "${CLEAR=";
@@ -181,8 +182,16 @@ public final class EncryptionFilter implements ConfigFilter {
 
     private String decryptRsa(PrivateKey privateKey, String value) {
         // service_password=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
-
-        if (value.startsWith(PREFIX_RSA)) {
+        if (value.startsWith(PREFIX_LEGACY_RSA)) {
+            LOGGER.log(Level.WARNING, () -> "You are using legacy RSA encryption. Please re-encrypt the value with RSA-P.");
+            String b64Value = removePlaceholder(PREFIX_LEGACY_RSA, value);
+            try {
+                return EncryptionUtil.decryptRsaLegacy(privateKey, b64Value);
+            } catch (ConfigEncryptionException e) {
+                LOGGER.log(Level.FINEST, e, () -> "Failed to decrypt " + value);
+                return value;
+            }
+        } else if (value.startsWith(PREFIX_RSA)) {
             String b64Value = removePlaceholder(PREFIX_RSA, value);
             try {
                 return EncryptionUtil.decryptRsa(privateKey, b64Value);

@@ -29,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class TestFilterService {
     @Test
     void testFiltering() {
-        Config config = Config.create().get("current");
+        Config config = Config.create().get("aes-current");
 
         String value = config.get("pwd4").asString().get();
 

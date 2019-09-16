@@ -35,21 +35,21 @@ import static org.hamcrest.Matchers.hasSize;
 /**
  * Tests rsa support in config.
  */
-public class RsaSecureConfigTest {
+public class RsaLegacySecureConfigTest {
 
     private static Config config;
     private static Config configRequiresEncryption;
 
     @BeforeAll
     public static void initClass() {
-        config = Config.create().get("rsa-current");
+        config = Config.create().get("rsa-legacy");
 
         configRequiresEncryption = Config.builder()
                 .sources(ConfigSources.create(
                         //override require encryption
                         ConfigSources.create(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
                         ConfigSources.classpath("application.yaml")))
-                .build().get("rsa-current");
+                .build().get("rsa-legacy");
 
         assertThat("We must have the correct configuration file", config.get("pwd3").type().isLeaf());
         assertThat("We must have the correct configuration file", configRequiresEncryption.get("pwd3").type().isLeaf());
@@ -57,7 +57,7 @@ public class RsaSecureConfigTest {
 
     @Test
     public void testWrongAsymmetric() {
-        testPassword(config, "pwd10", "${RSA-P=not really encrypted}");
+        testPassword(config, "pwd10", "${RSA=not really encrypted}");
     }
 
 
