@@ -165,7 +165,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
             case "jar":
                 String relativePath = uri.getSchemeSpecificPart();
                 int idx = relativePath.indexOf("!");
-                if (idx > 0) {
+                if (idx > 0 && idx < relativePath.length()) {
                     relativePath = relativePath.substring(idx + 1);
                 }
                 path = Paths.get(relativePath);
