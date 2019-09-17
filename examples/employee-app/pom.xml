@@ -82,18 +82,4 @@
         </plugins>
     </build>
 
-    <!-- com.oracle:jdbc:odjbc8 requires the maven oracle repository -->
-    <repositories>
-        <repository>
-            <id>maven.oracle.com</id>
-            <url>https://maven.oracle.com</url>
-            <layout>default</layout>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>
