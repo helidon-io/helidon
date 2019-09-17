@@ -38,7 +38,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.oracle.jdbc</groupId>
+            <groupId>com.oracle.ojdbc</groupId>
             <artifactId>ojdbc8</artifactId>
         </dependency>
         <dependency>

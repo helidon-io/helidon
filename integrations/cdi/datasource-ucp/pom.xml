@@ -52,7 +52,7 @@
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>com.oracle.jdbc</groupId>
+                    <groupId>com.oracle.ojdbc</groupId>
                     <artifactId>ojdbc10</artifactId>
                 </exclusion>
             </exclusions>
