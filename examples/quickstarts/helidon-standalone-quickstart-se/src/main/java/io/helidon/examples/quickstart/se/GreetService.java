@@ -64,7 +64,7 @@ public class GreetService implements Service {
     }
 
     /**
-     * A service registers itself by updating the routine rules.
+     * A service registers itself by updating the routing rules.
      * @param rules the routing rules.
      */
     @Override
