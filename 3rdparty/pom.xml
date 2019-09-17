@@ -546,7 +546,7 @@
                 <version>${version.lib.ojdbc8}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.jdbc</groupId>
+                <groupId>com.oracle.ojdbc</groupId>
                 <artifactId>ucp</artifactId>
                 <version>${version.lib.ucp}</version>
             </dependency>

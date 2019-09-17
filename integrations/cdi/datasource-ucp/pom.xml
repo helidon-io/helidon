@@ -45,8 +45,9 @@
             <artifactId>helidon-integrations-cdi-datasource</artifactId>
             <scope>compile</scope>
         </dependency>
+
         <dependency>
-            <groupId>com.oracle.jdbc</groupId>
+            <groupId>com.oracle.ojdbc</groupId>
             <artifactId>ucp</artifactId>
             <scope>compile</scope>
             <exclusions>
