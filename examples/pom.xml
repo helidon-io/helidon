@@ -48,6 +48,8 @@
         <module>todo-app</module>
         <module>translator-app</module>
         <module>webserver</module>
+        <module>integrations</module>
+        <module>employee-app</module>
     </modules>
 
     <build>
@@ -64,13 +66,4 @@
         </pluginManagement>
     </build>
 
-    <profiles>
-        <profile>
-            <id>integrations</id>
-            <modules>
-                <module>integrations</module>
-                <module>employee-app</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

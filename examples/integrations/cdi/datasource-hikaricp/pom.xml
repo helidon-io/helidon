@@ -56,7 +56,7 @@
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
-            <groupId>com.oracle.jdbc</groupId>
+            <groupId>com.oracle.ojdbc</groupId>
             <artifactId>ojdbc8</artifactId>
             <scope>runtime</scope>
         </dependency>
@@ -125,16 +125,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <!-- com.oracle:jdbc:odjbc8 requires the maven oracle repository -->
-    <repositories>
-        <repository>
-            <id>maven.oracle.com</id>
-            <url>https://maven.oracle.com</url>
-            <layout>default</layout>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-    </repositories>
 </project>
