@@ -20,9 +20,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Objects;
@@ -108,7 +111,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         }
     }
 
-    private ConfigParser.Content<Instant> genericContent(URLConnection urlConnection) throws IOException {
+    private ConfigParser.Content<Instant> genericContent(URLConnection urlConnection) throws IOException, URISyntaxException {
         final String mediaType = mediaType(null);
         Reader reader = new InputStreamReader(urlConnection.getInputStream(),
                                               StandardCharsets.UTF_8);
@@ -116,7 +119,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         return ConfigParser.Content.create(reader, mediaType, Optional.of(Instant.now()));
     }
 
-    private ConfigParser.Content<Instant> httpContent(HttpURLConnection connection) throws IOException {
+    private ConfigParser.Content<Instant> httpContent(HttpURLConnection connection) throws IOException, URISyntaxException {
         connection.setRequestMethod(GET_METHOD);
 
         final String mediaType = mediaType(connection.getContentType());
@@ -141,7 +144,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         return super.mediaType();
     }
 
-    private String mediaType(String responseMediaType) {
+    private String mediaType(String responseMediaType) throws URISyntaxException {
         String mediaType = mediaType();
         if (mediaType == null) {
             mediaType = responseMediaType;
@@ -155,9 +158,25 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         return mediaType;
     }
 
-    private String probeContentType() {
-        String path = url.getPath();
-        return ConfigHelper.detectContentType(Paths.get(path));
+    private String probeContentType() throws URISyntaxException {
+        URI uri = url.toURI();
+        Path path;
+        switch (uri.getScheme()) {
+            case "jar":
+                String relativePath = uri.getSchemeSpecificPart();
+                int idx = relativePath.indexOf("!");
+                if (idx > 0 && idx < relativePath.length()) {
+                    relativePath = relativePath.substring(idx + 1);
+                }
+                path = Paths.get(relativePath);
+                break;
+            case "file":
+                path = Paths.get(uri);
+                break;
+            default:
+                path = Paths.get(url.getPath());
+        }
+        return ConfigHelper.detectContentType(path);
     }
 
     @Override
