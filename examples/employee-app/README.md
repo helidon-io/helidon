@@ -9,24 +9,6 @@ By default the service uses a ArrayList backend with sample data. You can connec
  the backend application to an Oracle database by changing the values in the
  `resources/DbCreds.properties` file.
 
-## Using Oracle DB
-
-This application supports two storage implementations one using an array and
- other using an Oracle database to persist the data. To compile and package the
- application you need the JDBC driver. The JDBC driver for the Oracle DB is only available from the
-https://www.oracle.com/webfolder/application/maven/index.html[Oracle Maven Repository].
-
-This means that you have to configure the repository in order to add the driver
- to your classpath.
-
-Follow these steps:
-
-- Go to https://www.oracle.com/webfolder/application/maven/index.html and
- accept the license
-- Create an OTN account
-- Update your settings.xml as documented
- https://docs.oracle.com/middleware/1213/core/MAVEN/config_maven_repo.htm#MAVEN9016[here]
-
 ## Build and run
 
 With JDK8+

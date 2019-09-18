@@ -541,12 +541,12 @@
                 <version>${version.lib.h2}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.jdbc</groupId>
+                <groupId>com.oracle.ojdbc</groupId>
                 <artifactId>ojdbc8</artifactId>
                 <version>${version.lib.ojdbc8}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.jdbc</groupId>
+                <groupId>com.oracle.ojdbc</groupId>
                 <artifactId>ucp</artifactId>
                 <version>${version.lib.ucp}</version>
             </dependency>
