@@ -1,13 +1,14 @@
-# Helidon Quickstart MP Example
+# Helidon Standalone Quickstart MP Example
 
-This example implements a simple Hello World REST service using MicroProfile.
+This example implements a simple Hello World REST service using MicroProfile
+ with a standalone Maven pom.
 
 ## Build and run
 
 With JDK8+
 ```bash
 mvn package
-java -jar target/helidon-quickstart-mp.jar
+java -jar target/helidon-standalone-quickstart-mp.jar
 ```
 
 ## Exercise the application
@@ -47,13 +48,13 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ## Build the Docker Image
 
 ```
-docker build -t helidon-quickstart-mp .
+docker build -t helidon-standalone-quickstart-mp .
 ```
 
 ## Start the application with Docker
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-mp:latest
+docker run --rm -p 8080:8080 helidon-standalone-quickstart-mp:latest
 ```
 
 Exercise the application as described above
@@ -64,5 +65,5 @@ Exercise the application as described above
 kubectl cluster-info                         # Verify which cluster
 kubectl get pods                             # Verify connectivity to cluster
 kubectl create -f app.yaml               # Deploy application
-kubectl get service helidon-quickstart-mp  # Verify deployed service
+kubectl get service helidon-standalone-quickstart-mp  # Verify deployed service
 ```
