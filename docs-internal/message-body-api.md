@@ -129,6 +129,11 @@ public Charset charset() throws IllegalStateException {
   // throws an IllegalStateException exception if the charset cannot be loaded
   // otherwise use the server default
 }
+
+@Override
+public Charset charset(Charset defaultCharset) throws IllegalStateException {
+  // overloaded variant that takes a defaultCharset as a the default fallback
+}
 ```
 
 Here are the header related methods provided by `MessageBodyWriterContext`:
@@ -149,6 +154,7 @@ public void contentType(MediaType contentType) {
 
 public void contentLength(long contentLength) {
   // sets the Content-Length header value if not already set
+  // in the case of a client body writer, this method would be a no-op.
 }
 
 public List<MediaType> acceptedTypes() {
@@ -191,6 +197,11 @@ public Charset charset() throws IllegalStateException {
   // derive the charset from the `Content-Type` value if set and the charset parameter is defined
   // throws an IllegalStateException exception if the charset cannot be loaded
   // otherwise use the server default
+}
+
+@Override
+public Charset charset(Charset charset) throws IllegalStateException {
+  // overloaded variant that takes a defaultCharset as a the default fallback
 }
 ```
 
@@ -399,6 +410,7 @@ public MessageBodyReaderContext registerReader(MessageBodyStreamReader<?> reader
 public <T> void registerReader(Class<T> type,
   io.helidon.common.http.Reader<T> reader) {
   // ...
+  // FQDN notation to avoid the compiler deprecation warning.
 }
 
 @Deprecated
@@ -515,8 +527,8 @@ This interface could potentially extends `MessageBodyReader` and override the `r
 public interface MessageBodyWriter<T>
   extends MessageBodyOperator<MessageBodyWriterContext> {
 
-    Publisher<DataChunk> write(T content, GenericType<? extends T> type,
-      MessageBodyWriterContext context);
+    Publisher<DataChunk> write(MessageBodyWriterContext context, GenericType<? extends T> type,
+        T content);
 }
 ```
 
@@ -562,8 +574,8 @@ Java does not support overriding method with covariant parameter (only for retur
 public interface MessageBodyStreamWriter<T>
   extends MessageBodyOperator<MessageBodyWriterContext> {
 
-    Publisher<DataChunk> write(Publisher<T> publisher, GenericType<? extends T> type,
-      MessageBodyWriterContext context);
+    Publisher<DataChunk> write(MessageBodyWriterContext context, Publisher<T> publisher,
+        GenericType<? extends T> type);
 }
 ```
 
@@ -657,8 +669,8 @@ E.g. Compose a message body payload from multiple fragments represented as publi
 
 ```java
 // End user creates fragments...
-MessageBodyWriteableContent fragment1 = MessageBodyWriteableContent.create(new Foo(), new HashParameters());
-MessageBodyWriteableContent fragment2 = MessageBodyWriteableContent.create(new Bar(), new HashParameters());
+MessageBodyWriteableContent fragment1 = MessageBodyWriteableContent.create(new Foo(), HashParameters.create());
+MessageBodyWriteableContent fragment2 = MessageBodyWriteableContent.create(new Bar(), HashParameters.create());
 
 // later on a stream writer or writer converts each fragment to a chunk publisher
 MessageBodyWriterContext parentWriterContext = serverResponse.writerContext();
@@ -710,8 +722,8 @@ The new "reader" interface declares has a method with a type parameter bound to 
 public interface MessageBodyReader<T>
   extends MessageBodyOperator<MessageBodyReaderContext> {
 
-    <U extends T> Mono<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
-      MessageBodyReaderContext context);
+    <U extends T> Mono<U> read(MessageBodyReaderContext context, Publisher<DataChunk> publisher,
+        GenericType<U> type);
 }
 ```
 
