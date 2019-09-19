@@ -1,17 +1,17 @@
-
 # Helidon gRPC Security ABAC Example
 
 An example gRPC outbound security
 
-## Build
+## Build and run
 
-```
-mvn package
+With JDK8+
+```bash
+mvn -f ../pom.xml -pl common/security-outbound package
+java -jar target/helidon-examples-grpc-security-outbound.jar
 ```
 
-## Run
-
-To start the server run:
-```
-mvn exec:java
+Exercise the example:
+```bash
+java -cp target/helidon-examples-grpc-security-outbound.jar \
+    io.helidon.grpc.examples.security.outbound.SecureGreetClient
 ```

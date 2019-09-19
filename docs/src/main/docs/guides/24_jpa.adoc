@@ -29,8 +29,8 @@ within a Helidon MP application.
 |===
 |About 30 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|<<20_datasources.adoc,An understanding of named data source support in Helidon MP>>
-|<<22_jta.adoc,An understanding of transaction support in Helidon MP>>
+|<<guides/20_datasource.adoc,An understanding of named data source support in Helidon MP>>
+|<<guides/22_jta.adoc,An understanding of transaction support in Helidon MP>>
 |An understanding of JPA itself
 |===
 

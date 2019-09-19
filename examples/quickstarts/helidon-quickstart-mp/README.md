@@ -1,35 +1,12 @@
-
 # Helidon Quickstart MP Example
 
-This example implements a simple Hello World REST service using MicroProfile
+This example implements a simple Hello World REST service using MicroProfile.
 
-## Prerequisites
+## Build and run
 
-1. Maven 3.5 or newer
-2. Java SE 8 or newer
-3. Docker 17 or newer (if you want to build and run docker images)
-4. Kubernetes minikube v0.24 or newer (if you want to deploy to Kubernetes)
-   or access to a Kubernetes 1.7.4 or newer cluster
-5. Kubectl 1.7.4 or newer for deploying to Kubernetes
-
-Verify prerequisites
-```
-java -version
-mvn --version
-docker --version
-minikube version
-kubectl version --short
-```
-
-## Build
-
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Start the application
-
-```
 java -jar target/helidon-quickstart-mp.jar
 ```
 

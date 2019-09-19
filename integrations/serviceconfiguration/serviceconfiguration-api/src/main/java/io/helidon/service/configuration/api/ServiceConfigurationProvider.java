@@ -26,7 +26,10 @@ import java.util.Set;
  * @see #buildFor(Set, Properties)
  *
  * @see ServiceConfiguration
+ *
+ * @deprecated This class is slated for removal.
  */
+@Deprecated
 public abstract class ServiceConfigurationProvider {
 
 

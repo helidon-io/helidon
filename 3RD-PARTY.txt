@@ -941,9 +941,11 @@ Apache License, Version 2.0
 
 =======================
 MicroProfile Metrics API 1.1
+MicroProfile Metrics API 2.0.1
 =======================
 MicroProfile Metrics API (org.eclipse.microprofile.metrics:microprofile-metrics-api)
  Copyright (c) 2017 Contributors to the Eclipse Foundation
+ Copyright (c) 2016-2019 Eclipse Microprofile Contributors
 Apache License, Version 2.0
 
 Portions of this software were originally based on the following:
@@ -973,13 +975,18 @@ Felix Wong fmhwong@ca.ibm.com,
 Mike Croft mike.croft@payara.fish,
 Werner Keil werner@catmedia.us
 </text>
-
+--------------------------------------------
+Fourth Party Dependencies
 --------------------------------------------
 "org.osgi:org.osgi.annotation.versioning" 1.0.0
 (org.osgi:org.osgi.annotation.versioning)
  Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
  Copyright (c) OSGi Alliance (2013). All Rights Reserved.
 Apache License, Version 2.0
+-------------------------------------------
+MicroProfile Config API
+Copyright (c) Contributors to the Eclipse Foundation
+Apache License Version 2.0
 
 =======================
 MicroProfile Fault Tolerance API 2.0
@@ -3150,7 +3157,7 @@ one year after the cause of action arose. Each party waives its rights
 to a jury trial in any resulting litigation.
 
 =======================
-Jersey 2.29
+Jersey 2.29.1
 =======================
 Copyright (c) 2010,2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.

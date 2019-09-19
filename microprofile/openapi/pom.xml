@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.1-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.openapi</groupId>
     <artifactId>helidon-microprofile-openapi</artifactId>
@@ -75,12 +75,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

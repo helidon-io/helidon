@@ -5,13 +5,69 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 
+## [1.3.0] 
 
 ### Notes
 
+This release is a feature release and adds support for MicroProfile 3.0 and
+support for Hibernate as a JPA provider. It also includes a number of additional
+bug fixes and enhancements.
+
+**Note:** MicroProfile 3.0 breaks compatibility with MicroProfile 2.2 -- specifically
+in the area of Metrics. Since Helidon 1.3 continues to support MicroProfile 2.2
+your applications that depend on the MicroProfile 2.2 APIs should continue to work
+when you upgrade to Helidon 1.3. But when you switch to MicroProfile 3.0 you will
+likely need to change code that uses the MicroProfile Metrics API. For more
+information see sections 6.5 and Chapter 7 of
+[microprofile-metrics-spec-2.0.pdf](https://github.com/eclipse/microprofile-metrics/releases/download/2.0/microprofile-metrics-spec-2.0.pdf)
+
+As part of this release we are also deprecating APIs for possible removal
+in a future release. Please see the Deprecations section below.
+
 ### Improvements
 
+- MicroProfile 3.0
+- MicroProfile Metrics 2.0.1 [992](https://github.com/oracle/helidon/pull/992)
+- MicroProfile REST Client 1.3 [1010](https://github.com/oracle/helidon/pull/1010)
+- Security: New SecureUserStore [989](https://github.com/oracle/helidon/pull/989)
+- Security: Allow injection of Security through CDI [986](https://github.com/oracle/helidon/pull/986)
+- Security: Jersey client: propagate SecurityContext automatically [943](https://github.com/oracle/helidon/pull/943)
+- JPA: Add Hibernate support [894](https://github.com/oracle/helidon/pull/894)
+- OpenAPI: Support admin port [999](https://github.com/oracle/helidon/pull/999)
+- Health check endpoint can now be disabled [990](https://github.com/oracle/helidon/pull/990)
+- Introduce parent poms for applications to reduce Maven boilerplate [1022](https://github.com/oracle/helidon/pull/1022)
+- Documentation: new guides [898](https://github.com/oracle/helidon/pull/898) [890](https://github.com/oracle/helidon/pull/890) [918](https://github.com/oracle/helidon/pull/918) [925](https://github.com/oracle/helidon/pull/925) [942](https://github.com/oracle/helidon/pull/942) [959](https://github.com/oracle/helidon/pull/959) [961](https://github.com/oracle/helidon/pull/961) [974](https://github.com/oracle/helidon/pull/974) [987](https://github.com/oracle/helidon/pull/987) [996](https://github.com/oracle/helidon/pull/996) [1011](https://github.com/oracle/helidon/pull/892) [1008](https://github.com/oracle/helidon/pull/1008)
+- Helidon bare archetypes [950](https://github.com/oracle/helidon/pull/950) [995](https://github.com/oracle/helidon/pull/995)
+
 ### Fixes
+
+- Upgrade Jersey to 2.29.1 [1010](https://github.com/oracle/helidon/pull/1010)
+- Upgrade Jackson databind to 2.9.9.3 [969](https://github.com/oracle/helidon/pull/969)
+- GraalVM: Support static content for Graal native-image [962](https://github.com/oracle/helidon/pull/962)
+- GraalVM: Support for Jersey in Graal native-image [985](https://github.com/oracle/helidon/pull/985)
+- Fix NullPointerException in ConfigCdiExtension; repairs erroneous private constructors in JPA and JTA integrations [1005](https://github.com/oracle/helidon/pull/1005)
+- Config: Fix precedence for explicit sys prop and env var sources [1002](https://github.com/oracle/helidon/pull/1002)
+- bom/pom.xml cleanup [980](https://github.com/oracle/helidon/pull/980)
+- TracerBuilder now uses Helidon service loader [967](https://github.com/oracle/helidon/pull/967)
+- Reactive utilities [1003](https://github.com/oracle/helidon/pull/1003)
+- Tests: improve AccessLogSupportTest and fix test with locales other than en_US [998](https://github.com/oracle/helidon/pull/998)
+- Documentation: javadoc cleanup [993](https://github.com/oracle/helidon/pull/993) [997](https://github.com/oracle/helidon/pull/997)
+
+### Deprecations
+
+The following APIs are deprecated and will be removed in a future release:
+
+- MicroProfile 2.2 and earlier. Use MicroProfile 3.0.
+- The `@SecureClient` annotation. Security propagation is now automatic across the MicroProfile and Jersey REST clients.
+- `UserStore` in basic authentication. Replaced by `SecureUserStore`.
+- All methods that use `Span` in Webserver APIs (and Security etc.). Use `SpanContext` instead.
+- All methods that provide general health checks and not readiness or liveness checks. For example
+  use `HealthSupportBuilder.addLiveness()` instead of `HealthSupportBuilder.add()`
+- `io.helidon.common.reactive.SubmissionPublisher`
+- The `io.helidon.service.configuration` package.
+- The `io.helidon.common.reactive.valve` package.
+- Any other classes and methods that have been annotated as deprecated.
+
 
 ## [1.2.1] - 2019-08-21
 
@@ -424,7 +480,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.2.1...HEAD
+[1.3.0]: https://github.com/oracle/helidon/compare/1.2.1...1.3.0
 [1.2.1]: https://github.com/oracle/helidon/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/oracle/helidon/compare/1.1.2...1.2.0
 [1.1.2]: https://github.com/oracle/helidon/compare/1.1.1...1.1.2

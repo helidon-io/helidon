@@ -1,0 +1,68 @@
+#
+# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: zipkin
+  labels:
+    app: zipkin
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+      - image: openzipkin/zipkin:2
+        imagePullPolicy: Always
+        name: zipkin
+        ports:
+        - containerPort: 9411
+      restartPolicy: Always
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  labels:
+    app: zipkin
+spec:
+  type: ClusterIP
+  selector:
+    app: zipkin
+  ports:
+  - port: 9411
+    targetPort: 9411
+    name: http
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: zipkin-ingress
+spec:
+  rules:
+  - host: localhost
+    http:
+      paths:
+      - path: /zipkin
+        backend:
+          serviceName: zipkin
+          servicePort: 9411

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,50 +19,51 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.service.configuration.api.ServiceConfiguration;
-import io.helidon.service.configuration.api.System;
-import io.helidon.service.configuration.hikaricp.HikariCPServiceConfiguration;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@Deprecated
 public class TestPropertiesScenarios {
 
-  public TestPropertiesScenarios() {
-    super();
-  }
+    public TestPropertiesScenarios() {
+        super();
+    }
 
-  @Test
-  public void testBareBones() {
-    final ServiceConfiguration sc = ServiceConfiguration.getInstance("hikaricp");
-    assertNull(sc);
-  }
+    @Test
+    public void testBareBones() {
+        final io.helidon.service.configuration.api.ServiceConfiguration sc =
+            io.helidon.service.configuration.api.ServiceConfiguration.getInstance("hikaricp");
+        assertNull(sc);
+    }
 
-  @Test
-  public void testACCSSystem() {
-    final Map<String, String> env = new HashMap<>();
-    env.put("MYSQLCS_CONNECT_STRING", "TODO");
-    env.put("MYSQLCS_USER_NAME", "sa");
-    env.put("MYSQLCS_USER_PASSWORD", "sa");
-    final System dummyAccsSystem = new System("accs", true) {
-        @Override
-        public final boolean isEnabled() {
-          return true;
-        }
+    @Test
+    public void testACCSSystem() {
+        final Map<String, String> env = new HashMap<>();
+        env.put("MYSQLCS_CONNECT_STRING", "TODO");
+        env.put("MYSQLCS_USER_NAME", "sa");
+        env.put("MYSQLCS_USER_PASSWORD", "sa");
+        final io.helidon.service.configuration.api.System dummyAccsSystem =
+            new io.helidon.service.configuration.api.System("accs", true) {
+                @Override
+                public final boolean isEnabled() {
+                    return true;
+                }
 
-        @Override
-        public final Map<String, String> getenv() {
-          return env;
-        }
-      };
-    final HikariCPServiceConfigurationACCSProvider provider = new HikariCPServiceConfigurationACCSProvider();
-    final ServiceConfiguration sc = provider.buildFor(Collections.singleton(dummyAccsSystem), null);
-    assertNotNull(sc);
-    assertEquals("jdbc:mysql://TODO", sc.getProperty("javax.sql.DataSource.dataSource.url"));
+                @Override
+                public final Map<String, String> getenv() {
+                    return env;
+                }
+            };
+        final HikariCPServiceConfigurationACCSProvider provider =
+            new HikariCPServiceConfigurationACCSProvider();
+        final io.helidon.service.configuration.api.ServiceConfiguration sc =
+            provider.buildFor(Collections.singleton(dummyAccsSystem), null);
+        assertNotNull(sc);
+        assertEquals("jdbc:mysql://TODO", sc.getProperty("javax.sql.DataSource.dataSource.url"));
     
-  }
+    }
   
 }

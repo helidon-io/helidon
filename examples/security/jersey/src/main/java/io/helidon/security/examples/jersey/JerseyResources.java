@@ -58,7 +58,7 @@ final class JerseyResources {
         @GET
         @Produces(MediaType.TEXT_PLAIN)
         public String getHello(@Context SecurityContext securityContext) {
-            return "To test this example, call /jersey. If you use a user without \"user\" role, your request will be denied. "
+            return "To test this example, call /protected. If you use a user without \"user\" role, your request will be denied. "
                     + "Your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
         }
 
@@ -122,7 +122,7 @@ final class JerseyResources {
         @GET
         @Produces(MediaType.TEXT_PLAIN)
         public String getHello(@Context SecurityContext securityContext) {
-            return "To test this example, call /jersey. If you use a user without \"user\" role, your request will be denied. "
+            return "To test this example, call /protected. If you use a user without \"user\" role, your request will be denied. "
                     + "Your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
         }
 

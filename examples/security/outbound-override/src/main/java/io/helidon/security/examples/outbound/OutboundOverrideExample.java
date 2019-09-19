@@ -69,26 +69,24 @@ public final class OutboundOverrideExample {
     private static CompletionStage<Void> startServingService() {
         Config config = createConfig("serving-service");
 
-        return startServer(Routing
-                                   .builder()
-                                   .register(WebSecurity.create(config.get("security")))
-                                   .get("/hello", (req, res) -> {
-                                       res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
-                                               Subject::principal).map(Principal::getName).orElse("Anonymous"));
-                                   }),
-                           server -> servingPort = server.port());
+        Routing routing = Routing.builder()
+                .register(WebSecurity.create(config.get("security")))
+                .get("/hello", (req, res) -> {
+                    res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
+                            Subject::principal).map(Principal::getName).orElse("Anonymous"));
+                }).build();
+        return startServer(routing, 9080, server -> servingPort = server.port());
     }
 
     private static CompletionStage<Void> startClientService() {
         Config config = createConfig("client-service");
 
-        return startServer(Routing
-                                   .builder()
-                                   .register(WebSecurity.create(config.get("security")))
-                                   .get("/override", OutboundOverrideExample::override)
-                                   .get("/propagate", OutboundOverrideExample::propagate),
-                           server -> clientPort = server.port());
-
+        Routing routing = Routing.builder()
+                .register(WebSecurity.create(config.get("security")))
+                .get("/override", OutboundOverrideExample::override)
+                .get("/propagate", OutboundOverrideExample::propagate)
+                .build();
+        return startServer(routing, 8080, server -> clientPort = server.port());
     }
 
     private static void override(ServerRequest req, ServerResponse res) {
@@ -101,7 +99,7 @@ public final class OutboundOverrideExample {
                 .rx()
                 .get(String.class)
                 .thenAccept(result -> {
-                    res.send("You are: " + context.userName() + ", backend service returned: " + result);
+                    res.send("You are: " + context.userName() + ", backend service returned: " + result + "\n");
                 })
                 .exceptionally(throwable -> sendError(throwable, res));
     }
@@ -113,7 +111,7 @@ public final class OutboundOverrideExample {
                 .request()
                 .rx()
                 .get(String.class)
-                .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result))
+                .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result + "\n"))
                 .exceptionally(throwable -> sendError(throwable, res));
     }
 }

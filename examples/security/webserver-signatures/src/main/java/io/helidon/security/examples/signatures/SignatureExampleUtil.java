@@ -27,6 +27,7 @@ import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.WebServer;
@@ -48,8 +49,11 @@ final class SignatureExampleUtil {
      * @param routing routing to configre
      * @return started web server instance
      */
-    public static WebServer startServer(Routing routing) {
-        WebServer server = WebServer.create(routing);
+    public static WebServer startServer(Routing routing, int port) {
+        WebServer server = WebServer.builder(routing)
+                .config(ServerConfiguration.builder()
+                        .port(port))
+                .build();
         long t = System.nanoTime();
 
         CountDownLatch cdl = new CountDownLatch(1);

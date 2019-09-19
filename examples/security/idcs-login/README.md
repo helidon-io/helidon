@@ -1,23 +1,16 @@
-Security integration with IDCS
-===================
+# Security integration with IDCS
 
 This example demonstrates integration with IDCS (Oracle identity service, integrated with Open ID Connect provider).
 
-Contents
---------
+## Contents
 
 This project contains two samples, one (IdcsMain.java) which is configured via the application.yaml file and a second example (IdcsBuilderMain.java) which is configured in code.
 
 When configured the example exposes two HTTP endpoints  `/jersey`, a rest endpoint protected by an IDCS application (with two scopes) and a second endpoint (/rest/profile) which is not protected.
 
-
-Configuring the example
---------------------------
-
 ### IDCS Configuration
 
 Edit application.yaml for IdcsMain.java or OidcConfig variable definition for IdcsBuilderMain.java sample
-
 
 1. Log in to the IDCS console and create a new application of type "confidential app"
 2. Within  **Resources**
@@ -44,12 +37,18 @@ Edit application.yaml for IdcsMain.java or OidcConfig variable definition for Id
  5. proxy-host   : Your proxy server if needed
  6. scope-audience : This is the scope audience which MUST match the primary audience in the IDCS resource, recommendation is not to have a trailing slash (/)
 
+## Build and run
 
-## Building and Running the Example
+With JDK8+
+```bash
+mvn package
+java -jar target/helidon-examples-security-oidc.jar
+```
 
-1. `mvn package` to compile and build sample
-2. `mvn exec:java` to run sample
-3. Once run go to a browser window and navigate to your application /rest/profile URI, e.g.  `http://localhost:7987/rest/profile`. This should present you with a response highlighting your logged in role (null) correctly as you are not logged in
+Try the endpoints:
+
+3. Open http://localhost:7987/rest/profile in your browser. This should present
+ you with a response highlighting your logged in role (null) correctly as you are not logged in
 4. Navigate to `http://localhost:7987/jersey` this should
    1. Redirect you to the OIDCS login console to authenticate yourself, once done
    2. Redirects you back to the application and should display your users credentials/IDCS information
@@ -70,7 +69,6 @@ Now that everything is setup it is possible to call the sample from tools like p
 4. Request Token  (If you get an error check the postman developer console)
 5. Once you have a token ensure you press the "Use token" button
 6. Execute your rest call
-
 
 ## Troubleshooting
 

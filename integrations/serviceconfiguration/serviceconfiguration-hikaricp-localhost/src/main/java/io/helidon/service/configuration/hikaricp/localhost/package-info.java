@@ -21,8 +21,12 @@
  * connection pool</a> componentry suitable for local testing
  * environments.
  *
- * @see io.helidon.service.configuration.hikaricp.localhost.HikariCPServiceConfigurationLocalhost
+ * @see
+ * io.helidon.service.configuration.hikaricp.localhost.HikariCPServiceConfigurationLocalhost
  *
- * @see io.helidon.service.configuration.hikaricp.localhost.HikariCPServiceConfigurationLocalhostProvider
+ * @see
+ * io.helidon.service.configuration.hikaricp.localhost.HikariCPServiceConfigurationLocalhostProvider
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.hikaricp.localhost;

@@ -1,7 +1,11 @@
-Tutorial Server
-===============
+# Tutorial Server
 
-Web application serving tutorial articles. Articles contains code examples directly from sources. Thanks to it, all examples
-are build, tested and up-to-date.
+This application demonstrates various WebServer use cases together and in its complexity.
 
-It is also complex Web Server example.
+## Build and run
+
+With JDK8+
+```bash
+mvn package
+java -jar target/helidon-examples-webserver-tutorial.jar
+```

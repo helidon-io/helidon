@@ -24,7 +24,7 @@
     <parent>
         <artifactId>helidon-microprofile-jwt-project</artifactId>
         <groupId>io.helidon.microprofile.jwt</groupId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
@@ -39,12 +39,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.jwt</groupId>
             <artifactId>helidon-microprofile-jwt-auth</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

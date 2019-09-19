@@ -155,9 +155,9 @@ Learn how to use GraalVM to build a native executable for your Helidon SE applic
 [PILLARS]
 ====
 [CARD]
-.Helidion MP Tutorial
+.Helidon MP Tutorial
 [link=guides/91_mp-tutorial.adoc]
 --
-Learn how to build an Helidon MicroProfile (MP) application from scratch.
+Learn how to build a Helidon MicroProfile (MP) application from scratch.
 --
 ====

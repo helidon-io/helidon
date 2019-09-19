@@ -1,10 +1,10 @@
-
 # Helidon Config Changes Example
 
 This example shows how an application can deal with changes to 
 configuration.
 
 ## Change notification
+
 The example highlights two approaches to change notification:
 
 1. [`ChangesSubscriberExample.java`](./src/main/java/io/helidon/config/examples/changes/ChangesSubscriberExample.java):
@@ -17,6 +17,7 @@ would also work) which the config system invokes when the config source changes
 )
 
 ## Latest-value supplier
+
 A third example illustrates a different solution. 
 Recall that once your application obtains a `Config` instance, its config values 
 do not change. The 
@@ -27,14 +28,10 @@ application obtained the `Config` object. Although this approach does not notify
 your application _when_ changes occur, it _does_ permit your code to always use 
 the most up-to-date value. Sometimes that is all you need.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-config-changes.jar
 ```

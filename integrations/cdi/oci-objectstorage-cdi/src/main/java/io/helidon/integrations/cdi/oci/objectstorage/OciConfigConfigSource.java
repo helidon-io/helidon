@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,7 +187,10 @@ public final class OciConfigConfigSource implements ConfigSource {
     } else {
       final Map<String, String> properties = new HashMap<>();
       properties.put("oci.auth.fingerprint", provider.getFingerprint());
-      properties.put("oci.auth.passphraseCharacters", String.valueOf(provider.getPassphraseCharacters()));
+      char[] passphrase = provider.getPassphraseCharacters();
+      if (passphrase != null && passphrase.length > 0) {
+        properties.put("oci.auth.passphraseCharacters", String.valueOf(passphrase));
+      }
       properties.put("oci.auth.tenancy", provider.getTenantId());
       properties.put("oci.auth.user", provider.getUserId());
       returnValue = Collections.unmodifiableMap(properties);

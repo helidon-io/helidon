@@ -15,27 +15,25 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.examples</groupId>
         <artifactId>helidon-examples-project</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.1-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>examples-quickstarts-project</artifactId>
     <name>Helidon Quickstart Examples</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.sources.skip>true</maven.sources.skip>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
-        <spotbugs.skip>true</spotbugs.skip>
-    </properties>
-
     <modules>
         <module>helidon-quickstart-se</module>
         <module>helidon-quickstart-mp</module>
+        <module>helidon-standalone-quickstart-mp</module>
+        <module>helidon-standalone-quickstart-se</module>
     </modules>
 </project>

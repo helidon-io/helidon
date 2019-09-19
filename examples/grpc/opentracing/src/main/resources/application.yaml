@@ -26,4 +26,5 @@ webserver:
   bind-address: "0.0.0.0"
 
 tracing:
+  host: "localhost"
   service: "grpc-server"
