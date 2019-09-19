@@ -31,6 +31,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -72,7 +74,6 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
-import javax.enterprise.context.BeforeDestroyed;
 
 /**
  * MetricsCdiExtension class.
@@ -343,7 +344,7 @@ public class MetricsCdiExtension implements Extension {
      *
      * @param event the event describing the bean descruction
      */
-    private void onShutdown(@Observes BeforeDestroyed event) {
+    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
         RegistryFactory.getInstance().close();
     }
 
