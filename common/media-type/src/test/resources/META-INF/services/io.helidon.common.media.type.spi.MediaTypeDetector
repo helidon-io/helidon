@@ -1,0 +1,2 @@
+io.helidon.common.media.type.CustomTypeDetector
+io.helidon.common.media.type.DockerfileTypeDetector
