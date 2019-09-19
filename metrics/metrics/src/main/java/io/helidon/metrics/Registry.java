@@ -315,6 +315,13 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                 .map(Registry::toBridgeEntry);
     }
 
+    /**
+     * Close this registry, discarding all previously-registered metrics.
+     */
+    public void close() {
+        allMetrics.clear();
+    }
+
     private static <T extends Metric> SortedMap<MetricID, T>
             getBridgeMetrics(SortedMap<String, T> metrics, Class<T> clazz) {
         return metrics.entrySet().stream()

@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -62,6 +64,7 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
+import io.helidon.metrics.RegistryFactory;
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
@@ -196,9 +199,15 @@ public class MetricsCdiExtension implements Extension {
         configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember().getModifiers()))
                 .forEach(method -> {
                     METRIC_ANNOTATIONS.forEach(annotation -> {
+                        Method m = method.getAnnotated().getJavaMember();
                         LookupResult<? extends Annotation> lookupResult
                                 = lookupAnnotation(method.getAnnotated().getJavaMember(), annotation, clazz);
-                        if (lookupResult != null) {
+                        // For methods, register the metric only on the declaring
+                        // class, not subclasses per the MP Metrics TCK
+                        // VisibilityTimedMethodBeanTest.
+                        if (lookupResult != null
+                                && (lookupResult.getType() != MetricUtil.MatchingType.METHOD
+                                    || clazz.equals(m.getDeclaringClass()))) {
                             registerMetric(method.getAnnotated().getJavaMember(), clazz, lookupResult);
                         }
                     });
@@ -232,7 +241,8 @@ public class MetricsCdiExtension implements Extension {
      * @param ppf Producer field.
      */
     private void recordProducerFields(@Observes ProcessProducerField<? extends org.eclipse.microprofile.metrics.Metric, ?> ppf) {
-        LOGGER.log(Level.FINE, () -> "### recordProducerFields " + ppf.getBean().getBeanClass());
+        LOGGER.log(Level.FINE, () -> "### recordProducerFields " + ppf.getBean().getBeanClass()
+                        + ", field: " + ppf.getAnnotatedProducerField());
         if (!MetricProducer.class.equals(ppf.getBean().getBeanClass())) {
             Metric metric = ppf.getAnnotatedProducerField().getAnnotation(Metric.class);
             if (metric != null) {
@@ -250,6 +260,15 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
+    /**
+     * Responds when this instance is about to be retired by CDI.
+     *
+     * @param event the event describing the bean destruction
+     */
+    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
+        RegistryFactory.getInstance().close();
+    }
+
     // -- Utility classes and methods -----------------------------------------
 
     /**
@@ -260,7 +279,8 @@ public class MetricsCdiExtension implements Extension {
      */
     private void recordProducerMethods(@Observes
                                                ProcessProducerMethod<? extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
-        LOGGER.log(Level.FINE, () -> "### recordProducerMethods " + ppm.getBean().getBeanClass());
+        LOGGER.log(Level.FINE, () -> "### recordProducerMethods " + ppm.getBean().getBeanClass()
+                        + ", method: " + ppm.getAnnotatedProducerMethod());
         if (!MetricProducer.class.equals(ppm.getBean().getBeanClass())) {
             Metric metric = ppm.getAnnotatedProducerMethod().getAnnotation(Metric.class);
             if (metric != null) {

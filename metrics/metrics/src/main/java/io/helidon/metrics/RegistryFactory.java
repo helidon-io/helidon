@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -159,6 +160,14 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
     @Override
     public io.helidon.common.metrics.InternalBridge.MetricRegistry getBridgeRegistry(Type type) {
         return io.helidon.common.metrics.InternalBridge.MetricRegistry.class.cast(getRegistry(type));
+    }
+
+    /**
+     * Close this registry factory, in turn closing the known registries.
+     */
+    public void close() {
+        registries.values().stream()
+                .forEach(Registry::close);
     }
 
     private void update(Config config) {
