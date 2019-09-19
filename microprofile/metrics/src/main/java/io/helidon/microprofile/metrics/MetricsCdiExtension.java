@@ -51,6 +51,8 @@ import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.interceptor.Interceptor;
 
+import io.helidon.metrics.RegistryFactory;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -64,7 +66,6 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import io.helidon.metrics.RegistryFactory;
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
