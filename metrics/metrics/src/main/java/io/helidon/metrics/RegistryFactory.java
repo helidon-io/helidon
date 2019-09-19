@@ -17,7 +17,6 @@
 package io.helidon.metrics;
 
 import java.util.EnumMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
