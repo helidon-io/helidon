@@ -199,15 +199,9 @@ public class MetricsCdiExtension implements Extension {
         configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember().getModifiers()))
                 .forEach(method -> {
                     METRIC_ANNOTATIONS.forEach(annotation -> {
-                        Method m = method.getAnnotated().getJavaMember();
                         LookupResult<? extends Annotation> lookupResult
                                 = lookupAnnotation(method.getAnnotated().getJavaMember(), annotation, clazz);
-                        // For methods, register the metric only on the declaring
-                        // class, not subclasses per the MP Metrics TCK
-                        // VisibilityTimedMethodBeanTest.
-                        if (lookupResult != null
-                                && (lookupResult.getType() != MetricUtil.MatchingType.METHOD
-                                    || clazz.equals(m.getDeclaringClass()))) {
+                        if (lookupResult != null) {
                             registerMetric(method.getAnnotated().getJavaMember(), clazz, lookupResult);
                         }
                     });
