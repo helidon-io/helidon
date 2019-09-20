@@ -65,9 +65,11 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
     }
 
     static Metadata toMetadata(io.helidon.common.metrics.InternalBridge.Metadata metadata, Map<String, String> tags) {
-        return new Metadata(metadata.getName(), metadata.getDisplayName(),
+        Metadata result = new Metadata(metadata.getName(), metadata.getDisplayName(),
         metadata.getDescription().orElse(null), metadata.getTypeRaw(),
                 metadata.getUnit().orElse(null), tagsAsString(tags));
+        result.setReusable(metadata.isReusable());
+        return result;
     }
 
     Optional<HelidonMetric> getMetric(String metricName) {
