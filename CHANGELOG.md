@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] 
+
+### Notes
+
+This is a bugfix release. It fixes a critical Helidon MP 
+configuration bug on Windows: [1038](https://github.com/oracle/helidon/issues/1038).
+
+### Fixes
+
+- Fix UrlConfigSource to work on windows [1039](https://github.com/oracle/helidon/pull/1039)
+- Documentation fixes [1043](https://github.com/oracle/helidon/pull/1043)
+- Update POM names for consistency [1031](https://github.com/oracle/helidon/pull/1031) [1032](https://github.com/oracle/helidon/pull/1032)
+- Add stand-alone pom examples [1031](https://github.com/oracle/helidon/pull/1031)
+- Remove Oracle Maven Repository dependency [1040](https://github.com/oracle/helidon/pull/1040)
+- Add exclusions for org.osgi:org.osgi.annotation.versioning [1034](https://github.com/oracle/helidon/pull/1034)
+- Build fixes [1027](https://github.com/oracle/helidon/pull/1027) [1033](https://github.com/oracle/helidon/pull/1033) [1035](https://github.com/oracle/helidon/pull/1035)
+
 ## [1.3.0] 
 
 ### Notes
@@ -480,6 +497,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[Unreleased]: https://github.com/oracle/helidon/compare/1.3.0...HEAD
 [1.3.0]: https://github.com/oracle/helidon/compare/1.2.1...1.3.0
 [1.2.1]: https://github.com/oracle/helidon/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/oracle/helidon/compare/1.1.2...1.2.0
