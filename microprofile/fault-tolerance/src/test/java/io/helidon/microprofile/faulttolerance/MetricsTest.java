@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
+import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.common.metrics.InternalBridge.MetricRegistry;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -86,8 +87,9 @@ public class MetricsTest extends FaultToleranceTest {
                 .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build());
-        metricRegistry.counter("dcounter").inc();
-        assertThat(metricRegistry.counter("dcounter").getCount(), is(1L));
+        MetricID metricID = InternalBridge.INSTANCE.getMetricIDFactory().newMetricID("dcounter");
+        metricRegistry.getBridgeCounters().get(metricID).inc();
+        assertThat(metricRegistry.getBridgeCounters().get(metricID).getCount(), is(1L));
     }
 
     @Test
