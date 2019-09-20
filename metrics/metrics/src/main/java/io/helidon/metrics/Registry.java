@@ -424,6 +424,10 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
             if (metric.isReusable() != metadata.isReusable()) {
                 throw new IllegalArgumentException("Metadata not re-usable for metric " + metadata.getName());
             }
+            if (!metadata.isReusable()) {
+                throw new IllegalArgumentException("Attempt to re-register metric " + metric.getName()
+                        + " but reuse of this metric is not permitted by its metadata");
+            }
         } else {
             metric = newInstanceCreator.apply(metadata.getName());
             metric.setReusable(metadata.isReusable());
