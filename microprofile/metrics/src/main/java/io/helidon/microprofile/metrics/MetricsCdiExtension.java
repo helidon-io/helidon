@@ -261,15 +261,6 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
-    /**
-     * Responds when this instance is about to be retired by CDI.
-     *
-     * @param event the event describing the bean destruction
-     */
-    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        RegistryFactory.getInstance().close();
-    }
-
     // -- Utility classes and methods -----------------------------------------
 
     /**
