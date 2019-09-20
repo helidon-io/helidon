@@ -161,13 +161,6 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
         return io.helidon.common.metrics.InternalBridge.MetricRegistry.class.cast(getRegistry(type));
     }
 
-    /**
-     * Closes this registry factory, in turn closing the known registries.
-     */
-    public void close() {
-        registries.values().stream()
-                .forEach(Registry::close);
-    }
     private void update(Config config) {
         this.config.set(config);
     }

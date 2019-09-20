@@ -399,15 +399,6 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return getBridgeMetrics(getTimers(), Timer.class);
     }
 
-    /**
-     * Closes this registry, discarding previously-registered metadata and metrics.
-     */
-    public void close() {
-        allMetrics.clear();
-        allMetadata.clear();
-        allMetricIDsByName.clear();
-    }
-
     private static <T extends Metric> SortedMap<io.helidon.common.metrics.InternalBridge.MetricID, T> getBridgeMetrics(
             SortedMap<MetricID, T> metrics, Class<T> clazz) {
         return metrics.entrySet().stream()
