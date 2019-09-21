@@ -87,9 +87,8 @@ public class MetricsTest extends FaultToleranceTest {
                 .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build());
-        MetricID metricID = InternalBridge.INSTANCE.getMetricIDFactory().newMetricID("dcounter");
-        metricRegistry.getBridgeCounters().get(metricID).inc();
-        assertThat(metricRegistry.getBridgeCounters().get(metricID).getCount(), is(1L));
+        metricRegistry.counter("dcounter").inc();
+        assertThat(metricRegistry.counter("dcounter").getCount(), is(1L));
     }
 
     @Test
