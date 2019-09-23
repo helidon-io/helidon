@@ -112,7 +112,7 @@ public class RegistryFactoryTest {
         assertNotSame(c1, c2);
 
         //replace c2 with a counter from the same registry
-        c2 = app.getCounters().get("new.counter");
+        c2 = app.counter("new.counter");
         assertSame(c1, c2);
     }
 
