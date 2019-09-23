@@ -142,9 +142,8 @@ This approach is based on a pair of keys: a public key which is known to anybody
  For asymmetric encryption, the following is true:
 
 - a value encrypted by a public key can only be decrypted by the private key
-- a value encrypted by a private key can only be decrypted by the public key
 
-When using the config encryption filter, you have to encrypt the configuration values
+When using the config encryption filter, you should encrypt the configuration values
 using the public key, and give the application process access to the 
 private key to decrypt the values.
 

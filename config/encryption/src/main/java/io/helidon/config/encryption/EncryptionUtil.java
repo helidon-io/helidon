@@ -62,7 +62,7 @@ public final class EncryptionUtil {
 
     /**
      * Decrypt using RSA with OAEP.
-     * Expects message encrypted with the other key.
+     * Expects message encrypted with the public key.
      *
      * @param key             private key used to decrypt
      * @param encryptedBase64 base64 encoded encrypted secret

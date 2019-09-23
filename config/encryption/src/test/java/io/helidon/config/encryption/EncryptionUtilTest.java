@@ -64,11 +64,6 @@ public class EncryptionUtilTest {
         publicKey = kc.publicKey().orElseThrow(AssertionError::new);
     }
 
-//    @Test
-//    public void testEncryptAndDecryptRsaPrivate() {
-//        testPki(privateKey, publicKey, false);
-//    }
-
     @Test
     public void testEncryptAndDecryptRsaPublic() {
         testPki(publicKey, privateKey, true);
