@@ -79,6 +79,6 @@ public class MetricsMpServiceTest {
     }
 
     protected static Counter getCounter(String name) {
-        return registry.getCounters().get(name);
+        return registry.counter(name);
     }
 }
