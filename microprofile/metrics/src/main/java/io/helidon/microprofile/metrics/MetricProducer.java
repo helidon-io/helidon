@@ -43,8 +43,6 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 @ApplicationScoped
 public class MetricProducer {
 
-    private final Map<InjectionPoint, Object> injectionPoints = new HashMap<>();
-
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
         return metric == null ? new Metadata(getName(ip),
                                              "",
@@ -162,24 +160,16 @@ public class MetricProducer {
 
     private <T> T processInjectionPoint(InjectionPoint ip, Supplier<Map<String, T>> getTypedMetricsFn,
             Function<Metadata, T> registerFn, Class<T> clazz) {
+
+        Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
+        T result = getTypedMetricsFn.get().get(getName(metricAnno, ip));
         /*
-         * Some injection points are reported more than once. If the IP has
-         * previously been processed just return the metric that was created at
-         * that time, rather than trying to create a new metric again.
+         * For an injection point, refer to a previously-registered metric that matches the name,
+         * if any. Register a new instance only if none is already present.
          */
-        if (!injectionPoints.containsKey(ip)) {
-            Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
-            T result = getTypedMetricsFn.get().get(getName(metricAnno, ip));
-            /*
-             * For an injection point, refer to a previously-registered metric,
-             * if any. Register a new instance only if none is already present.
-             */
-            if (result == null) {
-                result = registerFn.apply(newMetadata(ip, metricAnno, MetricType.from(clazz)));
-            }
-            injectionPoints.put(ip, result);
-            return result;
+        if (result == null) {
+            result = registerFn.apply(newMetadata(ip, metricAnno, MetricType.from(clazz)));
         }
-        return clazz.cast(injectionPoints.get(ip));
+        return result;
     }
 }
