@@ -17,7 +17,6 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.reflect.Constructor;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
