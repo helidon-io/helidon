@@ -430,8 +430,6 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
         }
         return a.getName().equals(b.getName())
                 && a.getTypeRaw().equals(b.getTypeRaw())
-                && a.getDisplayName().equals(b.getDisplayName())
-                && Objects.equals(a.getDescription(), b.getDescription())
                 && Objects.equals(a.getUnit(), b.getUnit())
                 && a.getTags().equals(b.getTags())
                 && (a.isReusable() == b.isReusable());
