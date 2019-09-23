@@ -88,7 +88,7 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
-        return processInjectionPoint(ip, registry::getCounters, registry::counter, Counter.class);
+        return produceMetric(ip, registry::getCounters, registry::counter, Counter.class);
     }
 
     @Produces
@@ -99,7 +99,7 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Meter produceMeter(MetricRegistry registry, InjectionPoint ip) {
-        return processInjectionPoint(ip, registry::getMeters, registry::meter, Meter.class);
+        return produceMetric(ip, registry::getMeters, registry::meter, Meter.class);
     }
 
     @Produces
@@ -110,7 +110,7 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
-        return processInjectionPoint(ip, registry::getTimers, registry::timer, Timer.class);
+        return produceMetric(ip, registry::getTimers, registry::timer, Timer.class);
     }
 
     @Produces
@@ -121,7 +121,7 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
-        return processInjectionPoint(ip, registry::getHistograms, registry::histogram, Histogram.class);
+        return produceMetric(ip, registry::getHistograms, registry::histogram, Histogram.class);
     }
 
     /**
@@ -157,7 +157,7 @@ public class MetricProducer {
         return produceGauge(registry, ip);
     }
 
-    private <T> T processInjectionPoint(InjectionPoint ip, Supplier<Map<String, T>> getTypedMetricsFn,
+    private <T> T produceMetric(InjectionPoint ip, Supplier<Map<String, T>> getTypedMetricsFn,
             Function<Metadata, T> registerFn, Class<T> clazz) {
 
         Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
