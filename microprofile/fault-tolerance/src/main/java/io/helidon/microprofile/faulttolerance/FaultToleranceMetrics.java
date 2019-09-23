@@ -17,6 +17,7 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 
 import javax.enterprise.inject.spi.CDI;
 
@@ -33,7 +34,6 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
-import java.util.Collections;
 
 /**
  * Class FaultToleranceMetrics.
