@@ -196,13 +196,19 @@ public class MetricsCdiExtension implements Extension {
         configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember().getModifiers()))
                 .forEach(method -> {
                     METRIC_ANNOTATIONS.forEach(annotation -> {
-                        LookupResult<? extends Annotation> lookupResult
-                                = lookupAnnotation(method.getAnnotated().getJavaMember(), annotation, clazz);
-                        if (lookupResult != null) {
-                            registerMetric(method.getAnnotated().getJavaMember(), clazz, lookupResult);
-                        }
+                        Method m = method.getAnnotated().getJavaMember();
+                        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(m, annotation, clazz);
+                            // For methods, register the metric only on the declaring
+                            // class, not subclasses per the MP Metrics TCK
+                            // VisibilityTimedMethodBeanTest.
+                            if (lookupResult != null
+                                    && (lookupResult.getType() != MetricUtil.MatchingType.METHOD
+                                    || clazz.equals(m.getDeclaringClass()))) {
+
+                                registerMetric(method.getAnnotated().getJavaMember(), clazz, lookupResult);
+                           }
+                       });
                     });
-                });
 
         // Process constructors
         configurator.filterConstructors(constructor -> !Modifier.isPrivate(constructor.getJavaMember().getModifiers()))
@@ -232,7 +238,8 @@ public class MetricsCdiExtension implements Extension {
      * @param ppf Producer field.
      */
     private void recordProducerFields(@Observes ProcessProducerField<? extends org.eclipse.microprofile.metrics.Metric, ?> ppf) {
-        LOGGER.log(Level.FINE, () -> "### recordProducerFields " + ppf.getBean().getBeanClass());
+        LOGGER.log(Level.FINE, () -> "### recordProducerFields " + ppf.getBean().getBeanClass()
+                                   + ", field: " + ppf.getAnnotatedProducerField());
         if (!MetricProducer.class.equals(ppf.getBean().getBeanClass())) {
             Metric metric = ppf.getAnnotatedProducerField().getAnnotation(Metric.class);
             if (metric != null) {
@@ -260,7 +267,8 @@ public class MetricsCdiExtension implements Extension {
      */
     private void recordProducerMethods(@Observes
                                                ProcessProducerMethod<? extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
-        LOGGER.log(Level.FINE, () -> "### recordProducerMethods " + ppm.getBean().getBeanClass());
+        LOGGER.log(Level.FINE, () -> "### recordProducerMethods " + ppm.getBean().getBeanClass()
+                                   + ", method: " + ppm.getAnnotatedProducerMethod());
         if (!MetricProducer.class.equals(ppm.getBean().getBeanClass())) {
             Metric metric = ppm.getAnnotatedProducerMethod().getAnnotation(Metric.class);
             if (metric != null) {
