@@ -50,6 +50,9 @@ import org.eclipse.microprofile.metrics.Timer;
  * Metrics registry.
  */
 class Registry extends MetricRegistry implements io.helidon.common.metrics.InternalBridge.MetricRegistry {
+
+    private static final Map<Class<? extends HelidonMetric>, MetricType> METRIC_TO_TYPE_MAP = prepareMetricToTypeMap();
+
     private final Type type;
     private final Map<String, MetricImpl> allMetrics = new ConcurrentHashMap<>();
 
@@ -512,7 +515,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
 
     private static <T extends HelidonMetric, U extends HelidonMetric> U toType(T m1, Class<U> clazz) {
         MetricType type1 = toType(m1);
-        MetricType type2 = MetricType.from(clazz);
+        MetricType type2 = toType(clazz);
         if (type1 == type2) {
             return clazz.cast(m1);
         }
@@ -534,5 +537,19 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
             clazz = clazz.getSuperclass();
         } while (clazz != null);
         return MetricType.from(clazz == null ? metric.getClass() : clazz);
+    }
+
+    private static <T extends HelidonMetric> MetricType toType(Class<T> clazz) {
+        return METRIC_TO_TYPE_MAP.getOrDefault(clazz, MetricType.INVALID);
+    }
+
+    private static Map<Class<? extends HelidonMetric>, MetricType> prepareMetricToTypeMap() {
+        final Map<Class<? extends HelidonMetric>, MetricType> result = new HashMap<>();
+        result.put(HelidonCounter.class, MetricType.COUNTER);
+        result.put(HelidonGauge.class, MetricType.GAUGE);
+        result.put(HelidonHistogram.class, MetricType.HISTOGRAM);
+        result.put(HelidonMeter.class, MetricType.METERED);
+        result.put(HelidonTimer.class, MetricType.TIMER);
+        return result;
     }
 }
