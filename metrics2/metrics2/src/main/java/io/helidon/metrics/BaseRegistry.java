@@ -26,7 +26,6 @@ import java.lang.management.ThreadMXBean;
 import java.util.List;
 
 import io.helidon.config.Config;
-import java.util.logging.Logger;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -54,8 +53,6 @@ import org.eclipse.microprofile.metrics.Tag;
 final class BaseRegistry extends Registry {
 
     static final String BASE_ENABLED_KEY = "base.enabled";
-
-    private static final Logger LOGGER = Logger.getLogger(BaseRegistry.class.getName());
 
     private static final String CONFIG_METRIC_ENABLED_BASE = "base.";
 
