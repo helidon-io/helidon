@@ -32,6 +32,11 @@ module io.helidon.microprofile.server {
     requires java.logging;
     requires io.helidon.common.serviceloader;
 
+    // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
+    requires weld.se.core;
+    requires weld.core.impl;
+    requires weld.environment.common;
+
     exports io.helidon.microprofile.server;
     exports io.helidon.microprofile.server.spi;
 
