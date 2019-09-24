@@ -42,7 +42,8 @@ and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertra
 
 === Tracing concepts
 
-This section explains a few tracing concepts that you need to understand before you get started with tracing.
+This section explains a few concepts that you need to understand before you get started with tracing.
+In the context of this document, a service is synonymous with an application.
 A _span_ is the basic unit of work done within a single service, on a single host.
 Every span has a name, starting timestamp, and duration.  For example, the work done by a REST endpoint is a span.
 A span is associated to a single service, but its descendants can belong to different services and hosts.
@@ -116,7 +117,8 @@ curl http://localhost:9411/health // <1>
 === Enable Tracing in your Helidon application
 
 Update the pom.xml file and add the following Zipkin dependency to the `<dependencies>`
-section (*not* `<dependencyManagement>`).
+section (*not* `<dependencyManagement>`).  This will enable Helidon to use Zipkin at the
+default host and port, `localhost:9411`.
 
 [source,xml]
 .Add the following dependency to `pom.xml`:
@@ -141,10 +143,13 @@ tracing:
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add a new import, 2) call the `buildServerConfig` method, and 3) Add the `buildServerConfig` method:
+.Update the `Main` class; 1) Add a new import, 2) Change the code that initializes `serverConfig` to use the new `buildServerConfig` method., and 3) Add the `buildServerConfig` method:
 ----
 import io.helidon.tracing.TracerBuilder; // <1>
 ...
+    // Replace the existing line of code
+    // `ServerConfiguration serverConfig = ServerConfiguration.create(config.get("server"));`
+    // with ` ServerConfiguration serverConfig = buildServerConfig(config);`
     ServerConfiguration serverConfig = buildServerConfig(config); // <2>
 ...
 
@@ -174,10 +179,9 @@ import io.opentracing.Span; // <1>
             .asChildOf(request.spanContext())  // <4>
             .start(); // <5>
 
-        try{
+        try {
             sendResponse(response, "World");
-        }
-        finally{
+        } finally {
             span.finish();  // <6>
         }
     }
@@ -212,9 +216,6 @@ curl http://localhost:8080/greet
 
 Because you had tracing enabled, the previous `/greet` endpoint invocation resulted in a new trace being created.
 Let's get the trace data that was generated using the Zipkin API.  First, get the service information.
-
-NOTE: If you enable tracing then Helidon automatically creates spans for JAX-RS resources methods.
-See https://github.com/eclipse/microprofile-opentracing/releases/tag/1.3[MicroProfile OpenTracing] for more details.
 
 [source,bash]
 .Run the curl command and check the response:
@@ -338,14 +339,14 @@ mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeArtifactId=helidon-quickstart-se \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-se \
+    -DartifactId=helidon-quickstart-se-2 \
     -Dpackage=io.helidon.examples.quickstart.se
 ----
 
 [source,bash]
 .The project will be built and run from the `helidon-quickstart-se` directory:
 ----
-cd helidon-quickstart-se
+cd helidon-quickstart-se-2
 ----
 
 [source,xml]
@@ -404,10 +405,9 @@ import io.opentracing.Span;
             .asChildOf(request.spanContext())
             .start();
 
-        try{
+        try {
             sendResponse(response, "World");
-        }
-        finally{
+        } finally {
             span.finish();
         }
     }
@@ -458,7 +458,7 @@ call it.
 
 
 [source,java]
-.Update the `GreetService` class with the following code:
+.Replace the `GreetService` class with the following code:
 ----
 package io.helidon.examples.quickstart.se;
 
