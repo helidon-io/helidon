@@ -167,13 +167,12 @@ Add the following file under `src/main/resources`:
 [source,sql]
 .`src/main/resources/greeting.ddl`
 ----
-CREATE TABLE GREETING (
+CREATE TABLE IF NOT EXISTS GREETING (
     SALUTATION VARCHAR(64) NOT NULL PRIMARY KEY,
     RESPONSE VARCHAR(64) NOT NULL
 );
 
-INSERT INTO GREETING (SALUTATION, RESPONSE) VALUES ('Marco', 'Polo');
-
+MERGE INTO GREETING (SALUTATION, RESPONSE) VALUES ('Marco', 'Polo');
 ----
 
 == Add an `application.yaml` File With Database Connectivity Information
@@ -513,6 +512,26 @@ of this method when it is invoked as a result of an incoming HTTP
 request, and committed or rolled back when the method terminates
 normally or exceptionally.  The injected `EntityManager` will join the
 transaction automatically.
+
+== Add Logging
+
+Add the following file under `src/main/resources`:
+
+[source,properties]
+.`src/main/resources/logging.properties`
+----
+.level=INFO
+handlers=java.util.logging.ConsoleHandler
+java.util.logging.ConsoleHandler.formatter=io.helidon.webserver.WebServerLogFormatter
+java.util.logging.ConsoleHandler.level=FINEST
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
+
+com.zaxxer.hikari.level=INFO
+h2database.level=WARNING
+io.netty.level=INFO
+org.eclipse.persistence.level=FINE
+org.glassfish.jersey.server.level=CONFIG
+----
 
 == Build the Application
 
