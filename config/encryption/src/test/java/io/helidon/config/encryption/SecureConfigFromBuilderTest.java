@@ -48,7 +48,7 @@ public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
                                    .masterPassword("myMasterPasswordForEncryption".toCharArray())
                                    .privateKey(keyConfig)
                                    .buildProvider())
-                .build().get("current");
+                .build().get("aes-current");
 
         configRequiresEncryption = Config.builder()
                 .disableFilterServices()
@@ -57,7 +57,7 @@ public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
                                    .masterPassword("myMasterPasswordForEncryption".toCharArray())
                                    .privateKey(keyConfig)
                                    .buildProvider())
-                .build().get("current");
+                .build().get("aes-current");
 
         assertThat("We must have the correct configuration file", config.get("pwd1").type().isLeaf());
         assertThat("We must have the correct configuration file", configRequiresEncryption.get("pwd1").type().isLeaf());

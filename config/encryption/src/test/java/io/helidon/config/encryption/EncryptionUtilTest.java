@@ -65,20 +65,15 @@ public class EncryptionUtilTest {
     }
 
     @Test
-    public void testEncryptAndDecryptRsaPrivate() {
-        testPki(privateKey, publicKey, false);
-    }
-
-    @Test
     public void testEncryptAndDecryptRsaPublic() {
         testPki(publicKey, privateKey, true);
     }
 
     @Test
     public void testEncryptWrongKey() throws NoSuchAlgorithmException {
-        PrivateKey privateKey = generateDsaPrivateKey();
+        PublicKey publicKey = generateDsaPublicKey();
         try {
-            EncryptionUtil.encryptRsa(privateKey, TEST_SECRET);
+            EncryptionUtil.encryptRsa(publicKey, TEST_SECRET);
             fail("We have fed DSA private key to RSA decryption. This should have failed");
         } catch (ConfigEncryptionException e) {
             Throwable cause = e.getCause();
@@ -88,14 +83,14 @@ public class EncryptionUtilTest {
         }
     }
 
-    private PrivateKey generateDsaPrivateKey() throws NoSuchAlgorithmException {
+    private PublicKey generateDsaPublicKey() throws NoSuchAlgorithmException {
         KeyPairGenerator gen = KeyPairGenerator.getInstance("DSA");
         gen.initialize(1024);
         KeyPair keyPair = gen.generateKeyPair();
-        return keyPair.getPrivate();
+        return keyPair.getPublic();
     }
 
-    private void testPki(Key encryptionKey, Key decryptionKey, boolean mustBeSeeded) {
+    private void testPki(PublicKey encryptionKey, PrivateKey decryptionKey, boolean mustBeSeeded) {
         String encryptedBase64 = EncryptionUtil.encryptRsa(encryptionKey, TEST_SECRET);
         String decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedBase64);
 
@@ -110,16 +105,6 @@ public class EncryptionUtilTest {
         decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedAgain);
 
         assertEquals(TEST_SECRET, decrypted);
-    }
-
-    @Test
-    public void testEncryptedRsaPrivate() {
-        assertThrows(ConfigEncryptionException.class, () -> testPki(privateKey, privateKey, false));
-    }
-
-    @Test
-    public void testEncryptedRsaPublic() {
-        assertThrows(ConfigEncryptionException.class, () -> testPki(publicKey, publicKey, true));
     }
 
     @Test
