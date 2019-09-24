@@ -42,7 +42,8 @@ and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertra
 
 === Tracing concepts
 
-This section explains a few tracing concepts that you need to understand before you get started with tracing.
+This section explains a few concepts that you need to understand before you get started with tracing.
+In the context of this document, a service is synonymous with an application.
 A _span_ is the basic unit of work done within a single service, on a single host.
 Every span has a name, starting timestamp, and duration.  For example, the work done by a REST endpoint is a span.
 A span is associated to a single service, but its descendants can belong to different services and hosts.
@@ -116,7 +117,8 @@ curl http://localhost:9411/health // <1>
 === Enable Tracing in your Helidon application
 
 Update the pom.xml file and add the following Zipkin dependency to the `<dependencies>`
-section (*not* `<dependencyManagement>`).
+section (*not* `<dependencyManagement>`).  This will enable Helidon to use Zipkin at the
+default host and port, `localhost:9411`.
 
 [source,xml]
 .Add the following dependency to `pom.xml`:
@@ -450,14 +452,14 @@ mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeArtifactId=helidon-quickstart-mp \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-mp \
+    -DartifactId=helidon-quickstart-mp-2 \
     -Dpackage=io.helidon.examples.quickstart.mp
 ----
 
 [source,bash]
 .The project will be built and run from the `helidon-quickstart-mp` directory:
 ----
-cd helidon-quickstart-mp
+cd helidon-quickstart-mp-2
 ----
 
 [source,xml]
@@ -503,7 +505,7 @@ Once you have validated that the second service is running correctly, you need t
 call it.
 
 [source,java]
-.Update the `GreetResource` class with the following code:
+.Replace the `GreetResource` class with the following code:
 ----
 package io.helidon.examples.quickstart.mp;
 
