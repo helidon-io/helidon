@@ -500,6 +500,9 @@ public final class MetricsSupport implements Service {
             // backward compatibility
             config.get("context").asString().ifPresent(this::context);
 
+            if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
+                LOGGER.finest("Metrics support for base metrics is disabled in configuration");
+            }
             return this;
         }
 

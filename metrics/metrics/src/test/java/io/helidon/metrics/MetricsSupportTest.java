@@ -16,10 +16,14 @@
 
 package io.helidon.metrics;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import javax.json.JsonObject;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +35,9 @@ class MetricsSupportTest {
     private static Registry base;
     private static Registry vendor;
     private static Registry app;
+
+    private static final String METRIC_USED_HEAP = "memory.usedHeap";
+
 
     @BeforeAll
     static void initClass() {
@@ -77,5 +84,17 @@ class MetricsSupportTest {
     void testJsonMetaMultiple() {
         JsonObject jsonObject = MetricsSupport.toJsonMeta(app, base);
         System.out.println("jsonObject = " + jsonObject);
+    }
+
+    @Test
+    void testBaseMetricsDisabled() {
+        Config config = Config.builder()
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                        "base.enabled", "false")))
+                .build();
+        RegistryFactory myRF = RegistryFactory.create(config);
+        Registry myBase = myRF.getARegistry(MetricRegistry.Type.BASE);
+        assertFalse(myBase.getGauges().containsKey(METRIC_USED_HEAP), "Base registry incorrectly contains "
+                + METRIC_USED_HEAP + " when base was configured as disabled");
     }
 }
