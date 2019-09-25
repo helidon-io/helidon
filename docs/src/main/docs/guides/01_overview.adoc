@@ -89,7 +89,14 @@ Learn how to configure a Helidon SE application.
 .MP Tracing Guide
 [link=guides/12_tracing_mp_guide.adoc]
 --
-Learn how use Helidon MP tracing.
+Learn how to trace a Helidon MP application.
+--
+
+[CARD]
+.SE Tracing Guide
+[link=guides/12_tracing_se_guide.adoc]
+--
+Learn how to trace a Helidon SE application.
 --
 ====
 
