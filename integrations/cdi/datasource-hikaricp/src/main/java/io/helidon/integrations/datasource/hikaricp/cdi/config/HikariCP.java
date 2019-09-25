@@ -15,15 +15,17 @@
  */
 package io.helidon.integrations.datasource.hikaricp.cdi.config;
 
-import io.helidon.service.configuration.api.ServiceConfiguration;
-import io.helidon.service.configuration.microprofile.config.ServiceConfigurationConfigSource;
-
 /**
- * A {@link ServiceConfigurationConfigSource} that sits atop the
- * {@code hikaricp} {@link ServiceConfiguration} in effect (if there
- * is one).
+ * A {@link
+ * io.helidon.service.configuration.microprofile.config.ServiceConfigurationConfigSource}
+ * that sits atop the {@code hikaricp} {@link
+ * io.helidon.service.configuration.api.ServiceConfiguration} in
+ * effect (if there is one).
+ *
+ * @deprecated This class is slated for removal.
  */
-public final class HikariCP extends ServiceConfigurationConfigSource {
+@Deprecated
+public final class HikariCP extends io.helidon.service.configuration.microprofile.config.ServiceConfigurationConfigSource {
 
     /**
      * Creates a new {@link HikariCP}.

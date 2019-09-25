@@ -42,14 +42,14 @@ public class RsaSecureConfigTest {
 
     @BeforeAll
     public static void initClass() {
-        config = Config.create().get("rsa");
+        config = Config.create().get("rsa-current");
 
         configRequiresEncryption = Config.builder()
                 .sources(ConfigSources.create(
                         //override require encryption
                         ConfigSources.create(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
                         ConfigSources.classpath("application.yaml")))
-                .build().get("rsa");
+                .build().get("rsa-current");
 
         assertThat("We must have the correct configuration file", config.get("pwd3").type().isLeaf());
         assertThat("We must have the correct configuration file", configRequiresEncryption.get("pwd3").type().isLeaf());
@@ -57,7 +57,7 @@ public class RsaSecureConfigTest {
 
     @Test
     public void testWrongAsymmetric() {
-        testPassword(config, "pwd10", "${RSA=not really encrypted}");
+        testPassword(config, "pwd10", "${RSA-P=not really encrypted}");
     }
 
 

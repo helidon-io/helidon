@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics2-project</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics2</artifactId>
     <name>Helidon Metrics2</name>
@@ -36,7 +36,27 @@
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
-    
+
+    <profiles>
+        <profile>
+            <id>pipeline</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <helidon.concurrentGauge.minRequiredSeconds>45</helidon.concurrentGauge.minRequiredSeconds>
+                                    <helidon.histogram.tolerance>0.01</helidon.histogram.tolerance>
+                                </systemPropertyVariables>
+                            </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -44,7 +64,8 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>InternalBridgeTest with global tags set</id>
+                            <!-- Run this test in default-test and also here with an env var set -->
+                            <id>metrics-global-tags-set</id>
                             <goals>
                                 <goal>test</goal>
                             </goals>
@@ -61,43 +82,43 @@
             </plugin>
         </plugins>
     </build>
-    
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-metrics</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
             <version>${version.lib.microprofile-metrics2-api}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.osgi</groupId>
+                    <artifactId>org.osgi.annotation.versioning</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.media.jsonp</groupId>
             <artifactId>helidon-media-jsonp-server</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
-            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

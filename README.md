@@ -86,7 +86,7 @@ but a couple are handy to use on your desktop to verify your changes.
 ## Get Help
 
 * See the [Helidon FAQ](https://github.com/oracle/helidon/wiki/FAQ)
-* Join us on Slack: [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE)
+* Join us on Slack: [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LWNiNGIzOGFhZDdjNzAyM2Y2MzlmMDI4NWY4YjE1OWQ2OTdkYTZkN2FlNDcxNmUyZmZmMTZhZmZhNWI2ZTI1NGI)
 
 ## Get Involved
 

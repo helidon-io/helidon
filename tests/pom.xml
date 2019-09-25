@@ -23,14 +23,14 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.1-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests</groupId>
     <artifactId>helidon-tests-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Helidon Tests</name>
+    <name>Helidon Tests Project</name>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>

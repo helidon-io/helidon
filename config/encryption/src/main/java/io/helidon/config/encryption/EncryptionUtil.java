@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.Key;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Base64;
@@ -60,6 +61,32 @@ public final class EncryptionUtil {
     }
 
     /**
+     * Decrypt using RSA with OAEP.
+     * Expects message encrypted with the public key.
+     *
+     * @param key             private key used to decrypt
+     * @param encryptedBase64 base64 encoded encrypted secret
+     * @return Secret value
+     * @throws ConfigEncryptionException If any problem with decryption occurs
+     */
+    public static String decryptRsa(PrivateKey key, String encryptedBase64) throws ConfigEncryptionException {
+        Objects.requireNonNull(key, "Key must be provided for decryption");
+        Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
+
+        try {
+            Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(encryptedBase64));
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (ConfigEncryptionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ConfigEncryptionException("Failed to decrypt value using RSA. Returning clear text value as is: "
+                                                        + encryptedBase64, e);
+        }
+    }
+
+    /**
      * Decrypt using RSA (private or public key).
      * Expects message encrypted with the other key.
      *
@@ -68,7 +95,7 @@ public final class EncryptionUtil {
      * @return Secret value
      * @throws ConfigEncryptionException If any problem with decryption occurs
      */
-    public static String decryptRsa(Key key, String encryptedBase64) throws ConfigEncryptionException {
+    public static String decryptRsaLegacy(Key key, String encryptedBase64) throws ConfigEncryptionException {
         Objects.requireNonNull(key, "Key must be provided for decryption");
         Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
 
@@ -86,22 +113,22 @@ public final class EncryptionUtil {
     }
 
     /**
-     * Encrypt secret using RSA (private or public key).
+     * Encrypt secret using RSA with OAEP.
      *
-     * @param key    private or public key to use to encrypt
-     * @param secret secret to encrypt
+     * @param key     public key used to encrypt
+     * @param secret  secret to encrypt
      * @return base64 encoded encrypted bytes
      * @throws ConfigEncryptionException If any problem with encryption occurs
      */
-    public static String encryptRsa(Key key, String secret) throws ConfigEncryptionException {
+    public static String encryptRsa(PublicKey key, String secret) throws ConfigEncryptionException {
         Objects.requireNonNull(key, "Key must be provided for encryption");
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
-        if (secret.getBytes(StandardCharsets.UTF_8).length > 245) {
-            throw new ConfigEncryptionException("Secret value is too large. Maximum of 245 bytes is allowed.");
+        if (secret.getBytes(StandardCharsets.UTF_8).length > 190) {
+            throw new ConfigEncryptionException("Secret value is too large. Maximum of 190 bytes is allowed.");
         }
 
         try {
-            Cipher cipher = Cipher.getInstance("RSA");
+            Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] encrypted = cipher.doFinal(secret.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);

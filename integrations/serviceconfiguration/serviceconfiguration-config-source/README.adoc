@@ -1,5 +1,7 @@
 = Service Configuration `ConfigSource` Implementation
 
+NOTE: This project is deprecated and slated for removal.
+
 This project implements a MicroProfile Config `ConfigSource` in terms
 of the Helidon Service Configuration API.
 

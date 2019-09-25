@@ -86,13 +86,13 @@ The supported templates are:
 |Secret in clear text (for testing) - `requiresEncryption` must be disabled
 |${CLEAR=knownSecret}
 
-|${RSA=...}
+|${RSA-P=...}
 |Public/private key encryption, base64 value
-|${RSA=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}
+|${RSA-P=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}
 
-|${AES=...}
+|${GCM=...}
 |Shared secret ecryption, base64 value
-|${AES=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}
+|${GCM=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}
 
 |${ALIAS=...}
 |Reference to another key
@@ -142,7 +142,6 @@ This approach is based on a pair of keys: a public key which is known to anybody
  For asymmetric encryption, the following is true:
 
 - a value encrypted by a public key can only be decrypted by the private key
-- a value encrypted by a private key can only be decrypted by the public key
 
 When using the config encryption filter, you should encrypt the configuration values
 using the public key, and give the application process access to the 

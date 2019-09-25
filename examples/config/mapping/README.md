@@ -1,4 +1,3 @@
-
 # Helidon Config Mapping Example
 
 This example shows how to implement mappers that convert configuration
@@ -16,15 +15,10 @@ setter methods.
 illustrates how you can add a static factory method `create` to a POJO to tell the config
 system how to construct a POJO instance.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
+java -jar target/helidon-examples-config-mapping.jar
 ```
-
-## Run
-
-```
-mvn exec:java
-```
-

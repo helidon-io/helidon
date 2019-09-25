@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -544,8 +545,8 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
                 && a.getTypeRaw().equals(b.getTypeRaw())
                 && (((isFlexible(a) || isFlexible(b))
                     || (a.getDisplayName().equals(b.getDisplayName())
-                        && a.getDescription().equals(b.getDescription())
-                        && a.getUnit().equals(b.getUnit())
+                        && Objects.equals(a.getDescription(), b.getDescription())
+                        && Objects.equals(a.getUnit(), b.getUnit())
                         && (a.isReusable() == b.isReusable())
                     ))
                    );

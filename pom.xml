@@ -20,70 +20,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.helidon</groupId>
+    <parent>
+        <groupId>io.helidon</groupId>
+        <artifactId>helidon-dependencies</artifactId>
+        <version>1.3.1-SNAPSHOT</version>
+        <relativePath>./dependencies/pom.xml</relativePath>
+    </parent>
     <artifactId>helidon-project</artifactId>
-    <version>1.2.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Helidon Project</name>
-
     <description>Java libraries for writing microservices</description>
-
-    <url>https://helidon.io</url>
-
-    <organization>
-        <name>Oracle Corporation</name>
-        <url>http://www.oracle.com/</url>
-    </organization>
-
-    <inceptionYear>2018</inceptionYear>
-
-    <licenses>
-        <license>
-            <name>Apache 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <name>Tomas Langer</name>
-            <email>tomas.langer@oracle.com</email>
-            <organization>Oracle Corporation</organization>
-        </developer>
-        <developer>
-            <name>Tim Quinn</name>
-            <email>tim.quinn@oracle.com</email>
-            <organization>Oracle Corporation</organization>
-        </developer>
-        <developer>
-            <name>Romain Grecourt</name>
-            <email>romain.grecourt@oracle.com</email>
-            <organization>Oracle Corporation</organization>
-        </developer>
-        <developer>
-            <name>Laird Nelson</name>
-            <email>laird.nelson@oracle.com</email>
-            <organization>Oracle Corporation</organization>
-        </developer>
-        <developer>
-            <name>Santiago Pericas-Geertsen</name>
-            <email>santiago.pericasgeertsen@oracle.com</email>
-            <organization>Oracle Corporation</organization>
-        </developer>
-        <developer>
-            <name>Bryan Atsatt</name>
-            <email>bryan.atsatt@oracle.com</email>
-            <organization>Oracle Corporation</organization>
-        </developer>
-    </developers>
-
-    <scm>
-        <developerConnection>scm:git:git@github.com:oracle/helidon.git</developerConnection>
-        <connection>scm:git:git@github.com:oracle/helidon.git</connection>
-        <tag>HEAD</tag>
-        <url>https://github.com/oracle/helidon</url>
-    </scm>
 
     <properties>
         <doclint>all</doclint>
@@ -103,94 +50,23 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.activation-api>1.2.0</version.lib.activation-api>
-        <version.lib.annotation-api>1.3.1</version.lib.annotation-api>
-        <version.lib.apache-httpclient>4.5.5</version.lib.apache-httpclient>
         <version.lib.arquillian>1.4.0.Final</version.lib.arquillian>
         <version.lib.arquillian-weld-embedded>2.0.0.Final</version.lib.arquillian-weld-embedded>
         <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
         <version.lib.asm>6.0</version.lib.asm>
-        <version.lib.brave-opentracing>0.31.0</version.lib.brave-opentracing>
-        <version.lib.cdi-api>2.0</version.lib.cdi-api>
         <version.lib.checkstyle>8.18</version.lib.checkstyle>
-        <version.lib.eclipselink>2.7.4</version.lib.eclipselink>
-        <version.lib.el-api>3.0.0</version.lib.el-api>
-        <version.lib.el-impl>3.0.0</version.lib.el-impl>
-        <version.lib.etcd4j>2.16.0</version.lib.etcd4j>
-        <version.lib.google-api-client>1.23.0</version.lib.google-api-client>
-        <version.lib.graalvm>19.2.0</version.lib.graalvm>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.grpc>1.22.1</version.lib.grpc>
-        <version.lib.guava>25.0-jre</version.lib.guava>
-        <version.lib.h2>1.4.197</version.lib.h2>
-        <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.hibernate>5.4.4.Final</version.lib.hibernate>
-        <version.lib.hikaricp>2.7.8</version.lib.hikaricp>
-        <version.lib.inject>1</version.lib.inject>
-        <!-- Jackson databind 2.9.9 has patch versions. This bom has databind 2.9.9.3 -->
-        <version.lib.jackson>2.9.9</version.lib.jackson>
-        <version.lib.jackson-bom>2.9.9.20190807</version.lib.jackson-bom>
-        <version.lib.jaegertracing>0.34.0</version.lib.jaegertracing>
-        <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
-        <version.lib.jandex>2.1.1.Final</version.lib.jandex>
-        <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
-        <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
-        <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
-        <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
-        <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
-        <version.lib.jedis>2.9.0</version.lib.jedis>
-        <version.lib.jersey>2.29.1</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
-        <version.lib.jmh>1.19</version.lib.jmh>
-        <version.lib.jsonb-api>1.0.1</version.lib.jsonb-api>
-        <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
-        <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
         <version.lib.jsr305>3.0.2</version.lib.jsr305>
-        <version.lib.junit>5.1.0</version.lib.junit>
-        <version.lib.microprofile-config-api>1.3</version.lib.microprofile-config-api>
-        <version.lib.microprofile-config-tck>1.3</version.lib.microprofile-config-tck>
-        <version.lib.microprofile-health>2.0.1</version.lib.microprofile-health>
-        <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
-        <version.lib.microprofile-metrics-api>1.1</version.lib.microprofile-metrics-api>
-        <version.lib.microprofile-metrics2-api>2.0.1</version.lib.microprofile-metrics2-api>
-        <version.lib.microprofile-openapi-api>1.1.2</version.lib.microprofile-openapi-api>
-        <version.lib.microprofile-fault-tolerance-api>2.0</version.lib.microprofile-fault-tolerance-api>
-        <version.lib.microprofile-tracing>1.3.1</version.lib.microprofile-tracing>
-        <version.lib.microprofile-rest-client>1.3.3</version.lib.microprofile-rest-client>
-        <version.lib.mockito>2.23.4</version.lib.mockito>
-        <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
-        <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.39.Final</version.lib.netty>
-        <version.netty.tcnative>2.0.25.Final</version.netty.tcnative>
-        <version.lib.oci-java-sdk-objectstorage>1.5.2</version.lib.oci-java-sdk-objectstorage>
-        <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
-        <version.lib.opentracing>0.31.0</version.lib.opentracing>
-        <version.lib.opentracing.grpc>0.0.12</version.lib.opentracing.grpc>
-        <version.lib.persistence-api>2.2</version.lib.persistence-api>
-        <version.lib.prometheus>0.6.0</version.lib.prometheus>
-        <version.lib.protobuf.java>3.5.1</version.lib.protobuf.java>
-        <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
-        <version.lib.reactor>3.1.5.RELEASE</version.lib.reactor>
+        <version.lib.netty.tcnative>2.0.25.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.0.8</version.lib.rxjava>
-        <version.lib.slf4j>1.7.26</version.lib.slf4j>
-        <version.lib.smallrye-openapi>1.1.1</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
-        <version.lib.surefire.testng>3.0.0-M3</version.lib.surefire.testng>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
+        <version.lib.surefire.testng>3.0.0-M3</version.lib.surefire.testng>
         <version.lib.testng>6.13.1</version.lib.testng>
-        <version.lib.transaction-api>1.2</version.lib.transaction-api>
-        <version.lib.typesafe-config>1.3.3</version.lib.typesafe-config>
-        <version.lib.ucp>19.3.0.0</version.lib.ucp>
-        <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
-        <version.lib.weld>3.1.1.Final</version.lib.weld>
-        <version.lib.zipkin>2.6.0</version.lib.zipkin>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
-        <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.failsafe>1.1.0</version.lib.failsafe>
-        <version.lib.yasson>1.0.3</version.lib.yasson>
         <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <!--
@@ -204,7 +80,6 @@
         <version.plugin.checkstyle>2.17</version.plugin.checkstyle>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
-        <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.directory>0.1</version.plugin.directory>
         <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
         <version.plugin.enforcer>1.4.1</version.plugin.enforcer>
@@ -212,7 +87,6 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>1.48</version.plugin.glassfish-copyright>
-        <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.helidon-build-tools>1.0.10</version.plugin.helidon-build-tools>
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
@@ -220,7 +94,6 @@
         <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
-        <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
@@ -230,12 +103,12 @@
         <version.plugin.site>3.7.1</version.plugin.site>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
-        <version.plugin.spotify-docker>1.0.0</version.plugin.spotify-docker>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
+        <version.plugin.wiremock>2.7.0</version.plugin.wiremock>
 
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/2.9/</javadoc.link.jackson-core>
@@ -270,12 +143,15 @@
     </properties>
 
     <modules>
+        <module>parent</module>
+        <module>dependencies</module>
+        <module>bom</module>
+        <module>applications</module>
         <module>common</module>
         <module>config</module>
         <module>media</module>
         <module>webserver</module>
         <module>security</module>
-        <module>bom</module>
         <module>microprofile</module>
         <module>tracing</module>
         <module>bundles</module>
@@ -286,6 +162,7 @@
         <module>openapi</module>
         <module>jersey</module>
         <module>webclient</module>
+        <module>integrations</module>
     </modules>
 
     <build>
@@ -451,11 +328,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${version.plugin.deploy}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>${version.plugin.source}</version>
                 </plugin>
@@ -468,11 +340,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-toolchains-plugin</artifactId>
                     <version>${version.plugin.toolchains}</version>
-                </plugin>
-                <plugin>
-                    <groupId>com.spotify</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>${version.plugin.spotify-docker}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -668,23 +535,6 @@
                     </dependencies>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${version.plugin.gpg}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>${version.plugin.nexus-staging}</version>
-                    <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
-                        <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>com.ethlo.persistence.tools</groupId>
                     <artifactId>eclipselink-maven-plugin</artifactId>
                     <version>${version.plugin.eclipselink}</version>
@@ -714,16 +564,28 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${version.plugin.shade}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.archetype</groupId>
-                    <artifactId>archetype-packaging</artifactId>
-                    <version>${version.plugin.archetype-packaging}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${version.lib.asm}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-commons</artifactId>
+                            <version>${version.lib.asm}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-archetype-plugin</artifactId>
                     <version>${version.plugin.archetype}</version>
+                </plugin>
+                <plugin>
+                    <groupId>uk.co.deliverymind</groupId>
+                    <artifactId>wiremock-maven-plugin</artifactId>
+                    <version>${version.plugin.wiremock}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -792,180 +654,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.glassfish.jersey</groupId>
-                <artifactId>jersey-bom</artifactId>
-                <version>${version.lib.jersey}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${version.lib.jackson-bom}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-server</artifactId>
-                <version>${version.lib.jersey}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish.hk2.external</groupId>
-                        <artifactId>jakarta.inject</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.inject</groupId>
-                <artifactId>jersey-hk2</artifactId>
-                <version>${version.lib.jersey}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish.hk2.external</groupId>
-                        <artifactId>jakarta.inject</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <!-- Explicitly force jackson-annotations to use proper version; bom doesn't -->
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${version.lib.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jaegertracing</groupId>
-                <artifactId>jaeger-client</artifactId>
-                <version>${version.lib.jaegertracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.projectreactor</groupId>
-                <artifactId>reactor-core</artifactId>
-                <version>${version.lib.reactor}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-util</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-api</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-noop</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.opentracing</groupId>
                 <artifactId>opentracing-mock</artifactId>
                 <version>${version.lib.opentracing}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${version.lib.jaxb-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-core</artifactId>
-                <version>${version.lib.jaxb-core}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.lib.jaxb-impl}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>${version.lib.jaxrs-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.enterprise</groupId>
-                <artifactId>cdi-api</artifactId>
-                <version>${version.lib.cdi-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.el</groupId>
-                <artifactId>javax.el-api</artifactId>
-                <version>${version.lib.el-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
-                <version>${version.lib.annotation-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>${version.lib.inject}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.json</groupId>
-                <artifactId>javax.json-api</artifactId>
-                <version>${version.lib.jsonp-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.json.bind</groupId>
-                <artifactId>jakarta.json.bind-api</artifactId>
-                <version>${version.lib.jsonb-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>javax.json</artifactId>
-                <version>${version.lib.jsonp-impl}</version>
-            </dependency>
-            <dependency>
-                <!-- contains the API as well -->
-                <groupId>org.glassfish</groupId>
-                <artifactId>javax.el</artifactId>
-                <version>${version.lib.el-impl}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${version.lib.netty}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-dns</artifactId>
-                <version>${version.lib.netty}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver-dns</artifactId>
-                <version>${version.lib.netty}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${version.lib.netty}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http2</artifactId>
-                <version>${version.lib.netty}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse</groupId>
-                <artifactId>yasson</artifactId>
-                <version>${version.lib.yasson}</version>
-            </dependency>
-
-            <!-- Config related -->
-            <dependency>
-                <groupId>com.typesafe</groupId>
-                <artifactId>config</artifactId>
-                <version>${version.lib.typesafe-config}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${version.lib.snakeyaml}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.akarnokd</groupId>
@@ -983,54 +674,9 @@
                 <version>${version.lib.restito}</version>
             </dependency>
             <dependency>
-                <groupId>org.mousio</groupId>
-                <artifactId>etcd4j</artifactId>
-                <version>${version.lib.etcd4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-core</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-context</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-protobuf</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-stub</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-services</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-netty</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative-boringssl-static</artifactId>
-                <version>${version.netty.tcnative}</version>
-            </dependency>
-            <dependency>
-              <groupId>io.opentracing.contrib</groupId>
-              <artifactId>opentracing-grpc</artifactId>
-              <version>${version.lib.opentracing.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${version.lib.protobuf.java}</version>
+                <version>${version.lib.netty.tcnative}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
@@ -1041,13 +687,6 @@
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit.junit</artifactId>
                 <version>${version.lib.jgit}</version>
-            </dependency>
-
-            <!-- Webserver related -->
-            <dependency>
-                <groupId>io.zipkin.reporter2</groupId>
-                <artifactId>zipkin-sender-urlconnection</artifactId>
-                <version>${version.lib.zipkin}</version>
             </dependency>
             <dependency>
                 <groupId>io.zipkin.zipkin2</groupId>
@@ -1060,96 +699,19 @@
                 <version>${version.lib.bedrock}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${version.lib.guava}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient</artifactId>
-                <version>${version.lib.prometheus}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
                 <version>${version.lib.spotbugs-annotations}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing.brave</groupId>
-                <artifactId>brave-opentracing</artifactId>
-                <version>${version.lib.brave-opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.reactivestreams</groupId>
-                <artifactId>reactive-streams</artifactId>
-                <version>${version.lib.reactivestreams}</version>
             </dependency>
             <dependency>
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams-tck</artifactId>
                 <version>${version.lib.reactivestreams}</version>
             </dependency>
-
-            <!-- Security related -->
-            <dependency>
-                <!-- Use this version instead of the one in google-api-client -->
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${version.lib.apache-httpclient}</version>
-            </dependency>
-            <dependency>
-                <!-- Google APIs -->
-                <groupId>com.google.api-client</groupId>
-                <artifactId>google-api-client</artifactId>
-                <version>${version.lib.google-api-client}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- must use current version -->
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- must use guava artifactId -->
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava-jdk5</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- must use current version -->
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- must use current version -->
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${version.lib.jsr305}</version>
-            </dependency>
-
-            <!-- Microprofile related -->
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-core-bom</artifactId>
-                <version>${version.lib.weld}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld.se</groupId>
-                <artifactId>weld-se-core</artifactId>
-                <version>${version.lib.weld}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- must use current version -->
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-all</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <!-- if needed (as excluded from weld) -->
@@ -1158,24 +720,9 @@
                 <version>${version.lib.groovy-all}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.microprofile.config</groupId>
-                <artifactId>microprofile-config-api</artifactId>
-                <version>${version.lib.microprofile-config-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.health</groupId>
-                <artifactId>microprofile-health-api</artifactId>
-                <version>${version.lib.microprofile-health}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.eclipse.microprofile.health</groupId>
                 <artifactId>microprofile-health-tck</artifactId>
                 <version>${version.lib.microprofile-health}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.jwt</groupId>
-                <artifactId>microprofile-jwt-auth-api</artifactId>
-                <version>${version.lib.microprofile-jwt}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.jwt</groupId>
@@ -1187,22 +734,11 @@
                 <artifactId>microprofile-jwt-auth-tck</artifactId>
                 <version>${version.lib.microprofile-jwt}</version>
                 <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
-                <artifactId>microprofile-fault-tolerance-api</artifactId>
-                <version>${version.lib.microprofile-fault-tolerance-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
                 <artifactId>microprofile-fault-tolerance-tck</artifactId>
                 <version>${version.lib.microprofile-fault-tolerance-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-api</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.opentracing</groupId>
@@ -1216,43 +752,13 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.rest.client</groupId>
-                <artifactId>microprofile-rest-client-api</artifactId>
-                <version>${version.lib.microprofile-rest-client}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.rest.client</groupId>
                 <artifactId>microprofile-rest-client-tck</artifactId>
                 <version>${version.lib.microprofile-rest-client}</version>
             </dependency>
             <dependency>
-                <groupId>com.netflix.hystrix</groupId>
-                <artifactId>hystrix-core</artifactId>
-                <version>${version.lib.hystrix}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.jodah</groupId>
-                <artifactId>failsafe</artifactId>
-                <version>${version.lib.failsafe}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jandex</artifactId>
-                <version>${version.lib.jandex}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${version.lib.slf4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-jdk14</artifactId>
-                <version>${version.lib.slf4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>${version.lib.slf4j}</version>
+                <groupId>org.eclipse.microprofile.openapi</groupId>
+                <artifactId>microprofile-openapi-tck</artifactId>
+                <version>${version.lib.microprofile-openapi-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
@@ -1267,6 +773,11 @@
             <dependency>
                 <groupId>org.jboss.arquillian.testenricher</groupId>
                 <artifactId>arquillian-testenricher-cdi</artifactId>
+                <version>${version.lib.arquillian}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-test-spi</artifactId>
                 <version>${version.lib.arquillian}</version>
             </dependency>
             <dependency>
@@ -1292,7 +803,7 @@
             <dependency>
                 <groupId>org.eclipse.microprofile.config</groupId>
                 <artifactId>microprofile-config-tck</artifactId>
-                <version>${version.lib.microprofile-config-tck}</version>
+                <version>${version.lib.microprofile-config}</version>
                 <exclusions>
                     <exclusion>
                         <!--
@@ -1303,172 +814,6 @@
                         <artifactId>bsh</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.smallrye</groupId>
-                <artifactId>smallrye-open-api</artifactId>
-                <version>${version.lib.smallrye-openapi}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.openapi</groupId>
-                <artifactId>microprofile-openapi-api</artifactId>
-                <version>${version.lib.microprofile-openapi-api}</version>
-            </dependency>
-
-
-            <!-- Integrations related -->
-            <dependency>
-                <groupId>jakarta.persistence</groupId>
-                <artifactId>jakarta.persistence-api</artifactId>
-                <version>${version.lib.jakarta-persistence-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.persistence</groupId>
-                <artifactId>javax.persistence-api</artifactId>
-                <version>${version.lib.persistence-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.transaction</groupId>
-                <artifactId>javax.transaction-api</artifactId>
-                <version>${version.lib.transaction-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${version.lib.validation-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${version.lib.h2}</version>
-            </dependency>
-            <!--
-                See http://docs.oracle.com/middleware/1213/core/MAVEN/config_maven_repo.htm#MAVEN9010
-            -->
-            <dependency>
-                <groupId>com.oracle.jdbc</groupId>
-                <artifactId>ojdbc8</artifactId>
-                <version>${version.lib.ojdbc8}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.jdbc</groupId>
-                <artifactId>ucp</artifactId>
-                <version>${version.lib.ucp}</version>
-                <type>jar</type>
-            </dependency>
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${version.lib.mysql-connector-java}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-objectstorage</artifactId>
-                <version>${version.lib.oci-java-sdk-objectstorage}</version>
-                <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>com.zaxxer</groupId>
-                <artifactId>HikariCP</artifactId>
-                <version>${version.lib.hikaricp}</version>
-            </dependency>
-            <dependency>
-                <groupId>redis.clients</groupId>
-                <artifactId>jedis</artifactId>
-                <version>${version.lib.jedis}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.persistence</groupId>
-                <artifactId>org.eclipse.persistence.jpa</artifactId>
-                <version>${version.lib.eclipselink}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>${version.lib.hibernate}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.narayana.jta</groupId>
-                <artifactId>cdi</artifactId>
-                <version>${version.lib.narayana}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.resource</groupId>
-                        <artifactId>jboss-connector-api_1.7_spec</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>sun.jdk</groupId>
-                        <artifactId>jconsole</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-transaction-spi</artifactId>
-                <version>${version.lib.jboss-transaction-spi}</version>
-                <exclusions>
-                  <exclusion>
-                      <groupId>org.jboss.spec.javax.resource</groupId>
-                      <artifactId>jboss-connector-api_1.7_spec</artifactId>
-                  </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.graalvm.sdk</groupId>
-                <artifactId>graal-sdk</artifactId>
-                <version>${version.lib.graalvm}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.substratevm</groupId>
-                <artifactId>svm</artifactId>
-                <version>${version.lib.graalvm}</version>
-            </dependency>
-
-            <!-- Testing libraries -->
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${version.lib.mockito}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-params</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
-                <version>${version.lib.hamcrest}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-core</artifactId>
-                <version>${version.lib.hamcrest}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-core</artifactId>
-                <version>${version.lib.jmh}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-generator-annprocess</artifactId>
-                <version>${version.lib.jmh}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>javax.activation-api</artifactId>
-                <version>${version.lib.activation-api}</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -1494,12 +839,6 @@
             <id>examples</id>
             <modules>
                 <module>examples</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>integrations</id>
-            <modules>
-                <module>integrations</module>
             </modules>
         </profile>
         <profile>
@@ -1857,11 +1196,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <extensions>true</extensions>
-                    </plugin>
-                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
@@ -1906,19 +1240,6 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -1955,39 +1276,5 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>staging</id>
-            <repositories>
-                <repository>
-                    <id>ossrh-staging</id>
-                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>ossrh-staging</id>
-                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
     </profiles>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh-snapshots</id>
-            <name>Internal Helidon Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <name>Internal Helidon Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 </project>

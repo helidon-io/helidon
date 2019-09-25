@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,94 +41,87 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class HelidonLogoResource {
 
-  private final ObjectStorage client;
+    private final ObjectStorage client;
 
-  private final String namespaceName;
+    private final String namespaceName;
 
-  /**
-   * Creates a new {@link HelidonLogoResource}.
-   *
-   * @param client an {@link ObjectStorage} client; must not be {@code
-   * null}
-   *
-   * @param namespaceName the name of an OCI object storage namespace
-   * that will be used; must not be {@code null}
-   *
-   * @exception NullPointerException if either parameter is {@code
-   * null}
-   */
-  @Inject
-  public HelidonLogoResource(final ObjectStorage client,
-                             @ConfigProperty(name = "oci.objectstorage.namespace") final String namespaceName) {
-    super();
-    this.client = Objects.requireNonNull(client);
-    this.namespaceName = Objects.requireNonNull(namespaceName);
-  }
-
-  /**
-   * Returns a non-{@code null} {@link Response} which, if successful,
-   * will contain the object stored under the supplied {@code
-   * namespaceName}, {@code bucketName} and {@code objectName}.
-   *
-   * @param namespaceName the OCI object storage namespace to use;
-   * must not be {@code null}
-   *
-   * @param bucketName the OCI object storage bucket name to use; must
-   * not be {@code null}
-   *
-   * @param objectName the OCI object storage object name to use; must
-   * not be {@code null}
-   *
-   * @return a non-{@code null} {@link Response} describing the
-   * operation
-   *
-   * @exception NullPointerException if any of the parameters is
-   * {@code null}
-   */
-  @GET
-  @Path("/{namespaceName}/{bucketName}/{objectName}")
-  @Produces(MediaType.WILDCARD)
-  public Response getLogo(@PathParam("namespaceName") String namespaceName,
-                          @PathParam("bucketName") final String bucketName,
-                          @PathParam("objectName") final String objectName) {
-    final Response returnValue;
-    if (bucketName == null || bucketName.isEmpty() || objectName == null || objectName.isEmpty()) {
-      returnValue = Response.status(400)
-        .build();
-    } else {
-      if (namespaceName == null || namespaceName.isEmpty()) {
-        namespaceName = this.namespaceName;
-      }
-      Response temp = null;
-      try {
-        final GetObjectRequest request = GetObjectRequest.builder()
-          .namespaceName(namespaceName)
-          .bucketName(bucketName)
-          .objectName(objectName)
-          .build();
-        assert request != null;
-        final GetObjectResponse response = this.client.getObject(request);
-        assert response != null;
-        final Long contentLength = response.getContentLength();
-        assert contentLength != null;
-        if (contentLength.longValue() <= 0L) {
-          temp = Response.noContent()
-            .build();
-        } else {
-          temp = Response.ok()
-            .type(response.getContentType())
-            .entity(response.getInputStream())
-            .build();
-        }
-      } catch (final BmcException bmcException) {
-        final int statusCode = bmcException.getStatusCode();
-        temp = Response.status(statusCode)
-          .build();
-      } finally {
-        returnValue = temp;
-      }
+    /**
+     * Creates a new {@link HelidonLogoResource}.
+     *
+     * @param client an {@link ObjectStorage} client; must not be {@code
+     * null}
+     *
+     * @param namespaceName the name of an OCI object storage namespace that will be used; must not be {@code null}
+     *
+     * @exception NullPointerException if either parameter is {@code
+     * null}
+     */
+    @Inject
+    public HelidonLogoResource(final ObjectStorage client,
+            @ConfigProperty(name = "oci.objectstorage.namespace") final String namespaceName) {
+        super();
+        this.client = Objects.requireNonNull(client);
+        this.namespaceName = Objects.requireNonNull(namespaceName);
     }
-    return returnValue;
-  }
+
+    /**
+     * Returns a non-{@code null} {@link Response} which, if successful, will contain the object stored under the supplied {@code
+     * namespaceName}, {@code bucketName} and {@code objectName}.
+     *
+     * @param namespaceName the OCI object storage namespace to use; must not be {@code null}
+     *
+     * @param bucketName the OCI object storage bucket name to use; must not be {@code null}
+     *
+     * @param objectName the OCI object storage object name to use; must not be {@code null}
+     *
+     * @return a non-{@code null} {@link Response} describing the operation
+     *
+     * @exception NullPointerException if any of the parameters is {@code null}
+     */
+    @GET
+    @Path("/{namespaceName}/{bucketName}/{objectName}")
+    @Produces(MediaType.WILDCARD)
+    public Response getLogo(@PathParam("namespaceName") String namespaceName,
+            @PathParam("bucketName") final String bucketName,
+            @PathParam("objectName") final String objectName) {
+        final Response returnValue;
+        if (bucketName == null || bucketName.isEmpty() || objectName == null || objectName.isEmpty()) {
+            returnValue = Response.status(400)
+                    .build();
+        } else {
+            if (namespaceName == null || namespaceName.isEmpty()) {
+                namespaceName = this.namespaceName;
+            }
+            Response temp = null;
+            try {
+                final GetObjectRequest request = GetObjectRequest.builder()
+                        .namespaceName(namespaceName)
+                        .bucketName(bucketName)
+                        .objectName(objectName)
+                        .build();
+                assert request != null;
+                final GetObjectResponse response = this.client.getObject(request);
+                assert response != null;
+                final Long contentLength = response.getContentLength();
+                assert contentLength != null;
+                if (contentLength <= 0L) {
+                    temp = Response.noContent()
+                            .build();
+                } else {
+                    temp = Response.ok()
+                            .type(response.getContentType())
+                            .entity(response.getInputStream())
+                            .build();
+                }
+            } catch (final BmcException bmcException) {
+                final int statusCode = bmcException.getStatusCode();
+                temp = Response.status(statusCode)
+                        .build();
+            } finally {
+                returnValue = temp;
+            }
+        }
+        return returnValue;
+    }
 
 }

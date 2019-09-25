@@ -17,6 +17,7 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 
 import javax.enterprise.inject.spi.CDI;
 
@@ -303,7 +304,8 @@ class FaultToleranceMetrics {
      */
     private static Counter registerCounter(String name, String description) {
         return getMetricRegistry().counter(
-                newMetadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE));
+                newMetadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE,
+                        true, Collections.emptyMap()));
     }
 
     /**
@@ -315,7 +317,8 @@ class FaultToleranceMetrics {
      */
     static Histogram registerHistogram(String name, String description) {
         return getMetricRegistry().histogram(
-                newMetadata(name, name, description, MetricType.HISTOGRAM, MetricUnits.NANOSECONDS));
+                newMetadata(name, name, description, MetricType.HISTOGRAM, MetricUnits.NANOSECONDS,
+                        true, Collections.emptyMap()));
     }
 
     /**
@@ -335,7 +338,8 @@ class FaultToleranceMetrics {
         Gauge<T> existing = getMetricRegistry().getBridgeGauges().get(metricID);
         if (existing == null) {
             getMetricRegistry().register(
-                    newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS),
+                    newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS,
+                            true, Collections.emptyMap()),
                     gauge);
         }
         return existing;

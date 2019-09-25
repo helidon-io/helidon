@@ -75,29 +75,27 @@ public final class OutboundOverrideJwtExample {
     private static CompletionStage<Void> startServingService() {
         Config config = createConfig("serving-service-jwt");
 
-        return startServer(Routing
-                                   .builder()
-                                   .register(WebSecurity.create(config.get("security")))
-                                   .get("/hello", (req, res) -> {
-                                       // This is the token. It should be bearer <signed JWT base64 encoded>
-                                       req.headers().first("Authorization")
-                                               .ifPresent(System.out::println);
-                                       res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
-                                               Subject::principal).map(Principal::getName).orElse("Anonymous"));
-                                   }),
-                           server -> servingPort = server.port());
+        Routing routing = Routing.builder()
+                        .register(WebSecurity.create(config.get("security")))
+                        .get("/hello", (req, res) -> {
+                            // This is the token. It should be bearer <signed JWT base64 encoded>
+                            req.headers().first("Authorization")
+                                    .ifPresent(System.out::println);
+                            res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
+                                    Subject::principal).map(Principal::getName).orElse("Anonymous"));
+                        }).build();
+        return startServer(routing, 9080, server -> servingPort = server.port());
     }
 
     private static CompletionStage<Void> startClientService() {
         Config config = createConfig("client-service-jwt");
 
-        return startServer(Routing
-                                   .builder()
-                                   .register(WebSecurity.create(config.get("security")))
-                                   .get("/override", OutboundOverrideJwtExample::override)
-                                   .get("/propagate", OutboundOverrideJwtExample::propagate),
-                           server -> clientPort = server.port());
-
+        Routing routing = Routing.builder()
+                .register(WebSecurity.create(config.get("security")))
+                .get("/override", OutboundOverrideJwtExample::override)
+                .get("/propagate", OutboundOverrideJwtExample::propagate)
+                .build();
+        return startServer(routing, 8080, server -> clientPort = server.port());
     }
 
     private static void override(ServerRequest req, ServerResponse res) {

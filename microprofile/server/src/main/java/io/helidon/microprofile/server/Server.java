@@ -33,8 +33,8 @@ import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.CollectionsHelper;
@@ -48,6 +48,7 @@ import io.helidon.microprofile.server.spi.MpService;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.jboss.weld.environment.se.Weld;
 
 /**
  * Microprofile server.
@@ -307,7 +308,8 @@ public interface Server {
 
         private SeContainer createContainer(ClassLoader classLoader) {
             // not in CDI
-            SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+            Weld initializer = new Weld();
+            initializer.addBeanDefiningAnnotations(Path.class);
             initializer.setClassLoader(classLoader);
             Map<String, Object> props = new HashMap<>(config.helidonConfig()
                                                               .get("cdi")

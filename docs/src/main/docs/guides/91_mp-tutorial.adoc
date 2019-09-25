@@ -20,7 +20,7 @@
 :description: Helidon MP Tutorial
 :keywords: helidon
 
-This tutorial describes how to build an Helidon MicroProfile (MP) application from scratch 
+This tutorial describes how to build a Helidon MicroProfile (MP) application from scratch
  including JSON REST endpoints, metrics, health check, and configuration.
 
 == What you need
@@ -45,69 +45,84 @@ Create a new Maven POM file (called `pom.xml`) and add the following
 .Initial Maven POM file
 ----
 <?xml version="1.0" encoding="UTF-8"?>
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
+    <parent> <1>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-mp</artifactId>
+        <version>{helidon.version}</version>
+        <relativePath/>
+    </parent>
 
     <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-mp-tutorial</artifactId>  <1>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <artifactId>helidon-mp-tutorial</artifactId>  <2>
     <name>${project.artifactId}</name>
 
     <properties>
-        <helidon.version>{helidon-version}</helidon.version>
-        <mainClass>io.helidon.examples.Main</mainClass>
-        <maven.compiler.source>8</maven.compiler.source> <2>
-        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+        <mainClass>io.helidon.examples.Main</mainClass> <3>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.helidon</groupId>
-                <artifactId>helidon-bom</artifactId> <3>
-                <version>${helidon.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-2.2</artifactId> <4>
+            <artifactId>helidon-microprofile-3.0</artifactId> <4>
         </dependency>
     </dependencies>
 
+    <build> <5>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jboss.jandex</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
+
 ----
 
 The POM file contains the basic project information and configurations 
  needed to get started and does the following:  
 
-<1> Establishes the Maven coordinates for the new project.
-<2> Tells Maven to use Java 8 for the source
- and target versions as defined in the `properties` section, and 
- sets the `mainClass` which will be used later
- when building a JAR file.  The class will be created later in this
- tutorial.
-<3> Include the Helidon BOM POM in the `dependencyManagement` section.
- A BOM is a special kind of POM that is used to control the versions of a
- project's dependencies and provide a central place to define and update
- those versions. The BOM provides the flexibility to add a dependency to a
- module without worrying about the version it should depend on.
-<4> Adds a dependency for the MicroProfile 2.2 bundle which allows the use of
- MicroProfile 2.2 features in the application.
+<1> Includes the Helidon MP application parent pom. This parent pom
+    contains dependency and plugin management to keep your application's
+    pom simple and clean.
+<2> Establishes the Maven coordinates for the new project.
+<3> Sets the `mainClass` which will be used later
+    when building a JAR file.  The class will be created later in this
+    tutorial.
+<4> Adds a dependency for the MicroProfile 3.0 bundle which allows the
+    use of MicroProfile 3.0 features in the application. The helidon-mp
+    parent pom includes dependency management, so you don't need to
+    include a version number here. You will automatically use the
+    version of Helidon that matches the version of the parent pom
+    ({helidon.version} in this case).
+<5> Adds plugins to be executed during the build. The `maven-dependency-plugin`
+    is used to copy the runtime dependencies into your target directory. The
+    `jandex-maven-plugin` builds an index of your class files for faster
+    loading. The Helidon parent pom handles the details of configuring
+    these plugins. But you can modify the configuration here.
 
-TIP: MicroProfile 2.2 contains features like Metrics, Health Check,
+TIP: MicroProfile 3.0 contains features like Metrics, Health Check,
  Streams Operators, Open Tracing, OpenAPI, REST client, and fault
- tolerance. You can find detailed information about MicroProfile 2.2 on the
- https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-2.2[Eclipse MicroProfile 2.2] site.
+ tolerance. You can find detailed information about MicroProfile 3.0 on the
+ https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-3.0[Eclipse MicroProfile 3.0] site.
 
 With this `pom.xml`, the application can be built successfully with Maven:
 
@@ -151,7 +166,7 @@ Create a new Java class inside that directory called `GreetApplication.java`
  and add the following content:
 
 [source,java]
-.Initial application class
+.src/main/java/io/helidon/examples/GreetApplication.java
 ----
 package io.helidon.examples;
 
@@ -195,7 +210,7 @@ The `GreetResource` is defined in the `GreetResource.java` class as shown
 below: 
 
 [source,java]
-.Initial resource class
+.src/main/java/io/helidon/examples/GreetResource.java
 ----
 package io.helidon.examples;
 
@@ -249,7 +264,7 @@ A main class is also required to start up the server and run the
  application.  Here is the initial main class:
 
 [source,java]
-.Initial Main class
+.src/main/java/io/helidon/examples/Main.java
 ----
 package io.helidon.examples;
 
@@ -288,7 +303,7 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
  with the following content:
 
 [source,xml]
-.beans.xml file
+.src/main/resources/META-INF/beans.xml
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
@@ -303,119 +318,14 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
 <1> The `bean-discovery-mode` tells Helidon to look for the annotations
  to discover Java beans in the application.
 
-== Update the POM to build the application
+== Build the application
 
 Helidon MP applications are packaged into a JAR file and the dependencies
  are copied into a `libs` directory.  A detailed explanation of 
  why this particular packaging approach is recommended is provided on the 
- <<guides/30_dockerfile,Creating Docker Images>> page. 
- Update the Maven POM file to create the correct packaging.  Here is 
- the updated file:
+ <<guides/30_dockerfile.adoc,Creating Docker Images>> page.
 
-[source,xml]
-.Updated POM file
-----
-<?xml version="1.0" encoding="UTF-8"?>
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-mp-tutorial</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-    <name>${project.artifactId}</name>
-
-    <properties>
-        <helidon.version>{helidon-version}</helidon.version>
-        <mainClass>io.helidon.examples.Main</mainClass>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
-        <libs.classpath.prefix>libs</libs.classpath.prefix> <1>
-        <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.helidon</groupId>
-                <artifactId>helidon-bom</artifactId>
-                <version>${helidon.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-2.2</artifactId>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId> <2>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.5</version>
-                    <configuration>
-                        <archive>
-                            <manifest>
-                                <addClasspath>true</addClasspath>
-                                <classpathPrefix>${libs.classpath.prefix}</classpathPrefix>
-                                <mainClass>${mainClass}</mainClass>
-                                <useUniqueVersions>false</useUniqueVersions>
-                            </manifest>
-                        </archive>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId> <3>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${copied.libs.dir}</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                            <includeScope>runtime</includeScope>
-                            <excludeScope>test</excludeScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
-</project>
----- 
-
-<1> New entries are created in the `properties` to set the name of the `libs`
- directory where the dependencies will be placed.   
-<2> In the `build` section,
- a `plugin` entry is added to configure the `maven-jar-plugin` to set the
- main class in the manifest, and to add the `libs` directory to the
- manifest classpath.  
-<3> Additionally, the `maven-dependency-plugin` is
- configured to copy the dependencies into the `libs` directory.
-
-With these updates in place, build the application with Maven:
+ You can now build the application.
 
 [source,bash]
 .Build the Application
@@ -430,7 +340,7 @@ dependencies in the `target/libs` directory. This means you can easily start the
 [source,bash]
 .Run the application
 ----
-java -jar target/helidon-mp-tutorial-1.0-SNAPSHOT.jar
+java -jar target/helidon-mp-tutorial.jar
 ----
 
 At this stage, the application is a very simple "Hello World" greeting service. 
@@ -468,7 +378,7 @@ Rebuild the application and run it again.  Notice that it now uses port
  8080 as specified in the configuration file.
 
 TIP: You can learn more about options for configuring the Helidon Server on the
- <<miroprofile/02_server-configuration,Configuring the Server>> page. 
+ <<microprofile/02_server-configuration.adoc,Configuring the Server>> page.
 
 In addition to predefined server properties, application-specific 
  configuration information can be added to this file.  Add the `app.greeting`
@@ -491,7 +401,7 @@ Add a new "provider" class to read this property and make it available
  and have the following content:
 
 [source,java]
-.GreetingProvider class
+.src/main/java/io/helidon/examples/GreetingProvider.java
 ----
 package io.helidon.examples;
 
@@ -840,8 +750,6 @@ http://localhost:8080/greet
 http://localhost:8080/greet
 ----
 
-Learn more about logging in the <<guides/xx_logging.adoc,Logging Guide>>.
-
 == Metrics
 
 Helidon provides built-in support for metrics endpoints.
@@ -1008,7 +916,7 @@ Helidon allows the addition of custom health checks to applications.
  Create a new class `GreetHealthcheck.java` with the following content:
 
 [source,java]
-.New GreetHealthcheck.java custom health check class
+.src/main/java/io/helidon/examples/GreetHealthcheck.java
 ----
 package io.helidon.examples;
 
@@ -1104,8 +1012,7 @@ content-length: 536
 <3> The status is now reported as "UP" and the details are provided in the
  checks.
 
-Learn more about health checks in the <<xx_health-checks.adoc,Health Check
- Guide>>.
+Learn more about health checks in the <<guides/07_health_mp_guide.adoc,Health Check Guide>>.
 
 == Build a Docker Image
 
@@ -1186,7 +1093,7 @@ Learn more about creating Docker images for Helidon applications at
 == Deploy the application to Kubernetes
 
 If you don't have access to a Kubernetes cluster, you can
-<<getting-started/05_kubernetes.adoc,install one on your desktop>>.
+<<about/05_kubernetes.adoc,install one on your desktop>>.
 Then deploy the example:
 
 [source,bash]
@@ -1310,13 +1217,12 @@ There were several links to more detailed information included in the
 
 ==== Related links
 
-* https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-2.2[Eclipse MicroProfile 2.2]
+* https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-3.0[Eclipse MicroProfile 3.0]
 * https://docs.jboss.org/cdi/api/2.0/index.html[Contexts and Dependency Injection Specification]
-* <<guides/04_dockerfile,Creating Docker Images>>
-* <<miroprofile/02_server-configuration,Configuring the Server>>
+* <<guides/30_dockerfile.adoc,Creating Docker Images>>
+* <<microprofile/02_server-configuration.adoc,Configuring the Server>>
 * <<config/01_introduction.adoc,Config>>
-* <<guides/xx_logging.adoc,Logging Guide>>
 * https://microprofile.io/project/eclipse/microprofile-metrics[MicroProfile Metrics Specification]
 * <<guides/09_metrics_mp_guide.adoc,Metrics Guide>>
 * https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc[MicroProfile Health Protocol and Wireformat]
-* <<getting-started/05_kubernetes.adoc,Install Kubernetes on your desktop>>
+* <<about/05_kubernetes.adoc,Install Kubernetes on your desktop>>

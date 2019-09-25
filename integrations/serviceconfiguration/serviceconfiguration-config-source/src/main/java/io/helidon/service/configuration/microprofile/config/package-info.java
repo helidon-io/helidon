@@ -22,5 +22,7 @@
  *
  * @see
  * io.helidon.service.configuration.microprofile.config.ServiceConfigurationConfigSource
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.microprofile.config;

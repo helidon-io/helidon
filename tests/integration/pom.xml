@@ -23,14 +23,14 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.1-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration</artifactId>
     <packaging>pom</packaging>
 
-    <name>Integration Tests</name>
+    <name>Helidon Integration Tests</name>
 
     <modules>
         <module>zipkin-mp-2.2</module>

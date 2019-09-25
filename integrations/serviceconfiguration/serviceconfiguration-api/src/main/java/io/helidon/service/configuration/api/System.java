@@ -54,7 +54,10 @@ import java.util.Set;
  * @see #getProperties()
  *
  * @see #isAuthoritative()
+ *
+ * @deprecated This class is slated for removal.
  */
+@Deprecated
 public abstract class System {
 
 

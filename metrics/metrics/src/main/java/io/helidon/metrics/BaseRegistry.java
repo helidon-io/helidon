@@ -47,10 +47,13 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * </ul>
  *
  * Each metric can be disabled by using the following configuration property:
- * {@code helidon.metrics.base.${metric_name}.enabled=false}
+ * {@code helidon.metrics.base.${metric_name}.enabled=false}. Further, to suppress
+ * all base metrics set {@code helidon.metrics.base.enabled=false}.
  */
 final class BaseRegistry extends Registry {
     private static final String CONFIG_METRIC_ENABLED_BASE = "base.";
+    static final String BASE_ENABLED_KEY = CONFIG_METRIC_ENABLED_BASE + "enabled";
+
     private static final Metadata MEMORY_USED_HEAP = new Metadata("memory.usedHeap",
                                                                   "Used Heap Memory",
                                                                   "Displays the amount of used heap memory in bytes.",
@@ -182,6 +185,9 @@ final class BaseRegistry extends Registry {
 
         BaseRegistry result = new BaseRegistry(config);
 
+        if (!config.get(BASE_ENABLED_KEY).asBoolean().orElse(true)) {
+            return result;
+        }
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics

@@ -1,10 +1,10 @@
-
 # Helidon Config Git Example
 
 This example shows how to load configuration from a Git repository
 and switch which branch to load from at runtime.
 
 ## Prerequisites
+
 The example assumes that the GitHub repository <https://github.com/helidonrobot/test-config>
 has a branch named `test` that contains `application.conf` which sets the key
 `greeting` to value `hello`. (The Helidon team has created and populated this 
@@ -19,15 +19,11 @@ The example application constructs a `Config` instance from that file in the
 GitHub repository and branch, prints out the value for key `greeting`, and 
 checks to make sure the value is the expected `hello`.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
 export ENVIRONMENT_NAME=test
-mvn exec:java
+java -jar target/helidon-examples-config-git.jar
 ```

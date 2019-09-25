@@ -104,7 +104,7 @@ class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBui
         if (name == null) {
             throw new IllegalStateException("name must be assigned");
         }
-        return new InternalMetadataImpl(name, displayName, description, type, unit);
+        return new InternalMetadataImpl(name, displayName, description, type, unit, reusable, null);
     }
 
     static class FactoryImpl implements Metadata.MetadataBuilder.Factory {

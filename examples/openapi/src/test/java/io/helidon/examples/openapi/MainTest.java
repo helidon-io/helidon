@@ -16,28 +16,24 @@
 
 package io.helidon.examples.openapi;
 
-import io.helidon.common.http.MediaType;
-import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
-
-import io.helidon.webserver.WebServer;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
 import javax.json.JsonPointer;
 import javax.json.JsonString;
-import javax.json.JsonWriter;
+
+import io.helidon.webserver.WebServer;
+import io.helidon.common.http.MediaType;
+import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
@@ -156,6 +152,5 @@ public class MainTest {
     private static String escape(String path) {
         return path.replace("/", "~1");
     }
-
 
 }

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.serviceconfiguration</groupId>
         <artifactId>helidon-serviceconfiguration-project</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
     <name>Helidon ServiceConfiguration HikariCP ACCS</name>
@@ -36,11 +36,10 @@
         <dependency>
             <groupId>io.helidon.serviceconfiguration</groupId>
             <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
-            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.jdbc</groupId>
+            <groupId>com.oracle.ojdbc</groupId>
             <artifactId>ojdbc8</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
@@ -63,20 +62,4 @@
         </dependency>
     </dependencies>
 
-    <!--
-        com.oracle:jdbc:odjbc8 requires the maven oracle repository
-    -->
-    <repositories>
-        <repository>
-            <id>maven.oracle.com</id>
-            <url>https://maven.oracle.com</url>
-            <layout>default</layout>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>

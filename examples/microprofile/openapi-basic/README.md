@@ -1,19 +1,14 @@
-
 # Helidon MP Basic OpenAPI Example
 
 This example shows a simple greeting application, similar to the one from the 
 Helidon MP QuickStart, enhanced with OpenAPI support.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-microprofile-openapi-basic.jar
 ```
 
 Try the endpoints:

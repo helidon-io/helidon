@@ -34,7 +34,7 @@ public class SecureLegacyConfigFromConfigTest extends AbstractSecureConfigTest {
 
     @BeforeAll
     public static void initClass() {
-        config = Config.create().get("legacy");
+        config = Config.create().get("aes-legacy");
 
         configRequiresEncryption = Config.builder()
                 .sources(ConfigSources.create(
@@ -42,7 +42,7 @@ public class SecureLegacyConfigFromConfigTest extends AbstractSecureConfigTest {
                         ConfigSources.create(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
                         ConfigSources.classpath("application.yaml")))
                 .build()
-                .get("legacy");
+                .get("aes-legacy");
 
         assertThat("We must have the correct configuration file", config.get("pwd1").type().isLeaf());
         assertThat("We must have the correct configuration file", configRequiresEncryption.get("pwd1").type().isLeaf());

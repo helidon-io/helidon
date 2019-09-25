@@ -16,6 +16,9 @@
 
 package io.helidon.metrics;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import java.util.Collections;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -24,6 +27,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,6 +45,7 @@ class MetricsSupportTest {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
+    private static final MetricID METRIC_USED_HEAP = new MetricID("memory.usedHeap");
 
     @BeforeAll
     static void initClass() {
@@ -120,11 +125,23 @@ class MetricsSupportTest {
         assertEquals(8d, commonObj.getJsonNumber("doubleA").doubleValue());
 
         assertEquals("this really is other stuff", jo.getString("otherStuff"));
-        
+
         JsonArray commonArray = jo.getJsonArray("commonArray");
         assertEquals("integration", commonArray.getJsonArray(0).getString(0));
         assertEquals(6, commonArray.getJsonArray(0).getInt(1));
         assertEquals("demo", commonArray.getJsonArray(1).getString(0));
         assertEquals(7, commonArray.getJsonArray(1).getInt(1));
+    }
+
+    @Test
+    void testBaseMetricsDisabled() {
+        Config config = Config.builder()
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                        "base.enabled", "false")))
+                .build();
+        RegistryFactory myRF = RegistryFactory.create(config);
+        Registry myBase = myRF.getARegistry(MetricRegistry.Type.BASE);
+        assertFalse(myBase.getGauges().containsKey(METRIC_USED_HEAP), "Base registry incorrectly contains "
+                + METRIC_USED_HEAP + " when base was configured as disabled");
     }
 }

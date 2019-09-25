@@ -269,25 +269,25 @@ public final class MetricsSupport implements Service {
         String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
 
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
-        Counter totalCount = vendor.counter(new Metadata(metricPrefix + "count",
+        Counter totalCount = vendor.counter(reusableMetadata(metricPrefix + "count",
                                                          "Total number of HTTP requests",
                                                          "Each request (regardless of HTTP method) will increase this counter",
                                                          MetricType.COUNTER,
                                                          MetricUnits.NONE));
 
-        Meter totalMeter = vendor.meter(new Metadata(metricPrefix + "meter",
+        Meter totalMeter = vendor.meter(reusableMetadata(metricPrefix + "meter",
                                                      "Meter for overall HTTP requests",
                                                      "Each request will mark the meter to see overall throughput",
                                                      MetricType.METERED,
                                                      MetricUnits.NONE));
 
-        vendor.counter(new Metadata("grpc.requests.count",
+        vendor.counter(reusableMetadata("grpc.requests.count",
                                     "Total number of gRPC requests",
                                     "Each gRPC request (regardless of the method) will increase this counter",
                                     MetricType.COUNTER,
                                     MetricUnits.NONE));
 
-        vendor.meter(new Metadata("grpc.requests.meter",
+        vendor.meter(reusableMetadata("grpc.requests.meter",
                                   "Meter for overall gRPC requests",
                                   "Each gRPC request will mark the meter to see overall throughput",
                                   MetricType.METERED,
@@ -351,6 +351,13 @@ public final class MetricsSupport implements Service {
     public void update(Routing.Rules rules) {
         configureVendorMetrics(null, rules);
         configureEndpoint(rules);
+    }
+
+    private Metadata reusableMetadata(String name, String displayName, String description,
+            MetricType type, String units) {
+        Metadata result = new Metadata(name, displayName, description, type, units);
+        result.setReusable(true);
+        return result;
     }
 
     private void getOne(ServerRequest req, ServerResponse res, Registry registry) {
@@ -441,7 +448,9 @@ public final class MetricsSupport implements Service {
             // backward compatibility
             config.get("context").asString().ifPresent(this::context);
 
-
+            if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
+                LOGGER.finest("Metrics support for base metrics is disabled in configuration");
+            }
             return this;
         }
 
