@@ -33,7 +33,7 @@ final class NoTransactionSupport implements TransactionSupport {
 
 
     private static final Logger LOGGER = Logger.getLogger(NoTransactionSupport.class.getName(),
-                                                          NoTransactionSupport.class.getPackage().getName() + ".LogMessages");
+                                                          NoTransactionSupport.class.getPackage().getName() + ".Messages");
 
 
     /**
