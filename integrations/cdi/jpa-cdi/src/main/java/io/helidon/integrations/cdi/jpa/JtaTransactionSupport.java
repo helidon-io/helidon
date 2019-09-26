@@ -33,7 +33,7 @@ import javax.transaction.TransactionScoped;
  * details.</p>
  */
 @ApplicationScoped
-final class JtaTransactionSupport implements TransactionSupport {
+class JtaTransactionSupport implements TransactionSupport {
 
 
     /*
@@ -44,7 +44,12 @@ final class JtaTransactionSupport implements TransactionSupport {
     /**
      * A {@link Provider} of {@link BeanManager} instances.
      *
-     * <p>This field will never be {@code null}.</p>
+     * <p>This field will normally not be {@code null} but if the
+     * {@link #JtaSupport()} constructor is used, then it will be
+     * {@code null} (and the {@link JtaTransactionSupport} instance so
+     * constructed will be non-functional.</p>
+     *
+     * @see #JtaSupport()
      */
     private final Provider<BeanManager> beanManagerProvider;
 
@@ -53,6 +58,30 @@ final class JtaTransactionSupport implements TransactionSupport {
      * Constructors.
      */
 
+
+    /**
+     * Creates a new, <strong>nonfunctional</strong> {@link
+     * JtaTransactionSupport}.
+     *
+     * <p>This constructor exists only to conform with section 3.15 of
+     * the CDI specification.</p>
+     *
+     * @deprecated This constructor exists only to conform with
+     * section 3.15 of the CDI specification; please use the {@link
+     * #JtaTransactionSupport(Provider)} constructor instead.
+     *
+     * @see
+     * #JtaTransactionSupport(Provider)
+     *
+     * @see <a
+     * href="http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#unproxyable">Section
+     * 3.15 of the CDI 2.0 specification</a>
+     */
+    @Deprecated
+    JtaTransactionSupport() {
+        super();
+        this.beanManagerProvider = null;
+    }
 
     /**
      * Creates a new {@link JtaTransactionSupport}.
