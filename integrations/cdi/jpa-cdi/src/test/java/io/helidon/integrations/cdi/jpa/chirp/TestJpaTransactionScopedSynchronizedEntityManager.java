@@ -51,10 +51,8 @@ import static org.junit.jupiter.api.Assertions.fail;
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
     url = "jdbc:h2:mem:chirp;INIT=RUNSCRIPT FROM 'classpath:chirp.ddl'",
-    serverName = "",
-    properties = {
-        "user=sa"
-    }
+    user = "sa",
+    serverName = ""
 )
 class TestJpaTransactionScopedSynchronizedEntityManager {
 

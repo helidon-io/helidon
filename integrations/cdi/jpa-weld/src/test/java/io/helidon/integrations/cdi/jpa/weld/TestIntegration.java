@@ -45,10 +45,8 @@ import static org.junit.jupiter.api.Assertions.fail;
     name = "test",
     className = "org.h2.jdbcx.JdbcDataSource",
     url = "jdbc:h2:mem:test",
+    user = "sa",
     serverName = "",
-    properties = {
-        "user=sa"
-    }
 )
 public class TestIntegration {
 

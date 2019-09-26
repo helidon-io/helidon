@@ -19,16 +19,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 
+import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.Annotated;
+import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.BeanConfigurator;
 import javax.inject.Named;
 import javax.sql.DataSource;
@@ -142,9 +149,38 @@ public abstract class AbstractDataSourceExtension implements Extension {
      * properties relevant to the data source; must not be {@code
      * null}
      */
-    protected abstract void addBean(BeanConfigurator<DataSource> beanConfigurator,
-                                    Named name,
-                                    Properties properties);
+    @Deprecated
+    protected void addBean(BeanConfigurator<DataSource> beanConfigurator,
+                           Named name,
+                           Properties properties) {
+
+    }
+
+    /**
+     * Called to permit subclasses to add a {@link DataSource}-typed
+     * bean using the supplied {@link BeanConfigurator}.
+     *
+     * <p>Implementations of this method will be called from an
+     * observer method that is observing the {@link
+     * AfterBeanDiscovery} container lifecycle event.</p>
+     *
+     * @param beanConfigurator the {@link BeanConfigurator} to use to
+     * actually add a new bean; must not be {@code null}
+     *
+     * @param name a {@link Named} instance qualifying the {@link
+     * DataSource}-typed bean to be added; may be {@code null}
+     *
+     * @param propertiesFunction a {@link Function} that returns
+     * {@link Properties} objects containing properties relevant to
+     * the data source and whose sole {@code Boolean} parameter
+     * indicates whether supporting configuration may be removed to
+     * save memory; must not be {@code null}
+     */
+    protected void addBean(final BeanConfigurator<DataSource> beanConfigurator,
+                           final Named name,
+                           final Function<? super Boolean, ? extends Properties> propertiesFunction) {
+        this.addBean(beanConfigurator, name, propertiesFunction.apply(false));
+    }
 
     /**
      * Returns the {@link Config} instance used to acquire
@@ -193,7 +229,14 @@ public abstract class AbstractDataSourceExtension implements Extension {
      * eventually by the {@link #addBean(BeanConfigurator, Named,
      * Properties)} method.
      *
+     * <p>Invocations of this method will replace {@link Properties}
+     * previously indexed under the supplied {@code dataSourceName},
+     * if any.</p>
+     *
      * <p>This method may return {@code null}.</p>
+     *
+     * <p>An invocation of this method after CDI has completed bean
+     * discovery will result in undefined behavior.</p>
      *
      * @param dataSourceName the name of the data source under which
      * the supplied {@link Properties} will be indexed; may be {@code
@@ -206,6 +249,10 @@ public abstract class AbstractDataSourceExtension implements Extension {
      */
     protected final Properties putDataSourceProperties(final String dataSourceName, final Properties properties) {
         return this.explicitlySetProperties.put(dataSourceName, properties);
+    }
+
+    public final void addDataSourceName(final String dataSourceName) {
+        this.explicitlySetProperties.put(dataSourceName, null);
     }
 
     /**
@@ -290,11 +337,16 @@ public abstract class AbstractDataSourceExtension implements Extension {
         // implementation may add on some Helidon SE Config sources
         // that are not represented as MicroProfile Config sources.
         // Consequently we have to source property names from both the
-        // MicroProfile Config ConfigSources and from Helidon itself.
-        // We do this by first iterating over the MicroProfile Config
-        // ConfigSources and then augmenting where necessary with any
-        // other (cached) property names reported by the Helidon
-        // MicroProfile Config implementation.
+        // MicroProfile Config ConfigSources and from the MicroProfile
+        // Config object itself.  We do this by first iterating over
+        // the MicroProfile Config object's ConfigSources and then
+        // augmenting where necessary with any other (cached) property
+        // names reported by the MicroProfile Config implementation.
+        // This may be a violation of the MicroProfile Config
+        // specification, but as there is no test for it and the
+        // specification is unclear, we have to be prepared to handle
+        // it.  See also:
+        // https://github.com/eclipse/microprofile-config/issues/431#issuecomment-519858099
         //
         // (The MicroProfile Config specification also does not say
         // whether a ConfigSource is thread-safe
@@ -345,23 +397,126 @@ public abstract class AbstractDataSourceExtension implements Extension {
         return returnValue;
     }
 
-    private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
+    private void processAnnotatedType(@Observes
+                                      @WithAnnotations(DataSourceDefinition.class)
+                                      final ProcessAnnotatedType<?> event) {
         if (event != null) {
-            if (this.masterProperties.isEmpty()) {
-                this.initializeMasterProperties();
-            }
-            final Set<? extends Entry<? extends String, ? extends Properties>> masterPropertiesEntries =
-                this.masterProperties.entrySet();
-            if (masterPropertiesEntries != null && !masterPropertiesEntries.isEmpty()) {
-                for (final Entry<? extends String, ? extends Properties> entry : masterPropertiesEntries) {
-                    if (entry != null) {
-                        this.addBean(event.addBean(), NamedLiteral.of(entry.getKey()), entry.getValue());
+            final Annotated annotated = event.getAnnotatedType();
+            if (annotated != null) {
+                final Set<? extends DataSourceDefinition> dataSourceDefinitions =
+                    annotated.getAnnotations(DataSourceDefinition.class);
+                if (dataSourceDefinitions != null && !dataSourceDefinitions.isEmpty()) {
+                    for (final DataSourceDefinition dsd : dataSourceDefinitions) {
+                        assert dsd != null;
+                        final Set<String> knownDataSourceNames = this.getDataSourceNames();
+                        assert knownDataSourceNames != null;
+                        final String dataSourceName = dsd.name();
+                        if (!knownDataSourceNames.contains(dataSourceName)) {
+                            this.putDataSourceProperties(dataSourceName, toProperties(dsd));
+                        }
                     }
                 }
             }
         }
-        this.masterProperties.clear();
+    }
+
+    private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
+        if (event != null) {
+            final Config config = this.getConfig();
+            assert config != null;
+            if (this.masterProperties.isEmpty()) {
+                final boolean lateConfigurationBinding = config.getOptionalValue("jpa.lateConfigurationBinding", Boolean.class)
+                    .orElse(false);
+                if (!lateConfigurationBinding) {
+                    this.initializeMasterProperties();
+                }
+            }
+            final Set<? extends String> dataSourceNames = this.masterProperties.keySet();
+            if (dataSourceNames != null && !dataSourceNames.isEmpty()) {
+                for (final String dataSourceName : dataSourceNames) {
+                    if (dataSourceName != null) {
+                        this.addBean(event.addBean(),
+                                     NamedLiteral.of(dataSourceName),
+                                     remove -> remove
+                                     ? this.masterProperties.remove(dataSourceName)
+                                     : this.masterProperties.get(dataSourceName));
+                    }
+                }
+            }
+        }
+    }
+
+    private void afterDeploymentValidation(@Observes final AfterDeploymentValidation event) {
+        Set<? extends String> dataSourceNames = this.getDataSourceNames();
+        if (!dataSourceNames.isEmpty()) {
+            if (this.masterProperties.isEmpty()) {
+                // Master properties were never initialized, but we
+                // had explicit data source names, so we're in a
+                // delayed binding situation.
+                this.initializeMasterProperties();
+                dataSourceNames = this.getDataSourceNames();
+                // There have to be some data source names, because
+                // getDataSourceNames() will always return the
+                // explicitly set ones, which is how we got into this
+                // block in the first place.
+                assert !dataSourceNames.isEmpty();
+            }
+            for (final String dataSourceName : dataSourceNames) {
+                this.validateDataSourceProperties(event, dataSourceName, this.masterProperties.get(dataSourceName));
+            }
+        }
         this.explicitlySetProperties.clear();
+    }
+
+    /**
+     * Validates the supplied {@link Properties} which are assumed to
+     * be properties for a data source identified by the supplied
+     * {@code dataSourceName}.
+     *
+     * @param event the {@link AfterDeploymentValidation} event in
+     * effect; must not be {@code null}
+     *
+     * @param dataSourceName the name of the data source; may be
+     * {@code null} in invalid scenarios
+     *
+     * @param dataSourceProperties the data source properties
+     * corresponding to the supplied {@code dataSourceName}; may be
+     * {@code null}
+     *
+     * @exception NullPointerException if {@code event} is {@code null}
+     *
+     * @see AfterDeploymentValidation#addDeploymentProblem(Throwable)
+     */
+    protected void validateDataSourceProperties(final AfterDeploymentValidation event,
+                                                final String dataSourceName,
+                                                final Properties dataSourceProperties) {
+        Objects.requireNonNull(event);
+        if (dataSourceName == null) {
+            event.addDeploymentProblem(new DeploymentException("The datasource name was null"));
+        }
+        if (dataSourceProperties == null) {
+            event.addDeploymentProblem(new DeploymentException("No datasource properties found for datasource \""
+                                                               + dataSourceName + "\""));
+        }
+    }
+
+    /**
+     * Returns a {@link Properties} object representing the properties
+     * defined by the supplied {@link DataSourceDefinition}.
+     *
+     * <p>This implementation returns {@code null} in all cases.
+     * Overrides are encouraged to return more sensible values.</p>
+     *
+     * <p>Overrides are permitted to return {@code null}.</p>
+     *
+     * @param dsd the {@link DataSourceDefinition} in question; may be
+     * {@code null}
+     *
+     * @return a {@link Properties} object representing the
+     * properties, or {@code null} if no properties could be inferred
+     */
+    protected Properties toProperties(final DataSourceDefinition dsd) {
+        return null;
     }
 
 }

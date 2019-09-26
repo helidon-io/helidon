@@ -18,11 +18,10 @@ package io.helidon.integrations.datasource.hikaricp.cdi;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.sql.Connection;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,12 +29,10 @@ import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.CreationException;
-import javax.enterprise.inject.spi.Annotated;
+import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
-import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.BeanConfigurator;
 import javax.inject.Named;
 import javax.sql.DataSource;
@@ -98,12 +95,12 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
     @Override
     protected final void addBean(final BeanConfigurator<DataSource> beanConfigurator,
                                  final Named dataSourceName,
-                                 final Properties dataSourceProperties) {
+                                 final Function<? super Boolean, ? extends Properties> dataSourcePropertiesFunction) {
         beanConfigurator.addQualifier(dataSourceName)
             .addTransitiveTypeClosure(HikariDataSource.class)
             .beanClass(HikariDataSource.class)
             .scope(ApplicationScoped.class)
-            .createWith(ignored -> new HikariDataSource(new HikariConfig(dataSourceProperties)))
+            .createWith(ignored -> new HikariDataSource(new HikariConfig(dataSourcePropertiesFunction.apply(true))))
             .destroyWith((dataSource, ignored) -> {
                     if (dataSource instanceof AutoCloseable) {
                         try {
@@ -115,32 +112,6 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                         }
                     }
                 });
-    }
-
-    private void processAnnotatedType(@Observes
-                                      @WithAnnotations(DataSourceDefinition.class)
-                                      final ProcessAnnotatedType<?> event) {
-        if (event != null) {
-            final Annotated annotated = event.getAnnotatedType();
-            if (annotated != null) {
-                final Set<? extends DataSourceDefinition> dataSourceDefinitions =
-                    annotated.getAnnotations(DataSourceDefinition.class);
-                if (dataSourceDefinitions != null && !dataSourceDefinitions.isEmpty()) {
-                    for (final DataSourceDefinition dsd : dataSourceDefinitions) {
-                        assert dsd != null;
-                        final Set<String> knownDataSourceNames = this.getDataSourceNames();
-                        assert knownDataSourceNames != null;
-                        final String dataSourceName = dsd.name();
-                        if (!knownDataSourceNames.contains(dataSourceName)) {
-                            final Entry<? extends String, ? extends Properties> entry = toProperties(dsd);
-                            if (entry != null) {
-                                this.putDataSourceProperties(dataSourceName, entry.getValue());
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private <T extends DataSource> void processInjectionPoint(@Observes final ProcessInjectionPoint<?, T> event) {
@@ -183,11 +154,27 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
         }
     }
 
-    private static Entry<String, Properties> toProperties(final DataSourceDefinition dsd) {
+    @Override
+    protected void validateDataSourceProperties(final AfterDeploymentValidation event,
+                                                final String dataSourceName,
+                                                final Properties dataSourceProperties) {
+        super.validateDataSourceProperties(event, dataSourceName, dataSourceProperties);
+        // Our superclass takes care of null parameter values, but via
+        // event.addDeploymentProblem(), not via throwing exceptions.
+        if (dataSourceProperties != null) {
+            try {
+                final HikariConfig hikariConfig = new HikariConfig(dataSourceProperties);
+                hikariConfig.validate();
+            } catch (final RuntimeException validationProblem) {
+                event.addDeploymentProblem(validationProblem);
+            }
+        }
+    }
+
+    @Override
+    protected Properties toProperties(final DataSourceDefinition dsd) {
         Objects.requireNonNull(dsd);
-        final String dataSourceName = dsd.name();
-        final Properties properties = new Properties();
-        final Entry<String, Properties> returnValue = new SimpleImmutableEntry<>(dataSourceName, properties);
+        final Properties returnValue = new Properties();
 
         final String[] propertyStrings = dsd.properties();
         assert propertyStrings != null;
@@ -199,13 +186,13 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                 assert name != null;
                 final String value = propertyString.substring(equalsIndex + 1);
                 assert value != null;
-                properties.setProperty("dataSource." + name.trim(), value.trim());
+                returnValue.setProperty("dataSource." + name.trim(), value.trim());
             }
         }
 
         // See https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby.
 
-        properties.setProperty("dataSourceClassName", dsd.className());
+        returnValue.setProperty("dataSourceClassName", dsd.className());
 
         // initialPoolSize -> (ignored)
 
@@ -216,25 +203,25 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
         // minPoolSize -> minimumIdle
         final int minPoolSize = dsd.minPoolSize();
         if (minPoolSize >= 0) {
-            properties.setProperty("dataSource.minimumIdle", String.valueOf(minPoolSize));
+            returnValue.setProperty("dataSource.minimumIdle", String.valueOf(minPoolSize));
         }
 
         // maxPoolSize -> maximumPoolSize
         final int maxPoolSize = dsd.maxPoolSize();
         if (maxPoolSize >= 0) {
-            properties.setProperty("dataSource.maximumPoolSize", String.valueOf(maxPoolSize));
+            returnValue.setProperty("dataSource.maximumPoolSize", String.valueOf(maxPoolSize));
         }
 
         // loginTimeout -> connectionTimeout
         final int loginTimeout = dsd.loginTimeout();
         if (loginTimeout > 0) {
-            properties.setProperty("dataSource.connectionTimeout", String.valueOf(loginTimeout));
+            returnValue.setProperty("dataSource.connectionTimeout", String.valueOf(loginTimeout));
         }
 
         // maxIdleTime -> idleTimeout
         final int maxIdleTime = dsd.maxIdleTime();
         if (maxIdleTime >= 0) {
-            properties.setProperty("dataSource.idleTimeout", String.valueOf(maxIdleTime));
+            returnValue.setProperty("dataSource.idleTimeout", String.valueOf(maxIdleTime));
         }
 
         // password -> password
@@ -243,7 +230,7 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
         final String password = dsd.password();
         assert password != null;
         if (!password.isEmpty()) {
-            properties.setProperty("dataSource.password", password);
+            returnValue.setProperty("dataSource.password", password);
         }
 
         // isolationLevel -> transactionIsolation
@@ -270,51 +257,48 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                 propertyValue = null;
                 throw new IllegalStateException("Unexpected isolation level: " + isolationLevel);
             }
-            properties.setProperty("dataSource.transactionIsolation", propertyValue);
+            returnValue.setProperty("dataSource.transactionIsolation", propertyValue);
         }
 
-        // user -> dataSource.username
-        //
-        // This one's a bit odd.  Note that this does NOT map to
-        // dataSource.user!
+        // user -> dataSource.user (standard DataSource property)
         final String user = dsd.user();
         assert user != null;
         if (!user.isEmpty()) {
-            properties.setProperty("dataSource.username", user);
+            returnValue.setProperty("dataSource.user", user);
         }
 
         // databaseName -> dataSource.databaseName (standard DataSource property)
         final String databaseName = dsd.databaseName();
         assert databaseName != null;
         if (!databaseName.isEmpty()) {
-            properties.setProperty("dataSource.databaseName", databaseName);
+            returnValue.setProperty("dataSource.databaseName", databaseName);
         }
 
         // description -> dataSource.description (standard DataSource property)
         final String description = dsd.description();
         assert description != null;
         if (!description.isEmpty()) {
-            properties.setProperty("dataSource.description", description);
+            returnValue.setProperty("dataSource.description", description);
         }
 
         // portNumber -> dataSource.portNumber (standard DataSource property)
         final int portNumber = dsd.portNumber();
         if (portNumber >= 0) {
-            properties.setProperty("dataSource.portNumber", String.valueOf(portNumber));
+            returnValue.setProperty("dataSource.portNumber", String.valueOf(portNumber));
         }
 
         // serverName -> dataSource.serverName (standard DataSource property)
         final String serverName = dsd.serverName();
         assert serverName != null;
         if (!serverName.isEmpty()) {
-            properties.setProperty("dataSource.serverName", serverName);
+            returnValue.setProperty("dataSource.serverName", serverName);
         }
 
         // url -> dataSource.url (standard DataSource property)
         final String url = dsd.url();
         assert url != null;
         if (!url.isEmpty()) {
-            properties.setProperty("dataSource.url", url);
+            returnValue.setProperty("dataSource.url", url);
         }
 
         return returnValue;

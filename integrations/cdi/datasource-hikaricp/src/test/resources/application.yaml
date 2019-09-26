@@ -20,4 +20,3 @@ javax:
                url: jdbc:h2:mem:test
                user: sa
                password: ""
-
