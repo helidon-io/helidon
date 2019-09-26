@@ -321,7 +321,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                 .map(Registry::toBridgeEntry);
     }
 
-    private synchronized static <T extends Metric> SortedMap<MetricID, T>
+    private static synchronized <T extends Metric> SortedMap<MetricID, T>
             getBridgeMetrics(SortedMap<String, T> metrics, Class<T> clazz) {
         return metrics.entrySet().stream()
                 .map(Registry::toBridgeEntry)
