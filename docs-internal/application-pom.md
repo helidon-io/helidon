@@ -27,7 +27,7 @@ To address this we decided to bite the bullet and introduce Helidon application 
 for SE and MP. This is a trade-off. It helps newbies by simplifying the pom they
 deal with and reducing the chance of making a mistake. But it obscures
 the details of what's going on and makes things more complicated for customers
- that want to use their on parent poms.
+ that want to use their own parent poms.
 
 We decided this was a reasonable tradeoff because it's important for
 the initial experience with Helidon to be frictionless and pleasant. Also 
