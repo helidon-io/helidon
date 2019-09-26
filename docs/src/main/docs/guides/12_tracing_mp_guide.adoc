@@ -486,7 +486,7 @@ server.host=0.0.0.0
 .Build the application, skipping unit tests, then run it:
 ----
 mvn package -DskipTests=true
-java -jar target/helidon-quickstart-mp.jar
+java -jar target/helidon-quickstart-mp-2.jar
 ----
 
 [source,bash]

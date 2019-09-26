@@ -148,7 +148,7 @@ tracing:
 import io.helidon.tracing.TracerBuilder; // <1>
 ...
     // Replace the existing line of code
-    // `ServerConfiguration serverConfig = ServerConfiguration.create(config.get("server"));`
+    // ServerConfiguration serverConfig = ServerConfiguration.create(config.get("server"));
     // with ` ServerConfiguration serverConfig = buildServerConfig(config);`
     ServerConfiguration serverConfig = buildServerConfig(config); // <2>
 ...
@@ -417,7 +417,7 @@ import io.opentracing.Span;
 .Build the application, skipping unit tests, then run it:
 ----
 mvn package -DskipTests=true
-java -jar target/helidon-quickstart-se.jar
+java -jar target/helidon-quickstart-se-2.jar
 ----
 
 [source,bash]
