@@ -32,6 +32,7 @@ import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.Annotated;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
@@ -148,6 +149,14 @@ public abstract class AbstractDataSourceExtension implements Extension {
      * @param properties a {@link Properties} instance containing
      * properties relevant to the data source; must not be {@code
      * null}
+     *
+     * @see #addBean(BeanConfigurator, Named, Function)
+     *
+     * @deprecated This method was {@code abstract} at one point, is
+     * no longer, and <strong>does nothing by design</strong>,
+     * existing only to preserve backwards compatibility.  Please use
+     * the {@link #addBean(BeanConfigurator, Named, Function)} method
+     * instead.
      */
     @Deprecated
     protected void addBean(BeanConfigurator<DataSource> beanConfigurator,
@@ -224,16 +233,18 @@ public abstract class AbstractDataSourceExtension implements Extension {
     }
 
     /**
-     * Adds additional synthesized properties to an internal map of
-     * data source properties whose contents will be processed
+     * Adds additional possibly synthetic properties to an internal
+     * map of data source properties whose contents will be processed
      * eventually by the {@link #addBean(BeanConfigurator, Named,
      * Properties)} method.
      *
      * <p>Invocations of this method will replace {@link Properties}
      * previously indexed under the supplied {@code dataSourceName},
-     * if any.</p>
+     * if there are any.</p>
      *
-     * <p>This method may return {@code null}.</p>
+     * <p>This method may return {@code null}, indicating that no
+     * {@link Properties} object was previously indexed under the
+     * supplied {@code dataSourceName}, a very common case.</p>
      *
      * <p>An invocation of this method after CDI has completed bean
      * discovery will result in undefined behavior.</p>
@@ -251,8 +262,29 @@ public abstract class AbstractDataSourceExtension implements Extension {
         return this.explicitlySetProperties.put(dataSourceName, properties);
     }
 
+    /**
+     * Adds a known data source name to this {@link
+     * AbstractDataSourceExtension} without specifying any properties
+     * for it; please see this method's description for further
+     * details.
+     *
+     * <p>This method is typically useful only when the {@code
+     * jpa.lateConfigurationBinding} configuration property is also
+     * set to {@code true}.  Adding a data source name without
+     * corresponding properties in this case will cause data source
+     * configuration to be loaded as late as possible in the lifecycle
+     * of this extension.  Most users will never have the need to call
+     * this method, nor the need to set the {@code
+     * jpa.lateConfigurationBinding} configuration property.</p>
+     *
+     * @param dataSourceName the dataSourceName to add; must not be
+     * {@code null}
+     *
+     * @exception NullPointerException if {@code dataSourceName} is
+     * {@code null}
+     */
     public final void addDataSourceName(final String dataSourceName) {
-        this.explicitlySetProperties.put(dataSourceName, null);
+        this.explicitlySetProperties.put(Objects.requireNonNull(dataSourceName), null);
     }
 
     /**
@@ -420,16 +452,30 @@ public abstract class AbstractDataSourceExtension implements Extension {
         }
     }
 
+    private void beforeBeanDiscovery(@Observes final BeforeBeanDiscovery event) {
+        final Config config = this.getConfig();
+        assert config != null;
+        // Note that somewhat bizarrely Sets are supported with
+        // injection, but not with programmatic lookup.  See
+        // https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/converters.asciidoc#programmatic-lookup.
+        final String[] explicitDataSourceNames = config.getOptionalValue("jpa.dataSourceNames", String[].class)
+            .orElse(null);
+        if (explicitDataSourceNames != null && explicitDataSourceNames.length > 0) {
+            for (final String explicitDataSourceName : explicitDataSourceNames) {
+                if (explicitDataSourceName != null) {
+                    this.addDataSourceName(explicitDataSourceName);
+                }
+            }
+        }
+    }
+
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
         if (event != null) {
             final Config config = this.getConfig();
             assert config != null;
-            if (this.masterProperties.isEmpty()) {
-                final boolean lateConfigurationBinding = config.getOptionalValue("jpa.lateConfigurationBinding", Boolean.class)
-                    .orElse(false);
-                if (!lateConfigurationBinding) {
-                    this.initializeMasterProperties();
-                }
+            if (this.masterProperties.isEmpty()
+                && !config.getOptionalValue("jpa.lateConfigurationBinding", Boolean.class).orElse(false)) {
+                this.initializeMasterProperties();
             }
             final Set<? extends String> dataSourceNames = this.masterProperties.keySet();
             if (dataSourceNames != null && !dataSourceNames.isEmpty()) {
