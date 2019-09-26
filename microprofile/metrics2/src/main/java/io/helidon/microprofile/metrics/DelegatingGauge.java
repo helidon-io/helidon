@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.Gauge;
  *
  * @param <T> data type reported by the underlying {@code Gauge}
  */
-public class DelegatingGauge<T> implements Gauge<T> {
+public class DelegatingGauge<T extends Number> implements Gauge<T> {
 
     private final Method method;
     private final Object obj;
@@ -50,15 +50,14 @@ public class DelegatingGauge<T> implements Gauge<T> {
      * @param clazz  type of the underlying gauge
      * @return {@code DelegatingGauge}
      */
-    public static <S> DelegatingGauge<S> newInstance(Method method, Object obj, Class<S> clazz) {
+    public static <S extends Number> DelegatingGauge<S> newInstance(Method method, Object obj, Class<S> clazz) {
         return new DelegatingGauge<>(method, obj, clazz);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public T getValue() {
         try {
-            return (T) method.invoke(obj);
+            return clazz.cast(method.invoke(obj));
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }

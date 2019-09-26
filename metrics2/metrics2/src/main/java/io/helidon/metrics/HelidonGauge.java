@@ -19,6 +19,12 @@ package io.helidon.metrics;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.DoubleAccumulator;
+import java.util.concurrent.atomic.DoubleAdder;
+import java.util.concurrent.atomic.LongAccumulator;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
 import javax.json.JsonObjectBuilder;
@@ -30,7 +36,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 /**
  * Gauge implementation.
  */
-final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
+final class HelidonGauge<T extends Number> extends MetricImpl implements Gauge<T> {
     private final Supplier<T> value;
 
     private HelidonGauge(String registryType, Metadata metadata, Gauge<T> metric) {
@@ -39,7 +45,7 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
         value = metric::getValue;
     }
 
-    static HelidonGauge<?> create(String registryType, Metadata metadata, Gauge<?> metric) {
+    static <T extends Number> HelidonGauge<T> create(String registryType, Metadata metadata, Gauge<T> metric) {
         return new HelidonGauge<>(registryType, metadata, metric);
     }
 
@@ -63,22 +69,38 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
         T value = getValue();
         String nameWithTags = jsonFullKey(metricID);
 
-        if (value instanceof String) {
-            builder.add(nameWithTags, (String) value);
-        } else if (value instanceof BigInteger) {
-            builder.add(nameWithTags, (BigInteger) value);
+        if (value instanceof AtomicInteger) {
+            builder.add(nameWithTags, ((AtomicInteger) value).get());
+        } else if (value instanceof AtomicLong) {
+            builder.add(nameWithTags, ((AtomicLong) value).get());
         } else if (value instanceof BigDecimal) {
             builder.add(nameWithTags, (BigDecimal) value);
+        } else if (value instanceof BigInteger) {
+            builder.add(nameWithTags, (BigInteger) value);
+        } else if (value instanceof Byte) {
+            builder.add(nameWithTags, ((Byte) value).intValue());
+        } else if (value instanceof Double) {
+            builder.add(nameWithTags, (Double) value);
+        } else if (value instanceof DoubleAccumulator) {
+            builder.add(nameWithTags, ((DoubleAccumulator) value).get());
+        } else if (value instanceof DoubleAdder) {
+            builder.add(nameWithTags, ((DoubleAdder) value).doubleValue());
+        } else if (value instanceof Float) {
+            builder.add(nameWithTags, (Float) value);
         } else if (value instanceof Integer) {
             builder.add(nameWithTags, (Integer) value);
         } else if (value instanceof Long) {
             builder.add(nameWithTags, (Long) value);
-        } else if (value instanceof Double) {
-            builder.add(nameWithTags, (Double) value);
-        } else if (value instanceof Boolean) {
-            builder.add(nameWithTags, (Boolean) value);
+        } else if (value instanceof LongAccumulator) {
+            builder.add(nameWithTags, ((LongAccumulator) value).get());
+        } else if (value instanceof LongAdder) {
+            builder.add(nameWithTags, ((LongAdder) value).longValue());
+        } else if (value instanceof Short) {
+            builder.add(nameWithTags, (Short) value);
         } else {
             builder.add(nameWithTags, String.valueOf(value));
+            throw new IllegalArgumentException("Gauge type of " + value.getClass().getName()
+                    + " does not extend Number");
         }
     }
 

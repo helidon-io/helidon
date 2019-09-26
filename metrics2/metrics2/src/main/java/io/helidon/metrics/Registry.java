@@ -85,7 +85,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
         Metadata metadata = getOrCreateMetadata(name, metric);
         return (T) reuseOrRegisterMetric(new MetricID(name), toImpl(metadata, metric));
     }
@@ -97,7 +97,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
+    public synchronized <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
         metadata = checkAgainstExistingMetadataOrRegister(metadata, tags);
         return (T) reuseOrRegisterMetric(new MetricID(metadata.getName(), tags), toImpl(metadata, metric));
     }
@@ -243,7 +243,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
     }
 
     @Override
-    public boolean remove(String name) {
+    public synchronized boolean remove(String name) {
         final boolean result = allMetricIDsByName.get(name).stream()
                 .map(metricID -> allMetrics.remove(metricID) != null)
                 .reduce((a, b) -> a || b)
@@ -254,7 +254,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
     }
 
     @Override
-    public boolean remove(MetricID metricID) {
+    public synchronized boolean remove(MetricID metricID) {
         final List<MetricID> likeNamedMetrics = allMetricIDsByName.get(metricID.getName());
         likeNamedMetrics.remove(metricID);
         if (likeNamedMetrics.isEmpty()) {
@@ -266,7 +266,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
     }
 
     @Override
-    public void removeMatching(MetricFilter filter) {
+    public synchronized void removeMatching(MetricFilter filter) {
         allMetrics.entrySet().stream()
                 .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
                 .map(entry -> remove(entry.getKey()))
@@ -357,7 +357,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
     }
 
     @Override
-    public Map<io.helidon.common.metrics.InternalBridge.MetricID, Metric> getBridgeMetrics(
+    public synchronized Map<io.helidon.common.metrics.InternalBridge.MetricID, Metric> getBridgeMetrics(
             Predicate<? super Map.Entry<? extends io.helidon.common.metrics.InternalBridge.MetricID,
                                         ? extends Metric>> predicate) {
 
@@ -400,7 +400,8 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return getBridgeMetrics(getTimers(), Timer.class);
     }
 
-    private static <T extends Metric> SortedMap<io.helidon.common.metrics.InternalBridge.MetricID, T> getBridgeMetrics(
+    private static synchronized
+        <T extends Metric> SortedMap<io.helidon.common.metrics.InternalBridge.MetricID, T> getBridgeMetrics(
             SortedMap<MetricID, T> metrics, Class<T> clazz) {
         return metrics.entrySet().stream()
                 .map(Registry::toBridgeEntry)
@@ -494,7 +495,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return (metadata.isReusable() ? builder.reusable() : builder.notReusable()).build();
     }
 
-    Optional<Map.Entry<MetricID, HelidonMetric>> getOptionalMetricEntry(String metricName) {
+    synchronized Optional<Map.Entry<MetricID, HelidonMetric>> getOptionalMetricEntry(String metricName) {
         return getOptionalMetricWithIDsEntry(metricName).map(entry -> {
                 final MetricID metricID = entry.getValue().get(0);
                 return new AbstractMap.SimpleImmutableEntry<>(metricID,
@@ -510,7 +511,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return getOptionalMetric(new MetricID(metadata.getName(), tags), clazz);
     }
 
-    Optional<Map.Entry<HelidonMetric, List<MetricID>>> getOptionalMetricWithIDsEntry(String metricName) {
+    synchronized Optional<Map.Entry<HelidonMetric, List<MetricID>>> getOptionalMetricWithIDsEntry(String metricName) {
         final List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
         if (metricIDs == null || metricIDs.isEmpty()) {
             return Optional.empty();
@@ -575,7 +576,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         }
     }
 
-    private <T extends HelidonMetric> T getOrRegisterMetric(Metadata metadata,
+    private synchronized <T extends HelidonMetric> T getOrRegisterMetric(Metadata metadata,
             BiFunction<String, Metadata, T> metricFactory,
             Class<T> clazz,
             Tag... tags) {
@@ -589,7 +590,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
                 });
     }
 
-    private <T extends HelidonMetric> T getOrRegisterMetric(String metricName,
+    private synchronized <T extends HelidonMetric> T getOrRegisterMetric(String metricName,
             BiFunction<String, Metadata, T> metricFactory,
             Class<T> clazz,
             Tag... tags) {
@@ -603,7 +604,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return metric;
     }
 
-    private Metadata getOrRegisterMetadata(String metricName, Supplier<HelidonMetadata> metadataSupplier) {
+    private synchronized Metadata getOrRegisterMetadata(String metricName, Supplier<HelidonMetadata> metadataSupplier) {
         Metadata result = allMetadata.get(metricName);
         if (result == null) {
             result = metadataSupplier.get();
@@ -643,7 +644,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         return metric;
     }
 
-    private Metadata checkAgainstExistingMetadataOrRegister(Metadata metadata, Tag... tags) {
+    private synchronized Metadata checkAgainstExistingMetadataOrRegister(Metadata metadata, Tag... tags) {
         final String metricName = metadata.getName();
         final Metadata existingMetadata = allMetadata.get(metricName);
         if (existingMetadata != null) {
@@ -674,7 +675,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends HelidonMetric> T reuseOrRegisterMetric(MetricID metricID, T metric) {
+    private synchronized <T extends HelidonMetric> T reuseOrRegisterMetric(MetricID metricID, T metric) {
         HelidonMetric existingMetric = allMetrics.get(metricID);
 
         if (existingMetric != null) {
@@ -748,7 +749,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
      * @param <V> Type of class.
      * @return The sorted map.
      */
-    private <V> SortedMap<MetricID, V> getSortedMetrics(MetricFilter filter, Class<V> metricClass) {
+    private synchronized <V> SortedMap<MetricID, V> getSortedMetrics(MetricFilter filter, Class<V> metricClass) {
         Map<MetricID, V> collected = allMetrics.entrySet()
                 .stream()
                 .filter(it -> metricClass.isAssignableFrom(it.getValue().getClass()))

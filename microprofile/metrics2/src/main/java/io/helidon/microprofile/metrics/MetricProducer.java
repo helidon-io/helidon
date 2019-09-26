@@ -187,7 +187,7 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     @SuppressWarnings("unchecked")
-    private <T> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
+    private <T extends Number> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
                 .filter(entry -> entry.getKey().getName().equals(metric.name()))
@@ -205,7 +205,7 @@ public class MetricProducer {
      * @return requested gauge
      */
     @Produces
-    private <T> Gauge<T> produceGaugeDefault(MetricRegistry registry, InjectionPoint ip) {
+    private <T extends Number> Gauge<T> produceGaugeDefault(MetricRegistry registry, InjectionPoint ip) {
         return produceGauge(registry, ip);
     }
 }

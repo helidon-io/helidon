@@ -81,6 +81,8 @@ public class MetricsCdiExtension implements Extension {
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
             = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class);
 
+    private static final Map<Class<?>, Class<? extends Number>> PRIMITIVES_TO_NUMBER_SUBCLASSES = preparePrimitiveToNumberClass();
+
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
     private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
@@ -409,15 +411,47 @@ public class MetricsCdiExtension implements Extension {
         annotatedGaugeSites.clear();
     }
 
-    private DelegatingGauge<?> buildDelegatingGauge(String gaugeName, AnnotatedMethodConfigurator<?> site, BeanManager bm) {
+    private DelegatingGauge<? extends Number> buildDelegatingGauge(String gaugeName, AnnotatedMethodConfigurator<?> site,
+            BeanManager bm) {
         Bean<?> bean = bm.getBeans(site.getAnnotated().getJavaMember().getDeclaringClass())
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find bean for annotated gauge " + gaugeName));
+        /*
+         * Make sure the type of the annotated site extends (or can be converted
+         * to a type that extends) Number, enforced as of Microprofile Metrics 2.1.0.
+         */
+        Method m = site.getAnnotated().getJavaMember();
+        Class<?> siteClass = m.getReturnType();
+        Class<? extends Number> numberClass = toNumberClass(siteClass, m);
         return DelegatingGauge.newInstance(
                 site.getAnnotated().getJavaMember(),
                 getReference(bm, bean.getBeanClass(), bean),
-                site.getAnnotated().getJavaMember().getReturnType());
+                numberClass);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Number> toNumberClass(Class<?> clazz, Method method) {
+        if (Number.class.isAssignableFrom(clazz)) {
+            return (Class<? extends Number>) clazz;
+        }
+        Class<? extends Number> candidateClass = PRIMITIVES_TO_NUMBER_SUBCLASSES.get(clazz);
+        if (candidateClass != null) {
+            return (Class<? extends Number>) candidateClass;
+        }
+        throw new IllegalArgumentException("Gauge annotation site must be assignable to Number but instead is type "
+                    + method.toString());
+    }
+
+    private static Map<Class<?>, Class<? extends Number>> preparePrimitiveToNumberClass() {
+        Map<Class<?>, Class<? extends Number>> result = new HashMap<>();
+        result.put(int.class, Integer.class);
+        result.put(long.class, Long.class);
+        result.put(short.class, Short.class);
+        result.put(double.class, Double.class);
+        result.put(byte.class, Byte.class);
+        result.put(float.class, Float.class);
+        return result;
     }
 
     static class AnnotatedElementWrapper implements AnnotatedElement, Member {
