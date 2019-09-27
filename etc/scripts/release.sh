@@ -204,7 +204,7 @@ release_build(){
 
     # Update scm/tag entry in the parent pom
     cat parent/pom.xml | \
-        sed -i s@'<tag>HEAD</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
+        sed -e s@'<tag>HEAD</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
         > parent/pom.xml.tmp
     mv parent/pom.xml.tmp parent/pom.xml
 
