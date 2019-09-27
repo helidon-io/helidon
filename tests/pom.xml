@@ -43,6 +43,7 @@
         <module>apps</module>
         <module>functional</module>
         <module>integration</module>
+        <module>integration/mp-ws-services</module>
     </modules>
 
     <build>

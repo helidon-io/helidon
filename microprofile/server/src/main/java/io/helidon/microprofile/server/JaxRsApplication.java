@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,9 @@ public final class JaxRsApplication {
     private final String contextRoot;
     private final ResourceConfig config;
     private final ExecutorService executorService;
+    private final String appClassName;
+    private final String routingName;
+    private final boolean routingNameRequired;
 
     /**
      * Create a new instance based on an JAX-RS Application class.
@@ -71,10 +74,13 @@ public final class JaxRsApplication {
         return new Builder();
     }
 
-    private JaxRsApplication(String contextRoot, ResourceConfig config, ExecutorService executorService) {
-        this.contextRoot = contextRoot;
-        this.config = config;
-        this.executorService = executorService;
+    private JaxRsApplication(Builder builder) {
+        this.contextRoot = builder.contextRoot;
+        this.config = builder.config;
+        this.executorService = builder.executorService;
+        this.appClassName = builder.appClassName;
+        this.routingName = builder.routingName;
+        this.routingNameRequired = builder.routingNameRequired;
     }
 
     String contextRoot() {
@@ -89,6 +95,18 @@ public final class JaxRsApplication {
         return Optional.ofNullable(executorService);
     }
 
+    String appClassName() {
+        return appClassName;
+    }
+
+    String routingName() {
+        return routingName;
+    }
+
+    boolean routingNameRequired() {
+        return routingNameRequired;
+    }
+
     /**
      * Fluent API builder to create {@link JaxRsApplication} instances.
      */
@@ -97,6 +115,9 @@ public final class JaxRsApplication {
         private String contextRoot;
         private ResourceConfig config;
         private ExecutorService executorService;
+        private String appClassName;
+        private String routingName;
+        private boolean routingNameRequired;
 
         /**
          * Configure an explicit context root for this application.
@@ -135,9 +156,11 @@ public final class JaxRsApplication {
         public Builder application(Application app) {
             this.config = toConfig(app);
 
-            if (null == this.contextRoot) {
-                this.contextRoot = getContextRoot(app.getClass());
-            }
+            Class<?> clazz = app.getClass();
+            contextRoot(clazz);
+            routingName(clazz);
+            appClassName = clazz.getName();
+
             return this;
         }
 
@@ -152,9 +175,11 @@ public final class JaxRsApplication {
          */
         public Builder application(Class<? extends Application> appClass) {
             config = ResourceConfig.forApplicationClass(appClass);
-            if (null == this.contextRoot) {
-                this.contextRoot = getContextRoot(appClass);
-            }
+
+            contextRoot(appClass);
+            routingName(appClass);
+            appClassName = appClass.getName();
+
             return this;
         }
 
@@ -180,7 +205,7 @@ public final class JaxRsApplication {
                 contextRoot = DEFAULT_CONTEXT_ROOT;
             }
 
-            return new JaxRsApplication(contextRoot, config, executorService);
+            return new JaxRsApplication(this);
         }
 
         private static ResourceConfig toConfig(Application application) {
@@ -191,12 +216,25 @@ public final class JaxRsApplication {
             return ResourceConfig.forApplication(application);
         }
 
-        private static String getContextRoot(Class<? extends Application> application) {
-            ApplicationPath path = application.getAnnotation(ApplicationPath.class);
-            if (null == path) {
-                return null;
+        private void contextRoot(Class<?> clazz) {
+            if (null != contextRoot) {
+                return;
             }
-            return path.value();
+            ApplicationPath path = clazz.getAnnotation(ApplicationPath.class);
+            if (null != path) {
+                contextRoot = path.value();
+            }
+        }
+
+        private void routingName(Class<?> clazz) {
+            if (null != routingName) {
+                return;
+            }
+            RoutingName rn = clazz.getAnnotation(RoutingName.class);
+            if (null != rn) {
+                this.routingName = rn.value();
+                this.routingNameRequired = rn.required();
+            }
         }
     }
 }
