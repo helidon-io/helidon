@@ -82,12 +82,16 @@ class RequestRouting implements Routing {
     }
 
     private static String canonicalize(String p) {
-        String result = p;
-        if (p.charAt(p.length() - 1) == '/') {
-            result = p.substring(0, p.length() - 1);
-        }
-        if (result.isEmpty()) {
+        String result;
+        if (p == null || p.isEmpty() || p.equals("/")) {
             result = "/";
+        } else {
+            int lastCharIndex = p.length() - 1;
+            if (p.charAt(lastCharIndex) == '/') {
+                result = p.substring(0, lastCharIndex);
+            } else {
+                result = p;
+            }
         }
         return result;
     }
