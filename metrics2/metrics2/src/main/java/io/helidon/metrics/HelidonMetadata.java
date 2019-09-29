@@ -28,30 +28,6 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  */
 public class HelidonMetadata extends DefaultMetadata {
 
-    private boolean isFlexible = false;
-
-    /**
-     * Creates a new "flexible" metadata instance which, when used in comparison against other
-     * instances, will require matches on only the name and type. This is particularly
-     * useful for injection handling of {@code @Metric} which can specify metadata-related
-     * information to be used if the metadata has not been previously registered
-     * but need not mandate what that existing metadata must be.
-     *
-     * @param name name
-     * @param displayName display name
-     * @param description description
-     * @param type metric type
-     * @param unit unit
-     * @return new flexible {@code HelidonMetadata}
-     */
-    public static HelidonMetadata newFlexible(String name, String displayName, String description, MetricType type,
-                           String unit) {
-        final HelidonMetadata result = new HelidonMetadata(name, displayName, description,
-                type, unit, false);
-        result.isFlexible = true;
-        return result;
-    }
-
     /**
      * Construct immutable metadata.
      *
@@ -89,39 +65,4 @@ public class HelidonMetadata extends DefaultMetadata {
     public HelidonMetadata(String name, String displayName, String description, MetricType type, String unit) {
         super(name, displayName, description, type, unit, true);
     }
-
-    public boolean isFlexible() {
-        return isFlexible;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s, HelidonMetadata{isFlexible=%b}", super.toString(), isFlexible);
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = super.hashCode();
-        hash = 37 * hash + (this.isFlexible ? 1 : 0);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof HelidonMetadata)) {
-            return false;
-        }
-        final HelidonMetadata other = (HelidonMetadata) obj;
-        if (this.isFlexible != other.isFlexible) {
-            return false;
-        }
-        return super.equals(obj);
-    }
-
 }

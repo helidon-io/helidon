@@ -435,7 +435,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                 && (a.isReusable() == b.isReusable());
     }
 
-    private static <T extends MetricImpl> T enforceConsistentMetadata(T metric, Metadata metadata) {
+    private static <T extends MetricImpl> boolean enforceConsistentMetadata(T metric, Metadata metadata) {
 
         // Check that metadata is compatible.
         if (!metadataMatches(metric, metadata)) {
@@ -444,7 +444,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                     + " conflicts with a metric already registered with metadata "
                     + metadata);
         }
-        return metric;
+        return true;
     }
 
     <T extends HelidonMetric> Optional<T> getOptionalMetric(String metricName, Class<T> clazz) {
@@ -452,12 +452,12 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                 .map(metric -> toType(metric, clazz));
     }
 
-    private static <T extends MetricImpl> T enforceReusability(T metric, Metadata metadata) {
+    private static <T extends MetricImpl> boolean enforceReusability(T metric, Metadata metadata) {
         if (!(metric.isReusable() && metadata.isReusable())) {
             throw new IllegalArgumentException("Attempting to re-register metric "
                     + metric.getName() + " that is already registered with different reusability");
         }
-        return metric;
+        return true;
     }
 
     /**
@@ -497,8 +497,8 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
             BiFunction<String, Metadata, T> metricFactory,
             Class<T> clazz) {
         return getOptionalMetric(metadata.getName(), clazz)
-                .map(metric -> enforceConsistentMetadata(metric, metadata))
-                .map(metric -> enforceReusability(metric, metadata))
+                .filter(metric -> enforceConsistentMetadata(metric, metadata))
+                .filter(metric -> enforceReusability(metric, metadata))
                 .orElseGet(() -> {
                     return registerMetric(metadata.getName(), metadata, metricFactory);
                 });
