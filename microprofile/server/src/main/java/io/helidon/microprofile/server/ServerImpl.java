@@ -216,12 +216,16 @@ public class ServerImpl implements Server {
                                                      .orElseGet(defaultExecService))
                             .build();
 
+                    Routing.Rules routing = findRouting(config,
+                                                        serverConfiguration,
+                                                        routingBuilder,
+                                                        namedRoutings,
+                                                        app.routingName(),
+                                                        app.routingNameRequired(),
+                                                        app.appClassName());
+
                     registerService(config,
-                                    serverConfiguration,
-                                    routingBuilder,
-                                    namedRoutings,
-                                    app.routingName(),
-                                    app.routingNameRequired(),
+                                    routing,
                                     app.contextRoot(),
                                     app.appClassName(),
                                     js);
@@ -251,36 +255,35 @@ public class ServerImpl implements Server {
 
             path = config.get(className + "." + RoutingPath.CONFIG_KEY_PATH).asString().orElse(path);
 
+            Routing.Rules routing = findRouting(config,
+                                                serverConfiguration,
+                                                routingBuilder,
+                                                namedRoutings,
+                                                routingName,
+                                                routingNameRequired,
+                                                className);
+
             registerService(config,
-                            serverConfiguration,
-                            routingBuilder,
-                            namedRoutings,
-                            routingName,
-                            routingNameRequired,
+                            routing,
                             path,
                             className,
                             service);
         });
     }
 
-    private static void registerService(Config config,
-                                        ServerConfiguration serverConfiguration,
-                                        Routing.Builder routingBuilder,
-                                        Map<String, Routing.Builder> namedRoutings,
-                                        String routingNameParam,
-                                        boolean routingNameRequiredParam,
-                                        String pathParam,
-                                        String className,
-                                        Service service) {
-
+    private static Routing.Rules findRouting(Config config,
+                                             ServerConfiguration serverConfiguration,
+                                             Routing.Builder routingBuilder,
+                                             Map<String, Routing.Builder> namedRoutings,
+                                             String routingNameParam,
+                                             boolean routingNameRequiredParam,
+                                             String className) {
         String routingName = config.get(className + "." + RoutingName.CONFIG_KEY_NAME).asString().orElse(routingNameParam);
         boolean routingNameRequired = config.get(className + "." + RoutingName.CONFIG_KEY_REQUIRED).asBoolean()
                 .orElse(routingNameRequiredParam);
 
-        Routing.Rules rules;
-
         if ((null == routingName) || RoutingName.DEFAULT_NAME.equals(routingName)) {
-            rules = routingBuilder;
+            return routingBuilder;
         } else {
 
             SocketConfiguration socket = serverConfiguration.socket(routingName);
@@ -291,11 +294,19 @@ public class ServerImpl implements Server {
                 }
                 LOGGER.fine(() -> className + " is configured with named routing " + routingName + ". Such a routing"
                         + " is not configured, this service/application will run on default socket.");
-                rules = routingBuilder;
+                return routingBuilder;
             } else {
-                rules = namedRoutings.computeIfAbsent(routingName, it -> Routing.builder());
+                return namedRoutings.computeIfAbsent(routingName, it -> Routing.builder());
             }
         }
+
+    }
+
+    private static void registerService(Config config,
+                                        Routing.Rules rules,
+                                        String pathParam,
+                                        String className,
+                                        Service service) {
 
         String path = config.get(className + "." + RoutingPath.CONFIG_KEY_PATH).asString().orElse(pathParam);
 
