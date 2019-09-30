@@ -163,7 +163,6 @@
         <module>jersey</module>
         <module>webclient</module>
         <module>integrations</module>
-        <module>mp-ws-services</module>
     </modules>
 
     <build>
