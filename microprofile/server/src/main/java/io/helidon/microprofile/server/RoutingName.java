@@ -43,7 +43,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * public class MyService implements Service {
  *     {@literal @}Override
  *     public void update(Routing.Rules rules) {
- *         rules.get("/hello", (req, res) -> res.send("Hello WebServer"));
+ *         {@code rules.get("/hello", (req, res) -> res.send("Hello WebServer"));}
  *     }
  * }
  * </pre>
@@ -69,13 +69,13 @@ public @interface RoutingName {
     String CONFIG_KEY_REQUIRED = "routing-name.required";
 
     /**
-     * Name (reserved) for the default listener of webserver.
+     * Name (reserved) for the default listener of WebServer.
      */
     String DEFAULT_NAME = "@default";
 
     /**
      * Name of a routing to bind this application/service to.
-     * @return name of a routing (or listener host/port) on webserver
+     * @return name of a routing (or listener host/port) on WebServer
      */
     String value();
 

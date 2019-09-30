@@ -40,7 +40,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * public class MyService implements Service {
  *     {@literal @}Override
  *     public void update(Routing.Rules rules) {
- *         rules.get("/hello", (req, res) -> res.send("Hello WebServer"));
+ *         {@code rules.get("/hello", (req, res) -> res.send("Hello WebServer"));}
  *     }
  * }
  * </pre>
