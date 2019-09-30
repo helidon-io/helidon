@@ -15,7 +15,8 @@
  */
 package io.helidon.microprofile.tracing;
 
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 
 import io.helidon.common.context.Contexts;
@@ -26,7 +27,7 @@ import io.opentracing.util.GlobalTracer;
 /**
  * A producer of {@link io.opentracing.Tracer} needed for injection into {@code CDI} beans.
  */
-@RequestScoped
+@ApplicationScoped
 public class TracerProducer {
 
     /**
@@ -35,6 +36,7 @@ public class TracerProducer {
      *  or {@link io.opentracing.util.GlobalTracer#get()} in case we are not within a context.
      */
     @Produces
+    @Dependent // we want to inject a new instance each time a bean is created, to make sure we use the current value from context
     public Tracer tracer() {
         return Contexts.context()
                 .flatMap(ctx -> ctx.get(Tracer.class))

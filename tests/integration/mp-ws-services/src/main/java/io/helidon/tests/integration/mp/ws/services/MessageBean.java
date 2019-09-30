@@ -15,38 +15,26 @@
  */
 package io.helidon.tests.integration.mp.ws.services;
 
-import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-
-import io.helidon.microprofile.server.RoutingName;
-import io.helidon.microprofile.server.RoutingPath;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.Service;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * Service example.
+ * Example bean.
  */
-@Priority(1)
 @ApplicationScoped
-@RoutingPath("/services")
-// by default, the routing name is not required
-@RoutingName("wrong")
-public class Service1 implements Service {
-    // ApplicationScoped injection
-    @Inject
-    private MessageBean messageBean;
-    // Dependent scope injection
+public class MessageBean {
     @Inject
     @ConfigProperty(name = "app.message")
     private String message;
 
+    public String message() {
+        return message;
+    }
+
     @Override
-    public void update(Routing.Rules rules) {
-        rules.get("/service1", (req, res) -> res.send("service1"))
-                .get("/", (req, res) -> res.send("service1"))
-                .get("/info", (req, res) -> res.send("Values: " + messageBean + ", " + message));
+    public String toString() {
+        return message;
     }
 }

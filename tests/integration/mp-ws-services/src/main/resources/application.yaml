@@ -34,3 +34,4 @@ io.helidon.tests.integration.mp.ws.services:
     routing-path:
       path: "/jaxrs"
 
+app.message: "message"
