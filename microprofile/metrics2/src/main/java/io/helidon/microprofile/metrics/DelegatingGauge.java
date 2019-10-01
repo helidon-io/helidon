@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.Gauge;
  *
  * @param <T> data type reported by the underlying {@code Gauge}
  */
-public class DelegatingGauge<T> implements Gauge<T> {
+class DelegatingGauge<T> implements Gauge<T> {
 
     private final Method method;
     private final Object obj;

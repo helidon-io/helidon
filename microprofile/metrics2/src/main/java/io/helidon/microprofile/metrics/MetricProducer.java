@@ -47,7 +47,7 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
  * Class MetricProducer.
  */
 @ApplicationScoped
-public class MetricProducer {
+class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
         return metric == null ? new HelidonMetadata(getName(ip),

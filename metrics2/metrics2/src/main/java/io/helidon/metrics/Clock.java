@@ -20,7 +20,7 @@ package io.helidon.metrics;
  * Clock interface to allow replacing system clock with
  * a custom one (e.g. for unit testing).
  */
-public interface Clock {
+interface Clock {
     /**
      * System clock. Please do not use directly, use {@link #system()}.
      * This is only visible as we cannot do private modifier in interfaces yet.
