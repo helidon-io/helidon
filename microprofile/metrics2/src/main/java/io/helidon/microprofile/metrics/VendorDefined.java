@@ -36,7 +36,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Documented
 @Qualifier
-public @interface VendorDefined {
+@interface VendorDefined {
 
     /**
      * Literal.

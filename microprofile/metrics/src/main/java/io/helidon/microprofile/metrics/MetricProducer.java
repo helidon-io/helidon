@@ -44,7 +44,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
  * Class MetricProducer.
  */
 @ApplicationScoped
-public class MetricProducer {
+class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
         return metric == null ? new Metadata(getName(ip),

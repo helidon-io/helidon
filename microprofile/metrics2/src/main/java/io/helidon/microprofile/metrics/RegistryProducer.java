@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
  * Producer of each type of registry.
  */
 @ApplicationScoped
-public final class RegistryProducer {
+final class RegistryProducer {
 
     private static final io.helidon.metrics.RegistryFactory REGISTRY_FACTORY =
             io.helidon.metrics.RegistryFactory.getInstance();
