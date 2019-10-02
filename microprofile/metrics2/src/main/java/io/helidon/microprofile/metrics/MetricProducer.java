@@ -27,9 +27,7 @@ import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
-import javax.inject.Inject;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.metrics.HelidonMetadata;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -229,7 +227,7 @@ class MetricProducer {
      * @param clazz class for the metric type of interest
      * @return the existing metric (if any), or the newly-created and registered one
      */
-    private <T,U extends Annotation> T produceMetric(MetricRegistry registry, InjectionPoint ip,
+    private <T, U extends Annotation> T produceMetric(MetricRegistry registry, InjectionPoint ip,
             Class<U> annotationClass, Supplier<Map<MetricID, T>> getTypedMetricsFn,
             BiFunction<Metadata, Tag[], T> registerFn, Class<T> clazz) {
 
