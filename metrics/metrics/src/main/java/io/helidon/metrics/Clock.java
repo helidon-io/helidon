@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package io.helidon.metrics;
  * Clock interface to allow replacing system clock with
  * a custom one (e.g. for unit testing).
  */
-public interface Clock {
+interface Clock {
     /**
      * System clock. Please do not use directly, use {@link #system()}.
      * This is only visible as we cannot do private modifier in interfaces yet.
