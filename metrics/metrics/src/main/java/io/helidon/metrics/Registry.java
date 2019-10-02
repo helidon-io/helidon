@@ -452,14 +452,6 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                 .map(metric -> toType(metric, clazz));
     }
 
-    private static <T extends MetricImpl> boolean enforceReusability(T metric, Metadata metadata) {
-        if (!(metric.isReusable() && metadata.isReusable())) {
-            throw new IllegalArgumentException("Attempting to re-register metric "
-                    + metric.getName() + " that is already registered with different reusability");
-        }
-        return true;
-    }
-
     /**
      * Returns an existing metric with the requested name, or if none is already
      * registered registers a new metric using the name and type.
@@ -498,7 +490,6 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
             Class<T> clazz) {
         return getOptionalMetric(metadata.getName(), clazz)
                 .filter(metric -> enforceConsistentMetadata(metric, metadata))
-                .filter(metric -> enforceReusability(metric, metadata))
                 .orElseGet(() -> {
                     return registerMetric(metadata.getName(), metadata, metricFactory);
                 });

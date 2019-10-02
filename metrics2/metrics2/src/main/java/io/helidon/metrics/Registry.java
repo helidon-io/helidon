@@ -579,8 +579,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
     /**
      * Returns an existing metric (if one is already registered with the name
      * from the metadata plus the tags, and if the existing metadata is
-     * consistent with the new metadata, and if reuse is permitted) or a new
-     * metric, registered using the metadata and tags.
+     * consistent with the new metadata) or a new metric, registered using the metadata and tags.
      *
      * @param <T> type of the metric
      * @param newMetadata metadata describing the metric
@@ -605,7 +604,6 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
          */
         return getOptionalMetric(metricName, clazz, tags)
                 .filter(existingMetric -> enforceConsistentMetadata(existingMetric, newMetadata, tags))
-                .filter(existingMetric -> enforceReusability(existingMetric, newMetadata, tags))
                 .orElseGet(() -> {
                     final Metadata metadata = getOrRegisterMetadata(metricName, newMetadata, tags);
                     return registerMetric(metricName,
@@ -702,15 +700,6 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
     private boolean enforceMetricUniqueness(MetricID metricID) {
         if (allMetrics.containsKey(metricID)) {
             throw new IllegalArgumentException("Attempt to reregister the existing metric " + metricID);
-        }
-        return true;
-    }
-
-    private static <T extends HelidonMetric> boolean enforceReusability(T metric, Metadata metadata, Tag... tags) {
-        // We are here because a metric already exists during an attempt to register.
-        if (!metadata.isReusable()) {
-            throw new IllegalArgumentException("Attempting to re-register metric "
-                    + metric.getName() + " that is already registered as non-reusable");
         }
         return true;
     }

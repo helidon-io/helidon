@@ -108,15 +108,4 @@ public class RegistryTest {
                 () -> registry.counter(metadata2, tag1));
         assertThat(ex.getMessage(), containsString("conflicts with"));
     }
-
-    @Test
-    void testInvalidReregistration() {
-        Metadata metadata1 = new HelidonMetadata("counter6", "display name",
-        "description", MetricType.COUNTER, MetricUnits.NONE, false);
-        registry.counter(metadata1, tag1);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> registry.counter(metadata1,tag1));
-        assertThat(ex.getMessage(), containsString("re-register"));
-        assertThat(ex.getMessage(), containsString("already registered as non-reusable"));
-    }
 }
