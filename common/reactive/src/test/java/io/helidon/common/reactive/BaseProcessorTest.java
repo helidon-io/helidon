@@ -80,7 +80,11 @@ public class BaseProcessorTest {
         processor.subscribe(subscriber);
         subscriber.request1();
         processor.onComplete();
-        processor.onNext("foo");
+        try {
+            processor.onNext("foo");
+        } catch (Throwable t) {
+            assertThat(t, is(instanceOf(IllegalStateException.class)));
+        }
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getItems(), is(empty()));
     }

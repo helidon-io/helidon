@@ -76,6 +76,8 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
             } catch (Throwable ex) {
                 onError(ex);
             }
+        } else {
+            throw new IllegalStateException("Subscriber is closed!");
         }
     }
 
