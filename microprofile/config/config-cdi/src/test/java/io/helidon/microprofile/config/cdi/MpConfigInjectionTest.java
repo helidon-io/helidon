@@ -20,20 +20,25 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
+import javax.inject.Qualifier;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
 import io.helidon.microprofile.config.Converters.Parse;
 import io.helidon.microprofile.config.Converters.ValueOf;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -81,6 +86,21 @@ class MpConfigInjectionTest {
         );
     }
 
+    @Test
+    public void testImplicitConversionSubclass() {
+
+        Bean bean = CDI.current().select(SubBean.class,
+                new AnnotationLiteral<Specific>() {
+                }).get();
+
+        assertAll("Implicit conversion injection",
+                () -> assertThat("of", bean.of, is(Of.of("of"))),
+                () -> assertThat("valueOf", bean.valueOf, is(ValueOf.valueOf("valueOf"))),
+                () -> assertThat("parse", bean.parse, is(Parse.parse("parse"))),
+                () -> assertThat("ctor", bean.ctor, is(new Ctor("ctor")))
+        );
+    }
+
     @Dependent
     public static class Bean {
 
@@ -99,5 +119,16 @@ class MpConfigInjectionTest {
         @Inject
         @ConfigProperty(name = "inject.ctor")
         public Ctor ctor;
+    }
+
+    @Qualifier
+    @Retention(RUNTIME)
+    @Target(TYPE)
+    public @interface Specific {
+    }
+
+    @Dependent
+    @Specific
+    public static class SubBean extends Bean {
     }
 }
