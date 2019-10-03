@@ -212,9 +212,10 @@ class MetricProducer {
     }
 
     /**
-     * Returns an existing metric if one exists matching the injection point
+     * Returns an existing metric if one exists that matches the injection point
      * criteria and is also reusable, or if there is none registers and returns a new one
-     * using the caller-provided function.
+     * using the caller-provided function. If the caller refers to an existing metric that is
+     * not reusable then the method throws an {@code IllegalArgumentException}.
      *
      * @param <T> the type of the metric
      * @param <U> the type of the annotation which marks a registration of the metric type
@@ -227,8 +228,8 @@ class MetricProducer {
      * @param clazz class for the metric type of interest
      * @return the existing metric (if any), or the newly-created and registered one
      */
-    private <T, U extends Annotation> T produceMetric(MetricRegistry registry, InjectionPoint ip,
-            Class<U> annotationClass, Supplier<Map<MetricID, T>> getTypedMetricsFn,
+    private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(MetricRegistry registry,
+            InjectionPoint ip, Class<U> annotationClass, Supplier<Map<MetricID, T>> getTypedMetricsFn,
             BiFunction<Metadata, Tag[], T> registerFn, Class<T> clazz) {
 
         final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);

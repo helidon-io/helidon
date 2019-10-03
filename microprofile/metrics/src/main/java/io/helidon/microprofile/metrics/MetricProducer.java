@@ -165,7 +165,7 @@ class MetricProducer {
         return produceGauge(registry, ip);
     }
 
-    private <T, U extends Annotation> T produceMetric(MetricRegistry registry,
+    private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(MetricRegistry registry,
             InjectionPoint ip, Class<U> annotationClass, Supplier<Map<String, T>> getTypedMetricsFn,
             Function<Metadata, T> registerFn, Class<T> clazz) {
 
