@@ -29,6 +29,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
     private static final Logger VALUE_LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName() + ".VALUES");
 
-    private final List<IpConfig> ipConfigs = new LinkedList<>();
+    private final Set<IpConfig> ipConfigs = new HashSet<>();
 
     /**
      * Constructor invoked by CDI container.
@@ -379,6 +380,19 @@ public class ConfigCdiExtension implements Extension {
         private IpConfig(ConfigQualifier qualifier, Type type) {
             this.qualifier = qualifier;
             this.type = type;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            IpConfig ipConfig = (IpConfig) o;
+            return Objects.equals(qualifier, ipConfig.qualifier) && Objects.equals(type, ipConfig.type);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(qualifier, type);
         }
     }
 

@@ -21,7 +21,7 @@
 Project Helidon is a set of Java Libraries for writing microservices.
 Helidon supports two programming models:
 
-* Helidon MP: [MicroProfile](https://microprofile.io/) 2.2
+* Helidon MP: [MicroProfile](https://microprofile.io/) 3.0
 * Helidon SE: a small, functional style API
 
 In either case your application is just a Java SE program.
@@ -96,4 +96,4 @@ but a couple are handy to use on your desktop to verify your changes.
 ## Stay Informed
 
 * Twitter: [@helidon_project](https://twitter.com/helidon_project)
-* Blog: [OracleDevs on Medium](https://medium.com/oracledevs/search?q=helidon)
+* Blog: [Helidon on Medium](https://medium.com/helidon)
