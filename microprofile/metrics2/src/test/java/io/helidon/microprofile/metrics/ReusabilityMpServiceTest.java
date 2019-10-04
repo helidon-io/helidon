@@ -44,16 +44,6 @@ public class ReusabilityMpServiceTest {
     }
 
     @Test
-    public void tryToStartServerWithIllegalAnnotationReuse() throws Exception {
-
-        final DefinitionException ex = assertThrows(DefinitionException.class, () -> {
-            initServer(ResourceWithIllegallyReusedMetrics.class);;
-        });
-        assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
-        assertThat(ex.getCause().getMessage(), containsString("already registered"));
-    }
-
-    @Test
     public void tryToStartServerWithLegalAnnotationReuse() throws Exception {
         Server server = initServer(ResourceWithLegallyReusedMetrics.class);
         try {
@@ -62,15 +52,4 @@ public class ReusabilityMpServiceTest {
             server.stop();
         }
     }
-
-    @Test
-    public void tryToStartServerWithMixedReuseAnnotations() throws Exception {
-        DefinitionException ex = assertThrows(DefinitionException.class, () -> {
-            initServer(ResourceWithMixedReusability.class);;
-        });
-
-        assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
-        assertThat(ex.getCause().getMessage(), containsString("already registered"));
-    }
-
 }
