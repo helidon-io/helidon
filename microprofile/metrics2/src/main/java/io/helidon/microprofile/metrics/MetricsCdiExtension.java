@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
+import javax.enterprise.inject.InjectionException;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedType;
@@ -394,17 +395,24 @@ public class MetricsCdiExtension implements Extension {
             MetricID gaugeID = gaugeSite.getKey();
 
             AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
-            DelegatingGauge<? extends Number> dg = buildDelegatingGauge(gaugeID.getName(), site,
-                    bm);
-            Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
-            Metadata md = new HelidonMetadata(gaugeID.getName(),
-                    gaugeAnnotation.displayName(),
-                    gaugeAnnotation.description(),
-                    MetricType.GAUGE,
-                    gaugeAnnotation.unit(),
-                    false);
-            LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
-            registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
+            DelegatingGauge<? extends Number> dg;
+            try {
+                dg = buildDelegatingGauge(gaugeID.getName(), site,
+                        bm);
+                Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
+                Metadata md = new HelidonMetadata(gaugeID.getName(),
+                        gaugeAnnotation.displayName(),
+                        gaugeAnnotation.description(),
+                        MetricType.GAUGE,
+                        gaugeAnnotation.unit(),
+                        false);
+                LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
+                registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
+            } catch (Throwable t) {
+                adv.addDeploymentProblem(new IllegalArgumentException("Error processing @Gauge " +
+                        "annotation on " + site.getAnnotated().getJavaMember().getDeclaringClass().getName()
+                        + ":" + site.getAnnotated().getJavaMember().getName(), t));
+            }
         });
 
         annotatedGaugeSites.clear();
@@ -426,6 +434,7 @@ public class MetricsCdiExtension implements Extension {
                 narrowedReturnType);
     }
 
+    @SuppressWarnings("unchecked")
     private static Class<? extends Number> typeToNumber(Class<?> clazz) {
         Class<? extends Number> narrowedReturnType;
         if (byte.class.isAssignableFrom(clazz)) {
@@ -446,7 +455,7 @@ public class MetricsCdiExtension implements Extension {
             throw new IllegalArgumentException("Annotated gauge type must extend or be "
                     + "assignment-compatible with Number but is " + clazz.getName());
         }
-        return (Class<? extends Number>) clazz;
+        return narrowedReturnType;
     }
 
     static class AnnotatedElementWrapper implements AnnotatedElement, Member {
