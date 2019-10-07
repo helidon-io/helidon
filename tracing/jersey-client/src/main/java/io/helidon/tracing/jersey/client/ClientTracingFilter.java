@@ -180,8 +180,8 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
             return;
         }
 
-        Optional<SpanContext> parentSpan = findParentSpan(requestContext, tracingContext);
         Tracer tracer = findTracer(requestContext, tracingContext);
+        Optional<SpanContext> parentSpan = findParentSpan(tracer, requestContext, tracingContext);
         Map<String, List<String>> inboundHeaders = findInboundHeaders(tracingContext);
         String spanName = findSpanName(requestContext, spanConfig);
 
@@ -267,13 +267,26 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
     }
 
-    private Optional<SpanContext> findParentSpan(ClientRequestContext requestContext,
+    private Optional<SpanContext> findParentSpan(Tracer tracer, ClientRequestContext requestContext,
                                                  Optional<TracingContext> tracingContext) {
+
+        // parent span lookup
+        // first is the configured span in request properties
+        Optional<SpanContext> property = property(requestContext, SpanContext.class, CURRENT_SPAN_CONTEXT_PROPERTY_NAME);
+        if (property.isPresent()) {
+            return property;
+        }
+
+        // then the active span
+        Span activeSpan = tracer.activeSpan();
+        if (null != activeSpan) {
+            return Optional.of(activeSpan.context());
+        }
+
+        // then spans registered in context
         return OptionalHelper
-                // from client property
-                .from(property(requestContext, SpanContext.class, CURRENT_SPAN_CONTEXT_PROPERTY_NAME))
                 // from injected span context
-                .or(() -> tracingContext.map(TracingContext::parentSpan))
+                .from(tracingContext.map(TracingContext::parentSpan))
                 // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
                 // then look for overall span context
