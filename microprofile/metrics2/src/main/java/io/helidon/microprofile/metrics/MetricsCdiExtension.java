@@ -394,7 +394,8 @@ public class MetricsCdiExtension implements Extension {
             MetricID gaugeID = gaugeSite.getKey();
 
             AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
-            DelegatingGauge<?> dg = buildDelegatingGauge(gaugeID.getName(), site, bm);
+            DelegatingGauge<? extends Number> dg = buildDelegatingGauge(gaugeID.getName(), site,
+                    bm);
             Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
             Metadata md = new HelidonMetadata(gaugeID.getName(),
                     gaugeAnnotation.displayName(),
@@ -409,15 +410,43 @@ public class MetricsCdiExtension implements Extension {
         annotatedGaugeSites.clear();
     }
 
-    private DelegatingGauge<?> buildDelegatingGauge(String gaugeName, AnnotatedMethodConfigurator<?> site, BeanManager bm) {
+    private DelegatingGauge<? extends Number> buildDelegatingGauge(String gaugeName,
+            AnnotatedMethodConfigurator<?> site, BeanManager bm) {
         Bean<?> bean = bm.getBeans(site.getAnnotated().getJavaMember().getDeclaringClass())
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find bean for annotated gauge " + gaugeName));
+
+        Class<?> returnType = site.getAnnotated().getJavaMember().getReturnType();
+        Class<? extends Number> narrowedReturnType = typeToNumber(returnType);
+
         return DelegatingGauge.newInstance(
                 site.getAnnotated().getJavaMember(),
                 getReference(bm, bean.getBeanClass(), bean),
-                site.getAnnotated().getJavaMember().getReturnType());
+                narrowedReturnType);
+    }
+
+    private static Class<? extends Number> typeToNumber(Class<?> clazz) {
+        Class<? extends Number> narrowedReturnType;
+        if (byte.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Byte.class;
+        } else if (short.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Short.class;
+        } else if (int.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Integer.class;
+        } else if (long.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Long.class;
+        } else if (float.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Float.class;
+        } else if (double.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Double.class;
+        } else if (Number.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = (Class<? extends Number>) clazz;
+        } else {
+            throw new IllegalArgumentException("Annotated gauge type must extend or be "
+                    + "assignment-compatible with Number but is " + clazz.getName());
+        }
+        return (Class<? extends Number>) clazz;
     }
 
     static class AnnotatedElementWrapper implements AnnotatedElement, Member {
