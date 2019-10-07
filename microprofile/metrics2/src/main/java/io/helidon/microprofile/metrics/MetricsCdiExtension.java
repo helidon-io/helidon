@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
-import javax.enterprise.inject.InjectionException;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedType;
@@ -409,8 +408,8 @@ public class MetricsCdiExtension implements Extension {
                 LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
             } catch (Throwable t) {
-                adv.addDeploymentProblem(new IllegalArgumentException("Error processing @Gauge " +
-                        "annotation on " + site.getAnnotated().getJavaMember().getDeclaringClass().getName()
+                adv.addDeploymentProblem(new IllegalArgumentException("Error processing @Gauge "
+                        + "annotation on " + site.getAnnotated().getJavaMember().getDeclaringClass().getName()
                         + ":" + site.getAnnotated().getJavaMember().getName(), t));
             }
         });
