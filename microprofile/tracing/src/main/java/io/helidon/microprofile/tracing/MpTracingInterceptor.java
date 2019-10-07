@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 import javax.annotation.Priority;
+import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
@@ -31,6 +32,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
+import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -46,6 +48,9 @@ import static io.helidon.common.CollectionsHelper.mapOf;
 @Traced
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 7)
 public class MpTracingInterceptor {
+    @Inject
+    private Tracer tracer;
+
     @AroundInvoke
     private Object aroundMethod(InvocationContext context) throws Exception {
         Method method = context.getMethod();
@@ -80,7 +85,8 @@ public class MpTracingInterceptor {
 
             parentSpan.ifPresent(spanBuilder::asChildOf);
 
-            Span span = spanBuilder.start();
+            Scope scope = spanBuilder.startActive(false);
+            Span span = scope.span();
             try {
                 return context.proceed();
             } catch (Exception e) {
@@ -90,6 +96,7 @@ public class MpTracingInterceptor {
                 throw e;
             } finally {
                 span.finish();
+                scope.close();
             }
         } else {
             return context.proceed();
@@ -101,6 +108,12 @@ public class MpTracingInterceptor {
     }
 
     private Optional<SpanContext> locateParent() {
+        // first check if we are in an active span
+        Span active = tracer.activeSpan();
+        if (null != active) {
+            // in case there is an active span (such as from JAX-RS resource or from another bean), use it as a parent
+            return Optional.of(active.context());
+        }
         Optional<Context> context = Contexts.context();
 
         return OptionalHelper.from(context.flatMap(ctx -> ctx.get(SpanContext.class)))
