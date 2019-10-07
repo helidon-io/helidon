@@ -53,7 +53,6 @@ public final class SecurityTracing extends CommonTracing {
     private final SpanTracingConfig responseSpanConfig;
     private AtnTracing atnTracing;
     private AtzTracing atzTracing;
-    private OutboundTracing outboundTracing;
     private ResponseTracing responseTracing;
 
     // avoid instantiation of a utility class
@@ -234,13 +233,11 @@ public final class SecurityTracing extends CommonTracing {
     }
 
     /**
-     * Create a tracing span for authorization.
+     * Create a tracing span for outbound tracing.
+     * Each invocation of this method returns a new tracing instance (to support multiple outbound calls).
      * @return outbound security tracing
      */
     public OutboundTracing outboundTracing() {
-        if (null != outboundTracing) {
-            return outboundTracing;
-        }
 
         // outbound tracing should be based on current outbound span
         Optional<SpanContext> parentOptional = Contexts.context()
@@ -249,14 +246,13 @@ public final class SecurityTracing extends CommonTracing {
             parentOptional = parentSpanContext();
         }
 
-        Optional<Span> outboundSpan = newSpan(atnSpanConfig, SPAN_OUTBOUND, parentOptional);
-        this.outboundTracing = new OutboundTracing(parentSpanContext(),
-                                                   parentSpan(),
-                                                   span(),
-                                                   outboundSpan,
-                                                   outboundSpanConfig);
+        Optional<Span> outboundSpan = newSpan(outboundSpanConfig, SPAN_OUTBOUND, parentOptional);
+        return new OutboundTracing(parentSpanContext(),
+                                   parentSpan(),
+                                   span(),
+                                   outboundSpan,
+                                   outboundSpanConfig);
 
-        return outboundTracing;
     }
 
     /**
