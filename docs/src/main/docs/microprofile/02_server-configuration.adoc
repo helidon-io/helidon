@@ -100,7 +100,7 @@ You can assign a JAX-RS application to a named routing (and as a result to a nam
 either an annotation or configuration (or both to override the value from annotation).
 
 === Annotation `@RoutingName`
-You can annotated an application with this annotation to assign it to a specific named routing,
+You can annotate an application with this annotation to assign it to a specific named routing,
 that is (most likely) going to be bound to a specific port.
 
 The annotation has two attributes:
