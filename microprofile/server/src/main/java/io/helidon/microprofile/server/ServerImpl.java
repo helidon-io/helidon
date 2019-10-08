@@ -242,7 +242,7 @@ public class ServerImpl implements Server {
         CreationalContext<Object> context = beanManager.createCreationalContext(null);
         List<Bean<?>> wsServicesSorted = prioritySort(beanManager.getBeans(Service.class));
 
-        wsServicesSorted.forEach(serviceBean -> {
+        for (Bean<?> serviceBean : wsServicesSorted) {
             Bean<Object> theBean = (Bean<Object>) serviceBean;
             Class<?> serviceClass = theBean.getBeanClass();
             String className = serviceClass.getName();
@@ -268,7 +268,7 @@ public class ServerImpl implements Server {
                             path,
                             className,
                             service);
-        });
+        }
     }
 
     private static Routing.Rules findRouting(Config config,
