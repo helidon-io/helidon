@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import javax.json.Json;
+import javax.json.JsonException;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonStructure;
@@ -86,7 +87,11 @@ public final class JsonProcessing {
                             ? jsonReaderFactory.createReader(is)
                             : jsonReaderFactory.createReader(is, charset);
 
-                    return reader.read();
+                    JsonStructure json = reader.read();
+                    if (!clazz.isAssignableFrom(json.getClass())) {
+                        throw new JsonException("Unable to convert " + json.getClass() + " to " + clazz);
+                    }
+                    return json;
                 });
     }
 
