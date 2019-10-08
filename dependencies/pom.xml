@@ -54,7 +54,6 @@
         <version.lib.hibernate>5.4.4.Final</version.lib.hibernate>
         <version.lib.hikaricp>2.7.8</version.lib.hikaricp>
         <version.lib.inject>1</version.lib.inject>
-        <!-- Jackson databind 2.9.9 has patch versions. This bom has databind 2.9.9.3 -->
         <version.lib.jackson>2.10.0</version.lib.jackson>
         <version.lib.jaegertracing>0.34.0</version.lib.jaegertracing>
         <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
