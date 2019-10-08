@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -61,6 +62,8 @@ class MainTest {
     static void setup() throws Exception {
         System.out.println("Using port number" + port);
         healthUrl = new URL("http://localhost:" + port + "/health");
+        appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
+        appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
     }
 
     @AfterEach

@@ -15,6 +15,8 @@
  */
 package io.helidon.grpc.client;
 
+import java.nio.file.Paths;
+
 import javax.net.ssl.SSLException;
 
 import io.helidon.config.Config;
@@ -162,9 +164,9 @@ public class GrpcChannelsProviderTest {
         GrpcSslDescriptor ssl = chCfg.sslDescriptor();
         assertThat(ssl, notNullValue());
         assertThat(ssl.isEnabled(), equalTo(false));
-        assertThat(ssl.tlsKey(), endsWith(CLIENT_KEY));
-        assertThat(ssl.tlsCert(), endsWith(CLIENT_CERT));
-        assertThat(ssl.tlsCaCert(), endsWith(CA_CERT));
+        assertThat(ssl.tlsKey(), endsWith(normalizedPath(CLIENT_KEY)));
+        assertThat(ssl.tlsCert(), endsWith(normalizedPath(CLIENT_CERT)));
+        assertThat(ssl.tlsCaCert(), endsWith(normalizedPath(CA_CERT)));
     }
 
     @Test
@@ -178,7 +180,7 @@ public class GrpcChannelsProviderTest {
         assertThat(ssl.isEnabled(), equalTo(true));
         assertThat(ssl.tlsKey(), nullValue());
         assertThat(ssl.tlsCert(), nullValue());
-        assertThat(ssl.tlsCaCert(), endsWith(CA_CERT));
+        assertThat(ssl.tlsCaCert(), endsWith(normalizedPath(CA_CERT)));
     }
 
     @Test
@@ -190,14 +192,18 @@ public class GrpcChannelsProviderTest {
         GrpcSslDescriptor ssl = chCfg.sslDescriptor();
         assertThat(ssl, notNullValue());
         assertThat(ssl.isEnabled(), equalTo(true));
-        assertThat(ssl.tlsKey(), endsWith(CLIENT_KEY));
-        assertThat(ssl.tlsCert(), endsWith(CLIENT_CERT));
-        assertThat(ssl.tlsCaCert(), endsWith(CA_CERT));
+        assertThat(ssl.tlsKey(), endsWith(normalizedPath(CLIENT_KEY)));
+        assertThat(ssl.tlsCert(), endsWith(normalizedPath(CLIENT_CERT)));
+        assertThat(ssl.tlsCaCert(), endsWith(normalizedPath(CA_CERT)));
     }
 
     @Test
     public void testBuilderCreate() throws SSLException {
         assertThat(GrpcChannelsProvider.create().channels().size(), equalTo(1));
         assertThat(GrpcChannelsProvider.create().channel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME), notNullValue());
+    }
+
+    private String normalizedPath(String path) {
+        return Paths.get(path).normalize().toString();
     }
 }

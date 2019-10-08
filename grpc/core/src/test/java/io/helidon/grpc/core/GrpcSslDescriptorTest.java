@@ -15,6 +15,8 @@
  */
 package io.helidon.grpc.core;
 
+import java.nio.file.Paths;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -65,9 +67,13 @@ public class GrpcSslDescriptorTest {
         assertThat(desc.isJdkSSL(), equalTo(false));
         String path = "src/test/resources/ssl/";
 
-        assertThat(desc.tlsKey(), endsWith(path + "serverKey.pem"));
-        assertThat(desc.tlsCert(), endsWith(path + "serverCert.pem"));
-        assertThat(desc.tlsCaCert(), endsWith(path + "ca.pem"));
+        assertThat(desc.tlsKey(), endsWith(normalizedPath(path + "serverKey.pem")));
+        assertThat(desc.tlsCert(), endsWith(normalizedPath(path + "serverCert.pem")));
+        assertThat(desc.tlsCaCert(), endsWith(normalizedPath(path + "ca.pem")));
+    }
+
+    private String normalizedPath(String path) {
+        return Paths.get(path).normalize().toString();
     }
 
 }
