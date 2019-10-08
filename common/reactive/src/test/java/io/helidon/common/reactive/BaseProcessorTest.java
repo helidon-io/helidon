@@ -29,6 +29,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * {@link BaseProcessor} test.
@@ -80,11 +81,7 @@ public class BaseProcessorTest {
         processor.subscribe(subscriber);
         subscriber.request1();
         processor.onComplete();
-        try {
-            processor.onNext("foo");
-        } catch (Throwable t) {
-            assertThat(t, is(instanceOf(IllegalStateException.class)));
-        }
+        assertThrows(IllegalStateException.class, () -> processor.onNext("foo"));
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getItems(), is(empty()));
     }
