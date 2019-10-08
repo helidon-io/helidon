@@ -202,12 +202,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @see io.helidon.tracing.jaeger.JaegerTracerBuilder#config(io.helidon.config.Config)
      */
     public static JaegerTracerBuilder create(Config config) {
-        String serviceName = config.get("service")
-                .asString()
-                .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
-
-        return JaegerTracerBuilder.forService(serviceName)
-                .config(config);
+        return create().config(config);
     }
 
     static TracerBuilder<JaegerTracerBuilder> create() {
@@ -307,16 +302,22 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     @Override
     public JaegerTracerBuilder config(Config config) {
+        config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
+
         if (null == serviceName) {
-            throw new IllegalArgumentException("Configuration must at least contain the 'service' key");
+            if (enabled) {
+                throw new IllegalArgumentException("Configuration must at least contain the 'service' key");
+            } else {
+                // if tracing is disabled, ignore service name requirement
+                serviceName = "disabled-service";
+            }
         }
 
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
         config.get("path").asString().ifPresent(this::collectorPath);
-        config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("token").asString().ifPresent(this::token);
         config.get("username").asString().ifPresent(this::username);
         config.get("password").asString().ifPresent(this::password);

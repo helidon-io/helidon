@@ -152,12 +152,7 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
      * @see ZipkinTracerBuilder#config(Config)
      */
     public static ZipkinTracerBuilder create(Config config) {
-        String serviceName = config.get("service")
-                .asString()
-                .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
-
-        return ZipkinTracerBuilder.forService(serviceName)
-                .config(config);
+        return create().config(config);
     }
 
     static TracerBuilder<ZipkinTracerBuilder> create() {
@@ -246,13 +241,23 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
 
     @Override
     public ZipkinTracerBuilder config(Config config) {
+        config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
+
+        if (null == serviceName) {
+            if (enabled) {
+                throw new IllegalArgumentException("Configuration must at least contain the 'service' key");
+            } else {
+                // if tracing is disabled, ignore service name requirement
+                serviceName = "disabled-service";
+            }
+        }
+
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("api-version").asString().ifPresent(this::configApiVersion);
-        config.get("enabled").asBoolean().ifPresent(this::enabled);
 
         config.get("tags").detach()
                 .asMap()
@@ -337,7 +342,6 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
 
         return result;
     }
-
 
     /**
      * Version of Zipkin API to use.
