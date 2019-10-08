@@ -175,7 +175,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertThat(handler.path, is(Paths.get("/root")));
+        assertThat(handler.path, is(Paths.get("/root").toAbsolutePath().normalize()));
     }
 
     @Test
@@ -195,7 +195,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertThat(handler.path, is(Paths.get("/root/foo/some.txt")));
+        assertThat(handler.path, is(Paths.get("/root/foo/some.txt").toAbsolutePath().normalize()));
     }
 
     @Test
