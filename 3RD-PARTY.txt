@@ -2389,7 +2389,7 @@ Version 2.0, January 2004
 http://www.apache.org/licenses/
 
 ========================================================================
-jackson-databind 2.9.9.3
+jackson-databind 2.10.0
 ========================================================================
 COPYRIGHT: Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 LICENSE: Apache 2.0
@@ -2402,7 +2402,7 @@ It is currently developed by a community of developers, as well as supported
 commercially by FasterXML.com.
 
 ## Licensing
------------------jackson-core 2.9.9.3 -----------------------
+-----------------jackson-core 2.10.0 -----------------------
 COPYRIGHT: Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 LICENSE: Apache 2.0
 
@@ -2416,7 +2416,10 @@ FasterXML.com (http://fasterxml.com).
 A list of contributors may be found from CREDITS file, which is included
 in some artifacts (usually source distributions); but is always available
 from the source code management (SCM) system project uses.
------------------jackson-annotations 2.9.8 -----------------------
+-----------------jackson-annotations 2.10.0 -----------------------
+-----------------jackson-datatype-jdk8 2.10.0 -----------------------
+-----------------jackson-datatype-jsr310 2.10.0 -----------------------
+-----------------jackson-module-parameter-names 2.10.0 -----------------------
 COPYRIGHT: Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 LICENSE: Apache 2.0
 
