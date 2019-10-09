@@ -184,7 +184,7 @@
                         <source>1.8</source>
                         <target>1.8</target>
                         <compilerArgs>
-                            <arg>-Xlint:unchecked</arg>
+                            <arg>-Xlint:unchecked</arg>io.helidon.config.git.GitConfigSourceBuilderTest.testPolling
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -194,6 +194,8 @@
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
                         <source>8</source>
+                        <!-- we are not interested in each file that is generated -->
+                        <quiet>true</quiet>
                         <offlineLinks>
                             <offlineLink>
                                 <url>${javadoc.link.jackson-annotations}</url>
