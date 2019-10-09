@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -304,16 +303,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     public JaegerTracerBuilder config(Config config) {
         config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
-
-        if (null == serviceName) {
-            if (enabled) {
-                throw new IllegalArgumentException("Configuration must at least contain the 'service' key");
-            } else {
-                // if tracing is disabled, ignore service name requirement
-                serviceName = "disabled-service";
-            }
-        }
-
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
@@ -460,13 +449,14 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      */
     @Override
     public Tracer build() {
-        Objects.requireNonNull(serviceName,
-                               "Service name must be defined, either programmatically or in "
-                                       + "configuration using key \"service\"");
-
         Tracer result;
 
         if (enabled) {
+            if (null == serviceName) {
+                throw new IllegalArgumentException(
+                        "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
+            }
+
             result = jaegerConfig().getTracer();
         } else {
             LOGGER.info("Jaeger Tracer is explicitly disabled.");

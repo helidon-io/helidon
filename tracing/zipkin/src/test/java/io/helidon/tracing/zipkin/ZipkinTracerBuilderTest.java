@@ -90,7 +90,7 @@ class ZipkinTracerBuilderTest {
         ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
 
         assertThat(zBuilder.tags(), is(CollectionsHelper.listOf()));
-        assertThat(zBuilder.serviceName(), is("disabled-service"));
+        assertThat(zBuilder.serviceName(), nullValue());
         assertThat(zBuilder.protocol(), is(ZipkinTracerBuilder.DEFAULT_PROTOCOL));
         assertThat(zBuilder.host(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_HOST));
         assertThat(zBuilder.port(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_PORT));

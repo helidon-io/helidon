@@ -243,16 +243,6 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
     public ZipkinTracerBuilder config(Config config) {
         config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
-
-        if (null == serviceName) {
-            if (enabled) {
-                throw new IllegalArgumentException("Configuration must at least contain the 'service' key");
-            } else {
-                // if tracing is disabled, ignore service name requirement
-                serviceName = "disabled-service";
-            }
-        }
-
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
@@ -292,13 +282,14 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
      */
     @Override
     public Tracer build() {
-        Objects.requireNonNull(serviceName,
-                               "Service name must be defined, either programmatically or in "
-                                       + "configuration using key \"service\"");
-
         Tracer result;
 
         if (enabled) {
+            if (null == serviceName) {
+                throw new IllegalArgumentException(
+                        "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
+            }
+
             Sender buildSender = (this.sender == null) ? createSender() : this.sender;
 
             Reporter<Span> reporter = AsyncReporter.builder(buildSender)
