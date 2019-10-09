@@ -50,12 +50,12 @@ class JaegerTracerBuilderTest {
 
     @Test
     void testNoConfig() {
-        assertThrows(IllegalArgumentException.class, () -> TracerBuilder.create(Config.empty()));
+        assertThrows(IllegalArgumentException.class, () -> TracerBuilder.create(Config.empty()).build());
     }
 
     @Test
     void testBadConfig() {
-        assertThrows(IllegalArgumentException.class, () -> TracerBuilder.create(config.get("jaeger-very-bad")));
+        assertThrows(IllegalArgumentException.class, () -> TracerBuilder.create(config.get("jaeger-very-bad")).build());
     }
 
     @Test
