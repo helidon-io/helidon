@@ -214,7 +214,9 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
             commitFile("application.properties", "greeting=hi", "master");
 
-            assertThat(changeLatch.await(1000, TimeUnit.MILLISECONDS), is(true));
+            assertThat("Change latch was not finished in time",
+                       changeLatch.await(1000, TimeUnit.MILLISECONDS),
+                       is(true));
 
             sub.cancel();
             /*
