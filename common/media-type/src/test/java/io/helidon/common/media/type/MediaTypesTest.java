@@ -19,6 +19,7 @@ package io.helidon.common.media.type;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -32,22 +33,40 @@ import static org.hamcrest.Matchers.is;
 class MediaTypesTest {
 
     @Test
-    void testBuiltIn() {
-        Optional<String> yml = MediaTypes.detectFileType("yml");
+    void testBuiltIn() throws MalformedURLException {
+        Optional<String> expected = Optional.of("application/x-yaml");
 
-        assertThat(yml, is(Optional.of("application/x-yaml")));
+        // file suffix
+        Optional<String> yml = MediaTypes.detectExtensionType("yml");
+        assertThat(yml, is(expected));
+
+        // URI
+        yml = MediaTypes.detectType(URI.create("http://localhost:8080/static/test.yml"));
+        assertThat(yml, is(expected));
+
+        // URL
+        yml = MediaTypes.detectType(new URL("http://localhost:8080/static/test.yml"));
+        assertThat(yml, is(expected));
+
+        // Path object
+        yml = MediaTypes.detectType(Paths.get("/home/config.yml"));
+        assertThat(yml, is(expected));
+
+        // Path string
+        yml = MediaTypes.detectType("some path/forward\\back\\config.yml");
+        assertThat(yml, is(expected));
     }
 
     @Test
     void testCustom() {
-        Optional<String> hocon = MediaTypes.detectFileType("json");
+        Optional<String> hocon = MediaTypes.detectExtensionType("json");
 
         assertThat(hocon, is(Optional.of("application/hocon")));
     }
 
     @Test
     void testService() throws MalformedURLException {
-        Optional<String> type = MediaTypes.detectFileType(CustomTypeDetector.SUFFIX);
+        Optional<String> type = MediaTypes.detectExtensionType(CustomTypeDetector.SUFFIX);
         assertThat(type, is(Optional.of(CustomTypeDetector.MEDIA_TYPE)));
 
         type = MediaTypes.detectType(new URL("http", "localhost", 80, "/test/path.mine"));

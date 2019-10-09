@@ -17,6 +17,8 @@ package io.helidon.common.media.type;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +31,8 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
 /**
  * Detector for custom media type mappings.
  */
-public class CustomDetector implements MediaTypeDetector {
+class CustomDetector implements MediaTypeDetector {
+    private static final String MEDIA_TYPE_RESOURCE = "META-INF/helidon/media-types.properties";
     private static final Logger LOGGER = Logger.getLogger(CustomDetector.class.getName());
     private static final Map<String, String> MAPPINGS = new HashMap<>();
 
@@ -37,12 +40,18 @@ public class CustomDetector implements MediaTypeDetector {
         // look for configured mapping by a user
         // to override existing mappings from default
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try (InputStream customTypes = classLoader.getResourceAsStream("META-INF/media-types.properties")) {
-            if (null != customTypes) {
-                Properties properties = new Properties();
-                properties.load(customTypes);
-                for (String name : properties.stringPropertyNames()) {
-                    MAPPINGS.put(name, properties.getProperty(name));
+
+        try {
+            Enumeration<URL> resources = classLoader.getResources(MEDIA_TYPE_RESOURCE);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                LOGGER.finest(() -> "Loading custom media type mapping from: " + url);
+                try (InputStream is = url.openStream()) {
+                    Properties properties = new Properties();
+                    properties.load(is);
+                    for (String name : properties.stringPropertyNames()) {
+                        MAPPINGS.put(name, properties.getProperty(name));
+                    }
                 }
             }
         } catch (IOException e) {

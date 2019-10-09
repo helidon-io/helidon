@@ -28,9 +28,15 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 
 /**
- * TODO javadoc.
+ * Media type detection based on a resource.
+ * <p>The media type detection uses the following algorithm:
+ * <ul>
+ *     <li>Queries {@link io.helidon.common.media.type.spi.MediaTypeDetector} services in priority order</li>
+ *     <li>Checks all {@code META-INF/media-types.properties} files on classpath for a mapping (suffix=media type)</li>
+ *     <li>Checks built-in mapping provided by Helidon (with the usual the web relevant media types)</li>
+ * </ul>
  */
-public class MediaTypes {
+public final class MediaTypes {
     private static final Logger LOGGER = Logger.getLogger(MediaTypes.class.getName());
     private static final List<MediaTypeDetector> DETECTORS;
     private static final ConcurrentHashMap<String, Optional<String>> CACHE = new ConcurrentHashMap<>();
@@ -44,6 +50,17 @@ public class MediaTypes {
                 .asList();
     }
 
+    // prevent instantiation of utility class
+    private MediaTypes() {
+    }
+
+    /**
+     * Detect media type based on URL.
+     * As there may be an infinite number of urls used in a system, the results are NOT cached.
+     *
+     * @param url to determine media type for
+     * @return media type or empty if none found
+     */
     public static Optional<String> detectType(URL url) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(url))
@@ -52,6 +69,13 @@ public class MediaTypes {
                 .findFirst();
     }
 
+    /**
+     * Detect media type based on URI.
+     * Results may not be cached.
+     *
+     * @param uri to determine media type for
+     * @return media type or empty if none found
+     */
     public static Optional<String> detectType(URI uri) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(uri))
@@ -60,6 +84,13 @@ public class MediaTypes {
                 .findFirst();
     }
 
+    /**
+     * Detect media type for a file on file system.
+     * Results may not be cached.
+     *
+     * @param file file on a file system
+     * @return media type or empty if none found
+     */
     public static Optional<String> detectType(Path file) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(file))
@@ -68,6 +99,17 @@ public class MediaTypes {
                 .findFirst();
     }
 
+    /**
+     * Detect media type for a path (may be URL, URI, path on a file system).
+     * Results may not be cached. If you have {@link java.net.URL}, {@link java.net.URI}, or {@link java.nio.file.Path} please
+     * use the other methods on this class.
+     *
+     * @param fileName any string that has a file name as its last element
+     * @return media type or empty if none found
+     * @see #detectType(java.net.URI)
+     * @see #detectType(java.net.URL)
+     * @see #detectType(java.nio.file.Path)
+     */
     public static Optional<String> detectType(String fileName) {
         return DETECTORS.stream()
                 .map(mtd -> mtd.detectType(fileName))
@@ -76,7 +118,14 @@ public class MediaTypes {
                 .findFirst();
     }
 
-    public static Optional<String> detectFileType(String fileSuffix) {
+    /**
+     * Detecd media type for a specific file extension.
+     * Results are cached.
+     *
+     * @param fileSuffix suffix of a file, such as {@code txt}, {@code properties}, or {@code jpeg}. Without the leading dot.
+     * @return media type for the file suffix or empty if none found
+     */
+    public static Optional<String> detectExtensionType(String fileSuffix) {
         return CACHE.computeIfAbsent(fileSuffix, it ->
                 DETECTORS.stream()
                         .map(mtd -> mtd.detectExtensionType(fileSuffix))

@@ -27,9 +27,9 @@ import java.util.logging.Logger;
 import io.helidon.common.media.type.spi.MediaTypeDetector;
 
 /**
- * Detector for custom media type mappings.
+ * Detector for built-in media type mappings.
  */
-public class BuiltInsDetector implements MediaTypeDetector {
+class BuiltInsDetector implements MediaTypeDetector {
     private static final Logger LOGGER = Logger.getLogger(BuiltInsDetector.class.getName());
     private static final Map<String, String> MAPPINGS = new HashMap<>();
     static {
