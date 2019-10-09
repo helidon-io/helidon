@@ -19,32 +19,30 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
-        <groupId>io.helidon.tests</groupId>
-        <artifactId>helidon-tests-project</artifactId>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-mp</artifactId>
         <version>1.3.2-SNAPSHOT</version>
+        <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
-
     <groupId>io.helidon.tests.integration</groupId>
-    <artifactId>helidon-tests-integration</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>helidon-tests-integration-mp-ws-services</artifactId>
+    <name>Helidon Integration Test MP WebServer services</name>
 
-    <name>Helidon Integration Tests</name>
-
-    <modules>
-        <module>zipkin-mp-2.2</module>
-        <module>mp-security-client</module>
-        <module>health</module>
-        <module>mp-ws-services</module>
-    </modules>
-
-    <profiles>
-        <profile>
-            <id>native-image</id>
-            <modules>
-                <module>native-image</module>
-            </modules>
-        </profile>
-    </profiles>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-3.0</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

@@ -19,26 +19,35 @@ package io.helidon.microprofile.server;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.Bean;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.Prioritized;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -46,6 +55,8 @@ import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
+import io.helidon.webserver.Service;
+import io.helidon.webserver.SocketConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
@@ -89,7 +100,9 @@ public class ServerImpl implements Server {
         }
         this.host = listenHost.getHostName();
 
+        BeanManager beanManager = container.getBeanManager();
         Routing.Builder routingBuilder = Routing.builder();
+
         Config serverConfig = config.get("server");
 
         ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder(serverConfig)
@@ -166,30 +179,157 @@ public class ServerImpl implements Server {
         });
 
         STARTUP_LOGGER.finest("Static path");
+        ServerConfiguration serverConfiguration = serverConfigBuilder.build();
 
-        applications
-                .forEach(app -> {
-                    JerseySupport js = JerseySupport.builder(app.resourceConfig())
-                            .executorService(app.executorService()
-                                                     .orElseGet(builder::defaultExecutorService))
-                            .build();
-
-                    if ("/".equals(app.contextRoot())) {
-                        routingBuilder.register(js);
-                    } else {
-                        routingBuilder.register(app.contextRoot(), js);
-                    }
-                });
+        registerJerseyApplications(config,
+                                   routingBuilder,
+                                   namedRoutings,
+                                   serverConfiguration,
+                                   applications,
+                                   builder::defaultExecutorService);
 
         STARTUP_LOGGER.finest("Registered jersey application(s)");
+
+        registerWebServerServices(config, beanManager, routingBuilder, namedRoutings, serverConfiguration);
+
+        STARTUP_LOGGER.finest("Registered WebServer services");
 
         WebServer.Builder serverBuilder = WebServer.builder(routingBuilder.build());
         namedRoutings.forEach(serverBuilder::addNamedRouting);
 
-        server = serverBuilder.config(serverConfigBuilder.build())
+        server = serverBuilder.config(serverConfiguration)
                 .build();
 
         STARTUP_LOGGER.finest("Server created");
+    }
+
+    private static void registerJerseyApplications(Config config,
+                                                   Routing.Builder routingBuilder,
+                                                   Map<String, Routing.Builder> namedRoutings,
+                                                   ServerConfiguration serverConfiguration,
+                                                   List<JaxRsApplication> applications,
+                                                   Supplier<ExecutorService> defaultExecService) {
+        applications
+                .forEach(app -> {
+                    JerseySupport js = JerseySupport.builder(app.resourceConfig())
+                            .executorService(app.executorService()
+                                                     .orElseGet(defaultExecService))
+                            .build();
+
+                    Routing.Rules routing = findRouting(config,
+                                                        serverConfiguration,
+                                                        routingBuilder,
+                                                        namedRoutings,
+                                                        app.routingName(),
+                                                        app.routingNameRequired(),
+                                                        app.appClassName());
+
+                    registerService(config,
+                                    routing,
+                                    app.contextRoot(),
+                                    app.appClassName(),
+                                    js);
+                });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void registerWebServerServices(Config config,
+                                                  BeanManager beanManager,
+                                                  Routing.Builder routingBuilder,
+                                                  Map<String, Routing.Builder> namedRoutings,
+                                                  ServerConfiguration serverConfiguration) {
+
+        CreationalContext<Object> context = beanManager.createCreationalContext(null);
+        List<Bean<?>> wsServicesSorted = prioritySort(beanManager.getBeans(Service.class));
+
+        for (Bean<?> serviceBean : wsServicesSorted) {
+            Bean<Object> theBean = (Bean<Object>) serviceBean;
+            Class<?> serviceClass = theBean.getBeanClass();
+            String className = serviceClass.getName();
+            Service service = (Service) theBean.create(context);
+            RoutingPath rp = serviceClass.getAnnotation(RoutingPath.class);
+            RoutingName rn = serviceClass.getAnnotation(RoutingName.class);
+            String path = (null == rp) ? null : rp.value();
+            String routingName = (null == rn) ? null : rn.value();
+            boolean routingNameRequired = (null != rn) && rn.required();
+
+            path = config.get(className + "." + RoutingPath.CONFIG_KEY_PATH).asString().orElse(path);
+
+            Routing.Rules routing = findRouting(config,
+                                                serverConfiguration,
+                                                routingBuilder,
+                                                namedRoutings,
+                                                routingName,
+                                                routingNameRequired,
+                                                className);
+
+            registerService(config,
+                            routing,
+                            path,
+                            className,
+                            service);
+        }
+    }
+
+    private static Routing.Rules findRouting(Config config,
+                                             ServerConfiguration serverConfiguration,
+                                             Routing.Builder routingBuilder,
+                                             Map<String, Routing.Builder> namedRoutings,
+                                             String routingNameParam,
+                                             boolean routingNameRequiredParam,
+                                             String className) {
+        String routingName = config.get(className + "." + RoutingName.CONFIG_KEY_NAME).asString().orElse(routingNameParam);
+        boolean routingNameRequired = config.get(className + "." + RoutingName.CONFIG_KEY_REQUIRED).asBoolean()
+                .orElse(routingNameRequiredParam);
+
+        if ((null == routingName) || RoutingName.DEFAULT_NAME.equals(routingName)) {
+            return routingBuilder;
+        } else {
+
+            SocketConfiguration socket = serverConfiguration.socket(routingName);
+            if (null == socket) {
+                if (routingNameRequired) {
+                    throw new IllegalStateException(className + " requires routing " + routingName
+                                                            + ", yet such a named socket is not configured for web server");
+                }
+                LOGGER.fine(() -> className + " is configured with named routing " + routingName + ". Such a routing"
+                        + " is not configured, this service/application will run on default socket.");
+                return routingBuilder;
+            } else {
+                return namedRoutings.computeIfAbsent(routingName, it -> Routing.builder());
+            }
+        }
+
+    }
+
+    private static void registerService(Config config,
+                                        Routing.Rules rules,
+                                        String pathParam,
+                                        String className,
+                                        Service service) {
+
+        String path = config.get(className + "." + RoutingPath.CONFIG_KEY_PATH).asString().orElse(pathParam);
+
+        if ((null == path) || "/".equals(path)) {
+            rules.register(service);
+        } else {
+            rules.register(path, service);
+        }
+    }
+
+    private static List<Bean<?>> prioritySort(Set<Bean<?>> beans) {
+        List<Bean<?>> prioritized = new ArrayList<>(beans);
+        prioritized.sort((o1, o2) -> {
+            int firstPriority = priority(o1.getBeanClass());
+            int secondPriority = priority(o2.getBeanClass());
+            return Integer.compare(firstPriority, secondPriority);
+        });
+        return prioritized;
+    }
+
+    private static int priority(Class<?> aClass) {
+        Priority prio = aClass.getAnnotation(Priority.class);
+        return (null == prio) ? Prioritized.DEFAULT_PRIORITY : prio.value();
     }
 
     private void loadExtensions(Builder builder,
