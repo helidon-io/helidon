@@ -269,6 +269,7 @@ tracing:
         web-server:
           spans:
           - name: "content-read"
+            new-name: "read"
             enabled: false
 ----
 
@@ -288,3 +289,25 @@ routingBuilder.register(WebTracingConfig.builder()
         .build();
     .build());
 ----
+
+==== Renaming top level span using request properties
+To have a nicer overview in search pane of a tracer, you can customize the top-level span name using configuration.
+
+Example:
+[source,yaml]
+.Configuration in YAML
+----
+tracing:
+  components:
+    web-server:
+      spans:
+      - name: "HTTP Request"
+        new-name: "HTTP %1$s %2$s"
+----
+
+This is supported ONLY for the span named "HTTP Request" on component "web-server".
+
+Parameters provided:
+1. Method - HTTP method
+2. Path - path of the request (such as '/greet')
+3. Query - query of the request (may be null)
