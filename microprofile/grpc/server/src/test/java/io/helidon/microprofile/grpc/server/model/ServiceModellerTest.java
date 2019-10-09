@@ -208,16 +208,6 @@ public class ServiceModellerTest {
         assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
     }
 
-    @Test
-    public void shouldCreateSingletonServiceFromClass() {
-        assertSingleton(new ServiceModeller(ServiceFive.class));
-    }
-
-    @Test
-    public void shouldCreateSingletonServiceFromInstance() {
-        assertSingleton(new ServiceModeller(new ServiceFive()));
-    }
-
     @SuppressWarnings("unchecked")
     public void assertSingleton(ServiceModeller modeller) {
         ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
@@ -247,32 +237,6 @@ public class ServiceModellerTest {
         verify(callTwo).sendMessage(captorTwo.capture());
 
         assertThat(captorOne.getValue(), is(sameInstance(captorTwo.getValue())));
-    }
-
-    @Test
-    public void shouldHaveMarshallerFromServiceAnnotation() {
-        ServiceModeller modeller = new ServiceModeller(ServiceThree.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
-
-        ServiceDescriptor descriptor = builder.build();
-
-        MethodDescriptor methodDescriptor = descriptor.method("unary");
-        io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
-    }
-
-    @Test
-    public void shouldHaveMarshallerFromMethodAnnotation() {
-        ServiceModeller modeller = new ServiceModeller(ServiceFour.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
-
-        ServiceDescriptor descriptor = builder.build();
-
-        MethodDescriptor methodDescriptor = descriptor.method("unary");
-        io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
     }
 
     @RpcService(name = "ServiceOne/foo")

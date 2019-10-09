@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.grpc</groupId>
         <artifactId>helidon-microprofile-grpc</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
+        <version>1.3.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-grpc-core</artifactId>
@@ -33,12 +33,10 @@
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-client</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.enterprise</groupId>
@@ -48,12 +46,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-service-loader</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.weld.se</groupId>
@@ -71,7 +67,11 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
-            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

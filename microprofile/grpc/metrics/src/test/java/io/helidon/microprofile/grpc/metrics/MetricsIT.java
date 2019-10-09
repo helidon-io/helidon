@@ -45,6 +45,7 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import services.StringService;
 
@@ -61,6 +62,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * and the {@link javax.enterprise.context.ApplicationScoped} annotation. Their methods are annotated with various
  * microprofile metrics annotations so they should automatically generate the correct metrics.
  */
+@Disabled
 public class MetricsIT {
     private static final Logger LOGGER = Logger.getLogger(MetricsIT.class.getName());
 

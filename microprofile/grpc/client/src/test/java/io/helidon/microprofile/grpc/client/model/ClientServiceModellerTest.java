@@ -177,32 +177,6 @@ public class ClientServiceModellerTest {
         assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
     }
 
-    @Test
-    public void shouldHaveMarshallerFromServiceAnnotation() {
-        ClientServiceModeller modeller = new ClientServiceModeller(ServiceThree.class);
-        ClientServiceDescriptor.Builder builder = modeller.createServiceBuilder();
-
-        ClientServiceDescriptor descriptor = builder.build();
-
-        ClientMethodDescriptor ClientMethodDescriptor = descriptor.method("unary");
-        io.grpc.MethodDescriptor grpcDescriptor = ClientMethodDescriptor.descriptor();
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
-    }
-
-    @Test
-    public void shouldHaveMarshallerFromMethodAnnotation() {
-        ClientServiceModeller modeller = new ClientServiceModeller(ServiceFour.class);
-        ClientServiceDescriptor.Builder builder = modeller.createServiceBuilder();
-
-        ClientServiceDescriptor descriptor = builder.build();
-
-        ClientMethodDescriptor ClientMethodDescriptor = descriptor.method("unary");
-        io.grpc.MethodDescriptor grpcDescriptor = ClientMethodDescriptor.descriptor();
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
-    }
-
     @RpcService(name = "ServiceOne/foo")
     public static class ServiceOne {
         @RpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)

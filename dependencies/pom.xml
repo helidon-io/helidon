@@ -281,6 +281,11 @@
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
+                <artifactId>grpc-api</artifactId>
+                <version>${version.lib.grpc}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
                 <artifactId>grpc-context</artifactId>
                 <version>${version.lib.grpc}</version>
             </dependency>

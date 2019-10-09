@@ -34,38 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ModelHelperTest {
 
     @Test
-    public void shouldGetJavaMarshaller() throws Exception {
-        GrpcMarshaller annotation = getAnnotation("javaMarshaller");
-        MarshallerSupplier supplier = ModelHelper.getMarshallerSupplier(annotation);
-        assertThat(supplier, is(notNullValue()));
-        assertThat(supplier, is(instanceOf(JavaMarshaller.Supplier.class)));
-    }
-
-    @Test
-    public void shouldGetProtoMarshaller() throws Exception {
-        GrpcMarshaller annotation = getAnnotation("protoMarshaller");
-        MarshallerSupplier supplier = ModelHelper.getMarshallerSupplier(annotation);
-        assertThat(supplier, is(notNullValue()));
-        assertThat(supplier, is(instanceOf(MarshallerSupplier.ProtoMarshallerSupplier.class)));
-    }
-
-    @Test
-    public void shouldGetImplicitDefaultMarshaller() throws Exception {
-        GrpcMarshaller annotation = getAnnotation("implicitDefaultMarshaller");
-        MarshallerSupplier supplier = ModelHelper.getMarshallerSupplier(annotation);
-        assertThat(supplier, is(notNullValue()));
-        assertThat(supplier, is(instanceOf(MarshallerSupplier.DefaultMarshallerSupplier.class)));
-    }
-
-    @Test
-    public void shouldGetExplicitDefaultMarshaller() throws Exception {
-        GrpcMarshaller annotation = getAnnotation("explicitDefaultMarshaller");
-        MarshallerSupplier supplier = ModelHelper.getMarshallerSupplier(annotation);
-        assertThat(supplier, is(notNullValue()));
-        assertThat(supplier, is(instanceOf(MarshallerSupplier.DefaultMarshallerSupplier.class)));
-    }
-
-    @Test
     public void shouldGetAnnotatedSuperClass() {
         Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildOne.class, RpcService.class);
         assertThat(cls, equalTo(Parent.class));
