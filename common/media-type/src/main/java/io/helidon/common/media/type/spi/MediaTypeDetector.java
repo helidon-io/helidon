@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.media.type.spi;
 
 import java.net.URI;
@@ -59,7 +60,11 @@ public interface MediaTypeDetector {
      * @return media type if detected
      */
     default Optional<String> detectType(Path file) {
-        return detectType(file.getFileName().toString());
+        Path fileName = file.getFileName();
+        if (null == fileName) {
+            return Optional.empty();
+        }
+        return detectType(fileName.toString());
     }
 
     /**
