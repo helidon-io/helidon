@@ -184,7 +184,7 @@
                         <source>1.8</source>
                         <target>1.8</target>
                         <compilerArgs>
-                            <arg>-Xlint:unchecked</arg>io.helidon.config.git.GitConfigSourceBuilderTest.testPolling
+                            <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
