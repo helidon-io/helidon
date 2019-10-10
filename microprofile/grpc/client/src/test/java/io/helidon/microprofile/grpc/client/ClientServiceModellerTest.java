@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.client.model;
+package io.helidon.microprofile.grpc.client;
 
 import javax.inject.Singleton;
 
 import io.helidon.grpc.client.ClientMethodDescriptor;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.core.JavaMarshaller;
-import io.helidon.microprofile.grpc.client.StubMarshaller;
+import io.helidon.microprofile.grpc.client.ClientServiceModeller;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.RpcMethod;
 import io.helidon.microprofile.grpc.core.RpcService;

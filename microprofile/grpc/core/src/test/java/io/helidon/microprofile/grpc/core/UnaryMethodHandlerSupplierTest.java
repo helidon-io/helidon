@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,6 +27,7 @@ import io.helidon.microprofile.grpc.core.ResponseType;
 import io.helidon.microprofile.grpc.core.RpcService;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
+import io.helidon.microprofile.grpc.core.UnaryMethodHandlerSupplier;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
@@ -42,7 +43,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

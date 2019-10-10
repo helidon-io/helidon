@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -30,11 +30,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.microprofile.grpc.core.Bidirectional;
-import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.ServerStreaming;
-import io.helidon.microprofile.grpc.core.Unary;
 
 /**
  * A model of an annotated gRPC method.

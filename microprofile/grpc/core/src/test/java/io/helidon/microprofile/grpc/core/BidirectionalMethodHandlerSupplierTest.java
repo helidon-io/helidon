@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.microprofile.grpc.core.Bidirectional;

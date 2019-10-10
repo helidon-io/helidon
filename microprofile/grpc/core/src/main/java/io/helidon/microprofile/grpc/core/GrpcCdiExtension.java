@@ -21,8 +21,6 @@ import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 
-import io.helidon.microprofile.grpc.core.model.ModelHelper;
-
 /**
  * An extension that processes beans as they are discovered.
  */

@@ -19,7 +19,6 @@
  */
 module io.helidon.microprofile.grpc.server {
     exports io.helidon.microprofile.grpc.server;
-    exports io.helidon.microprofile.grpc.server.model;
     exports io.helidon.microprofile.grpc.server.spi;
 
     requires transitive io.helidon.grpc.server;
@@ -33,7 +32,7 @@ module io.helidon.microprofile.grpc.server {
     requires java.logging;
 
     uses io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
-    uses io.helidon.microprofile.grpc.server.model.AnnotatedServiceConfigurer;
+    uses io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 
     provides javax.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;

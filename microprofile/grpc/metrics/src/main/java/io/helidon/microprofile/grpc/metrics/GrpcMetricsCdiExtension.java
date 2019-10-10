@@ -28,9 +28,9 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.interceptor.Interceptor;
 
+import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.model.AnnotatedMethod;
-import io.helidon.microprofile.grpc.server.model.ServiceModeller;
+import io.helidon.microprofile.grpc.server.ServiceModeller;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;

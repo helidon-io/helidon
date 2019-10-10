@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,14 +29,13 @@ import io.helidon.microprofile.grpc.core.RequestType;
 import io.helidon.microprofile.grpc.core.ResponseType;
 import io.helidon.microprofile.grpc.core.RpcService;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
+import io.helidon.microprofile.grpc.core.ServerStreamingMethodHandlerSupplier;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;

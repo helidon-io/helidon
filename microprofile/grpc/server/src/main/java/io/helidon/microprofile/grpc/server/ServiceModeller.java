@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server.model;
+package io.helidon.microprofile.grpc.server;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -36,16 +36,16 @@ import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
+import io.helidon.microprofile.grpc.core.AbstractServiceModeller;
+import io.helidon.microprofile.grpc.core.AnnotatedMethod;
+import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcInterceptor;
 import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
 import io.helidon.microprofile.grpc.core.GrpcInterceptors;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
+import io.helidon.microprofile.grpc.core.Instance;
+import io.helidon.microprofile.grpc.core.ModelHelper;
 import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.model.AbstractServiceModeller;
-import io.helidon.microprofile.grpc.core.model.AnnotatedMethod;
-import io.helidon.microprofile.grpc.core.model.AnnotatedMethodList;
-import io.helidon.microprofile.grpc.core.model.Instance;
-import io.helidon.microprofile.grpc.core.model.ModelHelper;
 
 import io.grpc.ServerInterceptor;
 

@@ -19,7 +19,6 @@
  */
 module io.helidon.microprofile.grpc.client {
     exports io.helidon.microprofile.grpc.client;
-    exports io.helidon.microprofile.grpc.client.model;
 
     requires transitive io.helidon.microprofile.grpc.core;
 

@@ -21,7 +21,7 @@ import javax.enterprise.inject.spi.InjectionPoint;
 
 import io.helidon.grpc.client.GrpcChannelsProvider;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
-import io.helidon.microprofile.grpc.core.model.ModelHelper;
+import io.helidon.microprofile.grpc.core.ModelHelper;
 
 import io.grpc.Channel;
 
@@ -49,7 +49,7 @@ class GrpcProxyProducer {
      * @return a gRPC client proxy
      */
     @GrpcServiceProxy
-    public static Object proxyUsingDefaultChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
+    static Object proxyUsingDefaultChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
         Channel channel = producer.findChannel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME);
 
@@ -68,7 +68,7 @@ class GrpcProxyProducer {
      */
     @GrpcServiceProxy
     @GrpcChannel(name = "default")
-    public static Object proxyUsingNamedChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
+    static Object proxyUsingNamedChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
         GrpcChannel channelName = injectionPoint.getAnnotated().getAnnotation(GrpcChannel.class);
         Channel channel = producer.findChannel(channelName.name());
@@ -88,7 +88,7 @@ class GrpcProxyProducer {
      */
     @GrpcServiceProxy
     @InProcessGrpcChannel
-    public static Object proxyUsingInProcessChannel(InjectionPoint injectionPoint, BeanManager beanManager) {
+    static Object proxyUsingInProcessChannel(InjectionPoint injectionPoint, BeanManager beanManager) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
         Channel channel = ChannelProducer.inProcessChannel(beanManager);
 

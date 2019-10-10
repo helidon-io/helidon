@@ -23,11 +23,11 @@ import java.util.logging.Logger;
 
 import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.ServiceDescriptor;
+import io.helidon.microprofile.grpc.core.AnnotatedMethod;
+import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.model.AnnotatedMethod;
-import io.helidon.microprofile.grpc.core.model.AnnotatedMethodList;
-import io.helidon.microprofile.grpc.server.model.AnnotatedServiceConfigurer;
-import io.helidon.microprofile.grpc.server.model.ServiceModeller;
+import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
+import io.helidon.microprofile.grpc.server.ServiceModeller;
 import io.helidon.microprofile.metrics.MetricUtil;
 
 import org.eclipse.microprofile.metrics.MetricType;

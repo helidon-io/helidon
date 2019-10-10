@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server.model;
+package io.helidon.microprofile.grpc.server;
 
 import io.helidon.grpc.server.ServiceDescriptor;
 
@@ -22,7 +22,7 @@ import io.helidon.grpc.server.ServiceDescriptor;
  * A class that may apply modifications to a {@link ServiceDescriptor.Builder}
  * for an annotated gRPC service class.
  * <p>
- * Implementations of this class are called by the {@link io.helidon.microprofile.grpc.server.model.ServiceModeller} when
+ * Implementations of this class are called by the {@link ServiceModeller} when
  * it builds a {@link ServiceDescriptor} from an annotated class. Instances of
  * {@link AnnotatedServiceConfigurer} are discovered using the
  * {@link io.helidon.common.serviceloader.HelidonServiceLoader}. This service

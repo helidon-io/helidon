@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -36,9 +36,6 @@ import javax.inject.Singleton;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.grpc.core.MarshallerSupplier;
-import io.helidon.microprofile.grpc.core.GrpcMarshaller;
-import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.RpcService;
 
 /**
  * Utility class for constructing service descriptors
@@ -232,14 +229,14 @@ public abstract class AbstractServiceModeller {
     }
 
     /**
-     * Load the {@link io.helidon.microprofile.grpc.core.model.MethodHandlerSupplier} instances using the {@link java.util.ServiceLoader}
+     * Load the {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances using the {@link java.util.ServiceLoader}
      * and return them in priority order.
      * <p>
      * Priority is determined by the value obtained from the {@link javax.annotation.Priority} annotation on
      * any implementation classes. Classes not annotated with {@link javax.annotation.Priority} have a
      * priority of zero.
      *
-     * @return a priority ordered list of {@link io.helidon.microprofile.grpc.core.model.MethodHandlerSupplier} instances
+     * @return a priority ordered list of {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances
      */
     private List<MethodHandlerSupplier> loadHandlerSuppliers() {
         List<MethodHandlerSupplier> list = new ArrayList<>();

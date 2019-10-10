@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -32,12 +32,10 @@ import java.util.stream.StreamSupport;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Named;
 
 import io.helidon.grpc.core.MarshallerSupplier;
-import io.helidon.microprofile.grpc.core.GrpcMarshaller;
-
-import org.jboss.weld.literal.NamedLiteral;
 
 /**
  * Common model helper methods.
@@ -291,6 +289,23 @@ public final class ModelHelper {
             return o.getClass();
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * An annotation literal for {@link Named}.
+     */
+    static class NamedLiteral extends AnnotationLiteral<Named> implements Named {
+
+        private final String value;
+
+        NamedLiteral(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String value() {
+            return this.value;
         }
     }
 

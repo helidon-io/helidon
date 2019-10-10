@@ -173,15 +173,15 @@ grpc:
       port: 1408
       tls:                          <1>
         enabled: true               <2>
-        tlsCert: /certs/foo.cert    <3>
-        tlsKey: /certs/foo.key      <4>
-        tlsCaCert: /certs/ca.cert   <5>
+        tls-cert: /certs/foo.cert    <3>
+        tls-key: /certs/foo.key      <4>
+        tls-ca-cert: /certs/ca.cert   <5>
 ----
 <1> The `tls` section of the channel configuration is used to configure TLS.
 <2> The `enabled` value is used to enable or disable TLS for this channel.
-<3> The `tlsCert` value is the location of the TLS certificate file
-<4> The `tlsKey` value is the location of the TLS key file
-<5> The `tlsCaCert` value is the location of the TLS CA certificate file
+<3> The `tls-cert` value is the location of the TLS certificate file
+<4> The `tls-key` value is the location of the TLS key file
+<5> The `tls-ca-cert` value is the location of the TLS CA certificate file
 
 
 === Using Channels

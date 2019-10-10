@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
-
-import io.helidon.microprofile.grpc.core.Bidirectional;
-import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.ServerStreaming;
-import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;

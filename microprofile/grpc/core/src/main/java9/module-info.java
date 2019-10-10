@@ -19,7 +19,6 @@
  */
 module io.helidon.microprofile.grpc.core {
     exports io.helidon.microprofile.grpc.core;
-    exports io.helidon.microprofile.grpc.core.model;
 
     requires transitive io.helidon.grpc.core;
     requires transitive io.helidon.grpc.client;
@@ -30,13 +29,12 @@ module io.helidon.microprofile.grpc.core {
 
     requires java.logging;
     requires javax.inject;
-    requires weld.core.impl;
 
-    uses io.helidon.microprofile.grpc.core.model.MethodHandlerSupplier;
+    uses io.helidon.microprofile.grpc.core.MethodHandlerSupplier;
 
-    provides io.helidon.microprofile.grpc.core.model.MethodHandlerSupplier
-            with io.helidon.microprofile.grpc.core.model.BidirectionalMethodHandlerSupplier,
-            io.helidon.microprofile.grpc.core.model.ClientStreamingMethodHandlerSupplier,
-            io.helidon.microprofile.grpc.core.model.ServerStreamingMethodHandlerSupplier,
-            io.helidon.microprofile.grpc.core.model.UnaryMethodHandlerSupplier;
+    provides io.helidon.microprofile.grpc.core.MethodHandlerSupplier
+            with io.helidon.microprofile.grpc.core.BidirectionalMethodHandlerSupplier,
+            io.helidon.microprofile.grpc.core.ClientStreamingMethodHandlerSupplier,
+            io.helidon.microprofile.grpc.core.ServerStreamingMethodHandlerSupplier,
+            io.helidon.microprofile.grpc.core.UnaryMethodHandlerSupplier;
 }

@@ -130,22 +130,22 @@ public class GrpcTlsDescriptor {
 
             Path path = Paths.get(config.get("path").asString().orElse(""));
 
-            String tlsCert = config.get("tlsCert").asString().orElse(null);
+            String tlsCert = config.get("tls-cert").asString().orElse(null);
             if (tlsCert != null) {
                 this.tlsCert = path.resolve(tlsCert).toAbsolutePath().toString();
             }
 
-            String tlsKey = config.get("tlsKey").asString().orElse(null);
+            String tlsKey = config.get("tls-key").asString().orElse(null);
             if (tlsKey != null) {
                 this.tlsKey = path.resolve(tlsKey).toAbsolutePath().toString();
             }
 
-            String tlsCaCert = config.get("tlsCaCert").asString().orElse(null);
+            String tlsCaCert = config.get("tls-ca-cert").asString().orElse(null);
             if (tlsCaCert != null) {
                 this.tlsCaCert = path.resolve(tlsCaCert).toAbsolutePath().toString();
             }
 
-            this.jdkSSL = config.get("jdkSSL").asBoolean().orElse(false);
+            this.jdkSSL = config.get("jdk-ssl").asBoolean().orElse(false);
             this.enabled = config.get("enabled").asBoolean().orElse(true);
         }
 
@@ -165,7 +165,7 @@ public class GrpcTlsDescriptor {
          * @param jdkSSL true to use JDK based SSL, false otherwise
          * @return this instance for fluent API
          */
-        @Value()
+        @Value(key = "jdk-ssl")
         public Builder jdkSSL(boolean jdkSSL) {
             this.jdkSSL = jdkSSL;
             return this;
@@ -176,7 +176,7 @@ public class GrpcTlsDescriptor {
          * @param tlsCert the path to client's certificate
          * @return this instance for fluent API
          */
-        @Value
+        @Value(key = "tls-cert")
         public Builder tlsCert(String tlsCert) {
             this.tlsCert = tlsCert;
             return this;
@@ -187,7 +187,7 @@ public class GrpcTlsDescriptor {
          * @param tlsKey the 's TLS private key
          * @return this instance for fluent API
          */
-        @Value
+        @Value(key = "tls-key")
         public Builder tlsKey(String tlsKey) {
             this.tlsKey = tlsKey;
             return this;
@@ -198,7 +198,7 @@ public class GrpcTlsDescriptor {
          * @param caCert the path to CA certificate
          * @return this instance for fluent API
          */
-        @Value
+        @Value(key = "tls-ca-cert")
         public Builder tlsCaCert(String caCert) {
             this.tlsCaCert = caCert;
             return this;

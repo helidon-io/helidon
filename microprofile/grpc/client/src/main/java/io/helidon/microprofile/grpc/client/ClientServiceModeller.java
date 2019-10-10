@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.client.model;
+package io.helidon.microprofile.grpc.client;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -25,19 +25,19 @@ import java.util.logging.Logger;
 import io.helidon.grpc.client.ClientMethodDescriptor;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.core.MethodHandler;
+import io.helidon.microprofile.grpc.core.AbstractServiceModeller;
+import io.helidon.microprofile.grpc.core.AnnotatedMethod;
+import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
+import io.helidon.microprofile.grpc.core.Instance;
+import io.helidon.microprofile.grpc.core.ModelHelper;
 import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.model.AbstractServiceModeller;
-import io.helidon.microprofile.grpc.core.model.AnnotatedMethod;
-import io.helidon.microprofile.grpc.core.model.AnnotatedMethodList;
-import io.helidon.microprofile.grpc.core.model.Instance;
-import io.helidon.microprofile.grpc.core.model.ModelHelper;
 
 /**
  * Utility class for constructing a {@link ClientServiceDescriptor.Builder}
  * from an annotated POJO.
  */
-public class ClientServiceModeller
+class ClientServiceModeller
         extends AbstractServiceModeller {
 
     private static final Logger LOGGER = Logger.getLogger(ClientServiceModeller.class.getName());
@@ -48,7 +48,7 @@ public class ClientServiceModeller
      * @param service the service to call gRPC handler methods on
      * @throws NullPointerException if the service is null
      */
-    public ClientServiceModeller(Object service) {
+    ClientServiceModeller(Object service) {
         this(service.getClass(), Instance.singleton(service));
     }
 
@@ -58,7 +58,7 @@ public class ClientServiceModeller
      * @param serviceClass gRPC service (handler) class.
      * @throws NullPointerException if the service class is null
      */
-    public ClientServiceModeller(Class<?> serviceClass) {
+    ClientServiceModeller(Class<?> serviceClass) {
         this(Objects.requireNonNull(serviceClass), createInstanceSupplier(serviceClass));
     }
 
@@ -69,7 +69,7 @@ public class ClientServiceModeller
      * @param instance     the target instance to call gRPC handler methods on
      * @throws NullPointerException if the service or instance parameters are null
      */
-    public ClientServiceModeller(Class<?> serviceClass, Supplier<?> instance) {
+    private ClientServiceModeller(Class<?> serviceClass, Supplier<?> instance) {
         super(serviceClass, instance);
     }
 
@@ -81,7 +81,7 @@ public class ClientServiceModeller
      *
      * @return new resource model builder for the introspected class.
      */
-    public ClientServiceDescriptor.Builder createServiceBuilder() {
+    ClientServiceDescriptor.Builder createServiceBuilder() {
         checkForNonPublicMethodIssues();
 
         Class<?> annotatedServiceClass = annotatedServiceClass();
@@ -121,7 +121,7 @@ public class ClientServiceModeller
      * method and the method signature.
      *
      * @param builder  the {@link ClientServiceDescriptor.Builder} to add the method to
-     * @param method   the {@link io.helidon.microprofile.grpc.core.model.AnnotatedMethod} representing the method to add
+     * @param method   the {@link io.helidon.microprofile.grpc.core.AnnotatedMethod} representing the method to add
      */
     private void addServiceMethod(ClientServiceDescriptor.Builder builder, AnnotatedMethod method) {
         RpcMethod annotation = method.firstAnnotationOrMetaAnnotation(RpcMethod.class);

@@ -36,7 +36,7 @@ import io.grpc.Channel;
  * A producer of gRPC {@link io.grpc.Channel Channels}.
  */
 @ApplicationScoped
-public class ChannelProducer {
+class ChannelProducer {
 
     private final GrpcChannelsProvider provider;
 
@@ -49,7 +49,7 @@ public class ChannelProducer {
      *                the provided {@link io.grpc.Channel}s
      */
     @Inject
-    public ChannelProducer(Config config) {
+    ChannelProducer(Config config) {
         provider = GrpcChannelsProvider.create(config.get("grpc"));
     }
 
@@ -90,7 +90,7 @@ public class ChannelProducer {
      * @param name the channel name
      * @return  the named {@link io.grpc.Channel}
      */
-    public Channel findChannel(String name) {
+    Channel findChannel(String name) {
         return channelMap.computeIfAbsent(name, provider::channel);
     }
 
@@ -100,7 +100,7 @@ public class ChannelProducer {
      * @param beanManager the CDI {@link BeanManager} to use to find the {@link io.grpc.Channel}
      * @return an in-process {@link io.grpc.Channel}
      */
-    public static Channel inProcessChannel(BeanManager beanManager) {
+    static Channel inProcessChannel(BeanManager beanManager) {
         return inProcessChannel(beanManager.createInstance());
     }
 
@@ -110,7 +110,7 @@ public class ChannelProducer {
      * @param instance the CDI {@link Instance} to use to find the {@link io.grpc.Channel}
      * @return an in-process {@link io.grpc.Channel}
      */
-    public static Channel inProcessChannel(Instance<Object> instance) {
+    static Channel inProcessChannel(Instance<Object> instance) {
         return instance.select(Channel.class, InProcessGrpcChannel.Literal.INSTANCE).get();
     }
 }

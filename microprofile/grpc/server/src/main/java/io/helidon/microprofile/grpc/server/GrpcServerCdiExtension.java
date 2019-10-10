@@ -42,7 +42,6 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
 import io.helidon.microprofile.grpc.core.RpcService;
-import io.helidon.microprofile.grpc.server.model.ServiceModeller;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 

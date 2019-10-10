@@ -21,14 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.client.GrpcServiceClient;
-import io.helidon.microprofile.grpc.client.model.ClientServiceModeller;
 
 import io.grpc.Channel;
 
 /**
  * Helper methods for gRPC clients.
  */
-public class GrpcClientHelper {
+class GrpcClientHelper {
 
     private static final Map<Class<?>, ClientServiceDescriptor> DESCRIPTORS = new ConcurrentHashMap<>();
 
@@ -45,13 +44,13 @@ public class GrpcClientHelper {
      * @param <T>      the service type
      * @return a dynamic proxy that makes calls to the gRPC service.
      */
-    public static <T> T proxy(Channel channel, Class<T> type) {
-        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, GrpcClientHelper::createDesriptor);
+    static <T> T proxy(Channel channel, Class<T> type) {
+        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, GrpcClientHelper::createDescriptor);
         GrpcServiceClient client = GrpcServiceClient.builder(channel, descriptor).build();
         return client.proxy(type);
     }
 
-    private static ClientServiceDescriptor createDesriptor(Class<?> type) {
+    private static ClientServiceDescriptor createDescriptor(Class<?> type) {
         ClientServiceModeller modeller = new ClientServiceModeller(type);
         return modeller.createServiceBuilder().build();
     }

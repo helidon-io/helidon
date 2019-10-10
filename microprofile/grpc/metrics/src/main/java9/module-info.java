@@ -28,7 +28,7 @@ module io.helidon.microprofile.grpc.metrics {
     requires java.logging;
     requires javax.interceptor.api;
 
-    provides io.helidon.microprofile.grpc.server.model.AnnotatedServiceConfigurer
+    provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 
     provides javax.enterprise.inject.spi.Extension

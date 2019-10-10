@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core.model;
+package io.helidon.microprofile.grpc.core;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,9 +26,6 @@ import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.SafeStreamObserver;
 import io.helidon.grpc.core.proto.Types;
-import io.helidon.microprofile.grpc.core.RequestType;
-import io.helidon.microprofile.grpc.core.ResponseType;
-import io.helidon.microprofile.grpc.core.RpcMethod;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -37,7 +34,7 @@ import io.grpc.stub.StreamObserver;
 /**
  * A base class for {@link MethodHandlerSupplier} implementations.
  */
-public abstract class AbstractMethodHandlerSupplier
+abstract class AbstractMethodHandlerSupplier
         implements MethodHandlerSupplier {
 
     private final MethodDescriptor.MethodType methodType;
@@ -48,7 +45,7 @@ public abstract class AbstractMethodHandlerSupplier
      * @param methodType  the {@link MethodDescriptor.MethodType} to handle
      * @throws java.lang.NullPointerException if the method type parameter is {@code null}
      */
-    protected AbstractMethodHandlerSupplier(MethodDescriptor.MethodType methodType) {
+    AbstractMethodHandlerSupplier(MethodDescriptor.MethodType methodType) {
         this.methodType = Objects.requireNonNull(methodType, "The method type parameter cannot be null");
     }
 
@@ -65,7 +62,7 @@ public abstract class AbstractMethodHandlerSupplier
      * @param method  the method to test
      * @return  {@code true} if the method is annotated with the correct type
      */
-    protected boolean isRequiredMethodType(AnnotatedMethod method) {
+    boolean isRequiredMethodType(AnnotatedMethod method) {
         if (method == null) {
             return false;
         }

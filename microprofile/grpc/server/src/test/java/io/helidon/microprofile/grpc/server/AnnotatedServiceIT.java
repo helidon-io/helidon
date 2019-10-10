@@ -39,7 +39,6 @@ import io.helidon.microprofile.grpc.core.ClientStreaming;
 import io.helidon.microprofile.grpc.core.RpcService;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
-import io.helidon.microprofile.grpc.server.model.ServiceModeller;
 import io.helidon.microprofile.grpc.server.test.BidiServiceGrpc;
 import io.helidon.microprofile.grpc.server.test.ClientStreamingServiceGrpc;
 import io.helidon.microprofile.grpc.server.test.ServerStreamingServiceGrpc;

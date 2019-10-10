@@ -30,7 +30,6 @@ import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
 import io.helidon.microprofile.grpc.core.GrpcInterceptors;
 import io.helidon.microprofile.grpc.core.RpcService;
 import io.helidon.microprofile.grpc.core.Unary;
-import io.helidon.microprofile.grpc.server.model.ServiceModeller;
 
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -47,7 +46,6 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 
 /**
  * Functional test for server side interceptors using annotations.

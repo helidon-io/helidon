@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server.model;
+package io.helidon.microprofile.grpc.server;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
@@ -26,7 +26,7 @@ import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.RpcMethod;
 import io.helidon.microprofile.grpc.core.RpcService;
-import io.helidon.microprofile.grpc.server.StubMarshaller;
+import io.helidon.microprofile.grpc.server.ServiceModeller;
 
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
