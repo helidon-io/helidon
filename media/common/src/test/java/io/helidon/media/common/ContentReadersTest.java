@@ -17,6 +17,7 @@
 package io.helidon.media.common;
 
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
@@ -73,5 +74,20 @@ class ContentReadersTest {
         InputStream inputStream = future.get(10, TimeUnit.SECONDS);
         byte[] actualBytes = InputStreamHelper.readAllBytes(inputStream);
         assertThat(actualBytes, is(bytes));
+    }
+
+    @Test
+    void testURLDecodingReader() throws Exception {
+        String original = "myParam=\"Now@is'the/time";
+        String encoded = URLEncoder.encode(original, "UTF-8");
+        Multi<DataChunk> chunks = Multi.just(DataChunk.create(encoded.getBytes(StandardCharsets.UTF_8)));
+
+        CompletableFuture<? extends String> future =
+                ContentReaders.urlEncodedStringReader(StandardCharsets.UTF_8)
+                        .apply(chunks)
+                        .toCompletableFuture();
+
+        String s = future.get(10, TimeUnit.SECONDS);
+        assertThat(s, is(original));
     }
 }
