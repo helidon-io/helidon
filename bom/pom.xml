@@ -433,6 +433,11 @@
                 <artifactId>helidon-health-checks</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.health</groupId>
+                <artifactId>helidon-health-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- jwt -->
             <dependency>
