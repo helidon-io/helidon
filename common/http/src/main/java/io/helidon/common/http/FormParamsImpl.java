@@ -16,12 +16,9 @@
 package io.helidon.common.http;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +27,7 @@ import io.helidon.common.CollectionsHelper;
 /**
  * Implementation of the {@link FormParams} interface.
  */
-public class FormParamsImpl implements FormParams {
+class FormParamsImpl extends ReadOnlyParameters implements FormParams {
 
     /*
      * For form params represented in text/plain (uncommon), newlines appear between name=value
@@ -43,8 +40,6 @@ public class FormParamsImpl implements FormParams {
     private static Pattern preparePattern(String assignmentSeparator) {
         return Pattern.compile(String.format("([^=]+)=([^%1$s]+)%1$s?", assignmentSeparator));
     }
-
-    private Map<String, List<String>> params;
 
     static FormParams create(String paramAssignments, MediaType mediaType) {
         final Map<String, List<String>> params = new HashMap<>();
@@ -64,77 +59,6 @@ public class FormParamsImpl implements FormParams {
     }
 
     private FormParamsImpl(Map<String, List<String>> params) {
-        this.params = params;
-    }
-
-    @Override
-    public Optional<String> first(String name) {
-        return Optional.ofNullable(params.get(name)).filter(list -> !list.isEmpty()).map(list -> list.get(0));
-    }
-
-    @Override
-    public List<String> all(String name) {
-        List<String> result = params.get(name);
-        return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
-    }
-
-    @Override
-    public List<String> put(String key, String... values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<String> put(String key, Iterable<String> values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<String> putIfAbsent(String key, String... values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<String> putIfAbsent(String key, Iterable<String> values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<String> computeIfAbsent(String key, Function<String, Iterable<String>> values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<String> computeSingleIfAbsent(String key, Function<String, String> value) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void putAll(Parameters parameters) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void add(String key, String... values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void add(String key, Iterable<String> values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void addAll(Parameters parameters) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<String> remove(String key) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Map<String, List<String>> toMap() {
-        return Collections.unmodifiableMap(params);
+        super(params);
     }
 }

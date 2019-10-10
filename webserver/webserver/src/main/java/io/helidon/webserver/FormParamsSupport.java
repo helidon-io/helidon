@@ -16,6 +16,7 @@
 package io.helidon.webserver;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.FormParams;
@@ -54,7 +55,7 @@ public class FormParamsSupport implements Service, Handler {
     @Override
     public void accept(ServerRequest req, ServerResponse res) {
         MediaType reqMediaType = req.headers().contentType().orElse(MediaType.TEXT_PLAIN);
-        Charset charset = reqMediaType.charset().map(Charset::forName).orElse(Charset.defaultCharset());
+        Charset charset = reqMediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
 
         req.content().registerReader(FormParams.class,
                 (chunks, type) -> readContent(reqMediaType, charset, chunks)
