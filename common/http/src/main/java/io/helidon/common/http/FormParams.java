@@ -25,8 +25,8 @@ public interface FormParams extends Parameters {
      * type.
      *
      * @param paramAssignments String containing the parameter assignments, formatted according
-     *                         to the media type specified (& separator for URL-encoded, NL for
-     *                         text/plain)
+     *                         to the media type specified ({@literal &} separator for
+     *                         URL-encoded, NL for text/plain)
      * @param mediaType MediaType for which the parameter conversion is occurring
      * @return the new {@code FormParams} instance
      */
