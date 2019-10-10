@@ -21,7 +21,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 import io.helidon.common.CollectionsHelper;
@@ -152,12 +151,7 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
      * @see ZipkinTracerBuilder#config(Config)
      */
     public static ZipkinTracerBuilder create(Config config) {
-        String serviceName = config.get("service")
-                .asString()
-                .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
-
-        return ZipkinTracerBuilder.forService(serviceName)
-                .config(config);
+        return create().config(config);
     }
 
     static TracerBuilder<ZipkinTracerBuilder> create() {
@@ -246,13 +240,13 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
 
     @Override
     public ZipkinTracerBuilder config(Config config) {
+        config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("api-version").asString().ifPresent(this::configApiVersion);
-        config.get("enabled").asBoolean().ifPresent(this::enabled);
 
         config.get("tags").detach()
                 .asMap()
@@ -287,13 +281,14 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
      */
     @Override
     public Tracer build() {
-        Objects.requireNonNull(serviceName,
-                               "Service name must be defined, either programmatically or in "
-                                       + "configuration using key \"service\"");
-
         Tracer result;
 
         if (enabled) {
+            if (null == serviceName) {
+                throw new IllegalArgumentException(
+                        "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
+            }
+
             Sender buildSender = (this.sender == null) ? createSender() : this.sender;
 
             Reporter<Span> reporter = AsyncReporter.builder(buildSender)
@@ -337,7 +332,6 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
 
         return result;
     }
-
 
     /**
      * Version of Zipkin API to use.

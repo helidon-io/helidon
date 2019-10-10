@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -202,12 +201,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @see io.helidon.tracing.jaeger.JaegerTracerBuilder#config(io.helidon.config.Config)
      */
     public static JaegerTracerBuilder create(Config config) {
-        String serviceName = config.get("service")
-                .asString()
-                .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
-
-        return JaegerTracerBuilder.forService(serviceName)
-                .config(config);
+        return create().config(config);
     }
 
     static TracerBuilder<JaegerTracerBuilder> create() {
@@ -307,16 +301,12 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     @Override
     public JaegerTracerBuilder config(Config config) {
+        config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
-        if (null == serviceName) {
-            throw new IllegalArgumentException("Configuration must at least contain the 'service' key");
-        }
-
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
         config.get("path").asString().ifPresent(this::collectorPath);
-        config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("token").asString().ifPresent(this::token);
         config.get("username").asString().ifPresent(this::username);
         config.get("password").asString().ifPresent(this::password);
@@ -459,13 +449,14 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      */
     @Override
     public Tracer build() {
-        Objects.requireNonNull(serviceName,
-                               "Service name must be defined, either programmatically or in "
-                                       + "configuration using key \"service\"");
-
         Tracer result;
 
         if (enabled) {
+            if (null == serviceName) {
+                throw new IllegalArgumentException(
+                        "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
+            }
+
             result = jaegerConfig().getTracer();
         } else {
             LOGGER.info("Jaeger Tracer is explicitly disabled.");
