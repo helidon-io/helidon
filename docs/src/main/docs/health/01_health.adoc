@@ -248,7 +248,7 @@ Routing.builder()
 
 The JSON responses shown above contain properties `"status"` and `"outcome"` with the same
 values. Helidon reports both of these to maintain backward compatibility with older
-versions of the MicroProfile Metrics library. This behavior can be disabled by setting
+versions of MicroProfile Health. This behavior can be disabled by setting
 the property `health.backward-compatible` to `false`, in which case only `"status"`
-is reported. Future versions of Helidon will drop support for older versions of Metrics,
+is reported. Future versions of Helidon will drop support for older versions of Health,
 so it is recommended to rely on `"status"` instead of `"outcome"` in your applications.
