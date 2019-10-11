@@ -98,7 +98,8 @@ final class HelidonGauge<T extends Number> extends MetricImpl implements Gauge<T
         } else if (value instanceof Short) {
             builder.add(nameWithTags, value.intValue());
         } else {
-            builder.add(nameWithTags, String.valueOf(value));
+            // Might be a developer-provided class which extends Number.
+            builder.add(nameWithTags, value.doubleValue());
         }
     }
 

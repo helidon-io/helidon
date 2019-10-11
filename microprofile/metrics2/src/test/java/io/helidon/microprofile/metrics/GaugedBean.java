@@ -52,4 +52,38 @@ public class GaugedBean {
         return measuredValue;
     }
 
+    @Gauge(unit = MetricUnits.HOURS)
+    public MyValue getMyValue() {
+        return new MyValue(measuredValue);
+    }
+
+    public static class MyValue extends Number {
+
+        private Double value;
+
+        public MyValue(double value) {
+            this.value = Double.valueOf(value);
+        }
+
+        @Override
+        public int intValue() {
+            return value.intValue();
+        }
+
+        @Override
+        public long longValue() {
+            return value.longValue();
+        }
+
+        @Override
+        public float floatValue() {
+            return value.floatValue();
+        }
+
+        @Override
+        public double doubleValue() {
+            return value.doubleValue();
+        }
+    }
+
 }
