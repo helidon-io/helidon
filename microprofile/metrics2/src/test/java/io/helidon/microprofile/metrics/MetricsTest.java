@@ -118,7 +118,7 @@ public class MetricsTest extends MetricsBaseTest {
 
         Gauge<GaugedBean.MyValue> customTypeGauge = getMetric(bean, "getMyValue");
         GaugedBean.MyValue valueViaCustomGauge = customTypeGauge.getValue();
-        assertThat(valueViaCustomGauge, is(EXPECTED_VALUE));
+        assertThat(valueViaCustomGauge.intValue(), is(EXPECTED_VALUE));
     }
 
     @Test

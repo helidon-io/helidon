@@ -45,7 +45,8 @@ final class HelidonGauge<T extends Number> extends MetricImpl implements Gauge<T
         value = metric::getValue;
     }
 
-    static HelidonGauge<?> create(String registryType, Metadata metadata, Gauge<?> metric) {
+    static <S extends Number> HelidonGauge<S> create(String registryType, Metadata metadata,
+            Gauge<S> metric) {
         return new HelidonGauge<>(registryType, metadata, metric);
     }
 
