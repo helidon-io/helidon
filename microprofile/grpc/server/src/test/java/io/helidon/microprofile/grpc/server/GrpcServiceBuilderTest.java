@@ -26,7 +26,6 @@ import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.RpcMethod;
 import io.helidon.microprofile.grpc.core.RpcService;
-import io.helidon.microprofile.grpc.server.ServiceModeller;
 
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -46,7 +45,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-public class ServiceModellerTest {
+public class GrpcServiceBuilderTest {
 
     private BeanManager beanManager;
 
@@ -61,35 +60,33 @@ public class ServiceModellerTest {
     @Test
     public void shouldUseServiceNameFromAnnotation() {
         ServiceOne service = new ServiceOne();
-        ServiceModeller modeller = new ServiceModeller(service);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder modeller = GrpcServiceBuilder.create(service, beanManager);
+        ServiceDescriptor descriptor = modeller.build();
 
-        assertThat(builder.name(), is("ServiceOne/foo"));
+        assertThat(descriptor.name(), is("ServiceOne/foo"));
     }
 
     @Test
     public void shouldUseDefaultServiceName() {
         ServiceTwo service = new ServiceTwo();
-        ServiceModeller modeller = new ServiceModeller(service);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder modeller = GrpcServiceBuilder.create(service, beanManager);
+        ServiceDescriptor descriptor = modeller.build();
 
-        assertThat(builder.name(), is("ServiceTwo"));
+        assertThat(descriptor.name(), is("ServiceTwo"));
     }
 
     @Test
     public void shouldCreateServiceFromInstance() {
         ServiceOne service = new ServiceOne();
-        assertServiceOne(new ServiceModeller(service));
+        assertServiceOne(GrpcServiceBuilder.create(service, beanManager));
     }
 
     @Test
     public void shouldCreateServiceFromClass() {
-        assertServiceOne(new ServiceModeller(ServiceOne.class));
+        assertServiceOne(GrpcServiceBuilder.create(ServiceOne.class, beanManager));
     }
 
-    public void assertServiceOne(ServiceModeller modeller) {
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
-
+    public void assertServiceOne(GrpcServiceBuilder builder) {
         ServiceDescriptor descriptor = builder.build();
         assertThat(descriptor.name(), is("ServiceOne/foo"));
         assertThat(descriptor.methods().size(), is(4));
@@ -149,8 +146,7 @@ public class ServiceModellerTest {
     @Test
     public void shouldCreateServiceWithMethodNamesFromAnnotation() {
         ServiceTwo service = new ServiceTwo();
-        ServiceModeller modeller = new ServiceModeller(service);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(service, beanManager);
 
         ServiceDescriptor descriptor = builder.build();
         assertThat(descriptor.name(), is("ServiceTwo"));
@@ -209,9 +205,7 @@ public class ServiceModellerTest {
     }
 
     @SuppressWarnings("unchecked")
-    public void assertSingleton(ServiceModeller modeller) {
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
-
+    public void assertSingleton(GrpcServiceBuilder builder) {
         ServiceDescriptor descriptor = builder.build();
 
         MethodDescriptor methodDescriptor = descriptor.method("unary");

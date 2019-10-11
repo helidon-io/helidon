@@ -38,12 +38,11 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.grpc.core.MarshallerSupplier;
 
 /**
- * Utility class for constructing service descriptors
- * from an annotated POJO.
+ * A base class for gRPC service and client descriptor builders.
  */
-public abstract class AbstractServiceModeller {
+public abstract class AbstractServiceBuilder {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractServiceModeller.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AbstractServiceBuilder.class.getName());
 
     private final Class<?> serviceClass;
     private final Class<?> annotatedServiceClass;
@@ -57,7 +56,7 @@ public abstract class AbstractServiceModeller {
      * @param instance     the target instance to call gRPC handler methods on
      * @throws NullPointerException if the service or instance parameters are null
      */
-    protected AbstractServiceModeller(Class<?> serviceClass, Supplier<?> instance) {
+    protected AbstractServiceBuilder(Class<?> serviceClass, Supplier<?> instance) {
         this.serviceClass = Objects.requireNonNull(serviceClass);
         this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, RpcService.class);
         this.instance = Objects.requireNonNull(instance);

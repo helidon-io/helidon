@@ -288,13 +288,13 @@ public class AnnotatedServiceIT {
     }
 
     private static ServiceDescriptor descriptor(Class<?> cls) {
-        ServiceModeller modeller = new ServiceModeller(cls);
         BeanManager beanManager = mock(BeanManager.class);
         Instance instance = mock(Instance.class);
-
         when(beanManager.createInstance()).thenReturn(instance);
 
-        return modeller.createServiceBuilder(beanManager).build();
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(cls, beanManager);
+
+        return builder.build();
     }
 
     // ----- service implementations ----------------------------------------

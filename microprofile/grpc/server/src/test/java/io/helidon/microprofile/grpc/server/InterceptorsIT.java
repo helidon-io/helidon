@@ -69,8 +69,7 @@ public class InterceptorsIT {
     @Test
     public void shouldDiscoverServiceInterceptor() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceOne.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceOne.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         boolean hasInterceptor = descriptor.interceptors()
@@ -84,8 +83,7 @@ public class InterceptorsIT {
     @Test
     public void shouldDiscoverMethodInterceptor() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceTwo.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceTwo.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         assertThat(sizeOf(descriptor.interceptors()), is(0));
@@ -103,8 +101,7 @@ public class InterceptorsIT {
     @Test
     public void shouldDiscoverServiceAndMethodInterceptor() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceThree.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceThree.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         boolean hasServiceInterceptor = descriptor.interceptors()
@@ -127,8 +124,7 @@ public class InterceptorsIT {
     @Test
     public void shouldDiscoverServiceInterceptorBasedOnAnnotationMemberValue() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceFour.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceFour.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         boolean hasInterceptor = descriptor.interceptors()
@@ -142,8 +138,7 @@ public class InterceptorsIT {
     @Test
     public void shouldUseSpecificServiceInterceptorBean() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceFive.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceFive.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         PriorityBag<ServerInterceptor> interceptors = descriptor.interceptors();
@@ -163,8 +158,7 @@ public class InterceptorsIT {
     @Test
     public void shouldUseSpecificMethodInterceptorBean() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceSix.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceSix.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         assertThat(sizeOf(descriptor.interceptors()), is(0));
@@ -185,8 +179,7 @@ public class InterceptorsIT {
     @Test
     public void shouldUseSpecificNonCdiServiceInterceptor() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceSeven.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceSeven.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         PriorityBag<ServerInterceptor> interceptors = descriptor.interceptors();
@@ -201,8 +194,7 @@ public class InterceptorsIT {
     @Test
     public void shouldUseSpecificNonCdiMethodInterceptor() {
         BeanManager beanManager = weld.getBeanManager();
-        ServiceModeller modeller = new ServiceModeller(InterceptedServiceEight.class);
-        ServiceDescriptor.Builder builder = modeller.createServiceBuilder(beanManager);
+        GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceEight.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
         assertThat(sizeOf(descriptor.interceptors()), is(0));

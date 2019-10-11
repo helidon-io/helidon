@@ -239,9 +239,9 @@ public class GrpcServerCdiExtension
      * @param beanManager the {@link BeanManager} to use to locate beans required by the service
      */
     private void register(Object service, GrpcRouting.Builder builder, Class<?> cls, BeanManager beanManager) {
-        ServiceModeller modeller = new ServiceModeller(cls, () -> service);
-        if (modeller.isAnnotatedService()) {
-            builder.register(modeller.createServiceBuilder(beanManager).build());
+        GrpcServiceBuilder serviceBuilder = GrpcServiceBuilder.create(cls, () -> service, beanManager);
+        if (serviceBuilder.isAnnotatedService()) {
+            builder.register(serviceBuilder.build());
         } else {
             LOGGER.log(Level.WARNING,
                        () -> "Discovered type is not a properly annotated gRPC service " + service.getClass());

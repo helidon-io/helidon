@@ -20,6 +20,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.WithAnnotations;
 
 /**
  * An extension that processes beans as they are discovered.
@@ -40,7 +41,7 @@ public class GrpcCdiExtension implements Extension {
      *
      * @param event the {@link ProcessAnnotatedType} event
      */
-    public void beforeBean(@Observes ProcessAnnotatedType<?> event) {
+    public void beforeBean(@Observes @WithAnnotations(RpcService.class) ProcessAnnotatedType<?> event) {
         AnnotatedType<?> type = event.getAnnotatedType();
         Class<?> javaClass = type.getJavaClass();
         Class<?> annotatedClass = ModelHelper.getAnnotatedResourceClass(javaClass, RpcService.class);

@@ -27,7 +27,7 @@ import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.RpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
-import io.helidon.microprofile.grpc.server.ServiceModeller;
+import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
 import io.helidon.microprofile.metrics.MetricUtil;
 
 import org.eclipse.microprofile.metrics.MetricType;
@@ -104,7 +104,7 @@ public class MetricsConfigurer
         if (rpcMethod != null) {
             Method method = findAnnotatedMethod(annotatedMethod, annotation.annotationType());
             Class<?> annotatedClass = method.getDeclaringClass();
-            String grpcMethodName = ServiceModeller.determineMethodName(annotatedMethod, rpcMethod);
+            String grpcMethodName = GrpcServiceBuilder.determineMethodName(annotatedMethod, rpcMethod);
             String metricName = getMetricName(method,
                                               annotatedClass,
                                               MetricUtil.MatchingType.METHOD,

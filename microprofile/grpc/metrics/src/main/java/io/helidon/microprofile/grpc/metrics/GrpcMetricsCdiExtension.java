@@ -30,7 +30,7 @@ import javax.interceptor.Interceptor;
 
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.server.ServiceModeller;
+import io.helidon.microprofile.grpc.core.RpcService;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -63,20 +63,16 @@ public class GrpcMetricsCdiExtension
      * @param pat  the {@link ProcessAnnotatedType} to observer
      */
     private void registerMetrics(@Observes
-                                 @WithAnnotations({Counted.class, Timed.class, Metered.class})
+                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, RpcService.class})
                                  @Priority(Interceptor.Priority.APPLICATION)
                                  ProcessAnnotatedType<?> pat) {
 
-        Class<?> javaClass = pat.getAnnotatedType().getJavaClass();
-        ServiceModeller modeller = new ServiceModeller(javaClass);
-        if (modeller.isAnnotatedService()) {
-            METRIC_ANNOTATIONS.forEach(type ->
-                   pat.configureAnnotatedType()
-                      .methods()
-                      .stream()
-                      .filter(method -> isRpcMethod(method, type))
-                      .forEach(method -> method.remove(ann -> type.isAssignableFrom(ann.getClass()))));
-        }
+        METRIC_ANNOTATIONS.forEach(type ->
+               pat.configureAnnotatedType()
+                  .methods()
+                  .stream()
+                  .filter(method -> isRpcMethod(method, type))
+                  .forEach(method -> method.remove(ann -> type.isAssignableFrom(ann.getClass()))));
     }
 
     /**

@@ -31,12 +31,13 @@ import java.util.stream.Collectors;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.spi.BeanManager;
 
+import io.helidon.common.Builder;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
-import io.helidon.microprofile.grpc.core.AbstractServiceModeller;
+import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcInterceptor;
@@ -50,56 +51,78 @@ import io.helidon.microprofile.grpc.core.RpcMethod;
 import io.grpc.ServerInterceptor;
 
 /**
- * Utility class for constructing a {@link ServiceDescriptor.Builder}
+ * A builder for constructing a {@link ServiceDescriptor}
  * instances from an annotated POJOs.
  */
-public class ServiceModeller
-        extends AbstractServiceModeller {
+public class GrpcServiceBuilder
+        extends AbstractServiceBuilder
+        implements Builder<ServiceDescriptor> {
 
-    private static final Logger LOGGER = Logger.getLogger(ServiceModeller.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(GrpcServiceBuilder.class.getName());
 
-    /**
-     * Create a new introspection modeller for a given gRPC service.
-     *
-     * @param service the service to call gRPC handler methods on
-     * @throws java.lang.NullPointerException if the service is null
-     */
-    public ServiceModeller(Object service) {
-        this(service.getClass(), Instance.singleton(service));
-    }
-
-    /**
-     * Create a new introspection modeller for a given gRPC service class.
-     *
-     * @param serviceClass gRPC service (handler) class.
-     * @throws java.lang.NullPointerException if the service class is null
-     */
-    public ServiceModeller(Class<?> serviceClass) {
-        this(Objects.requireNonNull(serviceClass), createInstanceSupplier(serviceClass));
-    }
+    private final BeanManager beanManager;
 
     /**
      * Create a new introspection modeller for a given gRPC service class.
      *
      * @param serviceClass gRPC service (handler) class.
      * @param instance     the target instance to call gRPC handler methods on
+     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     *                     to look-up CDI beans.
      * @throws java.lang.NullPointerException if the service or instance parameters are null
      */
-    public ServiceModeller(Class<?> serviceClass, Supplier<?> instance) {
+    private GrpcServiceBuilder(Class<?> serviceClass, Supplier<?> instance, BeanManager beanManager) {
         super(serviceClass, instance);
+        this.beanManager = beanManager;
     }
 
     /**
-     * Create a new resource model builder for the introspected class.
-     * <p>
-     * The model returned is filled with the introspected data.
+     * Create a new introspection modeller for a given gRPC service.
      *
+     * @param service      the service to call gRPC handler methods on
      * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
      *                     to look-up CDI beans.
-     *
-     * @return new resource model builder for the introspected class.
+     * @throws java.lang.NullPointerException if the service is null
+     * @return a {@link GrpcServiceBuilder}
      */
-    public ServiceDescriptor.Builder createServiceBuilder(BeanManager beanManager) {
+    public static GrpcServiceBuilder create(Object service, BeanManager beanManager) {
+        return new GrpcServiceBuilder(service.getClass(), Instance.singleton(service), beanManager);
+    }
+
+    /**
+     * Create a new introspection modeller for a given gRPC service class.
+     *
+     * @param serviceClass gRPC service (handler) class.
+     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     *                     to look-up CDI beans.
+     * @throws java.lang.NullPointerException if the service class is null
+     * @return a {@link GrpcServiceBuilder}
+     */
+    public static GrpcServiceBuilder create(Class<?> serviceClass, BeanManager beanManager) {
+        return new GrpcServiceBuilder(Objects.requireNonNull(serviceClass), createInstanceSupplier(serviceClass), beanManager);
+    }
+
+    /**
+     * Create a {@link GrpcServiceBuilder} for a given gRPC service class.
+     *
+     * @param serviceClass gRPC service (handler) class.
+     * @param instance     the target instance to call gRPC handler methods on
+     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     *                     to look-up CDI beans.
+     * @throws java.lang.NullPointerException if the service or instance parameters are null
+     * @return a {@link GrpcServiceBuilder}
+     */
+    public static GrpcServiceBuilder create(Class<?> serviceClass, Supplier<?> instance, BeanManager beanManager) {
+        return new GrpcServiceBuilder(serviceClass, instance, beanManager);
+    }
+
+    /**
+     * Create a {@link ServiceDescriptor.Builder} introspected class.
+     *
+     * @return a {@link ServiceDescriptor.Builder} for the introspected class.
+     */
+    @Override
+    public ServiceDescriptor build() {
         checkForNonPublicMethodIssues();
 
         Class<?> annotatedServiceClass = annotatedServiceClass();
@@ -117,9 +140,7 @@ public class ServiceModeller
         HelidonServiceLoader.create(ServiceLoader.load(AnnotatedServiceConfigurer.class))
                 .forEach(configurer -> configurer.accept(serviceClass, annotatedClass, builder));
 
-        LOGGER.log(Level.FINEST, () -> String.format("A new gRPC service was created by ServiceModeller: %s", builder));
-
-        return builder;
+        return builder.build();
     }
 
     /**

@@ -22,10 +22,11 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.Builder;
 import io.helidon.grpc.client.ClientMethodDescriptor;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.microprofile.grpc.core.AbstractServiceModeller;
+import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
@@ -34,43 +35,46 @@ import io.helidon.microprofile.grpc.core.ModelHelper;
 import io.helidon.microprofile.grpc.core.RpcMethod;
 
 /**
- * Utility class for constructing a {@link ClientServiceDescriptor.Builder}
+ * A builder for constructing a {@link ClientServiceDescriptor.Builder} instances
  * from an annotated POJO.
  */
-class ClientServiceModeller
-        extends AbstractServiceModeller {
+class GrpcClientBuilder
+        extends AbstractServiceBuilder
+        implements Builder<ClientServiceDescriptor.Builder> {
 
-    private static final Logger LOGGER = Logger.getLogger(ClientServiceModeller.class.getName());
-
-    /**
-     * Create a new introspection modeller for a given gRPC service.
-     *
-     * @param service the service to call gRPC handler methods on
-     * @throws NullPointerException if the service is null
-     */
-    ClientServiceModeller(Object service) {
-        this(service.getClass(), Instance.singleton(service));
-    }
+    private static final Logger LOGGER = Logger.getLogger(GrpcClientBuilder.class.getName());
 
     /**
-     * Create a new introspection modeller for a given gRPC service class.
-     *
-     * @param serviceClass gRPC service (handler) class.
-     * @throws NullPointerException if the service class is null
-     */
-    ClientServiceModeller(Class<?> serviceClass) {
-        this(Objects.requireNonNull(serviceClass), createInstanceSupplier(serviceClass));
-    }
-
-    /**
-     * Create a new introspection modeller for a given gRPC service class.
+     * Create a {@link GrpcClientBuilder} for a given gRPC service class.
      *
      * @param serviceClass gRPC service (handler) class.
      * @param instance     the target instance to call gRPC handler methods on
      * @throws NullPointerException if the service or instance parameters are null
      */
-    private ClientServiceModeller(Class<?> serviceClass, Supplier<?> instance) {
+    private GrpcClientBuilder(Class<?> serviceClass, Supplier<?> instance) {
         super(serviceClass, instance);
+    }
+
+    /**
+     * Create a {@link GrpcClientBuilder} for a given gRPC service.
+     *
+     * @param service the service to call gRPC handler methods on
+     * @throws NullPointerException if the service is null
+     * @return a {@link GrpcClientBuilder}
+     */
+    static GrpcClientBuilder create(Object service) {
+        return new GrpcClientBuilder(service.getClass(), Instance.singleton(service));
+    }
+
+    /**
+     * Create a {@link GrpcClientBuilder} for a given gRPC service class.
+     *
+     * @param serviceClass gRPC service (handler) class.
+     * @throws NullPointerException if the service class is null
+     * @return a {@link GrpcClientBuilder}
+     */
+    static GrpcClientBuilder create(Class<?> serviceClass) {
+        return new GrpcClientBuilder(Objects.requireNonNull(serviceClass), createInstanceSupplier(serviceClass));
     }
 
     /**
@@ -81,7 +85,8 @@ class ClientServiceModeller
      *
      * @return new resource model builder for the introspected class.
      */
-    ClientServiceDescriptor.Builder createServiceBuilder() {
+    @Override
+    public ClientServiceDescriptor.Builder build() {
         checkForNonPublicMethodIssues();
 
         Class<?> annotatedServiceClass = annotatedServiceClass();

@@ -21,7 +21,6 @@ import javax.inject.Singleton;
 import io.helidon.grpc.client.ClientMethodDescriptor;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.core.JavaMarshaller;
-import io.helidon.microprofile.grpc.client.ClientServiceModeller;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.RpcMethod;
 import io.helidon.microprofile.grpc.core.RpcService;
@@ -34,40 +33,40 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ClientServiceModellerTest {
+public class GrpcClientBuilderTest {
     @Test
     public void shouldUseServiceNameFromAnnotation() {
         ServiceOne service = new ServiceOne();
-        ClientServiceModeller modeller = new ClientServiceModeller(service);
-        ClientServiceDescriptor.Builder builder = modeller.createServiceBuilder();
+        GrpcClientBuilder builder = GrpcClientBuilder.create(service);
+        ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
 
-        assertThat(builder.name(), is("ServiceOne/foo"));
+        assertThat(descriptorBuilder.name(), is("ServiceOne/foo"));
     }
 
     @Test
     public void shouldUseDefaultServiceName() {
         ServiceTwo service = new ServiceTwo();
-        ClientServiceModeller modeller = new ClientServiceModeller(service);
-        ClientServiceDescriptor.Builder builder = modeller.createServiceBuilder();
+        GrpcClientBuilder builder = GrpcClientBuilder.create(service);
+        ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
 
-        assertThat(builder.name(), is("ServiceTwo"));
+        assertThat(descriptorBuilder.name(), is("ServiceTwo"));
     }
 
     @Test
     public void shouldCreateServiceFromInstance() {
         ServiceOne service = new ServiceOne();
-        assertServiceOne(new ClientServiceModeller(service));
+        assertServiceOne(GrpcClientBuilder.create(service));
     }
 
     @Test
     public void shouldCreateServiceFromClass() {
-        assertServiceOne(new ClientServiceModeller(ServiceOne.class));
+        assertServiceOne(GrpcClientBuilder.create(ServiceOne.class));
     }
 
-    public void assertServiceOne(ClientServiceModeller modeller) {
-        ClientServiceDescriptor.Builder builder = modeller.createServiceBuilder();
+    public void assertServiceOne(GrpcClientBuilder builder) {
+        ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
 
-        ClientServiceDescriptor descriptor = builder.build();
+        ClientServiceDescriptor descriptor = descriptorBuilder.build();
         assertThat(descriptor.name(), is("ServiceOne/foo"));
         assertThat(descriptor.methods().size(), is(4));
 
@@ -122,10 +121,10 @@ public class ClientServiceModellerTest {
     @Test
     public void shouldCreateServiceWithMethodNamesFromAnnotation() {
         ServiceTwo service = new ServiceTwo();
-        ClientServiceModeller modeller = new ClientServiceModeller(service);
-        ClientServiceDescriptor.Builder builder = modeller.createServiceBuilder();
+        GrpcClientBuilder builder = GrpcClientBuilder.create(service);
+        ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
 
-        ClientServiceDescriptor descriptor = builder.build();
+        ClientServiceDescriptor descriptor = descriptorBuilder.build();
         assertThat(descriptor.name(), is("ServiceTwo"));
         assertThat(descriptor.methods().size(), is(4));
 

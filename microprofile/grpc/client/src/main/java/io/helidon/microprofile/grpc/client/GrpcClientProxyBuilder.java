@@ -19,20 +19,32 @@ package io.helidon.microprofile.grpc.client;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.helidon.common.Builder;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.client.GrpcServiceClient;
 
 import io.grpc.Channel;
 
 /**
- * Helper methods for gRPC clients.
+ * A builder for gRPC clients dynamic proxies.
  */
-class GrpcClientHelper {
+class GrpcClientProxyBuilder<T>
+        implements Builder<T> {
 
     private static final Map<Class<?>, ClientServiceDescriptor> DESCRIPTORS = new ConcurrentHashMap<>();
 
+    private final GrpcServiceClient client;
+
+    private final Class<T> type;
+
+    private GrpcClientProxyBuilder(GrpcServiceClient client, Class<T> type) {
+        this.client = client;
+        this.type = type;
+    }
+
     /**
-     * Create a gRPC client.
+     * Create a GrpcClientProxyBuilder that can build gRPC dynamic proxies
+     * for a given gRPC service interface.
      * <p>
      * The class passed to this method should be properly annotated with
      * {@link io.helidon.microprofile.grpc.core.RpcService} and
@@ -42,22 +54,27 @@ class GrpcClientHelper {
      * @param channel  the {@link Channel} to connect to the server
      * @param type     the service type
      * @param <T>      the service type
-     * @return a dynamic proxy that makes calls to the gRPC service.
+     * @return a {@link GrpcClientProxyBuilder} that can build dynamic proxies
+     *         for the gRPC service
      */
-    static <T> T proxy(Channel channel, Class<T> type) {
-        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, GrpcClientHelper::createDescriptor);
-        GrpcServiceClient client = GrpcServiceClient.builder(channel, descriptor).build();
+    public static <T> GrpcClientProxyBuilder<T> create(Channel channel, Class<T> type) {
+        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, GrpcClientProxyBuilder::createDescriptor);
+        return new GrpcClientProxyBuilder<>(GrpcServiceClient.builder(channel, descriptor).build(), type);
+    }
+
+    /**
+     * Build a gRPC client dynamic proxy of the required type.
+     *
+     * @return a gRPC client dynamic proxy
+     */
+    @Override
+    public T build() {
         return client.proxy(type);
     }
 
     private static ClientServiceDescriptor createDescriptor(Class<?> type) {
-        ClientServiceModeller modeller = new ClientServiceModeller(type);
-        return modeller.createServiceBuilder().build();
-    }
-
-    /**
-     * Private constructor for utility class.
-     */
-    private GrpcClientHelper() {
+        GrpcClientBuilder builder = GrpcClientBuilder.create(type);
+        ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
+        return descriptorBuilder.build();
     }
 }
