@@ -23,6 +23,7 @@ module io.helidon.grpc.core {
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.config.objectmapping;
+    requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.common.http;

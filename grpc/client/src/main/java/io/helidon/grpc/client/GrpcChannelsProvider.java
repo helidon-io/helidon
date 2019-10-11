@@ -16,12 +16,12 @@
 
 package io.helidon.grpc.client;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLException;
 
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
 
@@ -104,17 +104,17 @@ public class GrpcChannelsProvider {
         return new Builder(config);
     }
 
-    private static SslContext createClientSslContext(String trustCertCollectionFilePath,
-                                                     String clientCertChainFilePath,
-                                                     String clientPrivateKeyFilePath) {
+    private static SslContext createClientSslContext(Resource trustCert,
+                                                     Resource clientCert,
+                                                     Resource clientPrivateKey) {
         try {
             SslContextBuilder builder = GrpcSslContexts.forClient();
-            if (trustCertCollectionFilePath != null) {
-                builder.trustManager(new File(trustCertCollectionFilePath));
+            if (trustCert != null) {
+                builder.trustManager(trustCert.stream());
             }
 
-            if (clientCertChainFilePath != null && clientPrivateKeyFilePath != null) {
-                builder.keyManager(new File(clientCertChainFilePath), new File(clientPrivateKeyFilePath));
+            if (clientCert != null && clientPrivateKey != null) {
+                builder.keyManager(clientCert.stream(), clientPrivateKey.stream());
             }
 
             return builder.build();

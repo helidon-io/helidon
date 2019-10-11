@@ -173,9 +173,9 @@ grpc:
       port: 1408
       tls:                          <1>
         enabled: true               <2>
-        tls-cert: /certs/foo.cert    <3>
-        tls-key: /certs/foo.key      <4>
-        tls-ca-cert: /certs/ca.cert   <5>
+        tls-cert-path: /certs/foo.cert    <3>
+        tls-key-path: /certs/foo.key      <4>
+        tls-ca-cert-path: /certs/ca.cert   <5>
 ----
 <1> The `tls` section of the channel configuration is used to configure TLS.
 <2> The `enabled` value is used to enable or disable TLS for this channel.
@@ -183,6 +183,11 @@ grpc:
 <4> The `tls-key` value is the location of the TLS key file
 <5> The `tls-ca-cert` value is the location of the TLS CA certificate file
 
+The SSL configuration uses the Helidon `Resource` class to locate configured keys and certificates.
+In the example above the `tls-cert-path` config key has the `-path` suffix which tells the configuration to load `/certs/foo.cert`
+as a file. If `/certs/foo.cert` was a resource on the classpath the configuration key could have been changed to
+`tls-cert-resource-path` to load `/certs/foo.cert` from the classpath. The same applies to the `tls-key` and `tls-ca-cert`
+configuration keys. See the `io.helidon.common.configurable.Resource` class for details.
 
 === Using Channels
 Once one or more channels have been configured they can be used by client code. The simplest way to use a channel is to inject it

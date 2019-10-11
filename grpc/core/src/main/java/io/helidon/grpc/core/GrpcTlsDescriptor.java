@@ -16,9 +16,7 @@
 
 package io.helidon.grpc.core;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.Value;
 
@@ -28,11 +26,11 @@ import io.helidon.config.objectmapping.Value;
 public class GrpcTlsDescriptor {
     private final boolean enabled;
     private final boolean jdkSSL;
-    private final String tlsCert;
-    private final String tlsKey;
-    private final String tlsCaCert;
+    private final Resource tlsCert;
+    private final Resource tlsKey;
+    private final Resource tlsCaCert;
 
-    private GrpcTlsDescriptor(boolean enabled, boolean jdkSSL, String tlsCert, String tlsKey, String tlsCaCert) {
+    private GrpcTlsDescriptor(boolean enabled, boolean jdkSSL, Resource tlsCert, Resource tlsKey, Resource tlsCaCert) {
         this.enabled = enabled;
         this.jdkSSL = jdkSSL;
         this.tlsCert = tlsCert;
@@ -88,7 +86,7 @@ public class GrpcTlsDescriptor {
      * Get the tlsCert path. Can be either client or server cert.
      * @return the path to tls certificate
      */
-    public String tlsCert() {
+    public Resource tlsCert() {
         return tlsCert;
     }
 
@@ -96,7 +94,7 @@ public class GrpcTlsDescriptor {
      * Get the client private key path. Can be either client or server private key.
      * @return the path to tls private key
      */
-    public String tlsKey() {
+    public Resource tlsKey() {
         return tlsKey;
     }
 
@@ -104,7 +102,7 @@ public class GrpcTlsDescriptor {
      * Get the CA (certificate authority) certificate path.
      * @return the path to CA certificate
      */
-    public String tlsCaCert() {
+    public Resource tlsCaCert() {
         return tlsCaCert;
     }
 
@@ -115,9 +113,9 @@ public class GrpcTlsDescriptor {
 
         private boolean enabled = true;
         private boolean jdkSSL;
-        private String tlsCert;
-        private String tlsKey;
-        private String tlsCaCert;
+        private Resource tlsCert;
+        private Resource tlsKey;
+        private Resource tlsCaCert;
 
         private Builder() {
 
@@ -128,22 +126,9 @@ public class GrpcTlsDescriptor {
                 return;
             }
 
-            Path path = Paths.get(config.get("path").asString().orElse(""));
-
-            String tlsCert = config.get("tls-cert").asString().orElse(null);
-            if (tlsCert != null) {
-                this.tlsCert = path.resolve(tlsCert).toAbsolutePath().toString();
-            }
-
-            String tlsKey = config.get("tls-key").asString().orElse(null);
-            if (tlsKey != null) {
-                this.tlsKey = path.resolve(tlsKey).toAbsolutePath().toString();
-            }
-
-            String tlsCaCert = config.get("tls-ca-cert").asString().orElse(null);
-            if (tlsCaCert != null) {
-                this.tlsCaCert = path.resolve(tlsCaCert).toAbsolutePath().toString();
-            }
+            Resource.create(config, "tls-cert").ifPresent(this::tlsCert);
+            Resource.create(config, "tls-key").ifPresent(this::tlsKey);
+            Resource.create(config, "tls-ca-cert").ifPresent(this::tlsCaCert);
 
             this.jdkSSL = config.get("jdk-ssl").asBoolean().orElse(false);
             this.enabled = config.get("enabled").asBoolean().orElse(true);
@@ -177,7 +162,7 @@ public class GrpcTlsDescriptor {
          * @return this instance for fluent API
          */
         @Value(key = "tls-cert")
-        public Builder tlsCert(String tlsCert) {
+        public Builder tlsCert(Resource tlsCert) {
             this.tlsCert = tlsCert;
             return this;
         }
@@ -188,7 +173,7 @@ public class GrpcTlsDescriptor {
          * @return this instance for fluent API
          */
         @Value(key = "tls-key")
-        public Builder tlsKey(String tlsKey) {
+        public Builder tlsKey(Resource tlsKey) {
             this.tlsKey = tlsKey;
             return this;
         }
@@ -199,7 +184,7 @@ public class GrpcTlsDescriptor {
          * @return this instance for fluent API
          */
         @Value(key = "tls-ca-cert")
-        public Builder tlsCaCert(String caCert) {
+        public Builder tlsCaCert(Resource caCert) {
             this.tlsCaCert = caCert;
             return this;
         }

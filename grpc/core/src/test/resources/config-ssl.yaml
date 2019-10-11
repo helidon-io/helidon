@@ -18,8 +18,7 @@
 grpcserver:
   ssl:
     enabled: true
-    tls-cert: serverCert.pem
-    tls-key: serverKey.pem
-    tls-ca-cert: ca.pem
+    tls-cert-resource-path: ssl/serverCert.pem
+    tls-key-resource-path: ssl/serverKey.pem
+    tls-ca-cert-resource-path: ssl/ca.pem
     jdk-ssl: false
-    path: "src/test/resources/ssl"

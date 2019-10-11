@@ -15,8 +15,7 @@
  */
 package io.helidon.grpc.core;
 
-import java.nio.file.Paths;
-
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -27,7 +26,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class GrpcTlsDescriptorTest {
 
@@ -43,18 +44,22 @@ public class GrpcTlsDescriptorTest {
 
     @Test
     public void testSslDescriptorWithBuilder() {
+        Resource certResource = mock(Resource.class);
+        Resource keyResource = mock(Resource.class);
+        Resource trustResource = mock(Resource.class);
+
         GrpcTlsDescriptor desc = GrpcTlsDescriptor.builder()
-                .tlsCaCert("/certs/cacert")
-                .tlsCert("/certs/clientcert")
-                .tlsKey("/certs/clientkey")
+                .tlsCaCert(trustResource)
+                .tlsCert(certResource)
+                .tlsKey(keyResource)
                 .enabled(true)
                 .jdkSSL(true)
                 .build();
         assertThat(desc.isEnabled(), is(true));
         assertThat(desc.isJdkSSL(), is(true));
-        assertThat(desc.tlsCaCert(), equalTo("/certs/cacert"));
-        assertThat(desc.tlsCert(), equalTo("/certs/clientcert"));
-        assertThat(desc.tlsKey(), equalTo("/certs/clientkey"));
+        assertThat(desc.tlsCaCert(), is(sameInstance(trustResource)));
+        assertThat(desc.tlsCert(), is(sameInstance(certResource)));
+        assertThat(desc.tlsKey(), is(sameInstance(keyResource)));
     }
 
     @Test
@@ -67,13 +72,12 @@ public class GrpcTlsDescriptorTest {
         assertThat(desc.isJdkSSL(), equalTo(false));
         String path = "src/test/resources/ssl/";
 
-        assertThat(desc.tlsKey(), endsWith(normalizedPath(path + "serverKey.pem")));
-        assertThat(desc.tlsCert(), endsWith(normalizedPath(path + "serverCert.pem")));
-        assertThat(desc.tlsCaCert(), endsWith(normalizedPath(path + "ca.pem")));
-    }
-
-    private String normalizedPath(String path) {
-        return Paths.get(path).normalize().toString();
+        assertThat(desc.tlsKey(), is(notNullValue()));
+        assertThat(desc.tlsKey().location(), endsWith("serverKey.pem"));
+        assertThat(desc.tlsCert(), is(notNullValue()));
+        assertThat(desc.tlsCert().location(), endsWith("serverCert.pem"));
+        assertThat(desc.tlsCaCert(), is(notNullValue()));
+        assertThat(desc.tlsCaCert().location(), endsWith("ca.pem"));
     }
 
 }

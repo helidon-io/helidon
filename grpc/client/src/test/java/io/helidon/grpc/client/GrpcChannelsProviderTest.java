@@ -15,10 +15,7 @@
  */
 package io.helidon.grpc.client;
 
-import java.nio.file.Paths;
-
-import javax.net.ssl.SSLException;
-
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
@@ -33,13 +30,15 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class GrpcChannelsProviderTest {
 
-    private static final String CLIENT_CERT = "/clientCert.pem";
-    private static final String CLIENT_KEY = "/clientKey.pem";
-    private static final String CA_CERT = "/ca.pem";
+    private static final String CLIENT_CERT = "ssl/clientCert.pem";
+    private static final String CLIENT_KEY = "ssl/clientKey.pem";
+    private static final String CA_CERT = "ssl/ca.pem";
 
     private static final String DEFAULT_HOST_PORT_CFG = "default_host_port";
     private static final String DEFAULT_HOST_CFG = "default_host";
@@ -102,20 +101,24 @@ public class GrpcChannelsProviderTest {
 
     @Test
     public void testChannelConfigurationWithSslConfig() {
+        Resource certResource = mock(Resource.class);
+        Resource keyResource = mock(Resource.class);
+        Resource trustResource = mock(Resource.class);
+
         GrpcChannelDescriptor cfg = GrpcChannelDescriptor.builder()
                 .sslDescriptor(
                         GrpcTlsDescriptor.builder()
-                                .tlsCaCert("/certs/cacert")
-                                .tlsCert("/certs/clientcert")
-                                .tlsKey("/certs/clientkey")
+                                .tlsCaCert(trustResource)
+                                .tlsCert(certResource)
+                                .tlsKey(keyResource)
                                 .build())
                 .build();
         assertThat(cfg.host(), equalTo("localhost"));
         assertThat(cfg.port(), equalTo(1408));
         assertThat(cfg.tlsDescriptor().isEnabled(), is(true));
-        assertThat(cfg.tlsDescriptor().tlsCaCert(), equalTo("/certs/cacert"));
-        assertThat(cfg.tlsDescriptor().tlsCert(), equalTo("/certs/clientcert"));
-        assertThat(cfg.tlsDescriptor().tlsKey(), equalTo("/certs/clientkey"));
+        assertThat(cfg.tlsDescriptor().tlsCaCert(), is(sameInstance(trustResource)));
+        assertThat(cfg.tlsDescriptor().tlsCert(), is(sameInstance(certResource)));
+        assertThat(cfg.tlsDescriptor().tlsKey(), is(sameInstance(keyResource)));
     }
 
     @Test
@@ -161,12 +164,19 @@ public class GrpcChannelsProviderTest {
         assertThat(chCfg.host(), equalTo("localhost"));
         assertThat(chCfg.port(), equalTo(1408));
 
+        Resource keyResource = Resource.create(CLIENT_KEY);
+        Resource certResource = Resource.create(CLIENT_CERT);
+        Resource trustResource = Resource.create(CA_CERT);
+
         GrpcTlsDescriptor ssl = chCfg.tlsDescriptor();
         assertThat(ssl, notNullValue());
         assertThat(ssl.isEnabled(), equalTo(false));
-        assertThat(ssl.tlsKey(), endsWith(normalizedPath(CLIENT_KEY)));
-        assertThat(ssl.tlsCert(), endsWith(normalizedPath(CLIENT_CERT)));
-        assertThat(ssl.tlsCaCert(), endsWith(normalizedPath(CA_CERT)));
+        assertThat(ssl.tlsKey(), is(notNullValue()));
+        assertThat(ssl.tlsKey().location(), is(keyResource.location()));
+        assertThat(ssl.tlsCert(), is(notNullValue()));
+        assertThat(ssl.tlsCert().location(), endsWith(certResource.location()));
+        assertThat(ssl.tlsCaCert(), is(notNullValue()));
+        assertThat(ssl.tlsCaCert().location(), endsWith(trustResource.location()));
     }
 
     @Test
@@ -175,12 +185,15 @@ public class GrpcChannelsProviderTest {
         assertThat(chCfg.host(), equalTo("localhost"));
         assertThat(chCfg.port(), equalTo(4096));
 
+        Resource trustResource = Resource.create(CA_CERT);
+
         GrpcTlsDescriptor ssl = chCfg.tlsDescriptor();
         assertThat(ssl, notNullValue());
         assertThat(ssl.isEnabled(), equalTo(true));
         assertThat(ssl.tlsKey(), nullValue());
         assertThat(ssl.tlsCert(), nullValue());
-        assertThat(ssl.tlsCaCert(), endsWith(normalizedPath(CA_CERT)));
+        assertThat(ssl.tlsCaCert(), is(notNullValue()));
+        assertThat(ssl.tlsCaCert().location(), endsWith(trustResource.location()));
     }
 
     @Test
@@ -189,21 +202,24 @@ public class GrpcChannelsProviderTest {
         assertThat(chCfg.host(), equalTo("non_default_host.com"));
         assertThat(chCfg.port(), equalTo(1408));
 
+        Resource keyResource = Resource.create(CLIENT_KEY);
+        Resource certResource = Resource.create(CLIENT_CERT);
+        Resource trustResource = Resource.create(CA_CERT);
+
         GrpcTlsDescriptor ssl = chCfg.tlsDescriptor();
         assertThat(ssl, notNullValue());
         assertThat(ssl.isEnabled(), equalTo(true));
-        assertThat(ssl.tlsKey(), endsWith(normalizedPath(CLIENT_KEY)));
-        assertThat(ssl.tlsCert(), endsWith(normalizedPath(CLIENT_CERT)));
-        assertThat(ssl.tlsCaCert(), endsWith(normalizedPath(CA_CERT)));
+        assertThat(ssl.tlsKey(), is(notNullValue()));
+        assertThat(ssl.tlsKey().location(), is(keyResource.location()));
+        assertThat(ssl.tlsCert(), is(notNullValue()));
+        assertThat(ssl.tlsCert().location(), endsWith(certResource.location()));
+        assertThat(ssl.tlsCaCert(), is(notNullValue()));
+        assertThat(ssl.tlsCaCert().location(), endsWith(trustResource.location()));
     }
 
     @Test
-    public void testBuilderCreate() throws SSLException {
+    public void testBuilderCreate() {
         assertThat(GrpcChannelsProvider.create().channels().size(), equalTo(1));
         assertThat(GrpcChannelsProvider.create().channel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME), notNullValue());
-    }
-
-    private String normalizedPath(String path) {
-        return Paths.get(path).normalize().toString();
     }
 }
