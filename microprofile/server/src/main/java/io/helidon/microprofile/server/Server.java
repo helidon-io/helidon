@@ -148,6 +148,8 @@ public interface Server {
      * Builder to build {@link Server} instance.
      */
     final class Builder {
+        private static final long STARTUP_TIME = ServerImpl.STARTUP_TIME;
+
         // there should only be one
         private static final AtomicInteger MP_SERVER_COUNTER = new AtomicInteger(1);
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());

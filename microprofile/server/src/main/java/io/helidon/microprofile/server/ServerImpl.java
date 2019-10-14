@@ -67,6 +67,7 @@ import org.glassfish.jersey.server.ResourceConfig;
  * Server to handle lifecycle of microprofile implementation.
  */
 public class ServerImpl implements Server {
+    static final long STARTUP_TIME = System.nanoTime();
     private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
@@ -446,14 +447,13 @@ public class ServerImpl implements Server {
         CountDownLatch cdl = new CountDownLatch(1);
         AtomicReference<Throwable> throwRef = new AtomicReference<>();
 
-        long beforeT = System.nanoTime();
         server.start()
                 .whenComplete((webServer, throwable) -> {
                     if (null != throwable) {
                         STARTUP_LOGGER.log(Level.FINEST, "Startup failed", throwable);
                         throwRef.set(throwable);
                     } else {
-                        long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
+                        long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - STARTUP_TIME, TimeUnit.NANOSECONDS);
 
                         port = webServer.port();
                         STARTUP_LOGGER.finest("Started up");
