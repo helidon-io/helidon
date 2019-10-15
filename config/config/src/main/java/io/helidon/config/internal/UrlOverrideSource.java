@@ -27,12 +27,12 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.OverrideSources;
 import io.helidon.config.spi.AbstractOverrideSource;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 
 /**
@@ -50,9 +50,29 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
 
     private final URL url;
 
-    UrlOverrideSource(UrlBuilder builder, URL url) {
+    UrlOverrideSource(UrlBuilder builder) {
         super(builder);
-        this.url = url;
+
+        this.url = builder.url;
+    }
+
+    /**
+     * Create a new URL override source from meta configuration.
+     *
+     * @param metaConfig meta configuration containing at least the {@key url} key
+     * @return a new URL override source
+     */
+    public static UrlOverrideSource create(Config metaConfig) {
+        return builder().config(metaConfig).build();
+    }
+
+    /**
+     * Create a new fluent API builder to create URL override source.
+     *
+     * @return a new builder
+     */
+    public static UrlBuilder builder() {
+        return new UrlBuilder();
     }
 
     @Override
@@ -127,15 +147,26 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
 
         /**
          * Initialize builder.
-         *
-         * @param url configuration url
          */
-        public UrlBuilder(URL url) {
+        private UrlBuilder() {
             super(URL.class);
+        }
 
-            Objects.requireNonNull(url, "url cannot be null");
-
+        /**
+         * Configure the URL that is source of this overrides.
+         *
+         * @param url url of the resource to load
+         * @return updated builder instance
+         */
+        public UrlBuilder url(URL url) {
             this.url = url;
+            return this;
+        }
+
+        @Override
+        public UrlBuilder config(Config metaConfig) {
+            metaConfig.get("url").as(URL.class).ifPresent(this::url);
+            return super.config(metaConfig);
         }
 
         @Override
@@ -150,8 +181,10 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
          *
          * @return new instance of Url ConfigSource.
          */
-        public OverrideSource build() {
-            return new UrlOverrideSource(this, url);
+        public UrlOverrideSource build() {
+            Objects.requireNonNull(url, "url cannot be null");
+
+            return new UrlOverrideSource(this);
         }
 
         PollingStrategy pollingStrategyInternal() { //just for testing purposes

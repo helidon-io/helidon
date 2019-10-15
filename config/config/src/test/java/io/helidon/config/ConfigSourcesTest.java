@@ -120,7 +120,7 @@ public class ConfigSourcesTest {
 
     @Test
     public void testLoadNoSource() {
-        ConfigSource source = ConfigSources.load().build();
+        ConfigSource source = ConfigSources.empty();
         source.init(mock(ConfigContext.class));
 
         assertThat(source.load(), is(Optional.empty()));
@@ -139,7 +139,7 @@ public class ConfigSourcesTest {
                                 .build())
                         .build());
 
-        ConfigSource source = ConfigSources.load(meta1).build();
+        ConfigSource source = MetaConfig.compositeSource(Config.create(meta1));
         source.init(mock(ConfigContext.class));
         ObjectNode objectNode = source.load().get();
         assertThat(objectNode.get(TEST_SYS_PROP_NAME), valueNode(TEST_SYS_PROP_VALUE));
@@ -173,7 +173,7 @@ public class ConfigSourcesTest {
                         .build());
 
         //meta1 has precedence over meta2
-        ConfigSource source = ConfigSources.load(meta1, meta2).build();
+        ConfigSource source = MetaConfig.compositeSource(Config.create(meta1, meta2));
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser("text/x-java-properties")).thenReturn(Optional.of(ConfigParsers.properties()));
 

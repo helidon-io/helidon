@@ -225,7 +225,7 @@ public class FileConfigSourceTest {
     public void testDataTimestamp() throws IOException {
         final String filename = "new-file";
         File file = folder.newFile(filename);
-        FileConfigSource fcs = new FileConfigSource(new FileBuilder(Paths.get(filename)), file.toPath());
+        FileConfigSource fcs = FileConfigSource.builder().path(file.toPath()).build();
         assertThat(fcs.dataStamp().isPresent(), is(true));
         assertThat(fcs.dataStamp().get().length, is(greaterThan(0)));
     }

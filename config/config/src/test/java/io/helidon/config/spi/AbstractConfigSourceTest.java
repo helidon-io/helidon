@@ -201,7 +201,7 @@ public class AbstractConfigSourceTest {
 
     @Test
     public void testInitAll() {
-        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().init(Config.create(ConfigSources.create(
+        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().config(Config.create(ConfigSources.create(
                 CollectionsHelper.mapOf("media-type-mapping.yaml", "application/x-yaml",
                        "media-type-mapping.password", "application/base64"))));
 
@@ -213,7 +213,7 @@ public class AbstractConfigSourceTest {
 
     @Test
     public void testInitNothing() {
-        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().init((Config.empty()));
+        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().config((Config.empty()));
 
         //media-type-mapping
         assertThat(builder.mediaTypeMapping(), is(nullValue()));

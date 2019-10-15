@@ -25,6 +25,8 @@ module io.helidon.config {
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.reactive;
+    requires io.helidon.common.serviceloader;
+    requires io.helidon.common.media.type;
 
     exports io.helidon.config;
     exports io.helidon.config.spi;
@@ -34,6 +36,11 @@ module io.helidon.config {
     uses io.helidon.config.spi.ConfigMapperProvider;
     uses io.helidon.config.spi.ConfigParser;
     uses io.helidon.config.spi.ConfigFilter;
+    uses io.helidon.config.spi.ConfigSourceProvider;
+    uses io.helidon.config.spi.OverrideSourceProvider;
+    uses io.helidon.config.spi.RetryPolicyProvider;
+    uses io.helidon.config.spi.PollingStrategyProvider;
+
     uses java.nio.file.spi.FileTypeDetector;
 
     provides io.helidon.config.spi.ConfigParser with io.helidon.config.internal.PropertiesConfigParser;

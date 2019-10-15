@@ -130,16 +130,14 @@ public class AbstractSourceTest {
 
     @Test
     public void testInitAll() {
-        TestingSource.TestingBuilder builder = TestingSource.builder().init(
+        TestingSource.TestingBuilder builder = TestingSource.builder().config(
                 Config.builder(ConfigSources.create(
-                        CollectionsHelper.mapOf("optional", "true",
-                                                "polling-strategy.class", TestingPollingStrategy.class.getName(),
-                                                "retry-policy.class", TestingRetryPolicy.class.getName()
-                        )))
+                        CollectionsHelper.mapOf("optional", "true")))
                         .addMapper(TestingRetryPolicy.class, config -> new TestingRetryPolicy())
                         .addMapper(TestingPollingStrategy.class, config -> new TestingPollingStrategy())
                         .build()
-        );
+        ).pollingStrategy(TestingPollingStrategy::new)
+                .retryPolicy(new TestingRetryPolicy());
 
         //optional
         assertThat(builder.isMandatory(), is(false));
@@ -151,7 +149,7 @@ public class AbstractSourceTest {
 
     @Test
     public void testInitNothing() {
-        TestingSource.TestingBuilder builder = TestingSource.builder().init(Config.empty());
+        TestingSource.TestingBuilder builder = TestingSource.builder().config(Config.empty());
 
         //optional
         assertThat(builder.isMandatory(), is(true));

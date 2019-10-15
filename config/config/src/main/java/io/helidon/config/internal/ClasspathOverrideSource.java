@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.AbstractOverrideSource;
 import io.helidon.config.spi.OverrideSource;
@@ -42,12 +43,13 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
 
     private final String resource;
 
-    ClasspathOverrideSource(ClasspathBuilder builder, String resource) {
+    ClasspathOverrideSource(ClasspathBuilder builder) {
         super(builder);
+        String builderResource = builder.resource;
 
-        this.resource = resource.startsWith("/")
-                ? resource.substring(1)
-                : resource;
+        this.resource = builderResource.startsWith("/")
+                ? builderResource.substring(1)
+                : builderResource;
     }
 
     @Override
@@ -88,6 +90,24 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
     }
 
     /**
+     * Create a new classpath override source from meta configuration, containing {@code resource} key and other options.
+     * @param config meta configuration
+     * @return a new classpath override source
+     */
+    public static ClasspathOverrideSource create(Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
+     * Create a new fluent API builder.
+     *
+     * @return a new builder
+     */
+    public static ClasspathBuilder builder() {
+        return new ClasspathBuilder();
+    }
+
+    /**
      * Classpath OverrideSource Builder.
      * <p>
      * It allows to configure following properties:
@@ -105,19 +125,36 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
 
         /**
          * Initialize builder.
-         *
-         * @param resource classpath resource name
          */
-        public ClasspathBuilder(String resource) {
+        private ClasspathBuilder() {
             super(Path.class);
+        }
 
-            Objects.requireNonNull(resource, "resource name cannot be null");
-
+        /**
+         * Configure the classpath resource to be used as a source.
+         *
+         * @param resource classpath resource path
+         * @return updated builder instance
+         */
+        public ClasspathBuilder resource(String resource) {
             this.resource = resource;
+            return this;
+        }
+
+        /**
+         * Update builder from meta configuration.
+         *
+         * @param metaConfig meta configuration to load this override source from
+         * @return updated builder instance
+         */
+        public ClasspathBuilder config(Config metaConfig) {
+            metaConfig.get("resource").asString().ifPresent(this::resource);
+            return super.config(metaConfig);
         }
 
         @Override
         protected Path target() {
+            Objects.requireNonNull(resource, "resource name cannot be null");
             try {
                 Path resourcePath = ClasspathSourceHelper.resourcePath(resource);
                 if (resourcePath != null) {
@@ -136,8 +173,8 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
          * @return new instance of Classpath OverrideSource.
          */
         @Override
-        public OverrideSource build() {
-            return new ClasspathOverrideSource(this, resource);
+        public ClasspathOverrideSource build() {
+            return new ClasspathOverrideSource(this);
         }
 
         PollingStrategy pollingStrategyInternal() { //just for testing purposes

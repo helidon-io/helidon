@@ -1,6 +1,9 @@
 {
     "sources": [
         {
+            "type": "system-properties"
+        },
+        {
             "type": "classpath",
             "properties": {
                 "resource": "config.json"

@@ -18,7 +18,6 @@ package io.helidon.config.internal;
 
 import java.io.StringReader;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,10 +46,15 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     private final Path filePath;
 
-    FileConfigSource(FileBuilder builder, Path filePath) {
+    /**
+     * Create a new file config source.
+     *
+     * @param builder builder with configured path and other options of this source
+     */
+    protected FileConfigSource(FileBuilder builder) {
         super(builder);
 
-        this.filePath = filePath;
+        this.filePath = builder.path;
     }
 
     /**
@@ -60,7 +64,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * <ul>
      * <li>{@code path} - type {@link Path}</li>
      * </ul>
-     * Optional {@code properties}: see {@link AbstractParsableConfigSource.Builder#init(Config)}.
+     * Optional {@code properties}: see {@link AbstractParsableConfigSource.Builder#config(Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -69,12 +73,20 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#file(String)
-     * @see AbstractParsableConfigSource.Builder#init(Config)
+     * @see AbstractParsableConfigSource.Builder#config(Config)
      */
     public static FileConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (FileConfigSource) new FileBuilder(metaConfig.get(PATH_KEY).as(Path.class).get())
-                .init(metaConfig)
+        return FileConfigSource.builder()
+                .config(metaConfig)
                 .build();
+    }
+
+    /**
+     * Get a builder instance to create a new config source.
+     * @return a fluent API builder
+     */
+    public static FileBuilder builder() {
+        return new FileBuilder();
     }
 
     @Override
@@ -128,22 +140,34 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
     public static final class FileBuilder extends Builder<FileBuilder, Path> {
         private Path path;
 
-        /**
-         * Initialize builder.
-         *
-         * @param path configuration file path
-         */
-        public FileBuilder(Path path) {
+        private FileBuilder() {
             super(Path.class);
-
-            Objects.requireNonNull(path, "file path cannot be null");
-
-            this.path = path;
         }
 
+        /**
+         * Configure the path to read configuration from (mandatory).
+         *
+         * @param path path of a file to use
+         * @return updated builder instance
+         */
+        public FileBuilder path(Path path) {
+            this.path = path;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <ul>
+         * <li>{@code path} - path to the file containing the configuration</li>
+         * </ul>
+         *
+         * @param metaConfig configuration properties used to configure a builder instance.
+         * @return modified builder instance
+         */
         @Override
-        protected FileBuilder init(Config metaConfig) {
-            return super.init(metaConfig);
+        public FileBuilder config(Config metaConfig) {
+            metaConfig.get(PATH_KEY).as(Path.class).ifPresent(this::path);
+            return super.config(metaConfig);
         }
 
         @Override
@@ -158,8 +182,11 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
          *
          * @return new instance of File ConfigSource.
          */
-        public ConfigSource build() {
-            return new FileConfigSource(this, path);
+        public FileConfigSource build() {
+            if (null == path) {
+                throw new IllegalArgumentException("File path cannot be null");
+            }
+            return new FileConfigSource(this);
         }
 
         PollingStrategy pollingStrategyInternal() { //just for testing purposes

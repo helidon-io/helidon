@@ -187,16 +187,16 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
          * <li>{@code media-type-mapping} - type {@code Map} - key to media type, see {@link #mediaTypeMapping(Function)}</li>
          * </ul>
          *
-         * @param metaConfig configuration properties used to initialize a builder instance.
+         * @param metaConfig configuration properties used to configure a builder instance.
          * @return modified builder instance
          */
         @Override
-        protected B init(Config metaConfig) {
+        public B config(Config metaConfig) {
             //media-type-mapping
             metaConfig.get(MEDIA_TYPE_MAPPING_KEY).detach().asMap()
                     .ifPresent(this::initMediaTypeMapping);
 
-            return super.init(metaConfig);
+            return super.config(metaConfig);
         }
 
         private void initMediaTypeMapping(Map<String, String> mediaTypeMapping) {

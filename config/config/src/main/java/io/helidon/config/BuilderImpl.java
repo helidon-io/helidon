@@ -18,12 +18,14 @@ package io.helidon.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
@@ -46,8 +48,6 @@ import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
-
-import static io.helidon.config.ConfigSources.classpath;
 
 /**
  * {@link Config} Builder implementation.
@@ -100,6 +100,18 @@ class BuilderImpl implements Config.Builder {
                 envVarAliasGeneratorEnabled = true;
             }
         });
+        return this;
+    }
+
+    @Override
+    public Config.Builder addSource(ConfigSource source) {
+        if (null == sources) {
+            sources = new LinkedList<>();
+        }
+        sources.add(source);
+        if (source instanceof ConfigSources.EnvironmentVariablesConfigSource) {
+            envVarAliasGeneratorEnabled = true;
+        }
         return this;
     }
 
@@ -212,6 +224,11 @@ class BuilderImpl implements Config.Builder {
         return this;
     }
 
+    public Config.Builder cachingEnabled(boolean enabled) {
+        this.cachingEnabled = enabled;
+        return this;
+    }
+
     @Override
     public Config.Builder changesExecutor(Executor changesExecutor) {
         Objects.requireNonNull(changesExecutor);
@@ -278,6 +295,50 @@ class BuilderImpl implements Config.Builder {
         return this;
     }
 
+    @Override
+    public Config.Builder config(Config metaConfig) {
+        metaConfig.get("caching.enabled").asBoolean().ifPresent(this::cachingEnabled);
+        metaConfig.get("key-resolving.enabled").asBoolean().ifPresent(this::keyResolvingEnabled);
+        metaConfig.get("value-resolving.enabled").asBoolean().ifPresent(this::valueResolvingEnabled);
+        metaConfig.get("parsers.enabled").asBoolean().ifPresent(this::parserServicesEnabled);
+        metaConfig.get("mappers.enabled").asBoolean().ifPresent(this::mapperServicesEnabled);
+
+        disableSystemPropertiesSource();
+        disableEnvironmentVariablesSource();
+
+        List<ConfigSource> sourceList = new LinkedList<>();
+
+        metaConfig.get("sources")
+                .asNodeList()
+                .ifPresent(list -> list.forEach(it -> sourceList.add(MetaConfig.configSource(it))));
+
+        sourceList.forEach(this::addSource);
+        sourceList.clear();
+
+        Config overrideConfig = metaConfig.get("override-source");
+        if (overrideConfig.exists()) {
+            overrides(() -> MetaConfig.overrideSource(overrideConfig));
+        }
+
+        return this;
+    }
+
+    private void mapperServicesEnabled(Boolean aBoolean) {
+        this.mapperServicesEnabled = aBoolean;
+    }
+
+    private void parserServicesEnabled(Boolean aBoolean) {
+        parserServicesEnabled = aBoolean;
+    }
+
+    private void valueResolvingEnabled(Boolean aBoolean) {
+        // TODO this is a noop as is disableValueResolving
+    }
+
+    private void keyResolvingEnabled(Boolean aBoolean) {
+        this.keyResolving = aBoolean;
+    }
+
     private ProviderImpl buildProvider() {
 
         //context
@@ -294,8 +355,8 @@ class BuilderImpl implements Config.Builder {
         }
 
         Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled
-                                                        ? EnvironmentVariableAliases::aliasesOf
-                                                        : null;
+                ? EnvironmentVariableAliases::aliasesOf
+                : null;
 
         //config provider
         return createProvider(configMapperManager,
@@ -320,14 +381,17 @@ class BuilderImpl implements Config.Builder {
         }
 
         if (systemPropertiesSourceEnabled
-            && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
+                && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
             targetSources.add(ConfigSources.systemProperties());
         }
 
         if (sources != null) {
             targetSources.addAll(sources);
         } else {
-            targetSources.add(defaultConfigSource());
+            Set<String> supportedMediaTypes = new HashSet<>();
+
+            // if there are no sources configured, use meta-configuration
+            targetSources.add(MetaConfig.compositeSource(mediaType -> context.findParser(mediaType).isPresent()));
         }
 
         final ConfigSource targetConfigSource;
@@ -375,39 +439,6 @@ class BuilderImpl implements Config.Builder {
     //
     // utils
     //
-
-    private static ConfigSource defaultConfigSource() {
-        final List<ConfigSource> sources = new ArrayList<>();
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        final List<ConfigSource> meta = defaultConfigSources(classLoader, "meta-config");
-        if (!meta.isEmpty()) {
-            sources.add(ConfigSources.load(toDefaultConfigSource(meta)).build());
-        }
-        sources.addAll(defaultConfigSources(classLoader, "application"));
-        return ConfigSources.create(toDefaultConfigSource(sources)).build();
-    }
-
-    private static List<ConfigSource> defaultConfigSources(final ClassLoader classLoader, final String baseResourceName) {
-        final List<ConfigSource> sources = new ArrayList<>();
-        for (final String extension : DEFAULT_FILE_EXTENSIONS) {
-            final String resource = baseResourceName + "." + extension;
-            if (classLoader.getResource(resource) != null) {
-                sources.add(classpath(resource).optional().build());
-            }
-        }
-        return sources;
-    }
-
-    private static ConfigSource toDefaultConfigSource(final List<ConfigSource> sources) {
-        if (sources.isEmpty()) {
-            return ConfigSources.empty();
-        } else if (sources.size() == 1) {
-            return sources.get(0);
-        } else {
-            return new UseFirstAvailableConfigSource(sources);
-        }
-    }
-
     static List<ConfigParser> buildParsers(boolean servicesEnabled, List<ConfigParser> userDefinedParsers) {
         List<ConfigParser> parsers = new LinkedList<>(userDefinedParsers);
         if (servicesEnabled) {

@@ -16,12 +16,12 @@
 
 package io.helidon.config.spi;
 
-import java.net.URL;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.MetaConfig;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
@@ -38,6 +38,20 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  */
 @FunctionalInterface
 public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource> {
+    @Override
+    default ConfigSource get() {
+        return this;
+    }
+
+    /**
+     * Initialize the config source with a {@link ConfigContext}.
+     * <p>
+     * The method is executed during {@link Config} bootstrapping by {@link Config.Builder}.
+     *
+     * @param context a config context
+     */
+    default void init(ConfigContext context) {
+    }
 
     /**
      * Initializes a {@link ConfigSource} from meta-configuration.
@@ -73,7 +87,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * available properties for types other than {@code system-properties} and
      * {@code environment-variables} (which do not support {@code properties}
      * settings).
-     * <table class="config">
+     * <table>
      * <caption><b>Predefined Configuration Source Types</b></caption>
      * <tr>
      * <th>Source Type</th>
@@ -107,7 +121,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * </tr>
      * <tr>
      * <td>{@code url}</td>
-     * <td>{@link ConfigSources#url(URL)}</td>
+     * <td>{@link ConfigSources#url(java.net.URL)}</td>
      * <td>{@code url}</td>
      * </tr>
      * <tr>
@@ -230,32 +244,18 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * @param metaConfig meta-configuration used to initialize the
      * {@code ConfigSource}
      * @return {@code ConfigSource} described by {@code metaConfig}
-     * @throws MissingValueException if the configuration tree does not contain
+     * @throws io.helidon.config.MissingValueException if the configuration tree does not contain
      * all expected sub-nodes required by the mapper implementation to provide
      * an instance of the corresponding Java type.
-     * @throws ConfigMappingException if the mapper fails to map the (existing)
+     * @throws io.helidon.config.ConfigMappingException if the mapper fails to map the (existing)
      * configuration tree represented by the supplied configuration node to an
      * instance of the given Java type
      * @see ConfigSources#load(Supplier[])
      * @see ConfigSources#load(Config)
+     * @deprecated use {@link io.helidon.config.MetaConfig#configSource(io.helidon.config.Config)}
      */
+    @Deprecated
     static ConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return ConfigSourceConfigMapper.instance().apply(metaConfig);
+        return MetaConfig.configSource(metaConfig);
     }
-
-    @Override
-    default ConfigSource get() {
-        return this;
-    }
-
-    /**
-     * Initialize the config source with a {@link ConfigContext}.
-     * <p>
-     * The method is executed during {@link Config} bootstrapping by {@link Config.Builder}.
-     *
-     * @param context a config context
-     */
-    default void init(ConfigContext context) {
-    }
-
 }

@@ -353,10 +353,9 @@ public interface Config {
      * {@code Config} instance as desired.
      *
      * @return new instance of {@link Config}
-     * @see #loadSourcesFrom(Supplier[])
      */
     static Config create() {
-        return builder().build();
+        return builder().metaConfig().build();
     }
 
     /**
@@ -375,9 +374,7 @@ public interface Config {
      *
      * @param configSources ordered list of configuration sources
      * @return new instance of {@link Config}
-     * @see #loadSourcesFrom(Supplier[])
      * @see #builder(Supplier[])
-     * @see #builderLoadSourcesFrom(Supplier[])
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
@@ -388,25 +385,6 @@ public interface Config {
     @SafeVarargs
     static Config create(Supplier<ConfigSource>... configSources) {
         return builder(configSources).build();
-    }
-
-    /**
-     * Creates a new {@link Config} loaded from the specified
-     * {@link ConfigSource}s representing meta-configurations.
-     * <p>
-     * See {@link ConfigSource#create(Config)} for more information about the
-     * format of meta-configuration.
-     *
-     * @param metaSources ordered list of meta sources
-     * @return new instance of {@link Config}
-     * @see #create(Supplier[])
-     * @see #builder(Supplier[])
-     * @see #builderLoadSourcesFrom(Supplier[])
-     * @see ConfigSources#load(Supplier[])
-     */
-    @SafeVarargs
-    static Config loadSourcesFrom(Supplier<ConfigSource>... metaSources) {
-        return builderLoadSourcesFrom(metaSources).build();
     }
 
     /**
@@ -427,8 +405,6 @@ public interface Config {
      * @return new initialized Builder instance
      * @see #builder()
      * @see #create(Supplier[])
-     * @see #loadSourcesFrom(Supplier[])
-     * @see #builderLoadSourcesFrom(Supplier[])
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
@@ -439,28 +415,6 @@ public interface Config {
     @SafeVarargs
     static Builder builder(Supplier<ConfigSource>... configSources) {
         return builder().sources(CollectionsHelper.listOf(configSources));
-    }
-
-    /**
-     * Provides a {@link Builder} for creating a {@link Config} based on the
-     * specified {@link ConfigSource}s representing meta-configurations.
-     * <p>
-     * Each meta-configuration source should set the {@code sources} property to
-     * be an array of config sources. See {@link ConfigSource#create(Config)} for
-     * more information about the format of meta-configuration.
-     *
-     * @param metaSources ordered list of meta sources
-     * @return new initialized Builder instance
-     * @see #builder()
-     * @see #builder(Supplier[])
-     * @see ConfigSources#load(Supplier[])
-     * @see #loadSourcesFrom(Supplier[])
-     */
-    @SafeVarargs
-    static Builder builderLoadSourcesFrom(Supplier<ConfigSource>... metaSources) {
-        return builder(ConfigSources.load(metaSources))
-                .disableSystemPropertiesSource()
-                .disableEnvironmentVariablesSource();
     }
 
     /**
@@ -1320,6 +1274,14 @@ public interface Config {
         Builder sources(List<Supplier<ConfigSource>> configSources);
 
         /**
+         * Add a config source to the list of sources.
+         *
+         * @param source to add
+         * @return updated builder instance
+         */
+        Builder addSource(ConfigSource source);
+
+        /**
          * Sets a {@link ConfigSource} instance to be used as a source of configuration to be wrapped into {@link Config} API.
          * <p>
          * Target source is composed from {@code configSource} and following sources (unless they are disabled) in order:
@@ -1704,5 +1666,25 @@ public interface Config {
          * @return updated builder instance
          */
         Builder mappersFrom(Config config);
+
+        /**
+         * Check if meta configuration is present and if so, update this builder using
+         * the meta configuration.
+         *
+         * @return updated builder instance
+         */
+        default Builder metaConfig() {
+            MetaConfig.metaConfig()
+                    .ifPresent(this::config);
+
+            return this;
+        }
+
+        /**
+         * Configure this config builder from meta configuration.
+         *
+         * TODO configuration options should be here
+         */
+        Builder config(Config metaConfig);
     }
 }

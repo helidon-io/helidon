@@ -34,7 +34,7 @@ public abstract class AbstractOverrideSource<S> extends AbstractSource<OverrideS
      *
      * @param builder builder to be initialized from
      */
-    protected AbstractOverrideSource(Builder builder) {
+    protected AbstractOverrideSource(Builder<?, ?> builder) {
         super(builder);
     }
 

@@ -59,13 +59,13 @@ public class MyConfigSourceBuilder1
     public static MyConfigSourceBuilder1 from(Config metaConfig) {
         return from(metaConfig.get("myProp1").asString().get(),
                     metaConfig.get("myProp2").asInt().get())
-                .init(metaConfig);
+                .config(metaConfig);
     }
 
     @Override
-    protected MyConfigSourceBuilder1 init(Config metaConfig) {
+    public MyConfigSourceBuilder1 config(Config metaConfig) {
         metaConfig.get("myProp3").asBoolean().ifPresent(this::myProp3);
-        return super.init(metaConfig);
+        return super.config(metaConfig);
     }
 
     /**

@@ -75,7 +75,7 @@ public final class OverrideSources {
      */
     public static AbstractOverrideSource.Builder
             <? extends AbstractOverrideSource.Builder<?, Path>, Path> classpath(String resourceName) {
-        return new ClasspathOverrideSource.ClasspathBuilder(resourceName);
+        return ClasspathOverrideSource.builder().resource(resourceName);
     }
 
     /**
@@ -86,7 +86,7 @@ public final class OverrideSources {
      */
     public static AbstractOverrideSource.Builder
             <? extends AbstractOverrideSource.Builder<?, Path>, Path> file(String file) {
-        return new FileOverrideSource.FileBuilder(Paths.get(file));
+        return FileOverrideSource.builder().path(Paths.get(file));
     }
 
     /**
@@ -97,7 +97,7 @@ public final class OverrideSources {
      */
     public static AbstractOverrideSource.Builder
             <? extends AbstractOverrideSource.Builder<?, URL>, URL> url(URL url) {
-        return new UrlOverrideSource.UrlBuilder(url);
+        return UrlOverrideSource.builder().url(url);
     }
 
     /**

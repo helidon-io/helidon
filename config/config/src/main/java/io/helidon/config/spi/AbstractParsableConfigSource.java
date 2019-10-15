@@ -148,16 +148,17 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
          * <li>{@code media-type} - type {@code String}, see {@link #mediaType(String)}</li>
          * </ul>
          *
-         * @param metaConfig configuration properties used to initialize a builder instance.
+         * @param metaConfig configuration properties used to configure a builder instance.
          * @return modified builder instance
          */
         @Override
-        protected B init(Config metaConfig) {
+        public B config(Config metaConfig) {
             //media-type
-            metaConfig.get(MEDIA_TYPE_KEY).asString()
+            metaConfig.get(MEDIA_TYPE_KEY)
+                    .asString()
                     .ifPresent(this::mediaType);
 
-            return super.init(metaConfig);
+            return super.config(metaConfig);
         }
 
         /**

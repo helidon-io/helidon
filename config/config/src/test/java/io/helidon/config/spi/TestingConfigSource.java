@@ -118,8 +118,8 @@ public class TestingConfigSource extends AbstractConfigSource<Instant> {
         }
 
         @Override
-        protected TestingBuilder init(Config metaConfig) {
-            return super.init(metaConfig);
+        public TestingBuilder config(Config metaConfig) {
+            return super.config(metaConfig);
         }
 
         public TestingBuilder objectNode(ObjectNode objectNode) {

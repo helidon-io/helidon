@@ -27,7 +27,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link Config#create()} from meta config with just built-in Properties Parser available, missing other parsers.
+ * Tests {@link Config#create()} from meta config with just built-in Properties Parser available,
+ * missing other parsers.
  */
 public class ConfigCreateDefaultFromMetaPropertiesTest {
 
@@ -50,7 +51,7 @@ public class ConfigCreateDefaultFromMetaPropertiesTest {
 
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(ConfigValues.simpleValue(PROP_VALUE)));
+        assertThat(config.get(KEY).asString().get(), is(PROP_VALUE));
     }
 
 }

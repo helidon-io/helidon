@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.AbstractOverrideSource;
 import io.helidon.config.spi.ConfigParser;
@@ -42,10 +43,10 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
 
     private final Path filePath;
 
-    FileOverrideSource(FileBuilder builder, Path filePath) {
+    FileOverrideSource(FileBuilder builder) {
         super(builder);
 
-        this.filePath = filePath;
+        this.filePath = builder.path;
     }
 
     @Override
@@ -73,6 +74,25 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
     }
 
     /**
+     * Create a new file override source from meta configuration.
+     *
+     * @param metaConfig meta configuration containing the {@code path} and other configuration options
+     * @return a new file override source
+     */
+    public static FileOverrideSource create(Config metaConfig) {
+        return builder().config(metaConfig).build();
+    }
+
+    /**
+     * Create a new fluent API builder.
+     *
+     * @return builder to create new instances of file override source
+     */
+    public static FileBuilder builder() {
+        return new FileBuilder();
+    }
+
+    /**
      * File ConfigSource Builder.
      * <p>
      * It allows to configure following properties:
@@ -93,15 +113,27 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
 
         /**
          * Initialize builder.
-         *
-         * @param path configuration file path
          */
-        public FileBuilder(Path path) {
+        private FileBuilder() {
             super(Path.class);
+        }
 
-            Objects.requireNonNull(path, "file path cannot be null");
-
+        /**
+         * Configure path to look for the source.
+         *
+         * @param path file path
+         * @return updated builder
+         */
+        public FileBuilder path(Path path) {
             this.path = path;
+            return this;
+        }
+
+        @Override
+        public FileBuilder config(Config metaConfig) {
+            metaConfig.get("path").as(Path.class).ifPresent(this::path);
+
+            return super.config(metaConfig);
         }
 
         @Override
@@ -116,8 +148,10 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
          *
          * @return new instance of File ConfigSource.
          */
-        public OverrideSource build() {
-            return new FileOverrideSource(this, path);
+        @Override
+        public FileOverrideSource build() {
+            Objects.requireNonNull(path, "file path cannot be null");
+            return new FileOverrideSource(this);
         }
 
         PollingStrategy pollingStrategyInternal() { //just for testing purposes

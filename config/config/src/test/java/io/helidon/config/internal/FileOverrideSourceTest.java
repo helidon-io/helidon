@@ -104,8 +104,9 @@ public class FileOverrideSourceTest {
     @Test
     public void testDataTimestamp() throws IOException {
         final String filename = "new-file";
-        File file = folder.newFile(filename);
-        FileOverrideSource fcs = new FileOverrideSource(new FileBuilder(Paths.get(filename)), file.toPath());
+        FileOverrideSource fcs = FileOverrideSource.builder()
+                .path(Paths.get(filename))
+                .build();
         assertThat(fcs.dataStamp(), is(not(Instant.now())));
     }
 

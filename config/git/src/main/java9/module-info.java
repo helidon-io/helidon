@@ -24,4 +24,6 @@ module io.helidon.config.git {
     requires io.helidon.common;
 
     exports io.helidon.config.git;
+
+    provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.config.git.GitConfigSourceProvider;
 }

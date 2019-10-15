@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
@@ -209,7 +208,7 @@ public final class ConfigSources {
      * @return new @{code ConfigSource} for the newly-prefixed content
      */
     public static ConfigSource prefixed(String key, Supplier<ConfigSource> sourceSupplier) {
-        return new PrefixedConfigSource(key, sourceSupplier.get());
+        return PrefixedConfigSource.create(key, sourceSupplier.get());
     }
 
     /**
@@ -258,8 +257,21 @@ public final class ConfigSources {
      */
     public static AbstractParsableConfigSource.Builder
             <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> file(String path) {
-        return new FileConfigSource.FileBuilder(Paths.get(path));
+        return FileConfigSource.builder().path(Paths.get(path));
     }
+
+    /**
+     * Provides a {@code Builder} for creating a {@code ConfigSource} from the specified
+     * file path.
+     *
+     * @param path a file path
+     * @return builder for the file-based {@code ConfigSource}
+     */
+    public static AbstractParsableConfigSource.Builder
+            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> file(Path path) {
+        return FileConfigSource.builder().path(path);
+    }
+
 
     /**
      * Provides a {@code Builder} for creating a {@code ConfigSource} from the specified
@@ -303,8 +315,6 @@ public final class ConfigSources {
      * @see MergingStrategy
      * @see #create(Supplier[])
      * @see #create(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
      * @see Config#create(Supplier[])
      * @see Config#builder(Supplier[])
      */
@@ -330,87 +340,11 @@ public final class ConfigSources {
      * @see MergingStrategy
      * @see #create(Supplier[])
      * @see #create(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
      * @see Config#create(Supplier[])
      * @see Config#builder(Supplier[])
      */
     public static CompositeBuilder create(List<Supplier<ConfigSource>> configSources) {
         return new CompositeBuilder(configSources);
-    }
-
-    /**
-     * Provides a {@link CompositeBuilder} for creating a composite
-     * {@code ConfigSource} based on the {@code ConfigSource}s returned by the
-     * provided meta-sources.
-     * <p>
-     * Each meta-source must contain the {@code sources} property which is an
-     * array of config sources. See {@link ConfigSource#create(Config)} for more
-     * information about the format of meta-configuration.
-     * <p>
-     * The returned builder is a {@code CompositeBuilder} that combines the
-     * config from all config sources derived from the meta-configuration in the
-     * meta-sources. By default the composite builder uses the
-     * {@link MergingStrategy#fallback() fallback merging strategy}.
-     *
-     * @param metaSources ordered list of meta-sources from which the builder
-     * will read meta-configuration indicating the config sources
-     * @return new composite config source builder initialized from the
-     * specified meta-sources.
-     * @see CompositeBuilder
-     * @see MergingStrategy
-     * @see #create(Supplier[])
-     * @see #create(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
-     * @see Config#builderLoadSourcesFrom(Supplier[])
-     * @see Config#loadSourcesFrom(Supplier[])
-     */
-    @SafeVarargs
-    public static CompositeBuilder load(Supplier<ConfigSource>... metaSources) {
-        return load(Config.builder(metaSources)
-                            .disableEnvironmentVariablesSource()
-                            .disableSystemPropertiesSource()
-                            .build());
-    }
-
-    /**
-     * Provides a {@link CompositeBuilder} for creating a composite
-     * {@code ConfigSource} based on the {@link ConfigSource}s returned by the
-     * provided meta-configuration.
-     * <p>
-     * The meta-configuration must contain the {@code sources} property which is
-     * an array of config sources. See {@link ConfigSource#create(Config)} for
-     * more information about the format of meta-configuration.
-     * <p>
-     * The returned builder is a {@code CompositeBuilder} that combines the
-     * config from all config sources derived from the meta-configuration. By
-     * default the composite builder uses the
-     * {@link MergingStrategy#fallback() fallback merging strategy}.
-     *
-     * @param metaConfig meta-configuration from which the builder will derive
-     * config sources
-     * @return new composite config source builder initialized from the
-     * specified meta-config
-     * @see CompositeBuilder
-     * @see MergingStrategy
-     * @see #create(Supplier[])
-     * @see #create(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
-     * @see Config#builderLoadSourcesFrom(Supplier[])
-     * @see Config#loadSourcesFrom(Supplier[])
-     */
-    public static CompositeBuilder load(Config metaConfig) {
-        List<Supplier<ConfigSource>> sources = metaConfig.get(SOURCES_KEY)
-                .asNodeList()
-                .orElse(CollectionsHelper.listOf())
-                .stream()
-                .map(node -> node.as(ConfigSource::create))
-                .map(ConfigValue::get)
-                .collect(Collectors.toList());
-
-        return ConfigSources.create(sources);
     }
 
     /**

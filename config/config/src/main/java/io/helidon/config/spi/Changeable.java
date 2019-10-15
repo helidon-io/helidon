@@ -17,16 +17,17 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Flow;
 
 /**
- * Interface used to mark changeable source.
+ * A changeable component is a component that may identify a change
+ *  at an arbitrary point in time and that can notify listeners of such a change.
  *
  * @param <T> a type of source
  */
 public interface Changeable<T> { //TODO later to be extended just by selected sources
-
     /**
      * Returns a {@code Flow.Publisher} to which the caller can subscribe in
      * order to receive change notifications.

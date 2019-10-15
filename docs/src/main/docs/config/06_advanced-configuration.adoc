@@ -671,6 +671,7 @@ for that source.
 
 ===== Custom Source Type using `type`
 You can add your own custom type names to the built-in ones by adding to a
+TODO document correctly - need to use service loader (ConfigSourceProvider) - find all instances of this!
 `META-INF/resources/meta-config-sources.properties` file on the classpath.
 In this file each property name is a custom config source type name and its
 value is the fully-qualified class name for a custom `ConfigSource` implementation

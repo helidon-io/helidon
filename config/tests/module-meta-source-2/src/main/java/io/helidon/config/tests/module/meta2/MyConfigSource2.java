@@ -19,6 +19,7 @@ package io.helidon.config.tests.module.meta2;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.objectmapping.Value;
 import io.helidon.config.spi.ConfigNode;

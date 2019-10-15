@@ -46,8 +46,8 @@ public class DemoTest {
         Config config = Config.create();
 
         assertThat( // STRING
-                    config.get("app.greeting").asString(),
-                    is(simpleValue("Hello")));
+                    config.get("app.greeting").asString().get(),
+                    is("Hello"));
     }
 
     @Test

@@ -40,7 +40,7 @@ public class ConfigCreateDefaultFromPropertiesTest {
     public void testCreate() {
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(ConfigValues.simpleValue(CONFIG_VALUE)));
+        assertThat(config.get(KEY).asString().get(), is(CONFIG_VALUE));
     }
 
     @Test

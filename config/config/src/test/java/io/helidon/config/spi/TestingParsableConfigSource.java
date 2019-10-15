@@ -97,8 +97,8 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
         }
 
         @Override
-        protected TestingBuilder init(Config metaConfig) {
-            return super.init(metaConfig);
+        public TestingBuilder config(Config metaConfig) {
+            return super.config(metaConfig);
         }
 
         public TestingBuilder content(Supplier<ConfigParser.Content<Instant>> contentSupplier) {

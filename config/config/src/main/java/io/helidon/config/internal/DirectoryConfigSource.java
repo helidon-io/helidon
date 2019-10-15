@@ -57,7 +57,7 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
      * <li>{@code path} - type {@link Path}</li>
      * </ul>
      * Optional {@code properties}: see
-     * {@link io.helidon.config.spi.AbstractParsableConfigSource.Builder#init(Config)}.
+     * {@link io.helidon.config.spi.AbstractParsableConfigSource.Builder#config(Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -66,11 +66,11 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#directory(String)
-     * @see io.helidon.config.spi.AbstractParsableConfigSource.Builder#init(Config)
+     * @see io.helidon.config.spi.AbstractParsableConfigSource.Builder#config(Config)
      */
     public static DirectoryConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return (DirectoryConfigSource) new DirectoryBuilder(metaConfig.get(PATH_KEY).as(Path.class).get())
-                .init(metaConfig)
+                .config(metaConfig)
                 .build();
     }
 
@@ -127,8 +127,8 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
         }
 
         @Override
-        protected DirectoryBuilder init(Config metaConfig) {
-            return super.init(metaConfig);
+        public DirectoryBuilder config(Config metaConfig) {
+            return super.config(metaConfig);
         }
 
         @Override
