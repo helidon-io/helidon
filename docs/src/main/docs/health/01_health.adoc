@@ -166,6 +166,7 @@ TIP: Balance collecting a lot of information with the need to avoid overloading
 ----
 {
     "outcome": "UP",
+    "status": "UP",
     "checks": [
         {
             "name": "exampleHealthCheck",
@@ -209,6 +210,7 @@ Routing.builder()
 ----
 {
     "outcome": "UP",
+    "status": "UP",
     "checks": [
         {
             "name": "deadlock",
@@ -241,3 +243,12 @@ Routing.builder()
     ]
 }
 ----
+
+=== Strict JSON Output
+
+The JSON responses shown above contain properties `"status"` and `"outcome"` with the same
+values. Helidon reports both of these to maintain backward compatibility with older
+versions of MicroProfile Health. This behavior can be disabled by setting
+the property `health.backward-compatible` to `false`, in which case only `"status"`
+is reported. Future versions of Helidon will drop support for older versions of Health,
+so it is recommended to rely on `"status"` instead of `"outcome"` in your applications.

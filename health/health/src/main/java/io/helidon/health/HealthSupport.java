@@ -69,10 +69,12 @@ public final class HealthSupport implements Service {
     private final boolean includeAll;
     private final Set<String> includedHealthChecks;
     private final Set<String> excludedHealthChecks;
+    private final boolean backwardCompatible;
 
     private HealthSupport(Builder builder) {
         this.enabled = builder.enabled;
         this.webContext = builder.webContext;
+        this.backwardCompatible = builder.backwardCompatible;
 
         if (enabled) {
             builder.allChecks
@@ -159,9 +161,11 @@ public final class HealthSupport implements Service {
     }
 
     private JsonObject toJson(State state, List<HcResponse> responses) {
-        final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder()
-                .add("outcome", state.toString())
-                .add("status", state.toString());
+        final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder();
+        if (backwardCompatible) {
+            jsonBuilder.add("outcome", state.toString());
+        }
+        jsonBuilder.add("status", state.toString());
 
         final JsonArrayBuilder checkArrayBuilder = JSON.createArrayBuilder();
 
@@ -249,6 +253,7 @@ public final class HealthSupport implements Service {
         private final Set<String> excludedHealthChecks = new HashSet<>();
         private String webContext = DEFAULT_WEB_CONTEXT;
         private boolean enabled = true;
+        private boolean backwardCompatible = true;
 
         private Builder() {
         }
@@ -377,6 +382,7 @@ public final class HealthSupport implements Service {
             config.get("exclude-classes").asList(Class.class).ifPresent(list -> {
                 list.forEach(this::addExcludedClass);
             });
+            config.get("backward-compatible").asBoolean().ifPresent(this::backwardCompatible);
             return this;
         }
 
@@ -430,6 +436,18 @@ public final class HealthSupport implements Service {
          */
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
+            return this;
+        }
+
+        /**
+         * Backward compatibility flag to produce Health 1.X compatible JSON output
+         * (including "outcome" property).
+         *
+         * @param enabled whether to enable backward compatible mode (defaults to {@code true})
+         * @return updated builder instance
+         */
+        public Builder backwardCompatible(boolean enabled) {
+            this.backwardCompatible = enabled;
             return this;
         }
     }

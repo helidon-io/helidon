@@ -21,6 +21,8 @@ import java.lang.management.ThreadMXBean;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.helidon.health.common.BuiltInHealthCheck;
+
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -33,6 +35,7 @@ import org.eclipse.microprofile.health.Liveness;
  */
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI
+@BuiltInHealthCheck
 public final class DeadlockHealthCheck implements HealthCheck {
     /**
      * Used for detecting deadlocks. Injected in the constructor.

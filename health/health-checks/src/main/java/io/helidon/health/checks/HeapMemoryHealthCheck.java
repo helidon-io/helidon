@@ -22,6 +22,8 @@ import java.util.Locale;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.helidon.health.common.BuiltInHealthCheck;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -43,6 +45,7 @@ import org.eclipse.microprofile.health.Liveness;
  */
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI
+@BuiltInHealthCheck
 public final class HeapMemoryHealthCheck implements HealthCheck {
     /**
      * Default threshold percentage.

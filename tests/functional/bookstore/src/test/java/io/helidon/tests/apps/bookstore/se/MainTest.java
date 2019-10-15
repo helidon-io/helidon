@@ -233,6 +233,14 @@ class MainTest {
         jsonReader = Json.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
         assertThat("Checking health outcome", jsonObject.getString("outcome"), is("UP"));
+        assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
+
+        // Verify that built-in health checks are disabled in MP according to
+        // 'microprofile-config.properties' setting in bookstore application
+        if (edition.equals("mp")) {
+            assertThat("Checking built-in health checks disabled",
+                    jsonObject.getJsonArray("checks").size(), is(0));
+        }
     }
 
     @ParameterizedTest

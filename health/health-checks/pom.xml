@@ -38,6 +38,10 @@
             <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-common</artifactId>
+        </dependency>
+        <dependency>
             <!-- only needed for compilation, not required in runtime -->
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>

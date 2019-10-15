@@ -24,6 +24,7 @@ module io.helidon.microprofile.health {
     requires io.helidon.common;
     requires io.helidon.common.serviceloader;
     requires io.helidon.health;
+    requires io.helidon.health.common;
     requires io.helidon.microprofile.server;
 
     requires cdi.api;
