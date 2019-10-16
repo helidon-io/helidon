@@ -56,7 +56,7 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
 
         registry = Registry.create(Type.VENDOR);
         registries.put(Type.VENDOR, registry);
-        publicRegistries.put(Type.VENDOR, FinalRegistry.create(registry));
+        publicRegistries.put(Type.VENDOR, registry);
 
         this.config = new AtomicReference<>(config);
     }
@@ -143,8 +143,8 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
 
     /**
      * Get a registry based on its type.
-     * For {@link Type#APPLICATION} returns a modifiable registry, for other types
-     * returns a final registry (cannot register new metrics).
+     * For {@link Type#APPLICATION} and {@link Type#VENDOR} returns a modifiable registry,
+     * for {@link Type#BASE} returns a final registry (cannot register new metrics).
      *
      * @param type type of registry
      * @return MetricRegistry for the type defined.
