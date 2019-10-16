@@ -164,5 +164,5 @@ backend:
             - title: "Community"
               glyph:
                 type: "icon"
-                value: "fa-slack"
-              href: "https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE"
+                value: "fa-github"
+              href: "#/community/01_community"
