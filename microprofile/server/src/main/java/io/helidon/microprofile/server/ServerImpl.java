@@ -67,11 +67,13 @@ import org.glassfish.jersey.server.ResourceConfig;
  * Server to handle lifecycle of microprofile implementation.
  */
 public class ServerImpl implements Server {
-    static final long STARTUP_TIME = System.nanoTime();
     private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
     private static final StartedServers STARTED_SERVERS = new StartedServers();
+
+    private static long initStartupTime = System.nanoTime();
+    private static long initFinishTime = -1;
 
     private final SeContainer container;
     private final boolean containerCreated;
@@ -80,6 +82,21 @@ public class ServerImpl implements Server {
     private final Context context;
     private final boolean supportParallelRun;
     private int port = -1;
+    private boolean isInitTimingLogged = false;
+
+    static void recordInitStart(long time) {
+        if (time < initStartupTime) {
+            initStartupTime = time;
+        }
+    }
+
+    private static boolean recordInitFinish(long time) {
+        boolean result = initFinishTime == -1;
+        if (result) {
+            initFinishTime = time;
+        }
+        return result;
+    }
 
     ServerImpl(Builder builder) {
         MpConfig mpConfig = (MpConfig) builder.config();
@@ -453,16 +470,26 @@ public class ServerImpl implements Server {
                         STARTUP_LOGGER.log(Level.FINEST, "Startup failed", throwable);
                         throwRef.set(throwable);
                     } else {
-                        long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - STARTUP_TIME, TimeUnit.NANOSECONDS);
-
+                        boolean reportInitTime = recordInitFinish(System.nanoTime());
                         port = webServer.port();
                         STARTUP_LOGGER.finest("Started up");
-                        if ("0.0.0.0".equals(host)) {
-                            // listening on all addresses
-                            LOGGER.info(() -> "Server started on http://localhost:" + port + " (and all other host addresses) "
-                                    + "in " + t + " milliseconds.");
-                        } else {
-                            LOGGER.info(() -> "Server started on http://" + host + ":" + port + " in " + t + " milliseconds.");
+                        if (reportInitTime) {
+                            /*
+                             * Report initialization time only during the first server start; init
+                             * includes most notably CDI initialization and server start-up.
+                             */
+                            long initializationElapsedTime =
+                                TimeUnit.MILLISECONDS.convert(initFinishTime - initStartupTime,
+                                        TimeUnit.NANOSECONDS);
+
+                            if ("0.0.0.0".equals(host)) {
+                                // listening on all addresses
+                                LOGGER.info(() -> "Server initialized on http://localhost:" + port + " (and all other host addresses); "
+                                        + "in " + initializationElapsedTime + " milliseconds.");
+                            } else {
+                                LOGGER.info(() -> "Server initialized on http://" + host + ":" + port
+                                        + "in " + initializationElapsedTime + " milliseconds.");
+                            }
                         }
                     }
                     cdl.countDown();

@@ -148,7 +148,11 @@ public interface Server {
      * Builder to build {@link Server} instance.
      */
     final class Builder {
-        private static final long STARTUP_TIME = ServerImpl.STARTUP_TIME;
+
+        {
+            // Load the initialization start time as early as possible from non-public code.
+            ServerImpl.recordInitStart(System.nanoTime());
+        }
 
         // there should only be one
         private static final AtomicInteger MP_SERVER_COUNTER = new AtomicInteger(1);
