@@ -384,7 +384,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
 
             //polling-strategy
             metaConfig.get(POLLING_STRATEGY_KEY)
-                    .ifExists(cfg -> pollingStrategy((Function<T, PollingStrategy>) MetaConfig.pollingStrategy(cfg)));
+                    .ifExists(cfg -> pollingStrategy((t -> MetaConfig.pollingStrategy(cfg).apply(t))));
 
             //retry-policy
             metaConfig.get(RETRY_POLICY_KEY)
@@ -424,8 +424,8 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          * @see #pollingStrategy(Supplier)
          * @see #target()
          */
-        public final B pollingStrategy(Function<T, PollingStrategy> pollingStrategyProvider) {
-            pollingStrategy(() -> pollingStrategyProvider.apply(target()));
+        public final B pollingStrategy(Function<T, Supplier<PollingStrategy>> pollingStrategyProvider) {
+            pollingStrategy(() -> pollingStrategyProvider.apply(target()).get());
 
             return thisBuilder;
         }
