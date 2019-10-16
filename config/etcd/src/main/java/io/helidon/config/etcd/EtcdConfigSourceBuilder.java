@@ -52,11 +52,11 @@ public final class EtcdConfigSourceBuilder
         extends AbstractParsableConfigSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint> {
 
     /**
-     * Default Etcd API version ({@value}).
+     * Default Etcd API version ({@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi#v2}).
      */
     public static final EtcdApi DEFAULT_VERSION = EtcdApi.v2;
     /**
-     * Default Etcd endpoint ({@value}).
+     * Default Etcd endpoint ({@code http://localhost:2379}).
      */
     public static final URI DEFAULT_URI = URI.create("http://localhost:2379");
 
