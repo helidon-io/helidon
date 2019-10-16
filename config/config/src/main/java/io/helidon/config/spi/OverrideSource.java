@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 
 /**
  * Source of config override settings.
@@ -132,13 +133,15 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
          *
          * @param reader a source
          * @return a new instance
-         * @throws IOException when an error occurred when reading from the
+         * @throws io.helidon.config.ConfigException when an error occurred when reading from the
          * reader
          */
-        public static OverrideData create(Reader reader) throws IOException {
+        public static OverrideData create(Reader reader) {
             OrderedProperties properties = new OrderedProperties();
             try (Reader autocloseableReader = reader) {
                 properties.load(autocloseableReader);
+            } catch (IOException e) {
+                throw new ConfigException("Cannot load data from reader.", e);
             }
             List<Map.Entry<Predicate<Config.Key>, String>> data = properties.orderedMap().entrySet()
                     .stream()

@@ -16,15 +16,22 @@
 
 package io.helidon.config.internal;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import io.helidon.config.ConfigException;
 
 /**
  * Utilities for file-related source classes.
@@ -84,4 +91,29 @@ class ClasspathSourceHelper {
         }
         return Instant.EPOCH;
     }
+
+    static <T> T content(String resource,
+                         String description,
+                         BiFunction<InputStreamReader, Optional<Instant>, T> processor) throws ConfigException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+        InputStream inputStream = classLoader.getResourceAsStream(resource);
+
+        if (inputStream == null) {
+            LOGGER.log(Level.FINE,
+                       String.format("Error to get %s using %s CONTEXT ClassLoader.", description, classLoader));
+            throw new ConfigException(description + " does not exist. Used ClassLoader: " + classLoader);
+        }
+        Optional<Instant> resourceTimestamp = Optional.ofNullable(resourceTimestamp(resource));
+        try {
+            LOGGER.log(Level.FINE,
+                       String.format("Getting content from '%s'. Last modified at %s. Used ClassLoader: %s",
+                                     resourcePath(resource), resourceTimestamp, classLoader));
+        } catch (Exception ex) {
+            LOGGER.log(Level.FINE, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
+        }
+
+        return processor.apply(new InputStreamReader(inputStream, StandardCharsets.UTF_8), resourceTimestamp);
+    }
+
 }

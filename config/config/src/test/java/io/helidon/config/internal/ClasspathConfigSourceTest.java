@@ -141,7 +141,7 @@ public class ClasspathConfigSourceTest {
                 try {
                     assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
                 } catch (IOException e) {
-                    fail("Cannot read from source's reader");
+                    fail("Cannot read from source's reader", e);
                 }
                 return ObjectNode.empty();
             }

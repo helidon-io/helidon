@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,9 @@
 package io.helidon.config.etcd;
 
 import java.net.URI;
-import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigMappingException;
-import io.helidon.config.MissingValueException;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClientFactory;
 import io.helidon.config.etcd.internal.client.v2.EtcdV2ClientFactory;
@@ -119,12 +116,8 @@ public final class EtcdConfigSourceBuilder
      * </ul>
      * Optional {@code properties}: see {@link #config(Config)}.
      *
-     * @param metaConfig meta-configuration used to initialize returned config source builder instance from.
-     * @return new instance of config source builder described by {@code metaConfig}
-     * @throws MissingValueException  in case the configuration tree does not contain all expected sub-nodes
-     *                                required by the mapper implementation to provide instance of Java type.
-     * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
-     *                                supplied configuration node to an instance of a given Java type.
+     * @param metaConfig meta-configuration used to update the builder instance from
+     * @return updated builder instance
      * @see #config(Config)
      */
     @Override

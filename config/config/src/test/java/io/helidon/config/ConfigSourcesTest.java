@@ -103,14 +103,6 @@ public class ConfigSourcesTest {
     }
 
     @Test
-    public void testMapBuilderSupplierGetOnce() {
-        ConfigSources.MapBuilder builder = ConfigSources.create(mapOf());
-
-        ConfigSource configSource = builder.get();
-        assertThat(configSource, sameInstance(builder.get()));
-    }
-
-    @Test
     public void testCompositeBuilderSupplierGetOnce() {
         ConfigSources.CompositeBuilder builder = ConfigSources.create();
 

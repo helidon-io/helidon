@@ -28,7 +28,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -83,9 +82,18 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      * @see AbstractParsableConfigSource.Builder#config(Config)
      */
     public static UrlConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (UrlConfigSource) new UrlBuilder(metaConfig.get(URL_KEY).as(URL.class).get())
+        return builder()
                 .config(metaConfig)
                 .build();
+    }
+
+    /**
+     * A new fluent API builder.
+     *
+     * @return a new builder instance
+     */
+    public static UrlBuilder builder() {
+        return new UrlBuilder();
     }
 
     @Override
@@ -228,19 +236,33 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
 
         /**
          * Initialize builder.
-         *
-         * @param url configuration url
          */
-        public UrlBuilder(URL url) {
+        private UrlBuilder() {
             super(URL.class);
-
-            Objects.requireNonNull(url, "url cannot be null");
-
-            this.url = url;
         }
 
+        /**
+         * URL of the configuration.
+         *
+         * @param url of configuration source
+         * @return updated builder instance
+         */
+        public UrlBuilder url(URL url) {
+            this.url = url;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <ul>
+         *     <li>{@code url} - URL of the configuration source</li>
+         * </ul>
+         * @param metaConfig configuration properties used to configure a builder instance.
+         * @return updated builder instance
+         */
         @Override
         public UrlBuilder config(Config metaConfig) {
+            metaConfig.get(URL_KEY).as(URL.class).ifPresent(this::url);
             return super.config(metaConfig);
         }
 
@@ -256,7 +278,10 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
          *
          * @return new instance of Url ConfigSource.
          */
-        public ConfigSource build() {
+        public UrlConfigSource build() {
+            if (null == url) {
+                throw new IllegalArgumentException("url must be provided");
+            }
             return new UrlConfigSource(this, url);
         }
 

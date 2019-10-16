@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,10 @@
 
 package io.helidon.config.internal;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
@@ -44,9 +38,6 @@ import io.helidon.config.spi.PollingStrategy;
  * @see AbstractParsableConfigSource.Builder
  */
 public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant> {
-
-    private static final Logger LOGGER = Logger.getLogger(ClasspathConfigSource.class.getName());
-
     private static final String RESOURCE_KEY = "resource";
 
     private final String resource;
@@ -78,9 +69,18 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
      * @see AbstractParsableConfigSource.Builder#config(Config)
      */
     public static ClasspathConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (ClasspathConfigSource) new ClasspathBuilder(metaConfig.get(RESOURCE_KEY).asString().get())
+        return builder()
                 .config(metaConfig)
                 .build();
+    }
+
+    /**
+     * Create a new fluent API builder for classpath config source.
+     *
+     * @return a new builder instance
+     */
+    public static ClasspathBuilder builder() {
+        return new ClasspathBuilder();
     }
 
     @Override
@@ -107,24 +107,11 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
 
     @Override
     protected ConfigParser.Content<Instant> content() throws ConfigException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream(resource);
-        if (inputStream == null) {
-            LOGGER.log(Level.FINE,
-                       String.format("Error to get %s using %s CONTEXT ClassLoader.", description(), classLoader));
-            throw new ConfigException(description() + " does not exist. Used ClassLoader: " + classLoader);
-        }
-        Optional<Instant> resourceTimestamp = Optional.ofNullable(ClasspathSourceHelper.resourceTimestamp(resource));
-        try {
-            LOGGER.log(Level.FINE,
-                       String.format("Getting content from '%s'. Last modified at %s. Used ClassLoader: %s",
-                                     ClasspathSourceHelper.resourcePath(resource), resourceTimestamp, classLoader));
-        } catch (Exception ex) {
-            LOGGER.log(Level.FINE, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
-        }
-        return ConfigParser.Content.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8),
-                                           mediaType(),
-                                           resourceTimestamp);
+        return ClasspathSourceHelper.content(resource,
+                                             description(),
+                                             (inputStreamReader, instant) -> ConfigParser.Content.create(inputStreamReader,
+                                                                                                         mediaType(),
+                                                                                                         instant));
     }
 
     /**
@@ -149,19 +136,33 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
 
         /**
          * Initialize builder.
-         *
-         * @param resource classpath resource name
          */
-        public ClasspathBuilder(String resource) {
+        public ClasspathBuilder() {
             super(Path.class);
-
-            Objects.requireNonNull(resource, "resource name cannot be null");
-
-            this.resource = resource;
         }
 
+        /**
+         * Configure the classpath resource to load the configuration from.
+         *
+         * @param resource resource on classpath
+         * @return updated builder instance
+         */
+        public ClasspathBuilder resource(String resource) {
+            this.resource = resource;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <ul>
+         *     <li>{@code resource} - the classpath resource to load</li>
+         * </ul>
+         * @param metaConfig configuration properties used to configure a builder instance.
+         * @return updated builder instance
+         */
         @Override
         public ClasspathBuilder config(Config metaConfig) {
+            metaConfig.get(RESOURCE_KEY).asString().ifPresent(this::resource);
             return super.config(metaConfig);
         }
 
@@ -187,7 +188,10 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
          * @return new instance of Classpath ConfigSource.
          */
         @Override
-        public ConfigSource build() {
+        public ClasspathConfigSource build() {
+            if (null == resource) {
+                throw new IllegalArgumentException("resource must be defined");
+            }
             return new ClasspathConfigSource(this, resource);
         }
 

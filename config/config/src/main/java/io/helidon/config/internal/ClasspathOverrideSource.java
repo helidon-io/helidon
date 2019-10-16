@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,9 @@
 
 package io.helidon.config.internal;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -39,8 +32,6 @@ import io.helidon.config.spi.PollingStrategy;
  * @see Builder
  */
 public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
-    private static final Logger LOGGER = Logger.getLogger(ClasspathOverrideSource.class.getName());
-
     private final String resource;
 
     ClasspathOverrideSource(ClasspathBuilder builder) {
@@ -64,29 +55,13 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
 
     @Override
     public Data<OverrideData, Instant> loadData() throws ConfigException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream(resource);
-        if (inputStream == null) {
-            LOGGER.log(Level.FINE,
-                       String.format("Error to get %s using %s CONTEXT ClassLoader.", description(), classLoader));
-            throw new ConfigException(description() + " does not exist. Used ClassLoader: " + classLoader);
-        }
-        Instant resourceTimestamp = ClasspathSourceHelper.resourceTimestamp(resource);
-        try {
-            LOGGER.log(Level.FINE,
-                       String.format("Getting content from '%s'. Last modified at %s. Used ClassLoader: %s",
-                                     ClasspathSourceHelper.resourcePath(resource), resourceTimestamp, classLoader));
-        } catch (Exception ex) {
-            LOGGER.log(Level.FINE, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
-        }
-        try {
-            return new Data<>(
-                    Optional.of(OverrideData.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8))),
-                    Optional.ofNullable(resourceTimestamp)
-            );
-        } catch (IOException e) {
-            throw new ConfigException("Cannot load dta from resource.", e);
-        }
+        return ClasspathSourceHelper.content(resource,
+                                             description(),
+                                             (inputStreamReader, instant) -> {
+                                                 return new Data<>(
+                                                         Optional.of(OverrideData.create(inputStreamReader)),
+                                                         instant);
+                                             });
     }
 
     /**
@@ -154,7 +129,10 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
 
         @Override
         protected Path target() {
-            Objects.requireNonNull(resource, "resource name cannot be null");
+            if (null == resource) {
+                throw new IllegalArgumentException("Resource name must be defined.");
+            }
+
             try {
                 Path resourcePath = ClasspathSourceHelper.resourcePath(resource);
                 if (resourcePath != null) {

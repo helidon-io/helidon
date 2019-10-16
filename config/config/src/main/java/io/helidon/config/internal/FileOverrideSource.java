@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.config.internal;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -64,13 +63,10 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
         Optional<byte[]> digest = dataStamp();
         LOGGER.log(Level.FINE, String.format("Getting content from '%s'.", filePath));
 
-        try {
-            OverrideData overrideData = OverrideSource.OverrideData
-                    .create(new StringReader(FileSourceHelper.safeReadContent(filePath)));
-            return new Data<>(Optional.of(overrideData), digest);
-        } catch (IOException e) {
-            throw new ConfigException("Cannot load data from source.", e);
-        }
+        OverrideData overrideData = OverrideSource.OverrideData
+                .create(new StringReader(FileSourceHelper.safeReadContent(filePath)));
+        return new Data<>(Optional.of(overrideData), digest);
+
     }
 
     /**

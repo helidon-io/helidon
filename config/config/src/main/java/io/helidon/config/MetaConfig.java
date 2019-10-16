@@ -100,6 +100,7 @@ public final class MetaConfig {
      *   a key {@code properties} with configuration of the config sources
      * @param sourceMetaConfig meta configuration of a config source
      * @return config source instance
+     * @see Config.Builder#config(Config)
      */
     public static ConfigSource configSource(Config sourceMetaConfig) {
         String type = sourceMetaConfig.get("type").asString().get();

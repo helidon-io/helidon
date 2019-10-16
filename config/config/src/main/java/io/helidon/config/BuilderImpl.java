@@ -17,15 +17,12 @@
 package io.helidon.config;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
@@ -55,7 +52,6 @@ import io.helidon.config.spi.OverrideSource;
 class BuilderImpl implements Config.Builder {
 
     static final Executor DEFAULT_CHANGES_EXECUTOR = Executors.newCachedThreadPool(new ConfigThreadFactory("config"));
-    private static final List<String> DEFAULT_FILE_EXTENSIONS = Arrays.asList("yaml", "conf", "json", "properties");
 
     private List<ConfigSource> sources;
     private final MapperProviders mapperProviders;
@@ -224,11 +220,6 @@ class BuilderImpl implements Config.Builder {
         return this;
     }
 
-    public Config.Builder cachingEnabled(boolean enabled) {
-        this.cachingEnabled = enabled;
-        return this;
-    }
-
     @Override
     public Config.Builder changesExecutor(Executor changesExecutor) {
         Objects.requireNonNull(changesExecutor);
@@ -323,6 +314,10 @@ class BuilderImpl implements Config.Builder {
         return this;
     }
 
+    private void cachingEnabled(boolean enabled) {
+        this.cachingEnabled = enabled;
+    }
+
     private void mapperServicesEnabled(Boolean aBoolean) {
         this.mapperServicesEnabled = aBoolean;
     }
@@ -355,8 +350,8 @@ class BuilderImpl implements Config.Builder {
         }
 
         Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled
-                ? EnvironmentVariableAliases::aliasesOf
-                : null;
+                                                        ? EnvironmentVariableAliases::aliasesOf
+                                                        : null;
 
         //config provider
         return createProvider(configMapperManager,
@@ -381,15 +376,13 @@ class BuilderImpl implements Config.Builder {
         }
 
         if (systemPropertiesSourceEnabled
-                && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
+            && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
             targetSources.add(ConfigSources.systemProperties());
         }
 
         if (sources != null) {
             targetSources.addAll(sources);
         } else {
-            Set<String> supportedMediaTypes = new HashSet<>();
-
             // if there are no sources configured, use meta-configuration
             targetSources.add(MetaConfig.compositeSource(mediaType -> context.findParser(mediaType).isPresent()));
         }

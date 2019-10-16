@@ -19,6 +19,7 @@ package io.helidon.config.tests.meta;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValues;
+import io.helidon.config.MetaConfig;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.tests.module.meta1.MyConfigSource1;
@@ -50,7 +51,7 @@ public class CustomConfigSourceTypesTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
         assertThat(source, is(instanceOf(sourceClass)));
 

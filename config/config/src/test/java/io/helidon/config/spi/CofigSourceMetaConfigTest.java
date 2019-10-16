@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.MetaConfig;
 import io.helidon.config.internal.ClasspathConfigSource;
 import io.helidon.config.internal.DirectoryConfigSource;
 import io.helidon.config.internal.FileConfigSource;
@@ -48,9 +49,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 
 /**
- * Tests {@link ConfigSourceConfigMapper}.
+ * Tests meta configuration of config sources.
  */
-public class ConfigSourceConfigMapperTest {
+public class CofigSourceMetaConfigTest {
 
     private static final String TEST_SYS_PROP_NAME = "this_is_my_property-ConfigSourceConfigMapperTest";
     private static final String TEST_SYS_PROP_VALUE = "This Is My SYS PROPS Value.";
@@ -71,7 +72,7 @@ public class ConfigSourceConfigMapperTest {
                         .addValue("type", "system-properties")
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
         assertThat(source, is(instanceOf(MapConfigSource.class)));
 
@@ -87,7 +88,7 @@ public class ConfigSourceConfigMapperTest {
                         .addValue("type", "environment-variables")
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
         assertThat(source, is(instanceOf(MapConfigSource.class)));
 
@@ -107,7 +108,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
         assertThat(source, is(instanceOf(ClasspathConfigSource.class)));
 
@@ -127,7 +128,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
         assertThat(source, is(instanceOf(FileConfigSource.class)));
 
@@ -151,7 +152,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
         assertThat(source, is(instanceOf(DirectoryConfigSource.class)));
 
@@ -180,7 +181,7 @@ public class ConfigSourceConfigMapperTest {
                             .build()))
                     .build();
 
-            ConfigSource source = metaConfig.as(ConfigSource::create).get();
+            ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
             assertThat(source, is(instanceOf(UrlConfigSource.class)));
 
@@ -207,7 +208,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
         assertThat(source, is(instanceOf(PrefixedConfigSource.class)));
 

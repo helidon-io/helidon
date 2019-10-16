@@ -44,13 +44,36 @@ public class MapConfigSource implements ConfigSource {
      * @param strict        strict mode flag
      * @param mapSourceName name of map source
      */
-    public MapConfigSource(Map<String, String> map, boolean strict, String mapSourceName) {
+    protected MapConfigSource(Map<String, String> map, boolean strict, String mapSourceName) {
         Objects.requireNonNull(map, "map cannot be null");
         Objects.requireNonNull(mapSourceName, "mapSourceName cannot be null");
 
         this.map = map;
         this.strict = strict;
         this.mapSourceName = mapSourceName;
+    }
+
+    /**
+     * Create a new config source from the provided map, with strict mode set to {@code false}.
+     *
+     * @param map config properties
+     * @return a new map config source
+     */
+    public static MapConfigSource create(Map<String, String> map) {
+        return create(map, false, "");
+    }
+
+    /**
+     * Create a new config source from the provided map.
+     *
+     * @param map config properties
+     * @param strict strict mode flag, if set to {@code true}, parsing would fail if a tree node and a leaf node conflict,
+     *                  such as for {@code http.ssl=true} and {@code http.ssl.port=1024}.
+     * @param mapSourceName name of map source (for debugging purposes)
+     * @return a new map config source
+     */
+    public static MapConfigSource create(Map<String, String> map, boolean strict, String mapSourceName) {
+        return new MapConfigSource(map, strict, mapSourceName);
     }
 
     @Override

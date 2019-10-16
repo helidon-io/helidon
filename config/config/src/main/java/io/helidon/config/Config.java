@@ -1672,6 +1672,7 @@ public interface Config {
          * the meta configuration.
          *
          * @return updated builder instance
+         * @see #config(Config)
          */
         default Builder metaConfig() {
             MetaConfig.metaConfig()
@@ -1682,8 +1683,127 @@ public interface Config {
 
         /**
          * Configure this config builder from meta configuration.
+         * <p>
+         * The following configuration options are supported in a meta configuration file:
          *
-         * TODO configuration options should be here
+         * <table class="config">
+         * <caption>Optional configuration parameters</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         *     <th>reference</th>
+         * </tr>
+         * <tr>
+         *     <td>caching.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable caching of results of filters.</td>
+         *     <td>{@link #disableCaching()}</td>
+         * </tr>
+         * <tr>
+         *     <td>key-resolving.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable resolving of placeholders in keys.</td>
+         *     <td>{@link #disableKeyResolving()}</td>
+         * </tr>
+         * <tr>
+         *     <td>value-resolving.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable resolving of placeholders in values.</td>
+         *     <td>{@link #disableValueResolving()}</td>
+         * </tr>
+         * <tr>
+         *     <td>parsers.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable parser services.</td>
+         *     <td>{@link #disableParserServices()}</td>
+         * </tr>
+         * <tr>
+         *     <td>mappers.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable mapper services.</td>
+         *     <td>{@link #disableMapperServices()}</td>
+         * </tr>
+         * <tr>
+         *     <td>override-source</td>
+         *     <td>none</td>
+         *     <td>Configure an override source. Same as config source configuration (see below)</td>
+         *     <td>{@link #overrides(java.util.function.Supplier)}</td>
+         * </tr>
+         * <tr>
+         *     <td>sources</td>
+         *     <td>Default config sources are prefixed {@code application}, and suffix is the first available of
+         *          {@code yaml, conf, json, properties}</td>
+         *     <td>Configure config sources to be used by the application. This node contains the array of objects defining
+         *          config sources</td>
+         *     <td>{@link #addSource(io.helidon.config.spi.ConfigSource)}</td>
+         * </tr>
+         * </table>
+         *
+         * Config source configuration options:
+         * <table class="config">
+         * <caption>Config source</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         *     <th>reference</th>
+         * </tr>
+         * <tr>
+         *     <td>type</td>
+         *     <td>&nbsp;</td>
+         *     <td>Type of a config source - a string supported by a provider.</td>
+         *     <td>{@link io.helidon.config.spi.ConfigSourceProvider#create(String, Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties</td>
+         *     <td>&nbsp;</td>
+         *     <td>Configuration options to configure the config source (meta configuration of a source)</td>
+         *     <td>{@link io.helidon.config.spi.ConfigSourceProvider#create(String, Config)},
+         *      {@link MetaConfig#configSource(Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties.optional</td>
+         *     <td>false</td>
+         *     <td>Most config sources can be configured to be optional</td>
+         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#optional(boolean)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties.polling-strategy</td>
+         *     <td>&nbsp;</td>
+         *     <td>Some config sources can have a polling strategy defined</td>
+         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#pollingStrategy(java.util.function.Function)},
+         *          {@link MetaConfig#pollingStrategy(Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties.retry-policy</td>
+         *     <td>&nbsp;</td>
+         *     <td>Some config sources can have a retry policy defined</td>
+         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#retryPolicy(io.helidon.config.spi.RetryPolicy)},
+         *          {@link MetaConfig#retryPolicy(Config)}</td>
+         * </tr>
+         * </table>
+         *
+         * Full meta configuration example:
+         * <pre>
+         * sources:
+         *   - type: "system-properties"
+         *   - type: "environment-variables"
+         *   - type: "file"
+         *     properties:
+         *       optional: true
+         *       path: "conf/dev-application.yaml"
+         *       polling-strategy:
+         *         type: "watch"
+         *       retry-policy:
+         *         type: "repeat"
+         *         properties:
+         *           retries: 5
+         *    - type: "classpath"
+         *      properties:
+         *        optional: true
+         *        resource: "application.yaml"
+         * </pre>
          */
         Builder config(Config metaConfig);
     }

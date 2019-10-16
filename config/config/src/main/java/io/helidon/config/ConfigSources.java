@@ -245,7 +245,7 @@ public final class ConfigSources {
      */
     public static AbstractParsableConfigSource.Builder
             <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> classpath(String resource) {
-        return new ClasspathConfigSource.ClasspathBuilder(resource);
+        return ClasspathConfigSource.builder().resource(resource);
     }
 
     /**
@@ -282,7 +282,7 @@ public final class ConfigSources {
      */
     public static AbstractConfigSource.Builder
             <? extends AbstractConfigSource.Builder<?, Path>, Path> directory(String path) {
-        return new DirectoryConfigSource.DirectoryBuilder(Paths.get(path));
+        return DirectoryConfigSource.builder().path(Paths.get(path));
     }
 
     /**
@@ -295,7 +295,7 @@ public final class ConfigSources {
      */
     public static AbstractParsableConfigSource.Builder
             <? extends AbstractParsableConfigSource.Builder<?, URL>, URL> url(URL url) {
-        return new UrlConfigSource.UrlBuilder(url);
+        return UrlConfigSource.builder().url(url);
     }
 
     /**
@@ -382,7 +382,6 @@ public final class ConfigSources {
         private Map<String, String> map;
         private boolean strict;
         private String mapSourceName;
-        private volatile ConfigSource configSource;
 
         private MapBuilder(final Map<String, String> map, final String name) {
             requireNonNull(name, "name cannot be null");
@@ -424,15 +423,7 @@ public final class ConfigSources {
          */
         @Override
         public ConfigSource build() {
-            return new MapConfigSource(map, strict, mapSourceName);
-        }
-
-        @Override
-        public ConfigSource get() {
-            if (configSource == null) {
-                configSource = build();
-            }
-            return configSource;
+            return MapConfigSource.create(map, strict, mapSourceName);
         }
     }
 

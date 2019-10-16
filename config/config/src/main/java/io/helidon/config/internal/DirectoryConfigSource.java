@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.config.internal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.config.Config;
@@ -69,9 +68,16 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
      * @see io.helidon.config.spi.AbstractParsableConfigSource.Builder#config(Config)
      */
     public static DirectoryConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (DirectoryConfigSource) new DirectoryBuilder(metaConfig.get(PATH_KEY).as(Path.class).get())
-                .config(metaConfig)
-                .build();
+        return builder().config(metaConfig).build();
+    }
+
+    /**
+     * Create a fluent API builder to construct a directory config source.
+     *
+     * @return a new builder instance
+     */
+    public static DirectoryBuilder builder() {
+        return new DirectoryBuilder();
     }
 
     @Override
@@ -115,19 +121,33 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
 
         /**
          * Initialize builder.
-         *
-         * @param path configuration directory path
          */
-        public DirectoryBuilder(Path path) {
+        private DirectoryBuilder() {
             super(Path.class);
-
-            Objects.requireNonNull(path, "directory path cannot be null");
-
-            this.path = path;
         }
 
+        /**
+         * Configuration directory path.
+         *
+         * @param path directory
+         * @return updated builder instance
+         */
+        public DirectoryBuilder path(Path path) {
+            this.path = path;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <ul>
+         *     <li>{@code path} - directory path</li>
+         * </ul>
+         * @param metaConfig configuration properties used to configure a builder instance.
+         * @return updated builder instance
+         */
         @Override
         public DirectoryBuilder config(Config metaConfig) {
+            metaConfig.get(PATH_KEY).as(Path.class).ifPresent(this::path);
             return super.config(metaConfig);
         }
 
@@ -141,7 +161,11 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
          *
          * @return new instance of File ConfigSource.
          */
-        public ConfigSource build() {
+        @Override
+        public DirectoryConfigSource build() {
+            if (null == path) {
+                throw new IllegalArgumentException("path must be defined");
+            }
             return new DirectoryConfigSource(this, path);
         }
     }

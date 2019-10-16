@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.config.tests.module.meta2;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.objectmapping.Value;
 import io.helidon.config.spi.ConfigNode;
