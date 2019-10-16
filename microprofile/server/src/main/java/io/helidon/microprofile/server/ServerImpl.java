@@ -484,11 +484,11 @@ public class ServerImpl implements Server {
 
                             if ("0.0.0.0".equals(host)) {
                                 // listening on all addresses
-                                LOGGER.info(() -> "Server initialized on http://localhost:" + port + " (and all other host addresses); "
-                                        + "in " + initializationElapsedTime + " milliseconds.");
+                                LOGGER.info(() -> "Server initialized on http://localhost:" + port + " (and all other host addresses)"
+                                        + " in " + initializationElapsedTime + " milliseconds.");
                             } else {
                                 LOGGER.info(() -> "Server initialized on http://" + host + ":" + port
-                                        + "in " + initializationElapsedTime + " milliseconds.");
+                                        + " in " + initializationElapsedTime + " milliseconds.");
                             }
                         }
                     }
