@@ -42,6 +42,7 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.config.MetaConfig;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
 
@@ -215,10 +216,20 @@ public interface Server {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
             if (null == config) {
-                config = (MpConfig) ConfigProviderResolver.instance().getConfig(classLoader);
-            } else {
-                ConfigProviderResolver.instance().registerConfig(config, classLoader);
+                Optional<io.helidon.config.Config> metaConfigured = MetaConfig.metaConfig()
+                        .map(metaConfig -> io.helidon.config.Config.builder().config(metaConfig).build());
+
+                if (metaConfigured.isPresent()) {
+                    // if we have a meta configured config, let's use it
+                    this.config = (MpConfig) MpConfig.builder().config(metaConfigured.get()).build();
+                } else {
+                    // otherwise use the default
+                    this.config = (MpConfig) ConfigProviderResolver.instance().getConfig(classLoader);
+                }
             }
+
+            // make sure the config is available to application
+            ConfigProviderResolver.instance().registerConfig(config, classLoader);
 
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
