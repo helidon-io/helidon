@@ -59,6 +59,18 @@ public final class MetaConfig {
     }
 
     /**
+     * Create configuration from provided meta configuration.
+     *
+     * @param metaConfig meta configuration
+     * @return a new config instance built from meta configuration
+     */
+    public static Config config(Config metaConfig) {
+        return Config.builder()
+                .config(metaConfig)
+                .build();
+    }
+
+    /**
      * Find meta configuration (files or classpath resources) and create a meta configuration instance from it.
      *
      * @return meta configuration if present, or empty
@@ -151,18 +163,6 @@ public final class MetaConfig {
                 .forEach(parser -> supportedMediaTypes.addAll(parser.supportedMediaTypes()));
 
         return supportedMediaTypes::contains;
-    }
-
-    /**
-     * Create configuration from provided meta configuration.
-     *
-     * @param metaConfig meta configuration
-     * @return a new config instance built from meta configuration
-     */
-    private static Config config(Config metaConfig) {
-        return Config.builder()
-                .config(metaConfig)
-                .build();
     }
 
     private static Config createDefault() {

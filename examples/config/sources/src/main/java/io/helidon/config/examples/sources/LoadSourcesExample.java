@@ -18,6 +18,7 @@ package io.helidon.config.examples.sources;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.MetaConfig;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -46,9 +47,8 @@ public class LoadSourcesExample {
            with a filter which convert values with keys ending with "level" to upper case
          */
 
-        Config metaConfig = Config.builder(file("conf/meta-config.yaml").optional(),
-                                           classpath("meta-config.yaml"))
-                .build();
+        Config metaConfig = Config.create(file("conf/meta-config.yaml").optional(),
+                                           classpath("meta-config.yaml"));
 
         Config config = Config.builder()
                 .config(metaConfig)
