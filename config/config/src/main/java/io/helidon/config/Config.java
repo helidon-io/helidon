@@ -1687,7 +1687,7 @@ public interface Config {
          * The following configuration options are supported in a meta configuration file:
          *
          * <table class="config">
-         * <caption>Optional configuration parameters</caption>
+         * <caption>Meta configuration</caption>
          * <tr>
          *     <th>key</th>
          *     <th>default value</th>
