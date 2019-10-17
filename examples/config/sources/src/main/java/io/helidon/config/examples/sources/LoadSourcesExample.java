@@ -18,7 +18,6 @@ package io.helidon.config.examples.sources;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.config.MetaConfig;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
