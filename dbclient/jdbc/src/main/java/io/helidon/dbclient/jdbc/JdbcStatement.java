@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -132,7 +133,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
 
         try {
             // Parameters names must be replaced with ? and names occurence order must be stored.
-            MappingParser parser = new MappingParser(statement);
+            Parser parser = new Parser(statement);
             String jdbcStatement = parser.convert();
             LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
             PreparedStatement preparedStatement = connection.prepareStatement(jdbcStatement);
@@ -173,50 +174,53 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
     /**
      * Mapping parser state machine.
      *
-     * Is it really worth it to write a parser, when we could use a regular expression with a single restriction,
-     * that the statement text must not contain :word except for parameters?
-     * The implementation is then really simple:
-     * <pre>
-     *  Pattern pattern = Pattern.compile(":(\\w+)", Pattern.UNICODE_CHARACTER_CLASS);
-     *  Matcher matcher = pattern.matcher(select);
-     *  List names = new LinkedList<>();
-     *  while(matcher.find()) {
-     *      names.add(matcher.group(1));
-     *  }
-     *  matcher.reset();
-     *  replaced = matcher.replaceAll("?");
-     *  </pre>
-     *
      * Before replacement:
      * {@code SELECT * FROM table WHERE name = :name AND type = :type}
      * After replacement:
      * {@code SELECT * FROM table WHERE name = ? AND type = ?}
-     * Expected list of parameteres:
+     * Expected list of parameters:
      * {@code "name", "type"}
      */
-    private static final class MappingParser {
+    static final class Parser {
+                @FunctionalInterface
 
-        /**
-         * Parser ACTION to be performed.
-         */
-        @FunctionalInterface
-        private interface Action {
-            void process(MappingParser parser);
-        }
+        private interface Action extends Consumer<Parser> {}
 
         /**
          * Character classes used in state machine.
          */
         private enum CharClass {
-            LT,  // Letter
-            NUM, // Number
-            SQ,  // Single quote, begins string in SQL
-            COL, // Colon, begins named parameter
-            OTH;  // Other character
+            LT,  // Letter (any unicode letter)
+            NUM, // Number (any unicode digit)
+            LF,  // Line feed / new line (\n), terminates line alone or in CR LF sequence
+            CR,  // Carriage return (\r), terminates line in CR LF sequence
+            SQ,  // Single quote ('), begins string in SQL
+            ST,  // Star (*), part of multiline comment beginning "/*" and ending "*/" sequence
+            DA,  // Dash (-), part of single line comment beginning sequence "--"
+            SL,  // Slash (/), part of multiline comment beginning "/*" and ending "*/" sequence
+            CL,  // Colon (:), begins named parameter
+            OTH; // Other characters
 
-            // This is far from optimal code, but direct translation table would be too large for Java char
+            /**
+             * Returns character class corresponding to provided character.
+             *
+             * @param c character to determine its character class
+             * @return character class corresponding to provided character
+             */
             private static CharClass charClass(char c) {
-                return Character.isLetter(c) ? LT : (Character.isDigit(c) ? NUM : ((c == '\'') ? SQ : ((c == ':') ? COL : OTH)));
+                switch(c) {
+                    case '\r': return CR;
+                    case '\n': return LF;
+                    case '\'': return SQ;
+                    case '*': return ST;
+                    case '-': return DA;
+                    case '/': return SL;
+                    case ':': return CL;
+                    default:
+                        return Character.isLetter(c)
+                                ? LT
+                                : (Character.isDigit(c) ? NUM : OTH);
+                }
             }
 
         }
@@ -225,32 +229,48 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          * States used in state machine.
          */
         private enum State {
-            STMT, // Common statement
-            STR,  // SQL string
-            COL,  // After colon, expecting parameter name
-            PAR,  // Processing parameter name
+            STMT, // Common statement processing
+            STR,  // SQL string processing after 1st SQ was recieved
+            COL,  // Symbolic name processing after opening CL (colon) was recieved
+            PAR,  // Symbolic name processing after 1st LT or later LT or NUM of parameter name was recieved
+            MCB,  // Multiline comment processing after opening slash was recieved from the "/*" sequence
+            MCE,  // Multiline comment processing after closing star was recieved from the "*/" sequence
+            MLC,  // Multiline comment processing of the comment itself
+            SCB,  // Single line comment processing after opening dash was recieved from the "--" sequence
+            SCE,  // Single line comment processing after closing CR was recieved from the CR LF sequence
+            SLC;  // Single line comment processing of the comment itself
+
+            /** States transition table. */
+            private static final State[][] TRANSITION = {
+            //   LT    NUM   LF    CR    SQ    ST     DA    SL    CL    OTH
+                {STMT, STMT, STMT, STMT,  STR, STMT,  SCB,  MCB,  COL, STMT}, // Transitions from STMT state
+                { STR,  STR,  STR,  STR, STMT,  STR,  STR,  STR,  STR,  STR}, // Transitions from STR state
+                { PAR, STMT, STMT, STMT,  STR, STMT,  SCB,  MCB,  COL, STMT}, // Transitions from COL state
+                { PAR,  PAR, STMT, STMT,  STR, STMT,  SCB,  MCB,  COL, STMT}, // Transitions from PAR state
+                {STMT, STMT, STMT, STMT,  STR,  MLC,  SCB,  MCB,  COL, STMT}, // Transitions from MCB state
+                { MLC,  MLC,  MLC,  MLC,  MLC,  MCE,  MLC, STMT,  MLC, MLC}, // Transitions from MCE state
+                { MLC,  MLC,  MLC,  MLC,  MLC,  MCE,  MLC,  MLC,  MLC, MLC}, // Transitions from MLC state
+                {STMT, STMT, STMT, STMT,  STR, STMT,  SLC,  MCB,  COL, STMT}, // Transitions from SCB state
+                { SLC,  SLC, STMT,  SCE,  SLC,  SLC,  SLC,  SLC,  SLC,  SLC}, // Transitions from SCE state
+                { SLC,  SLC, STMT,  SCE,  SLC,  SLC,  SLC,  SLC,  SLC,  SLC} // Transitions from SLC state
+            };
         }
 
         /**
-         * States TRANSITION table.
-         */
-        private static final State[][] TRANSITION = {
-                // LT          NUM         SQ          COL        OTH
-                {State.STMT, State.STMT, State.STR, State.COL, State.STMT}, // Transition from STMT
-                {State.STR, State.STR, State.STMT, State.STR, State.STR}, // Transition from STR
-                {State.PAR, State.PAR, State.STR, State.COL, State.STMT}, // Transition from COL
-                {State.PAR, State.PAR, State.STMT, State.COL, State.STMT}  // Transition from PAR
-        };
-
-        /**
-         * States TRANSITION ACTION table.
+         * State automaton action table.
          */
         private static final Action[][] ACTION = {
-                // LT                   NUM                  SQ                    COL                  OTH
-                {MappingParser::copy, MappingParser::copy, MappingParser::copy, MappingParser::noop, MappingParser::copy}, // STMT
-                {MappingParser::copy, MappingParser::copy, MappingParser::copy, MappingParser::copy, MappingParser::copy}, // STR
-                {MappingParser::fnap, MappingParser::fnap, MappingParser::clch, MappingParser::cpcl, MappingParser::clch},  // COL
-                {MappingParser::nnap, MappingParser::nnap, MappingParser::enap, MappingParser::enap, MappingParser::enap}   // PAR
+            //     LT                 NUM                  LF                  CR                  SQ                 ST                  DA                   SL                 CL                  OTH
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar, Parser::doNothing,  Parser::copyChar},  // STMT actions
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar,  Parser::copyChar,  Parser::copyChar},  // STR actions
+                {   Parser::firstLt, Parser::clAndChar,  Parser::clAndChar,  Parser::clAndChar,  Parser::clAndChar,  Parser::clAndChar,  Parser::clAndChar,    Parser::clAndChar, Parser::addColon,  Parser::clAndChar},  // COL actions
+                { Parser::nextLtNum, Parser::nextLtNum, Parser::endParChar, Parser::endParChar, Parser::endParChar, Parser::endParChar,  Parser::endParChar,  Parser::endParChar,   Parser::endPar,  Parser::endParChar}, // PAR actions
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar,  Parser::copyChar,  Parser::copyChar},  // MCB actions
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar,  Parser::copyChar,  Parser::copyChar},  // MCE actions
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar,  Parser::copyChar,  Parser::copyChar},  // MLC actions
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar,  Parser::copyChar,  Parser::copyChar},  // SCB actions
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar,  Parser::copyChar,  Parser::copyChar},  // SCE actions
+                {  Parser::copyChar,  Parser::copyChar,   Parser::copyChar,   Parser::copyChar,   Parser::copyChar,  Parser::copyChar,    Parser::copyChar,    Parser::copyChar,  Parser::copyChar,  Parser::copyChar},  // SLC actions
         };
 
         /**
@@ -258,7 +278,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void noop(MappingParser parser) {
+        private static void doNothing(Parser parser) {
         }
 
         /**
@@ -266,16 +286,16 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void copy(MappingParser parser) {
+        private static void copyChar(Parser parser) {
             parser.sb.append(parser.c);
         }
 
         /**
-         * Copy previous colon character to output.
+         * Add previous colon character to output.
          *
          * @param parser parser instance
          */
-        private static void cpcl(MappingParser parser) {
+        private static void addColon(Parser parser) {
             parser.sb.append(':');
         }
 
@@ -284,7 +304,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void clch(MappingParser parser) {
+        private static void clAndChar(Parser parser) {
             parser.sb.append(':');
             parser.sb.append(parser.c);
         }
@@ -294,17 +314,17 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void fnap(MappingParser parser) {
+        private static void firstLt(Parser parser) {
             parser.nap.setLength(0);
             parser.nap.append(parser.c);
         }
 
         /**
-         * Store next named parameter letter.
+         * Store next named parameter letter or number.
          *
          * @param parser parser instance
          */
-        private static void nnap(MappingParser parser) {
+        private static void nextLtNum(Parser parser) {
             parser.nap.append(parser.c);
         }
 
@@ -313,7 +333,19 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void enap(MappingParser parser) {
+        private static void endParChar(Parser parser) {
+            String parName = parser.nap.toString();
+            parser.names.add(parName);
+            parser.sb.append('?');
+            parser.sb.append(parser.c);
+        }
+
+        /**
+         * Finish stored named parameter without copying current character from input string to output as is.
+         *
+         * @param parser parser instance
+         */
+        private static void endPar(Parser parser) {
             String parName = parser.nap.toString();
             parser.names.add(parName);
             parser.sb.append('?');
@@ -323,30 +355,35 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         /**
          * SQL statement to be parsed.
          */
+
         private final String statement;
         /**
          * Target SQL statement builder.
          */
+
         private final StringBuilder sb;
         /**
          * Temporary string storage.
          */
+
         private final StringBuilder nap;
         /**
          * Ordered list of parameter names.
          */
-        private final List<String> names;
+
+        private final List<String>names;
 
         /**
          * Character being currently processed.
          */
         private char c;
+
         /**
          * Character class of character being currently processed.
          */
         private CharClass cl;
 
-        private MappingParser(String statement) {
+        Parser(String statement) {
             this.sb = new StringBuilder(statement.length());
             this.nap = new StringBuilder(32);
             this.names = new LinkedList<>();
@@ -356,14 +393,14 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
 
         }
 
-        private String convert() {
+        String convert() {
             State state = State.STMT;  // Initial state: common statement processing
             int len = statement.length();
             for (int i = 0; i < len; i++) {
                 c = statement.charAt(i);
                 cl = CharClass.charClass(c);
-                ACTION[state.ordinal()][cl.ordinal()].process(this);
-                state = TRANSITION[state.ordinal()][cl.ordinal()];
+                ACTION[state.ordinal()][cl.ordinal()].accept(this);
+                state = State.TRANSITION[state.ordinal()][cl.ordinal()];
             }
             // Process end of statement
             if (state == State.PAR) {
@@ -374,7 +411,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             return sb.toString();
         }
 
-        private List<String> namesOrder() {
+        List<String> namesOrder() {
             return names;
         }
 
