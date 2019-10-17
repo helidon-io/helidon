@@ -28,7 +28,7 @@
     <name>Helidon Microprofile Tests TCK Opentracing</name>
 
     <properties>
-        <jackson.tck.version>2.9.0</jackson.tck.version>
+        <jackson.tck.version>2.10.0</jackson.tck.version>
     </properties>
 
     <dependencies>
