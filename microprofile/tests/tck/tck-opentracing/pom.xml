@@ -28,7 +28,9 @@
     <name>Helidon Microprofile Tests TCK Opentracing</name>
 
     <properties>
-        <jackson.tck.version>2.9.0</jackson.tck.version>
+        <!-- We force the version of jackson to 2.9.0 since that's -->
+        <!-- what the TCK test forces us to use (via shrinkwrap)   -->
+        <version.lib.jackson>2.9.0</version.lib.jackson>
     </properties>
 
     <dependencies>
@@ -90,31 +92,26 @@
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <version>${jackson.tck.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-base</artifactId>
-            <version>${jackson.tck.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.tck.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.tck.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-jaxb-annotations</artifactId>
-            <version>${jackson.tck.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
