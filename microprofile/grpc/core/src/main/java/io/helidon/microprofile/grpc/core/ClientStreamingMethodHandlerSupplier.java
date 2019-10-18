@@ -19,6 +19,7 @@ package io.helidon.microprofile.grpc.core;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -91,24 +92,24 @@ public class ClientStreamingMethodHandlerSupplier
                 // Signature is StreamObserver<Reqt> invoke(StreamObserver<RespT>)
                 callType = CallType.clientStreaming;
             } else if (Iterable.class.isAssignableFrom(parameterTypes[0])
-                && CompletableFuture.class.equals(returnType)) {
+                && CompletionStage.class.isAssignableFrom(returnType)) {
                 // ** This is a client side only handler **
                 // Assume that the first parameter is the requests to stream
                 // and the return is the response
-                // Signature is <RespT> invoke(Iterable<ReqT>)
+                // Signature is CompletionStage<RespT> invoke(Iterable<ReqT>)
                 callType = CallType.clientStreamingIterable;
             } else if (Stream.class.isAssignableFrom(parameterTypes[0])
-                && CompletableFuture.class.isAssignableFrom(returnType)) {
+                && CompletionStage.class.isAssignableFrom(returnType)) {
                 // ** This is a client side only handler **
                 // Assume that the first parameter is the requests to stream
                 // and the return is the response
-                // Signature is <RespT> invoke(Stream<ReqT>)
+                // Signature is CompletionStage<RespT> invoke(Stream<ReqT>)
                 callType = CallType.clientStreamingStream;
-            } else if (CompletableFuture.class.equals(parameterTypes[0])
+            } else if (CompletionStage.class.isAssignableFrom(parameterTypes[0])
                 && StreamObserver.class.equals(returnType)) {
-                // Assume that the first parameter is the response CompletableFuture value
+                // Assume that the first parameter is the response CompletableStage value
                 // and the return is the request observer
-                // Signature is StreamObserver<Reqt> invoke(CompletableFuture<RespT>)
+                // Signature is StreamObserver<Reqt> invoke(CompletableStage<RespT>)
                 callType = CallType.futureResponse;
             } else {
                 // Signature is unsupported - <?> invoke(<?>)
@@ -153,7 +154,7 @@ public class ClientStreamingMethodHandlerSupplier
         /**
          * A standard client streaming call with an async response.
          * <pre>
-         *     StreamObserver&lt;ReqT&gt; invoke(CompletableFuture&lt;RespT&gt; future)
+         *     StreamObserver&lt;ReqT&gt; invoke(CompletionStage&lt;RespT&gt; future)
          * </pre>
          */
         futureResponse,
@@ -264,7 +265,7 @@ public class ClientStreamingMethodHandlerSupplier
      * A client side only client streaming {@link MethodHandler} that
      * streams requests from an iterable.
      * <pre>
-     *     CompletableFuture&lt;RespT&gt; invoke(Iterable&lt;ReqT&gt; observer)
+     *     CompletionStage&lt;RespT&gt; invoke(Iterable&lt;ReqT&gt; observer)
      * </pre>
      *
      * @param <ReqT>  the request type
@@ -318,7 +319,7 @@ public class ClientStreamingMethodHandlerSupplier
      * A client side only client streaming {@link MethodHandler} that
      * streams requests from a stream.
      * <pre>
-     *     CompletableFuture&lt;RespT&gt; invoke(Stream&lt;ReqT&gt; observer)
+     *     CompletionStage&lt;RespT&gt; invoke(Stream&lt;ReqT&gt; observer)
      * </pre>
      *
      * @param <ReqT>  the request type

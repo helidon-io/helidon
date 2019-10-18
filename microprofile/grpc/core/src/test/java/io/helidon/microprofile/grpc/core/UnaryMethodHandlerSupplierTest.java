@@ -17,6 +17,7 @@
 package io.helidon.microprofile.grpc.core;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.grpc.core.MethodHandler;
 
@@ -408,6 +409,110 @@ public class UnaryMethodHandlerSupplierTest {
     /**
      * Test handler for:
      * <pre>
+     *     CompletionStage<RespT> invoke(ReqT request);
+     * </pre>
+     */
+    @Test
+    public void shouldSupplyHandlerForCompletionStageResponse() {
+        UnaryMethodHandlerSupplier supplier = new UnaryMethodHandlerSupplier();
+        AnnotatedMethod method = getMethod("completionStageResponse", String.class);
+        UnaryService service = mock(UnaryService.class);
+
+        when(service.completionStageResponse(anyString())).thenReturn(CompletableFuture.completedFuture(19L));
+
+        MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
+        assertThat(handler, is(notNullValue()));
+        assertThat(handler.getRequestType(), equalTo(String.class));
+        assertThat(handler.getResponseType(), equalTo(Long.class));
+        assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
+
+        StreamObserver<Long> observer = mock(StreamObserver.class);
+        handler.invoke("foo", observer);
+        verify(service).completionStageResponse(eq("foo"));
+        verify(observer).onNext(19L);
+    }
+
+    /**
+     * Test client call handler for:
+     * <pre>
+     *     CompletionStage<RespT> invoke(ReqT request);
+     * </pre>
+     */
+    @Test
+    public void shouldSupplyHandlerForCompletionStageResponseAndHandleClientCall() throws Exception {
+        UnaryMethodHandlerSupplier supplier = new UnaryMethodHandlerSupplier();
+        AnnotatedMethod method = getMethod("completionStageResponse", String.class);
+        UnaryService service = mock(UnaryService.class);
+
+        when(service.completionStageResponse(anyString())).thenReturn(CompletableFuture.completedFuture(19L));
+
+        MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
+        assertThat(handler, is(notNullValue()));
+
+        MethodHandler.UnaryClient client = mock(MethodHandler.UnaryClient.class);
+
+        when(client.unary(anyString(), any())).thenReturn(CompletableFuture.completedFuture("done!"));
+
+        CompletionStage<Object> result = (CompletionStage<Object>) handler.unary(new Object[]{"bar"}, client);
+        assertThat(result.toCompletableFuture().get(), is("done!"));
+        verify(client).unary(eq("foo"), eq("bar"));
+    }
+
+    /**
+     * Test handler for:
+     * <pre>
+     *     CompletionStage<RespT> invoke();
+     * </pre>
+     */
+    @Test
+    public void shouldSupplyHandlerForCompletionStageResponseNoRequest() {
+        UnaryMethodHandlerSupplier supplier = new UnaryMethodHandlerSupplier();
+        AnnotatedMethod method = getMethod("completionStageResponseNoRequest");
+        UnaryService service = mock(UnaryService.class);
+
+        when(service.completionStageResponseNoRequest()).thenReturn(CompletableFuture.completedFuture(19L));
+
+        MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
+        assertThat(handler, is(notNullValue()));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
+        assertThat(handler.getResponseType(), equalTo(Long.class));
+        assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
+
+        StreamObserver<Long> observer = mock(StreamObserver.class);
+        handler.invoke("foo", observer);
+        verify(service).completionStageResponseNoRequest();
+        verify(observer).onNext(19L);
+    }
+
+    /**
+     * Test client call handler for:
+     * <pre>
+     *     CompletionStage<RespT> invoke();
+     * </pre>
+     */
+    @Test
+    public void shouldSupplyHandlerForCompletionStageResponseNoRequestAndHandleClientCall() throws Exception {
+        UnaryMethodHandlerSupplier supplier = new UnaryMethodHandlerSupplier();
+        AnnotatedMethod method = getMethod("completionStageResponseNoRequest");
+        UnaryService service = mock(UnaryService.class);
+
+        when(service.completionStageResponseNoRequest()).thenReturn(CompletableFuture.completedFuture(19L));
+
+        MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
+        assertThat(handler, is(notNullValue()));
+
+        MethodHandler.UnaryClient client = mock(MethodHandler.UnaryClient.class);
+
+        when(client.unary(anyString(), any())).thenReturn(CompletableFuture.completedFuture("done!"));
+
+        CompletionStage<Object> result = (CompletionStage<Object>) handler.unary(new Object[0], client);
+        assertThat(result.toCompletableFuture().get(), is("done!"));
+        verify(client).unary(eq("foo"), eq(Empty.getDefaultInstance()));
+    }
+
+    /**
+     * Test handler for:
+     * <pre>
      *     void invoke(StreamObserver<RespT> observer);
      * </pre>
      */
@@ -682,6 +787,12 @@ public class UnaryMethodHandlerSupplierTest {
 
         @Unary
         CompletableFuture<Long> futureResponseNoRequest();
+
+        @Unary
+        CompletionStage<Long> completionStageResponse(String request);
+
+        @Unary
+        CompletionStage<Long> completionStageResponseNoRequest();
 
         @Unary
         void unary(String request, StreamObserver<Long> observer);

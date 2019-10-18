@@ -142,6 +142,10 @@ public class UnaryMethodHandlerSupplier
                     // Assume that the single parameter is the request value and the response is a CompletableFuture
                     // Signature is CompletableFuture<ResT> invoke(ReqT)
                     callType = CallType.futureResponse;
+                } else if (CompletionStage.class.equals(returnType)) {
+                    // Assume that the single parameter is the request value and the response is a CompletionStage
+                    // Signature is CompletionStage<ResT> invoke(ReqT)
+                    callType = CallType.futureResponse;
                 } else {
                     // Assume that the single parameter is the request value
                     // and that the return is the response value
@@ -153,6 +157,10 @@ public class UnaryMethodHandlerSupplier
             if (CompletableFuture.class.equals(returnType)) {
                 // There is no request parameter the response is a CompletableFuture
                 // Signature is CompletableFuture<ResT> invoke()
+                callType = CallType.futureResponseNoRequest;
+            } else if (CompletionStage.class.equals(returnType)) {
+                // There is no request parameter the response is a CompletionStage
+                // Signature is CompletionStage<ResT> invoke()
                 callType = CallType.futureResponseNoRequest;
             } else if (voidReturn) {
                 // There is no request parameter and no response
@@ -207,16 +215,16 @@ public class UnaryMethodHandlerSupplier
          */
         noRequestNoResponse,
         /**
-         * An unary call with a {@link CompletableFuture} response.
+         * An unary call with a {@link CompletionStage} response.
          * <pre>
-         *     CompletableFuture&ltResT&gt; invoke(ReqT request)
+         *     CompletionStage&ltResT&gt; invoke(ReqT request)
          * </pre>
          */
         futureResponse,
         /**
-         * An unary call with no request and a {@link CompletableFuture} response.
+         * An unary call with no request and a {@link CompletionStage} response.
          * <pre>
-         *     CompletableFuture&ltResT&gt; invoke()
+         *     CompletionStage&ltResT&gt; invoke()
          * </pre>
          */
         futureResponseNoRequest,

@@ -19,6 +19,7 @@ package io.helidon.microprofile.grpc.core;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import io.helidon.grpc.core.MethodHandler;
@@ -42,6 +43,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -259,6 +261,70 @@ public class ClientStreamingMethodHandlerSupplierTest {
     }
 
     @Test
+    public void shouldHandleClientCallForIterableReturningCompletionStage() throws Exception {
+        ClientStreamingMethodHandlerSupplier supplier = new ClientStreamingMethodHandlerSupplier();
+        AnnotatedMethod method = getMethod("iterableCompletionStage", Iterable.class);
+        Service service = mock(Service.class);
+
+        MethodHandler<Long, String> handler = supplier.get("foo", method, () -> service);
+        assertThat(handler, is(notNullValue()));
+
+        List<String> list = Arrays.asList("A", "B", "C");
+        StreamObserver<String> response = mock(StreamObserver.class);
+        MethodHandler.ClientStreaming client = mock(MethodHandler.ClientStreaming.class);
+
+        when(client.clientStreaming(anyString(), any(StreamObserver.class))).thenReturn(response);
+
+        Object result = handler.clientStreaming(new Object[]{list}, client);
+
+        assertThat(result, is(instanceOf(CompletionStage.class)));
+
+        ArgumentCaptor<StreamObserver> captor = ArgumentCaptor.forClass(StreamObserver.class);
+        verify(client).clientStreaming(eq("foo"), captor.capture());
+
+        StreamObserver observer = captor.getValue();
+        observer.onNext("bar");
+        observer.onCompleted();
+
+        CompletionStage<Object> stage = (CompletionStage<Object>) result;
+        CompletableFuture<Object> future = stage.toCompletableFuture();
+        assertThat(future.isDone(), is(true));
+        assertThat(future.get(), is("bar"));
+    }
+
+    @Test
+    public void shouldHandleClientCallForStreamReturningCompletionStage() throws Exception {
+        ClientStreamingMethodHandlerSupplier supplier = new ClientStreamingMethodHandlerSupplier();
+        AnnotatedMethod method = getMethod("streamCompletionStage", Stream.class);
+        Service service = mock(Service.class);
+
+        MethodHandler<Long, String> handler = supplier.get("foo", method, () -> service);
+        assertThat(handler, is(notNullValue()));
+
+        Stream<String> stream = Stream.of("A", "B", "C");
+        StreamObserver<String> response = mock(StreamObserver.class);
+        MethodHandler.ClientStreaming client = mock(MethodHandler.ClientStreaming.class);
+
+        when(client.clientStreaming(anyString(), any(StreamObserver.class))).thenReturn(response);
+
+        Object result = handler.clientStreaming(new Object[]{stream}, client);
+
+        assertThat(result, is(instanceOf(CompletionStage.class)));
+
+        ArgumentCaptor<StreamObserver> captor = ArgumentCaptor.forClass(StreamObserver.class);
+        verify(client).clientStreaming(eq("foo"), captor.capture());
+
+        StreamObserver observer = captor.getValue();
+        observer.onNext("bar");
+        observer.onCompleted();
+
+        CompletionStage<Object> stage = (CompletionStage<Object>) result;
+        CompletableFuture<Object> future = stage.toCompletableFuture();
+        assertThat(future.isDone(), is(true));
+        assertThat(future.get(), is("bar"));
+    }
+
+    @Test
     public void shouldSupplyClientStreamingHandlerWithTypesFromAnnotation() {
         ClientStreamingMethodHandlerSupplier supplier = new ClientStreamingMethodHandlerSupplier();
         AnnotatedMethod method = getMethod("reqResp", StreamObserver.class);
@@ -373,6 +439,12 @@ public class ClientStreamingMethodHandlerSupplierTest {
 
         @ClientStreaming
         CompletableFuture<Long> stream(Stream<String> requests);
+
+        @ClientStreaming
+        CompletionStage<Long> iterableCompletionStage(Iterable<String> requests);
+
+        @ClientStreaming
+        CompletionStage<Long> streamCompletionStage(Stream<String> requests);
 
         @ClientStreaming
         @RequestType(Long.class)
