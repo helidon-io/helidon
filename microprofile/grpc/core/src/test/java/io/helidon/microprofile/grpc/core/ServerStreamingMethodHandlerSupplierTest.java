@@ -22,16 +22,8 @@ import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.core.proto.Types;
-import io.helidon.microprofile.grpc.core.Bidirectional;
-import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RequestType;
-import io.helidon.microprofile.grpc.core.ResponseType;
-import io.helidon.microprofile.grpc.core.RpcService;
-import io.helidon.microprofile.grpc.core.ServerStreaming;
-import io.helidon.microprofile.grpc.core.ServerStreamingMethodHandlerSupplier;
-import io.helidon.microprofile.grpc.core.Unary;
 
+import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.Test;
@@ -127,7 +119,7 @@ public class ServerStreamingMethodHandlerSupplierTest {
 
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
-        assertThat(handler.getRequestType(), equalTo(Types.Empty.class));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
         assertThat(handler.getResponseType(), equalTo(Long.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.SERVER_STREAMING));
 
@@ -282,7 +274,7 @@ public class ServerStreamingMethodHandlerSupplierTest {
 
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
-        assertThat(handler.getRequestType(), equalTo(Types.Empty.class));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
         assertThat(handler.getResponseType(), equalTo(Long.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.SERVER_STREAMING));
 

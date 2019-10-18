@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.SafeStreamObserver;
-import io.helidon.grpc.core.proto.Types;
 
+import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -84,8 +84,8 @@ abstract class AbstractMethodHandlerSupplier
         private final AnnotatedMethod method;
         private final Supplier<?> instance;
         private final MethodDescriptor.MethodType methodType;
-        private Class<?> requestType = Types.Empty.class;
-        private Class<?> responseType = Types.Empty.class;
+        private Class<?> requestType = Empty.class;
+        private Class<?> responseType = Empty.class;
 
         /**
          * Create a handler.
@@ -114,7 +114,7 @@ abstract class AbstractMethodHandlerSupplier
         public void invoke(ReqT request, StreamObserver<RespT> observer) {
             StreamObserver<RespT> safe = SafeStreamObserver.ensureSafeObserver(observer);
 
-            if (Types.Empty.class.equals(requestType)) {
+            if (Empty.class.equals(requestType)) {
                 safe = new NullHandlingResponseObserver<>(observer);
             }
 
@@ -276,7 +276,7 @@ abstract class AbstractMethodHandlerSupplier
         @SuppressWarnings("unchecked")
         public void onNext(V value) {
             if (value == null) {
-                delegate.onNext(Types.Empty.getDefaultInstance());
+                delegate.onNext(Empty.getDefaultInstance());
             }
             delegate.onNext(value);
         }

@@ -19,16 +19,8 @@ package io.helidon.microprofile.grpc.core;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.core.proto.Types;
-import io.helidon.microprofile.grpc.core.Bidirectional;
-import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RequestType;
-import io.helidon.microprofile.grpc.core.ResponseType;
-import io.helidon.microprofile.grpc.core.RpcService;
-import io.helidon.microprofile.grpc.core.ServerStreaming;
-import io.helidon.microprofile.grpc.core.Unary;
-import io.helidon.microprofile.grpc.core.UnaryMethodHandlerSupplier;
 
+import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.Test;
@@ -177,7 +169,7 @@ public class UnaryMethodHandlerSupplierTest {
 
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
-        assertThat(handler.getRequestType(), equalTo(Types.Empty.class));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
         assertThat(handler.getResponseType(), equalTo(Long.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
 
@@ -210,7 +202,7 @@ public class UnaryMethodHandlerSupplierTest {
 
         Object result = handler.unary(new Object[0], client);
         assertThat(result, is("done!"));
-        verify(client).unary(eq("foo"), eq(Types.Empty.getDefaultInstance()));
+        verify(client).unary(eq("foo"), eq(Empty.getDefaultInstance()));
     }
 
     /**
@@ -228,13 +220,13 @@ public class UnaryMethodHandlerSupplierTest {
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
         assertThat(handler.getRequestType(), equalTo(String.class));
-        assertThat(handler.getResponseType(), equalTo(Types.Empty.class));
+        assertThat(handler.getResponseType(), equalTo(Empty.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
 
         StreamObserver observer = mock(StreamObserver.class);
         handler.invoke("foo", observer);
         verify(service).requestNoResponse(eq("foo"));
-        verify(observer).onNext(isA(Types.Empty.class));
+        verify(observer).onNext(isA(Empty.class));
     }
 
     /**
@@ -275,14 +267,14 @@ public class UnaryMethodHandlerSupplierTest {
 
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
-        assertThat(handler.getRequestType(), equalTo(Types.Empty.class));
-        assertThat(handler.getResponseType(), equalTo(Types.Empty.class));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
+        assertThat(handler.getResponseType(), equalTo(Empty.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
 
         StreamObserver observer = mock(StreamObserver.class);
         handler.invoke("foo", observer);
         verify(service).noRequestNoResponse();
-        verify(observer).onNext(isA(Types.Empty.class));
+        verify(observer).onNext(isA(Empty.class));
     }
 
     /**
@@ -306,7 +298,7 @@ public class UnaryMethodHandlerSupplierTest {
 
         Object result = handler.unary(new Object[0], client);
         assertThat(result, is(nullValue()));
-        verify(client).unary(eq("foo"), eq(Types.Empty.getDefaultInstance()));
+        verify(client).unary(eq("foo"), eq(Empty.getDefaultInstance()));
     }
 
     /**
@@ -377,7 +369,7 @@ public class UnaryMethodHandlerSupplierTest {
 
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
-        assertThat(handler.getRequestType(), equalTo(Types.Empty.class));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
         assertThat(handler.getResponseType(), equalTo(Long.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
 
@@ -410,7 +402,7 @@ public class UnaryMethodHandlerSupplierTest {
 
         CompletableFuture<Object> result = (CompletableFuture<Object>) handler.unary(new Object[0], client);
         assertThat(result.get(), is("done!"));
-        verify(client).unary(eq("foo"), eq(Types.Empty.getDefaultInstance()));
+        verify(client).unary(eq("foo"), eq(Empty.getDefaultInstance()));
     }
 
     /**
@@ -427,7 +419,7 @@ public class UnaryMethodHandlerSupplierTest {
 
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
-        assertThat(handler.getRequestType(), equalTo(Types.Empty.class));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
         assertThat(handler.getResponseType(), equalTo(Long.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
 
@@ -457,7 +449,7 @@ public class UnaryMethodHandlerSupplierTest {
         when(client.unary(anyString(), any())).thenReturn(CompletableFuture.completedFuture("done!"));
 
         handler.unary(new Object[]{observer}, client);
-        verify(client).unary(eq("foo"), eq(Types.Empty.getDefaultInstance()));
+        verify(client).unary(eq("foo"), eq(Empty.getDefaultInstance()));
         verify(observer).onNext("done!");
         verify(observer).onCompleted();
     }
@@ -524,7 +516,7 @@ public class UnaryMethodHandlerSupplierTest {
 
         MethodHandler<String, Long> handler = supplier.get("foo", method, () -> service);
         assertThat(handler, is(notNullValue()));
-        assertThat(handler.getRequestType(), equalTo(Types.Empty.class));
+        assertThat(handler.getRequestType(), equalTo(Empty.class));
         assertThat(handler.getResponseType(), equalTo(Long.class));
         assertThat(handler.type(), equalTo(MethodDescriptor.MethodType.UNARY));
 
@@ -554,7 +546,7 @@ public class UnaryMethodHandlerSupplierTest {
         when(client.unary(anyString(), any())).thenReturn(CompletableFuture.completedFuture("done!"));
 
         handler.unary(new Object[]{future}, client);
-        verify(client).unary(eq("foo"), eq(Types.Empty.getDefaultInstance()));
+        verify(client).unary(eq("foo"), eq(Empty.getDefaultInstance()));
         assertThat(future.get(), is("done!"));
     }
 

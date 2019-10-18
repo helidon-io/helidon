@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.ResponseHelper;
-import io.helidon.grpc.core.proto.Types;
 
+import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -259,7 +259,7 @@ public class ServerStreamingMethodHandlerSupplier
         @SuppressWarnings("unchecked")
         public Object serverStreaming(Object[] args, ServerStreamingClient client) {
             try {
-                client.serverStreaming(methodName(), Types.Empty.getDefaultInstance(), (StreamObserver) args[0]);
+                client.serverStreaming(methodName(), Empty.getDefaultInstance(), (StreamObserver) args[0]);
                 return null;
             } catch (Throwable thrown) {
                 throw GrpcHelper.ensureStatusRuntimeException(thrown, Status.INTERNAL);
@@ -342,7 +342,7 @@ public class ServerStreamingMethodHandlerSupplier
         public Object serverStreaming(Object[] args, ServerStreamingClient client) {
             try {
                 Observer<RespT> observer = new Observer<>();
-                client.serverStreaming(methodName(), Types.Empty.getDefaultInstance(), observer);
+                client.serverStreaming(methodName(), Empty.getDefaultInstance(), observer);
                 return observer.future().get().stream();
             } catch (Throwable thrown) {
                 throw GrpcHelper.ensureStatusRuntimeException(thrown, Status.INTERNAL);

@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.core.proto.Types;
 
+import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -269,7 +269,7 @@ public class UnaryMethodHandlerSupplier
         /**
          * The argument to use for a {@code null} request parameter.
          */
-        static final Types.Empty EMPTY = Types.Empty.getDefaultInstance();
+        static final Empty EMPTY = Empty.getDefaultInstance();
 
         AbstractUnaryHandler(String methodName, AnnotatedMethod method, Supplier<?> instance) {
             super(methodName, method, instance, MethodDescriptor.MethodType.UNARY);

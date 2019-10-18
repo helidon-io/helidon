@@ -19,7 +19,6 @@
  */
 module io.helidon.grpc.core {
     exports io.helidon.grpc.core;
-    exports io.helidon.grpc.core.proto;
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.config.objectmapping;
