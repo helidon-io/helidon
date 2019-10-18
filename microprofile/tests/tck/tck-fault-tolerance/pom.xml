@@ -38,7 +38,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>io.helidon.microprofile.bundles</groupId>
-                    <artifactId>helidon-microprofile-3.0</artifactId>
+                    <artifactId>helidon-microprofile-3.1</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
