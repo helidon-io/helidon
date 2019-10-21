@@ -132,6 +132,15 @@ public class GrpcMetrics
     }
 
     /**
+     * Obtain the {@link org.eclipse.microprofile.metrics.MetricType}.
+     *
+     * @return the {@link org.eclipse.microprofile.metrics.MetricType}
+     */
+    public MetricType metricType() {
+        return metricRule.type();
+    }
+
+    /**
      * Set the {@link NamingFunction} to use to generate the metric name.
      * <p>
      * The default name will be the {@code <service-name>.<method-name>}.

@@ -22,19 +22,19 @@ grpc:
     default_port:
       host: "non_default_host.com"
     default_host_port_ssl_disabled:
-      ssl:
+      tls:
         enabled: false
-        tlsKey: "clientKey.pem"
-        tlsCert: "clientCert.pem"
-        tlsCaCert: "ca.pem"
+        tls-key-resource-path: "ssl/clientKey.pem"
+        tls-cert-resource-path: "ssl/clientCert.pem"
+        tls-ca-cert-resource-path: "ssl/ca.pem"
     default_host_ssl_one_way:
       port: 4096
-      ssl:
+      tls:
         enabled: true
-        tlsCaCert: "ca.pem"
+        tls-ca-cert-resource-path: "ssl/ca.pem"
     default_port_ssl:
       host: "non_default_host.com"
-      ssl:
-        tlsKey: "clientKey.pem"
-        tlsCert: "clientCert.pem"
-        tlsCaCert: "ca.pem"
+      tls:
+        tls-key-resource-path: "ssl/clientKey.pem"
+        tls-cert-resource-path: "ssl/clientCert.pem"
+        tls-ca-cert-resource-path: "ssl/ca.pem"

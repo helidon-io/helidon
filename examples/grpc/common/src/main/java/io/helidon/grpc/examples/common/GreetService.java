@@ -30,7 +30,7 @@ import io.grpc.stub.StreamObserver;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
 /**
- * An implementation of the GreetService.
+ * A plain Java implementation of the GreetService.
  */
 public class GreetService implements GrpcService {
     /**

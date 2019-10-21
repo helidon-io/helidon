@@ -21,25 +21,17 @@ module io.grpc {
     exports io.grpc;
     exports io.grpc.inprocess;
     exports io.grpc.internal;
-    exports io.grpc.stub;
-    exports io.grpc.stub.annotations;
     exports io.grpc.util;
 
     requires java.logging;
     requires java.naming;
 
-    requires com.google.common;
-
-    requires error.prone.annotations;
+    requires static com.google.common;
+    requires static error.prone.annotations;
 
     uses io.grpc.ManagedChannelProvider;
     uses io.grpc.NameResolverProvider;
     uses io.grpc.ServerProvider;
     uses io.grpc.internal.BinaryLogProvider;
     uses io.grpc.LoadBalancerProvider;
-
-    provides io.grpc.NameResolverProvider
-            with io.grpc.internal.DnsNameResolverProvider;
-    provides io.grpc.LoadBalancerProvider
-            with io.grpc.internal.PickFirstLoadBalancerProvider;
 }

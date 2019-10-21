@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Service Metrics
+= gRPC Service Metrics
 :pagename: grpc-server-metrics
 :description: Helidon gRPC Service Metrics
 :keywords: helidon, grpc, java

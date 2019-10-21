@@ -69,6 +69,7 @@
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
+        <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <!--
         !Version statement! - end
         -->
@@ -714,6 +715,12 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${version.lib.jsr305}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-junit5</artifactId>
+                <version>${version.lib.weld-junit}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <!-- if needed (as excluded from weld) -->

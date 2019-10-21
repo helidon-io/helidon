@@ -17,7 +17,7 @@
 package io.helidon.grpc.client;
 
 import io.helidon.config.objectmapping.Value;
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 
 /**
  * GrpcChannelDescriptor contains the configuration for a {@link io.grpc.Channel}.
@@ -26,13 +26,13 @@ public class GrpcChannelDescriptor {
     private boolean inProcessChannel;
     private String host;
     private int port;
-    private GrpcSslDescriptor sslDescriptor;
+    private GrpcTlsDescriptor tlsDescriptor;
 
-    private GrpcChannelDescriptor(boolean inProcessChannel, String host, int port, GrpcSslDescriptor sslDescriptor) {
+    private GrpcChannelDescriptor(boolean inProcessChannel, String host, int port, GrpcTlsDescriptor tlsDescriptor) {
         this.inProcessChannel = inProcessChannel;
         this.host = host;
         this.port = port;
-        this.sslDescriptor = sslDescriptor;
+        this.tlsDescriptor = tlsDescriptor;
     }
 
     /**
@@ -71,14 +71,14 @@ public class GrpcChannelDescriptor {
     }
 
     /**
-     * Get the {@link io.helidon.grpc.core.GrpcSslDescriptor}. If this method returns null or
-     * if {@code sslDescriptor.isEnabled()} is false, then no TLS will be used (and none of the other configuration
-     * values from {@code sslDescriptor} will be used).
+     * Get the {@link io.helidon.grpc.core.GrpcTlsDescriptor}. If this method returns null or
+     * if {@code tlsDescriptor.isEnabled()} is false, then no TLS will be used (and none of the other configuration
+     * values from {@code tlsDescriptor} will be used).
      *
-     * @return the {@link io.helidon.grpc.core.GrpcSslDescriptor} instance (or {@code null} if no configuration was specified)
+     * @return the {@link io.helidon.grpc.core.GrpcTlsDescriptor} instance (or {@code null} if no configuration was specified)
      */
-    public GrpcSslDescriptor sslDescriptor() {
-        return sslDescriptor;
+    public GrpcTlsDescriptor tlsDescriptor() {
+        return tlsDescriptor;
     }
 
     /**
@@ -88,7 +88,7 @@ public class GrpcChannelDescriptor {
         private boolean inProcessChannel;
         private String host = GrpcChannelsProvider.DEFAULT_HOST;
         private int port = GrpcChannelsProvider.DEFAULT_PORT;
-        private GrpcSslDescriptor sslDescriptor;
+        private GrpcTlsDescriptor tlsDescriptor;
 
         /**
          * Set the host name to connect.
@@ -126,15 +126,15 @@ public class GrpcChannelDescriptor {
         }
 
         /**
-         * Set the GrpcSslDescriptor. If {@code sslDescriptor} is null or if the {@code sslDescriptor.isEnabled()} is false,
+         * Set the GrpcTlsDescriptor. If {@code tlsDescriptor} is null or if the {@code tlsDescriptor.isEnabled()} is false,
          * then no TLS will be used.
-         * @param sslDescriptor the GrpcSslDescriptor
+         * @param tlsDescriptor the GrpcSslDescriptor
          *
          * @return this instance for fluent API
          */
-        @Value(key = "ssl")
-        public Builder sslDescriptor(GrpcSslDescriptor sslDescriptor) {
-            this.sslDescriptor = sslDescriptor;
+        @Value(key = "tls")
+        public Builder sslDescriptor(GrpcTlsDescriptor tlsDescriptor) {
+            this.tlsDescriptor = tlsDescriptor;
             return this;
         }
 
@@ -143,7 +143,7 @@ public class GrpcChannelDescriptor {
          * @return a new GrpcChannelDescriptor
          */
         public GrpcChannelDescriptor build() {
-            return new GrpcChannelDescriptor(this.inProcessChannel, this.host, this.port, this.sslDescriptor);
+            return new GrpcChannelDescriptor(this.inProcessChannel, this.host, this.port, this.tlsDescriptor);
         }
     }
 }
