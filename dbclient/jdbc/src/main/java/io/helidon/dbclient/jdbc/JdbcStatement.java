@@ -199,7 +199,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             DASH,         // Dash (-), part of single line comment beginning sequence "--"
             SLASH,        // Slash (/), part of multiline comment beginning "/*" and ending "*/" sequence
             COLON,        // Colon (:), begins named parameter
-            OTHER;        // Other characters// Other characters
+            OTHER;        // Other characters
 
             /**
              * Returns character class corresponding to provided character.
