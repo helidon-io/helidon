@@ -63,8 +63,9 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
-     * Exposes this {@link Single} instance as a {@link CompletionStage}. Note that if this {@link Single} completes without a
-     * value, the resulting {@link CompletionStage} will be completed exceptionally with an {@link IllegalStateException}
+     * Exposes this {@link Single} instance as a {@link CompletionStage}.
+     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
      *
      * @return CompletionStage
      */
@@ -80,6 +81,14 @@ public interface Single<T> extends Subscribable<T> {
         }
     }
 
+    /**
+     * Exposes this {@link Single} instance as a {@link CompletionStage} with {@code Optional<T>} return type
+     * of the asynchronous operation.
+     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
+     *
+     * @return CompletionStage
+     */
     default CompletionStage<Optional<T>> toOptionalStage() {
         try {
             SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();

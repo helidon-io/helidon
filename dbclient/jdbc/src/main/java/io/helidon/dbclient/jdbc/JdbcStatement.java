@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -132,7 +133,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
 
         try {
             // Parameters names must be replaced with ? and names occurence order must be stored.
-            MappingParser parser = new MappingParser(statement);
+            Parser parser = new Parser(statement);
             String jdbcStatement = parser.convert();
             LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
             PreparedStatement preparedStatement = connection.prepareStatement(jdbcStatement);
@@ -173,50 +174,53 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
     /**
      * Mapping parser state machine.
      *
-     * Is it really worth it to write a parser, when we could use a regular expression with a single restriction,
-     * that the statement text must not contain :word except for parameters?
-     * The implementation is then really simple:
-     * <pre>
-     *  Pattern pattern = Pattern.compile(":(\\w+)", Pattern.UNICODE_CHARACTER_CLASS);
-     *  Matcher matcher = pattern.matcher(select);
-     *  List names = new LinkedList<>();
-     *  while(matcher.find()) {
-     *      names.add(matcher.group(1));
-     *  }
-     *  matcher.reset();
-     *  replaced = matcher.replaceAll("?");
-     *  </pre>
-     *
      * Before replacement:
      * {@code SELECT * FROM table WHERE name = :name AND type = :type}
      * After replacement:
      * {@code SELECT * FROM table WHERE name = ? AND type = ?}
-     * Expected list of parameteres:
+     * Expected list of parameters:
      * {@code "name", "type"}
      */
-    private static final class MappingParser {
+    static final class Parser {
+                @FunctionalInterface
 
-        /**
-         * Parser ACTION to be performed.
-         */
-        @FunctionalInterface
-        private interface Action {
-            void process(MappingParser parser);
-        }
+        private interface Action extends Consumer<Parser> {}
 
         /**
          * Character classes used in state machine.
          */
         private enum CharClass {
-            LT,  // Letter
-            NUM, // Number
-            SQ,  // Single quote, begins string in SQL
-            COL, // Colon, begins named parameter
-            OTH;  // Other character
+            LETTER,       // Letter (any unicode letter)
+            NUMBER,       // Number (any unicode digit)
+            LF,           // Line feed / new line (\n), terminates line alone or in CR LF sequence
+            CR,           // Carriage return (\r), terminates line in CR LF sequence
+            APOSTROPHE,   // Single quote ('), begins string in SQL
+            STAR,         // Star (*), part of multiline comment beginning "/*" and ending "*/" sequence
+            DASH,         // Dash (-), part of single line comment beginning sequence "--"
+            SLASH,        // Slash (/), part of multiline comment beginning "/*" and ending "*/" sequence
+            COLON,        // Colon (:), begins named parameter
+            OTHER;        // Other characters
 
-            // This is far from optimal code, but direct translation table would be too large for Java char
+            /**
+             * Returns character class corresponding to provided character.
+             *
+             * @param c character to determine its character class
+             * @return character class corresponding to provided character
+             */
             private static CharClass charClass(char c) {
-                return Character.isLetter(c) ? LT : (Character.isDigit(c) ? NUM : ((c == '\'') ? SQ : ((c == ':') ? COL : OTH)));
+                switch (c) {
+                    case '\r': return CR;
+                    case '\n': return LF;
+                    case '\'': return APOSTROPHE;
+                    case '*': return STAR;
+                    case '-': return DASH;
+                    case '/': return SLASH;
+                    case ':': return COLON;
+                    default:
+                        return Character.isLetter(c)
+                                ? LETTER
+                                : (Character.isDigit(c) ? NUMBER : OTHER);
+                }
             }
 
         }
@@ -225,32 +229,330 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          * States used in state machine.
          */
         private enum State {
-            STMT, // Common statement
-            STR,  // SQL string
-            COL,  // After colon, expecting parameter name
-            PAR,  // Processing parameter name
+            STATEMENT,            // Common statement processing
+            STRING,               // SQL string processing after 1st APOSTROPHE was recieved
+            COLON,                // Symbolic name processing after opening COLON (colon) was recieved
+            PARAMETER,            // Symbolic name processing after 1st LETTER or later LETTER
+                                  // or NUMBER of parameter name was recieved
+            MULTILN_COMMENT_BG,   // Multiline comment processing after opening slash was recieved from the "/*" sequence
+            MULTILN_COMMENT_END,  // Multiline comment processing after closing star was recieved from the "*/" sequence
+            MULTILN_COMMENT,      // Multiline comment processing of the comment itself
+            SINGLELN_COMMENT_BG,  // Single line comment processing after opening dash was recieved from the "--" sequence
+            SINGLELN_COMMENT_END, // Single line comment processing after closing CR was recieved from the CR LF sequence
+            SINGLELN_COMMENT;     // Single line comment processing of the comment itself
+
+            /** States transition table. */
+            private static final State[][] TRANSITION = {
+                // Transitions from STATEMENT state
+                {
+                    STATEMENT,           // LETTER: regular part of the statement, keep processing it
+                    STATEMENT,           // NUMBER: regular part of the statement, keep processing it
+                    STATEMENT,           // LF: regular part of the statement, keep processing it
+                    STATEMENT,           // CR: regular part of the statement, keep processing it
+                    STRING,              // APOSTROPHE: beginning of SQL string processing, switch to STRING state
+                    STATEMENT,           // STAR: regular part of the statement, keep processing it
+                    SINGLELN_COMMENT_BG, // DASH: possible starting sequence of single line comment,
+                                         //       switch to SINGLELN_COMMENT_BG state
+                    MULTILN_COMMENT_BG,  // SLASH: possible starting sequence of multi line comment,
+                                         //        switch to MULTILN_COMMENT_BG state
+                    COLON,               // COLON: possible beginning of named parameter, switch to COLON state
+                    STATEMENT            // OTHER: regular part of the statement, keep processing it
+                },
+                // Transitions from STRING state
+                {
+                    STRING,              // LETTER: regular part of the SQL string, keep processing it
+                    STRING,              // NUMBER: regular part of the SQL string, keep processing it
+                    STRING,              // LF: regular part of the SQL string, keep processing it
+                    STRING,              // CR: regular part of the SQL string, keep processing it
+                    STATEMENT,           // APOSTROPHE: end of SQL string processing, go back to STATEMENT state
+                    STRING,              // STAR: regular part of the SQL string, keep processing it
+                    STRING,              // DASH: regular part of the SQL string, keep processing it
+                    STRING,              // SLASH: regular part of the SQL string, keep processing it
+                    STRING,              // COLON: regular part of the SQL string, keep processing it
+                    STRING               // OTHER: regular part of the SQL string, keep processing it
+                },
+                // Transitions from COLON state
+                {
+                    PARAMETER,           // LETTER: first character of named parameter, switch to PARAMETER state
+                    STATEMENT,           // NUMBER: can't be first character of named parameter, go back to STATEMENT state
+                    STATEMENT,           // LF: can't be first character of named parameter, go back to STATEMENT state
+                    STATEMENT,           // CR: can't be first character of named parameter, go back to STATEMENT state
+                    STRING,              // APOSTROPHE: not a named parameter but beginning of SQL string processing,
+                                         //             switch to STRING state
+                    STATEMENT,           // STAR: can't be first character of named parameter, go back to STATEMENT state
+                    SINGLELN_COMMENT_BG, // DASH: not a named parameter but possible starting sequence of single line comment,
+                                         //       switch to SINGLELN_COMMENT_BG state
+                    MULTILN_COMMENT_BG,  // SLASH: not a named parameter but possible starting sequence of multi line comment,
+                                         //        switch to MULTILN_COMMENT_BG state
+                    COLON,               // COLON: not a named parameter but possible beginning of another named parameter,
+                                         //        retry named parameter processing
+                    STATEMENT            // OTHER: can't be first character of named parameter, go back to STATEMENT state
+                },
+                // Transitions from PARAMETER state
+                {
+                    PARAMETER,           // LETTER: next character of named parameter, keep processing it
+                    PARAMETER,           // NUMBER: next character of named parameter, keep processing it
+                    STATEMENT,           // LF: can't be next character of named parameter, go back to STATEMENT state
+                    STATEMENT,           // CR: can't be next character of named parameter, go back to STATEMENT state
+                    STRING,              // APOSTROPHE: end of named parameter and beginning of SQL string processing,
+                                         //             switch to STRING state
+                    STATEMENT,           // STAR: can't be next character of named parameter, go back to STATEMENT state
+                    SINGLELN_COMMENT_BG, // DASH: end of named parameter and possible starting sequence of single line comment,
+                                         //       switch to SINGLELN_COMMENT_BG state
+                    MULTILN_COMMENT_BG,  // SLASH: end of named parameter and possible starting sequence of multi line comment,
+                                         //        switch to MULTILN_COMMENT_BG state
+                    COLON,               // COLON: end of named parameter and possible beginning of another named parameter,
+                                         //        switch to COLON state to restart named parameter processing
+                    STATEMENT            // OTHER: can't be next character of named parameter, go back to STATEMENT state
+                },
+                // Transitions from MULTILN_COMMENT_BG state
+                {
+                    STATEMENT,           // LETTER: not starting sequence of multi line comment, go back to STATEMENT state
+                    STATEMENT,           // NUMBER: not starting sequence of multi line comment, go back to STATEMENT state
+                    STATEMENT,           // LF: not starting sequence of multi line comment, go back to STATEMENT state
+                    STATEMENT,           // CR: not starting sequence of multi line comment, go back to STATEMENT state
+                    STRING,              // APOSTROPHE: not starting sequence of multi line comment but beginning of SQL
+                                         //             string processing, switch to STRING state
+                    MULTILN_COMMENT,     // STAR: end of starting sequence of multi line comment,
+                                         //       switch to MULTILN_COMMENT state
+                    SINGLELN_COMMENT_BG, // DASH: not starting sequence of multi line comment but possible starting sequence
+                                         //       of single line comment, switch to SINGLELN_COMMENT_BG state
+                    MULTILN_COMMENT_BG,  // SLASH: not starting sequence of multi line comment but possible starting sequence
+                                         //       of next multi line comment, retry multi line comment processing
+                    COLON,               // COLON: not starting sequence of multi line comment but possible beginning
+                                         //        of named parameter, switch to COLON state
+                    STATEMENT            // OTHER: not starting sequence of multi line comment, go back to STATEMENT state
+                },
+                // Transitions from MULTILN_COMMENT_END state
+                {
+                    MULTILN_COMMENT,     // LETTER: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // NUMBER: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // LF: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // CR: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT,     // APOSTROPHE: not ending sequence of multi line comment,
+                                         //             go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT_END, // STAR: not ending sequence of multi line comment but possible ending sequence
+                                         //       of next multi line comment, retry end of multi line comment processing
+                    MULTILN_COMMENT,     // DASH: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    STATEMENT,           // SLASH: end of ending sequence of multi line comment,
+                                         //        switch to STATEMENT state
+                    MULTILN_COMMENT,     // COLON: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                    MULTILN_COMMENT      // OTHER: not ending sequence of multi line comment, go back to MULTILN_COMMENT state
+                },
+                // Transitions from MULTILN_COMMENT state
+                {
+                    MULTILN_COMMENT,     // LETTER: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // NUMBER: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // LF: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // CR: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // APOSTROPHE: regular multi line comment, keep processing it
+                    MULTILN_COMMENT_END, // STAR: possible ending sequence of multi line comment,
+                                         //       switch to MULTILN_COMMENT_END state
+                    MULTILN_COMMENT,     // DASH: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // SLASH: regular multi line comment, keep processing it
+                    MULTILN_COMMENT,     // COLON: regular multi line comment, keep processing it
+                    MULTILN_COMMENT      // OTHER: regular multi line comment, keep processing it
+                },
+                // Transitions from SINGLELN_COMMENT_BG state
+                {
+                    STATEMENT,           // LETTER: not starting sequence of single line comment, go back to STATEMENT state
+                    STATEMENT,           // NUMBER: not starting sequence of single line comment, go back to STATEMENT state
+                    STATEMENT,           // LF: not starting sequence of single line comment, go back to STATEMENT state
+                    STATEMENT,           // CR: not starting sequence of single line comment, go back to STATEMENT state
+                    STRING,              // APOSTROPHE: not starting sequence of single line comment but beginning of SQL
+                                         //             string processing, switch to STRING state
+                    STATEMENT,           // STAR: not starting sequence of single line comment, go back to STATEMENT state
+                    SINGLELN_COMMENT,    // DASH: end of starting sequence of single line comment,
+                                         //       switch to SINGLELN_COMMENT state
+                    MULTILN_COMMENT_BG,  // SLASH: not starting sequence of single line comment but possible starting sequence
+                                         //       of next multi line comment, switch to MULTILN_COMMENT_BG state
+                    COLON,               // COLON: not starting sequence of single line comment but possible beginning
+                                         //        of named parameter, switch to COLON state
+                    STATEMENT            // OTHER: not starting sequence of single line comment, go back to STATEMENT state
+                },
+                // Transitions from SINGLELN_COMMENT_END state
+                {
+                    SINGLELN_COMMENT,     // LETTER: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // NUMBER: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    STATEMENT,            // LF: end of single line comment, switch to STATEMENT state
+                    SINGLELN_COMMENT_END, // CR: not ending sequence of single line comment but possible ending sequence
+                                          //     of next single line comment, retry end of single line comment processing
+                    SINGLELN_COMMENT,     // APOSTROPHE: not ending sequence of single line comment,
+                                          //             go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // STAR: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // DASH: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // SLASH: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT,     // COLON: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                    SINGLELN_COMMENT      // OTHER: not ending sequence of single line comment, go back to SINGLELN_COMMENT state
+                },
+                // Transitions from SINGLELN_COMMENT state
+                {
+                    SINGLELN_COMMENT,     // LETTER: regular single line comment, keep processing it
+                    SINGLELN_COMMENT,     // NUMBER: regular single line comment, keep processing it
+                    STATEMENT,            // LF: end of single line comment, switch to STATEMENT state
+                    SINGLELN_COMMENT_END, // CR: possible beginning of ending sequence of multi line comment,
+                                          //     switch to SINGLELN_COMMENT_END state
+                    SINGLELN_COMMENT,     // APOSTROPHE: regular single line comment, keep processing it
+                    SINGLELN_COMMENT,     // STAR: regular single line comment, keep processing it
+                    SINGLELN_COMMENT,     // DASH: regular single line comment, keep processing it
+                    SINGLELN_COMMENT,     // SLASH: regular single line comment, keep processing it
+                    SINGLELN_COMMENT,     // COLON: regular single line comment, keep processing it
+                    SINGLELN_COMMENT      // OTHER: regular single line comment, keep processing it
+                }
+            };
         }
 
         /**
-         * States TRANSITION table.
-         */
-        private static final State[][] TRANSITION = {
-                // LT          NUM         SQ          COL        OTH
-                {State.STMT, State.STMT, State.STR, State.COL, State.STMT}, // Transition from STMT
-                {State.STR, State.STR, State.STMT, State.STR, State.STR}, // Transition from STR
-                {State.PAR, State.PAR, State.STR, State.COL, State.STMT}, // Transition from COL
-                {State.PAR, State.PAR, State.STMT, State.COL, State.STMT}  // Transition from PAR
-        };
-
-        /**
-         * States TRANSITION ACTION table.
+         * State automaton action table.
          */
         private static final Action[][] ACTION = {
-                // LT                   NUM                  SQ                    COL                  OTH
-                {MappingParser::copy, MappingParser::copy, MappingParser::copy, MappingParser::noop, MappingParser::copy}, // STMT
-                {MappingParser::copy, MappingParser::copy, MappingParser::copy, MappingParser::copy, MappingParser::copy}, // STR
-                {MappingParser::fnap, MappingParser::fnap, MappingParser::clch, MappingParser::cpcl, MappingParser::clch},  // COL
-                {MappingParser::nnap, MappingParser::nnap, MappingParser::enap, MappingParser::enap, MappingParser::enap}   // PAR
+            // Actions performed on transitions from STATEMENT state
+            {
+                Parser::copyChar,  // LETTER: copy regular statement character to output
+                Parser::copyChar,  // NUMBER: copy regular statement character to output
+                Parser::copyChar,  // LF: copy regular statement character to output
+                Parser::copyChar,  // CR: copy regular statement character to output
+                Parser::copyChar,  // APOSTROPHE: copy SQL string character to output
+                Parser::copyChar,  // STAR: copy regular statement character to output
+                Parser::copyChar,  // DASH: copy character to output, no matter wheter it's comment or not
+                Parser::copyChar,  // SLASH: copy character to output, no matter wheter it's comment or not
+                Parser::doNothing, // COLON: delay character copying until it's obvious whether this is parameter or not
+                Parser::copyChar   // OTHER: copy regular statement character to output
+            },
+            // Actions performed on transitions from STRING state
+            {
+               Parser::copyChar, // LETTER: copy SQL string character to output
+               Parser::copyChar, // NUMBER: copy SQL string character to output
+               Parser::copyChar, // LF: copy SQL string character to output
+               Parser::copyChar, // CR: copy SQL string character to output
+               Parser::copyChar, // APOSTROPHE: copy SQL string character to output
+               Parser::copyChar, // STAR: copy SQL string character to output
+               Parser::copyChar, // DASH: copy SQL string character to output
+               Parser::copyChar, // SLASH: copy SQL string character to output
+               Parser::copyChar, // COLON: copy SQL string character to output
+               Parser::copyChar  // OTHER: copy SQL string character to output
+           },
+           // Actions performed on transitions from COLON state
+           {
+               Parser::setFirstParamChar,   // LETTER: set first parameter character
+               Parser::addColonAndCopyChar, // NUMBER: not a parameter, add delayed colon and copy current statement character
+                                            //         to output
+               Parser::addColonAndCopyChar, // LF: not a parameter, add delayed colon and copy current statement character
+                                            //     to output
+               Parser::addColonAndCopyChar, // CR: not a parameter, add delayed colon and copy current statement character
+                                            //     to output
+               Parser::addColonAndCopyChar, // APOSTROPHE: not a parameter, add delayed colon and copy current SQL string
+                                            //             character to output
+               Parser::addColonAndCopyChar, // STAR: not a parameter, add delayed colon and copy current statement character
+                                            //       to output
+               Parser::addColonAndCopyChar, // DASH: not a parameter, add delayed colon and copy current statement character
+                                            //       to output, no matter wheter it's comment or not
+               Parser::addColonAndCopyChar, // SLASH: not a parameter, add delayed colon and copy current statement character
+                                            //        to output, no matter wheter it's comment or not
+               Parser::addColon,            // COLON: not a parameter, add delayed colon and delay current colon copying
+                                            //        until it's obvious whether this is parameter or not
+               Parser::addColonAndCopyChar  // OTHER: not a parameter, add delayed colon and copy current statement character
+                                            //        to output
+           },
+           // Actions performed on transitions from PARAMETER state
+           {
+               Parser::setNextParamChar,       // LETTER: set next parameter character
+               Parser::setNextParamChar,       // NUMBER: set next parameter character
+               Parser::finishParamAndCopyChar, // LF: finish parameter processing and copy current character as part
+                                               //     of regular statement
+               Parser::finishParamAndCopyChar, // CR: finish parameter processing and copy current character as part
+                                               //     of regular statement
+               Parser::finishParamAndCopyChar, // APOSTROPHE: finish parameter processing and copy current character as part
+                                               //             of regular statement
+               Parser::finishParamAndCopyChar, // STAR: finish parameter processing and copy current character as part
+                                               //       of regular statement
+               Parser::finishParamAndCopyChar, // DASH: finish parameter processing and copy current character as part
+                                               //       of regular statement
+               Parser::finishParamAndCopyChar, // SLASH: finish parameter processing and copy current character as part
+                                               //        of regular statement
+               Parser::finishParam,            // COLON: finish parameter processing and delay character copying until
+                                               //        it's obvious whether this is next parameter or not
+               Parser::finishParamAndCopyChar  // OTHER: finish parameter processing and copy current character as part
+                                               //        of regular statement
+           },
+           // Actions performed on transitions from MULTILN_COMMENT_BG state
+           {
+               Parser::copyChar,  // LETTER: copy regular statement character to output
+               Parser::copyChar,  // NUMBER: copy regular statement character to output
+               Parser::copyChar,  // LF: copy regular statement character to output
+               Parser::copyChar,  // CR: copy regular statement character to output
+               Parser::copyChar,  // APOSTROPHE: copy SQL string character to output
+               Parser::copyChar,  // STAR: copy multi line comment character to output
+               Parser::copyChar,  // DASH: copy character to output, no matter wheter it's comment or not
+               Parser::copyChar,  // SLASH: copy character to output, no matter wheter it's comment or not
+               Parser::doNothing, // COLON: delay character copying until it's obvious whether this is parameter or not
+               Parser::copyChar   // OTHER: copy regular statement character to output
+           },
+           // Actions performed on transitions from MULTILN_COMMENT_END state
+           {
+               Parser::copyChar, // LETTER: copy multi line comment character to output
+               Parser::copyChar, // NUMBER: copy multi line comment character to output
+               Parser::copyChar, // LF: copy multi line comment character to output
+               Parser::copyChar, // CR: copy multi line comment character to output
+               Parser::copyChar, // APOSTROPHE: copy multi line comment character to output
+               Parser::copyChar, // STAR: copy multi line comment character to output
+               Parser::copyChar, // DASH: copy multi line comment character to output
+               Parser::copyChar, // SLASH: copy multi line comment character to output
+               Parser::copyChar, // COLON: copy multi line comment character to output
+               Parser::copyChar  // OTHER: copy multi line comment character to output
+           },
+           // Actions performed on transitions from MULTILN_COMMENT state
+           {
+               Parser::copyChar, // LETTER: copy multi line comment character to output
+               Parser::copyChar, // NUMBER: copy multi line comment character to output
+               Parser::copyChar, // LF: copy multi line comment character to output
+               Parser::copyChar, // CR: copy multi line comment character to output
+               Parser::copyChar, // APOSTROPHE: copy multi line comment character to output
+               Parser::copyChar, // STAR: copy multi line comment character to output
+               Parser::copyChar, // DASH: copy multi line comment character to output
+               Parser::copyChar, // SLASH: copy multi line comment character to output
+               Parser::copyChar, // COLON: copy multi line comment character to output
+               Parser::copyChar  // OTHER: copy multi line comment character to output
+           },
+           // Actions performed on transitions from SINGLELN_COMMENT_BG state
+           {
+               Parser::copyChar,  // LETTER: copy regular statement character to output
+               Parser::copyChar,  // NUMBER: copy regular statement character to output
+               Parser::copyChar,  // LF: copy regular statement character to output
+               Parser::copyChar,  // CR: copy regular statement character to output
+               Parser::copyChar,  // APOSTROPHE: copy SQL string character to output
+               Parser::copyChar,  // STAR: copy regular statement character to output
+               Parser::copyChar,  // DASH: copy single line comment character to output
+               Parser::copyChar,  // SLASH: copy character to output, no matter wheter it's comment or not
+               Parser::doNothing, // COLON: delay character copying until it's obvious whether this is parameter or not
+               Parser::copyChar   // OTHER: copy regular statement character to output
+           },
+           // Actions performed on transitions from SINGLELN_COMMENT_END state
+           {
+               Parser::copyChar,  // LETTER: copy single line comment character to output
+               Parser::copyChar,  // NUMBER: copy single line comment character to output
+               Parser::copyChar,  // LF: copy single line comment character to output
+               Parser::copyChar,  // CR: copy single line comment character to output
+               Parser::copyChar,  // APOSTROPHE: copy single line comment character to output
+               Parser::copyChar,  // STAR: copy single line comment character to output
+               Parser::copyChar,  // DASH: copy single line comment character to output
+               Parser::copyChar,  // SLASH: copy single line comment character to output
+               Parser::copyChar,  // COLON: copy single line comment character to output
+               Parser::copyChar   // OTHER: copy single line comment character to output
+           },
+           // Actions performed on transitions from SINGLELN_COMMENT state
+           {
+               Parser::copyChar,  // LETTER: copy single line comment character to output
+               Parser::copyChar,  // NUMBER: copy single line comment character to output
+               Parser::copyChar,  // LF: copy single line comment character to output
+               Parser::copyChar,  // CR: copy single line comment character to output
+               Parser::copyChar,  // APOSTROPHE: copy single line comment character to output
+               Parser::copyChar,  // STAR: copy single line comment character to output
+               Parser::copyChar,  // DASH: copy single line comment character to output
+               Parser::copyChar,  // SLASH: copy single line comment character to output
+               Parser::copyChar,  // COLON: copy single line comment character to output
+               Parser::copyChar   // OTHER: copy single line comment character to output
+           }
         };
 
         /**
@@ -258,7 +560,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void noop(MappingParser parser) {
+        private static void doNothing(Parser parser) {
         }
 
         /**
@@ -266,16 +568,16 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void copy(MappingParser parser) {
+        private static void copyChar(Parser parser) {
             parser.sb.append(parser.c);
         }
 
         /**
-         * Copy previous colon character to output.
+         * Add previous colon character to output.
          *
          * @param parser parser instance
          */
-        private static void cpcl(MappingParser parser) {
+        private static void addColon(Parser parser) {
             parser.sb.append(':');
         }
 
@@ -284,7 +586,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void clch(MappingParser parser) {
+        private static void addColonAndCopyChar(Parser parser) {
             parser.sb.append(':');
             parser.sb.append(parser.c);
         }
@@ -294,17 +596,17 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void fnap(MappingParser parser) {
+        private static void setFirstParamChar(Parser parser) {
             parser.nap.setLength(0);
             parser.nap.append(parser.c);
         }
 
         /**
-         * Store next named parameter letter.
+         * Store next named parameter letter or number.
          *
          * @param parser parser instance
          */
-        private static void nnap(MappingParser parser) {
+        private static void setNextParamChar(Parser parser) {
             parser.nap.append(parser.c);
         }
 
@@ -313,7 +615,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          *
          * @param parser parser instance
          */
-        private static void enap(MappingParser parser) {
+        private static void finishParamAndCopyChar(Parser parser) {
             String parName = parser.nap.toString();
             parser.names.add(parName);
             parser.sb.append('?');
@@ -321,17 +623,31 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         }
 
         /**
+         * Finish stored named parameter without copying current character from input string to output as is.
+         *
+         * @param parser parser instance
+         */
+        private static void finishParam(Parser parser) {
+            String parName = parser.nap.toString();
+            parser.names.add(parName);
+            parser.sb.append('?');
+        }
+
+        /**
          * SQL statement to be parsed.
          */
         private final String statement;
+
         /**
          * Target SQL statement builder.
          */
         private final StringBuilder sb;
+
         /**
          * Temporary string storage.
          */
         private final StringBuilder nap;
+
         /**
          * Ordered list of parameter names.
          */
@@ -341,12 +657,13 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
          * Character being currently processed.
          */
         private char c;
+
         /**
          * Character class of character being currently processed.
          */
         private CharClass cl;
 
-        private MappingParser(String statement) {
+        Parser(String statement) {
             this.sb = new StringBuilder(statement.length());
             this.nap = new StringBuilder(32);
             this.names = new LinkedList<>();
@@ -356,17 +673,17 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
 
         }
 
-        private String convert() {
-            State state = State.STMT;  // Initial state: common statement processing
+        String convert() {
+            State state = State.STATEMENT;  // Initial state: common statement processing
             int len = statement.length();
             for (int i = 0; i < len; i++) {
                 c = statement.charAt(i);
                 cl = CharClass.charClass(c);
-                ACTION[state.ordinal()][cl.ordinal()].process(this);
-                state = TRANSITION[state.ordinal()][cl.ordinal()];
+                ACTION[state.ordinal()][cl.ordinal()].accept(this);
+                state = State.TRANSITION[state.ordinal()][cl.ordinal()];
             }
             // Process end of statement
-            if (state == State.PAR) {
+            if (state == State.PARAMETER) {
                 String parName = nap.toString();
                 names.add(parName);
                 sb.append('?');
@@ -374,7 +691,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             return sb.toString();
         }
 
-        private List<String> namesOrder() {
+        List<String> namesOrder() {
             return names;
         }
 

@@ -27,7 +27,7 @@ import io.helidon.common.reactive.Flow;
  *
  * @param <T> type of the result, starts as {@link io.helidon.dbclient.DbRow}
  */
-public interface DbRows<T> extends Multi<T> {
+public interface DbRows<T> {
     /**
      * Map this row result using a mapping function.
      *
