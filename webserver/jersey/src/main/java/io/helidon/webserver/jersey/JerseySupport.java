@@ -41,6 +41,7 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
@@ -171,16 +172,16 @@ public class JerseySupport implements Service {
     private static URI baseUri(ServerRequest req) {
         try {
             return new URI(req.isSecure() ? "https" : "http", null, req.localAddress(),
-                           req.localPort(), basePath(req), null, null);
+                           req.localPort(), basePath(req.path()), null, null);
         } catch (URISyntaxException e) {
             throw new IllegalStateException("Unable to create a base URI from the request info.", e);
         }
     }
 
-    private static String basePath(ServerRequest req) {
-        String reqPath = req.path().toString();
-        String absPath = req.path().absolute().toString();
-        String basePath = absPath.substring(0, absPath.length() - reqPath.length());
+    static String basePath(HttpRequest.Path path) {
+        String reqPath = path.toString();
+        String absPath = path.absolute().toString();
+        String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);
 
         if (absPath.isEmpty() || basePath.isEmpty()) {
             return "/";

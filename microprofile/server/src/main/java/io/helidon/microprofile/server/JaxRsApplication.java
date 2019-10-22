@@ -126,7 +126,7 @@ public final class JaxRsApplication {
          * @return updated builder instance
          */
         public Builder contextRoot(String contextRoot) {
-            this.contextRoot = contextRoot;
+            this.contextRoot = normalize(contextRoot);
             return this;
         }
 
@@ -222,8 +222,19 @@ public final class JaxRsApplication {
             }
             ApplicationPath path = clazz.getAnnotation(ApplicationPath.class);
             if (null != path) {
-                contextRoot = path.value();
+                contextRoot = normalize(path.value());
             }
+        }
+
+        /**
+         * Normalizes a context root by stripping off a trailing slash.
+         *
+         * @param contextRoot Context root to normalize.
+         * @return Normalized context root.
+         */
+        private static String normalize(String contextRoot) {
+            int length = contextRoot.length();
+            return length > 1 && contextRoot.endsWith("/") ? contextRoot.substring(0, length - 1) : contextRoot;
         }
 
         private void routingName(Class<?> clazz) {
