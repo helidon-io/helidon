@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -507,7 +508,7 @@ public final class ConfigSources {
          * @param source config source
          * @return updated builder
          */
-        public CompositeBuilder add(Supplier<ConfigSource> source) {
+        public CompositeBuilder add(Supplier<? extends ConfigSource> source) {
             requireNonNull(source, "source cannot be null");
 
             configSources.add(source.get());
@@ -709,7 +710,23 @@ public final class ConfigSources {
          * Constructor.
          */
         SystemPropertiesConfigSource() {
-            super(ConfigUtils.propertiesToMap(System.getProperties()), false, "");
+            // TODO need builder to be able to customize polling strategy
+            super(builder().pollingStrategy(PollingStrategies.regular(Duration.of(5, ChronoUnit.SECONDS))),
+                  false,
+                  "");
+        }
+
+        @Override
+        protected Data<ConfigNode.ObjectNode, Instant> loadData() throws ConfigException {
+            return new Data<>(Optional.of(ConfigUtils
+                                                  .mapToObjectNode(ConfigUtils.propertiesToMap(System.getProperties()), false)),
+                              Optional.of(Instant.now()));
+        }
+
+        @Override
+        protected Optional<Instant> dataStamp() {
+            // each polling event will trigger a load and comparison of config tree
+            return Optional.of(Instant.now());
         }
     }
 }

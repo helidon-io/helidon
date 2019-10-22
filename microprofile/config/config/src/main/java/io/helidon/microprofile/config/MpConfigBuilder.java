@@ -42,6 +42,7 @@ import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.AbstractMpSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 
@@ -213,7 +214,11 @@ public class MpConfigBuilder implements ConfigBuilder {
                 .getName() + "), values: " + source.getProperties());
 
         mpConfigSources.add(source);
-        helidonConfigSources.add(wrapSource(source));
+        if (source instanceof AbstractMpSource) {
+            helidonConfigSources.add((io.helidon.config.spi.ConfigSource) source);
+        } else {
+            helidonConfigSources.add(wrapSource(source));
+        }
     }
 
     @Override
@@ -262,7 +267,7 @@ public class MpConfigBuilder implements ConfigBuilder {
         Collections.reverse(mpConfigSources);
     }
 
-    private List<Supplier<io.helidon.config.spi.ConfigSource>>
+    private List<Supplier<? extends io.helidon.config.spi.ConfigSource>>
         toSupplierList(List<io.helidon.config.spi.ConfigSource> configSources) {
 
         return configSources.stream()

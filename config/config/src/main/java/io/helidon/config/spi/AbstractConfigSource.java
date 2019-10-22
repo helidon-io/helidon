@@ -42,7 +42,7 @@ import io.helidon.config.spi.ConfigParser.Content;
  * @param <S> a type of data stamp
  * @see Builder
  */
-public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode, S> implements ConfigSource {
+public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implements ConfigSource {
 
     private final Function<Config.Key, String> mediaTypeMapping;
     private final Function<Config.Key, ConfigParser> parserMapping;
@@ -80,7 +80,12 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
                 || (mediaTypeMapping == null && parserMapping == null)) {
             return data;
         }
-        return new Data<>(Optional.of(processObject(data.stamp(), ConfigKeyImpl.of(), data.data().get())), data.stamp());
+        Data<ObjectNode, S> result = new Data<>(Optional.of(processObject(data.stamp(), ConfigKeyImpl.of(), data.data().get())),
+                                                data.stamp());
+
+        super.processLoadedData(result);
+
+        return result;
     }
 
     private ConfigNode processNode(Optional<S> datastamp, ConfigKeyImpl key, ConfigNode node) {
@@ -153,13 +158,13 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
      * @param <T> type of key source attributes (target) used to construct polling strategy from
      */
     public abstract static class Builder<B extends Builder<B, T>, T>
-            extends AbstractSource.Builder<B, T, ConfigSource>
-            implements io.helidon.common.Builder<ConfigSource> {
+            extends AbstractSource.Builder<B, T, AbstractMpSource<?>>
+            implements io.helidon.common.Builder<AbstractMpSource<?>> {
 
         private static final String MEDIA_TYPE_MAPPING_KEY = "media-type-mapping";
         private Function<Config.Key, String> mediaTypeMapping;
         private Function<Config.Key, ConfigParser> parserMapping;
-        private volatile ConfigSource configSource;
+        private volatile AbstractMpSource<?> configSource;
 
         /**
          * Initialize builder.
@@ -174,7 +179,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
         }
 
         @Override
-        public ConfigSource get() {
+        public AbstractMpSource<?> get() {
             if (configSource == null) {
                 configSource = build();
             }

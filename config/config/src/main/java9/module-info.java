@@ -27,6 +27,7 @@ module io.helidon.config {
     requires transitive io.helidon.common.reactive;
     requires io.helidon.common.serviceloader;
     requires io.helidon.common.media.type;
+    requires transitive microprofile.config.api;
 
     exports io.helidon.config;
     exports io.helidon.config.spi;

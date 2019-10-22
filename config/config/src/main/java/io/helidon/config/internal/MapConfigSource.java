@@ -16,11 +16,16 @@
 
 package io.helidon.config.internal;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.config.spi.AbstractMpSource;
+import io.helidon.config.spi.AbstractSource;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
@@ -31,7 +36,7 @@ import io.helidon.config.spi.ConfigSource;
  *
  * @see io.helidon.config.ConfigSources.MapBuilder
  */
-public class MapConfigSource implements ConfigSource {
+public class MapConfigSource extends AbstractMpSource<Instant> {
 
     private final Map<String, String> map;
     private final String mapSourceName;
@@ -45,12 +50,20 @@ public class MapConfigSource implements ConfigSource {
      * @param mapSourceName name of map source
      */
     protected MapConfigSource(Map<String, String> map, boolean strict, String mapSourceName) {
+        super(new Builder());
         Objects.requireNonNull(map, "map cannot be null");
         Objects.requireNonNull(mapSourceName, "mapSourceName cannot be null");
 
         this.map = map;
         this.strict = strict;
         this.mapSourceName = mapSourceName;
+    }
+
+    private MapConfigSource(Builder builder) {
+        super(builder);
+        this.map = new HashMap<>();
+        this.mapSourceName = "empty";
+        this.strict = true;
     }
 
     /**
@@ -77,12 +90,32 @@ public class MapConfigSource implements ConfigSource {
     }
 
     @Override
-    public String description() {
-        return ConfigSource.super.description() + (mapSourceName.isEmpty() ? "" : "[" + mapSourceName + "]");
+    protected String uid() {
+        return "Map" + (mapSourceName.isEmpty() ? "" : "[" + mapSourceName + "]");
     }
 
     @Override
-    public Optional<ObjectNode> load() {
-        return Optional.of(ConfigUtils.mapToObjectNode(map, strict));
+    protected Optional<Instant> dataStamp() {
+        return Optional.of(Instant.EPOCH);
+    }
+
+    @Override
+    protected Data<ObjectNode, Instant> loadData() throws ConfigException {
+        return new Data<>(Optional.of(ConfigUtils.mapToObjectNode(map, strict)), Optional.of(Instant.EPOCH));
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder extends AbstractSource.Builder<Builder, String, MapConfigSource> {
+        private Builder() {
+            super(String.class);
+        }
+
+        @Override
+        public MapConfigSource build() {
+            return new MapConfigSource(this);
+        }
     }
 }

@@ -37,6 +37,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
+import io.helidon.config.spi.AbstractMpSource;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;

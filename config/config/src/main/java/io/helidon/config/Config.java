@@ -1271,7 +1271,7 @@ public interface Config {
          * @see ConfigSources.CompositeBuilder
          * @see ConfigSources.MergingStrategy
          */
-        Builder sources(List<Supplier<ConfigSource>> configSources);
+        Builder sources(List<Supplier<? extends ConfigSource>> configSources);
 
         /**
          * Add a config source to the list of sources.
@@ -1300,7 +1300,7 @@ public interface Config {
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
          */
-        default Builder sources(Supplier<ConfigSource> configSource) {
+        default Builder sources(Supplier<? extends ConfigSource> configSource) {
             sources(CollectionsHelper.listOf(configSource));
             return this;
         }
@@ -1326,8 +1326,8 @@ public interface Config {
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
          */
-        default Builder sources(Supplier<ConfigSource> configSource,
-                                Supplier<ConfigSource> configSource2) {
+        default Builder sources(Supplier<? extends ConfigSource> configSource,
+                                Supplier<? extends ConfigSource> configSource2) {
             sources(CollectionsHelper.listOf(configSource, configSource2));
             return this;
         }
@@ -1354,9 +1354,9 @@ public interface Config {
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
          */
-        default Builder sources(Supplier<ConfigSource> configSource,
-                                Supplier<ConfigSource> configSource2,
-                                Supplier<ConfigSource> configSource3) {
+        default Builder sources(Supplier<? extends ConfigSource> configSource,
+                                Supplier<? extends ConfigSource> configSource2,
+                                Supplier<? extends ConfigSource> configSource3) {
             sources(CollectionsHelper.listOf(configSource, configSource2, configSource3));
             return this;
         }

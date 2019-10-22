@@ -88,7 +88,7 @@ class BuilderImpl implements Config.Builder {
     }
 
     @Override
-    public Config.Builder sources(List<Supplier<ConfigSource>> sourceSuppliers) {
+    public Config.Builder sources(List<Supplier<? extends ConfigSource>> sourceSuppliers) {
         sources = new ArrayList<>(sourceSuppliers.size());
         sourceSuppliers.stream().map(Supplier::get).forEach(source -> {
             sources.add(source);

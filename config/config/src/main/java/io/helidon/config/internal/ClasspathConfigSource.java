@@ -137,7 +137,7 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
         /**
          * Initialize builder.
          */
-        public ClasspathBuilder() {
+        private ClasspathBuilder() {
             super(Path.class);
         }
 

@@ -187,19 +187,6 @@ public class AbstractConfigSourceTest {
     }
 
     @Test
-    public void testCompositeBuilderSupplierGetOnce() {
-        AbstractConfigSource.Builder builder = new AbstractConfigSource.Builder(Void.class) {
-            @Override
-            public ConfigSource build() {
-                return Optional::empty;
-            }
-        };
-
-        ConfigSource configSource = builder.get();
-        assertThat(configSource, sameInstance(builder.get()));
-    }
-
-    @Test
     public void testInitAll() {
         TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().config(Config.create(ConfigSources.create(
                 CollectionsHelper.mapOf("media-type-mapping.yaml", "application/x-yaml",
