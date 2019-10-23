@@ -35,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BadGaugeTest  {
 
+    // TODO - re-enable once MP metrics reinstates the Gauge<T extends Number> restriction.
+    @org.junit.jupiter.api.Disabled
     @Test
     public void testBadBean() {
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();

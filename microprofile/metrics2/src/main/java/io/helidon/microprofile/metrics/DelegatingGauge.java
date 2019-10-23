@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.Gauge;
  *
  * @param <T> data type reported by the underlying {@code Gauge}
  */
-class DelegatingGauge<T extends Number> implements Gauge<T> {
+class DelegatingGauge<T /* extends Number */> implements Gauge<T> {
 
     private final Method method;
     private final Object obj;
@@ -50,7 +50,7 @@ class DelegatingGauge<T extends Number> implements Gauge<T> {
      * @param clazz  type of the underlying gauge
      * @return {@code DelegatingGauge}
      */
-    public static <S extends Number> DelegatingGauge<S> newInstance(Method method, Object obj,
+    public static <S /* extends Number */> DelegatingGauge<S> newInstance(Method method, Object obj,
             Class<S> clazz) {
         return new DelegatingGauge<>(method, obj, clazz);
     }
