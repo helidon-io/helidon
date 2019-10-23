@@ -47,7 +47,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
 
     private static final String GET_METHOD = "GET";
     private static final String HEAD_METHOD = "HEAD";
-    public static final String URL_KEY = "url";
+    private static final String URL_KEY = "url";
 
     private final URL url;
 
