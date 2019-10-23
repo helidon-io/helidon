@@ -47,6 +47,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
 
     private static final String GET_METHOD = "GET";
     private static final String HEAD_METHOD = "HEAD";
+    public static final String URL_KEY = "url";
 
     private final URL url;
 
@@ -165,7 +166,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
 
         @Override
         public UrlBuilder config(Config metaConfig) {
-            metaConfig.get("url").as(URL.class).ifPresent(this::url);
+            metaConfig.get(URL_KEY).as(URL.class).ifPresent(this::url);
             return super.config(metaConfig);
         }
 

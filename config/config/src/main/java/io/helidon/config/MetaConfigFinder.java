@@ -34,6 +34,11 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * Utility class that locates the meta configuration source.
  */
 final class MetaConfigFinder {
+    /**
+     * System property used to set a file with meta configuration.
+     */
+    public static final String META_CONFIG_SYSTEM_PROPERTY = "io.helidon.config.meta-config";
+
     private static final Logger LOGGER = Logger.getLogger(MetaConfigFinder.class.getName());
     private static final List<String> CONFIG_SUFFIXES = listOf("yaml", "conf", "json", "properties");
     private static final String META_CONFIG_PREFIX = "meta-config.";
@@ -57,7 +62,7 @@ final class MetaConfigFinder {
         Optional<ConfigSource> source;
 
         // check if meta configuration is configured using system property
-        String property = System.getProperty("io.helidon.config.meta-config");
+        String property = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
         if (null != property) {
             // is it a file
             source = findFile(property);
