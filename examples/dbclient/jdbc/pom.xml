@@ -28,6 +28,10 @@
     <artifactId>helidon-examples-dbclient-jdbc</artifactId>
     <name>Helidon Examples DB Client JDBC</name>
 
+    <properties>
+        <mainClass>io.helidon.examples.dbclient.jdbc.JdbcExampleMain</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
