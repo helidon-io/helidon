@@ -30,6 +30,8 @@ import io.helidon.security.integration.jersey.client.ClientSecurity;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+
 /**
  * A simple test gRPC echo service that
  * makes a secure outbound http request.

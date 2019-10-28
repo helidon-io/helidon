@@ -21,7 +21,6 @@ import java.util.stream.Stream;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
@@ -43,8 +42,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
  */
 @RpcService
 @ApplicationScoped
-public class StringService
-        implements ResponseHelper {
+public class StringService {
 
     /**
      * Convert a string value to upper case.

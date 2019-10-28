@@ -21,12 +21,8 @@ import java.util.stream.Stream;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import io.helidon.grpc.core.ResponseHelper;
-import io.helidon.grpc.examples.common.Strings;
 import io.helidon.grpc.examples.common.Strings.StringMessage;
 import io.helidon.grpc.server.CollectingObserver;
-import io.helidon.grpc.server.GrpcService;
-import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
 import io.helidon.microprofile.grpc.core.RpcService;
@@ -38,13 +34,15 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.stream;
+
 /**
  * An implementation of the StringService with metrics annotated methods.
  */
 @RpcService
 @ApplicationScoped
-public class StringService
-        implements ResponseHelper {
+public class StringService {
 
     @Counted
     @Unary(name = "Upper")

@@ -27,12 +27,13 @@ import java.util.stream.Stream;
 
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.core.ResponseHelper;
 
 import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+
+import static io.helidon.grpc.core.ResponseHelper.stream;
 
 /**
  * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for server streaming gRPC methods.
@@ -280,8 +281,7 @@ public class ServerStreamingMethodHandlerSupplier
      * @param <RespT> the response type
      */
     public static class StreamResponse<ReqT, RespT>
-            extends AbstractServerStreamingHandler<ReqT, RespT>
-            implements ResponseHelper {
+            extends AbstractServerStreamingHandler<ReqT, RespT> {
 
         StreamResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
             super(methodName, method, instance);
@@ -322,8 +322,7 @@ public class ServerStreamingMethodHandlerSupplier
      * @param <RespT> the response type
      */
     public static class StreamResponseNoRequest<ReqT, RespT>
-            extends AbstractServerStreamingHandler<ReqT, RespT>
-            implements ResponseHelper {
+            extends AbstractServerStreamingHandler<ReqT, RespT> {
 
         StreamResponseNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instance) {
             super(methodName, method, instance);
