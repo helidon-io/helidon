@@ -485,15 +485,11 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         final MetadataBuilder builder = new MetadataBuilder();
         builder.withName(metadata.getName())
                 .withDisplayName(metadata.getDisplayName())
-                .withType(metadata.getTypeRaw());
-        // TODO - restore to original code here once new MP module is avl
-//                .reusable(metadata.isReusable());
+                .reusable(metadata.isReusable());
 
         metadata.getDescription().ifPresent(builder::withDescription);
         metadata.getUnit().ifPresent(builder::withUnit);
-// TODO - restore original return once new MP module is avl
-//        return builder.build();
-        return (metadata.isReusable() ? builder.reusable() : builder.notReusable()).build();
+        return builder.build();
     }
 
     synchronized Optional<Map.Entry<MetricID, HelidonMetric>> getOptionalMetricEntry(String metricName) {

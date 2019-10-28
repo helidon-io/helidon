@@ -36,7 +36,8 @@ import org.eclipse.microprofile.metrics.MetricID;
 /**
  * Gauge implementation.
  */
-final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
+final class HelidonGauge<T /* extends Number */> extends MetricImpl implements Gauge<T> {
+    // TODO uncomment above once MP metrics enforces the Number restriction
     private final Supplier<T> value;
 
     private HelidonGauge(String registryType, Metadata metadata, Gauge<T> metric) {
@@ -45,8 +46,9 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
         value = metric::getValue;
     }
 
-    static <S> HelidonGauge<S> create(String registryType, Metadata metadata,
+    static <S /* extends Number */> HelidonGauge<S> create(String registryType, Metadata metadata,
             Gauge<S> metric) {
+        // TODO uncomment above once MP metrics enforces the Number restriction
         return new HelidonGauge<>(registryType, metadata, metric);
     }
 
@@ -67,9 +69,13 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
 
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+        // TODO uncomment 'value' declaration below and remove 'untypedValue' once MP metrics enforces restriction
+        // T value = getValue();
         T untypedValue = getValue();
         String nameWithTags = jsonFullKey(metricID);
 
+        // TODO remove following 'if' and 'value' assignment once MP metrics enforces restriction,
+        // promoting the nested 'if' one level.
         if (untypedValue instanceof Number) {
             Number value = (Number) untypedValue;
             if (value instanceof AtomicInteger) {
@@ -104,6 +110,7 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
                 // Might be a developer-provided class which extends Number.
                 builder.add(nameWithTags, value.doubleValue());
             }
+        // TODO remove following 'else' and 'builder.add' once MP metrics enforces restriction
         } else {
             builder.add(nameWithTags, String.valueOf(value));
         }
