@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.cors;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.Path;
@@ -67,19 +69,21 @@ public class CrossOriginTest {
         client.close();
     }
 
+    @ApplicationScoped
     static public class CorsApplication extends Application {
 
         @Override
         public Set<Class<?>> getClasses() {
-            return CollectionsHelper.setOf(CorsResource.class);
+            return CollectionsHelper.setOf(CorsResource1.class);
         }
     }
 
+    @CrossOrigin
+    @RequestScoped
     @Path("/cors")
-    static public class CorsResource {
+    static public class CorsResource1 {
 
         @GET
-        @CrossOrigin
         @Path("defaults")
         public String defaults() {
             return "defaults";

@@ -27,7 +27,6 @@ public class CrossOriginAutoDiscoverable implements AutoDiscoverable {
 
     @Override
     public void configure(FeatureContext context) {
-        // TODO: config property to enable this
         context.register(CrossOriginFilter.class);
     }
 }
