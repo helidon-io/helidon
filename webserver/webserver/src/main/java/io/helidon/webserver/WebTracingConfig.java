@@ -289,6 +289,9 @@ public abstract class WebTracingConfig {
             }
 
             String spanName = spanConfig.newName().orElse(TRACING_SPAN_HTTP_REQUEST);
+            if (spanName.indexOf('%') > -1) {
+                spanName = String.format(spanName, req.method().name(), req.path(), req.query());
+            }
             // tracing is enabled, so we replace the parent span with web server parent span
             Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
                     .withTag(Tags.COMPONENT.getKey(), "helidon-webserver")

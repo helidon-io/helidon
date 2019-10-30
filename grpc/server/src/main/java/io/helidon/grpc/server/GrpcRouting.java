@@ -16,9 +16,10 @@
 
 package io.helidon.grpc.server;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
@@ -87,16 +88,16 @@ public interface GrpcRouting {
     final class Builder implements io.helidon.common.Builder<GrpcRouting> {
 
         /**
-         * The {@link List} of the {@link ServiceDescriptor} instances
-         * to add to the {@link GrpcRouting}.
+         * The {@link Map} of the {@link ServiceDescriptor} instances
+         * to add to the {@link GrpcRouting} keyed by service name.
          */
-        private List<ServiceDescriptor> services = new ArrayList<>();
+        private Map<String, ServiceDescriptor> services = new LinkedHashMap<>();
 
         /**
          * The {@link List} of the global {@link io.grpc.ServerInterceptor}s that should be
          * applied to all services.
          */
-        private PriorityBag<ServerInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        private PriorityBag<ServerInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
 
         /**
          * Add one or more global {@link ServerInterceptor} instances that will intercept calls
@@ -135,6 +136,8 @@ public interface GrpcRouting {
          *
          * @param service  the {@link GrpcService} to register
          * @return this builder to allow fluent method chaining
+         * @throws java.lang.IllegalArgumentException if an attempt is made to register a service
+         *         with the same name as an already registered service
          */
         public Builder register(GrpcService service) {
             return register(service, null);
@@ -147,6 +150,8 @@ public interface GrpcRouting {
          * @param configurer an optional configurer that can update the {@link ServiceDescriptor}
          *                   for the registered service
          * @return this builder to allow fluent method chaining
+         * @throws java.lang.IllegalArgumentException if an attempt is made to register a service
+         *         with the same name as an already registered service
          */
         public Builder register(GrpcService service, ServiceDescriptor.Configurer configurer) {
             return register(ServiceDescriptor.builder(service), configurer);
@@ -157,6 +162,8 @@ public interface GrpcRouting {
          *
          * @param service  the {@link BindableService} to register
          * @return this builder to allow fluent method chaining
+         * @throws java.lang.IllegalArgumentException if an attempt is made to register a service
+         *         with the same name as an already registered service
          */
         public Builder register(BindableService service) {
             return register(service, null);
@@ -169,6 +176,8 @@ public interface GrpcRouting {
          * @param configurer an optional configurer that can update the {@link ServiceDescriptor}
          *                   for the registered service
          * @return this builder to allow fluent method chaining
+         * @throws java.lang.IllegalArgumentException if an attempt is made to register a service
+         *         with the same name as an already registered service
          */
         public Builder register(BindableService service, ServiceDescriptor.Configurer configurer) {
             return register(ServiceDescriptor.builder(service), configurer);
@@ -179,9 +188,15 @@ public interface GrpcRouting {
          *
          * @param service  the {@link ServiceDescriptor} to register
          * @return this builder to allow fluent method chaining
+         * @throws java.lang.IllegalArgumentException if an attempt is made to register a service
+         *         with the same name as an already registered service
          */
         public Builder register(ServiceDescriptor service) {
-            services.add(service);
+            String name = service.name();
+            if (services.containsKey(name)) {
+                throw new IllegalArgumentException("Attempted to register service name " + name + " multiple times");
+            }
+            services.put(name, service);
             return this;
         }
 
@@ -191,7 +206,7 @@ public interface GrpcRouting {
          * @return a new {@link GrpcRouting} instance
          */
         public GrpcRouting build() {
-            return new GrpcRoutingImpl(services, interceptors);
+            return GrpcRoutingImpl.create(services.values(), interceptors);
         }
 
         // ---- helpers -----------------------------------------------------
@@ -207,7 +222,7 @@ public interface GrpcRouting {
                     .map(ServiceDescriptor.Configurer.class::cast)
                     .forEach(interceptor -> interceptor.configure(builder));
 
-            services.add(builder.build());
+            register(builder.build());
             return this;
         }
     }

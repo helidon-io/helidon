@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -102,9 +102,9 @@ public interface GrpcServerConfiguration {
      * Returns a SslConfiguration to use with the server socket. If not {@code null} then
      * the server enforces an SSL communication.
      *
-     * @return a SSL context to use
+     * @return a TLS configuration to use
      */
-    GrpcSslDescriptor sslConfig();
+    GrpcTlsDescriptor tlsConfig();
 
     /**
      * Creates new instance with default values for all configuration properties.
@@ -162,7 +162,7 @@ public interface GrpcServerConfiguration {
 
         private int workers;
 
-        private GrpcSslDescriptor sslConfig = null;
+        private GrpcTlsDescriptor tlsConfig = null;
 
         private Context context;
 
@@ -267,14 +267,14 @@ public interface GrpcServerConfiguration {
         }
 
         /**
-         * Configures SslConfiguration to use with the server socket. If not {@code null} then
-         * the server enforces an SSL communication.
+         * Configures TLS configuration to use with the server socket. If not {@code null} then
+         * the server enforces an TLS communication.
          *
-         * @param sslConfig a SSL context to use
+         * @param tlsConfig a TLS configuration to use
          * @return this builder
          */
-        public Builder sslConfig(GrpcSslDescriptor sslConfig) {
-            this.sslConfig = sslConfig;
+        public Builder tlsConfig(GrpcTlsDescriptor tlsConfig) {
+            this.tlsConfig = tlsConfig;
             return this;
         }
 
@@ -298,8 +298,8 @@ public interface GrpcServerConfiguration {
             return tracingConfig;
         }
 
-        GrpcSslDescriptor sslConfig() {
-            return sslConfig;
+        GrpcTlsDescriptor tlsConfig() {
+            return tlsConfig;
         }
 
         boolean useNativeTransport() {
@@ -342,7 +342,7 @@ public interface GrpcServerConfiguration {
                 workers = DEFAULT_WORKER_COUNT;
             }
 
-            return new GrpcServerBasicConfig(this);
+            return GrpcServerBasicConfig.create(this);
         }
     }
 }

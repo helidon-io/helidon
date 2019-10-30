@@ -89,7 +89,7 @@ class ServerImplTest {
     void testTwoApps() {
         Server server = Server.builder()
                 .addApplication("/app1", new TestApplication1())
-                .addApplication("/app2", new TestApplication2())
+                .addApplication("/app2/", new TestApplication2())       // trailing slash ignored
                 .build();
 
         server.start();

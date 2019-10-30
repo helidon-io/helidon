@@ -144,6 +144,9 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
         } catch (ExecutionException e) {
             complete(e.getCause());
             throw new IOException(e.getCause());
+        } catch (IllegalStateException e) {
+            complete(e);
+            throw new IOException(e);
         }
     }
 

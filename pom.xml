@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>1.3.1-SNAPSHOT</version>
+        <version>1.3.2-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -57,7 +57,6 @@
         <version.lib.checkstyle>8.18</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
-        <version.lib.jsr305>3.0.2</version.lib.jsr305>
         <version.lib.netty.tcnative>2.0.25.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
@@ -69,6 +68,7 @@
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
+        <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <!--
         !Version statement! - end
         -->
@@ -194,6 +194,8 @@
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
                         <source>8</source>
+                        <!-- we are not interested in each file that is generated -->
+                        <quiet>true</quiet>
                         <offlineLinks>
                             <offlineLink>
                                 <url>${javadoc.link.jackson-annotations}</url>
@@ -709,9 +711,10 @@
                 <version>${version.lib.reactivestreams}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>jsr305</artifactId>
-                <version>${version.lib.jsr305}</version>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-junit5</artifactId>
+                <version>${version.lib.weld-junit}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <!-- if needed (as excluded from weld) -->

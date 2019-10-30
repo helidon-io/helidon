@@ -16,9 +16,13 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -32,26 +36,30 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
  * Class MetricProducer.
  */
 @ApplicationScoped
-public class MetricProducer {
+class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
-        return metric == null ? HelidonMetadata.newFlexible(getName(ip),
+        return metric == null ? new HelidonMetadata(getName(ip),
                                              "",
                                              "",
                                              metricType,
                                              chooseDefaultUnit(metricType))
-                : HelidonMetadata.newFlexible(getName(metric, ip),
+                : new HelidonMetadata(getName(metric, ip),
                                metric.displayName(),
                                metric.description(),
                                metricType,
@@ -103,17 +111,12 @@ public class MetricProducer {
     }
 
     private static String getName(Metric metric, InjectionPoint ip) {
-        StringBuilder fullName =
-                new StringBuilder(metric.absolute() ? "" : ip.getMember().getDeclaringClass().getName() + ".");
-        if (metric.name().isEmpty()) {
-            fullName.append(ip.getMember().getName());
-            if (ip.getMember() instanceof Constructor) {
-                fullName.append(".new");
-            }
-        } else {
-            fullName.append(metric.name());
-        }
-        return fullName.toString();
+        boolean isAbsolute = metric != null && metric.absolute();
+        String prefix = isAbsolute ? "" : ip.getMember().getDeclaringClass().getName() + ".";
+        String shortName = metric != null && !metric.name().isEmpty() ? metric.name() : ip.getMember().getName();
+        String ctorSuffix = ip.getMember() instanceof Constructor ? ".new" : "";
+        String fullName = prefix + shortName + ctorSuffix;
+        return fullName;
     }
 
     @Produces
@@ -124,8 +127,8 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
-        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.counter(newMetadata(ip, metric, MetricType.COUNTER), tags(metric));
+        return produceMetric(registry, ip, Counted.class, registry::getCounters,
+                registry::counter, Counter.class);
     }
 
     @Produces
@@ -136,8 +139,8 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Meter produceMeter(MetricRegistry registry, InjectionPoint ip) {
-        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.meter(newMetadata(ip, metric, MetricType.METERED), tags(metric));
+        return produceMetric(registry, ip, Metered.class, registry::getMeters,
+                registry::meter, Meter.class);
     }
 
     @Produces
@@ -148,8 +151,7 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
-        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.timer(newMetadata(ip, metric, MetricType.TIMER), tags(metric));
+        return produceMetric(registry, ip, Timed.class, registry::getTimers, registry::timer, Timer.class);
     }
 
     @Produces
@@ -160,8 +162,8 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
-        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.histogram(newMetadata(ip, metric, MetricType.HISTOGRAM), tags(metric));
+        return produceMetric(registry, ip, null, registry::getHistograms,
+                registry::histogram, Histogram.class);
     }
 
     @Produces
@@ -172,8 +174,8 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     private ConcurrentGauge produceConcurrentGauge(MetricRegistry registry, InjectionPoint ip) {
-        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.concurrentGauge(newMetadata(ip, metric, MetricType.CONCURRENT_GAUGE), tags(metric));
+        return produceMetric(registry, ip, org.eclipse.microprofile.metrics.annotation.ConcurrentGauge.class,
+                registry::getConcurrentGauges, registry::concurrentGauge, ConcurrentGauge.class);
     }
 
     /**
@@ -187,7 +189,8 @@ public class MetricProducer {
     @Produces
     @VendorDefined
     @SuppressWarnings("unchecked")
-    private <T> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
+    private <T /* extends Number */> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
+        // TODO uncomment preceding clause once MP metrics enforces restriction
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
                 .filter(entry -> entry.getKey().getName().equals(metric.name()))
@@ -205,7 +208,67 @@ public class MetricProducer {
      * @return requested gauge
      */
     @Produces
-    private <T> Gauge<T> produceGaugeDefault(MetricRegistry registry, InjectionPoint ip) {
+    private <T /* extends Number */> Gauge<T> produceGaugeDefault(MetricRegistry registry,
+            InjectionPoint ip) {
+        // TODO uncomment preceding clause once MP metrics enforces restrictions
         return produceGauge(registry, ip);
+    }
+
+    /**
+     * Returns an existing metric if one exists that matches the injection point
+     * criteria and is also reusable, or if there is none registers and returns a new one
+     * using the caller-provided function. If the caller refers to an existing metric that is
+     * not reusable then the method throws an {@code IllegalArgumentException}.
+     *
+     * @param <T> the type of the metric
+     * @param <U> the type of the annotation which marks a registration of the metric type
+     * @param registry metric registry to use
+     * @param ip the injection point
+     * @param annotationClass annotation which represents a declaration of a metric
+     * @param getTypedMetricsFn caller-provided factory for creating the correct
+     * type of metric (if there is no pre-existing one)
+     * @param registerFn caller-provided function for registering a newly-created metric
+     * @param clazz class for the metric type of interest
+     * @return the existing metric (if any), or the newly-created and registered one
+     */
+    private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(MetricRegistry registry,
+            InjectionPoint ip, Class<U> annotationClass, Supplier<Map<MetricID, T>> getTypedMetricsFn,
+            BiFunction<Metadata, Tag[], T> registerFn, Class<T> clazz) {
+
+        final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
+        final Tag[] tags = tags(metricAnno);
+        final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
+
+        T result = getTypedMetricsFn.get().get(metricID);
+        final Metadata newMetadata = newMetadata(ip, metricAnno, MetricType.from(clazz));
+        /*
+         * If the injection point does not include the corresponding metric  annotation which would
+         * declare the metric, then we do not need to enforce reuse restrictions because an @Inject
+         * or a @Metric by itself on an injection point is lookup-or-register.
+         */
+        if (result != null) {
+            final Annotation specificMetricAnno = annotationClass == null ? null
+                    : ip.getAnnotated().getAnnotation(annotationClass);
+            if (specificMetricAnno == null) {
+                return result;
+            }
+            final Metadata existingMetadata = registry.getMetadata().get(metricID.getName());
+            enforceReusability(metricID, existingMetadata, newMetadata);
+        } else {
+            result = registerFn.apply(newMetadata, tags);
+        }
+        return result;
+    }
+
+    private static void enforceReusability(MetricID metricID, Metadata existingMetadata,
+              Metadata newMetadata, Tag... tags) {
+        if (existingMetadata.isReusable() != newMetadata.isReusable()) {
+            throw new IllegalArgumentException("Attempt to reuse metric " + metricID
+                    + " with inconsistent isReusable setting");
+        }
+        if (!newMetadata.isReusable()) {
+            throw new IllegalArgumentException("Attempting to reuse metric "
+                    + metricID + " that is not reusable");
+        }
     }
 }

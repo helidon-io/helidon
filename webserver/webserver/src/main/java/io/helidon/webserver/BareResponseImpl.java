@@ -175,6 +175,7 @@ class BareResponseImpl implements BareResponse {
             responseFuture.complete(this);
         } else {
             LOGGER.log(Level.FINER, throwable, () -> log("Response completion failed!"));
+            internallyClosed.set(true);
             responseFuture.completeExceptionally(throwable);
         }
     }

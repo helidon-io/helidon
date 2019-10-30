@@ -51,6 +51,8 @@ Helidon SE is the functional programming style provided by all Helidon
 NOTE: Helidon SE gives you full transparency and puts you in control. There is
  no magic!
 
+<<about/02_se-about.adoc, About Helidon SE>>
+
 == Helidon MP
 
 Helidon MP is our MicroProfile implementation.
@@ -60,3 +62,5 @@ https://microprofile.io[MicroProfile] is a platform definition that is familiar
  is portable. It includes popular Java APIs such as `JAX-RS` and `CDI`.
 
 NOTE: Helidon MP is built on top of the Helidon libraries.
+
+<<about/02_mp-about.adoc, About Helidon MP>>

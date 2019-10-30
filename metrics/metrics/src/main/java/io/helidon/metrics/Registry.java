@@ -205,7 +205,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
     }
 
     @Override
-    public void removeMatching(MetricFilter filter) {
+    public synchronized void removeMatching(MetricFilter filter) {
         allMetrics.entrySet().removeIf(entry -> filter.matches(entry.getKey(), entry.getValue()));
     }
 
@@ -275,7 +275,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
     }
 
     @Override
-    public Map<InternalBridge.MetricID, Metric> getBridgeMetrics(
+    public synchronized Map<InternalBridge.MetricID, Metric> getBridgeMetrics(
             Predicate<? super Map.Entry<? extends InternalBridge.MetricID, ? extends Metric>> predicate) {
         return allMetrics.entrySet().stream()
                 .map(Registry::toBridgeEntry)
@@ -321,7 +321,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                 .map(Registry::toBridgeEntry);
     }
 
-    private static <T extends Metric> SortedMap<MetricID, T>
+    private static synchronized <T extends Metric> SortedMap<MetricID, T>
             getBridgeMetrics(SortedMap<String, T> metrics, Class<T> clazz) {
         return metrics.entrySet().stream()
                 .map(Registry::toBridgeEntry)
@@ -405,7 +405,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
         return type() + ": " + allMetrics.size() + " metrics";
     }
 
-    private <V> SortedMap<String, V> getSortedMetrics(MetricFilter filter, Class<V> metricClass) {
+    private synchronized <V> SortedMap<String, V> getSortedMetrics(MetricFilter filter, Class<V> metricClass) {
         Map<String, V> collected = allMetrics.entrySet()
                 .stream()
                 .filter(it -> metricClass.isAssignableFrom(it.getValue().getClass()))
@@ -435,7 +435,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                 && (a.isReusable() == b.isReusable());
     }
 
-    private static <T extends MetricImpl> T enforceConsistentMetadata(T metric, Metadata metadata) {
+    private static <T extends MetricImpl> boolean enforceConsistentMetadata(T metric, Metadata metadata) {
 
         // Check that metadata is compatible.
         if (!metadataMatches(metric, metadata)) {
@@ -444,20 +444,12 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
                     + " conflicts with a metric already registered with metadata "
                     + metadata);
         }
-        return metric;
+        return true;
     }
 
     <T extends HelidonMetric> Optional<T> getOptionalMetric(String metricName, Class<T> clazz) {
         return Optional.ofNullable(allMetrics.get(metricName))
                 .map(metric -> toType(metric, clazz));
-    }
-
-    private static <T extends MetricImpl> T enforceReusability(T metric, Metadata metadata) {
-        if (!(metric.isReusable() && metadata.isReusable())) {
-            throw new IllegalArgumentException("Attempting to re-register metric "
-                    + metric.getName() + " that is already registered with different reusability");
-        }
-        return metric;
     }
 
     /**
@@ -470,7 +462,7 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
      * @param clazz class of the metric to find or create
      * @return the existing metric (if any) or a newly-registered one
      */
-    private <T extends MetricImpl> T getOrRegisterMetric(String metricName,
+    private synchronized <T extends MetricImpl> T getOrRegisterMetric(String metricName,
             BiFunction<String, Metadata, T> metricFactory,
             Class<T> clazz) {
 
@@ -493,12 +485,11 @@ class Registry extends MetricRegistry implements io.helidon.common.metrics.Inter
      * @param clazz class of the metric to find or create
      * @return the existing metric (if matching the metadata) or a newly-registered one
      */
-    private <T extends MetricImpl> T getOrRegisterMetric(Metadata metadata,
+    private synchronized <T extends MetricImpl> T getOrRegisterMetric(Metadata metadata,
             BiFunction<String, Metadata, T> metricFactory,
             Class<T> clazz) {
         return getOptionalMetric(metadata.getName(), clazz)
-                .map(metric -> enforceConsistentMetadata(metric, metadata))
-                .map(metric -> enforceReusability(metric, metadata))
+                .filter(metric -> enforceConsistentMetadata(metric, metadata))
                 .orElseGet(() -> {
                     return registerMetric(metadata.getName(), metadata, metricFactory);
                 });

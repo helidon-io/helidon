@@ -128,6 +128,7 @@ public class HealthMpServiceIT {
 
         JsonObject json = (JsonObject) Json.createReader(new StringReader(health)).read();
         assertThat(json, is(notNullValue()));
+        assertThat(json.getJsonString("outcome"), is(notNullValue()));      // backward compatibility default
         return json;
     }
 

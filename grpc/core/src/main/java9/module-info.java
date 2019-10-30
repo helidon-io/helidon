@@ -22,16 +22,19 @@ module io.helidon.grpc.core {
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.config.objectmapping;
+    requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.common.http;
 
     requires grpc.netty;
+    requires transitive grpc.protobuf;
     requires grpc.protobuf.lite;
+    requires transitive grpc.stub;
     requires transitive io.grpc;
     requires io.netty.handler;
     requires io.netty.transport;
-    requires protobuf.java;
+    requires transitive protobuf.java;
 
     requires java.annotation;
     requires java.logging;

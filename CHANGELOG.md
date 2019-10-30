@@ -50,13 +50,13 @@ to change.
 
 - Support for gRPC in MicroProfile server [910](https://github.com/oracle/helidon/pull/910)
 
-
 ## [1.3.1] 
 
 ### Notes
 
 This is a bugfix release. It fixes a Helidon MP 
-configuration regression on Windows: [1038](https://github.com/oracle/helidon/issues/1038).
+configuration regression on Windows: [1038](https://github.com/oracle/helidon/issues/1038), as
+well as other fixes listed below.
 
 ### Fixes
 
@@ -71,6 +71,7 @@ configuration regression on Windows: [1038](https://github.com/oracle/helidon/is
 - Fixes a reference to a non-existent ResourceBundle [1058](https://github.com/oracle/helidon/pull/1058)
 - Add exclusions for org.osgi:org.osgi.annotation.versioning [1034](https://github.com/oracle/helidon/pull/1034)
 - Documentation fixes [1043](https://github.com/oracle/helidon/pull/1043) [1053](https://github.com/oracle/helidon/pull/1053) 
+- Documentation: add tracing guides [1023](https://github.com/oracle/helidon/pull/1023) [1014](https://github.com/oracle/helidon/pull/1014)
 - Examples fixes [1056](https://github.com/oracle/helidon/pull/1056)
 - Build fixes [1027](https://github.com/oracle/helidon/pull/1027) [1033](https://github.com/oracle/helidon/pull/1033) [1035](https://github.com/oracle/helidon/pull/1035)
 

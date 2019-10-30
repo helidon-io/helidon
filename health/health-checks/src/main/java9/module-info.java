@@ -26,6 +26,7 @@ module io.helidon.health.checks {
 
     requires io.helidon.common;
     requires io.helidon.health;
+    requires io.helidon.health.common;
     requires static microprofile.config.api;
     requires microprofile.health.api;
 

@@ -16,14 +16,14 @@
 
 package io.helidon.grpc.client;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLException;
 
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
@@ -67,7 +67,7 @@ public class GrpcChannelsProvider {
 
     /**
      * Builds a new instance of {@link GrpcChannelsProvider} using default configuration. The
-     * default configuration connects to "localhost:1408" without SSL.
+     * default configuration connects to "localhost:1408" without TLS.
      *
      * @return a new instance of {@link GrpcChannelsProvider}
      */
@@ -104,17 +104,17 @@ public class GrpcChannelsProvider {
         return new Builder(config);
     }
 
-    private static SslContext createClientSslContext(String trustCertCollectionFilePath,
-                                                     String clientCertChainFilePath,
-                                                     String clientPrivateKeyFilePath) {
+    private static SslContext createClientSslContext(Resource trustCert,
+                                                     Resource clientCert,
+                                                     Resource clientPrivateKey) {
         try {
             SslContextBuilder builder = GrpcSslContexts.forClient();
-            if (trustCertCollectionFilePath != null) {
-                builder.trustManager(new File(trustCertCollectionFilePath));
+            if (trustCert != null) {
+                builder.trustManager(trustCert.stream());
             }
 
-            if (clientCertChainFilePath != null && clientPrivateKeyFilePath != null) {
-                builder.keyManager(new File(clientCertChainFilePath), new File(clientPrivateKeyFilePath));
+            if (clientCert != null && clientPrivateKey != null) {
+                builder.keyManager(clientCert.stream(), clientPrivateKey.stream());
             }
 
             return builder.build();
@@ -155,15 +155,15 @@ public class GrpcChannelsProvider {
     private Channel createChannel(GrpcChannelDescriptor descriptor) {
 
         ManagedChannel channel;
-        GrpcSslDescriptor sslDescriptor = descriptor.sslDescriptor();
+        GrpcTlsDescriptor tlsDescriptor = descriptor.tlsDescriptor();
 
-        if (sslDescriptor == null || !sslDescriptor.isEnabled()) {
+        if (tlsDescriptor == null || !tlsDescriptor.isEnabled()) {
             ManagedChannelBuilder builder = ManagedChannelBuilder.forAddress(descriptor.host(), descriptor.port());
             channel = builder.usePlaintext().build();
         } else {
-            SslContext sslContext = createClientSslContext(sslDescriptor.tlsCaCert(),
-                                                           sslDescriptor.tlsCert(),
-                                                           sslDescriptor.tlsKey());
+            SslContext sslContext = createClientSslContext(tlsDescriptor.tlsCaCert(),
+                                                           tlsDescriptor.tlsCert(),
+                                                           tlsDescriptor.tlsKey());
 
             channel = NettyChannelBuilder.forAddress(descriptor.host(), descriptor.port())
                                          .negotiationType(NegotiationType.TLS)

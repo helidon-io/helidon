@@ -47,18 +47,25 @@ import io.opentracing.propagation.TextMapExtractAdapter;
 @Priority(InterceptorPriorities.TRACING)
 public class GrpcTracing
         implements ServerInterceptor {
-    /**
-     * public constructor.
-     *
-     * @param tracer        the Open Tracing {@link Tracer}
-     * @param tracingConfig the tracing configuration
-     */
-    GrpcTracing(Tracer tracer, GrpcTracingConfig tracingConfig) {
+
+    private GrpcTracing(Tracer tracer, GrpcTracingConfig tracingConfig) {
         this.tracer = tracer;
         operationNameConstructor = tracingConfig.operationNameConstructor();
         streaming = tracingConfig.isStreaming();
         verbose = tracingConfig.isVerbose();
         tracedAttributes = tracingConfig.tracedAttributes();
+    }
+
+    /**
+     * Create a {@link GrpcTracing} interceptor.
+     *
+     * @param tracer the Open Tracing {@link Tracer}
+     * @param config the tracing configuration
+     *
+     * @return a {@link GrpcTracing} interceptor instance
+     */
+    static GrpcTracing create(Tracer tracer, GrpcTracingConfig config) {
+        return new GrpcTracing(tracer, config);
     }
 
     @Override

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>1.3.1-SNAPSHOT</version>
+        <version>1.3.2-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
@@ -36,6 +36,7 @@
         <module>zipkin-mp-2.2</module>
         <module>mp-security-client</module>
         <module>health</module>
+        <module>mp-ws-services</module>
     </modules>
 
     <profiles>

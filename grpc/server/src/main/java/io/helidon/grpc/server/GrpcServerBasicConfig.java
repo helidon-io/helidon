@@ -17,7 +17,7 @@
 package io.helidon.grpc.server;
 
 import io.helidon.common.context.Context;
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 
 import io.opentracing.Tracer;
 
@@ -39,7 +39,7 @@ public class GrpcServerBasicConfig
 
     private final int workers;
 
-    private final GrpcSslDescriptor sslConfig;
+    private final GrpcTlsDescriptor tlsConfig;
 
     private final Context context;
 
@@ -49,7 +49,7 @@ public class GrpcServerBasicConfig
      * @param builder the {@link GrpcServerConfiguration.Builder} to use to configure
      *                this {@link GrpcServerBasicConfig}.
      */
-    GrpcServerBasicConfig(GrpcServerConfiguration.Builder builder) {
+    private GrpcServerBasicConfig(GrpcServerConfiguration.Builder builder) {
         this.name = builder.name();
         this.port = builder.port();
         this.context = builder.context();
@@ -57,7 +57,19 @@ public class GrpcServerBasicConfig
         this.tracer = builder.tracer();
         this.tracingConfig = builder.tracingConfig();
         this.workers = builder.workers();
-        this.sslConfig = builder.sslConfig();
+        this.tlsConfig = builder.tlsConfig();
+    }
+
+    /**
+     * Create a {@link GrpcServerBasicConfig} instance using the specified builder.
+     *
+     * @param builder the {@link GrpcServerConfiguration.Builder} to use to configure
+     *                this {@link GrpcServerBasicConfig}
+     *
+     * @return a {@link GrpcServerBasicConfig} instance
+     */
+    static GrpcServerBasicConfig create(GrpcServerConfiguration.Builder builder) {
+        return new GrpcServerBasicConfig(builder);
     }
 
     // ---- accessors ---------------------------------------------------
@@ -118,7 +130,7 @@ public class GrpcServerBasicConfig
     }
 
     @Override
-    public GrpcSslDescriptor sslConfig() {
-        return sslConfig;
+    public GrpcTlsDescriptor tlsConfig() {
+        return tlsConfig;
     }
 }

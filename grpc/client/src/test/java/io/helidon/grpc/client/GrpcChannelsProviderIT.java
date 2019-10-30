@@ -15,14 +15,14 @@
  */
 package io.helidon.grpc.client;
 
-import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLException;
 
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.common.configurable.Resource;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
@@ -39,11 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class GrpcChannelsProviderIT {
 
-    private static final String CLIENT_CERT = "clientCert.pem";
-    private static final String CLIENT_KEY = "clientKey.pem";
-    private static final String CA_CERT = "ca.pem";
-    private static final String SERVER_CERT = "serverCert.pem";
-    private static final String SERVER_KEY = "serverKey.pem";
+    private static final String CLIENT_CERT = "ssl/clientCert.pem";
+    private static final String CLIENT_KEY = "ssl/clientKey.pem";
+    private static final String CA_CERT = "ssl/ca.pem";
+    private static final String SERVER_CERT = "ssl/serverCert.pem";
+    private static final String SERVER_KEY = "ssl/serverKey.pem";
 
     // Constants used as flags by helper methods for determining ssl mode.
     private static final int WITH_NO_SSL = 1;
@@ -61,30 +61,11 @@ public class GrpcChannelsProviderIT {
     private static int port1WaySSL;
     private static int port2WaySSL;
 
-    // The SSL artifacts for servers.
-    private static String tlsCert;
-    private static String tlsKey;
-    private static String tlsCaCert;
-
-    // The SSL artifacts for clients.
-    private static String tlsClientKey;
-    private static String tlsClientCert;
-    private static String filePath;
-
     // The descriptor for the (test) TreeService.
     private static ClientServiceDescriptor treeMapSvcDesc;
 
     @BeforeAll
     public static void initGrpcConfig() throws Exception {
-
-        File resourcesDirectory = new File("src/test/resources/ssl");
-        filePath = resourcesDirectory.getAbsolutePath();
-        tlsCert = getFile(SERVER_CERT);
-        tlsKey = getFile(SERVER_KEY);
-        tlsCaCert = getFile(CA_CERT);
-        tlsClientCert = getFile(CLIENT_CERT);
-        tlsClientKey = getFile(CLIENT_KEY);
-
         grpcServer_noSsl = startGrpcServer(portNoSsl, false, true);
         portNoSsl = grpcServer_noSsl.port();
 
@@ -118,13 +99,17 @@ public class GrpcChannelsProviderIT {
      * @return A reference to a {@link io.helidon.grpc.server.GrpcServer}.
      */
     private static GrpcServer startGrpcServer(int nPort, boolean sslEnabled, boolean mutual) throws Exception {
-        GrpcSslDescriptor sslConfig = null;
+        Resource tlsCert = Resource.create(SERVER_CERT);
+        Resource tlsKey = Resource.create(SERVER_KEY);
+        Resource tlsCaCert = Resource.create(CA_CERT);
+
+        GrpcTlsDescriptor sslConfig = null;
         String name = "grpc.server";
         if (!sslEnabled) {
             name = name + 1;
         } else if (mutual) {
             name = name + 2;
-            sslConfig = GrpcSslDescriptor.builder()
+            sslConfig = GrpcTlsDescriptor.builder()
                     .jdkSSL(false)
                     .tlsCert(tlsCert)
                     .tlsKey(tlsKey)
@@ -132,7 +117,7 @@ public class GrpcChannelsProviderIT {
                     .build();
         } else {
             name = name + 3;
-            sslConfig = GrpcSslDescriptor.builder()
+            sslConfig = GrpcTlsDescriptor.builder()
                     .jdkSSL(false)
                     .tlsCert(tlsCert)
                     .tlsKey(tlsKey)
@@ -145,7 +130,7 @@ public class GrpcChannelsProviderIT {
 
         GrpcServerConfiguration.Builder bldr = GrpcServerConfiguration.builder().name(name).port(nPort);
         if (sslEnabled) {
-            bldr.sslConfig(sslConfig);
+            bldr.tlsConfig(sslConfig);
         }
 
         return GrpcServer.create(bldr.build(), routing)
@@ -153,10 +138,6 @@ public class GrpcChannelsProviderIT {
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
 
-    }
-
-    private static String getFile(String fileName) {
-        return filePath + "/" + fileName;
     }
 
     @Test
@@ -231,12 +212,16 @@ public class GrpcChannelsProviderIT {
      * @throws SSLException If mode > 0 and any of the SSL artifacts cannot be obtained.
      */
     private GrpcServiceClient createClient(int serverPort, int sslMode) throws SSLException {
+        Resource tlsCaCert = Resource.create(CA_CERT);
+        Resource tlsClientCert = Resource.create(CLIENT_CERT);
+        Resource tlsClientKey = Resource.create(CLIENT_KEY);
+
         GrpcChannelDescriptor.Builder chBldr = GrpcChannelDescriptor.builder();
         chBldr.port(serverPort);
 
         if ((sslMode & WITH_NO_SSL) == 0) {
             // SSL enabled.
-            GrpcSslDescriptor.Builder sslBldr = GrpcSslDescriptor.builder();
+            GrpcTlsDescriptor.Builder sslBldr = GrpcTlsDescriptor.builder();
             if ((sslMode & WITH_CA_CERT) > 0) {
                 sslBldr.tlsCaCert(tlsCaCert);
             }

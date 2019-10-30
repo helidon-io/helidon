@@ -166,7 +166,7 @@ public class ClientServiceDescriptor {
      * @return service interceptors
      */
     public PriorityBag<ClientInterceptor> interceptors() {
-        return interceptors;
+        return interceptors.readOnly();
     }
 
     /**
@@ -362,7 +362,7 @@ public class ClientServiceDescriptor {
     public static final class Builder
             implements Rules, io.helidon.common.Builder<ClientServiceDescriptor> {
         private String name;
-        private PriorityBag<ClientInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        private PriorityBag<ClientInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         private Class<?> serviceClass;
         private Descriptors.FileDescriptor proto;
         private MarshallerSupplier marshallerSupplier = MarshallerSupplier.defaultInstance();

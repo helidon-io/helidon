@@ -70,12 +70,13 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     @Override
     public final void onNext(T item) {
-        if (!subscriber.isClosed()) {
-            try {
-                hookOnNext(item);
-            } catch (Throwable ex) {
-                onError(ex);
-            }
+        if (subscriber.isClosed()) {
+            throw new IllegalStateException("Subscriber is closed!");
+        }
+        try {
+            hookOnNext(item);
+        } catch (Throwable ex) {
+            onError(ex);
         }
     }
 

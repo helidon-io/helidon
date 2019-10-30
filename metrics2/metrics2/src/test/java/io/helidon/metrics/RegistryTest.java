@@ -108,42 +108,4 @@ public class RegistryTest {
                 () -> registry.counter(metadata2, tag1));
         assertThat(ex.getMessage(), containsString("conflicts with"));
     }
-
-    @Test
-    void testInvalidReregistration() {
-        Metadata metadata1 = new HelidonMetadata("counter6", "display name",
-        "description", MetricType.COUNTER, MetricUnits.NONE, false);
-        registry.counter(metadata1, tag1);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> registry.counter(metadata1,tag1));
-        assertThat(ex.getMessage(), containsString("re-register"));
-        assertThat(ex.getMessage(), containsString("already registered as non-reusable"));
-    }
-
-    @Test
-    void testCompatibleFlexibleMetadata() {
-        Metadata flex1 = HelidonMetadata.newFlexible("counter7", "random DN", "random descr",
-                MetricType.TIMER, MetricUnits.MINUTES);
-        Metadata flex2 = HelidonMetadata.newFlexible("counter7", "other DN", "other descr",
-                MetricType.TIMER, MetricUnits.HOURS);
-        Metadata hard = new HelidonMetadata("counter7", "my DN", "my descr", MetricType.TIMER, MetricUnits.DAYS);
-
-        assertThat(Registry.metadataMatches(flex1, hard), is(true));
-        assertThat(Registry.metadataMatches(hard, flex1), is(true));
-        assertThat(Registry.metadataMatches(flex1, flex2), is(true));
-    }
-
-    @Test
-    void testIncompatibleFlexibleMetadata() {
-        Metadata flex1 = HelidonMetadata.newFlexible("differentName", "random DN", "random descr",
-                MetricType.TIMER, MetricUnits.MINUTES);
-        Metadata flex2 = HelidonMetadata.newFlexible("myMetric", "other DN", "other descr",
-                MetricType.COUNTER, MetricUnits.NONE);
-        Metadata hard = new HelidonMetadata("myMetric", "my DN", "my descr", MetricType.TIMER, MetricUnits.DAYS);
-
-        assertThat(Registry.metadataMatches(flex1, hard), is(false));
-        assertThat(Registry.metadataMatches(hard, flex1), is(false));
-        assertThat(Registry.metadataMatches(flex2, hard), is(false));
-        assertThat(Registry.metadataMatches(flex1, flex2), is(false));
-    }
 }

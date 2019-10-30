@@ -16,10 +16,12 @@
 
 package io.helidon.grpc.client;
 
+import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -27,12 +29,14 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.grpc.core.InterceptorPriorities;
+import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor.MethodType;
+import io.grpc.Status;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
@@ -82,7 +86,7 @@ public class GrpcServiceClient {
         for (ClientMethodDescriptor methodDescriptor : clientServiceDescriptor.methods()) {
             GrpcMethodStub methodStub = new GrpcMethodStub(channel, callOptions, methodDescriptor);
 
-            PriorityBag<ClientInterceptor> priorityInterceptors = new PriorityBag<>(InterceptorPriorities.USER);
+            PriorityBag<ClientInterceptor> priorityInterceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
             priorityInterceptors.addAll(clientServiceDescriptor.interceptors());
             priorityInterceptors.addAll(methodDescriptor.interceptors());
             List<ClientInterceptor> interceptors = priorityInterceptors.stream().collect(Collectors.toList());
@@ -121,6 +125,67 @@ public class GrpcServiceClient {
      */
     public String serviceName() {
         return clientServiceDescriptor.name();
+    }
+
+    /**
+     * Invoke the specified method using the method's
+     * {@link io.helidon.grpc.core.MethodHandler}.
+     *
+     * @param name  the name of the method to invoke
+     * @param args  the method arguments
+     * @return the method response
+     */
+    Object invoke(String name, Object[] args) {
+        GrpcMethodStub stub = methodStubs.get(name);
+        if (stub == null) {
+            throw Status.INTERNAL.withDescription("gRPC method '" + name + "' does not exist").asRuntimeException();
+        }
+        ClientMethodDescriptor descriptor = stub.descriptor();
+        MethodHandler methodHandler = descriptor.methodHandler();
+
+        switch (descriptor.descriptor().getType()) {
+        case UNARY:
+            return methodHandler.unary(args, this::unary);
+        case CLIENT_STREAMING:
+            return methodHandler.clientStreaming(args, this::clientStreaming);
+        case SERVER_STREAMING:
+            return methodHandler.serverStreaming(args, this::serverStreaming);
+        case BIDI_STREAMING:
+            return methodHandler.bidirectional(args, this::bidiStreaming);
+        case UNKNOWN:
+        default:
+            throw Status.INTERNAL.withDescription("Unknown or unsupported method type for method " + name).asRuntimeException();
+        }
+    }
+
+    /**
+     * Create a dynamic proxy for the specified interface that proxies
+     * calls to the wrapped gRPC service.
+     *
+     * @param type  the interface to create a proxy for
+     * @param extraTypes extra types for the proxy to implement
+     * @param <T>   the type of the returned proxy
+     * @return  a dynamic proxy that calls methods on this gRPC service
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T proxy(Class<T> type, Class<?>... extraTypes) {
+        Map<String, String> names = new HashMap<>();
+        for (ClientMethodDescriptor methodDescriptor : clientServiceDescriptor.methods()) {
+            MethodHandler methodHandler = methodDescriptor.methodHandler();
+            if (methodHandler != null) {
+                names.put(methodHandler.javaMethodName(), methodDescriptor.name());
+            }
+        }
+
+        Class<?>[] proxyTypes;
+        if (extraTypes == null || extraTypes.length == 0) {
+            proxyTypes = new Class<?>[]{type};
+        } else {
+            proxyTypes = new Class<?>[extraTypes.length + 1];
+            proxyTypes[0] = type;
+            System.arraycopy(extraTypes, 0, proxyTypes, 1, extraTypes.length);
+        }
+        return (T) Proxy.newProxyInstance(type.getClassLoader(), proxyTypes, ClientProxy.create(this, names));
     }
 
     /**

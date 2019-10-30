@@ -20,6 +20,7 @@ import java.util.Arrays;
 
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.MarshallerSupplier;
+import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.CallCredentials;
@@ -58,14 +59,21 @@ public final class ClientMethodDescriptor {
      */
     private CallCredentials callCredentials;
 
+    /**
+     * The method handler for this method.
+     */
+    private MethodHandler methodHandler;
+
     private ClientMethodDescriptor(String name,
                                    MethodDescriptor descriptor,
                                    PriorityBag<ClientInterceptor> interceptors,
-                                   CallCredentials callCredentials) {
+                                   CallCredentials callCredentials,
+                                   MethodHandler methodHandler) {
         this.name = name;
         this.descriptor = descriptor;
         this.interceptors = interceptors;
         this.callCredentials = callCredentials;
+        this.methodHandler = methodHandler;
     }
 
     /**
@@ -206,6 +214,15 @@ public final class ClientMethodDescriptor {
     }
 
     /**
+     * Obtain the {@link MethodHandler} to use to make client calls.
+     *
+     * @return the {@link MethodHandler} to use to make client calls
+     */
+    public MethodHandler methodHandler() {
+        return methodHandler;
+    }
+
+    /**
      * ClientMethod configuration API.
      */
     public interface Rules {
@@ -263,6 +280,14 @@ public final class ClientMethodDescriptor {
          * @return this {@link Rules} instance for fluent call chaining
          */
         Rules callCredentials(CallCredentials callCredentials);
+
+        /**
+         * Set the {@link MethodHandler} that can be used to invoke the method.
+         *
+         * @param methodHandler  the {2link MethodHandler} to use
+         * @return this {@link Rules} instance for fluent call chaining
+         */
+        Rules methodHandler(MethodHandler methodHandler);
     }
 
     /**
@@ -275,10 +300,11 @@ public final class ClientMethodDescriptor {
         private io.grpc.MethodDescriptor.Builder descriptor;
         private Class<?> requestType;
         private Class<?> responseType;
-        private PriorityBag<ClientInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        private PriorityBag<ClientInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
         private MarshallerSupplier marshallerSupplier;
         private CallCredentials callCredentials;
+        private MethodHandler methodHandler;
 
         /**
          * Constructs a new Builder instance.
@@ -331,6 +357,12 @@ public final class ClientMethodDescriptor {
             return this;
         }
 
+        @Override
+        public Builder methodHandler(MethodHandler methodHandler) {
+            this.methodHandler = methodHandler;
+            return this;
+        }
+
         /**
          * Sets the full name of this Method.
          *
@@ -375,7 +407,8 @@ public final class ClientMethodDescriptor {
             return new ClientMethodDescriptor(name,
                                               descriptor.build(),
                                               interceptors,
-                                              callCredentials);
+                                              callCredentials,
+                                              methodHandler);
         }
 
     }

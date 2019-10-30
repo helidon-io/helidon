@@ -17,6 +17,7 @@
 package io.helidon.grpc.server;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -48,9 +49,22 @@ public class GrpcRoutingImpl
      * @param interceptors  the {@link List} of the global {@link io.grpc.ServerInterceptor}s that should
      *                      be applied to all services
      */
-    GrpcRoutingImpl(List<ServiceDescriptor> services, PriorityBag<ServerInterceptor> interceptors) {
+    private GrpcRoutingImpl(Collection<ServiceDescriptor> services, PriorityBag<ServerInterceptor> interceptors) {
         this.services = new ArrayList<>(Objects.requireNonNull(services));
         this.interceptors = interceptors.copyMe();
+    }
+
+    /**
+     * Create a {@link GrpcRoutingImpl}.
+     *
+     * @param services      the {@link List} of registered {@link ServiceDescriptor} instances
+     * @param interceptors  the {@link List} of the global {@link io.grpc.ServerInterceptor}s that should
+     *                      be applied to all services
+     *
+     * @return a {@link GrpcRoutingImpl} for the specified gRPC services with interceptors
+     */
+    static GrpcRouting create(Collection<ServiceDescriptor> services, PriorityBag<ServerInterceptor> interceptors) {
+        return new GrpcRoutingImpl(services, interceptors);
     }
 
     @Override

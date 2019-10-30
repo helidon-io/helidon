@@ -19,6 +19,8 @@ package io.helidon.media.common;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 
@@ -65,6 +67,18 @@ public final class ContentReaders {
     }
 
     /**
+     * Convert the publisher of {@link DataChunk} into a {@link String} processed through URL
+     * decoding.
+     * @param chunks source publisher
+     * @param charset charset to use for decoding the input
+     * @return Single
+     */
+    public static Single<String> readURLEncodedString(Publisher<DataChunk> chunks,
+            Charset charset) {
+        return readString(chunks, charset).map(new StringToDecodedString(charset));
+    }
+
+    /**
      * Get a reader that converts a {@link DataChunk} publisher to a
      * {@link String}.
      *
@@ -73,6 +87,17 @@ public final class ContentReaders {
      */
     public static Reader<String> stringReader(Charset charset) {
         return (chunks, type) -> readString(chunks, charset).toStage();
+    }
+
+    /**
+     * Gets a reader that converts a {@link DataChunk} publisher to a {@link String} processed
+     * through URL decoding.
+     *
+     * @param charset the charset to use with the returned string content reader
+     * @return the URL-decoded string content reader
+     */
+    public static Reader<String> urlEncodedStringReader(Charset charset) {
+        return (chunks, type) -> readURLEncodedString(chunks, charset).toStage();
     }
 
     /**
@@ -118,6 +143,30 @@ public final class ContentReaders {
         }
     }
 
+    /**
+     * Mapper that applies URL decoding to a {@code String}.
+     */
+    private static final class StringToDecodedString implements Mapper<String, String> {
+
+        private final Charset charset;
+
+        StringToDecodedString(Charset charset) {
+            this.charset = charset;
+        }
+
+        @Override
+        public String map(String s) {
+            try {
+                return URLDecoder.decode(s, charset.name());
+            } catch (UnsupportedEncodingException e) {
+                /*
+                 * Convert the encoding exception into an unchecked one to simplify the mapper's use
+                 * in lambdas.
+                 */
+                throw new RuntimeException(e);
+            }
+        }
+    }
     /**
      * Implementation of {@link Collector} that collects chunks into a single
      * {@code byte[]}.

@@ -287,14 +287,14 @@ public interface GrpcServer {
          */
         @Override
         public GrpcServer build() {
-            PriorityBag<ServerInterceptor> interceptors = new PriorityBag<>();
-            GrpcServerImpl server = new GrpcServerImpl(configuration);
+            PriorityBag<ServerInterceptor> interceptors = PriorityBag.create();
+            GrpcServerImpl server = GrpcServerImpl.create(configuration);
 
-            interceptors.add(new ContextSettingServerInterceptor());
+            interceptors.add(ContextSettingServerInterceptor.create());
 
             Tracer tracer = configuration.tracer();
             if (tracer != null) {
-                interceptors.add(new GrpcTracing(tracer, configuration.tracingConfig()));
+                interceptors.add(GrpcTracing.create(tracer, configuration.tracingConfig()));
             }
 
             // add the global interceptors from the routing AFTER the tracing interceptor

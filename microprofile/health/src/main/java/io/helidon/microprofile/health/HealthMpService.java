@@ -17,14 +17,19 @@
 package io.helidon.microprofile.health;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.enterprise.inject.se.SeContainer;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
+import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
@@ -61,6 +66,13 @@ public class HealthMpService implements MpService {
         }
     };
 
+    private static final BuiltInHealthCheck BUILT_IN_HEALTH_CHECK_LITERAL = new BuiltInHealthCheck() {
+        @Override
+        public Class<? extends Annotation> annotationType() {
+            return BuiltInHealthCheck.class;
+        }
+    };
+
     @Override
     public void configure(MpServiceContext mpServiceContext) {
         Config healthConfig = mpServiceContext.helidonConfig().get("health");
@@ -75,16 +87,28 @@ public class HealthMpService implements MpService {
 
         SeContainer cdiContainer = mpServiceContext.cdiContainer();
 
+        // Collect built-in checks if disabled, otherwise set list to empty for filtering
+        Optional<Boolean> disableDefaults = mpServiceContext.config()
+                .getOptionalValue("mp.health.disable-default-procedures", Boolean.class);
+        List<HealthCheck> builtInHealthChecks = disableDefaults.map(
+                b -> b ? cdiContainer.select(HealthCheck.class, BUILT_IN_HEALTH_CHECK_LITERAL)
+                        .stream()
+                        .collect(Collectors.toList()) : Collections.<HealthCheck>emptyList())
+                .orElse(Collections.emptyList());
+
         cdiContainer.select(HealthCheck.class, HEALTH_LITERAL)
                 .stream()
+                .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::add);
 
         cdiContainer.select(HealthCheck.class, LIVENESS_LITERAL)
                 .stream()
+                .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addLiveness);
 
         cdiContainer.select(HealthCheck.class, READINESS_LITERAL)
                 .stream()
+                .filter(hc ->  !builtInHealthChecks.contains(hc))
                 .forEach(builder::addReadiness);
 
         HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))

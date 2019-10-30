@@ -132,6 +132,15 @@ public class GrpcMetrics
     }
 
     /**
+     * Obtain the {@link org.eclipse.microprofile.metrics.MetricType}.
+     *
+     * @return the {@link org.eclipse.microprofile.metrics.MetricType}
+     */
+    public MetricType metricType() {
+        return metricRule.type();
+    }
+
+    /**
      * Set the {@link NamingFunction} to use to generate the metric name.
      * <p>
      * The default name will be the {@code <service-name>.<method-name>}.
@@ -244,7 +253,7 @@ public class GrpcMetrics
          *
          * @param delegate the call to time
          */
-        MetricServerCall(MetricT metric, ServerCall<ReqT, RespT> delegate) {
+        private MetricServerCall(MetricT metric, ServerCall<ReqT, RespT> delegate) {
             super(delegate);
 
             this.metric = metric;
@@ -278,7 +287,7 @@ public class GrpcMetrics
          *
          * @param delegate the call to time
          */
-        TimedServerCall(Timer timer, ServerCall<ReqT, RespT> delegate) {
+        private TimedServerCall(Timer timer, ServerCall<ReqT, RespT> delegate) {
             super(timer, delegate);
 
             this.startNanos = System.nanoTime();
@@ -319,7 +328,7 @@ public class GrpcMetrics
          *
          * @param delegate the call to time
          */
-        CountedServerCall(Counter counter, ServerCall<ReqT, RespT> delegate) {
+        private CountedServerCall(Counter counter, ServerCall<ReqT, RespT> delegate) {
             super(counter, delegate);
         }
 
@@ -344,7 +353,7 @@ public class GrpcMetrics
          *
          * @param delegate the call to time
          */
-        MeteredServerCall(Meter meter, ServerCall<ReqT, RespT> delegate) {
+        private MeteredServerCall(Meter meter, ServerCall<ReqT, RespT> delegate) {
             super(meter, delegate);
         }
 
@@ -369,7 +378,7 @@ public class GrpcMetrics
          *
          * @param delegate the call to time
          */
-        HistogramServerCall(Histogram histogram, ServerCall<ReqT, RespT> delegate) {
+        private HistogramServerCall(Histogram histogram, ServerCall<ReqT, RespT> delegate) {
             super(histogram, delegate);
         }
 

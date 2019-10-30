@@ -45,6 +45,18 @@ class ContextSettingServerInterceptor
      */
     private ServiceDescriptor serviceDescriptor;
 
+    private ContextSettingServerInterceptor() {
+    }
+
+    /**
+     * Create a {@link ContextSettingServerInterceptor}.
+     *
+     * @return a {@link ContextSettingServerInterceptor} instance.
+     */
+    static ContextSettingServerInterceptor create() {
+        return new ContextSettingServerInterceptor();
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,

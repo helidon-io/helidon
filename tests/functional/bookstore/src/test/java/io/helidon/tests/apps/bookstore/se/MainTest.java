@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -61,6 +62,8 @@ class MainTest {
     static void setup() throws Exception {
         System.out.println("Using port number" + port);
         healthUrl = new URL("http://localhost:" + port + "/health");
+        appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
+        appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
     }
 
     @AfterEach
@@ -233,6 +236,14 @@ class MainTest {
         jsonReader = Json.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
         assertThat("Checking health outcome", jsonObject.getString("outcome"), is("UP"));
+        assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
+
+        // Verify that built-in health checks are disabled in MP according to
+        // 'microprofile-config.properties' setting in bookstore application
+        if (edition.equals("mp")) {
+            assertThat("Checking built-in health checks disabled",
+                    jsonObject.getJsonArray("checks").size(), is(0));
+        }
     }
 
     @ParameterizedTest

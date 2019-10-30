@@ -27,6 +27,8 @@ import io.helidon.grpc.server.test.Strings.StringMessage;
 
 import io.grpc.stub.StreamObserver;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.stream;
 
 public class StringService
         implements GrpcService {

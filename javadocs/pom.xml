@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.3.1-SNAPSHOT</version>
+        <version>1.3.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-javadocs</artifactId>
     <name>Helidon Javadocs</name>
@@ -73,7 +73,12 @@
                             <destDir>classes</destDir>
                             <doclint>none</doclint>
                             <doctitle>Helidon ${project.version} API Documentation</doctitle>
-                            <excludePackageNames>*.internal:*.internal.*:*.config.testing.*</excludePackageNames>
+                            <!--
+                                io.helidon.common.metrics support compat. between MP metrics 1.1 and 2.0. The contents
+                                are not for use by developers using Helidon and will be removed if/when we stop supporting
+                                the 1.1 compatibility.
+                            -->
+                            <excludePackageNames>*.internal:*.internal.*:*.config.testing.*:io.helidon.common.metrics</excludePackageNames>
                             <groups>
                                 <group>
                                     <title>Microprofile</title>
@@ -142,6 +147,17 @@
                                   test, compilation roots.
                               -->
                               <sourceFileExclude>**/*_.java</sourceFileExclude>
+                              <!--
+                                  Exclude internal bridge classes for metrics which must be public for
+                                  service loader discovery.
+                              -->
+                              <sourceFileExclude>**/InternalBridgeImpl.java</sourceFileExclude>
+                              <!--
+                                  Exclude MP metrics classes that must be public for visibility but should not be
+                                  used by developers.
+                              -->
+                              <sourceFileExclude>**/MetricsCdiExtension.java</sourceFileExclude>
+                              <sourceFileExclude>**/MetricsMpService.java</sourceFileExclude>
                             </sourceFileExcludes>
                             <sourceFileIncludes>
                                 <sourceFileInclude>io/helidon/**/*.java</sourceFileInclude>

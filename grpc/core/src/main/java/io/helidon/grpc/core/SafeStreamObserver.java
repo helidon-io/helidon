@@ -36,7 +36,7 @@ public class SafeStreamObserver<T>
      *
      * @param streamObserver  the {@link io.grpc.stub.StreamObserver} to wrap
      */
-    public SafeStreamObserver(StreamObserver<? super T> streamObserver) {
+    private SafeStreamObserver(StreamObserver<? super T> streamObserver) {
         delegate = streamObserver;
     }
 
@@ -63,11 +63,11 @@ public class SafeStreamObserver<T>
     @Override
     public void onError(Throwable thrown) {
         try {
-            if (!done) {
+            if (done) {
+                LOGGER.log(Level.SEVERE, checkNotNull(thrown), () -> "OnError called after StreamObserver was closed");
+            } else {
                 done = true;
                 delegate.onError(checkNotNull(thrown));
-            } else {
-                LOGGER.log(Level.SEVERE, checkNotNull(thrown), () -> "OnError called after StreamObserver was closed");
             }
         } catch (Throwable t) {
             throwIfFatal(t);
@@ -81,12 +81,21 @@ public class SafeStreamObserver<T>
             LOGGER.log(Level.WARNING, "onComplete called after StreamObserver was closed");
         } else {
             try {
+                done = true;
                 delegate.onCompleted();
             } catch (Throwable thrown) {
                 throwIfFatal(thrown);
                 LOGGER.log(Level.SEVERE, thrown, () -> "Caught exception handling onComplete");
             }
         }
+    }
+
+    /**
+     * Obtain the wrapped {@link StreamObserver}.
+     * @return  the wrapped {@link StreamObserver}
+     */
+    public StreamObserver<? super T> delegate() {
+        return delegate;
     }
 
     private Throwable checkNotNull(Throwable thrown) {

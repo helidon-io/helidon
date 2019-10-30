@@ -50,27 +50,6 @@ public class PriorityBag<T> implements Iterable<T> {
 
     private final int defaultPriority;
 
-    /**
-     * Create a new {@link PriorityBag} where elements
-     * added with no priority will be last in the order.
-     */
-    public PriorityBag() {
-        this(new TreeMap<>(), new ArrayList<>(), -1);
-    }
-
-    /**
-     * Create a new {@link PriorityBag} where elements
-     * added with no priority will be be given a default
-     * priority value.
-     *
-     * @param defaultPriority  the default priority value to assign
-     *                         to elements added with no priority
-     */
-    public PriorityBag(int defaultPriority) {
-        this(new TreeMap<>(), new ArrayList<>(), defaultPriority);
-    }
-
-
     private PriorityBag(Map<Integer, List<T>> contents, List<T> noPriorityList, int defaultPriority) {
         this.contents = contents;
         this.noPriorityList = noPriorityList;
@@ -78,12 +57,43 @@ public class PriorityBag<T> implements Iterable<T> {
     }
 
     /**
+     * Create a new {@link PriorityBag} where elements
+     * added with no priority will be last in the order.
+     *
+     * @param <T> the type of elements in the bag
+     * @return a new {@link PriorityBag} where elements
+     *         dded with no priority will be last in the
+     *         order
+     */
+    public static <T> PriorityBag<T> create() {
+        return new PriorityBag<>(new TreeMap<>(), new ArrayList<>(), -1);
+    }
+
+    /**
+     * Create a new {@link PriorityBag} where elements
+     * added with no priority will be be given a default
+     * priority value.
+     *
+     * @param priority  the default priority value to assign
+     *                  to elements added with no priority
+     * @param <T>       the type of elements in the bag
+     *
+     * @return a new {@link PriorityBag} where elements
+     *         added with no priority will be be given
+     *         a default priority value
+     */
+    public static <T> PriorityBag<T> withDefaultPriority(int priority) {
+        return new PriorityBag<>(new TreeMap<>(), new ArrayList<>(), priority);
+    }
+
+
+    /**
      * Obtain a copy of this {@link PriorityBag}.
      *
      * @return a copy of this {@link PriorityBag}
      */
     public PriorityBag<T> copyMe() {
-        PriorityBag<T> copy = new PriorityBag<>();
+        PriorityBag<T> copy = PriorityBag.create();
         copy.merge(this);
         return copy;
     }

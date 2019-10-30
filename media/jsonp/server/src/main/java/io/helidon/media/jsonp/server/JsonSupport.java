@@ -103,7 +103,7 @@ public final class JsonSupport extends JsonService {
         request.content()
                 .registerReader(JsonStructure.class::isAssignableFrom, (publisher, type) -> {
                     Charset charset = determineCharset(request.headers());
-                    return reader(charset).apply(publisher);
+                    return reader(charset).apply(publisher, type);
                 });
         // Writer
         response.registerWriter(json -> (json instanceof JsonStructure) && acceptsJson(request, response),

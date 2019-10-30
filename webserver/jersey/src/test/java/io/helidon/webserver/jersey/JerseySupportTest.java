@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.Collections;
+import java.util.List;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Entity;
@@ -29,14 +31,17 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.http.HttpRequest;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.jersey.JerseySupport.basePath;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * The JerseySupportTest.
@@ -313,6 +318,55 @@ public class JerseySupportTest {
             while ((n = is.read(buffer)) > 0) {
                 // consume rest of stream
             }
+        }
+    }
+
+    @Test
+    public void testBasePath() {
+        assertThat(basePath(new PathMockup(null, "/")),
+                is("/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/")),
+                is("/my/application/path/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/path")),
+                is("/my/application/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/application/path")),
+                is("/my/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/my/application/path")),
+                is("/"));
+    }
+
+    static class PathMockup implements HttpRequest.Path {
+        private final String absolutePath;
+        private final String path;
+
+        PathMockup(String absolutePath, String path) {
+            this.absolutePath = absolutePath;
+            this.path = path;
+        }
+
+        @Override
+        public String param(String name) {
+            return "";
+        }
+
+        @Override
+        public List<String> segments() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public String toRawString() {
+            return toString();
+        }
+
+        @Override
+        public HttpRequest.Path absolute() {
+            return absolutePath == null ? this : new PathMockup(null, absolutePath);
+        }
+
+        @Override
+        public String toString() {
+            return path;
         }
     }
 

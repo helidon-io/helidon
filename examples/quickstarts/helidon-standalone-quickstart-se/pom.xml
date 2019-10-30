@@ -22,11 +22,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>helidon-standalone-quickstart-se</artifactId>
-    <version>1.3.1-SNAPSHOT</version>
+    <version>1.3.2-SNAPSHOT</version>
     <name>Helidon Standalone Quickstart SE Example</name>
 
     <properties>
-        <helidon.version>1.3.1-SNAPSHOT</helidon.version>
+        <helidon.version>1.3.2-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
 
         <maven.compiler.source>8</maven.compiler.source>
@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-metrics2</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

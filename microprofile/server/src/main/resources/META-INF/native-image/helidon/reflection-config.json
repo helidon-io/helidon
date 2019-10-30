@@ -1,0 +1,16 @@
+{
+    "annotated":[
+        "javax.enterprise.context.Dependent",
+        "javax.enterprise.context.RequestScoped",
+        "javax.enterprise.context.ApplicationScoped",
+        "javax.ws.rs.Path"
+
+    ],
+    "class-hierarchy": [
+        "javax.ws.rs.container.ContainerRequestFilter",
+        "javax.ws.rs.container.ContainerResponseFilter",
+        "javax.ws.rs.core.Application"
+    ],
+    "classes": [
+    ]
+}

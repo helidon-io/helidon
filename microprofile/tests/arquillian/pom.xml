@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tests-project</artifactId>
-        <version>1.3.1-SNAPSHOT</version>
+        <version>1.3.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-arquillian</artifactId>
     <name>Helidon Microprofile Arquillian Integration</name>
@@ -53,7 +53,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-3.0</artifactId>
+            <artifactId>helidon-microprofile-3.1</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>io.helidon.health</groupId>

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>1.3.1-SNAPSHOT</version>
+        <version>1.3.2-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
@@ -32,7 +32,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>1.3.1-SNAPSHOT</helidon.version>
+        <helidon.version>1.3.2-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -114,6 +114,26 @@
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
                 <artifactId>helidon-grpc-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- media -->
@@ -358,6 +378,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
+                <artifactId>helidon-microprofile-3.1</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.bundles</groupId>
                 <artifactId>internal-test-libs</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -417,6 +442,11 @@
                 <artifactId>helidon-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- health checks -->
             <dependency>
                 <groupId>io.helidon.health</groupId>
@@ -426,6 +456,11 @@
             <dependency>
                 <groupId>io.helidon.health</groupId>
                 <artifactId>helidon-health-checks</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.health</groupId>
+                <artifactId>helidon-health-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -475,6 +510,11 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-service-loader</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-media-type</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

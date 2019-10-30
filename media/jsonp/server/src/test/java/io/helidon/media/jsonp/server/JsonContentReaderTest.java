@@ -64,12 +64,12 @@ public class JsonContentReaderTest {
 
         try {
             JsonArray array = stage.thenApply(o -> {
-                fail("Shouldn't occur because of a class cast exception!");
+                fail("Shouldn't occur because of JSON exception!");
                 return o;
             }).toCompletableFuture().get(10, TimeUnit.SECONDS);
             fail("Should have failed because an expected array is actually an object: " + array);
         } catch (ExecutionException e) {
-            assertThat(e.getCause(), IsInstanceOf.instanceOf(ClassCastException.class));
+            assertThat(e.getCause(), IsInstanceOf.instanceOf(JsonException.class));
         }
     }
 

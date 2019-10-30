@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Interceptors
+= gRPC Interceptors
 :pagename: grpc-server-interceptors
 :description: Helidon gRPC Service Interceptors
 :keywords: helidon, grpc, java
