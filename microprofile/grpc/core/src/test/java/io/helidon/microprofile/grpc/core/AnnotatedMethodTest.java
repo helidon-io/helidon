@@ -38,13 +38,13 @@ public class AnnotatedMethodTest {
 
     @Test
     public void shouldNotAllowNullMethod() {
-        assertThrows(NullPointerException.class, () -> new AnnotatedMethod(null));
+        assertThrows(NullPointerException.class, () -> AnnotatedMethod.create(null));
     }
 
     @Test
     public void shouldHaveSameDeclaredAndActualAnnotatedMethodsIfNoSuperClass() throws Exception {
         Method method = GrandParent.class.getDeclaredMethod("one");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(method);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(method);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(method)));
         assertThat(annotatedMethod.method(), is(method));
@@ -53,7 +53,7 @@ public class AnnotatedMethodTest {
     @Test
     public void shouldHaveSameDeclaredAndActualNonAnnotatedMethodsIfNoSuperClass() throws Exception {
         Method method = GrandParent.class.getDeclaredMethod("two");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(method);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(method);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(method)));
         assertThat(annotatedMethod.method(), is(method));
@@ -63,7 +63,7 @@ public class AnnotatedMethodTest {
     public void shouldHaveAnnotatedMethodFromSuperClass() throws Exception {
         Method declaredMethod = Parent.class.getDeclaredMethod("one");
         Method method = GrandParent.class.getDeclaredMethod("one");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(method));
@@ -72,7 +72,7 @@ public class AnnotatedMethodTest {
     @Test
     public void shouldHaveNonAnnotatedMethodOverridingSuperClass() throws Exception {
         Method declaredMethod = Parent.class.getDeclaredMethod("two");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(declaredMethod));
@@ -81,7 +81,7 @@ public class AnnotatedMethodTest {
     @Test
     public void shouldHaveAnnotatedMethodOverridingAnnotatedMethodInSuperClass() throws Exception {
         Method declaredMethod = Parent.class.getDeclaredMethod("three");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(declaredMethod));
@@ -90,7 +90,7 @@ public class AnnotatedMethodTest {
     @Test
     public void shouldHaveAnnotatedMethodNotOverridingMethodInSuperClass() throws Exception {
         Method declaredMethod = Parent.class.getDeclaredMethod("four");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(declaredMethod));
@@ -99,7 +99,7 @@ public class AnnotatedMethodTest {
     @Test
     public void shouldHaveNonAnnotatedMethodNotOverridingMethodInSuperClass() throws Exception {
         Method declaredMethod = Parent.class.getDeclaredMethod("five");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(declaredMethod));
@@ -109,7 +109,7 @@ public class AnnotatedMethodTest {
     public void shouldHaveAnnotatedMethodFromGrandParent() throws Exception {
         Method declaredMethod = Child.class.getDeclaredMethod("one");
         Method method = GrandParent.class.getDeclaredMethod("one");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(method));
@@ -119,7 +119,7 @@ public class AnnotatedMethodTest {
     public void shouldHaveAnnotatedMethodFromParentNotFromInterface() throws Exception {
         Method declaredMethod = Child.class.getDeclaredMethod("three");
         Method method = Parent.class.getDeclaredMethod("three");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(method));
@@ -129,7 +129,7 @@ public class AnnotatedMethodTest {
     public void shouldHaveAnnotatedMethodFromInterface() throws Exception {
         Method declaredMethod = Child.class.getDeclaredMethod("six");
         Method method = InterfaceOne.class.getDeclaredMethod("six");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(method));
@@ -139,7 +139,7 @@ public class AnnotatedMethodTest {
     public void shouldHaveAnnotatedMethodFromFirstDeclaredInterface() throws Exception {
         Method declaredMethod = Multi.class.getDeclaredMethod("three");
         Method method = InterfaceOne.class.getDeclaredMethod("three");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(method));
@@ -149,7 +149,7 @@ public class AnnotatedMethodTest {
     public void shouldHaveAnnotatedMethodFromSuperInterface() throws Exception {
         Method declaredMethod = Service.class.getDeclaredMethod("three");
         Method method = InterfaceOne.class.getDeclaredMethod("three");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(method));
@@ -159,7 +159,7 @@ public class AnnotatedMethodTest {
     public void shouldHaveAnnotatedMethodFromParentsInterface() throws Exception {
         Method declaredMethod = Child.class.getDeclaredMethod("seven");
         Method method = InterfaceFour.class.getDeclaredMethod("seven");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
 
         assertThat(annotatedMethod.declaredMethod(), is(sameInstance(declaredMethod)));
         assertThat(annotatedMethod.method(), is(method));
@@ -168,7 +168,7 @@ public class AnnotatedMethodTest {
     @Test
     public void shouldMergeAnnotations() throws Exception {
         Method declaredMethod = Parent.class.getDeclaredMethod("one");
-        AnnotatedMethod annotatedMethod = new AnnotatedMethod(declaredMethod);
+        AnnotatedMethod annotatedMethod = AnnotatedMethod.create(declaredMethod);
         Annotation[] annotations = annotatedMethod.getAnnotations();
 
         assertThat(annotations.length, is(3));

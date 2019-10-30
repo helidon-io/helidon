@@ -110,7 +110,7 @@ public class GrpcClientCdiExtension implements Extension {
         BeanAttributes<?> producerAttributes = beanManager.createBeanAttributes(producerMethod);
         ProducerFactory<GrpcProxyProducer> factory = beanManager.getProducerFactory(producerMethod, null);
         Set<Type> types = CollectionsHelper.setOf(Object.class, type);
-        BeanAttributes<?> beanAttributes = new DelegatingBeanAttributes<>(producerAttributes, types);
+        BeanAttributes<?> beanAttributes = DelegatingBeanAttributes.create(producerAttributes, types);
         event.addBean(beanManager.createBean(beanAttributes, GrpcProxyProducer.class, factory));
     }
 }

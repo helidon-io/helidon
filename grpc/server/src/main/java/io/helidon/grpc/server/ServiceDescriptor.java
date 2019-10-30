@@ -120,7 +120,7 @@ public class ServiceDescriptor {
     }
 
     BindableService bindableService(PriorityBag<ServerInterceptor> interceptors) {
-        return new BindableServiceImpl(this, interceptors);
+        return BindableServiceImpl.create(this, interceptors);
     }
 
     @Override
@@ -431,7 +431,7 @@ public class ServiceDescriptor {
         private Descriptors.FileDescriptor proto;
         private MarshallerSupplier marshallerSupplier = MarshallerSupplier.defaultInstance();
         private Map<String, MethodDescriptor.Builder> methodBuilders = new LinkedHashMap<>();
-        private PriorityBag<ServerInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        private PriorityBag<ServerInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         private Map<Context.Key<?>, Object> context = new HashMap<>();
         private HealthCheck healthCheck;
 

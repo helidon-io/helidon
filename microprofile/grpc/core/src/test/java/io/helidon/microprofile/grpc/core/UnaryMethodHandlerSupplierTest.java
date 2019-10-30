@@ -758,7 +758,7 @@ public class UnaryMethodHandlerSupplierTest {
 
     private AnnotatedMethod getMethod(String name, Class<?>... args) {
         try {
-            return new AnnotatedMethod(UnaryService.class.getMethod(name, args));
+            return AnnotatedMethod.create(UnaryService.class.getMethod(name, args));
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
