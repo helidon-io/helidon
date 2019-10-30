@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
@@ -42,8 +41,7 @@ import io.grpc.stub.StreamObserver;
  */
 @RpcService
 @ApplicationScoped
-public class AsyncStringService
-        implements ResponseHelper {
+public class AsyncStringService {
 
     /**
      * Convert a string value to upper case asynchronously.

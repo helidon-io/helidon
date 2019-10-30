@@ -27,6 +27,9 @@ import io.helidon.grpc.server.ServiceDescriptor;
 
 import io.grpc.stub.StreamObserver;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.stream;
+
 public class StringService
         implements GrpcService {
     @Override
