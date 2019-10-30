@@ -158,3 +158,11 @@ Any documentation for these properties that exists may be found in the
 javadocs for the link:{jedis-jedispool-api-url}[`JedisPool`] and
 link:{jedis-pool-api-url}[`Pool`] classes.
 
+Injection without a `@Named` annotation is also possible:
+[source,java]
+----
+ @Inject
+ private JedisPool ordersPool;
+----
+In this case, the properties for JedisPoolConfig and JedisPool that can be set will start wih `redis.clients.jedis.JedisPoolConfig.default` and `redis.clients.jedis.JedisPool.default` respectively.
+
