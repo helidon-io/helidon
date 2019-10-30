@@ -9,6 +9,52 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
+This is a feature release of Helidon and adds support for MicroProfile 3.2.
+It also includes a number of additional bug fixes and enhancements.
+
+### Improvements
+
+- MicroProfile 3.2
+- MicroProfile Metrics 2.2 [1117](https://github.com/oracle/helidon/pull/1117)
+- MicroProfile Health 2.1 [1092](https://github.com/oracle/helidon/pull/1092)
+- WebServer: add support for form parameters [1093](https://github.com/oracle/helidon/pull/1093)
+- Tracing: allow customization of top level span name using message format [1090](https://github.com/oracle/helidon/pull/1090)
+- Metrics: support for mutable vendor registry [1098](https://github.com/oracle/helidon/pull/1098)
+- MicroProfile: support reactive services and custom routing/port config [1073](https://github.com/oracle/helidon/pull/1073)
+
+### Fixes
+
+- UriInfo#getBaseUri() returns URL with 1 character short [1110](https://github.com/oracle/helidon/pull/1110)
+- Helidon build fixed on Windows [1097](https://github.com/oracle/helidon/pull/1097)
+- Refine start-up time calculation [1100](https://github.com/oracle/helidon/pull/1100)
+- Inform Jersey of broken pipe by throwing exception [1076](https://github.com/oracle/helidon/pull/1076)
+- Service name not needed when tracing is disabled. [1086](https://github.com/oracle/helidon/pull/1086)
+- Fix Tracing nesting and outbound security [1082](https://github.com/oracle/helidon/pull/1082)
+- Jaeger integration support for native-image [1084](https://github.com/oracle/helidon/pull/1084)
+- Detect media type [1091](https://github.com/oracle/helidon/pull/1091)
+- Restore helidon-metrics2 as default metrics library [1077](https://github.com/oracle/helidon/pull/1077)
+- Rationalize some metrics 1.1 and 2.0 support code; add sync to both impls [1071](https://github.com/oracle/helidon/pull/1071)
+- Brings our 1.1 and 2.0 impls in line with clarification of metric reuse [1080](https://github.com/oracle/helidon/pull/1080)
+- Throw JsonException when parser returns unexpected type [1085](https://github.com/oracle/helidon/pull/1085)
+- Fix Injecting @ConfigProperty fails [1074](https://github.com/oracle/helidon/pull/1074)
+- Fixes NPE in RequestRouting#canonicalize() [1072](https://github.com/oracle/helidon/pull/1072)
+- Upgrade to Jackson 2.10.0 [1088](https://github.com/oracle/helidon/pull/1088)
+- Upgrade to Netty 4.1.42 [1096](https://github.com/oracle/helidon/pull/1096)
+- Remove com.google.code.findbugs:jsr305 [1119](https://github.com/oracle/helidon/pull/1119)
+- Documentation [1075](https://github.com/oracle/helidon/pull/1075) [1123](https://github.com/oracle/helidon/pull/1123) [1118](https://github.com/oracle/helidon/pull/1118) [1105](https://github.com/oracle/helidon/pull/1105) [1079](https://github.com/oracle/helidon/pull/1079)
+
+## Experimental
+
+The following enhancements are experimental. They should be considered unstable and subject
+to change.
+
+- Support for gRPC in MicroProfile server [910](https://github.com/oracle/helidon/pull/910)
+
+
+## [1.3.1] 
+
+### Notes
+
 This is a bugfix release. It fixes a Helidon MP 
 configuration regression on Windows: [1038](https://github.com/oracle/helidon/issues/1038).
 
@@ -503,7 +549,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.3.0...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/1.3.1...HEAD
+[1.3.1]: https://github.com/oracle/helidon/compare/1.3.0...1.3.1
 [1.3.0]: https://github.com/oracle/helidon/compare/1.2.1...1.3.0
 [1.2.1]: https://github.com/oracle/helidon/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/oracle/helidon/compare/1.1.2...1.2.0
