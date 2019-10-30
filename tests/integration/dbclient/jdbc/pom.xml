@@ -86,43 +86,51 @@
                 <configuration>
                     <skipTests>true</skipTests>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${version.plugin.surefire}</version>
                 <executions>
+                    <!-- Wait for database to start up and initialize database-->
                     <execution>
                         <id>init</id>
                         <phase>integration-test</phase>
                         <goals>
-                            <goal>test</goal>
+                            <goal>integration-test</goal>
                         </goals>
                         <configuration>
                             <skipTests>false</skipTests>
                             <includes>
-                                <include>io/helidon/tests/integration/dbclient/jdbc/init/**</include>
+                                <include>io.helidon.tests.integration.dbclient.jdbc.init.*IT</include>
                             </includes>
                         </configuration>
                     </execution>
+                    <!-- Run ingegration tests. -->
                     <execution>
                         <id>test</id>
                         <phase>integration-test</phase>
                         <goals>
-                            <goal>test</goal>
+                            <goal>integration-test</goal>
                         </goals>
                         <configuration>
                             <skipTests>false</skipTests>
                             <includes>
-                                <include>io/helidon/tests/integration/dbclient/jdbc/tests/**</include>
+                                <include>io.helidon.tests.integration.dbclient.jdbc.tests.*IT</include>
                             </includes>
                         </configuration>
                     </execution>
+                    <!-- Database cleanup. -->
                     <execution>
                         <id>destroy</id>
                         <phase>integration-test</phase>
                         <goals>
-                            <goal>test</goal>
+                            <goal>integration-test</goal>
                         </goals>
                         <configuration>
                             <skipTests>false</skipTests>
                             <includes>
-                                <include>io/helidon/tests/integration/dbclient/jdbc/destroy/**</include>
+                                <include>io.helidon.tests.integration.dbclient.jdbc.destroy.*IT</include>
                             </includes>
                         </configuration>
                     </execution>
