@@ -65,13 +65,13 @@ public @interface CrossOrigin {
      * A list of supported HTTP request methods. In response to pre-flight
      * requests. Corresponds to {@code Access-Control-Allow-Methods}.
      */
-    HttpMethod[] allowMethods() default {};
+    String[] allowMethods() default {"*"};
 
     /**
      * Whether the client can send cookies or credentials. Corresponds to {@code
      * Access-Control-Allow-Credentials}.
      */
-    String allowCredentials() default "";
+    boolean allowCredentials() default false;
 
     /**
      * Pre-flight response duration in seconds. After time expires, a new pre-flight

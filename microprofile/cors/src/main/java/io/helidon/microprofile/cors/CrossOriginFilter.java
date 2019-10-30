@@ -16,10 +16,6 @@
 
 package io.helidon.microprofile.cors;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.Optional;
-
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -27,8 +23,16 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Optional;
 
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
 
 /**
  * Class CrossOriginFilter.
@@ -48,8 +52,19 @@ public class CrossOriginFilter implements ContainerRequestFilter, ContainerRespo
         lookupAnnotation(resourceInfo.getResourceClass(), resourceInfo.getResourceMethod())
                 .ifPresent(crossOrigin -> {
                     MultivaluedMap<String, Object> headers = responseContext.getHeaders();
-                    if (!headers.containsKey(ACCESS_CONTROL_ALLOW_ORIGIN)) {
-                        headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, formatArray(crossOrigin.value()));
+                    formatArray(crossOrigin.value()).ifPresent(
+                            s -> headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, s));
+                    formatArray(crossOrigin.allowMethods()).ifPresent(
+                            s -> headers.add(ACCESS_CONTROL_ALLOW_METHODS, s));
+                    formatArray(crossOrigin.allowHeaders()).ifPresent(
+                            s -> headers.add(ACCESS_CONTROL_ALLOW_HEADERS, s));
+                    formatArray(crossOrigin.exposeHeaders()).ifPresent(
+                            s -> headers.add(ACCESS_CONTROL_EXPOSE_HEADERS, s));
+                    if (crossOrigin.allowCredentials()) {
+                        headers.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+                    }
+                    if (crossOrigin.maxAge() >= 0) {
+                        headers.add(ACCESS_CONTROL_MAX_AGE, crossOrigin.maxAge());
                     }
                 });
     }
@@ -77,11 +92,11 @@ public class CrossOriginFilter implements ContainerRequestFilter, ContainerRespo
      *
      * @param array The array.
      * @param <T> Type of elements in array.
-     * @return Formatted array.
+     * @return Formatted array as an {@code Optional}.
      */
-    static <T> String formatArray(T[] array) {
+    static <T> Optional<String> formatArray(T[] array) {
         if (array.length == 0) {
-            return "";
+            return Optional.empty();
         }
         int i = 0;
         StringBuilder builder = new StringBuilder();
@@ -92,6 +107,6 @@ public class CrossOriginFilter implements ContainerRequestFilter, ContainerRespo
             }
             builder.append(", ");
         } while (true);
-        return builder.toString();
+        return Optional.of(builder.toString());
     }
 }
