@@ -39,9 +39,20 @@ class ClientProxy
      * @param client  the {@link io.helidon.grpc.client.GrpcServiceClient} to use
      * @param names   a map of Java method names to gRPC method names
      */
-    ClientProxy(GrpcServiceClient client, Map<String, String> names) {
+    private ClientProxy(GrpcServiceClient client, Map<String, String> names) {
         this.client = client;
         this.names = names;
+    }
+
+    /**
+     * Create a {@link ClientProxy} instance.
+     *
+     * @param client  the {@link io.helidon.grpc.client.GrpcServiceClient} to use
+     * @param names   a map of Java method names to gRPC method names
+     * @return a {@link ClientProxy} instance for the specified service client
+     */
+    static ClientProxy create(GrpcServiceClient client, Map<String, String> names) {
+        return new ClientProxy(client, names);
     }
 
     @Override

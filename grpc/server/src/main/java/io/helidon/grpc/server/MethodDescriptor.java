@@ -234,7 +234,7 @@ public class MethodDescriptor<ReqT, ResT> {
         private final io.grpc.MethodDescriptor.Builder<ReqT, ResT> descriptor;
         private final ServerCallHandler<ReqT, ResT> callHandler;
 
-        private final PriorityBag<ServerInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        private final PriorityBag<ServerInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
 
         private final Map<Context.Key, Object> context = new HashMap<>();
 

@@ -97,7 +97,7 @@ public interface GrpcRouting {
          * The {@link List} of the global {@link io.grpc.ServerInterceptor}s that should be
          * applied to all services.
          */
-        private PriorityBag<ServerInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        private PriorityBag<ServerInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
 
         /**
          * Add one or more global {@link ServerInterceptor} instances that will intercept calls
@@ -206,7 +206,7 @@ public interface GrpcRouting {
          * @return a new {@link GrpcRouting} instance
          */
         public GrpcRouting build() {
-            return new GrpcRoutingImpl(services.values(), interceptors);
+            return GrpcRoutingImpl.create(services.values(), interceptors);
         }
 
         // ---- helpers -----------------------------------------------------

@@ -33,7 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class HealthServiceImplTest {
     @Test
     public void shouldRequestCheckForUpService() {
-        HealthServiceImpl healthService = new HealthServiceImpl();
+        HealthServiceImpl healthService = HealthServiceImpl.create();
         String serviceName = "foo";
         HealthCheck check = ConstantHealthCheck.up(serviceName);
         HealthCheckRequest request = HealthCheckRequest.newBuilder().setService(serviceName).build();
@@ -57,7 +57,7 @@ public class HealthServiceImplTest {
 
     @Test
     public void shouldRequestCheckForDownService() {
-        HealthServiceImpl healthService = new HealthServiceImpl();
+        HealthServiceImpl healthService = HealthServiceImpl.create();
         String serviceName = "foo";
         HealthCheck check = ConstantHealthCheck.down(serviceName);
         HealthCheckRequest request = HealthCheckRequest.newBuilder().setService(serviceName).build();
@@ -81,7 +81,7 @@ public class HealthServiceImplTest {
 
     @Test
     public void shouldRequestCheckForGlobalService() {
-        HealthServiceImpl healthService = new HealthServiceImpl();
+        HealthServiceImpl healthService = HealthServiceImpl.create();
         String serviceName = "";
         HealthCheck check = ConstantHealthCheck.up(serviceName);
         HealthCheckRequest request = HealthCheckRequest.newBuilder().setService(serviceName).build();
@@ -105,7 +105,7 @@ public class HealthServiceImplTest {
 
     @Test
     public void shouldRequestCheckWithoutServiceName() {
-        HealthServiceImpl healthService = new HealthServiceImpl();
+        HealthServiceImpl healthService = HealthServiceImpl.create();
         String serviceName = "";
         HealthCheck check = ConstantHealthCheck.up(serviceName);
         HealthCheckRequest request = HealthCheckRequest.newBuilder().build();
@@ -129,7 +129,7 @@ public class HealthServiceImplTest {
 
     @Test
     public void shouldRequestCheckForUnknownService() {
-        HealthServiceImpl healthService = new HealthServiceImpl();
+        HealthServiceImpl healthService = HealthServiceImpl.create();
         String serviceName = "unknown";
         HealthCheckRequest request = HealthCheckRequest.newBuilder().setService(serviceName).build();
         TestStreamObserver<HealthCheckResponse> observer = new TestStreamObserver<>();

@@ -40,6 +40,7 @@ public class ClientStreamingMethodHandlerSupplier
     /**
      * Create a supplier of handlers for client streaming methods.
      */
+    // method is public because it is loaded via ServiceLoader
     public ClientStreamingMethodHandlerSupplier() {
         super(MethodDescriptor.MethodType.CLIENT_STREAMING);
     }

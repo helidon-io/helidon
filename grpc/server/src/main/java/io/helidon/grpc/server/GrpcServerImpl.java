@@ -107,7 +107,7 @@ public class GrpcServerImpl implements GrpcServer {
     /**
      * The health status manager.
      */
-    private HealthServiceImpl healthService = new HealthServiceImpl();
+    private HealthServiceImpl healthService = HealthServiceImpl.create();
 
     /**
      * The {@link HandlerRegistry} to register services.
@@ -133,10 +133,20 @@ public class GrpcServerImpl implements GrpcServer {
      *
      * @param config the configuration for this server
      */
-    GrpcServerImpl(GrpcServerConfiguration config) {
+    private GrpcServerImpl(GrpcServerConfiguration config) {
         this.config = config;
         this.context = config.context();
 
+    }
+
+    /**
+     * Create a {@link GrpcServerImpl} with the specified configuration.
+     *
+     * @param config the configuration for this server
+     * @return a {@link GrpcServerImpl} with the specified configuration
+     */
+    static GrpcServerImpl create(GrpcServerConfiguration config) {
+        return new GrpcServerImpl(config);
     }
 
     // ---- GrpcServer interface --------------------------------------------

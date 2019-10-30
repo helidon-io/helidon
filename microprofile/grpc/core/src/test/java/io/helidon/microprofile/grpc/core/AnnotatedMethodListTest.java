@@ -35,7 +35,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldFindAllDeclaredMethods() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         List<String> names = list.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());
@@ -45,7 +45,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldFindAllMethods() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class);
         List<String> names = list.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());
@@ -55,7 +55,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldIterateAllMethods() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         List<String> names = new ArrayList<>();
         Iterator<AnnotatedMethod> iterator = list.iterator();
         while (iterator.hasNext()) {
@@ -67,7 +67,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetNonePublicMethods() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.isNotPublic();
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
@@ -78,7 +78,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetMethodsWithParameterCount() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.hasParameterCount(2);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
@@ -89,7 +89,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetMethodsWithWithReturnType() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.hasReturnType(String.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
@@ -100,7 +100,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetMethodsWithWithNamePrefix() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.nameStartsWith("t");
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
@@ -111,7 +111,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetMethodsWithWithAnnotation() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.withAnnotation(Unary.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
@@ -122,7 +122,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetMethodsWithoutAnnotation() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.withoutAnnotation(Unary.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
@@ -133,7 +133,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetMethodsWithMetaAnnotation() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.withMetaAnnotation(RpcMethod.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
@@ -144,7 +144,7 @@ public class AnnotatedMethodListTest {
 
     @Test
     public void shouldGetMethodsWithoutMetaAnnotation() {
-        AnnotatedMethodList list = new AnnotatedMethodList(Stub.class, true);
+        AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
         AnnotatedMethodList methods = list.withoutMetaAnnotation(RpcMethod.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())

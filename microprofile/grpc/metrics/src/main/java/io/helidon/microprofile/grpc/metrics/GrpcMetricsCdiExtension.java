@@ -85,7 +85,7 @@ public class GrpcMetricsCdiExtension
      * @return {@code true} if the method is a timed gRPC method
      */
     private boolean isRpcMethod(AnnotatedMethodConfigurator<?> configurator, Class<? extends Annotation> type) {
-        AnnotatedMethod method = new AnnotatedMethod(configurator.getAnnotated().getJavaMember());
+        AnnotatedMethod method = AnnotatedMethod.create(configurator.getAnnotated().getJavaMember());
         RpcMethod rpcMethod = method.firstAnnotationOrMetaAnnotation(RpcMethod.class);
         if (rpcMethod != null) {
             Annotation annotation = method.firstAnnotationOrMetaAnnotation(type);

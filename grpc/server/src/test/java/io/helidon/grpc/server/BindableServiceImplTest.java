@@ -54,7 +54,7 @@ public class BindableServiceImplTest {
         ServerInterceptor interceptorFive = spy(new InterceptorStub());
         ServerInterceptor interceptorSix = spy(new InterceptorStub());
 
-        PriorityBag<ServerInterceptor> global = new PriorityBag<>(InterceptorPriorities.USER);
+        PriorityBag<ServerInterceptor> global = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         global.addAll(CollectionsHelper.listOf(interceptorOne, interceptorTwo, interceptorThree));
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(new Service())
@@ -64,7 +64,7 @@ public class BindableServiceImplTest {
                 .unary("foo", this::unary, rules -> rules.intercept(interceptorThree, interceptorFour, interceptorSix))
                 .build();
 
-        BindableServiceImpl bindableService = new BindableServiceImpl(descriptor, global);
+        BindableServiceImpl bindableService = BindableServiceImpl.create(descriptor, global);
         ServerServiceDefinition definition = bindableService.bindService();
         ServerMethodDefinition<?, ?> method = definition.getMethod("Service/foo");
         ServerCallHandler<?, ?> callHandler = method.getServerCallHandler();

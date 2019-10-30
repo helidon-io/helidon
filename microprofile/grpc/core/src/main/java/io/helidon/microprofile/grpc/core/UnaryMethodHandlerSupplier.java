@@ -40,6 +40,7 @@ public class UnaryMethodHandlerSupplier
     /**
      * Create a supplier of handlers for server streaming methods.
      */
+    // method is public because it is loaded via ServiceLoader
     public UnaryMethodHandlerSupplier() {
         super(MethodDescriptor.MethodType.UNARY);
     }

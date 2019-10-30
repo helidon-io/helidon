@@ -36,7 +36,7 @@ public class SafeStreamObserver<T>
      *
      * @param streamObserver  the {@link io.grpc.stub.StreamObserver} to wrap
      */
-    public SafeStreamObserver(StreamObserver<? super T> streamObserver) {
+    private SafeStreamObserver(StreamObserver<? super T> streamObserver) {
         delegate = streamObserver;
     }
 
