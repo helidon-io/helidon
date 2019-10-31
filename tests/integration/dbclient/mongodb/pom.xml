@@ -24,17 +24,47 @@
         <groupId>io.helidon.tests.integration.dbclient</groupId>
         <artifactId>helidon-tests-integration-dbclient-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>heldion-tests-integration-dbclient-mongodb</artifactId>
-    <name>Helidon Tests Integration DB Client MongoDB Project</name>
+    <name>Integration Tests: DB Client MongoDB</name>
+
+    <properties>
+        <mongo.port>27017</mongo.port>
+        <mongo.host>127.0.0.1</mongo.host>
+        <mongo.database>test</mongo.database>
+        <mongo.user>helidon</mongo.user>
+        <mongo.password>h3l1d0n</mongo.password>
+        <mongo.roootuser>root</mongo.roootuser>
+        <mongo.roootpw>I4mGr00t</mongo.roootpw>
+    </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.tests.integration.dbclient</groupId>
+            <artifactId>heldion-tests-integration-dbclient-common</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-mongodb</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -47,4 +77,141 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.plugin.surefire}</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${version.plugin.surefire}</version>
+                <configuration>
+                    <parallel>methods</parallel>
+                    <threadCount>10</threadCount>
+                </configuration>
+                <executions>
+                    <!-- Wait for database to start up and initialize database-->
+                    <execution>
+                        <id>init</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>io.helidon.tests.integration.dbclient.mongodb.init.*IT</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <!-- Run ingegration tests. -->
+                    <execution>
+                        <id>test</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>io.helidon.tests.integration.dbclient.mongodb.tests.*IT</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <!-- Database cleanup. -->
+                    <execution>
+                        <id>destroy</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>io.helidon.tests.integration.dbclient.mongodb.destroy.*IT</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>0.31.0</version>
+                        <executions>
+                            <execution>
+                                <id>start</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>stop</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>mongo:4.2</name>
+                                    <alias>mongo</alias>
+                                    <run>
+                                        <env>
+                                            <MONGO_INITDB_ROOT_USERNAME>${mongo.roootuser}</MONGO_INITDB_ROOT_USERNAME>
+                                            <MONGO_INITDB_ROOT_PASSWORD>${mongo.roootpw}</MONGO_INITDB_ROOT_PASSWORD>
+                                            <MONGO_INITDB_DATABASE>${mongo.database}</MONGO_INITDB_DATABASE>
+                                        </env>
+                                        <hostname>${mongo.host}</hostname>
+                                        <ports>
+                                            <port>${mongo.host}:${mongo.port}:27017</port>
+                                        </ports>
+                                        <wait>
+                                            <log>MySQL server is up an running</log>
+                                            <tcp>
+                                                <host>127.0.0.1</host>
+                                                <ports>
+                                                    <port>${mongo.port}</port>
+                                                </ports>
+                                            </tcp>
+                                            <time>120000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                            <showLogs>true</showLogs>
+                            <startParallel>false</startParallel>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

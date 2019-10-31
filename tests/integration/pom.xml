@@ -24,6 +24,7 @@
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
@@ -33,6 +34,7 @@
     <name>Integration Tests</name>
 
     <modules>
+        <module>dbclient</module>
         <module>zipkin-mp-2.2</module>
         <module>mp-security-client</module>
         <module>health</module>

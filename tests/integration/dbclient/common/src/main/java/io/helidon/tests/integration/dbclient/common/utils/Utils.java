@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.jdbc.tests;
+package io.helidon.tests.integration.dbclient.common.utils;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,16 +21,16 @@ import java.util.concurrent.ExecutionException;
 
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
-import io.helidon.tests.integration.dbclient.jdbc.AbstractIT;
+import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
-import static io.helidon.tests.integration.dbclient.jdbc.AbstractIT.dbClient;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.dbClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**
  * Test utilities.
  */
-class Utils {
+public class Utils {
 
     private Utils() {
         throw new IllegalStateException("No instances of this class are allowed!");
@@ -44,7 +44,7 @@ class Utils {
      * @throws InterruptedException when database query failed
      * @throws ExecutionException if the current thread was interrupted
      */
-    static void verifyPokemon(DbRows<DbRow> rows, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyPokemon(DbRows<DbRow> rows, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(rows, notNullValue());
         List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
         assertThat(rowsList, hasSize(1));
@@ -63,7 +63,7 @@ class Utils {
      * @throws InterruptedException when database query failed
      * @throws ExecutionException if the current thread was interrupted
      */
-    static void verifyPokemon(Optional<DbRow> maybeRow, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyPokemon(Optional<DbRow> maybeRow, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         Integer id = row.column(1).as(Integer.class);
@@ -80,7 +80,7 @@ class Utils {
      * @throws InterruptedException when database query failed
      * @throws ExecutionException if the current thread was interrupted
      */
-    static void verifyInsertPokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyInsertPokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .namedGet("select-pokemon-order-arg", pokemon.getName())
@@ -101,7 +101,7 @@ class Utils {
      * @throws InterruptedException when database query failed
      * @throws ExecutionException if the current thread was interrupted
      */
-    static void verifyUpdatePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyUpdatePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .namedGet("select-pokemon-by-id", pokemon.getId())
@@ -122,7 +122,7 @@ class Utils {
      * @throws InterruptedException when database query failed
      * @throws ExecutionException if the current thread was interrupted
      */
-    static void verifyDeletePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+    public static void verifyDeletePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .namedGet("select-pokemon-by-id", pokemon.getId())

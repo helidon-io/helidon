@@ -16,7 +16,7 @@
 
 db:
   source: jdbc
-  url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.database}?useSSL=false
+  url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.database}?useSSL=false&allowPublicKeyRetrieval=true
   username: ${mysql.user}
   password: ${mysql.password}
 
