@@ -26,7 +26,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 
-import static io.helidon.tests.integration.dbclient.jdbc.AbstractIT.dbClient;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.dbClient;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
