@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  *       key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
  *       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
  *
- *   outcoming:
+ *   outgoing:
  *     test-channel:
  *       bootstrap.servers: localhost:9092
  *       topic: graph-done

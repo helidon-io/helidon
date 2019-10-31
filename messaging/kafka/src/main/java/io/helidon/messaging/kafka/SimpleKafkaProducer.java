@@ -63,7 +63,7 @@ public class SimpleKafkaProducer<K, V> implements Closeable {
      * @see io.helidon.config.Config
      */
     public SimpleKafkaProducer(String producerId, Config config) {
-        properties = new KafkaConfigProperties(config.get("mp.messaging.outcoming").get(producerId));
+        properties = new KafkaConfigProperties(config.get("mp.messaging.outgoing").get(producerId));
         producer = new KafkaProducer<>(properties);
     }
 
