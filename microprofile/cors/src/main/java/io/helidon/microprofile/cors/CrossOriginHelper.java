@@ -94,6 +94,12 @@ class CrossOriginHelper {
             return forbidden("CORS origin not in allowed list");
         }
 
+        String method = headers.getFirst(ACCESS_CONTROL_REQUEST_METHOD);
+        List<String> allowedMethods = Arrays.asList(crossOrigin.get().allowMethods());
+        if (!allowedMethods.contains(method) && !allowedMethods.contains("*")) {
+            return forbidden("CORS method not in allowed list");
+        }
+
         // TODO
 
         return Response.ok().build();

@@ -27,7 +27,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.Set;
 
@@ -38,18 +37,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
-
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.microprofile.cors.CrossOrigin.ORIGIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNull.nullValue;
 
 /**
  * Class CrossOriginTest.
@@ -115,7 +106,7 @@ public class CrossOriginTest {
     }
 
     @Test
-    void testPreflightForbidden() {
+    void testForbiddenOrigin() {
         Response response = target.path("/app/cors")
                 .request()
                 .header(ORIGIN, "http://not.allowed")
@@ -125,7 +116,27 @@ public class CrossOriginTest {
     }
 
     @Test
-    void testPreflightAllowed() {
+    void testAllowedOrigin() {
+        Response response = target.path("/app/cors")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void testForbiddenMethod() {
+        Response response = target.path("/app/cors")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.FORBIDDEN));
+    }
+
+    @Test
+    void testAllowedMethod() {
         Response response = target.path("/app/cors")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
