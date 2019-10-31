@@ -20,7 +20,7 @@
 :description: Helidon MP reactive routing
 = :keywords: helidon, rest, reactive, WebServer, route, routing
 
-Since Helidon 1.3.2
+Since Helidon 1.4
 
 == Configuring a reactive route in Helidon MP
 Helidon MP Server will pick up CDI beans that implement the `io.helidon.webserver.Service`
