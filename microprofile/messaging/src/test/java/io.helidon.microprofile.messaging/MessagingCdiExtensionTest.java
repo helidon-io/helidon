@@ -102,8 +102,8 @@ class MessagingCdiExtensionTest {
         MpConfigProviderResolver.instance().registerConfig((MpConfig) MpConfig.builder().config(config).build(), Thread.currentThread().getContextClassLoader());
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         assertThat(initializer, is(notNullValue()));
-        initializer.addBeanClasses(KafkaConsumingTestBean.class);
         initializer.addBeanClasses(KafkaConnectorFactory.class);
+        initializer.addBeanClasses(KafkaConsumingTestBean.class);
         cdiContainer = initializer.initialize();
 
         cdiContainer.select(KafkaConnectorFactory.class).stream().forEach(f -> f.getConsumers().forEach(c -> {

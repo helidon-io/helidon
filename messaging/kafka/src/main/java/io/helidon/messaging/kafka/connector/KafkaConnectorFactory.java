@@ -17,9 +17,9 @@
 package io.helidon.messaging.kafka.connector;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.Config;
 import io.helidon.messaging.kafka.SimpleKafkaConsumer;
 import io.helidon.microprofile.config.MpConfig;
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
@@ -42,6 +42,7 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory {
     public static final String CONNECTOR_NAME = "helidon-kafka";
 
     private List<SimpleKafkaConsumer<Object, Object>> consumers = new CopyOnWriteArrayList<>();
+    private ThreadPoolSupplier threadPoolSupplier = null;
 
     public void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
         consumers.forEach(SimpleKafkaConsumer::close);
@@ -52,11 +53,23 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory {
     }
 
     @Override
-    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
-        io.helidon.config.Config config1 = ((MpConfig) config).helidonConfig();
-        SimpleKafkaConsumer<Object, Object> simpleKafkaConsumer =
-                new SimpleKafkaConsumer<>(config1);
+    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(org.eclipse.microprofile.config.Config config) {
+        Config helidonConfig = ((MpConfig) config).helidonConfig();
+        SimpleKafkaConsumer<Object, Object> simpleKafkaConsumer = new SimpleKafkaConsumer<>(helidonConfig);
         consumers.add(simpleKafkaConsumer);
-        return simpleKafkaConsumer.createPublisherBuilder(ThreadPoolSupplier.create(config1.get("executor-service")).get());
+        return simpleKafkaConsumer.createPublisherBuilder(getThreadPoolSupplier(helidonConfig).get());
+    }
+
+    private ThreadPoolSupplier getThreadPoolSupplier(Config config) {
+        if (this.threadPoolSupplier != null) {
+            return this.threadPoolSupplier;
+        }
+        synchronized (this) {
+            if (this.threadPoolSupplier != null) {
+                return this.threadPoolSupplier;
+            }
+            this.threadPoolSupplier = ThreadPoolSupplier.create(config.get("executor-service"));
+            return threadPoolSupplier;
+        }
     }
 }

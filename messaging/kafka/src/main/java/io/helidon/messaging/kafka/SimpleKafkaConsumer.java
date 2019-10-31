@@ -170,7 +170,7 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                         ConsumerRecords<K, V> consumerRecords = consumer.poll(Duration.ofSeconds(5));
                         consumerRecords.forEach(cr -> {
                             KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
-                            subscriber.onNext(kafkaMessage);
+                            executorService.execute(() -> subscriber.onNext(kafkaMessage));
                         });
                     }
                 } catch (WakeupException ex) {
