@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
+import javax.enterprise.inject.spi.ProcessSyntheticBean;
 import javax.enterprise.util.AnnotationLiteral;
 
 import org.eclipse.microprofile.config.Config;
@@ -177,14 +178,26 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param event Event information.
      */
+    void registerFaultToleranceMethods(BeanManager bm, @Observes ProcessSyntheticBean<?> event) {
+        registerFaultToleranceMethods(bm.createAnnotatedType(event.getBean().getBeanClass()));
+    }
+
+    /**
+     * Collects all FT methods in a set for later processing.
+     *
+     * @param event Event information.
+     */
     void registerFaultToleranceMethods(@Observes ProcessManagedBean<?> event) {
-        AnnotatedType<?> type = event.getAnnotatedBeanClass();
+        registerFaultToleranceMethods(event.getAnnotatedBeanClass());
+    }
+
+    private void registerFaultToleranceMethods(AnnotatedType<?> type) {
         for (AnnotatedMethod<?> method : type.getMethods()) {
             if (isFaultToleranceMethod(type.getJavaClass(), method.getJavaMember())) {
                 getRegisteredMethods().add(new BeanMethod(type.getJavaClass(), method.getJavaMember()));
             }
         }
-    }
+        }
 
     /**
      * Registers metrics for all FT methods.
