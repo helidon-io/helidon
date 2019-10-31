@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.messaging;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.microprofile.config.MpConfig;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -23,7 +25,6 @@ import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import javax.enterprise.context.spi.Context;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.Bean;
@@ -31,10 +32,11 @@ import javax.enterprise.inject.spi.BeanManager;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- *  Subscriber with reference to {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
- *  /{@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotated method
+ * Subscriber with reference to {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
+ * /{@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotated method
  */
 public class IncomingSubscriber implements Subscriber<Message<?>> {
     private Object beanInstance;
@@ -75,9 +77,13 @@ public class IncomingSubscriber implements Subscriber<Message<?>> {
     @Override
     public void onNext(Message<?> message) {
         try {
-            //io.helidon.common.context.Contexts.runInContext(io.helidon.common.context.Context, java.lang.Runnable)
-            //
-            method.invoke(beanInstance, message);
+            Context parentContext = Context.create();
+            Context context = Context
+                    .builder()
+                    .parent(parentContext)
+                    .id(parentContext.id() + ":message-" + UUID.randomUUID().toString())
+                    .build();
+            Contexts.runInContext(context, () -> method.invoke(beanInstance, message));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -97,7 +103,7 @@ public class IncomingSubscriber implements Subscriber<Message<?>> {
     }
 
     private Object getBeanInstance(Bean<?> bean, BeanManager beanManager) {
-        Context context = beanManager.getContext(bean.getScope());
+        javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {
             CreationalContext creationalContext = beanManager.createCreationalContext(bean);
