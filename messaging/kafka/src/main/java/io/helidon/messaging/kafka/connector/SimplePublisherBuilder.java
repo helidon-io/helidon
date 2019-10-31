@@ -57,6 +57,18 @@ public class SimplePublisherBuilder<K, V> implements PublisherBuilder<KafkaMessa
     }
 
     @Override
+    public CompletionRunner<Void> to(Subscriber<? super KafkaMessage<K, V>> subscriber) {
+        //TODO: Gonna need this for outgoing
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <R> CompletionRunner<R> to(SubscriberBuilder<? super KafkaMessage<K, V>, ? extends R> subscriber) {
+        //TODO: Gonna need this for outgoing
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Publisher<KafkaMessage<K, V>> buildRs(ReactiveStreamsEngine engine) {
         throw new UnsupportedOperationException();
     }
@@ -193,16 +205,6 @@ public class SimplePublisherBuilder<K, V> implements PublisherBuilder<KafkaMessa
 
     @Override
     public PublisherBuilder<KafkaMessage<K, V>> onErrorResumeWithRsPublisher(Function<Throwable, ? extends Publisher<? extends KafkaMessage<K, V>>> errorHandler) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CompletionRunner<Void> to(Subscriber<? super KafkaMessage<K, V>> subscriber) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <R> CompletionRunner<R> to(SubscriberBuilder<? super KafkaMessage<K, V>, ? extends R> subscriber) {
         throw new UnsupportedOperationException();
     }
 

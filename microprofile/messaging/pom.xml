@@ -92,7 +92,7 @@
         <dependency>
             <groupId>io.reactivex.rxjava2</groupId>
             <artifactId>rxjava</artifactId>
-            <scope>test</scope>
+<!--            <scope>test</scope>-->
         </dependency>
         <dependency>
             <groupId>org.jboss.weld</groupId>

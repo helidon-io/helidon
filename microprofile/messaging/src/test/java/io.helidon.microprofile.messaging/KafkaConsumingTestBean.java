@@ -16,12 +16,16 @@
 
 package io.helidon.microprofile.messaging;
 
+import io.reactivex.Flowable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 @ApplicationScoped
@@ -29,18 +33,29 @@ public class KafkaConsumingTestBean {
 
     public static int EXPECTED_TOPIC_RECORD_NUMBER = 3;
     //Two methods -> two consumers of same topic
-    public static CountDownLatch latch = new CountDownLatch(EXPECTED_TOPIC_RECORD_NUMBER * 2);
+    public static CountDownLatch testChannelLatch = new CountDownLatch(EXPECTED_TOPIC_RECORD_NUMBER * 2);
+    public static CountDownLatch selfCallLatch = new CountDownLatch(2);
 
     @Incoming("test-channel")
     public void receiveMethod1(Message<ConsumerRecord<Long, String>> msg) {
-        latch.countDown();
-        System.out.println("Received message!!! ->" + msg.getPayload().value());
+        testChannelLatch.countDown();
+        System.out.println("Received message ->" + msg.getPayload().value());
     }
-
 
     @Incoming("test-channel")
     public void receiveMethod2(Message<ConsumerRecord<Long, String>> msg) {
-        latch.countDown();
-        System.out.println("Received message in second consumer!!! ->" + msg.getPayload().value());
+        testChannelLatch.countDown();
+        System.out.println("Received message in second consumer ->" + msg.getPayload().value());
+    }
+
+    @Outgoing("self-call-channel")
+    public Publisher<String> produceMessage() {
+        return Flowable.fromIterable(Arrays.asList("test1", "test2"));
+    }
+
+    @Incoming("self-call-channel")
+    public void receiveFromSelfMethod(String msg) {
+        selfCallLatch.countDown();
+        System.out.println("Received message from myself ->" + msg);
     }
 }

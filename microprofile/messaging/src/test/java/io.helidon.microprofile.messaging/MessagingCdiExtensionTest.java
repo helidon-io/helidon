@@ -124,7 +124,7 @@ class MessagingCdiExtensionTest {
     }
 
     @Test
-    void name() throws InterruptedException {
+    void incomingKafkaTest() throws InterruptedException {
         Properties p = new Properties();
         p.setProperty("mp.messaging.outcoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString());
         p.setProperty("mp.messaging.outcoming.test-channel.topic", TEST_TOPIC);
@@ -161,10 +161,18 @@ class MessagingCdiExtensionTest {
         });
 
         // Wait till 3 records are delivered
-        assertTrue(KafkaConsumingTestBean.latch.await(15, TimeUnit.SECONDS)
+        assertTrue(KafkaConsumingTestBean.testChannelLatch.await(15, TimeUnit.SECONDS)
                 , "All messages not delivered in time, number of unreceived messages: "
-                        + KafkaConsumingTestBean.latch.getCount());
+                        + KafkaConsumingTestBean.testChannelLatch.getCount());
         producer.close();
+    }
+
+    @Test
+    void directOutgoingIncomingTest() throws InterruptedException {
+        // Wait till 2 messages are delivered
+        assertTrue(KafkaConsumingTestBean.selfCallLatch.await(15, TimeUnit.SECONDS)
+                , "All messages not delivered in time, number of unreceived messages: "
+                        + KafkaConsumingTestBean.selfCallLatch.getCount());
     }
 
     /**
