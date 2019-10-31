@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.jdbc.tests;
+package io.helidon.tests.integration.dbclient.common.tests.simple;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,10 +21,10 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.helidon.tests.integration.dbclient.jdbc.AbstractIT;
+import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
-import static io.helidon.tests.integration.dbclient.jdbc.tests.Utils.verifyInsertPokemon;
-import static io.helidon.tests.integration.dbclient.jdbc.tests.Utils.verifyUpdatePokemon;
+import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
+import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpdatePokemon;
 
 /**
  * Test set of basic JDBC updates.

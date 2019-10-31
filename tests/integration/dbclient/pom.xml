@@ -31,10 +31,10 @@
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-    <name>Helidon Tests Integration DB Client Project</name>
+    <name>Integration Tests: DB Client</name>
 
     <description>
-        A set of tests that validate health checks
+        A set of tests that validate DB Client
     </description>
 
     <modules>

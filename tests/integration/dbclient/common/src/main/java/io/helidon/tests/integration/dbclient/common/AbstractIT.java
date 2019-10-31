@@ -1,3 +1,5 @@
+package io.helidon.tests.integration.dbclient.common;
+
 /*
  * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
@@ -13,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.jdbc;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;

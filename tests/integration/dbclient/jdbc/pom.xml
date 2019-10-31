@@ -24,11 +24,12 @@
         <groupId>io.helidon.tests.integration.dbclient</groupId>
         <artifactId>helidon-tests-integration-dbclient-project</artifactId>
         <version>1.2.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>heldion-tests-integration-dbclient-jdbc</artifactId>
-    <name>Helidon Tests Integration DB Client JDBC Project</name>
+    <name>Integration Tests: DB Client JDBC</name>
 
     <properties>
         <mysql.port>3306</mysql.port>
@@ -41,23 +42,33 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.tests.integration.dbclient</groupId>
+            <artifactId>heldion-tests-integration-dbclient-common</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-jdbc</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -78,7 +89,9 @@
                 <filtering>true</filtering>
             </testResource>
         </testResources>
+
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -87,6 +100,7 @@
                     <skipTests>true</skipTests>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -104,7 +118,6 @@
                             <goal>integration-test</goal>
                         </goals>
                         <configuration>
-                            <skipTests>false</skipTests>
                             <includes>
                                 <include>io.helidon.tests.integration.dbclient.jdbc.init.*IT</include>
                             </includes>
@@ -118,8 +131,11 @@
                             <goal>integration-test</goal>
                         </goals>
                         <configuration>
-                            <skipTests>false</skipTests>
+                            <dependenciesToScan>
+                                <dependency>io.helidon.tests.integration.dbclient:heldion-tests-integration-dbclient-common</dependency>
+                            </dependenciesToScan>
                             <includes>
+                                <include>io.helidon.tests.integration.dbclient.common.tests.simple.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.jdbc.tests.*IT</include>
                             </includes>
                         </configuration>
@@ -132,7 +148,6 @@
                             <goal>integration-test</goal>
                         </goals>
                         <configuration>
-                            <skipTests>false</skipTests>
                             <includes>
                                 <include>io.helidon.tests.integration.dbclient.jdbc.destroy.*IT</include>
                             </includes>
@@ -140,7 +155,9 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
+
     </build>
 
     <profiles>
@@ -171,7 +188,7 @@
                         <configuration>
                             <images>
                                 <image>
-                                    <name>mysql:5.7</name>
+                                    <name>mysql:8</name>
                                     <alias>mysql</alias>
                                     <run>
                                         <env>
@@ -197,6 +214,8 @@
                                     </run>
                                 </image>
                             </images>
+                            <showLogs>true</showLogs>
+                            <startParallel>false</startParallel>
                         </configuration>
                     </plugin>
                 </plugins>
