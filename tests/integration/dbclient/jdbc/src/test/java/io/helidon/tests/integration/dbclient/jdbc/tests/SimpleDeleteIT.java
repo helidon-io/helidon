@@ -34,7 +34,7 @@ import static io.helidon.tests.integration.dbclient.jdbc.tests.Utils.verifyInser
 public class SimpleDeleteIT extends AbstractIT {
 
     /** Maximum Pokemon ID. */
-    private static final int maxId = LAST_POKEMON_ID + 20;
+    private static final int BASE_ID = LAST_POKEMON_ID + 30;
 
     /** Map of pokemons for update tests. */
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
@@ -55,14 +55,14 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        int curId = maxId;
-        addPokemon(new Pokemon(++curId, "Rayquaza", TYPES.get(3), TYPES.get(16))); // maxId+1
-        addPokemon(new Pokemon(++curId, "Lugia", TYPES.get(3), TYPES.get(14)));    // maxId+2
-        addPokemon(new Pokemon(++curId, "Ho-Oh", TYPES.get(3), TYPES.get(10)));    // maxId+3
-        addPokemon(new Pokemon(++curId, "Raikou", TYPES.get(13)));                 // maxId+4
-        addPokemon(new Pokemon(++curId, "Giratina", TYPES.get(8), TYPES.get(16))); // maxId+5
-        addPokemon(new Pokemon(++curId, "Regirock", TYPES.get(6)));                // maxId+6
-        addPokemon(new Pokemon(++curId, "Kyogre", TYPES.get(11)));                 // maxId+7
+        int curId = BASE_ID;
+        addPokemon(new Pokemon(++curId, "Rayquaza", TYPES.get(3), TYPES.get(16))); // BASE_ID+1
+        addPokemon(new Pokemon(++curId, "Lugia", TYPES.get(3), TYPES.get(14)));    // BASE_ID+2
+        addPokemon(new Pokemon(++curId, "Ho-Oh", TYPES.get(3), TYPES.get(10)));    // BASE_ID+3
+        addPokemon(new Pokemon(++curId, "Raikou", TYPES.get(13)));                 // BASE_ID+4
+        addPokemon(new Pokemon(++curId, "Giratina", TYPES.get(8), TYPES.get(16))); // BASE_ID+5
+        addPokemon(new Pokemon(++curId, "Regirock", TYPES.get(6)));                // BASE_ID+6
+        addPokemon(new Pokemon(++curId, "Kyogre", TYPES.get(11)));                 // BASE_ID+7
     }
 
 
@@ -76,9 +76,9 @@ public class SimpleDeleteIT extends AbstractIT {
     public void testCreateNamedDeleteStrStrOrderArgs() throws ExecutionException, InterruptedException {
         Long result = dbClient.execute(exec -> exec
                 .createNamedDelete("delete-rayquaza", "DELETE FROM Pokemons WHERE id=?")
-                .addParam(POKEMONS.get(maxId+1).getId()).execute()
+                .addParam(POKEMONS.get(BASE_ID+1).getId()).execute()
         ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(maxId+1));
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+1));
     }
 
     /**
@@ -91,9 +91,9 @@ public class SimpleDeleteIT extends AbstractIT {
     public void testCreateNamedDeleteStrNamedArgs() throws ExecutionException, InterruptedException {
         Long result = dbClient.execute(exec -> exec
                 .createNamedDelete("delete-pokemon-named-arg")
-                .addParam("id", POKEMONS.get(maxId+2).getId()).execute()
+                .addParam("id", POKEMONS.get(BASE_ID+2).getId()).execute()
         ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(maxId+2));
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+2));
     }
 
     /**
@@ -106,9 +106,9 @@ public class SimpleDeleteIT extends AbstractIT {
     public void testCreateNamedDeleteStrOrderArgs() throws ExecutionException, InterruptedException {
         Long result = dbClient.execute(exec -> exec
                 .createNamedDelete("delete-pokemon-order-arg")
-                .addParam(POKEMONS.get(maxId+3).getId()).execute()
+                .addParam(POKEMONS.get(BASE_ID+3).getId()).execute()
         ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(maxId+3));
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+3));
     }
 
     /**
@@ -121,9 +121,9 @@ public class SimpleDeleteIT extends AbstractIT {
     public void testCreateDeleteNamedArgs() throws ExecutionException, InterruptedException {
         Long result = dbClient.execute(exec -> exec
                 .createDelete("DELETE FROM Pokemons WHERE id=:id")
-                .addParam("id", POKEMONS.get(maxId+4).getId()).execute()
+                .addParam("id", POKEMONS.get(BASE_ID+4).getId()).execute()
         ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(maxId+4));
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+4));
     }
 
     /**
@@ -136,9 +136,9 @@ public class SimpleDeleteIT extends AbstractIT {
     public void testCreateDeleteOrderArgs() throws ExecutionException, InterruptedException {
         Long result = dbClient.execute(exec -> exec
                 .createDelete("DELETE FROM Pokemons WHERE id=?")
-                .addParam(POKEMONS.get(maxId+5).getId()).execute()
+                .addParam(POKEMONS.get(BASE_ID+5).getId()).execute()
         ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(maxId+5));
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+5));
     }
 
     /**
@@ -150,9 +150,9 @@ public class SimpleDeleteIT extends AbstractIT {
     @Test
     public void testNamedDeleteOrderArgs() throws ExecutionException, InterruptedException {
         Long result = dbClient.execute(exec -> exec
-                .namedDelete("delete-pokemon-order-arg", POKEMONS.get(maxId+6).getId())
+                .namedDelete("delete-pokemon-order-arg", POKEMONS.get(BASE_ID+6).getId())
         ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(maxId+6));
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+6));
     }
 
     /**
@@ -164,9 +164,9 @@ public class SimpleDeleteIT extends AbstractIT {
     @Test
     public void testDeleteOrderArgs() throws ExecutionException, InterruptedException {
         Long result = dbClient.execute(exec -> exec
-                .delete("DELETE FROM Pokemons WHERE id=?", POKEMONS.get(maxId+7).getId())
+                .delete("DELETE FROM Pokemons WHERE id=?", POKEMONS.get(BASE_ID+7).getId())
         ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(maxId+7));
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+7));
     }
 
 }

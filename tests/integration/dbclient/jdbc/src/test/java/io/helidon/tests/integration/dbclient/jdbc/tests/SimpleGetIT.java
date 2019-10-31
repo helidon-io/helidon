@@ -41,7 +41,7 @@ public class SimpleGetIT extends AbstractIT {
     public void testCreateNamedGetStrStrNamedArgs() throws ExecutionException, InterruptedException {
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .createNamedGet("select-pikachu", "SELECT id, name FROM Pokemons WHERE id=:id")
-                .addParam("id", 1).execute()
+                .addParam("id", POKEMONS.get(1).getId()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(maybeRow, POKEMONS.get(1));
     }
@@ -56,9 +56,9 @@ public class SimpleGetIT extends AbstractIT {
     public void testCreateNamedGetStrNamedArgs() throws ExecutionException, InterruptedException {
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .createNamedGet("select-pokemon-named-arg")
-                .addParam("name", POKEMONS.get(1).getName()).execute()
+                .addParam("name", POKEMONS.get(2).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(maybeRow, POKEMONS.get(1));
+        verifyPokemon(maybeRow, POKEMONS.get(2));
     }
 
     /**
@@ -71,9 +71,9 @@ public class SimpleGetIT extends AbstractIT {
     public void testCreateNamedGetStrOrderArgs() throws ExecutionException, InterruptedException {
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .createNamedGet("select-pokemon-order-arg")
-                .addParam(POKEMONS.get(1).getName()).execute()
+                .addParam(POKEMONS.get(3).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(maybeRow, POKEMONS.get(1));
+        verifyPokemon(maybeRow, POKEMONS.get(3));
     }
 
     /**
@@ -86,9 +86,9 @@ public class SimpleGetIT extends AbstractIT {
     public void testCreateGetNamedArgs() throws ExecutionException, InterruptedException {
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .createGet("SELECT id, name FROM Pokemons WHERE name=:name")
-                .addParam("name", POKEMONS.get(1).getName()).execute()
+                .addParam("name", POKEMONS.get(4).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(maybeRow, POKEMONS.get(1));
+        verifyPokemon(maybeRow, POKEMONS.get(4));
     }
 
     /**
@@ -101,9 +101,9 @@ public class SimpleGetIT extends AbstractIT {
     public void testCreateGetOrderArgs() throws ExecutionException, InterruptedException {
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
                 .createGet("SELECT id, name FROM Pokemons WHERE name=?")
-                .addParam(POKEMONS.get(1).getName()).execute()
+                .addParam(POKEMONS.get(5).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(maybeRow, POKEMONS.get(1));
+        verifyPokemon(maybeRow, POKEMONS.get(5));
     }
 
     /**
@@ -115,9 +115,9 @@ public class SimpleGetIT extends AbstractIT {
     @Test
     public void testNamedGetStrOrderArgs() throws ExecutionException, InterruptedException {
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
-                .namedGet("select-pokemon-order-arg", POKEMONS.get(1).getName())
+                .namedGet("select-pokemon-order-arg", POKEMONS.get(6).getName())
         ).toCompletableFuture().get();
-        verifyPokemon(maybeRow, POKEMONS.get(1));
+        verifyPokemon(maybeRow, POKEMONS.get(6));
     }
 
     /**
@@ -129,9 +129,9 @@ public class SimpleGetIT extends AbstractIT {
     @Test
     public void testGetStrOrderArgs() throws ExecutionException, InterruptedException {
         Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
-                .get("SELECT id, name FROM Pokemons WHERE name=?", POKEMONS.get(1).getName())
+                .get("SELECT id, name FROM Pokemons WHERE name=?", POKEMONS.get(7).getName())
         ).toCompletableFuture().get();
-        verifyPokemon(maybeRow, POKEMONS.get(1));
+        verifyPokemon(maybeRow, POKEMONS.get(7));
     }
 
 }

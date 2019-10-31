@@ -134,6 +134,8 @@ public abstract class AbstractIT {
         POKEMONS.put(3, new Pokemon(3, "Machop", TYPES.get(2)));
         POKEMONS.put(4, new Pokemon(4, "Snorlax", TYPES.get(1)));
         POKEMONS.put(5, new Pokemon(5, "Charizard", TYPES.get(10), TYPES.get(3)));
+        POKEMONS.put(6, new Pokemon(6, "Meowth", TYPES.get(1)));
+        POKEMONS.put(7, new Pokemon(7, "Gyarados", TYPES.get(3), TYPES.get(11)));
     }
 
     /** Last used id in Pokemons table. */

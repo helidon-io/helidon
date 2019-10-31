@@ -40,10 +40,11 @@ public class SimpleQueriesIT extends AbstractIT {
      * @throws ExecutionException if the current thread was interrupted
      */
     @Test
-    public void testCreateOrderQueryStrStrNamedArgs() throws ExecutionException, InterruptedException {
+    public void testCreateNamedQueryStrStrOrderArgs() throws ExecutionException, InterruptedException {
         // This call shall register named query
         DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .createNamedQuery("select-pikachu", "SELECT id, name FROM Pokemons WHERE id=?").addParam(1).execute()
+                .createNamedQuery("select-pikachu", "SELECT id, name FROM Pokemons WHERE id=?")
+                .addParam(POKEMONS.get(1).getId()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(rows, POKEMONS.get(1));
 // Not implemented yet
@@ -68,9 +69,9 @@ public class SimpleQueriesIT extends AbstractIT {
     public void testCreateNamedQueryStrNamedArgs() throws ExecutionException, InterruptedException {
         DbRows<DbRow> rows = dbClient.execute(exec -> exec
                 .createNamedQuery("select-pokemon-named-arg")
-                .addParam("name", POKEMONS.get(1).getName()).execute()
+                .addParam("name", POKEMONS.get(2).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(rows, POKEMONS.get(1));
+        verifyPokemon(rows, POKEMONS.get(2));
     }
 
     /**
@@ -80,12 +81,12 @@ public class SimpleQueriesIT extends AbstractIT {
      * @throws ExecutionException if the current thread was interrupted
      */
     @Test
-    public void testCreateOrderQueryStrOrderArgs() throws ExecutionException, InterruptedException {
+    public void testCreateNamedQueryStrOrderArgs() throws ExecutionException, InterruptedException {
         DbRows<DbRow> rows = dbClient.execute(exec -> exec
                 .createNamedQuery("select-pokemon-order-arg")
-                .addParam(POKEMONS.get(1).getName()).execute()
+                .addParam(POKEMONS.get(3).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(rows, POKEMONS.get(1));
+        verifyPokemon(rows, POKEMONS.get(3));
     }
 
     /**
@@ -98,9 +99,9 @@ public class SimpleQueriesIT extends AbstractIT {
     public void testCreateQueryNamedArgs() throws ExecutionException, InterruptedException {
         DbRows<DbRow> rows = dbClient.execute(exec -> exec
                 .createQuery("SELECT id, name FROM Pokemons WHERE name=:name")
-                .addParam("name", POKEMONS.get(1).getName()).execute()
+                .addParam("name", POKEMONS.get(4).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(rows, POKEMONS.get(1));
+        verifyPokemon(rows, POKEMONS.get(4));
     }
 
     /**
@@ -113,9 +114,9 @@ public class SimpleQueriesIT extends AbstractIT {
     public void testCreateQueryOrderArgs() throws ExecutionException, InterruptedException {
         DbRows<DbRow> rows = dbClient.execute(exec -> exec
                 .createQuery("SELECT id, name FROM Pokemons WHERE name=?")
-                .addParam(POKEMONS.get(1).getName()).execute()
+                .addParam(POKEMONS.get(5).getName()).execute()
         ).toCompletableFuture().get();
-        verifyPokemon(rows, POKEMONS.get(1));
+        verifyPokemon(rows, POKEMONS.get(5));
     }
 
     /**
@@ -127,9 +128,9 @@ public class SimpleQueriesIT extends AbstractIT {
     @Test
     public void testNamedQueryOrderArgs() throws ExecutionException, InterruptedException {
         DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .namedQuery("select-pokemon-order-arg", POKEMONS.get(1).getName())
+                .namedQuery("select-pokemon-order-arg", POKEMONS.get(6).getName())
         ).toCompletableFuture().get();
-        verifyPokemon(rows, POKEMONS.get(1));
+        verifyPokemon(rows, POKEMONS.get(6));
     }
 
     /**
@@ -141,10 +142,9 @@ public class SimpleQueriesIT extends AbstractIT {
     @Test
     public void testQueryOrderArgs() throws ExecutionException, InterruptedException {
         DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .query("SELECT id, name FROM Pokemons WHERE name=?", POKEMONS.get(1).getName())
+                .query("SELECT id, name FROM Pokemons WHERE name=?", POKEMONS.get(7).getName())
         ).toCompletableFuture().get();
-        verifyPokemon(rows, POKEMONS.get(1));
+        verifyPokemon(rows, POKEMONS.get(7));
     }
-
 
 }

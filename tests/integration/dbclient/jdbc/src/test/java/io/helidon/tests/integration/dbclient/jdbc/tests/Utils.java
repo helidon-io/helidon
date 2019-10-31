@@ -51,7 +51,7 @@ class Utils {
         DbRow row = rowsList.get(0);
         Integer id = row.column(1).as(Integer.class);
         String name = row.column(2).as(String.class);
-        assertThat(id, equalTo(1));
+        assertThat(id, equalTo(pokemon.getId()));
         assertThat(name, pokemon.getName().equals(name));
     }
 
@@ -68,7 +68,7 @@ class Utils {
         DbRow row = maybeRow.get();
         Integer id = row.column(1).as(Integer.class);
         String name = row.column(2).as(String.class);
-        assertThat(id, equalTo(1));
+        assertThat(id, equalTo(pokemon.getId()));
         assertThat(name, pokemon.getName().equals(name));
     }
 
