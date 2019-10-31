@@ -91,6 +91,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${version.plugin.surefire}</version>
+                <configuration>
+                    <parallel>methods</parallel>
+                    <threadCount>10</threadCount>
+                </configuration>
                 <executions>
                     <!-- Wait for database to start up and initialize database-->
                     <execution>
