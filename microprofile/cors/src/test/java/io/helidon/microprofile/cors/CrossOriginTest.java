@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.microprofile.cors.CrossOrigin.ORIGIN;
 import static org.hamcrest.CoreMatchers.is;
@@ -76,13 +77,34 @@ public class CrossOriginTest {
 
         @Override
         public Set<Class<?>> getClasses() {
-            return CollectionsHelper.setOf(CorsResource1.class);
+            return CollectionsHelper.setOf(CorsResource1.class, CorsResource2.class);
         }
     }
 
     @RequestScoped
-    @Path("/cors")
+    @Path("/cors1")
     static public class CorsResource1 {
+
+        @OPTIONS
+        @CrossOrigin
+        public String options() {
+            return "options";
+        }
+
+        @GET
+        public String getCors() {
+            return "getCors";
+        }
+
+        @PUT
+        public String putCors() {
+            return "putCors";
+        }
+    }
+
+    @RequestScoped
+    @Path("/cors2")
+    static public class CorsResource2 {
 
         @OPTIONS
         @CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
@@ -106,8 +128,50 @@ public class CrossOriginTest {
     }
 
     @Test
-    void testForbiddenOrigin() {
-        Response response = target.path("/app/cors")
+    void test1AllowedOrigin() {
+        Response response = target.path("/app/cors1")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void test1AllowedMethod() {
+        Response response = target.path("/app/cors1")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void test1AllowedHeaders1() {
+        Response response = target.path("/app/cors1")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void test1AllowedHeaders2() {
+        Response response = target.path("/app/cors1")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void test2ForbiddenOrigin() {
+        Response response = target.path("/app/cors2")
                 .request()
                 .header(ORIGIN, "http://not.allowed")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -117,7 +181,7 @@ public class CrossOriginTest {
 
     @Test
     void testAllowedOrigin() {
-        Response response = target.path("/app/cors")
+        Response response = target.path("/app/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -126,8 +190,8 @@ public class CrossOriginTest {
     }
 
     @Test
-    void testForbiddenMethod() {
-        Response response = target.path("/app/cors")
+    void test2ForbiddenMethod() {
+        Response response = target.path("/app/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
@@ -136,11 +200,56 @@ public class CrossOriginTest {
     }
 
     @Test
-    void testAllowedMethod() {
-        Response response = target.path("/app/cors")
+    void test2AllowedMethod() {
+        Response response = target.path("/app/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void test2ForbiddenHeader() {
+        Response response = target.path("/app/cors2")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar, X-oops")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.FORBIDDEN));
+    }
+
+    @Test
+    void test2AllowedHeaders1() {
+        Response response = target.path("/app/cors2")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void test2AllowedHeaders2() {
+        Response response = target.path("/app/cors2")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
+    }
+
+    @Test
+    void test2AllowedHeaders3() {
+        Response response = target.path("/app/cors2")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
                 .options();
         assertThat(response.getStatusInfo(), is(Response.Status.OK));
     }

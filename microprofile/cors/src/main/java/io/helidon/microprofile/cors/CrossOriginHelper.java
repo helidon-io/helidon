@@ -18,6 +18,8 @@ package io.helidon.microprofile.cors;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,12 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.microprofile.cors.CrossOrigin.ORIGIN;
 
@@ -90,21 +98,75 @@ class CrossOriginHelper {
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
-        if (!allowedOrigins.contains(origin) && !allowedOrigins.contains("*")) {
+        if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins)) {
             return forbidden("CORS origin not in allowed list");
         }
 
+        // Check if method is allowed
         String method = headers.getFirst(ACCESS_CONTROL_REQUEST_METHOD);
         List<String> allowedMethods = Arrays.asList(crossOrigin.get().allowMethods());
-        if (!allowedMethods.contains(method) && !allowedMethods.contains("*")) {
+        if (!allowedMethods.contains("*") && !contains(method, allowedMethods)) {
             return forbidden("CORS method not in allowed list");
         }
 
-        // TODO
+        // Check if headers are allowed
+        Set<String> requestHeaders = parseHeader(headers.get(ACCESS_CONTROL_REQUEST_HEADERS));
+        List<String> allowedHeaders = Arrays.asList(crossOrigin.get().allowHeaders());
+        if (!allowedHeaders.contains("*") && !contains(requestHeaders, allowedHeaders)) {
+            return forbidden("CORS headers not in allowed list");
+        }
 
-        return Response.ok().build();
+        // Build successful response
+        Response.ResponseBuilder builder = Response.ok();
+        builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, crossOrigin.get().allowCredentials());
+        builder.header(ACCESS_CONTROL_ALLOW_METHODS, method);
+        builder.header(ACCESS_CONTROL_ALLOW_HEADERS, formatHeader(requestHeaders.toArray()));
+        long maxAge = crossOrigin.get().maxAge();
+        if (maxAge > 0) {
+            builder.header(ACCESS_CONTROL_MAX_AGE, maxAge);
+        }
+        return builder.build();
     }
 
+    /**
+     * Checks containment in a {@code Collection<String>} case insensitively.
+     *
+     * @param item The string.
+     * @param collection The collection.
+     * @return Outcome of test.
+     */
+    static boolean contains(String item, Collection<String> collection) {
+        for (String s : collection) {
+            if (s.equalsIgnoreCase(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks containment in two collections, case insensitively.
+     *
+     * @param left First collection.
+     * @param right Second collection.
+     * @return Outcome of test.
+     */
+    static boolean contains(Collection<String> left, Collection<String> right) {
+        for (String s : left) {
+            if (!contains(s, right)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns response with forbidden status and entity created from message.
+     *
+     * @param message Message in entity.
+     * @return A {@code Response} instance.
+     */
     static Response forbidden(String message) {
         return Response.status(Response.Status.FORBIDDEN).entity(message).build();
     }
@@ -162,10 +224,26 @@ class CrossOriginHelper {
      */
     static Set<String> parseHeader(String header) {
         Set<String> result = new HashSet<>();
-        StringTokenizer tokenizer = new StringTokenizer(header, " ,");
+        StringTokenizer tokenizer = new StringTokenizer(header, ",");
         while (tokenizer.hasMoreTokens()) {
-            result.add(tokenizer.nextToken().trim());
+            String value = tokenizer.nextToken().trim();
+            if (value.length() > 0) {
+                result.add(value);
+            }
         }
         return result;
+    }
+
+    /**
+     * Parse a list of list of headers as a set.
+     *
+     * @param headers Header value as a list, each a potential list.
+     * @return Set of header values.
+     */
+    static Set<String> parseHeader(List<String> headers) {
+        if (headers == null) {
+            return Collections.emptySet();
+        }
+        return parseHeader(headers.stream().reduce("", (a, b) -> a + "," + b));
     }
 }
