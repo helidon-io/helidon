@@ -15,12 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.jdbc.tests;
 
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.jdbc.AbstractIT;
 
 import static io.helidon.tests.integration.dbclient.jdbc.tests.Utils.verifyInsertPokemon;
@@ -31,21 +28,7 @@ import static io.helidon.tests.integration.dbclient.jdbc.tests.Utils.verifyInser
 public class SimpleInsertIT extends AbstractIT {
 
     /** Maximum Pokemon ID. */
-    private static int maxId;
-
-    /**
-     * Initialize tests of basic JDBC inserts.
-     *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
-     */
-    @BeforeAll
-    public static void setup() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
-                .namedGet("select-max-id")
-        ).toCompletableFuture().get();
-        maybeRow.ifPresent(row -> maxId = row.column(1).as(Integer.class));
-    }
+    private static final int BASE_ID = LAST_POKEMON_ID + 10;
 
     /**
      * Verify {@code createNamedInsert(String, String)} API method with named parameters.
@@ -55,7 +38,7 @@ public class SimpleInsertIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(++maxId, "Bulbasaur", TYPES.get(4), TYPES.get(12));
+        Pokemon pokemon = new Pokemon(BASE_ID+1, "Bulbasaur", TYPES.get(4), TYPES.get(12));
        Long result = dbClient.execute(exec -> exec
                 .createNamedInsert("insert-bulbasaur", "INSERT INTO Pokemons(id, name) VALUES(:id, :name)")
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
@@ -71,7 +54,7 @@ public class SimpleInsertIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedInsertStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(++maxId, "Ivysaur", TYPES.get(4), TYPES.get(12));
+        Pokemon pokemon = new Pokemon(BASE_ID+2, "Ivysaur", TYPES.get(4), TYPES.get(12));
        Long result = dbClient.execute(exec -> exec
                 .createNamedInsert("insert-pokemon-named-arg")
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
@@ -87,7 +70,7 @@ public class SimpleInsertIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedInsertStrOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(++maxId, "Venusaur", TYPES.get(4), TYPES.get(12));
+        Pokemon pokemon = new Pokemon(BASE_ID+3, "Venusaur", TYPES.get(4), TYPES.get(12));
        Long result = dbClient.execute(exec -> exec
                 .createNamedInsert("insert-pokemon-order-arg")
                 .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
@@ -103,7 +86,7 @@ public class SimpleInsertIT extends AbstractIT {
      */
     @Test
     public void testCreateInsertNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(++maxId, "Magby", TYPES.get(10));
+        Pokemon pokemon = new Pokemon(BASE_ID+4, "Magby", TYPES.get(10));
        Long result = dbClient.execute(exec -> exec
                 .createInsert("INSERT INTO Pokemons(id, name) VALUES(:id, :name)")
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
@@ -119,7 +102,7 @@ public class SimpleInsertIT extends AbstractIT {
      */
     @Test
     public void testCreateInsertOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(++maxId, "Magmar", TYPES.get(10));
+        Pokemon pokemon = new Pokemon(BASE_ID+5, "Magmar", TYPES.get(10));
        Long result = dbClient.execute(exec -> exec
                 .createInsert("INSERT INTO Pokemons(id, name) VALUES(?, ?)")
                 .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
@@ -135,7 +118,7 @@ public class SimpleInsertIT extends AbstractIT {
      */
     @Test
     public void testNamedInsertOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(++maxId, "Rattata", TYPES.get(1));
+        Pokemon pokemon = new Pokemon(BASE_ID+6, "Rattata", TYPES.get(1));
         Long result = dbClient.execute(exec -> exec
                 .namedInsert("insert-pokemon-order-arg", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();
@@ -150,7 +133,7 @@ public class SimpleInsertIT extends AbstractIT {
      */
     @Test
     public void testInsertOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(++maxId, "Raticate", TYPES.get(1));
+        Pokemon pokemon = new Pokemon(BASE_ID+7, "Raticate", TYPES.get(1));
        Long result = dbClient.execute(exec -> exec
                 .insert("INSERT INTO Pokemons(id, name) VALUES(?, ?)", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();

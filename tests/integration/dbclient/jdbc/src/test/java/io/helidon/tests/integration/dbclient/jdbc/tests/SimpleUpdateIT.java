@@ -32,7 +32,7 @@ import static io.helidon.tests.integration.dbclient.jdbc.tests.Utils.verifyUpdat
 public class SimpleUpdateIT extends AbstractIT {
 
     /** Maximum Pokemon ID. */
-    private static final int maxId = LAST_POKEMON_ID + 10;
+    private static final int BASE_ID = LAST_POKEMON_ID + 20;
 
     /** Map of pokemons for update tests. */
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
@@ -53,14 +53,14 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        int curId = maxId;
-        addPokemon(new Pokemon(++curId, "Spearow", TYPES.get(1), TYPES.get(3))); // maxId+1
-        addPokemon(new Pokemon(++curId, "Fearow", TYPES.get(1), TYPES.get(3)));  // maxId+2
-        addPokemon(new Pokemon(++curId, "Ekans", TYPES.get(4)));                 // maxId+3
-        addPokemon(new Pokemon(++curId, "Arbok", TYPES.get(4)));                 // maxId+4
-        addPokemon(new Pokemon(++curId, "Sandshrew", TYPES.get(5)));             // maxId+5
-        addPokemon(new Pokemon(++curId, "Sandslash", TYPES.get(5)));             // maxId+6
-        addPokemon(new Pokemon(++curId, "Diglett", TYPES.get(5)));               // maxId+7
+        int curId = BASE_ID;
+        addPokemon(new Pokemon(++curId, "Spearow", TYPES.get(1), TYPES.get(3))); // BASE_ID+1
+        addPokemon(new Pokemon(++curId, "Fearow", TYPES.get(1), TYPES.get(3)));  // BASE_ID+2
+        addPokemon(new Pokemon(++curId, "Ekans", TYPES.get(4)));                 // BASE_ID+3
+        addPokemon(new Pokemon(++curId, "Arbok", TYPES.get(4)));                 // BASE_ID+4
+        addPokemon(new Pokemon(++curId, "Sandshrew", TYPES.get(5)));             // BASE_ID+5
+        addPokemon(new Pokemon(++curId, "Sandslash", TYPES.get(5)));             // BASE_ID+6
+        addPokemon(new Pokemon(++curId, "Diglett", TYPES.get(5)));               // BASE_ID+7
     }
 
     /**
@@ -71,8 +71,8 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedUpdateStrStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(maxId+1);
-        Pokemon updatedPokemon = new Pokemon(maxId+1, "Fearow", srcPokemon.getTypesArray());
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID+1);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID+1, "Fearow", srcPokemon.getTypesArray());
         Long result = dbClient.execute(exec -> exec
                 .createNamedUpdate("update-spearow", "UPDATE Pokemons SET name=:name WHERE id=:id")
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
@@ -88,8 +88,8 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedUpdateStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(maxId+2);
-        Pokemon updatedPokemon = new Pokemon(maxId+2, "Spearow", srcPokemon.getTypesArray());
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID+2);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID+2, "Spearow", srcPokemon.getTypesArray());
         Long result = dbClient.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-named-arg")
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
@@ -105,8 +105,8 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedUpdateStrOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(maxId+3);
-        Pokemon updatedPokemon = new Pokemon(maxId+3, "Arbok", srcPokemon.getTypesArray());
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID+3);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID+3, "Arbok", srcPokemon.getTypesArray());
         Long result = dbClient.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-order-arg")
                 .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
@@ -122,8 +122,8 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @Test
     public void testCreateUpdateNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(maxId+4);
-        Pokemon updatedPokemon = new Pokemon(maxId+4, "Ekans", srcPokemon.getTypesArray());
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID+4);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID+4, "Ekans", srcPokemon.getTypesArray());
         Long result = dbClient.execute(exec -> exec
                 .createUpdate("UPDATE Pokemons SET name=:name WHERE id=:id")
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
@@ -139,8 +139,8 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @Test
     public void testCreateUpdateOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(maxId+5);
-        Pokemon updatedPokemon = new Pokemon(maxId+5, "Diglett", srcPokemon.getTypesArray());
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID+5);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID+5, "Diglett", srcPokemon.getTypesArray());
         Long result = dbClient.execute(exec -> exec
                 .createUpdate("UPDATE Pokemons SET name=? WHERE id=?")
                 .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
@@ -156,8 +156,8 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @Test
     public void testNamedUpdateNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(maxId+6);
-        Pokemon updatedPokemon = new Pokemon(maxId+6, "Sandshrew", srcPokemon.getTypesArray());
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID+6);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID+6, "Sandshrew", srcPokemon.getTypesArray());
         Long result = dbClient.execute(exec -> exec
                 .namedUpdate("update-pokemon-order-arg", updatedPokemon.getName(), updatedPokemon.getId())
         ).toCompletableFuture().get();
@@ -172,8 +172,8 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @Test
     public void testUpdateOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(maxId+7);
-        Pokemon updatedPokemon = new Pokemon(maxId+7, "Sandslash", srcPokemon.getTypesArray());
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID+7);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID+7, "Sandslash", srcPokemon.getTypesArray());
         Long result = dbClient.execute(exec -> exec
                 .update("UPDATE Pokemons SET name=? WHERE id=?", updatedPokemon.getName(), updatedPokemon.getId())
         ).toCompletableFuture().get();
