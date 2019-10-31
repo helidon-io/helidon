@@ -20,12 +20,15 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.util.Set;
 
 import io.helidon.common.CollectionsHelper;
@@ -42,6 +45,8 @@ import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIG
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
 
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.microprofile.cors.CrossOrigin.ORIGIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -53,18 +58,24 @@ public class CrossOriginTest {
 
     private static Client client;
     private static Server server;
+    private static WebTarget target;
+
+    static {
+        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+    }
 
     @BeforeAll
     static void initClass() {
-        client = ClientBuilder.newClient();
         server = Server.builder()
                 .addApplication("/app", new CorsApplication())
                 .build();
         server.start();
+        client = ClientBuilder.newClient();
+        target = client.target("http://localhost:" + server.port());
     }
 
     @AfterAll
-    static void destroyClass() {
+    static void destroyClass() throws Exception {
         server.stop();
         client.close();
     }
@@ -78,51 +89,48 @@ public class CrossOriginTest {
         }
     }
 
-    @CrossOrigin
     @RequestScoped
     @Path("/cors")
     static public class CorsResource1 {
 
-        @GET
-        @Path("defaults")
-        public String defaults() {
-            return "defaults";
-        }
-
-        @GET
+        @OPTIONS
         @CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
                 allowHeaders = {"X-foo", "X-bar"},
                 allowMethods = {HttpMethod.GET, HttpMethod.PUT},
                 allowCredentials = true,
                 maxAge = -1)
-        @Path("cors1")
-        public String cors1() {
-            return "cors1";
+        public String options() {
+            return "options";
+        }
+
+        @GET
+        public String getCors() {
+            return "getCors";
+        }
+
+        @PUT
+        public String putCors() {
+            return "putCors";
         }
     }
 
     @Test
-    void testCorsDefaults() {
-        WebTarget target = client.target("http://localhost:" + server.port());
-        MultivaluedMap<String, Object> headers = target.path("/app/cors/defaults").request().get().getHeaders();
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("*"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_METHODS), is("*"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_HEADERS), is("*"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_MAX_AGE), is("3600"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS), is(nullValue()));
-        assertThat(headers.getFirst(ACCESS_CONTROL_EXPOSE_HEADERS), is(nullValue()));
+    void testPreflightForbidden() {
+        Response response = target.path("/app/cors")
+                .request()
+                .header(ORIGIN, "http://not.allowed")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.FORBIDDEN));
     }
 
     @Test
-    void testCors1() {
-        WebTarget target = client.target("http://localhost:" + server.port());
-        MultivaluedMap<String, Object> headers = target.path("/app/cors/cors1").request().get().getHeaders();
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_ORIGIN),
-                is("http://foo.bar, http://bar.foo"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_METHODS), is("GET, PUT"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_HEADERS), is("X-foo, X-bar"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS), is("true"));
-        assertThat(headers.getFirst(ACCESS_CONTROL_EXPOSE_HEADERS), is(nullValue()));
-        assertThat(headers.getFirst(ACCESS_CONTROL_MAX_AGE), is(nullValue()));
+    void testPreflightAllowed() {
+        Response response = target.path("/app/cors")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(response.getStatusInfo(), is(Response.Status.OK));
     }
 }

@@ -16,98 +16,43 @@
 
 package io.helidon.microprofile.cors;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.Optional;
-
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.microprofile.cors.CrossOriginHelper.findRequestType;
+import static io.helidon.microprofile.cors.CrossOriginHelper.processPreFlight;
 
 /**
  * Class CrossOriginFilter.
  */
-public class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilter {
+class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     @Context
     private ResourceInfo resourceInfo;
 
     @Override
-    public void filter(ContainerRequestContext requestContext) throws IOException {
+    public void filter(ContainerRequestContext requestContext) {
+        switch (findRequestType(requestContext)) {
+            case NORMAL:
+                // no-op
+                return;
+            case CORS:
+                break;
+            case PREFLIGHT:
+                Response response = processPreFlight(requestContext, resourceInfo);
+                requestContext.abortWith(response);
+                break;
+            default:
+                throw new IllegalStateException("Invalid value for enum RequestType");
+        }
     }
 
     @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
-            throws IOException {
-        lookupAnnotation(resourceInfo.getResourceClass(), resourceInfo.getResourceMethod())
-                .ifPresent(crossOrigin -> {
-                    MultivaluedMap<String, Object> headers = responseContext.getHeaders();
-                    formatArray(crossOrigin.value()).ifPresent(
-                            s -> headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, s));
-                    formatArray(crossOrigin.allowMethods()).ifPresent(
-                            s -> headers.add(ACCESS_CONTROL_ALLOW_METHODS, s));
-                    formatArray(crossOrigin.allowHeaders()).ifPresent(
-                            s -> headers.add(ACCESS_CONTROL_ALLOW_HEADERS, s));
-                    formatArray(crossOrigin.exposeHeaders()).ifPresent(
-                            s -> headers.add(ACCESS_CONTROL_EXPOSE_HEADERS, s));
-                    if (crossOrigin.allowCredentials()) {
-                        headers.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-                    }
-                    if (crossOrigin.maxAge() >= 0) {
-                        headers.add(ACCESS_CONTROL_MAX_AGE, crossOrigin.maxAge());
-                    }
-                });
-    }
-
-    /**
-     * Looks up a {@code CrossOrigin} annotation in method first and then class.
-     *
-     * @param beanClass The class.
-     * @param method The method.
-     * @return Outcome of lookup.
-     */
-    static Optional<CrossOrigin> lookupAnnotation(Class<?> beanClass, Method method) {
-        CrossOrigin annotation = method.getAnnotation(CrossOrigin.class);
-        if (annotation == null) {
-            annotation = beanClass.getAnnotation(CrossOrigin.class);
-            if (annotation == null) {
-                annotation = method.getDeclaringClass().getAnnotation(CrossOrigin.class);
-            }
-        }
-        return Optional.ofNullable(annotation);
-    }
-
-    /**
-     * Formats an array as a comma-separate list without brackets.
-     *
-     * @param array The array.
-     * @param <T> Type of elements in array.
-     * @return Formatted array as an {@code Optional}.
-     */
-    static <T> Optional<String> formatArray(T[] array) {
-        if (array.length == 0) {
-            return Optional.empty();
-        }
-        int i = 0;
-        StringBuilder builder = new StringBuilder();
-        do {
-            builder.append(array[i++].toString());
-            if (i == array.length) {
-                break;
-            }
-            builder.append(", ");
-        } while (true);
-        return Optional.of(builder.toString());
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
     }
 }

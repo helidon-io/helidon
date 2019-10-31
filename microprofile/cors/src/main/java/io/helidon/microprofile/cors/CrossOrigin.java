@@ -33,6 +33,21 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface CrossOrigin {
 
     /**
+     * Header Origin.
+     */
+    String ORIGIN = "Origin";
+
+    /**
+     * Header Access-Control-Request-Method.
+     */
+    String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
+
+    /**
+     * Header Access-Control-Request-Headers.
+     */
+    String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
+
+    /**
      * Header Access-Control-Allow-Origin.
      */
     String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
