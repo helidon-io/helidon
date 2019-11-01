@@ -53,6 +53,12 @@
             <artifactId>helidon-microprofile-2.2</artifactId>
             <scope>test</scope>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.smallrye.reactive</groupId>-->
+<!--            <artifactId>smallrye-reactive-streams-operators</artifactId>-->
+<!--            <version>1.0.10</version>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
@@ -95,7 +101,8 @@
                 <inherited>false</inherited>    <!-- Exclude testng dependency -->
                 <configuration>
                     <dependenciesToScan>
-                        <dependency>org.eclipse.microprofile.reactive.messaging:microprofile-reactive-messaging-tck</dependency>
+                        <dependency>org.eclipse.microprofile.reactive.messaging:microprofile-reactive-messaging-tck
+                        </dependency>
                     </dependenciesToScan>
                 </configuration>
                 <dependencies>

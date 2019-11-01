@@ -40,13 +40,11 @@ public class MessagingCdiExtension implements Extension {
     private ChannelRouter channelRouter = new ChannelRouter();
 
     private void registerChannelMethods(@Observes @WithAnnotations({Incoming.class, Outgoing.class}) ProcessAnnotatedType<?> pat) {
-        LOGGER.info("Registering incoming methods");
         pat.getAnnotatedType().getMethods()
                 .stream()
                 .filter(m -> m.isAnnotationPresent(Incoming.class))
                 .forEach(m -> channelRouter.addIncomingMethod(m));
 
-        LOGGER.info("Registering outgoing methods");
         pat.getAnnotatedType().getMethods()
                 .stream()
                 .filter(m -> m.isAnnotationPresent(Outgoing.class))
@@ -54,17 +52,14 @@ public class MessagingCdiExtension implements Extension {
     }
 
     public void onProcessBean(@Observes ProcessManagedBean event) {
-        LOGGER.info("Lookup connectors");
         // Lookup connectors
         Connector annotation = event.getAnnotatedBeanClass().getAnnotation(Connector.class);
         if (IncomingConnectorFactory.class.isAssignableFrom(event.getBean().getBeanClass()) && null != annotation) {
             channelRouter.addConnectorFactory(event.getBean());
         }
-        LOGGER.info("Gather references");
         // Gather bean references
         //TODO: Multiple bean references(not singleton)
         channelRouter.registerBeanReference(event.getBean());
-        LOGGER.info("References gathered");
     }
 
     public void makeConnections(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
