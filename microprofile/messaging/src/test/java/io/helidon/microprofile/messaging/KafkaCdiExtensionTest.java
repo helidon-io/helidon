@@ -21,110 +21,75 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.messaging.kafka.SimpleKafkaProducer;
 import io.helidon.messaging.kafka.connector.KafkaConnectorFactory;
-import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.config.MpConfigProviderResolver;
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.messaging.beans.KafkaConsumingBean;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.LogManager;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class MessagingCdiExtensionTest {
+class KafkaCdiExtensionTest extends AbstractCDITest {
 
-    private static SeContainer cdiContainer;
 
     @RegisterExtension
     public static final SharedKafkaTestResource kafkaResource = new SharedKafkaTestResource();
     public static final String TEST_TOPIC = "graph-done";
     public static final String TEST_MESSAGE = "this is first test message";
 
-
-    private static final Connector CONNECTOR_LITERAL = new Connector() {
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Connector.class;
-        }
-
-        @Override
-        public String value() {
-            return KafkaConnectorFactory.CONNECTOR_NAME;
-        }
-    };
-
-    @BeforeAll
-    public synchronized static void startCdiContainer() {
-        setupLogging();
-        Properties p = new Properties();
+    @Override
+    protected void cdiConfig(Properties p) {
         p.setProperty("mp.messaging.incoming.test-channel.connector", KafkaConnectorFactory.CONNECTOR_NAME);
         p.setProperty("mp.messaging.incoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString());
         p.setProperty("mp.messaging.incoming.test-channel.topic", TEST_TOPIC);
         p.setProperty("mp.messaging.incoming.test-channel.key.deserializer", LongDeserializer.class.getName());
         p.setProperty("mp.messaging.incoming.test-channel.value.deserializer", StringDeserializer.class.getName());
 
-        Config config = Config.builder()
-                .sources(ConfigSources.create(p))
-                .build();
+    }
 
+    @Override
+    void cdiBeanClasses(Set<Class<?>> classes) {
+        classes.add(KafkaConnectorFactory.class);
+        classes.add(KafkaConsumingBean.class);
+    }
+
+    @BeforeAll
+    public static void prepareTopics() {
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC, 10, (short) 1);
+    }
 
-        final Server.Builder builder = Server.builder();
-        assertNotNull(builder);
-        builder.config(config);
-        MpConfigProviderResolver.instance().registerConfig((MpConfig) MpConfig.builder().config(config).build(), Thread.currentThread().getContextClassLoader());
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertThat(initializer, is(notNullValue()));
-        initializer.addBeanClasses(KafkaConnectorFactory.class);
-        initializer.addBeanClasses(KafkaConsumingTestBean.class);
-        cdiContainer = initializer.initialize();
-
-        cdiContainer.select(KafkaConnectorFactory.class).stream().forEach(f -> f.getConsumers().forEach(c -> {
+    @BeforeEach
+    @Override
+    public void setUp() {
+        super.setUp();
+        //Wait till consumers are ready
+        forEachBean(KafkaConnectorFactory.class, KAFKA_CONNECTOR_LITERAL, b -> b.getConsumers().forEach(c -> {
             try {
                 c.waitForPartitionAssigment(10, TimeUnit.SECONDS);
             } catch (InterruptedException | TimeoutException e) {
                 fail(e);
             }
         }));
-
-    }
-
-    @AfterAll
-    public synchronized static void shutDownCdiContainer() {
-        if (cdiContainer != null) {
-            cdiContainer.close();
-        }
     }
 
     @Test
     void incomingKafkaTest() throws InterruptedException {
+        // Producer
         Properties p = new Properties();
         p.setProperty("mp.messaging.outcoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString());
         p.setProperty("mp.messaging.outcoming.test-channel.topic", TEST_TOPIC);
@@ -135,21 +100,11 @@ class MessagingCdiExtensionTest {
                 .sources(ConfigSources.create(p))
                 .build();
 
-        cdiContainer.select(KafkaConnectorFactory.class, CONNECTOR_LITERAL).stream()
-                .forEach(f -> f.getConsumers().forEach(c -> {
-                    try {
-                        c.waitForPartitionAssigment(10, TimeUnit.SECONDS);
-                    } catch (InterruptedException | TimeoutException e) {
-                        fail(e);
-                    }
-                }));
-
-        // Producer
         SimpleKafkaProducer<Long, String> producer = new SimpleKafkaProducer<>(config.get("mp.messaging.outcoming.test-channel"));
-        List<Future<RecordMetadata>> producerFutures = new ArrayList<>(3);
-        producerFutures.addAll(producer.produceAsync(TEST_MESSAGE + 1));
-        producerFutures.addAll(producer.produceAsync(TEST_MESSAGE + 2));
-        producerFutures.addAll(producer.produceAsync(TEST_MESSAGE + 3));
+        List<Future<RecordMetadata>> producerFutures = new ArrayList<>(KafkaConsumingBean.TEST_DATA.size());
+
+        //Send all test messages(async send means order is not guaranteed)
+        KafkaConsumingBean.TEST_DATA.forEach(msg -> producerFutures.addAll(producer.produceAsync(msg)));
 
         // Wait for all sent(this is example usage, sent doesn't mean delivered)
         producerFutures.forEach(f -> {
@@ -161,28 +116,9 @@ class MessagingCdiExtensionTest {
         });
 
         // Wait till 3 records are delivered
-        assertTrue(KafkaConsumingTestBean.testChannelLatch.await(15, TimeUnit.SECONDS)
+        assertTrue(KafkaConsumingBean.testChannelLatch.await(15, TimeUnit.SECONDS)
                 , "All messages not delivered in time, number of unreceived messages: "
-                        + KafkaConsumingTestBean.testChannelLatch.getCount());
+                        + KafkaConsumingBean.testChannelLatch.getCount());
         producer.close();
-    }
-
-    @Test
-    void directOutgoingIncomingTest() throws InterruptedException {
-        // Wait till 2 messages are delivered
-        assertTrue(KafkaConsumingTestBean.selfCallLatch.await(15, TimeUnit.SECONDS)
-                , "All messages not delivered in time, number of unreceived messages: "
-                        + KafkaConsumingTestBean.selfCallLatch.getCount());
-    }
-
-    /**
-     * Configure logging from logging.properties file.
-     */
-    private static void setupLogging() {
-        try (InputStream is = MessagingCdiExtensionTest.class.getResourceAsStream("/logging.properties")) {
-            LogManager.getLogManager().readConfiguration(is);
-        } catch (IOException e) {
-            fail(e);
-        }
     }
 }

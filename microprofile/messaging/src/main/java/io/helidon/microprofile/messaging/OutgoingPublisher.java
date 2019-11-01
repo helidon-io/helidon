@@ -3,11 +3,10 @@ package io.helidon.microprofile.messaging;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.microprofile.config.MpConfig;
-import io.reactivex.Flowable;
-import io.reactivex.schedulers.Schedulers;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -50,7 +49,11 @@ public class OutgoingPublisher extends AbstractConnectableChannelMethod implemen
                 if (incomingSubscribers != null) {
                     for (IncomingSubscriber s : getRouter().getIncomingSubscribers(getChannelName())) {
                         //TODO: get rid of reactivex
-                        ((Flowable)result).observeOn(Schedulers.computation()).subscribe(o -> s.onNext(Message.of(o)));
+                        //((Flowable)result).observeOn(Schedulers.computation()).subscribe(o -> s.onNext(Message.of(o)));
+                        //result.subscribe(new ConsumableSubscriber(m -> s.onNext(Message.of(m))));
+                        ReactiveStreams.fromPublisher(result).to(s).run();
+//                        publisherBuilder.buildRs().subscribe(new ConsumableSubscriber(m -> s.onNext(Message.of(m))));
+//                        publisherBuilder.buildRs().
                     }
                 }
 
