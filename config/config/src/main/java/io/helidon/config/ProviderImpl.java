@@ -66,7 +66,7 @@ class ProviderImpl implements Config.Context {
     private ConfigSourceChangeEventSubscriber configSourceChangeEventSubscriber;
 
     private ConfigDiff lastConfigsDiff;
-    private Config lastConfig;
+    private AbstractConfigImpl lastConfig;
     private OverrideSourceChangeEventSubscriber overrideSourceChangeEventSubscriber;
     private volatile boolean overrideChangeComplete;
     private volatile boolean configChangeComplete;
@@ -89,7 +89,7 @@ class ProviderImpl implements Config.Context {
         this.changesExecutor = changesExecutor;
 
         this.lastConfigsDiff = null;
-        this.lastConfig = Config.empty();
+        this.lastConfig = (AbstractConfigImpl) Config.empty();
 
         this.keyResolving = keyResolving;
         this.aliasGenerator = aliasGenerator;
@@ -102,7 +102,7 @@ class ProviderImpl implements Config.Context {
         configSourceChangeEventSubscriber = null;
     }
 
-    public Config newConfig() {
+    public AbstractConfigImpl newConfig() {
         lastConfig = build(configSource.load());
         return lastConfig;
     }
@@ -123,7 +123,7 @@ class ProviderImpl implements Config.Context {
         return lastConfig;
     }
 
-    private synchronized Config build(Optional<ObjectNode> rootNode) {
+    private synchronized AbstractConfigImpl build(Optional<ObjectNode> rootNode) {
 
         // resolve tokens
         rootNode = rootNode.map(this::resolveKeys);
@@ -141,7 +141,7 @@ class ProviderImpl implements Config.Context {
                                                   targetFilter,
                                                   this,
                                                   aliasGenerator);
-        Config config = factory.config();
+        AbstractConfigImpl config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);
         // caching
@@ -218,7 +218,7 @@ class ProviderImpl implements Config.Context {
 
     private synchronized void rebuild(Optional<ObjectNode> objectNode, boolean force) {
         // 1. build new Config
-        Config newConfig = build(objectNode);
+        AbstractConfigImpl newConfig = build(objectNode);
         // 2. for each subscriber fire event on specific node/key - see AbstractConfigImpl.FilteringConfigChangeEventSubscriber
         // 3. fire event
         ConfigDiff configsDiff = ConfigDiff.from(lastConfig, newConfig);

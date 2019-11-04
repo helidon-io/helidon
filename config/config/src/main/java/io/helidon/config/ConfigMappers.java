@@ -252,7 +252,18 @@ public final class ConfigMappers {
      * @return mapped {@code stringValue} to {@code boolean}
      */
     public static Boolean toBoolean(String stringValue) {
-        return Boolean.parseBoolean(stringValue);
+        final String lower = stringValue.toLowerCase();
+        // according to microprofile config specification (section Built-in Converters)
+        switch (lower) {
+        case "true":
+        case "1":
+        case "yes":
+        case "y":
+        case "on":
+            return true;
+        default:
+            return false;
+        }
     }
 
     /**

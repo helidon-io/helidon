@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.file.Path;
@@ -24,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,7 @@ import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.internal.PrefixedConfigSource;
 import io.helidon.config.internal.UrlConfigSource;
 import io.helidon.config.spi.AbstractConfigSource;
+import io.helidon.config.spi.AbstractMpSource;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
@@ -218,7 +221,7 @@ public final class ConfigSources {
      *
      * @return {@code ConfigSource} for config derived from system properties
      */
-    public static ConfigSource systemProperties() {
+    public static AbstractMpSource<Instant> systemProperties() {
         return new SystemPropertiesConfigSource();
     }
 
@@ -228,7 +231,7 @@ public final class ConfigSources {
      *
      * @return {@code ConfigSource} for config derived from environment variables
      */
-    public static ConfigSource environmentVariables() {
+    public static AbstractMpSource<Instant> environmentVariables() {
         return new EnvironmentVariablesConfigSource();
     }
 
@@ -247,6 +250,29 @@ public final class ConfigSources {
     public static AbstractParsableConfigSource.Builder
             <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> classpath(String resource) {
         return ClasspathConfigSource.builder().resource(resource);
+    }
+
+    /**
+     * Create builders for each instance of the resource on the current classpath.
+     * @param resource resource to look for
+     * @return a list of classpath config source builders
+     */
+    public static List<AbstractParsableConfigSource.Builder
+            <? extends AbstractParsableConfigSource.Builder<?, URL>, URL>> classpathAll(String resource) {
+
+        List<AbstractParsableConfigSource.Builder
+                <? extends AbstractParsableConfigSource.Builder<?, URL>, URL>> result = new LinkedList<>();
+        try {
+            Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(resource);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                result.add(url(url));
+            }
+        } catch (IOException e) {
+            throw new ConfigException("Failed to read " + resource + " from classpath", e);
+        }
+
+        return result;
     }
 
     /**

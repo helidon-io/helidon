@@ -49,7 +49,7 @@ final class ConfigFactory {
     private final ConfigFilter filter;
     private final ProviderImpl provider;
     private final Function<String, List<String>> aliasGenerator;
-    private final ConcurrentMap<PrefixedKey, Reference<Config>> configCache;
+    private final ConcurrentMap<PrefixedKey, Reference<AbstractConfigImpl>> configCache;
     private final Flow.Publisher<ConfigDiff> changesPublisher;
     private final Instant timestamp;
 
@@ -123,7 +123,7 @@ final class ConfigFactory {
      *
      * @return root {@link Config}
      */
-    public Config config() {
+    public AbstractConfigImpl config() {
         return config(ConfigKeyImpl.of(), ConfigKeyImpl.of());
     }
 
@@ -134,9 +134,9 @@ final class ConfigFactory {
      * @param key    config key
      * @return {@code key} specific instance of {@link Config}
      */
-    public Config config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+    public AbstractConfigImpl config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         PrefixedKey prefixedKey = new PrefixedKey(prefix, key);
-        Reference<Config> reference = configCache.compute(prefixedKey, (k, v) -> {
+        Reference<AbstractConfigImpl> reference = configCache.compute(prefixedKey, (k, v) -> {
             if (v == null || v.get() == null) {
                 return new SoftReference<>(createConfig(prefix, key));
             } else {
@@ -152,7 +152,7 @@ final class ConfigFactory {
      * @param key config key
      * @return new instance of {@link Config} for specified {@code key}
      */
-    private Config createConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+    private AbstractConfigImpl createConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         ConfigNode value = findNode(prefix, key);
 
         if (null == value) {
