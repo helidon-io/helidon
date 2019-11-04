@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.cors;
 
+import java.util.Optional;
+
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -24,7 +26,12 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
+import static io.helidon.microprofile.cors.CrossOriginHelper.RequestType.CORS;
+import static io.helidon.microprofile.cors.CrossOriginHelper.RequestType.NORMAL;
+import static io.helidon.microprofile.cors.CrossOriginHelper.RequestType.PREFLIGHT;
 import static io.helidon.microprofile.cors.CrossOriginHelper.findRequestType;
+import static io.helidon.microprofile.cors.CrossOriginHelper.processCorsRequest;
+import static io.helidon.microprofile.cors.CrossOriginHelper.processCorsResponse;
 import static io.helidon.microprofile.cors.CrossOriginHelper.processPreFlight;
 
 /**
@@ -37,22 +44,25 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        switch (findRequestType(requestContext)) {
-            case NORMAL:
-                // no-op
-                return;
-            case CORS:
-                break;
-            case PREFLIGHT:
+        CrossOriginHelper.RequestType type = findRequestType(requestContext);
+        if (type != NORMAL) {
+            if (type == PREFLIGHT) {
                 Response response = processPreFlight(requestContext, resourceInfo);
                 requestContext.abortWith(response);
-                break;
-            default:
+            } else if (type == CORS) {
+                Optional<Response> response = processCorsRequest(requestContext, resourceInfo);
+                response.ifPresent(requestContext::abortWith);
+            } else {
                 throw new IllegalStateException("Invalid value for enum RequestType");
+            }
         }
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+        CrossOriginHelper.RequestType type = findRequestType(requestContext);
+        if (type == CORS) {
+            processCorsResponse(requestContext, responseContext, resourceInfo);
+        }
     }
 }

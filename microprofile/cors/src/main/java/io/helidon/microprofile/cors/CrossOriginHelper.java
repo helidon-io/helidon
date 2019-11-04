@@ -26,7 +26,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -50,6 +53,9 @@ class CrossOriginHelper {
         NORMAL,
         CORS,
         PREFLIGHT
+    }
+
+    private CrossOriginHelper() {
     }
 
     /**
@@ -76,6 +82,59 @@ class CrossOriginHelper {
 
         // A CORS request that is not a pre-flight one
         return RequestType.CORS;
+    }
+
+    /**
+     * Process an actual CORS request.
+     *
+     * @param requestContext The request context.
+     * @param resourceInfo Info about the matched resource.
+     * @return A response to send back to the client.
+     */
+    static Optional<Response> processCorsRequest(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
+        MultivaluedMap<String, String> headers = requestContext.getHeaders();
+        String origin = headers.getFirst(ORIGIN);
+        Optional<CrossOrigin> crossOrigin = lookupAnnotation(resourceInfo);
+
+        // Annotation must be present for actual request
+        if (!crossOrigin.isPresent()) {
+            return Optional.of(forbidden("CORS origin is denied"));
+        }
+
+        // If enabled but not whitelisted, deny request
+        List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
+        if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins)) {
+            return Optional.of(forbidden("CORS origin not in allowed list"));
+        }
+
+        // Succesful processing of request
+        return Optional.empty();
+    }
+
+    /**
+     * Process a CORS response.
+     *
+     * @param requestContext The request context.
+     * @param responseContext The response context.
+     * @return A response to send back to the client.
+     */
+    static void processCorsResponse(ContainerRequestContext requestContext, ContainerResponseContext responseContext,
+                                    ResourceInfo resourceInfo) {
+        Optional<CrossOrigin> crossOrigin = lookupAnnotation(resourceInfo);
+        MultivaluedMap<String, Object> headers = responseContext.getHeaders();
+
+        // Add Origin header
+        String origin = requestContext.getHeaders().getFirst(ORIGIN);
+        headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+
+        // Add Access-Control-Allow-Credentials
+        if (crossOrigin.get().allowCredentials()) {
+            headers.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        }
+
+        // Add Access-Control-Allow-Headers if non-empty
+        formatHeader(crossOrigin.get().exposeHeaders()).ifPresent(
+                h -> headers.add(ACCESS_CONTROL_ALLOW_HEADERS, h));
     }
 
     /**
@@ -119,9 +178,12 @@ class CrossOriginHelper {
         // Build successful response
         Response.ResponseBuilder builder = Response.ok();
         builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-        builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, crossOrigin.get().allowCredentials());
+        if (crossOrigin.get().allowCredentials()) {
+            builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        }
         builder.header(ACCESS_CONTROL_ALLOW_METHODS, method);
-        formatHeader(requestHeaders.toArray()).ifPresent(h -> builder.header(ACCESS_CONTROL_ALLOW_HEADERS, h));
+        formatHeader(requestHeaders.toArray()).ifPresent(
+                h -> builder.header(ACCESS_CONTROL_ALLOW_HEADERS, h));
         long maxAge = crossOrigin.get().maxAge();
         if (maxAge > 0) {
             builder.header(ACCESS_CONTROL_MAX_AGE, maxAge);
@@ -172,25 +234,37 @@ class CrossOriginHelper {
     }
 
     /**
-     * Looks up a {@code CrossOrigin} annotation in method first and then class.
+     * Looks up a {@code CrossOrigin} annotation on the resource method matched first
+     * and if not present on a method annotated by {@code OPTIONS} on the same resource.
      *
      * @param resourceInfo Info about the matched resource.
      * @return Outcome of lookup.
      */
     static Optional<CrossOrigin> lookupAnnotation(ResourceInfo resourceInfo) {
-        Method method = resourceInfo.getResourceMethod();
-        if (method == null) {
-            return Optional.empty();
+        Method resourceMethod = resourceInfo.getResourceMethod();
+        Class<?> resourceClass = resourceInfo.getResourceClass();
+
+        CrossOrigin corsAnnot;
+        OPTIONS optsAnnot = resourceMethod.getAnnotation(OPTIONS.class);
+        if (optsAnnot != null) {
+            corsAnnot = resourceMethod.getAnnotation(CrossOrigin.class);
+        } else {
+            Path pathAnnot = resourceMethod.getAnnotation(Path.class);
+            Optional<Method> optionsMethod = Arrays.stream(resourceClass.getDeclaredMethods())
+                    .filter(m -> {
+                        OPTIONS optsAnnot2 = m.getAnnotation(OPTIONS.class);
+                        if (optsAnnot2 != null) {
+                            if (pathAnnot != null) {
+                                Path pathAnnot2 = m.getAnnotation(Path.class);
+                                return pathAnnot2 != null && pathAnnot.value().equals(pathAnnot2.value());
+                            }
+                            return true;
+                        }
+                        return false;
+                    }).findFirst();
+            corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class)).orElse(null);
         }
-        CrossOrigin annotation = method.getAnnotation(CrossOrigin.class);
-        if (annotation == null) {
-            Class<?> beanClass = resourceInfo.getResourceClass();
-            annotation = beanClass.getAnnotation(CrossOrigin.class);
-            if (annotation == null) {
-                annotation = method.getDeclaringClass().getAnnotation(CrossOrigin.class);
-            }
-        }
-        return Optional.ofNullable(annotation);
+        return Optional.ofNullable(corsAnnot);
     }
 
     /**
