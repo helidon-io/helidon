@@ -368,16 +368,16 @@ class BuilderImpl implements Config.Builder {
     private ConfigSource targetConfigSource(ConfigContext context) {
         List<ConfigSource> targetSources = new LinkedList<>();
 
+        if (systemPropertiesSourceEnabled
+                && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
+            targetSources.add(ConfigSources.systemProperties());
+        }
+
         if (hasSourceType(ConfigSources.EnvironmentVariablesConfigSource.class)) {
             envVarAliasGeneratorEnabled = true;
         } else if (environmentVariablesSourceEnabled) {
             targetSources.add(ConfigSources.environmentVariables());
             envVarAliasGeneratorEnabled = true;
-        }
-
-        if (systemPropertiesSourceEnabled
-            && !hasSourceType(ConfigSources.SystemPropertiesConfigSource.class)) {
-            targetSources.add(ConfigSources.systemProperties());
         }
 
         if (sources != null) {
