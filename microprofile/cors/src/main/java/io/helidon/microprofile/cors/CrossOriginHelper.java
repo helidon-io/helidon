@@ -121,7 +121,7 @@ class CrossOriginHelper {
         builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, crossOrigin.get().allowCredentials());
         builder.header(ACCESS_CONTROL_ALLOW_METHODS, method);
-        builder.header(ACCESS_CONTROL_ALLOW_HEADERS, formatHeader(requestHeaders.toArray()));
+        formatHeader(requestHeaders.toArray()).ifPresent(h -> builder.header(ACCESS_CONTROL_ALLOW_HEADERS, h));
         long maxAge = crossOrigin.get().maxAge();
         if (maxAge > 0) {
             builder.header(ACCESS_CONTROL_MAX_AGE, maxAge);
