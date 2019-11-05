@@ -18,7 +18,7 @@ package io.helidon.microprofile.cors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.GET;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PUT;
@@ -77,7 +77,7 @@ public class CrossOriginTest {
     }
 
     @AfterAll
-    static void destroyClass() throws Exception {
+    static void destroyClass() {
         server.stop();
         client.close();
     }
@@ -101,9 +101,9 @@ public class CrossOriginTest {
             return "options";
         }
 
-        @GET
-        public String getCors() {
-            return "getCors";
+        @DELETE
+        public String deleteCors() {
+            return "deleteCors";
         }
 
         @PUT
@@ -119,16 +119,16 @@ public class CrossOriginTest {
         @OPTIONS
         @CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
                 allowHeaders = {"X-foo", "X-bar"},
-                allowMethods = {HttpMethod.GET, HttpMethod.PUT},
+                allowMethods = {HttpMethod.DELETE, HttpMethod.PUT},
                 allowCredentials = true,
                 maxAge = -1)
         public String options() {
             return "options";
         }
 
-        @GET
-        public String getCors() {
-            return "getCors";
+        @DELETE
+        public String deleteCors() {
+            return "deleteCors";
         }
 
         @PUT

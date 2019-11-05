@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.BiFunction;
 
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
@@ -39,6 +40,7 @@ import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CRED
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
@@ -85,7 +87,8 @@ class CrossOriginHelper {
     }
 
     /**
-     * Process an actual CORS request.
+     * Process an actual CORS request. Additional headers are added by {@code processCorsResponse}
+     * to the response.
      *
      * @param requestContext The request context.
      * @param resourceInfo Info about the matched resource.
@@ -103,11 +106,11 @@ class CrossOriginHelper {
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
-        if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins)) {
+        if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins, String::equals)) {
             return Optional.of(forbidden("CORS origin not in allowed list"));
         }
 
-        // Succesful processing of request
+        // Successful processing of request
         return Optional.empty();
     }
 
@@ -123,7 +126,8 @@ class CrossOriginHelper {
         Optional<CrossOrigin> crossOrigin = lookupAnnotation(resourceInfo);
         MultivaluedMap<String, Object> headers = responseContext.getHeaders();
 
-        // Add Origin header
+        // Add Access-Control-Allow-Origin header
+        // TODO: Allow any origin as "*" here
         String origin = requestContext.getHeaders().getFirst(ORIGIN);
         headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
@@ -131,10 +135,9 @@ class CrossOriginHelper {
         if (crossOrigin.get().allowCredentials()) {
             headers.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
-
-        // Add Access-Control-Allow-Headers if non-empty
+        // Add Access-Control-Expose-Headers if non-empty
         formatHeader(crossOrigin.get().exposeHeaders()).ifPresent(
-                h -> headers.add(ACCESS_CONTROL_ALLOW_HEADERS, h));
+                h -> headers.add(ACCESS_CONTROL_EXPOSE_HEADERS, h));
     }
 
     /**
@@ -157,14 +160,14 @@ class CrossOriginHelper {
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
-        if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins)) {
+        if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins, String::equals)) {
             return forbidden("CORS origin not in allowed list");
         }
 
         // Check if method is allowed
         String method = headers.getFirst(ACCESS_CONTROL_REQUEST_METHOD);
         List<String> allowedMethods = Arrays.asList(crossOrigin.get().allowMethods());
-        if (!allowedMethods.contains("*") && !contains(method, allowedMethods)) {
+        if (!allowedMethods.contains("*") && !contains(method, allowedMethods, String::equals)) {
             return forbidden("CORS method not in allowed list");
         }
 
@@ -192,15 +195,16 @@ class CrossOriginHelper {
     }
 
     /**
-     * Checks containment in a {@code Collection<String>} case insensitively.
+     * Checks containment in a {@code Collection<String>}.
      *
      * @param item The string.
      * @param collection The collection.
+     * @param eq Equality function.
      * @return Outcome of test.
      */
-    static boolean contains(String item, Collection<String> collection) {
+    static boolean contains(String item, Collection<String> collection, BiFunction<String, String, Boolean> eq) {
         for (String s : collection) {
-            if (s.equalsIgnoreCase(item)) {
+            if (eq.apply(item, s)) {
                 return true;
             }
         }
@@ -216,7 +220,7 @@ class CrossOriginHelper {
      */
     static boolean contains(Collection<String> left, Collection<String> right) {
         for (String s : left) {
-            if (!contains(s, right)) {
+            if (!contains(s, right, String::equalsIgnoreCase)) {
                 return false;
             }
         }
@@ -297,6 +301,9 @@ class CrossOriginHelper {
      * @return Set of header values.
      */
     static Set<String> parseHeader(String header) {
+        if (header == null) {
+            return Collections.emptySet();
+        }
         Set<String> result = new HashSet<>();
         StringTokenizer tokenizer = new StringTokenizer(header, ",");
         while (tokenizer.hasMoreTokens()) {
