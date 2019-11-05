@@ -48,12 +48,10 @@ public class OutgoingPublisher extends AbstractConnectableChannelMethod implemen
                 List<IncomingSubscriber> incomingSubscribers = getRouter().getIncomingSubscribers(getChannelName());
                 if (incomingSubscribers != null) {
                     for (IncomingSubscriber s : getRouter().getIncomingSubscribers(getChannelName())) {
-                        //TODO: get rid of reactivex
-                        //((Flowable)result).observeOn(Schedulers.computation()).subscribe(o -> s.onNext(Message.of(o)));
-                        //result.subscribe(new ConsumableSubscriber(m -> s.onNext(Message.of(m))));
-                        ReactiveStreams.fromPublisher(result).to(s).run();
-//                        publisherBuilder.buildRs().subscribe(new ConsumableSubscriber(m -> s.onNext(Message.of(m))));
-//                        publisherBuilder.buildRs().
+                        ReactiveStreams
+                                .fromPublisher(result)
+                                .to(ReactiveStreams.fromSubscriber(s))
+                                .run();
                     }
                 }
 

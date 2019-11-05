@@ -122,6 +122,11 @@ public interface Multi<T> extends Subscribable<T> {
         return new MultiFromPublisher<>(new FixedItemsPublisher<>(listOf(items)));
     }
 
+    //TODO: This is just POC, hide it behind org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams
+    static <T> org.reactivestreams.Publisher<T> justMP(Collection<T> items) {
+        return new MultiFromPublisher<>(new FixedItemsPublisher<>(items));
+    }
+
     /**
      * Create a {@link Multi} instance that reports the given exception to its subscriber(s). The exception is reported by
      * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.

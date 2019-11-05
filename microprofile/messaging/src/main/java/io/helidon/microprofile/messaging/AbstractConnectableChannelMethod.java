@@ -5,6 +5,7 @@ import io.helidon.config.Config;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.DeploymentException;
 
 import java.lang.reflect.Method;
 
@@ -23,6 +24,14 @@ public abstract class AbstractConnectableChannelMethod {
         this.router = router;
         this.method = method;
         this.channelName = channelName;
+        validate();
+    }
+
+    private void validate() {
+        if (channelName == null || channelName.trim().isEmpty()) {
+            throw new DeploymentException("Missing channel name in annotation @Incoming/@Outgoing on method "
+                    + method.toString());
+        }
     }
 
     protected abstract void connect();

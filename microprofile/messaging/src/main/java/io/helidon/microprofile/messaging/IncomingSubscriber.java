@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * Subscriber with reference to {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
  * /{@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotated method
  */
-public class IncomingSubscriber extends AbstractConnectableChannelMethod implements Subscriber<Message<?>> {
+public class IncomingSubscriber extends AbstractConnectableChannelMethod implements Subscriber<Object> {
 
     private static final Logger LOGGER = Logger.getLogger(IncomingSubscriber.class.getName());
 
@@ -52,8 +52,10 @@ public class IncomingSubscriber extends AbstractConnectableChannelMethod impleme
         Config channelConfig = config.get("mp.messaging.incoming").get(channelName);
         ConfigValue<String> connectorName = channelConfig.get("connector").asString();
         if (connectorName.isPresent()) {
-            publisherBuilder = ((IncomingConnectorFactory) getBeanInstance(getRouter()
-                    .getIncomingConnectorFactory(connectorName.get()), beanManager))
+            publisherBuilder =
+                    ((IncomingConnectorFactory) getBeanInstance(
+                            getRouter().getIncomingConnectorFactory(connectorName.get()),
+                            beanManager))
                     .getPublisherBuilder(MpConfig.builder().config(channelConfig).build());
 
             //TODO: iterate over multiple publishers
@@ -68,12 +70,23 @@ public class IncomingSubscriber extends AbstractConnectableChannelMethod impleme
     }
 
     @Override
-    public void onNext(Message<?> message) {
+    public void onNext(Object message) {
         try {
             final Object paramValue;
             Class<?> paramType = this.method.getParameterTypes()[0];
-            if (paramType != Message.class) {
-                paramValue = paramType.cast(message.getPayload());
+
+            if (paramType != Message.class && !(message instanceof Message)) {
+                paramValue = paramType.cast(message);
+
+            } else if (paramType == Message.class && message instanceof Message) {
+                paramValue = paramType.cast(message);
+
+            } else if (paramType != Message.class && message instanceof Message) {
+                paramValue = paramType.cast(((Message) message).getPayload());
+
+            } else if (paramType == Message.class && !(message instanceof Message)) {
+                paramValue = paramType.cast(Message.of(message));
+
             } else {
                 paramValue = message;
             }
@@ -93,11 +106,13 @@ public class IncomingSubscriber extends AbstractConnectableChannelMethod impleme
     @Override
     public void onError(Throwable t) {
         //TODO: Error propagation
+        throw new RuntimeException(t);
     }
 
     @Override
     public void onSubscribe(Subscription s) {
-        System.out.println(s);
+        //TODO: this would be a problem with infinite streams
+        s.request(Long.MAX_VALUE);
     }
 
     @Override
