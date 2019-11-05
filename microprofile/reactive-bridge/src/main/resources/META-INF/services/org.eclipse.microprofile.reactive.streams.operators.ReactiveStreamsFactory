@@ -14,7 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.microprofile.reactive.HelidonReactiveStreamEngine
-
-#TODO: Find out why the stream just freeze with smallrye engine
-#io.smallrye.reactive.streams.Engine
+org.eclipse.microprofile.reactive.streams.operators.core.ReactiveStreamsFactoryImpl
