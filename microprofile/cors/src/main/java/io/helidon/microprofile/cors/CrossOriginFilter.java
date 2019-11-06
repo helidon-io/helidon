@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.cors;
 
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
@@ -26,6 +27,11 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
+import io.helidon.microprofile.config.MpConfig;
+
+import org.eclipse.microprofile.config.ConfigProvider;
+
+import static io.helidon.microprofile.cors.CrossOriginConfig.CrossOriginConfigMapper;
 import static io.helidon.microprofile.cors.CrossOriginHelper.RequestType.CORS;
 import static io.helidon.microprofile.cors.CrossOriginHelper.RequestType.NORMAL;
 import static io.helidon.microprofile.cors.CrossOriginHelper.RequestType.PREFLIGHT;
@@ -42,15 +48,22 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Context
     private ResourceInfo resourceInfo;
 
+    private List<CrossOriginConfig> crossOriginConfigs;
+
+    CrossOriginFilter() {
+        MpConfig config = (MpConfig) ConfigProvider.getConfig();
+        crossOriginConfigs = config.helidonConfig().get("cors").as(new CrossOriginConfigMapper()).get();
+    }
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
         CrossOriginHelper.RequestType type = findRequestType(requestContext);
         if (type != NORMAL) {
             if (type == PREFLIGHT) {
-                Response response = processPreFlight(requestContext, resourceInfo);
+                Response response = processPreFlight(requestContext, resourceInfo, crossOriginConfigs);
                 requestContext.abortWith(response);
             } else if (type == CORS) {
-                Optional<Response> response = processCorsRequest(requestContext, resourceInfo);
+                Optional<Response> response = processCorsRequest(requestContext, resourceInfo, crossOriginConfigs);
                 response.ifPresent(requestContext::abortWith);
             } else {
                 throw new IllegalStateException("Invalid value for enum RequestType");
@@ -62,7 +75,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         CrossOriginHelper.RequestType type = findRequestType(requestContext);
         if (type == CORS) {
-            processCorsResponse(requestContext, responseContext, resourceInfo);
+            processCorsResponse(requestContext, responseContext, resourceInfo, crossOriginConfigs);
         }
     }
 }

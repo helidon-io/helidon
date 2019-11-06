@@ -92,12 +92,15 @@ class CrossOriginHelper {
      *
      * @param requestContext The request context.
      * @param resourceInfo Info about the matched resource.
+     * @param crossOriginConfigs List of {@code CrossOriginConfig}.
      * @return A response to send back to the client.
      */
-    static Optional<Response> processCorsRequest(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
+    static Optional<Response> processCorsRequest(ContainerRequestContext requestContext,
+                                                 ResourceInfo resourceInfo,
+                                                 List<CrossOriginConfig> crossOriginConfigs) {
         MultivaluedMap<String, String> headers = requestContext.getHeaders();
         String origin = headers.getFirst(ORIGIN);
-        Optional<CrossOrigin> crossOrigin = lookupAnnotation(resourceInfo);
+        Optional<CrossOrigin> crossOrigin = lookupCrossOrigin(requestContext, resourceInfo, crossOriginConfigs);
 
         // Annotation must be present for actual request
         if (!crossOrigin.isPresent()) {
@@ -119,22 +122,26 @@ class CrossOriginHelper {
      *
      * @param requestContext The request context.
      * @param responseContext The response context.
+     * @param crossOriginConfigs List of {@code CrossOriginConfig}.
      * @return A response to send back to the client.
      */
-    static void processCorsResponse(ContainerRequestContext requestContext, ContainerResponseContext responseContext,
-                                    ResourceInfo resourceInfo) {
-        Optional<CrossOrigin> crossOrigin = lookupAnnotation(resourceInfo);
+    static void processCorsResponse(ContainerRequestContext requestContext,
+                                    ContainerResponseContext responseContext,
+                                    ResourceInfo resourceInfo,
+                                    List<CrossOriginConfig> crossOriginConfigs) {
+        Optional<CrossOrigin> crossOrigin = lookupCrossOrigin(requestContext, resourceInfo, crossOriginConfigs);
         MultivaluedMap<String, Object> headers = responseContext.getHeaders();
 
-        // Add Access-Control-Allow-Origin header
-        // TODO: Allow any origin as "*" here
+        // Add Access-Control-Allow-Origin and Access-Control-Allow-Credentials
         String origin = requestContext.getHeaders().getFirst(ORIGIN);
-        headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-
-        // Add Access-Control-Allow-Credentials
         if (crossOrigin.get().allowCredentials()) {
             headers.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        } else {
+            List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
+            headers.add(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin);
         }
+
         // Add Access-Control-Expose-Headers if non-empty
         formatHeader(crossOrigin.get().exposeHeaders()).ifPresent(
                 h -> headers.add(ACCESS_CONTROL_EXPOSE_HEADERS, h));
@@ -145,13 +152,16 @@ class CrossOriginHelper {
      *
      * @param requestContext The request context.
      * @param resourceInfo Info about the matched resource.
+     * @param crossOriginConfigs List of {@code CrossOriginConfig}.
      * @return A response to send back to the client.
      */
-    static Response processPreFlight(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
+    static Response processPreFlight(ContainerRequestContext requestContext,
+                                     ResourceInfo resourceInfo,
+                                     List<CrossOriginConfig> crossOriginConfigs) {
         MultivaluedMap<String, String> headers = requestContext.getHeaders();
 
         String origin = headers.getFirst(ORIGIN);
-        Optional<CrossOrigin> crossOrigin = lookupAnnotation(resourceInfo);
+        Optional<CrossOrigin> crossOrigin = lookupCrossOrigin(requestContext, resourceInfo, crossOriginConfigs);
 
         // If CORS not enabled, deny request
         if (!crossOrigin.isPresent()) {
@@ -241,10 +251,24 @@ class CrossOriginHelper {
      * Looks up a {@code CrossOrigin} annotation on the resource method matched first
      * and if not present on a method annotated by {@code OPTIONS} on the same resource.
      *
+     * @param requestContext The request context.
      * @param resourceInfo Info about the matched resource.
+     * @param crossOriginConfigs List of {@code CrossOriginConfig}.
      * @return Outcome of lookup.
      */
-    static Optional<CrossOrigin> lookupAnnotation(ResourceInfo resourceInfo) {
+    static Optional<CrossOrigin> lookupCrossOrigin(ContainerRequestContext requestContext,
+                                                   ResourceInfo resourceInfo,
+                                                   List<CrossOriginConfig> crossOriginConfigs) {
+        // First search in configs
+        for (CrossOriginConfig config : crossOriginConfigs) {
+            String pathPrefix = normalize(config.pathPrefix());
+            String uriPath = normalize(requestContext.getUriInfo().getPath());
+            if (uriPath.startsWith(pathPrefix)) {
+                return Optional.of(config);
+            }
+        }
+
+        // If not found, inspect resource matched
         Method resourceMethod = resourceInfo.getResourceMethod();
         Class<?> resourceClass = resourceInfo.getResourceClass();
 
@@ -279,7 +303,7 @@ class CrossOriginHelper {
      * @return Formatted array as an {@code Optional}.
      */
     static <T> Optional<String> formatHeader(T[] array) {
-        if (array.length == 0) {
+        if (array == null || array.length == 0) {
             return Optional.empty();
         }
         int i = 0;
@@ -326,5 +350,18 @@ class CrossOriginHelper {
             return Collections.emptySet();
         }
         return parseHeader(headers.stream().reduce("", (a, b) -> a + "," + b));
+    }
+
+    /**
+     * Trim leading or trailing slashes of a path.
+     *
+     * @param path The path.
+     * @return Normalized path.
+     */
+    private static String normalize(String path) {
+        int length = path.length();
+        int beginIndex = path.charAt(0) == '/' ? 1 : 0;
+        int endIndex = path.charAt(length - 1) == '/' ? length - 1 : length;
+        return path.substring(beginIndex, endIndex);
     }
 }

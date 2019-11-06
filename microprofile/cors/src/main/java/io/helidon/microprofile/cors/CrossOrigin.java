@@ -77,6 +77,11 @@ public @interface CrossOrigin {
     String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
 
     /**
+     * Default cache expiration in seconds.
+     */
+    long DEFAULT_AGE = 3600;
+
+    /**
      * A list of origins that are allowed such as {@code "http://foo.com"} or
      * {@code "*"} to allow all origins. Corresponds to header {@code
      * Access-Control-Allow-Origin}.
@@ -123,5 +128,5 @@ public @interface CrossOrigin {
      *
      * @return Max age.
      */
-    long maxAge() default 3600;
+    long maxAge() default DEFAULT_AGE;
 }

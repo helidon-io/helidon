@@ -20,7 +20,9 @@
 module io.helidon.microprofile.cors {
 
     requires transitive java.ws.rs;
+    requires io.helidon.microprofile.config;
     requires io.helidon.jersey.common;
+    requires microprofile.config.api;
 
     exports io.helidon.microprofile.cors;
 

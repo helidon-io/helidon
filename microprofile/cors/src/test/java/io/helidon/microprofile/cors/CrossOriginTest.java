@@ -87,7 +87,7 @@ public class CrossOriginTest {
 
         @Override
         public Set<Class<?>> getClasses() {
-            return CollectionsHelper.setOf(CorsResource1.class, CorsResource2.class);
+            return CollectionsHelper.setOf(CorsResource1.class, CorsResource2.class, CorsResource3.class);
         }
     }
 
@@ -97,18 +97,17 @@ public class CrossOriginTest {
 
         @OPTIONS
         @CrossOrigin
-        public String options() {
-            return "options";
+        public void options() {
         }
 
         @DELETE
-        public String deleteCors() {
-            return "deleteCors";
+        public Response deleteCors() {
+            return Response.ok().build();
         }
 
         @PUT
-        public String putCors() {
-            return "putCors";
+        public Response putCors() {
+            return Response.ok().build();
         }
     }
 
@@ -122,18 +121,32 @@ public class CrossOriginTest {
                 allowMethods = {HttpMethod.DELETE, HttpMethod.PUT},
                 allowCredentials = true,
                 maxAge = -1)
-        public String options() {
-            return "options";
+        public void options() {
         }
 
         @DELETE
-        public String deleteCors() {
-            return "deleteCors";
+        public Response deleteCors() {
+            return Response.ok().build();
         }
 
         @PUT
-        public String putCors() {
-            return "putCors";
+        public Response putCors() {
+            return Response.ok().build();
+        }
+    }
+
+    @RequestScoped
+    @Path("/cors3")     // Configured in META-INF/microprofile-config.properties
+    static public class CorsResource3 {
+
+        @DELETE
+        public Response deleteCors() {
+            return Response.ok().build();
+        }
+
+        @PUT
+        public Response putCors() {
+            return Response.ok().build();
         }
     }
 
@@ -294,7 +307,7 @@ public class CrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("*"));
     }
 
     @Test
@@ -306,5 +319,30 @@ public class CrossOriginTest {
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS), is("true"));
+    }
+
+    @Test
+    void test3PreFlightAllowedOrigin() {
+        Response res = target.path("/app/cors3")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS), is("PUT"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS), is(nullValue()));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE), is("3600"));
+    }
+
+    @Test
+    void test3ActualAllowedOrigin() {
+        Response res = target.path("/app/cors3")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
     }
 }
