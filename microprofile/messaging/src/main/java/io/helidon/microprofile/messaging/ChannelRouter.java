@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.microprofile.messaging;
 
 import io.helidon.config.Config;
@@ -31,7 +47,10 @@ public class ChannelRouter {
 
     public void connect(BeanManager beanManager) {
         Config config = ((MpConfig) ConfigProvider.getConfig()).helidonConfig();
-        connectableBeanMethods.forEach(m -> m.connect(beanManager, config));
+        //Needs to be initialized before connecting,
+        // fast publishers would call onNext before all bean references are resolved
+        connectableBeanMethods.forEach(m -> m.init(beanManager, config));
+        connectableBeanMethods.forEach(AbstractConnectableChannelMethod::connect);
     }
 
     void addIncomingMethod(AnnotatedMethod m) {
@@ -53,7 +72,8 @@ public class ChannelRouter {
         Connector annotation = beanType.getAnnotation(Connector.class);
         if (IncomingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
             incomingConnectorFactoryMap.put(annotation.value(), bean);
-        } else if (OutgoingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
+        }
+        if (OutgoingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
             outgoingConnectorFactoryMap.put(annotation.value(), bean);
         }
     }

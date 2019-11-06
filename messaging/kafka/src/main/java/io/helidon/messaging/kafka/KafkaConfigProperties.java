@@ -17,6 +17,7 @@
 package io.helidon.messaging.kafka;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -95,8 +96,11 @@ public class KafkaConfigProperties extends Properties {
         if (c.hasValue()) {
             value = c.asString().get();
         } else {
-            value = c.traverse(v -> v.type() == Config.Type.VALUE).findFirst()
-                    .get().asString().get();
+            value = c.traverse(v -> v.type() == Config.Type.VALUE)
+                    .map(Config::asString)
+                    .map(v -> v.orElse(""))
+                    .findFirst()
+                    .orElse("");
         }
         this.setProperty(key, value);
     }

@@ -20,15 +20,16 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.microprofile.config.MpConfig;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
+import javax.enterprise.inject.spi.DeploymentException;
 
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -42,9 +43,19 @@ public class IncomingSubscriber extends AbstractConnectableChannelMethod impleme
     private static final Logger LOGGER = Logger.getLogger(IncomingSubscriber.class.getName());
 
     private PublisherBuilder<? extends Message<?>> publisherBuilder;
+    private Subscription subscription;
+    private Long chunkSize = 5L;
+    private Long chunkPosition = 0L;
 
     public IncomingSubscriber(AnnotatedMethod method, ChannelRouter router) {
         super(method.getAnnotation(Incoming.class).value(), method.getJavaMember(), router);
+    }
+
+    void validate() {
+        if (channelName == null || channelName.trim().isEmpty()) {
+            throw new DeploymentException("Missing channel name in annotation @Incoming on method "
+                    + method.toString());
+        }
     }
 
     @Override
@@ -52,13 +63,22 @@ public class IncomingSubscriber extends AbstractConnectableChannelMethod impleme
         Config channelConfig = config.get("mp.messaging.incoming").get(channelName);
         ConfigValue<String> connectorName = channelConfig.get("connector").asString();
         if (connectorName.isPresent()) {
+            Config connectorConfig = config.get("mp.messaging.connector")
+                    .get(connectorName.get());
+            org.eclipse.microprofile.config.Config augmentedConfig =
+                    AdHocConfigBuilder
+                            .from(channelConfig)
+                            //It seams useless but its required by the spec
+                            .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, channelName)
+                            .putAll(connectorConfig)
+                            .build();
             publisherBuilder =
                     ((IncomingConnectorFactory) getBeanInstance(
                             getRouter().getIncomingConnectorFactory(connectorName.get()),
                             beanManager))
-                    .getPublisherBuilder(MpConfig.builder().config(channelConfig).build());
+                            .getPublisherBuilder(augmentedConfig);
 
-            //TODO: iterate over multiple publishers
+            //TODO: iterate over multiple publishers / does spec even support multiple publishers?
             publisherBuilder.buildRs().subscribe(this);
             LOGGER.info(String.format("Connected channel %s to connector %s, method: %s", channelName, connectorName.get(), method.toString()));
         }
@@ -67,6 +87,14 @@ public class IncomingSubscriber extends AbstractConnectableChannelMethod impleme
 
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder() {
         return publisherBuilder;
+    }
+
+    private void incrementAndCheckChunkPosition() {
+        chunkPosition++;
+        if (chunkPosition >= chunkSize) {
+            chunkPosition = 0L;
+            subscription.request(chunkSize);
+        }
     }
 
     @Override
@@ -97,22 +125,25 @@ public class IncomingSubscriber extends AbstractConnectableChannelMethod impleme
                     .parent(parentContext)
                     .id(parentContext.id() + ":message-" + UUID.randomUUID().toString())
                     .build();
-            Contexts.runInContext(context, () -> method.invoke(beanInstance, paramValue));
+            Contexts.runInContext(context, () -> this.method.invoke(this.beanInstance, paramValue));
+            incrementAndCheckChunkPosition();
         } catch (Exception e) {
+            //Notify publisher to stop sending
+            subscription.cancel();
             throw new RuntimeException(e);
         }
     }
 
     @Override
     public void onError(Throwable t) {
-        //TODO: Error propagation
         throw new RuntimeException(t);
     }
 
     @Override
     public void onSubscribe(Subscription s) {
-        //TODO: this would be a problem with infinite streams
-        s.request(Long.MAX_VALUE);
+        subscription = s;
+        //First chunk request
+        subscription.request(chunkSize);
     }
 
     @Override
