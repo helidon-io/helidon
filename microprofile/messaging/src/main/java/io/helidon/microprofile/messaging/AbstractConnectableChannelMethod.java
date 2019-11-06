@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.microprofile.messaging;
 
 import io.helidon.config.Config;
@@ -27,20 +43,14 @@ public abstract class AbstractConnectableChannelMethod {
         validate();
     }
 
-    private void validate() {
-        if (channelName == null || channelName.trim().isEmpty()) {
-            throw new DeploymentException("Missing channel name in annotation @Incoming/@Outgoing on method "
-                    + method.toString());
-        }
-    }
+    abstract void validate();
 
     protected abstract void connect();
 
-    public void connect(BeanManager beanManager, Config config) {
+    public void init(BeanManager beanManager, Config config) {
         this.beanInstance = getBeanInstance(bean, beanManager);
         this.beanManager = beanManager;
         this.config = config;
-        connect();
     }
 
     public void setDeclaringBean(Bean bean) {
@@ -60,7 +70,10 @@ public abstract class AbstractConnectableChannelMethod {
         Object instance = context.get(bean);
         if (instance == null) {
             CreationalContext creationalContext = beanManager.createCreationalContext(bean);
-            return beanManager.getReference(bean, bean.getBeanClass(), creationalContext);
+            instance = beanManager.getReference(bean, bean.getBeanClass(), creationalContext);
+        }
+        if (instance == null) {
+            throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
         }
         return instance;
     }

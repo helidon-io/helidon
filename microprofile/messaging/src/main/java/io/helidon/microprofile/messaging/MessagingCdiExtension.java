@@ -19,7 +19,6 @@ package io.helidon.microprofile.messaging;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -53,8 +52,7 @@ public class MessagingCdiExtension implements Extension {
 
     public void onProcessBean(@Observes ProcessManagedBean event) {
         // Lookup connectors
-        Connector annotation = event.getAnnotatedBeanClass().getAnnotation(Connector.class);
-        if (IncomingConnectorFactory.class.isAssignableFrom(event.getBean().getBeanClass()) && null != annotation) {
+        if (null != event.getAnnotatedBeanClass().getAnnotation(Connector.class)) {
             channelRouter.addConnectorFactory(event.getBean());
         }
         // Gather bean references
