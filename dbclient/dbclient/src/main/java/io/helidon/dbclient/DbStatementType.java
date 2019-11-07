@@ -44,6 +44,10 @@ public enum DbStatementType {
      */
     DML("dml"),
     /**
+     * Database command not related to a specific collection.
+     */
+    COMMAND("c"),
+    /**
      * The statement type is not yet knows (e.g. when invoking
      * {@link DbExecute#createNamedStatement(String)})
      */

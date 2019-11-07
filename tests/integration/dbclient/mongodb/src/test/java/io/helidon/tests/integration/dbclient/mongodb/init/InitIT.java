@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.jdbc.init;
+package io.helidon.tests.integration.dbclient.mongodb.init;
 
 import java.util.HashSet;
 import java.util.List;
@@ -45,21 +45,6 @@ public class InitIT extends AbstractIT {
     private static final Logger LOG = Logger.getLogger(InitIT.class.getName());
 
     /**
-     * Initializes database schema (tables).
-     *
-     * @param dbClient Helidon database client
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
-     */
-    private static void initSchema(DbClient dbClient) throws ExecutionException, InterruptedException {
-        dbClient.execute(exec -> exec
-                .namedDml("create-types")
-                .thenCompose(result -> exec.namedDml("create-pokemons"))
-                .thenCompose(result -> exec.namedDml("create-poketypes"))
-        ).toCompletableFuture().get();
-    }
-
-    /**
      * Initialize database content (rows in tables).
      *
      * @param dbClient Helidon database client
@@ -68,43 +53,41 @@ public class InitIT extends AbstractIT {
      */
     private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
         // Init pokemon types
-        dbClient.inTransaction(tx -> {
+        dbClient.execute(tx -> {
             CompletionStage<Long> stage = null;
             for (Map.Entry<Integer, Type> entry : TYPES.entrySet()) {
                 if (stage == null) {
-                    stage = tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
+                    stage = tx.namedInsert("insert-type", entry.getKey(), entry.getValue().getName());
                 } else {
-                    stage = stage.thenCompose(result -> tx.namedDml(
+                    stage = stage.thenCompose(result -> tx.namedInsert(
                             "insert-type", entry.getKey(), entry.getValue().getName()));
                 }
             }
             return stage;
         }).toCompletableFuture().get();
         // Init pokemons
-        dbClient.inTransaction(tx -> {
+        dbClient.execute(tx -> {
             CompletionStage<Long> stage = null;
             for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
                 if (stage == null) {
-                    stage = tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
+                    stage = tx.namedInsert("insert-pokemon", entry.getKey(), entry.getValue().getName());
                 } else {
-                    stage = stage.thenCompose(result -> tx.namedDml(
+                    stage = stage.thenCompose(result -> tx.namedInsert(
                             "insert-pokemon", entry.getKey(), entry.getValue().getName()));
                 }
             }
             return stage;
         }).toCompletableFuture().get();
         // Init pokemon to type relation
-        dbClient.inTransaction(tx -> {
+        dbClient.execute(tx -> {
             CompletionStage<Long> stage = null;
             for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
                 Pokemon pokemon = entry.getValue();
-                LOG.log(Level.INFO, "Pokemon: {0}", pokemon.toString());
                 for (Type type : pokemon.getTypes()) {
-                    LOG.log(Level.INFO, "  Type: {0}", type.toString());
                     if (stage == null) {
-                        stage = tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
+                        stage = tx.namedInsert("insert-poketype", pokemon.getId(), type.getId());
                     } else {
-                        stage = stage.thenCompose(result -> tx.namedDml(
+                        stage = stage.thenCompose(result -> tx.namedInsert(
                                 "insert-poketype", pokemon.getId(), type.getId()));
                     }
                 }
@@ -118,9 +101,8 @@ public class InitIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() {
-        LOG.log(Level.INFO, "Initializing Integration Tests");
+        LOG.info(() -> String.format("Initializing Integration Tests"));
         try {
-            initSchema(DB_CLIENT);
             initData(DB_CLIENT);
         } catch (ExecutionException | InterruptedException ex) {
             fail("Database setup failed!", ex);
@@ -148,7 +130,7 @@ public class InitIT extends AbstractIT {
             assertThat(ids, hasItem(id));
             ids.remove(id);
             assertThat(name, TYPES.get(id).getName().equals(name));
-            LOG.log(Level.INFO, "Type id={0} name={1}", new String[] {String.valueOf(id), name});
+            LOG.info(() -> String.format("Type id=%d name=%s", id, name));
         }
     }
 
@@ -173,7 +155,7 @@ public class InitIT extends AbstractIT {
             assertThat(ids, hasItem(id));
             ids.remove(id);
             assertThat(name, POKEMONS.get(id).getName().equals(name));
-            LOG.log(Level.INFO, "Pokemon id={0} name={1}", new String[] {String.valueOf(id), name});
+            LOG.info(() -> String.format("Pokemon id=%d name=%s", id, name));
         }
     }
 
@@ -196,8 +178,7 @@ public class InitIT extends AbstractIT {
             String pokemonName = row.column(2).as(String.class);
             Pokemon pokemon = POKEMONS.get(pokemonId);
             assertThat(pokemonName, POKEMONS.get(pokemonId).getName().equals(pokemonName));
-            LOG.log(Level.INFO, "DB Pokemon id={0} name={1}", new String[] {String.valueOf(pokemonId), pokemonName});
-            LOG.log(Level.INFO, "  MAP {0}", pokemon.toString());
+            LOG.info(() -> String.format("Pokemon id=%d name=%s", pokemonId, pokemonName));
             DbRows<DbRow> typeRows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-poketypes", pokemonId)
             ).toCompletableFuture().get();
@@ -205,7 +186,7 @@ public class InitIT extends AbstractIT {
             assertThat(typeRowsList.size(), equalTo(pokemon.getTypes().size()));
             for (DbRow typeRow : typeRowsList) {
                 Integer typeId = typeRow.column(2).as(Integer.class);
-                LOG.log(Level.INFO, "  DB Type ID: {0}", String.valueOf(typeId));
+                LOG.info(() -> String.format(" - Type id=%d name=%s", typeId, TYPES.get(typeId).getName()));
                 assertThat(pokemon.getTypes(), hasItem(TYPES.get(typeId)));
             }
         }

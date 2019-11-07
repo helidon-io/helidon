@@ -39,7 +39,7 @@ public class SimpleUpdateIT extends AbstractIT {
 
     private static void addPokemon(Pokemon pokemon) throws ExecutionException, InterruptedException {
         POKEMONS.put(pokemon.getId(), pokemon);
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -73,8 +73,8 @@ public class SimpleUpdateIT extends AbstractIT {
     public void testCreateNamedUpdateStrStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+1);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+1, "Fearow", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .createNamedUpdate("update-spearow", "UPDATE Pokemons SET name=:name WHERE id=:id")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createNamedUpdate("update-spearow", UPDATE_POKEMON_NAMED_ARG)
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
         ).toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -90,7 +90,7 @@ public class SimpleUpdateIT extends AbstractIT {
     public void testCreateNamedUpdateStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+2);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+2, "Spearow", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-named-arg")
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
         ).toCompletableFuture().get();
@@ -107,7 +107,7 @@ public class SimpleUpdateIT extends AbstractIT {
     public void testCreateNamedUpdateStrOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+3);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+3, "Arbok", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-order-arg")
                 .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
         ).toCompletableFuture().get();
@@ -124,8 +124,8 @@ public class SimpleUpdateIT extends AbstractIT {
     public void testCreateUpdateNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+4);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+4, "Ekans", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .createUpdate("UPDATE Pokemons SET name=:name WHERE id=:id")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createUpdate(UPDATE_POKEMON_NAMED_ARG)
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
         ).toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -141,8 +141,8 @@ public class SimpleUpdateIT extends AbstractIT {
     public void testCreateUpdateOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+5);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+5, "Diglett", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .createUpdate("UPDATE Pokemons SET name=? WHERE id=?")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createUpdate(UPDATE_POKEMON_ORDER_ARG)
                 .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
         ).toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -158,7 +158,7 @@ public class SimpleUpdateIT extends AbstractIT {
     public void testNamedUpdateNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+6);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+6, "Sandshrew", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedUpdate("update-pokemon-order-arg", updatedPokemon.getName(), updatedPokemon.getId())
         ).toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -174,8 +174,8 @@ public class SimpleUpdateIT extends AbstractIT {
     public void testUpdateOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+7);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+7, "Sandslash", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .update("UPDATE Pokemons SET name=? WHERE id=?", updatedPokemon.getName(), updatedPokemon.getId())
+        Long result = DB_CLIENT.execute(exec -> exec
+                .update(UPDATE_POKEMON_ORDER_ARG, updatedPokemon.getName(), updatedPokemon.getId())
         ).toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
     }

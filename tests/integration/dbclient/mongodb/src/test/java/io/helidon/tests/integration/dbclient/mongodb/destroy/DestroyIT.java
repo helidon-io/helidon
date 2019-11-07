@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.jdbc.destroy;
+package io.helidon.tests.integration.dbclient.mongodb.destroy;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -28,6 +28,8 @@ import io.helidon.dbclient.DbRows;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Destroy database
@@ -43,11 +45,11 @@ public class DestroyIT {
      * @throws InterruptedException when database query failed
      * @throws ExecutionException if the current thread was interrupted
      */
-    private static void dropSchema(DbClient dbClient) throws ExecutionException, InterruptedException {
+    private static void deleteSchema(DbClient dbClient) throws ExecutionException, InterruptedException {
         dbClient.execute(exec -> exec
-                .namedDml("drop-poketypes")
-                .thenCompose(result -> exec.namedDml("drop-pokemons"))
-                .thenCompose(result -> exec.namedDml("drop-types"))
+                .namedDelete("delete-poketypes")
+                .thenCompose(result -> exec.namedDelete("delete-pokemons"))
+                .thenCompose(result -> exec.namedDelete("delete-types"))
         ).toCompletableFuture().get();
     }
 
@@ -58,7 +60,7 @@ public class DestroyIT {
     @BeforeAll
     public static void destroy() {
         try {
-            dropSchema(DB_CLIENT);
+            deleteSchema(DB_CLIENT);
         } catch (ExecutionException | InterruptedException ex) {
             fail("Database cleanup failed!", ex);
         }
@@ -77,11 +79,11 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.log(Level.WARNING, "Rows count: {0}", rowsList.size());
-                fail("No Types rows shall be returned after database cleanup!");
+                LOG.warning(() -> String.format("Rows count: %d", rowsList.size()));
+                assertThat(rowsList, empty());
             }
         } catch (ExecutionException ex) {
-            LOG.log(Level.INFO, "Caught expected exception: {0}", ex.getMessage());
+            LOG.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 
@@ -98,11 +100,11 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.log(Level.WARNING, "Rows count: {0}", rowsList.size());
-                fail("No Pokemons rows shall be returned after database cleanup!");
+                LOG.warning(() -> String.format("Rows count: %d", rowsList.size()));
+                assertThat(rowsList, empty());
             }
         } catch (ExecutionException ex) {
-            LOG.log(Level.INFO, "Caught expected exception: {0}", ex.getMessage());
+            LOG.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 
@@ -119,11 +121,11 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.log(Level.WARNING, "Rows count: {0}", rowsList.size());
-                fail("No PokemonTypes rows shall be returned after database cleanup!");
+                LOG.warning(() -> String.format("Rows count: %d", rowsList.size()));
+                assertThat(rowsList, empty());
             }
         } catch (ExecutionException ex) {
-            LOG.log(Level.INFO, "Caught expected exception: {0}", ex.getMessage());
+            LOG.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 

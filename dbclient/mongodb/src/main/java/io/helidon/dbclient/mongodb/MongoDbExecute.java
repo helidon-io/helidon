@@ -93,7 +93,8 @@ public class MongoDbExecute extends AbstractDbExecute implements DbTransaction {
 
     @Override
     public DbStatementGeneric createNamedStatement(String statementName, String statement) {
-        throw new UnsupportedOperationException("Not implemented");
+        return new MongoDbStatementGeneric(DbStatementType.UNKNOWN, db, statementName, statement, dbMapperManager,
+                mapperManager, interceptors);
     }
 
     @Override

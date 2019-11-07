@@ -341,7 +341,7 @@ public interface DbExecute {
      * @return number of rows modified
      */
     default CompletionStage<Long> namedDml(String statementName, Object... parameters) {
-        return createNamedDelete(statementName).params(parameters).execute();
+        return createNamedDmlStatement(statementName).params(parameters).execute();
     }
 
     /**
@@ -352,7 +352,7 @@ public interface DbExecute {
      * @return number of rows modified
      */
     default CompletionStage<Long> dml(String statement, Object... parameters) {
-        return createDelete(statement).params(parameters).execute();
+        return createDmlStatement(statement).params(parameters).execute();
     }
 
     /*
