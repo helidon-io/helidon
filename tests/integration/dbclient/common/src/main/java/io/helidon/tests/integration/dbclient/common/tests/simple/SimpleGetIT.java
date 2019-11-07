@@ -23,8 +23,8 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.dbClient;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC get calls.
@@ -39,9 +39,9 @@ public class SimpleGetIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedGetStrStrNamedArgs() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
-                .createNamedGet("select-pikachu", "SELECT id, name FROM Pokemons WHERE id=:id")
-                .addParam("id", POKEMONS.get(1).getId()).execute()
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+                .createNamedGet("select-pikachu", SELECT_POKEMON_NAMED_ARG)
+                .addParam("name", POKEMONS.get(1).getName()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(maybeRow, POKEMONS.get(1));
     }
@@ -54,7 +54,7 @@ public class SimpleGetIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedGetStrNamedArgs() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .createNamedGet("select-pokemon-named-arg")
                 .addParam("name", POKEMONS.get(2).getName()).execute()
         ).toCompletableFuture().get();
@@ -69,7 +69,7 @@ public class SimpleGetIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedGetStrOrderArgs() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .createNamedGet("select-pokemon-order-arg")
                 .addParam(POKEMONS.get(3).getName()).execute()
         ).toCompletableFuture().get();
@@ -84,8 +84,8 @@ public class SimpleGetIT extends AbstractIT {
      */
     @Test
     public void testCreateGetNamedArgs() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
-                .createGet("SELECT id, name FROM Pokemons WHERE name=:name")
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+                .createGet(SELECT_POKEMON_NAMED_ARG)
                 .addParam("name", POKEMONS.get(4).getName()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(maybeRow, POKEMONS.get(4));
@@ -99,8 +99,8 @@ public class SimpleGetIT extends AbstractIT {
      */
     @Test
     public void testCreateGetOrderArgs() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
-                .createGet("SELECT id, name FROM Pokemons WHERE name=?")
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+                .createGet(SELECT_POKEMON_ORDER_ARG)
                 .addParam(POKEMONS.get(5).getName()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(maybeRow, POKEMONS.get(5));
@@ -114,7 +114,7 @@ public class SimpleGetIT extends AbstractIT {
      */
     @Test
     public void testNamedGetStrOrderArgs() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .namedGet("select-pokemon-order-arg", POKEMONS.get(6).getName())
         ).toCompletableFuture().get();
         verifyPokemon(maybeRow, POKEMONS.get(6));
@@ -128,8 +128,8 @@ public class SimpleGetIT extends AbstractIT {
      */
     @Test
     public void testGetStrOrderArgs() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
-                .get("SELECT id, name FROM Pokemons WHERE name=?", POKEMONS.get(7).getName())
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+                .get(SELECT_POKEMON_ORDER_ARG, POKEMONS.get(7).getName())
         ).toCompletableFuture().get();
         verifyPokemon(maybeRow, POKEMONS.get(7));
     }

@@ -18,6 +18,7 @@ package io.helidon.dbclient.mongodb;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonReaderFactory;
@@ -38,12 +39,14 @@ import org.bson.Document;
  * @param <S> MongoDB statement type
  * @param <R> Statement execution result type
  */
-public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
+abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
+
+    private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
 
     /**
      * Empty JSON object.
      */
-    protected static final Document EMPTY = Document.parse(Json.createObjectBuilder().build().toString());
+    static final Document EMPTY = Document.parse(Json.createObjectBuilder().build().toString());
 
     /**
      * Operation JSON parameter name.
@@ -61,6 +64,10 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
      * Value JSON parameter name.
      */
     protected static final String JSON_VALUE = "value";
+    /**
+     * Projection JSON parameter name: Defines projection to restrict returned fields.
+     */
+    protected static final String JSON_PROJECTION = "projection";
     /**
      * JSON reader factory.
      */
@@ -106,12 +113,33 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
      *
      * @return name of this statement (never null, may be generated)
      */
+    @Override
     public String statementName() {
         return super.statementName();
     }
 
     MongoDatabase db() {
         return db;
+    }
+
+    /**
+     * Db mapper manager.
+     *
+     * @return mapper manager for DB types
+     */
+    @Override
+    protected DbMapperManager dbMapperManager() {
+        return super.dbMapperManager();
+    }
+
+    /**
+     * Mapper manager.
+     *
+     * @return generic mapper manager
+     */
+    @Override
+    protected MapperManager mapperManager() {
+        return super.mapperManager();
     }
 
     @Override
@@ -126,7 +154,10 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
         QUERY("query", "find", "select"),
         INSERT("insert"),
         UPDATE("update"),
-        DELETE("delete");
+        DELETE("delete"),
+        // Database command not related to a specific collection
+        // Only executable using generic statement
+        COMMAND("command");
 
         private static final Map<String, MongoOperation> NAME_TO_OPERATION = new HashMap<>();
 
@@ -164,6 +195,7 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
         private final String collection;
         private final Document query;
         private final Document value;
+        private final Document projection;
 
         MongoStatement(DbStatementType dbStatementType, JsonReaderFactory jrf, String preparedStmt) {
             this.preparedStmt = preparedStmt;
@@ -192,9 +224,14 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
                                       MongoOperation.UPDATE, MongoOperation.DELETE);
                     break;
                 case UNKNOWN:
-                default:
-                    // any operation is OK for this type
+                    validateOperation(dbStatementType, operation, MongoOperation.QUERY,
+                                      MongoOperation.INSERT, MongoOperation.UPDATE,
+                                      MongoOperation.DELETE, MongoOperation.COMMAND);
                     break;
+                default:
+                    throw new IllegalStateException(
+                            "Operation type is not defined in statement, and cannot be inferred from statement type: "
+                                    + dbStatementType);
                 }
             } else {
                 switch (dbStatementType) {
@@ -225,12 +262,14 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
             this.collection = jsonStmt.getString(JSON_COLLECTION);
             this.value = jsonStmt.get(JSON_VALUE, Document.class);
             this.query = jsonStmt.get(JSON_QUERY, Document.class);
+            this.projection = jsonStmt.get(JSON_PROJECTION, Document.class);
         }
 
         private static void validateOperation(DbStatementType dbStatementType,
                                               MongoOperation actual,
                                               MongoOperation... expected) {
 
+            // PERF: time complexity of this check is terrible
             for (MongoOperation operation : expected) {
                 if (actual == operation) {
                     return;
@@ -243,24 +282,28 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
                                                     + actual);
         }
 
-        public Document/*JsonObject*/ getJsonStmt() {
+        Document/*JsonObject*/ getJsonStmt() {
             return jsonStmt;
         }
 
-        public MongoOperation getOperation() {
+        MongoOperation getOperation() {
             return operation;
         }
 
-        public String getCollection() {
+        String getCollection() {
             return collection;
         }
 
-        public Document getQuery() {
+        Document getQuery() {
             return query;
         }
 
-        public Document getValue() {
+        Document getValue() {
             return value;
+        }
+
+        Document getProjection() {
+            return projection;
         }
 
         @Override
@@ -268,4 +311,5 @@ public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends A
             return preparedStmt;
         }
     }
+
 }

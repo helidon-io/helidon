@@ -27,11 +27,11 @@ import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.dbClient;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyDeletePokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpdatePokemon;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC common statement calls.
@@ -46,7 +46,7 @@ public class SimpleStatementIT extends AbstractIT {
 
     private static void addPokemon(AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         POKEMONS.put(pokemon.getId(), pokemon);
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -88,9 +88,9 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testCreateNamedStatementWithQueryStrStrOrderArgs() throws ExecutionException, InterruptedException {
         // This call shall register named query
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .createNamedStatement("select-pikachu", "SELECT id, name FROM Pokemons WHERE id=?")
-                .addParam(AbstractIT.POKEMONS.get(1).getId()).execute()
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .createNamedStatement("select-pikachu", SELECT_POKEMON_ORDER_ARG)
+                .addParam(AbstractIT.POKEMONS.get(1).getName()).execute()
         ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
         verifyPokemon(rows, AbstractIT.POKEMONS.get(1));
     }
@@ -103,7 +103,7 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedStatementWithQueryStrNamedArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("select-pokemon-named-arg")
                 .addParam("name", AbstractIT.POKEMONS.get(2).getName()).execute()
         ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
@@ -118,7 +118,7 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedStatementWithQueryStrOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("select-pokemon-order-arg")
                 .addParam(AbstractIT.POKEMONS.get(3).getName()).execute()
         ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
@@ -133,8 +133,8 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateStatementWithQueryNamedArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .createStatement("SELECT id, name FROM Pokemons WHERE name=:name")
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .createStatement(SELECT_POKEMON_NAMED_ARG)
                 .addParam("name", AbstractIT.POKEMONS.get(4).getName()).execute()
         ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
         verifyPokemon(rows, AbstractIT.POKEMONS.get(4));
@@ -148,8 +148,8 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateStatementWithQueryOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .createStatement("SELECT id, name FROM Pokemons WHERE name=?")
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .createStatement(SELECT_POKEMON_ORDER_ARG)
                 .addParam(AbstractIT.POKEMONS.get(5).getName()).execute()
         ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
         verifyPokemon(rows, AbstractIT.POKEMONS.get(5));
@@ -163,7 +163,7 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testNamedStatementWithQueryOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedStatement("select-pokemon-order-arg", AbstractIT.POKEMONS.get(6).getName())
         ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
         verifyPokemon(rows, AbstractIT.POKEMONS.get(6));
@@ -177,8 +177,8 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testStatementWithQueryOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .statement("SELECT id, name FROM Pokemons WHERE name=?", AbstractIT.POKEMONS.get(7).getName())
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .statement(SELECT_POKEMON_ORDER_ARG, AbstractIT.POKEMONS.get(7).getName())
         ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
         verifyPokemon(rows, AbstractIT.POKEMONS.get(7));
     }
@@ -192,8 +192,8 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testCreateNamedStatementWithInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+1, "Zubat", TYPES.get(3), TYPES.get(4));
-        Long result = dbClient.execute(exec -> exec
-                .createNamedStatement("insert-zubat", "INSERT INTO Pokemons(id, name) VALUES(:id, :name)")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createNamedStatement("insert-zubat", INSERT_POKEMON_NAMED_ARG)
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -208,7 +208,7 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testCreateNamedStatementWithInsertStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+2, "Golbat", TYPES.get(3), TYPES.get(4));
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("insert-pokemon-named-arg")
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
@@ -224,7 +224,7 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testCreateNamedStatementWithInsertStrOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+3, "Crobat", TYPES.get(3), TYPES.get(4));
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("insert-pokemon-order-arg")
                 .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
@@ -240,8 +240,8 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testCreateStatementWithInsertNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+4, "Psyduck", TYPES.get(11));
-        Long result = dbClient.execute(exec -> exec
-                .createStatement("INSERT INTO Pokemons(id, name) VALUES(:id, :name)")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createStatement(INSERT_POKEMON_NAMED_ARG)
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -256,8 +256,8 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testCreateStatementWithInsertOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+5, "Golduck", TYPES.get(11));
-        Long result = dbClient.execute(exec -> exec
-                .createStatement("INSERT INTO Pokemons(id, name) VALUES(?, ?)")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createStatement(INSERT_POKEMON_ORDER_ARG)
                 .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -273,7 +273,7 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testNamedStatementWithInsertOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+6, "Aipom", TYPES.get(1));
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedStatement("insert-pokemon-order-arg", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -289,8 +289,8 @@ public class SimpleStatementIT extends AbstractIT {
     @Test
     public void testStatementWithInsertOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+7, "Ambipom", TYPES.get(1));
-       Long result = dbClient.execute(exec -> exec
-                .statement("INSERT INTO Pokemons(id, name) VALUES(?, ?)", pokemon.getId(), pokemon.getName())
+       Long result = DB_CLIENT.execute(exec -> exec
+                .statement(INSERT_POKEMON_ORDER_ARG, pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
     }
@@ -305,8 +305,8 @@ public class SimpleStatementIT extends AbstractIT {
     public void testCreateNamedStatementWithUpdateStrStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+10);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+10, "Prinplup", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .createNamedStatement("update-piplup", "UPDATE Pokemons SET name=:name WHERE id=:id")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createNamedStatement("update-piplup", UPDATE_POKEMON_NAMED_ARG)
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -322,7 +322,7 @@ public class SimpleStatementIT extends AbstractIT {
     public void testCreateNamedStatementWithUpdateStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+11);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+11, "Empoleon", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("update-pokemon-named-arg")
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
@@ -339,7 +339,7 @@ public class SimpleStatementIT extends AbstractIT {
     public void testCreateNamedStatementWithUpdateStrOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+12);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+12, "Piplup", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("update-pokemon-order-arg")
                 .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
@@ -356,8 +356,8 @@ public class SimpleStatementIT extends AbstractIT {
     public void testCreateStatemenWithUpdateNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+13);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+13, "Starmie", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .createStatement("UPDATE Pokemons SET name=:name WHERE id=:id")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createStatement(UPDATE_POKEMON_NAMED_ARG)
                 .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -373,8 +373,8 @@ public class SimpleStatementIT extends AbstractIT {
     public void testCreateStatemenWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+14);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+14, "Staryu", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .createStatement("UPDATE Pokemons SET name=? WHERE id=?")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createStatement(UPDATE_POKEMON_ORDER_ARG)
                 .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -391,7 +391,7 @@ public class SimpleStatementIT extends AbstractIT {
     public void testNamedStatemenWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+15);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+15, "Seadra", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedStatement("update-pokemon-order-arg", updatedPokemon.getName(), updatedPokemon.getId())
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
@@ -408,8 +408,8 @@ public class SimpleStatementIT extends AbstractIT {
     public void testStatemenWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon srcPokemon = POKEMONS.get(BASE_ID+16);
         Pokemon updatedPokemon = new Pokemon(BASE_ID+16, "Horsea", srcPokemon.getTypesArray());
-        Long result = dbClient.execute(exec -> exec
-                .statement("UPDATE Pokemons SET name=? WHERE id=?", updatedPokemon.getName(), updatedPokemon.getId())
+        Long result = DB_CLIENT.execute(exec -> exec
+                .statement(UPDATE_POKEMON_ORDER_ARG, updatedPokemon.getName(), updatedPokemon.getId())
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyUpdatePokemon(result, updatedPokemon);
     }
@@ -422,8 +422,8 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedStatemenWithDeleteStrStrOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .createNamedStatement("delete-mudkip", "DELETE FROM Pokemons WHERE id=?")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createNamedStatement("delete-mudkip", DELETE_POKEMON_ORDER_ARG)
                 .addParam(POKEMONS.get(BASE_ID+20).getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+20));
@@ -437,7 +437,7 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedStatemenWithDeleteStrNamedArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("delete-pokemon-named-arg")
                 .addParam("id", POKEMONS.get(BASE_ID+21).getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
@@ -452,7 +452,7 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedStatemenWithDeleteStrOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedStatement("delete-pokemon-order-arg")
                 .addParam(POKEMONS.get(BASE_ID+22).getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
@@ -467,8 +467,8 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateStatemenWithDeleteNamedArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .createStatement("DELETE FROM Pokemons WHERE id=:id")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createStatement(DELETE_POKEMON_NAMED_ARG)
                 .addParam("id", POKEMONS.get(BASE_ID+23).getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+23));
@@ -482,8 +482,8 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testCreateStatemenWithDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .createStatement("DELETE FROM Pokemons WHERE id=?")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createStatement(DELETE_POKEMON_ORDER_ARG)
                 .addParam(POKEMONS.get(BASE_ID+24).getId()).execute()
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+24));
@@ -497,7 +497,7 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testNamedStatemenWithDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedStatement("delete-pokemon-order-arg", POKEMONS.get(BASE_ID+25).getId())
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+25));
@@ -511,8 +511,8 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @Test
     public void testStatemenWithDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .statement("DELETE FROM Pokemons WHERE id=?", POKEMONS.get(BASE_ID+26).getId())
+        Long result = DB_CLIENT.execute(exec -> exec
+                .statement(DELETE_POKEMON_ORDER_ARG, POKEMONS.get(BASE_ID+26).getId())
         ).toCompletableFuture().get().dmlFuture().toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+26));
     }

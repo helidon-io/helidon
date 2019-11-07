@@ -127,8 +127,12 @@
                             <goal>integration-test</goal>
                         </goals>
                         <configuration>
+                            <dependenciesToScan>
+                                <dependency>io.helidon.tests.integration.dbclient:heldion-tests-integration-dbclient-common</dependency>
+                            </dependenciesToScan>
                             <includes>
-                                <include>io.helidon.tests.integration.dbclient.mongodb.tests.*IT</include>
+                                <include>io.helidon.tests.integration.dbclient.common.tests.simple.*IT</include>
+                                <include>io.helidon.tests.integration.dbclient.jdbc.tests.*IT</include>
                             </includes>
                         </configuration>
                     </execution>

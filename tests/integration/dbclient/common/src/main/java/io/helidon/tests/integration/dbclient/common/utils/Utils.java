@@ -23,9 +23,9 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.dbClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test utilities.
@@ -82,7 +82,7 @@ public class Utils {
      */
     public static void verifyInsertPokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .namedGet("select-pokemon-order-arg", pokemon.getName())
         ).toCompletableFuture().get();
         assertThat(maybeRow.isPresent(), equalTo(true));
@@ -103,7 +103,7 @@ public class Utils {
      */
     public static void verifyUpdatePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .namedGet("select-pokemon-by-id", pokemon.getId())
         ).toCompletableFuture().get();
         assertThat(maybeRow.isPresent(), equalTo(true));
@@ -124,7 +124,7 @@ public class Utils {
      */
     public static void verifyDeletePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
-        Optional<DbRow> maybeRow = dbClient.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
                 .namedGet("select-pokemon-by-id", pokemon.getId())
         ).toCompletableFuture().get();
         assertThat(maybeRow.isPresent(), equalTo(false));

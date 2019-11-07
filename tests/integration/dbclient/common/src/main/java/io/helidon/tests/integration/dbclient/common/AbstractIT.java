@@ -16,7 +16,6 @@ package io.helidon.tests.integration.dbclient.common;
  * limitations under the License.
  */
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +35,7 @@ public abstract class AbstractIT {
 
     public static final Config CONFIG = Config.create(ConfigSources.classpath("test.yaml"));
 
-    public static final DbClient dbClient = initDbClient();
+    public static final DbClient DB_CLIENT = initDbClient();
 
     public static DbClient initDbClient() {
         Config dbConfig = CONFIG.get("db");
@@ -62,6 +61,12 @@ public abstract class AbstractIT {
         public String getName() {
             return name;
         }
+
+        @Override
+        public String toString() {
+            return "Type: {id="+id+", name="+name+"}";
+        }
+
     }
 
     /**
@@ -77,8 +82,10 @@ public abstract class AbstractIT {
             this.id = id;
             this.name = name;
             this.types = new ArrayList<>(types != null ? types.length : 0);
-            for (Type type : types) {
-               this.types.add(type);
+            if (types != null) {
+                for (Type type : types) {
+                    this.types.add(type);
+                }
             }
         }
 
@@ -96,6 +103,27 @@ public abstract class AbstractIT {
 
         public Type[] getTypesArray() {
             return types.toArray(new Type[types.size()]);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Pokemon: {id=");
+            sb.append(id);
+            sb.append(", name=");
+            sb.append(name);
+            sb.append(", types=[");
+            boolean first = true;
+            for (Type type : types) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
+                sb.append(type.toString());
+            }
+            sb.append("]}");
+            return sb.toString();
         }
 
     }
@@ -142,4 +170,37 @@ public abstract class AbstractIT {
 
     /** Last used id in Pokemons table. */
     public static final int LAST_POKEMON_ID = 5;
+
+    /** Select statement with named arguments for Pokemon class. */
+    public static final String SELECT_POKEMON_NAMED_ARG
+            = CONFIG.get("db.statements.select-pokemon-named-arg").asString().get();
+
+    /** Select statement with ordered arguments for Pokemon class. */
+    public static final String SELECT_POKEMON_ORDER_ARG
+            = CONFIG.get("db.statements.select-pokemon-order-arg").asString().get();
+
+    /** Insert statement with named arguments for Pokemon class. */
+    public static final String INSERT_POKEMON_NAMED_ARG
+            = CONFIG.get("db.statements.insert-pokemon-named-arg").asString().get();
+
+    /** Insert statement with ordered arguments for Pokemon class. */
+    public static final String INSERT_POKEMON_ORDER_ARG
+            = CONFIG.get("db.statements.insert-pokemon-order-arg").asString().get();
+
+    /** Update statement with named arguments for Pokemon class. */
+    public static final String UPDATE_POKEMON_NAMED_ARG
+            = CONFIG.get("db.statements.update-pokemon-named-arg").asString().get();
+
+    /** Update statement with ordered arguments for Pokemon class. */
+    public static final String UPDATE_POKEMON_ORDER_ARG
+            = CONFIG.get("db.statements.update-pokemon-order-arg").asString().get();
+
+    /** Delete statement with named arguments for Pokemon class. */
+    public static final String DELETE_POKEMON_NAMED_ARG
+            = CONFIG.get("db.statements.delete-pokemon-named-arg").asString().get();
+
+    /** Delete statement with ordered arguments for Pokemon class. */
+    public static final String DELETE_POKEMON_ORDER_ARG
+            = CONFIG.get("db.statements.delete-pokemon-order-arg").asString().get();
+
 }

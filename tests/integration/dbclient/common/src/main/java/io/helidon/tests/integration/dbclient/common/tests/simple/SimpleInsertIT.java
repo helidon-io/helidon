@@ -39,8 +39,8 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testCreateNamedInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+1, "Bulbasaur", TYPES.get(4), TYPES.get(12));
-       Long result = dbClient.execute(exec -> exec
-                .createNamedInsert("insert-bulbasaur", "INSERT INTO Pokemons(id, name) VALUES(:id, :name)")
+       Long result = DB_CLIENT.execute(exec -> exec
+                .createNamedInsert("insert-bulbasaur", INSERT_POKEMON_NAMED_ARG)
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -55,7 +55,7 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testCreateNamedInsertStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+2, "Ivysaur", TYPES.get(4), TYPES.get(12));
-       Long result = dbClient.execute(exec -> exec
+       Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedInsert("insert-pokemon-named-arg")
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
         ).toCompletableFuture().get();
@@ -71,7 +71,7 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testCreateNamedInsertStrOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+3, "Venusaur", TYPES.get(4), TYPES.get(12));
-       Long result = dbClient.execute(exec -> exec
+       Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedInsert("insert-pokemon-order-arg")
                 .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
         ).toCompletableFuture().get();
@@ -87,8 +87,8 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testCreateInsertNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+4, "Magby", TYPES.get(10));
-       Long result = dbClient.execute(exec -> exec
-                .createInsert("INSERT INTO Pokemons(id, name) VALUES(:id, :name)")
+       Long result = DB_CLIENT.execute(exec -> exec
+                .createInsert(INSERT_POKEMON_NAMED_ARG)
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -103,8 +103,8 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testCreateInsertOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+5, "Magmar", TYPES.get(10));
-       Long result = dbClient.execute(exec -> exec
-                .createInsert("INSERT INTO Pokemons(id, name) VALUES(?, ?)")
+       Long result = DB_CLIENT.execute(exec -> exec
+                .createInsert(INSERT_POKEMON_ORDER_ARG)
                 .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -119,7 +119,7 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testNamedInsertOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+6, "Rattata", TYPES.get(1));
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon-order-arg", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -134,8 +134,8 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testInsertOrderArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+7, "Raticate", TYPES.get(1));
-       Long result = dbClient.execute(exec -> exec
-                .insert("INSERT INTO Pokemons(id, name) VALUES(?, ?)", pokemon.getId(), pokemon.getName())
+       Long result = DB_CLIENT.execute(exec -> exec
+                .insert(INSERT_POKEMON_ORDER_ARG, pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
     }

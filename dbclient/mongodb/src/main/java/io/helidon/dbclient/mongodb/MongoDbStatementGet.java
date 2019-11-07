@@ -34,6 +34,7 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
  * Statement for GET operation in mongoDB.
  */
 public class MongoDbStatementGet implements DbStatementGet {
+
     private final MongoDbStatementQuery theQuery;
 
     MongoDbStatementGet(MongoDatabase db,
