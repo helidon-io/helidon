@@ -19,6 +19,8 @@ package io.helidon.microprofile.cors;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Priority;
+import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -43,6 +45,7 @@ import static io.helidon.microprofile.cors.CrossOriginHelper.processPreFlight;
 /**
  * Class CrossOriginFilter.
  */
+@Priority(Priorities.HEADER_DECORATOR)
 class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     @Context
