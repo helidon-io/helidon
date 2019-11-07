@@ -39,15 +39,8 @@ public class MessagingCdiExtension implements Extension {
     private ChannelRouter channelRouter = new ChannelRouter();
 
     private void registerChannelMethods(@Observes @WithAnnotations({Incoming.class, Outgoing.class}) ProcessAnnotatedType<?> pat) {
-        pat.getAnnotatedType().getMethods()
-                .stream()
-                .filter(m -> m.isAnnotationPresent(Incoming.class))
-                .forEach(m -> channelRouter.addIncomingMethod(m));
-
-        pat.getAnnotatedType().getMethods()
-                .stream()
-                .filter(m -> m.isAnnotationPresent(Outgoing.class))
-                .forEach(m -> channelRouter.addOutgoingMethod(m));
+        // Lookup channel methods
+        pat.getAnnotatedType().getMethods().forEach(m -> channelRouter.addMethod(m));
     }
 
     public void onProcessBean(@Observes ProcessManagedBean event) {

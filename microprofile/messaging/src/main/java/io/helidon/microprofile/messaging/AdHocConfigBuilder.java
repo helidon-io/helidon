@@ -46,11 +46,6 @@ public class AdHocConfigBuilder {
     }
 
     public org.eclipse.microprofile.config.Config build() {
-        //TODO: There has to be some better way
-//        return MpConfig.builder().config(((MpConfig) mpConfigBuilder
-//                .config(Config.builder().sources(ConfigSources.create(config), ConfigSources.create(properties)).build())
-//                .build()).helidonConfig().get(currentContext)).build();
-//
         Config newConfig = Config.builder(ConfigSources.create(properties), ConfigSources.create(config))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()

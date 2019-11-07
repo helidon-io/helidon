@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.microprofile.messaging;
 
 import io.helidon.config.Config;
@@ -16,6 +32,7 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -51,13 +68,15 @@ public abstract class AbstractCDITest {
         }
     };
 
-    private SeContainer cdiContainer;
+    protected SeContainer cdiContainer;
 
-    protected void cdiConfig(Properties p){
+    protected void cdiConfig(Properties p) {
         //Default config
     }
 
-    abstract void cdiBeanClasses(Set<Class<?>> classes);
+    protected void cdiBeanClasses(Set<Class<?>> classes) {
+
+    }
 
     @BeforeEach
     public void setUp() {
@@ -75,8 +94,12 @@ public abstract class AbstractCDITest {
         }
     }
 
-    protected <T> void forEachBean(Class<T> beanType, Annotation annotation, Consumer<T> consumer){
+    protected <T> void forEachBean(Class<T> beanType, Annotation annotation, Consumer<T> consumer) {
         cdiContainer.select(beanType, annotation).stream().forEach(consumer);
+    }
+
+    public static SeContainer startCdiContainer(Properties p, Class<?>... beanClasses) {
+        return startCdiContainer(p, new HashSet<>(Arrays.asList(beanClasses)));
     }
 
     public static SeContainer startCdiContainer(Properties p, Set<Class<?>> beanClasses) {

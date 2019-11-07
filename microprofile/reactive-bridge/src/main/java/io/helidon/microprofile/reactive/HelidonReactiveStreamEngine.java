@@ -44,12 +44,12 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
 
     @Override
     public <T, R> SubscriberWithCompletionStage<T, R> buildSubscriber(Graph graph) throws UnsupportedStageException {
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet!!!");
     }
 
     @Override
     public <T, R> Processor<T, R> buildProcessor(Graph graph) throws UnsupportedStageException {
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet!!!");
     }
 
     @Override

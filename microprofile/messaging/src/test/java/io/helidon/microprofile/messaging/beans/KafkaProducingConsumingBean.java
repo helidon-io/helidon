@@ -30,7 +30,6 @@ import java.util.concurrent.CountDownLatch;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ApplicationScoped
-//TODO: Implement test
 public class KafkaProducingConsumingBean {
 
     public static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("test1", "test2", "test3"));

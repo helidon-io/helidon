@@ -63,7 +63,7 @@ class KafkaCdiExtensionTest extends AbstractCDITest {
     }
 
     @Override
-    void cdiBeanClasses(Set<Class<?>> classes) {
+    protected void cdiBeanClasses(Set<Class<?>> classes) {
         classes.add(KafkaConnectorFactory.class);
         classes.add(KafkaConsumingBean.class);
     }
