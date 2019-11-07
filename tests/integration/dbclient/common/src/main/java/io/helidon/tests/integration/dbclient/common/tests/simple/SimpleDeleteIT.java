@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.dbClient;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyDeletePokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC delete calls.
@@ -41,7 +41,7 @@ public class SimpleDeleteIT extends AbstractIT {
 
     private static void addPokemon(Pokemon pokemon) throws ExecutionException, InterruptedException {
         POKEMONS.put(pokemon.getId(), pokemon);
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();
         verifyInsertPokemon(result, pokemon);
@@ -74,8 +74,8 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedDeleteStrStrOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .createNamedDelete("delete-rayquaza", "DELETE FROM Pokemons WHERE id=?")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createNamedDelete("delete-rayquaza", DELETE_POKEMON_ORDER_ARG)
                 .addParam(POKEMONS.get(BASE_ID+1).getId()).execute()
         ).toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+1));
@@ -89,7 +89,7 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedDeleteStrNamedArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedDelete("delete-pokemon-named-arg")
                 .addParam("id", POKEMONS.get(BASE_ID+2).getId()).execute()
         ).toCompletableFuture().get();
@@ -104,7 +104,7 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedDeleteStrOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedDelete("delete-pokemon-order-arg")
                 .addParam(POKEMONS.get(BASE_ID+3).getId()).execute()
         ).toCompletableFuture().get();
@@ -119,8 +119,8 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @Test
     public void testCreateDeleteNamedArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .createDelete("DELETE FROM Pokemons WHERE id=:id")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createDelete(DELETE_POKEMON_NAMED_ARG)
                 .addParam("id", POKEMONS.get(BASE_ID+4).getId()).execute()
         ).toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+4));
@@ -134,8 +134,8 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @Test
     public void testCreateDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .createDelete("DELETE FROM Pokemons WHERE id=?")
+        Long result = DB_CLIENT.execute(exec -> exec
+                .createDelete(DELETE_POKEMON_ORDER_ARG)
                 .addParam(POKEMONS.get(BASE_ID+5).getId()).execute()
         ).toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+5));
@@ -149,7 +149,7 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @Test
     public void testNamedDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .namedDelete("delete-pokemon-order-arg", POKEMONS.get(BASE_ID+6).getId())
         ).toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+6));
@@ -163,8 +163,8 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @Test
     public void testDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = dbClient.execute(exec -> exec
-                .delete("DELETE FROM Pokemons WHERE id=?", POKEMONS.get(BASE_ID+7).getId())
+        Long result = DB_CLIENT.execute(exec -> exec
+                .delete(DELETE_POKEMON_ORDER_ARG, POKEMONS.get(BASE_ID+7).getId())
         ).toCompletableFuture().get();
         verifyDeletePokemon(result, POKEMONS.get(BASE_ID+7));
     }

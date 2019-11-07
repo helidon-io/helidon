@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.jdbc.init;
+package io.helidon.tests.integration.dbclient.mongodb.init;
 
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -21,9 +21,11 @@ import java.util.logging.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -41,6 +43,14 @@ public class CheckIT extends AbstractIT {
     /** Timeout in seconds to wait for database to come up. */
     private static final int TIMEOUT = 60;
 
+    /** Helidon DB client with admin database access. */
+    public static final DbClient DB_ADMIN = initDbAdmin();
+
+    private static DbClient initDbAdmin() {
+        Config dbConfig = CONFIG.get("dbadmin");
+        return DbClient.builder(dbConfig).build();
+    }
+
     /**
      * Wait for database server to start.
      *
@@ -56,19 +66,42 @@ public class CheckIT extends AbstractIT {
             } catch (ExecutionException | InterruptedException ex) {
                 if (System.currentTimeMillis() > endTm) {
                     fail("Database startup failed!", ex);
+                } else {
+                    LOG.info(() -> String.format("Exception: %s", ex.getMessage()));
                 }
             }
         }
     }
 
     /**
+     * Initialize user for test database.
+     *
+     * @param dbClient Helidon database client
+     */
+    private static void initUser(DbClient dbClient) {
+        try {
+            dbClient.execute(exec -> exec
+                    .namedDml("use")
+                    .thenCompose(result -> exec.namedDml("create-user"))
+            ).toCompletableFuture().get();
+        } catch (ExecutionException | InterruptedException ex) {
+                LOG.warning(() -> String.format("Exception: %s", ex.getMessage()));
+                fail("Database user setup failed!", ex);
+        }
+    }
+
+    /**
      * Setup database for tests.
      * Wait for database to start. Returns after ping query completed successfully or timeout passed.
+     *
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
-    public static void setup() {
-        LOG.log(Level.INFO, "Initializing Integration Tests");
-        waitForStart(DB_CLIENT);
+    public static void setup() throws ExecutionException, InterruptedException {
+        LOG.info(() -> String.format("Initializing Integration Tests"));
+        waitForStart(DB_ADMIN);
+        //initUser(DB_ADMIN);
     }
 
     /**

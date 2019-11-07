@@ -23,8 +23,8 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.dbClient;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC queries.
@@ -42,14 +42,14 @@ public class SimpleQueriesIT extends AbstractIT {
     @Test
     public void testCreateNamedQueryStrStrOrderArgs() throws ExecutionException, InterruptedException {
         // This call shall register named query
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .createNamedQuery("select-pikachu", "SELECT id, name FROM Pokemons WHERE id=?")
-                .addParam(POKEMONS.get(1).getId()).execute()
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .createNamedQuery("select-pikachu", SELECT_POKEMON_ORDER_ARG)
+                .addParam(POKEMONS.get(1).getName()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(rows, POKEMONS.get(1));
 // Not implemented yet
 //        // Run newly created named query
-//        rows = dbClient.execute(exec -> exec
+//        rows = DB_CLIENT.execute(exec -> exec
 //                .createNamedQuery("select-pikachu").addParam("id", 1).execute()
 //        ).toCompletableFuture().get();
 //        assertThat(rows, notNullValue());
@@ -67,7 +67,7 @@ public class SimpleQueriesIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedQueryStrNamedArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .createNamedQuery("select-pokemon-named-arg")
                 .addParam("name", POKEMONS.get(2).getName()).execute()
         ).toCompletableFuture().get();
@@ -82,7 +82,7 @@ public class SimpleQueriesIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedQueryStrOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .createNamedQuery("select-pokemon-order-arg")
                 .addParam(POKEMONS.get(3).getName()).execute()
         ).toCompletableFuture().get();
@@ -97,8 +97,8 @@ public class SimpleQueriesIT extends AbstractIT {
      */
     @Test
     public void testCreateQueryNamedArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .createQuery("SELECT id, name FROM Pokemons WHERE name=:name")
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .createQuery(SELECT_POKEMON_NAMED_ARG)
                 .addParam("name", POKEMONS.get(4).getName()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(rows, POKEMONS.get(4));
@@ -112,8 +112,8 @@ public class SimpleQueriesIT extends AbstractIT {
      */
     @Test
     public void testCreateQueryOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .createQuery("SELECT id, name FROM Pokemons WHERE name=?")
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .createQuery(SELECT_POKEMON_ORDER_ARG)
                 .addParam(POKEMONS.get(5).getName()).execute()
         ).toCompletableFuture().get();
         verifyPokemon(rows, POKEMONS.get(5));
@@ -127,7 +127,7 @@ public class SimpleQueriesIT extends AbstractIT {
      */
     @Test
     public void testNamedQueryOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-pokemon-order-arg", POKEMONS.get(6).getName())
         ).toCompletableFuture().get();
         verifyPokemon(rows, POKEMONS.get(6));
@@ -141,8 +141,8 @@ public class SimpleQueriesIT extends AbstractIT {
      */
     @Test
     public void testQueryOrderArgs() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
-                .query("SELECT id, name FROM Pokemons WHERE name=?", POKEMONS.get(7).getName())
+        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .query(SELECT_POKEMON_ORDER_ARG, POKEMONS.get(7).getName())
         ).toCompletableFuture().get();
         verifyPokemon(rows, POKEMONS.get(7));
     }

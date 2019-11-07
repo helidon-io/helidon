@@ -15,25 +15,11 @@
  */
 package io.helidon.dbclient.mongodb;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
-import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.MappingProcessor;
-import io.helidon.common.reactive.Multi;
-import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
@@ -42,422 +28,45 @@ import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.InterceptorSupport;
 
-import com.mongodb.reactivestreams.client.FindPublisher;
-import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
-import org.bson.Document;
-import org.reactivestreams.Subscription;
 
 /**
- * Implementation of a query.
+ * Implementation of a query for MongoDB.
  */
 class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, DbRows<DbRow>> implements DbStatementQuery {
+
     private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
 
-    MongoDbStatementQuery(DbStatementType dbStatementType,
-                          MongoDatabase db,
-                          String statementName,
-                          String statement,
-                          DbMapperManager dbMapperManager,
-                          MapperManager mapperManager,
-                          InterceptorSupport interceptors) {
-        super(dbStatementType,
-              db,
-              statementName,
-              statement,
-              dbMapperManager,
-              mapperManager,
-              interceptors);
+    MongoDbStatementQuery(
+            DbStatementType dbStatementType,
+            MongoDatabase db,
+            String statementName,
+            String statement,
+            DbMapperManager dbMapperManager,
+            MapperManager mapperManager,
+            InterceptorSupport interceptors
+    ) {
+        super(
+                dbStatementType,
+                db,
+                statementName,
+                statement,
+                dbMapperManager,
+                mapperManager,
+                interceptors);
     }
 
     @Override
-    protected CompletionStage<DbRows<DbRow>> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
-                                                       CompletableFuture<Void> statementFuture,
-                                                       CompletableFuture<Long> queryFuture) {
-
-        dbContextFuture.exceptionally(throwable -> {
-            statementFuture.completeExceptionally(throwable);
-            queryFuture.completeExceptionally(throwable);
-            return null;
-        });
-
-        CompletionStage<MongoStatement> mongoStmtFuture = dbContextFuture.thenApply(dbContext -> {
-            MongoStatement stmt = new MongoStatement(DbStatementType.QUERY, READER_FACTORY, build());
-            if (stmt.getOperation() == MongoOperation.QUERY) {
-                return stmt;
-            } else {
-                throw new UnsupportedOperationException(String.format("Operation %s is not supported",
-                                                                      stmt.getOperation().toString()));
-            }
-        });
-
-        return executeQuery(mongoStmtFuture, statementFuture, queryFuture);
+    protected CompletionStage<DbRows<DbRow>> doExecute(
+            CompletionStage<DbInterceptorContext> dbContextFuture,
+            CompletableFuture<Void> statementFuture,
+            CompletableFuture<Long> queryFuture
+    ) {
+        return MongoDbQueryExecutor.executeQuery(
+                this,
+                dbContextFuture,
+                statementFuture,
+                queryFuture);
     }
 
-    public CompletionStage<DbRows<DbRow>> executeQuery(CompletionStage<MongoStatement> stmtFuture,
-                                                       CompletableFuture<Void> statementFuture,
-                                                       CompletableFuture<Long> queryFuture) {
-
-        return stmtFuture.thenApply(mongoStmt -> {
-            MongoCollection<Document> mc = db().getCollection(mongoStmt.getCollection());
-            Document query = mongoStmt.getQuery();
-            return mc.find((query != null) ? query : EMPTY);
-        }).thenApply(mongoPublisher -> {
-            return new MongoDbRows<>(mongoPublisher,
-                                     dbMapperManager(),
-                                     mapperManager(),
-                                     DbRow.class,
-                                     statementFuture,
-                                     queryFuture);
-        });
-    }
-
-    private static class Row implements DbRow {
-
-        private final Map<String, DbColumn> columnsByName = new HashMap<>();
-        private final List<DbColumn> columnsList = new ArrayList<>();
-
-        private final DbMapperManager dbMapperManager;
-        private final MapperManager mapperManager;
-
-        Row(DbMapperManager dbMapperManager, MapperManager mapperManager) {
-            this.dbMapperManager = dbMapperManager;
-            this.mapperManager = mapperManager;
-        }
-
-        private void add(String name, DbColumn column) {
-            columnsByName.put(name, column);
-            columnsList.add(column);
-        }
-
-        @Override
-        public DbColumn column(String name) {
-            return columnsByName.get(name);
-        }
-
-        @Override
-        public DbColumn column(int index) {
-            return columnsList.get(index);
-        }
-
-        @Override
-        public void forEach(Consumer<? super DbColumn> columnAction) {
-            columnsByName.values().forEach(columnAction);
-        }
-
-        @Override
-        public <T> T as(Class<T> type) {
-            return dbMapperManager.read(this, type);
-        }
-
-        @Override
-        public <T> T as(GenericType<T> type) throws MapperException {
-            return dbMapperManager.read(this, type);
-        }
-
-        @Override
-        public <T> T as(Function<DbRow, T> mapper) {
-            return mapper.apply(this);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            boolean first = true;
-            sb.append('{');
-            for (DbColumn col : columnsByName.values()) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(',');
-                }
-                sb.append(col.name());
-                sb.append(':');
-                sb.append(col.value().toString());
-            }
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
-    public static class Column implements DbColumn {
-        private final MapperManager mapperManager;
-        private final String name;
-        private final Object value;
-
-        Column(DbMapperManager dbMapperManager, MapperManager mapperManager, String name, Object value) {
-            this.mapperManager = mapperManager;
-            this.name = name;
-            this.value = value;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <T> T as(Class<T> type) throws MapperException {
-            if (type.equals(javaType())) {
-                return (T) value;
-            }
-
-            return map(value, type);
-        }
-
-        @Override
-        public <T> T as(GenericType<T> type) throws MapperException {
-            return map(value, type);
-        }
-
-        @SuppressWarnings("unchecked")
-        private <S, T> T map(S value, Class<T> targetType) {
-            Class<S> sourceType = (Class<S>) javaType();
-
-            return mapperManager.map(value, sourceType, targetType);
-        }
-
-        @SuppressWarnings("unchecked")
-        private <S, T> T map(S value, GenericType<T> targetType) {
-            Class<S> sourceClass = (Class<S>) javaType();
-            GenericType<S> sourceType = GenericType.create(sourceClass);
-
-            return mapperManager.map(value, sourceType, targetType);
-        }
-
-        @Override
-        public Class<?> javaType() {
-            return (null == value) ? String.class : value.getClass();
-        }
-
-        @Override
-        public String dbType() {
-            throw new UnsupportedOperationException("sqlType() is not supported yet.");
-        }
-
-        @Override
-        public String name() {
-            return name;
-        }
-
-    }
-
-    private static final class QueryProcessor
-            implements org.reactivestreams.Subscriber<Document>, Flow.Publisher<DbRow> {
-
-        private final AtomicLong count = new AtomicLong();
-        private final CompletableFuture<Long> queryFuture;
-        private final DbMapperManager dbMapperManager;
-        private final MapperManager mapperManager;
-        private final CompletableFuture<Void> statementFuture;
-        private Flow.Subscriber<? super DbRow> subscriber;
-        private Subscription subscription;
-
-        private QueryProcessor(DbMapperManager dbMapperManager,
-                               MapperManager mapperManager,
-                               CompletableFuture<Void> statementFuture,
-                               CompletableFuture<Long> queryFuture) {
-
-            this.statementFuture = statementFuture;
-            this.queryFuture = queryFuture;
-            this.dbMapperManager = dbMapperManager;
-            this.mapperManager = mapperManager;
-        }
-
-        @Override
-        public void onSubscribe(Subscription subscription) {
-            this.subscription = subscription;
-        }
-
-        @Override
-        public void onNext(Document doc) {
-            Row dbRow = new Row(dbMapperManager, mapperManager);
-            doc.forEach((name, value) -> {
-                LOGGER.finest(() -> String
-                        .format("Column name = %s, value = %s", name, (value != null) ? value.toString() : "NULL"));
-                dbRow.add(name, new Column(dbMapperManager, mapperManager, name, value));
-            });
-            count.incrementAndGet();
-            subscriber.onNext(dbRow);
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            LOGGER.warning(String.format("Query error: %s", t.getMessage()));
-            statementFuture.completeExceptionally(t);
-            queryFuture.completeExceptionally(t);
-            subscriber.onError(t);
-        }
-
-        @Override
-        public void onComplete() {
-            LOGGER.fine(() -> "Query finished");
-            statementFuture.complete(null);
-            queryFuture.complete(count.get());
-            subscriber.onComplete();
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super DbRow> subscriber) {
-            this.subscriber = subscriber;
-            //TODO this MUST use flow control (e.g. only request what our subscriber requested)
-            this.subscription.request(Long.MAX_VALUE);
-        }
-    }
-
-    private static final class MongoDbRows<T> implements DbRows<T> {
-        private final AtomicBoolean resultRequested = new AtomicBoolean();
-        private final FindPublisher<Document> documentFindPublisher;
-        private final DbMapperManager dbMapperManager;
-        private final MapperManager mapperManager;
-        private final CompletableFuture<Long> queryFuture;
-        private final GenericType<T> currentType;
-        private final Function<?, T> resultMapper;
-        private final MongoDbRows<?> parent;
-        private final CompletableFuture<Void> statementFuture;
-
-        private MongoDbRows(FindPublisher<Document> documentFindPublisher,
-                            DbMapperManager dbMapperManager,
-                            MapperManager mapperManager,
-                            Class<T> initialType,
-                            CompletableFuture<Void> statementFuture,
-                            CompletableFuture<Long> queryFuture) {
-            this.documentFindPublisher = documentFindPublisher;
-
-            this.dbMapperManager = dbMapperManager;
-            this.mapperManager = mapperManager;
-            this.statementFuture = statementFuture;
-            this.queryFuture = queryFuture;
-            this.currentType = GenericType.create(initialType);
-            this.resultMapper = Function.identity();
-            this.parent = null;
-        }
-
-        private MongoDbRows(FindPublisher<Document> documentFindPublisher,
-                            DbMapperManager dbMapperManager,
-                            MapperManager mapperManager,
-                            CompletableFuture<Void> statementFuture,
-                            CompletableFuture<Long> queryFuture,
-                            GenericType<T> nextType,
-                            Function<?, T> resultMapper,
-                            MongoDbRows<?> parent) {
-            this.documentFindPublisher = documentFindPublisher;
-            this.dbMapperManager = dbMapperManager;
-            this.mapperManager = mapperManager;
-            this.statementFuture = statementFuture;
-            this.queryFuture = queryFuture;
-            this.resultMapper = resultMapper;
-            this.currentType = nextType;
-            this.parent = parent;
-        }
-
-        @Override
-        public <U> DbRows<U> map(Function<T, U> mapper) {
-            return new MongoDbRows<>(documentFindPublisher,
-                                     dbMapperManager,
-                                     mapperManager,
-                                     statementFuture,
-                                     queryFuture,
-                                     null,
-                                     mapper,
-                                     this);
-        }
-
-        @Override
-        public <U> DbRows<U> map(Class<U> type) {
-            return map(GenericType.create(type));
-        }
-
-        @Override
-        public <U> DbRows<U> map(GenericType<U> type) {
-            GenericType<T> currentType = this.currentType;
-
-            Function<T, U> theMapper;
-
-            if (null == currentType) {
-                theMapper = value -> mapperManager.map(value,
-                                                       GenericType.create(value.getClass()),
-                                                       type);
-            } else if (currentType.equals(DbMapperManager.TYPE_DB_ROW)) {
-                // maybe we want the same type
-                if (type.equals(DbMapperManager.TYPE_DB_ROW)) {
-                    return (DbRows<U>) this;
-                }
-                // try to find mapper in db mapper manager
-                theMapper = value -> {
-                    //first try db mapper
-                    try {
-                        return dbMapperManager.read((DbRow) value, type);
-                    } catch (MapperException originalException) {
-                        // not found in db mappers, use generic mappers
-                        try {
-                            return mapperManager.map(value,
-                                                     DbMapperManager.TYPE_DB_ROW,
-                                                     type);
-                        } catch (MapperException ignored) {
-                            throw originalException;
-                        }
-                    }
-                };
-            } else {
-                // one type to another
-                theMapper = value -> mapperManager.map(value,
-                                                       currentType,
-                                                       type);
-            }
-            return new MongoDbRows<>(documentFindPublisher,
-                                     dbMapperManager,
-                                     mapperManager,
-                                     statementFuture,
-                                     queryFuture,
-                                     type,
-                                     theMapper,
-                                     this);
-        }
-
-        @Override
-        public Flow.Publisher<T> publisher() {
-            checkResult();
-
-            return toPublisher();
-        }
-
-        @SuppressWarnings("unchecked")
-        private Flow.Publisher<T> toPublisher() {
-            // if parent is null, this is the DbRow type
-            if (null == parent) {
-                return (Flow.Publisher<T>) toDbPublisher();
-            }
-
-            Flow.Publisher<?> parentPublisher = parent.publisher();
-            Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
-            // otherwise we must apply mapping
-            MappingProcessor<Object, T> processor = MappingProcessor.create(mappingFunction);
-            parentPublisher.subscribe(processor);
-            return processor;
-        }
-
-        @Override
-        public CompletionStage<List<T>> collect() {
-            checkResult();
-
-            return Multi.from(toPublisher())
-                    .collectList()
-                    .toStage();
-        }
-
-        private Flow.Publisher<DbRow> toDbPublisher() {
-            QueryProcessor qp = new QueryProcessor(dbMapperManager,
-                                                   mapperManager,
-                                                   statementFuture,
-                                                   queryFuture);
-            documentFindPublisher.subscribe(qp);
-
-            return qp;
-        }
-
-        private void checkResult() {
-            if (resultRequested.get()) {
-                throw new IllegalStateException("Result has already been requested");
-            }
-            resultRequested.set(true);
-        }
-
-    }
 }

@@ -38,7 +38,7 @@ db:
     # data initialization verification statements
     select-types: "SELECT id, name FROM Types"
     select-pokemons: "SELECT id, name FROM Pokemons"
-    select-poketypes: "SELECT p.id, p.name, t.id, t.name FROM Pokemons p INNER JOIN PokemonTypes r ON p.id = r.id_pokemon INNER JOIN Types t ON r.id_type = t.id"
+    select-poketypes: "SELECT id_pokemon, id_type FROM PokemonTypes p WHERE id_pokemon = ?"
     # data cleanup verification statements
     select-poketypes-all: "SELECT id_pokemon, id_type FROM PokemonTypes"
     # retrieve max. Pokemon ID
