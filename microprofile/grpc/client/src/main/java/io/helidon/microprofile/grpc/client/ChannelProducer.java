@@ -36,7 +36,7 @@ import io.grpc.Channel;
  * A producer of gRPC {@link io.grpc.Channel Channels}.
  */
 @ApplicationScoped
-class ChannelProducer {
+public class ChannelProducer {
 
     private final GrpcChannelsProvider provider;
 
