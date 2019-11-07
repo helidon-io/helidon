@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,13 +191,18 @@ public class FaultToleranceExtension implements Extension {
         registerFaultToleranceMethods(event.getAnnotatedBeanClass());
     }
 
+    /**
+     * Register FT methods for later processing.
+     *
+     * @param type Bean type.
+     */
     private void registerFaultToleranceMethods(AnnotatedType<?> type) {
         for (AnnotatedMethod<?> method : type.getMethods()) {
             if (isFaultToleranceMethod(type.getJavaClass(), method.getJavaMember())) {
                 getRegisteredMethods().add(new BeanMethod(type.getJavaClass(), method.getJavaMember()));
             }
         }
-        }
+    }
 
     /**
      * Registers metrics for all FT methods.
