@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.messaging;
 
+import io.helidon.microprofile.messaging.channel.ChannelRouter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;

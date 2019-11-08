@@ -15,18 +15,8 @@
  *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
 
-import org.eclipse.microprofile.reactive.messaging.Message;
-
-public class ConnectorDownstreamProcessor extends InternalProcessor {
-
-    public ConnectorDownstreamProcessor(ProcessorChannelMethod processorChannelMethod) {
-        super(processorChannelMethod);
-    }
-
-    @Override
-    protected Object wrapValue(Object value) {
-        return Message.of(value);
-    }
+public class IncomingConnectorChannel {
+    //TODO: Move connector logic here
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.config.MpConfig;
@@ -36,9 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 public class ChannelRouter {
-    private List<AbstractChannelMethod> connectableBeanMethods = new ArrayList<>();
-    private Map<String, List<IncomingChannelMethod>> incomingSubscriberMap = new HashMap<>();
-    private Map<String, List<AbstractChannelMethod>> outgoingSubscriberMap = new HashMap<>();
+    private List<AbstractChannel> connectableBeanMethods = new ArrayList<>();
+    private Map<String, List<IncomingMethodChannel>> incomingSubscriberMap = new HashMap<>();
+    private Map<String, List<AbstractChannel>> outgoingSubscriberMap = new HashMap<>();
 
     private Map<String, Bean<?>> incomingConnectorFactoryMap = new HashMap<>();
     private Map<String, Bean<?>> outgoingConnectorFactoryMap = new HashMap<>();
@@ -54,8 +55,8 @@ public class ChannelRouter {
         //Needs to be initialized before connecting,
         // fast publishers would call onNext before all bean references are resolved
         connectableBeanMethods.forEach(m -> m.init(beanManager, config));
-        connectableBeanMethods.stream().filter(OutgoingChannelMethod.class::isInstance).forEach(AbstractChannelMethod::connect);
-        connectableBeanMethods.stream().filter(IncomingChannelMethod.class::isInstance).forEach(AbstractChannelMethod::connect);
+        connectableBeanMethods.stream().filter(OutgoingMethodChannel.class::isInstance).forEach(AbstractChannel::connect);
+        connectableBeanMethods.stream().filter(IncomingMethodChannel.class::isInstance).forEach(AbstractChannel::connect);
         connectableBeanMethods.stream().filter(m -> !m.connected).forEach(m -> {
             throw new DeploymentException("Channel " + m.incomingChannelName + "/" + m.outgoingChannelName
                     + " has no candidate to connect to method: " + m.method);
@@ -64,23 +65,23 @@ public class ChannelRouter {
     }
 
     void addIncomingMethod(AnnotatedMethod m) {
-        IncomingChannelMethod incomingChannelMethod = new IncomingChannelMethod(m, this);
-        incomingChannelMethod.validate();
-        String channelName = incomingChannelMethod.getIncomingChannelName();
-        getIncomingSubscribers(channelName).add(incomingChannelMethod);
-        connectableBeanMethods.add(incomingChannelMethod);
+        IncomingMethodChannel incomingMethodChannel = new IncomingMethodChannel(m, this);
+        incomingMethodChannel.validate();
+        String channelName = incomingMethodChannel.getIncomingChannelName();
+        getIncomingSubscribers(channelName).add(incomingMethodChannel);
+        connectableBeanMethods.add(incomingMethodChannel);
     }
 
     void addOutgoingMethod(AnnotatedMethod m) {
-        OutgoingChannelMethod outgoingChannelMethod = new OutgoingChannelMethod(m, this);
-        outgoingChannelMethod.validate();
-        String channelName = outgoingChannelMethod.getOutgoingChannelName();
-        getOutgoingSubscribers(channelName).add(outgoingChannelMethod);
-        connectableBeanMethods.add(outgoingChannelMethod);
+        OutgoingMethodChannel outgoingMethodChannel = new OutgoingMethodChannel(m, this);
+        outgoingMethodChannel.validate();
+        String channelName = outgoingMethodChannel.getOutgoingChannelName();
+        getOutgoingSubscribers(channelName).add(outgoingMethodChannel);
+        connectableBeanMethods.add(outgoingMethodChannel);
     }
 
     void addProcessorMethod(AnnotatedMethod m) {
-        ProcessorChannelMethod channelMethod = new ProcessorChannelMethod(m, this);
+        ProcessorMethodChannel channelMethod = new ProcessorMethodChannel(m, this);
         channelMethod.validate();
         getIncomingSubscribers(channelMethod.getIncomingChannelName()).add(channelMethod);
         getOutgoingSubscribers(channelMethod.getOutgoingChannelName()).add(channelMethod);
@@ -97,7 +98,7 @@ public class ChannelRouter {
         }
     }
 
-    void addConnectorFactory(Bean<?> bean) {
+    public void addConnectorFactory(Bean<?> bean) {
         Class<?> beanType = bean.getBeanClass();
         Connector annotation = beanType.getAnnotation(Connector.class);
         if (IncomingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
@@ -108,11 +109,11 @@ public class ChannelRouter {
         }
     }
 
-    public List<IncomingChannelMethod> getIncomingSubscribers(String channelName) {
+    public List<IncomingMethodChannel> getIncomingSubscribers(String channelName) {
         return getOrCreateList(channelName, incomingSubscriberMap);
     }
 
-    public List<AbstractChannelMethod> getOutgoingSubscribers(String channelName) {
+    public List<AbstractChannel> getOutgoingSubscribers(String channelName) {
         return getOrCreateList(channelName, outgoingSubscriberMap);
     }
 

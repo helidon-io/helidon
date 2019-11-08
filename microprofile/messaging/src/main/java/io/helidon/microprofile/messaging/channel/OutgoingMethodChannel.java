@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.microprofile.messaging.AdHocConfigBuilder;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Publisher;
 
@@ -33,17 +33,17 @@ import javax.enterprise.inject.spi.DeploymentException;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class OutgoingChannelMethod extends AbstractChannelMethod {
+public class OutgoingMethodChannel extends AbstractChannel {
 
-    private static final Logger LOGGER = Logger.getLogger(OutgoingChannelMethod.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(OutgoingMethodChannel.class.getName());
 
     private SubscriberBuilder<? extends Message<?>, Void> subscriberBuilder;
 
-    public OutgoingChannelMethod(AnnotatedMethod method, ChannelRouter router) {
+    public OutgoingMethodChannel(AnnotatedMethod method, ChannelRouter router) {
         super(null, method.getAnnotation(Outgoing.class).value(), method.getJavaMember(), router);
     }
 
-    void validate() {
+    public void validate() {
         if (outgoingChannelName == null || outgoingChannelName.trim().isEmpty()) {
             throw new DeploymentException("Missing channel name in annotation @Outgoing, method: "
                     + method.toString());
@@ -78,15 +78,15 @@ public class OutgoingChannelMethod extends AbstractChannelMethod {
             connected = true;
         } else {
             // Connect to Incoming methods with publisher
-            List<IncomingChannelMethod> incomingChannelMethods = getRouter().getIncomingSubscribers(getOutgoingChannelName());
-            if (incomingChannelMethods != null) {
-                for (IncomingChannelMethod s : getRouter().getIncomingSubscribers(getOutgoingChannelName())) {
+            List<IncomingMethodChannel> incomingMethodChannels = getRouter().getIncomingSubscribers(getOutgoingChannelName());
+            if (incomingMethodChannels != null) {
+                for (IncomingMethodChannel s : getRouter().getIncomingSubscribers(getOutgoingChannelName())) {
                     System.out.println("Connecting " + this.getOutgoingChannelName() + " " + this.method.getName() + " to " + s.method.getName());
 
                     Publisher publisher = getPublisher();
-                    if(s instanceof ProcessorChannelMethod){
+                    if(s instanceof ProcessorMethodChannel){
                         // Processors managing subscribing
-                        ((ProcessorChannelMethod)s).setPublisher(publisher);
+                        ((ProcessorMethodChannel)s).setPublisher(publisher);
                     }else{
                         // TODO: Move subscribing to Incoming methods to align with processors
                         publisher.subscribe(s.getSubscriber());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,24 +12,28 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.reactive;
 
+import io.helidon.microprofile.messaging.MessageUtils;
+import io.helidon.microprofile.messaging.channel.ProcessorMethodChannel;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class InternalProcessor implements Processor<Object, Object> {
 
 
-    private ProcessorChannelMethod processorChannelMethod;
+    private ProcessorMethodChannel processorMethodChannel;
     private Subscriber<? super Object> subscriber;
 
-    public InternalProcessor(ProcessorChannelMethod processorChannelMethod) {
-        this.processorChannelMethod = processorChannelMethod;
+    public InternalProcessor(ProcessorMethodChannel processorMethodChannel) {
+        this.processorMethodChannel = processorMethodChannel;
     }
 
     @Override
@@ -46,8 +50,10 @@ public class InternalProcessor implements Processor<Object, Object> {
     public void onNext(Object incomingValue) {
         try {
             //TODO: Has to be always one param in the processor, validate and propagate better
-            Class<?> paramType = processorChannelMethod.method.getParameterTypes()[0];
-            Object processedValue = processorChannelMethod.method.invoke(processorChannelMethod.beanInstance, MessageUtils.unwrap(incomingValue, paramType));
+            Method method = processorMethodChannel.getMethod();
+            Class<?> paramType = method.getParameterTypes()[0];
+            Object processedValue = method.invoke(processorMethodChannel.getBeanInstance(),
+                    MessageUtils.unwrap(incomingValue, paramType));
             subscriber.onNext(wrapValue(processedValue));
         } catch (IllegalAccessException | InvocationTargetException e) {
             subscriber.onError(e);

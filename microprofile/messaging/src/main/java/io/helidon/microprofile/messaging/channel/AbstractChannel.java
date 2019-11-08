@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -30,7 +31,7 @@ import javax.enterprise.inject.spi.DeploymentException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public abstract class AbstractChannelMethod {
+public abstract class AbstractChannel {
 
     protected String incomingChannelName;
     protected String outgoingChannelName;
@@ -46,7 +47,7 @@ public abstract class AbstractChannelMethod {
 
 
 
-    public AbstractChannelMethod(String incomingChannelName, String outgoingChannelName, Method method, ChannelRouter router) {
+    public AbstractChannel(String incomingChannelName, String outgoingChannelName, Method method, ChannelRouter router) {
         this.incomingChannelName = incomingChannelName;
         this.outgoingChannelName = outgoingChannelName;
         this.router = router;
@@ -61,6 +62,14 @@ public abstract class AbstractChannelMethod {
         this.beanInstance = getBeanInstance(bean, beanManager);
         this.beanManager = beanManager;
         this.config = config;
+    }
+
+    public Method getMethod() {
+        return method;
+    }
+
+    public Object getBeanInstance() {
+        return beanInstance;
     }
 
     public void setDeclaringBean(Bean bean) {

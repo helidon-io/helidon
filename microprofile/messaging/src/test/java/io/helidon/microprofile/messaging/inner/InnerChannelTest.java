@@ -18,10 +18,6 @@
 package io.helidon.microprofile.messaging.inner;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
-import io.helidon.microprofile.messaging.inner.InnerProcessorBean;
-import io.helidon.microprofile.messaging.inner.InternalChannelsBean;
-import io.helidon.microprofile.messaging.inner.NotConnectedIncommingChannelBean;
-import io.helidon.microprofile.messaging.inner.NotConnectedOutgoingChannelBean;
 import org.junit.jupiter.api.Test;
 
 import javax.enterprise.inject.spi.DeploymentException;
@@ -56,6 +52,16 @@ public class InnerChannelTest extends AbstractCDITest {
         assertTrue(InnerProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
                 , "All messages not delivered in time, number of unreceived messages: "
                         + InnerProcessorBean.testLatch.getCount());
+    }
+
+    @Test
+    void primitiveProcessorTest() throws InterruptedException {
+        cdiContainer = startCdiContainer(Collections.emptyMap(), PrimitiveProcessorBean.class);
+
+        // Wait till all messages are delivered
+        assertTrue(PrimitiveProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
+                , "All messages not delivered in time, number of unreceived messages: "
+                        + PrimitiveProcessorBean.testLatch.getCount());
     }
 
     @Test

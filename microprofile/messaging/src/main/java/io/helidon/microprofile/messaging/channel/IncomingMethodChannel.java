@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.microprofile.messaging.AdHocConfigBuilder;
+import io.helidon.microprofile.messaging.reactive.InternalSubscriber;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
@@ -38,14 +41,14 @@ import java.util.logging.Logger;
  * Subscriber with reference to {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
  * /{@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotated method
  */
-public class IncomingChannelMethod extends AbstractChannelMethod {
+public class IncomingMethodChannel extends AbstractChannel {
 
-    private static final Logger LOGGER = Logger.getLogger(IncomingChannelMethod.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(IncomingMethodChannel.class.getName());
 
     protected PublisherBuilder<? extends Message<?>> publisherBuilder;
     private Subscriber subscriber;
 
-    public IncomingChannelMethod(AnnotatedMethod method, ChannelRouter router) {
+    public IncomingMethodChannel(AnnotatedMethod method, ChannelRouter router) {
         super(method.getAnnotation(Incoming.class).value(), null, method.getJavaMember(), router);
         resolveSignatureType();
     }

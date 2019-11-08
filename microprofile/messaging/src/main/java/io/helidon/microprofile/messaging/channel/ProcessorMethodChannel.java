@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.microprofile.messaging.AdHocConfigBuilder;
+import io.helidon.microprofile.messaging.reactive.OutgoingConnectorProcessor;
+import io.helidon.microprofile.messaging.reactive.InternalProcessor;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
@@ -38,15 +42,15 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
-public class ProcessorChannelMethod extends IncomingChannelMethod {
+public class ProcessorMethodChannel extends IncomingMethodChannel {
 
-    private static final Logger LOGGER = Logger.getLogger(ProcessorChannelMethod.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ProcessorMethodChannel.class.getName());
 
     private SubscriberBuilder<? extends Message<?>, Void> subscriberBuilder;
     private Processor<Object, Object> processor;
     private Publisher<Object> publisher;
 
-    public ProcessorChannelMethod(AnnotatedMethod method, ChannelRouter router) {
+    public ProcessorMethodChannel(AnnotatedMethod method, ChannelRouter router) {
         super(method, router);
         super.outgoingChannelName =
                 method.getAnnotation(Outgoing.class).value();
@@ -66,7 +70,7 @@ public class ProcessorChannelMethod extends IncomingChannelMethod {
     }
 
     @Override
-    void validate() {
+    public void validate() {
         super.validate();
         if (outgoingChannelName == null || outgoingChannelName.trim().isEmpty()) {
             throw new DeploymentException("Missing channel name in annotation @Outgoing on method "
@@ -125,14 +129,14 @@ public class ProcessorChannelMethod extends IncomingChannelMethod {
             subscriberBuilder = ((OutgoingConnectorFactory) getBeanInstance(getRouter()
                     .getOutgoingConnectorFactory(outgoingConnectorName.get()), beanManager))
                     .getSubscriberBuilder(augmentedConfig);
-            processor = new ConnectorDownstreamProcessor(this);
+            processor = new OutgoingConnectorProcessor(this);
             processor.subscribe((Subscriber) subscriberBuilder.build());
             connected = true;
         } else {
             // Connect to downstream Incoming methods with publisher
-            List<IncomingChannelMethod> incomingChannelMethods = getRouter().getIncomingSubscribers(getOutgoingChannelName());
-            if (incomingChannelMethods != null) {
-                for (IncomingChannelMethod s : getRouter().getIncomingSubscribers(getOutgoingChannelName())) {
+            List<IncomingMethodChannel> incomingMethodChannels = getRouter().getIncomingSubscribers(getOutgoingChannelName());
+            if (incomingMethodChannels != null) {
+                for (IncomingMethodChannel s : getRouter().getIncomingSubscribers(getOutgoingChannelName())) {
                     System.out.println("Connecting " + this.getOutgoingChannelName() + " " + this.method.getName() + " to " + s.method.getName());
                     connected = true;
                     s.connected = true;

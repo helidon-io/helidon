@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,13 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.reactive;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import org.eclipse.microprofile.reactive.messaging.Message;
+import io.helidon.microprofile.messaging.MessageUtils;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -48,24 +49,7 @@ public class InternalSubscriber implements Subscriber<Object> {
     @Override
     public void onNext(Object message) {
         try {
-            final Object paramValue;
             Class<?> paramType = this.method.getParameterTypes()[0];
-
-            if (paramType != Message.class && !(message instanceof Message)) {
-                paramValue = paramType.cast(message);
-
-            } else if (paramType == Message.class && message instanceof Message) {
-                paramValue = paramType.cast(message);
-
-            } else if (paramType != Message.class && message instanceof Message) {
-                paramValue = paramType.cast(((Message) message).getPayload());
-
-            } else if (paramType == Message.class && !(message instanceof Message)) {
-                paramValue = paramType.cast(Message.of(message));
-
-            } else {
-                paramValue = message;
-            }
 
             Context parentContext = Context.create();
             Context context = Context
@@ -73,7 +57,7 @@ public class InternalSubscriber implements Subscriber<Object> {
                     .parent(parentContext)
                     .id(parentContext.id() + ":message-" + UUID.randomUUID().toString())
                     .build();
-            Contexts.runInContext(context, () -> this.method.invoke(this.beanInstance, paramValue));
+            Contexts.runInContext(context, () -> this.method.invoke(this.beanInstance, MessageUtils.unwrap(message, paramType)));
             incrementAndCheckChunkPosition();
         } catch (Exception e) {
             //Notify publisher to stop sending

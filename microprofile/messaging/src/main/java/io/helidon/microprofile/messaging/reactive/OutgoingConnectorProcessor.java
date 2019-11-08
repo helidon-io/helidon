@@ -15,26 +15,19 @@
  *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.reactive;
 
+import io.helidon.microprofile.messaging.channel.ProcessorMethodChannel;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-public class MessageUtils {
-    public static Object unwrap(Object value, Class<?> type) {
-        if (type.equals(Message.class)) {
-            if (value instanceof Message) {
-                return type.cast(value);
-            } else {
-                return Message.of(value);
-            }
-        } else {
-            if (value instanceof Message) {
-                return type.cast(((Message) value).getPayload());
-            } else if (type.isInstance(value)) {
-                return type.cast(value);
-            } else {
-                return value;
-            }
-        }
+public class OutgoingConnectorProcessor extends InternalProcessor {
+
+    public OutgoingConnectorProcessor(ProcessorMethodChannel processorMethodChannel) {
+        super(processorMethodChannel);
+    }
+
+    @Override
+    protected Object wrapValue(Object value) {
+        return Message.of(value);
     }
 }
