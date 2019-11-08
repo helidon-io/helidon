@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.kafka;
 
 import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.messaging.kafka.SimpleKafkaProducer;
 import io.helidon.messaging.kafka.connector.KafkaConnectorFactory;
-import io.helidon.microprofile.messaging.beans.KafkaConsumingBean;
+import io.helidon.microprofile.messaging.AbstractCDITest;
+import io.helidon.microprofile.messaging.kafka.KafkaConsumingBean;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
@@ -34,17 +36,18 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class KafkaCdiExtensionTest extends AbstractCDITest {
+public class KafkaCdiExtensionTest extends AbstractCDITest {
 
 
     @RegisterExtension
@@ -53,13 +56,13 @@ class KafkaCdiExtensionTest extends AbstractCDITest {
     public static final String TEST_MESSAGE = "this is first test message";
 
     @Override
-    protected void cdiConfig(Properties p) {
-        p.setProperty("mp.messaging.incoming.test-channel.connector", KafkaConnectorFactory.CONNECTOR_NAME);
-        p.setProperty("mp.messaging.incoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString());
-        p.setProperty("mp.messaging.incoming.test-channel.topic", TEST_TOPIC);
-        p.setProperty("mp.messaging.incoming.test-channel.key.deserializer", LongDeserializer.class.getName());
-        p.setProperty("mp.messaging.incoming.test-channel.value.deserializer", StringDeserializer.class.getName());
-
+    protected Map<String, String> cdiConfig() {
+        return mapOf(
+                "mp.messaging.incoming.test-channel.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel.topic", TEST_TOPIC,
+                "mp.messaging.incoming.test-channel.key.deserializer", LongDeserializer.class.getName(),
+                "mp.messaging.incoming.test-channel.value.deserializer", StringDeserializer.class.getName());
     }
 
     @Override
@@ -90,11 +93,12 @@ class KafkaCdiExtensionTest extends AbstractCDITest {
     @Test
     void incomingKafkaTest() throws InterruptedException {
         // Producer
-        Properties p = new Properties();
-        p.setProperty("mp.messaging.outcoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString());
-        p.setProperty("mp.messaging.outcoming.test-channel.topic", TEST_TOPIC);
-        p.setProperty("mp.messaging.outcoming.test-channel.key.serializer", LongSerializer.class.getName());
-        p.setProperty("mp.messaging.outcoming.test-channel.value.serializer", StringSerializer.class.getName());
+        Map<String, String> p = mapOf(
+                "mp.messaging.outcoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.outcoming.test-channel.topic", TEST_TOPIC,
+                "mp.messaging.outcoming.test-channel.key.serializer", LongSerializer.class.getName(),
+                "mp.messaging.outcoming.test-channel.value.serializer", StringSerializer.class.getName()
+        );
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))

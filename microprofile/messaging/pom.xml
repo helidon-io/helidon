@@ -94,17 +94,6 @@
             <artifactId>internal-test-libs</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>io.reactivex.rxjava2</groupId>-->
-        <!--            <artifactId>rxjava</artifactId>-->
-        <!--            <scope>test</scope>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>io.smallrye.reactive</groupId>-->
-        <!--            <artifactId>smallrye-reactive-streams-operators</artifactId>-->
-        <!--            <version>1.0.10</version>-->
-        <!--            <scope>test</scope>-->
-        <!--        </dependency>-->
         <dependency>
             <groupId>org.jboss.weld</groupId>
             <artifactId>weld-junit5</artifactId>

@@ -21,6 +21,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.messaging.kafka.connector.KafkaConnectorFactory;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.config.MpConfigProviderResolver;
+import io.helidon.microprofile.messaging.kafka.KafkaCdiExtensionTest;
 import io.helidon.microprofile.server.Server;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.junit.jupiter.api.AfterEach;
@@ -33,8 +34,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.LogManager;
@@ -70,8 +73,8 @@ public abstract class AbstractCDITest {
 
     protected SeContainer cdiContainer;
 
-    protected void cdiConfig(Properties p) {
-        //Default config
+    protected Map<String, String> cdiConfig() {
+        return Collections.emptyMap();
     }
 
     protected void cdiBeanClasses(Set<Class<?>> classes) {
@@ -80,10 +83,10 @@ public abstract class AbstractCDITest {
 
     @BeforeEach
     public void setUp() {
-        Properties p = new Properties();
+        Map<String, String> p = new HashMap<>();
         Set<Class<?>> classes = new HashSet<>();
         cdiBeanClasses(classes);
-        cdiConfig(p);
+        p.putAll(cdiConfig());
         cdiContainer = startCdiContainer(p, classes);
     }
 
@@ -98,11 +101,11 @@ public abstract class AbstractCDITest {
         cdiContainer.select(beanType, annotation).stream().forEach(consumer);
     }
 
-    public static SeContainer startCdiContainer(Properties p, Class<?>... beanClasses) {
+    public static SeContainer startCdiContainer(Map<String, String> p, Class<?>... beanClasses) {
         return startCdiContainer(p, new HashSet<>(Arrays.asList(beanClasses)));
     }
 
-    public static SeContainer startCdiContainer(Properties p, Set<Class<?>> beanClasses) {
+    public static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
                 .build();

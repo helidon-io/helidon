@@ -45,11 +45,17 @@ public class InternalProcessor implements Processor<Object, Object> {
     @Override
     public void onNext(Object incomingValue) {
         try {
-            Object processedValue = processorChannelMethod.method.invoke(processorChannelMethod.beanInstance, incomingValue);
-            subscriber.onNext(processedValue);
+            //TODO: Has to be always one param in the processor, validate and propagate better
+            Class<?> paramType = processorChannelMethod.method.getParameterTypes()[0];
+            Object processedValue = processorChannelMethod.method.invoke(processorChannelMethod.beanInstance, MessageUtils.unwrap(incomingValue, paramType));
+            subscriber.onNext(wrapValue(processedValue));
         } catch (IllegalAccessException | InvocationTargetException e) {
             subscriber.onError(e);
         }
+    }
+
+    protected Object wrapValue(Object value) {
+        return value;
     }
 
     @Override

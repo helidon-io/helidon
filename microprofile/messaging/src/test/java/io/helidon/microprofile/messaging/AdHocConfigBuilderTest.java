@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AdHocConfigBuilderTest {
@@ -39,7 +40,7 @@ class AdHocConfigBuilderTest {
 
     @Test
     void currentContext() {
-        Map<String, String> propMap = CollectionsHelper.mapOf(
+        Map<String, String> propMap = mapOf(
                 "mp.messaging.outcoming.test-channel.key.serializer", LongSerializer.class.getName()
         );
 
@@ -58,7 +59,7 @@ class AdHocConfigBuilderTest {
 
     @Test
     void customValueOverride() {
-        Map<String, String> propMap = CollectionsHelper.mapOf(
+        Map<String, String> propMap = mapOf(
                 "mp.messaging.outcoming.test-channel." + TEST_KEY, TEST_TOPIC_CONFIG,
                 "mp.messaging.outcoming.test-channel.key.serializer", LongSerializer.class.getName()
         );
@@ -77,11 +78,11 @@ class AdHocConfigBuilderTest {
 
     @Test
     void putAllTest() {
-        Map<String, String> propMap = CollectionsHelper.mapOf(
+        Map<String, String> propMap = mapOf(
                 "mp.messaging.outcoming.test-channel." + TEST_KEY, TEST_TOPIC_CONFIG
         );
 
-        Map<String, String> propMap2 = CollectionsHelper.mapOf(
+        Map<String, String> propMap2 = mapOf(
                 "mp.messaging.connector." + TEST_CONNECTOR + "." + ADDITION_ATTR_1, ADDITION_ATTR_1_VALUE,
                 "mp.messaging.connector." + TEST_CONNECTOR + "." + ADDITION_ATTR_2, ADDITION_ATTR_2_VALUE
         );

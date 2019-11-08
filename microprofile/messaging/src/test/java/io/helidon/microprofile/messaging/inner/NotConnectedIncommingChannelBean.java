@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.messaging.beans;
+package io.helidon.microprofile.messaging.inner;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 

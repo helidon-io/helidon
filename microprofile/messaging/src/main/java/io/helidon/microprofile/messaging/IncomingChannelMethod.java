@@ -42,7 +42,7 @@ public class IncomingChannelMethod extends AbstractChannelMethod {
 
     private static final Logger LOGGER = Logger.getLogger(IncomingChannelMethod.class.getName());
 
-    private PublisherBuilder<? extends Message<?>> publisherBuilder;
+    protected PublisherBuilder<? extends Message<?>> publisherBuilder;
     private Subscriber subscriber;
 
     public IncomingChannelMethod(AnnotatedMethod method, ChannelRouter router) {

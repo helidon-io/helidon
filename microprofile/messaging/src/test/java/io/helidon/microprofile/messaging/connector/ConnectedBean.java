@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,21 +12,28 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging.beans;
+package io.helidon.microprofile.messaging.connector;
 
-import io.helidon.common.reactive.Multi;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.reactivestreams.Publisher;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import javax.enterprise.context.ApplicationScoped;
 
-@ApplicationScoped
-public class NotConnectedOutgoingChannelBean {
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 
-    @Outgoing("not-existing-channel")
-    public Publisher<String> produceMessage() {
-        return Multi.justMP("t1", "t2");
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ApplicationScoped
+public class ConnectedBean {
+
+    public static final CountDownLatch LATCH = new CountDownLatch(IterableConnector.TEST_DATA.length);
+
+    @Incoming("iterable-channel-in")
+    public void receiveMethod(String msg) {
+        assertTrue(Arrays.asList(IterableConnector.TEST_DATA).contains(msg));
+        LATCH.countDown();
     }
 }

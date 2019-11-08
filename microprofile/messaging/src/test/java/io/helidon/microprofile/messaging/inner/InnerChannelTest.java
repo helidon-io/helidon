@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,25 +12,27 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.microprofile.messaging.beans.InnerProcessorBean;
-import io.helidon.microprofile.messaging.beans.InternalChannelsBean;
-import io.helidon.microprofile.messaging.beans.NotConnectedIncommingChannelBean;
-import io.helidon.microprofile.messaging.beans.NotConnectedOutgoingChannelBean;
+import io.helidon.microprofile.messaging.AbstractCDITest;
+import io.helidon.microprofile.messaging.inner.InnerProcessorBean;
+import io.helidon.microprofile.messaging.inner.InternalChannelsBean;
+import io.helidon.microprofile.messaging.inner.NotConnectedIncommingChannelBean;
+import io.helidon.microprofile.messaging.inner.NotConnectedOutgoingChannelBean;
 import org.junit.jupiter.api.Test;
 
 import javax.enterprise.inject.spi.DeploymentException;
 
-import java.util.Properties;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MessagingCdiExtensionTest extends AbstractCDITest {
+public class InnerChannelTest extends AbstractCDITest {
 
     @Override
     public void setUp() {
@@ -39,8 +41,7 @@ public class MessagingCdiExtensionTest extends AbstractCDITest {
 
     @Test
     void internalChannelsInSameBeanTest() throws InterruptedException {
-        cdiContainer = startCdiContainer(new Properties(), InternalChannelsBean.class);
-
+        cdiContainer = startCdiContainer(Collections.emptyMap(), InternalChannelsBean.class);
         // Wait till all messages are delivered
         assertTrue(InternalChannelsBean.publisher_string_latch.await(2, TimeUnit.SECONDS)
                 , "All messages not delivered in time, number of unreceived messages: "
@@ -49,7 +50,7 @@ public class MessagingCdiExtensionTest extends AbstractCDITest {
 
     @Test
     void processorInSameBeanTest() throws InterruptedException {
-        cdiContainer = startCdiContainer(new Properties(), InnerProcessorBean.class);
+        cdiContainer = startCdiContainer(Collections.emptyMap(), InnerProcessorBean.class);
 
         // Wait till all messages are delivered
         assertTrue(InnerProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
@@ -60,12 +61,12 @@ public class MessagingCdiExtensionTest extends AbstractCDITest {
     @Test
     void notConnectedIncomingChannelTest() {
         assertThrows(DeploymentException.class, () ->
-                cdiContainer = startCdiContainer(new Properties(), NotConnectedIncommingChannelBean.class));
+                cdiContainer = startCdiContainer(Collections.emptyMap(), NotConnectedIncommingChannelBean.class));
     }
 
     @Test
     void notConnectedOutgoingChannelTest() {
         assertThrows(DeploymentException.class, () ->
-                cdiContainer = startCdiContainer(new Properties(), NotConnectedOutgoingChannelBean.class));
+                cdiContainer = startCdiContainer(Collections.emptyMap(), NotConnectedOutgoingChannelBean.class));
     }
 }

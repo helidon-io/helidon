@@ -17,13 +17,18 @@
 package io.helidon.microprofile.messaging;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
+import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
+import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
@@ -31,8 +36,11 @@ import javax.enterprise.inject.spi.DeploymentException;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.logging.Logger;
 
 public class ProcessorChannelMethod extends IncomingChannelMethod {
+
+    private static final Logger LOGGER = Logger.getLogger(ProcessorChannelMethod.class.getName());
 
     private SubscriberBuilder<? extends Message<?>, Void> subscriberBuilder;
     private Processor<Object, Object> processor;
@@ -73,18 +81,67 @@ public class ProcessorChannelMethod extends IncomingChannelMethod {
 
     @Override
     protected void connect() {
-        // Connect to Incoming methods with publisher
-        List<IncomingChannelMethod> incomingChannelMethods = getRouter().getIncomingSubscribers(getOutgoingChannelName());
-        if (incomingChannelMethods != null) {
-            for (IncomingChannelMethod s : getRouter().getIncomingSubscribers(getOutgoingChannelName())) {
-                System.out.println("Connecting " + this.getOutgoingChannelName() + " " + this.method.getName() + " to " + s.method.getName());
-                connected = true;
-                s.connected = true;
-                processor.subscribe(s.getSubscriber());
-                publisher.subscribe(processor);
-            }
+        //TODO: Extract connectors to UpstreamConnectorChannel and DownstreamConnectorChannel also rename channelMethods to channels only
+        //Connect to upstream incoming connector if any
+        Config incomingChannelConfig = config.get("mp.messaging.incoming").get(incomingChannelName);
+        ConfigValue<String> connectorName = incomingChannelConfig.get("connector").asString();
+        if (connectorName.isPresent()) {
+            Config connectorConfig = config.get("mp.messaging.connector")
+                    .get(connectorName.get());
+            org.eclipse.microprofile.config.Config augmentedConfig =
+                    AdHocConfigBuilder
+                            .from(incomingChannelConfig)
+                            //It seams useless but its required by the spec
+                            .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, incomingChannelName)
+                            .putAll(connectorConfig)
+                            .build();
+            publisherBuilder =
+                    ((IncomingConnectorFactory) getBeanInstance(
+                            getRouter().getIncomingConnectorFactory(connectorName.get()),
+                            beanManager))
+                            .getPublisherBuilder(augmentedConfig);
+
+            //TODO: iterate over multiple publishers / does spec even support multiple publishers?
+            publisher = (Publisher) publisherBuilder.buildRs();
+            LOGGER.info(String.format("Connected channel %s to connector %s, method: %s", incomingChannelName, connectorName.get(), method.toString()));
+            connected = true;
         }
 
+        //Connect to downstream outgoing connector if any
+        Config outgoingChannelConfig = config.get("mp.messaging.outgoing").get(outgoingChannelName);
+        ConfigValue<String> outgoingConnectorName = outgoingChannelConfig.get("connector").asString();
+        if (outgoingConnectorName.isPresent()) {
+            //Connect to connector
+            Config connectorConfig = config
+                    .get("mp.messaging.connector")
+                    .get(outgoingConnectorName.get());
+            org.eclipse.microprofile.config.Config augmentedConfig =
+                    AdHocConfigBuilder
+                            .from(outgoingChannelConfig)
+                            //It seams useless but its required by the spec
+                            .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, outgoingChannelName)
+                            .putAll(connectorConfig)
+                            .build();
+            subscriberBuilder = ((OutgoingConnectorFactory) getBeanInstance(getRouter()
+                    .getOutgoingConnectorFactory(outgoingConnectorName.get()), beanManager))
+                    .getSubscriberBuilder(augmentedConfig);
+            processor = new ConnectorDownstreamProcessor(this);
+            processor.subscribe((Subscriber) subscriberBuilder.build());
+            connected = true;
+        } else {
+            // Connect to downstream Incoming methods with publisher
+            List<IncomingChannelMethod> incomingChannelMethods = getRouter().getIncomingSubscribers(getOutgoingChannelName());
+            if (incomingChannelMethods != null) {
+                for (IncomingChannelMethod s : getRouter().getIncomingSubscribers(getOutgoingChannelName())) {
+                    System.out.println("Connecting " + this.getOutgoingChannelName() + " " + this.method.getName() + " to " + s.method.getName());
+                    connected = true;
+                    s.connected = true;
+                    processor.subscribe(s.getSubscriber());
+                }
+            }
+        }
+        //Publisher is populated by upstream outgoing(OutgoingChannelMethod) or connector
+        publisher.subscribe(processor);
     }
 
     public void setPublisher(Publisher<Object> publisher) {
