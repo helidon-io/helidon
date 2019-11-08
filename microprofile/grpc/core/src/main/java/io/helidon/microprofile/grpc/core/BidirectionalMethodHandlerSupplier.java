@@ -37,6 +37,7 @@ public class BidirectionalMethodHandlerSupplier
     /**
      * Create a supplier of handlers for bi-directional streaming methods.
      */
+    // method is public because it is loaded via ServiceLoader
     public BidirectionalMethodHandlerSupplier() {
         super(MethodDescriptor.MethodType.BIDI_STREAMING);
     }

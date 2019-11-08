@@ -76,7 +76,7 @@ public abstract class AbstractServiceBuilder {
      * Obtain the service class.
      * @return  the service class
      */
-    public Class<?> serviceClass() {
+    protected Class<?> serviceClass() {
         return serviceClass;
     }
 
@@ -84,7 +84,7 @@ public abstract class AbstractServiceBuilder {
      * Obtain the actual annotated class.
      * @return  the actual annotated class
      */
-    public Class<?> annotatedServiceClass() {
+    protected Class<?> annotatedServiceClass() {
         return annotatedServiceClass;
     }
 
@@ -119,7 +119,7 @@ public abstract class AbstractServiceBuilder {
      * Verify that there are no non-public annotated methods.
      */
     protected void checkForNonPublicMethodIssues() {
-        AnnotatedMethodList allDeclaredMethods = new AnnotatedMethodList(getAllDeclaredMethods(serviceClass));
+        AnnotatedMethodList allDeclaredMethods = AnnotatedMethodList.create(getAllDeclaredMethods(serviceClass));
 
         // log warnings for all non-public annotated methods
         allDeclaredMethods.withMetaAnnotation(RpcMethod.class).isNotPublic()

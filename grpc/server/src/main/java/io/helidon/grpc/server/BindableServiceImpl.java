@@ -50,10 +50,21 @@ class BindableServiceImpl implements BindableService {
      */
     private final PriorityBag<ServerInterceptor> globalInterceptors;
 
-
-    BindableServiceImpl(ServiceDescriptor descriptor, PriorityBag<ServerInterceptor> interceptors) {
+    private BindableServiceImpl(ServiceDescriptor descriptor, PriorityBag<ServerInterceptor> interceptors) {
         this.descriptor = descriptor;
         this.globalInterceptors = interceptors.copyMe();
+    }
+
+    /**
+     * Create a {@link BindableServiceImpl} for a gRPC service.
+     *
+     * @param descriptor    the service descriptor
+     * @param interceptors  the bag of interceptors to apply to the service
+     *
+     * @return a {@link BindableServiceImpl} for the gRPC service
+     */
+    static BindableServiceImpl create(ServiceDescriptor descriptor, PriorityBag<ServerInterceptor> interceptors) {
+        return new BindableServiceImpl(descriptor, interceptors);
     }
 
     // ---- BindableService implementation ----------------------------------
@@ -74,7 +85,7 @@ class BindableServiceImpl implements BindableService {
     private <ReqT, RespT> ServerCallHandler<ReqT, RespT> wrapCallHandler(MethodDescriptor<ReqT, RespT> method) {
         ServerCallHandler<ReqT, RespT> handler = method.callHandler();
 
-        PriorityBag<ServerInterceptor> priorityServerInterceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        PriorityBag<ServerInterceptor> priorityServerInterceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         priorityServerInterceptors.addAll(globalInterceptors);
         priorityServerInterceptors.addAll(descriptor.interceptors());
         priorityServerInterceptors.addAll(method.interceptors());

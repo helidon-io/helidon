@@ -22,6 +22,8 @@ import io.helidon.grpc.server.test.Echo;
 
 import io.grpc.stub.StreamObserver;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+
 /**
  * A simple test gRPC echo service.
  */

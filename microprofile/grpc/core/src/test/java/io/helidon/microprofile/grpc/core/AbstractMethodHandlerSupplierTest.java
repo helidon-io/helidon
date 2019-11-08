@@ -44,7 +44,7 @@ public class AbstractMethodHandlerSupplierTest {
 
     @Test
     public void shouldHandleBidirectionalInvocationError() throws Exception {
-        AnnotatedMethod method = new AnnotatedMethod(getClientStreamingMethod());
+        AnnotatedMethod method = AnnotatedMethod.create(getClientStreamingMethod());
         AbstractMethodHandlerSupplierTest instance = mock(AbstractMethodHandlerSupplierTest.class);
         StreamObserver observer = mock(StreamObserver.class);
         BadHandlerStub<String, String> stub = new BadHandlerStub<>(method,
@@ -60,7 +60,7 @@ public class AbstractMethodHandlerSupplierTest {
 
     @Test
     public void shouldHandleClientStreamingInvocationError() throws Exception {
-        AnnotatedMethod method = new AnnotatedMethod(getClientStreamingMethod());
+        AnnotatedMethod method = AnnotatedMethod.create(getClientStreamingMethod());
         AbstractMethodHandlerSupplierTest instance = mock(AbstractMethodHandlerSupplierTest.class);
         StreamObserver observer = mock(StreamObserver.class);
         BadHandlerStub<String, String> stub = new BadHandlerStub<>(method,
@@ -76,7 +76,7 @@ public class AbstractMethodHandlerSupplierTest {
 
     @Test
     public void shouldHandleServerStreamingInvocationError() throws Exception {
-        AnnotatedMethod method = new AnnotatedMethod(getServerStreamingMethod());
+        AnnotatedMethod method = AnnotatedMethod.create(getServerStreamingMethod());
         AbstractMethodHandlerSupplierTest instance = mock(AbstractMethodHandlerSupplierTest.class);
         StreamObserver observer = mock(StreamObserver.class);
         BadHandlerStub<String, String> stub = new BadHandlerStub<>(method,
@@ -95,7 +95,7 @@ public class AbstractMethodHandlerSupplierTest {
 
     @Test
     public void shouldHandleUnaryInvocationError() throws Exception {
-        AnnotatedMethod method = new AnnotatedMethod(getUnaryMethod());
+        AnnotatedMethod method = AnnotatedMethod.create(getUnaryMethod());
         AbstractMethodHandlerSupplierTest instance = mock(AbstractMethodHandlerSupplierTest.class);
         StreamObserver observer = mock(StreamObserver.class);
         BadHandlerStub<String, String> stub = new BadHandlerStub<>(method, () -> instance, MethodDescriptor.MethodType.UNARY);
@@ -112,7 +112,7 @@ public class AbstractMethodHandlerSupplierTest {
 
     @Test
     public void shouldHandleFutureCompletion() throws Exception {
-        AnnotatedMethod method = new AnnotatedMethod(getUnaryMethod());
+        AnnotatedMethod method = AnnotatedMethod.create(getUnaryMethod());
         AbstractMethodHandlerSupplierTest instance = mock(AbstractMethodHandlerSupplierTest.class);
         StreamObserver observer = mock(StreamObserver.class);
         HandlerStub<String, String> stub = new HandlerStub<>(method, () -> instance, MethodDescriptor.MethodType.UNARY);
@@ -126,7 +126,7 @@ public class AbstractMethodHandlerSupplierTest {
 
     @Test
     public void shouldHandleFutureExceptionalCompletion() throws Exception {
-        AnnotatedMethod method = new AnnotatedMethod(getUnaryMethod());
+        AnnotatedMethod method = AnnotatedMethod.create(getUnaryMethod());
         AbstractMethodHandlerSupplierTest instance = mock(AbstractMethodHandlerSupplierTest.class);
         StreamObserver observer = mock(StreamObserver.class);
         HandlerStub<String, String> stub = new HandlerStub<>(method, () -> instance, MethodDescriptor.MethodType.UNARY);

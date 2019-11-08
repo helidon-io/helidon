@@ -18,7 +18,6 @@ package services;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.grpc.server.test.Echo.EchoRequest;
 import io.helidon.grpc.server.test.Echo.EchoResponse;
 import io.helidon.microprofile.grpc.core.RpcService;
@@ -27,13 +26,14 @@ import io.helidon.microprofile.grpc.core.Unary;
 import io.grpc.stub.StreamObserver;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+
 /**
  * A simple test gRPC echo service.
  */
 @RpcService
 @ApplicationScoped
-public class EchoService
-        implements ResponseHelper {
+public class EchoService {
 
     /**
      * Echo the message back to the caller.

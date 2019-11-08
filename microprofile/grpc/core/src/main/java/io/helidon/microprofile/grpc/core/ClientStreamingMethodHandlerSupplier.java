@@ -24,11 +24,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.core.ResponseHelper;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+
+import static io.helidon.grpc.core.ResponseHelper.completeAsync;
 
 /**
  * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for client streaming gRPC methods.
@@ -39,6 +40,7 @@ public class ClientStreamingMethodHandlerSupplier
     /**
      * Create a supplier of handlers for client streaming methods.
      */
+    // method is public because it is loaded via ServiceLoader
     public ClientStreamingMethodHandlerSupplier() {
         super(MethodDescriptor.MethodType.CLIENT_STREAMING);
     }
@@ -233,8 +235,7 @@ public class ClientStreamingMethodHandlerSupplier
      * @param <RespT> the response type
      */
     public static class FutureResponse<ReqT, RespT>
-            extends AbstractClientStreamingHandler<ReqT, RespT>
-            implements ResponseHelper {
+            extends AbstractClientStreamingHandler<ReqT, RespT> {
 
         FutureResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
             super(methodName, method, instance);

@@ -32,7 +32,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldReturnElementsInOrder() {
-        PriorityBag<String> bag = new PriorityBag<>();
+        PriorityBag<String> bag = PriorityBag.create();
         bag.add("Three", 3);
         bag.add("Two", 2);
         bag.add("One", 1);
@@ -42,7 +42,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldReturnElementsInOrderWithinSamePriority() {
-        PriorityBag<String> bag = new PriorityBag<>();
+        PriorityBag<String> bag = PriorityBag.create();
         bag.add("Two", 2);
         bag.add("TwoToo", 2);
 
@@ -51,7 +51,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldReturnNoPriorityElementsLast() {
-        PriorityBag<String> bag = new PriorityBag<>();
+        PriorityBag<String> bag = PriorityBag.create();
         bag.add("Three", 3);
         bag.add("Last");
         bag.add("One", 1);
@@ -61,7 +61,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldGetPriorityFromAnnotation() {
-        PriorityBag<Object> bag = new PriorityBag<>();
+        PriorityBag<Object> bag = PriorityBag.create();
         Value value = new Value();
         bag.add("One", 1);
         bag.add("Three", 3);
@@ -72,7 +72,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldGetPriorityFromPrioritized() {
-        PriorityBag<Object> bag = new PriorityBag<>();
+        PriorityBag<Object> bag = PriorityBag.create();
         PrioritizedValue value = new PrioritizedValue();
         bag.add("One", 1);
         bag.add("Three", 3);
@@ -83,7 +83,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldUsePriorityFromPrioritizedOverAnnotation() {
-        PriorityBag<Object> bag = new PriorityBag<>();
+        PriorityBag<Object> bag = PriorityBag.create();
         AnnotatedPrioritizedValue value = new AnnotatedPrioritizedValue();
         bag.add("One", 1);
         bag.add("Three", 3);
@@ -94,7 +94,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldUseDefaultPriority() {
-        PriorityBag<Object> bag = new PriorityBag<>(2);
+        PriorityBag<Object> bag = PriorityBag.withDefaultPriority(2);
         bag.add("One", 1);
         bag.add("Three", 3);
         bag.add("Two");
@@ -104,7 +104,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldAddAll() {
-        PriorityBag<Object> bag = new PriorityBag<>();
+        PriorityBag<Object> bag = PriorityBag.create();
         bag.addAll(Arrays.asList("One", "Two", "Three"));
 
         assertThat(bag, contains("One", "Two", "Three"));
@@ -112,7 +112,7 @@ public class PriorityBagTest {
 
     @Test
     public void shouldAddAllWithPriority() {
-        PriorityBag<Object> bag = new PriorityBag<>();
+        PriorityBag<Object> bag = PriorityBag.create();
         bag.add("First", 1);
         bag.add("Last", 3);
         bag.addAll(Arrays.asList("One", "Two", "Three"), 2);
@@ -122,8 +122,8 @@ public class PriorityBagTest {
 
     @Test
     public void shouldMerge() {
-        PriorityBag<Object> bagOne = new PriorityBag<>();
-        PriorityBag<Object> bagTwo = new PriorityBag<>();
+        PriorityBag<Object> bagOne = PriorityBag.create();
+        PriorityBag<Object> bagTwo = PriorityBag.create();
 
         bagOne.add("A", 1);
         bagOne.add("B", 2);

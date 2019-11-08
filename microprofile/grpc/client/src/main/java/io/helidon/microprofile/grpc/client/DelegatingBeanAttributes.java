@@ -40,11 +40,21 @@ class DelegatingBeanAttributes<T> implements BeanAttributes<T> {
      * @param delegate  the {@link BeanAttributes} to delegate to
      * @param types the {@link Type}s for this bean
      */
-    DelegatingBeanAttributes(BeanAttributes<?> delegate, Set<Type> types) {
+    private DelegatingBeanAttributes(BeanAttributes<?> delegate, Set<Type> types) {
         super();
         Objects.requireNonNull(delegate);
         this.delegate = delegate;
         this.types = Collections.unmodifiableSet(types);
+    }
+
+    /**
+     * Create a {@link DelegatingBeanAttributes}.
+     *
+     * @param delegate  the {@link BeanAttributes} to delegate to
+     * @param types the {@link Type}s for this bean
+     */
+    static <T> DelegatingBeanAttributes<T> create(BeanAttributes<?> delegate, Set<Type> types) {
+        return new DelegatingBeanAttributes<>(delegate, types);
     }
 
     @Override

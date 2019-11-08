@@ -16,13 +16,10 @@
 
 package io.helidon.grpc.server;
 
-import io.helidon.grpc.core.ResponseHelper;
-
 /**
  * A Helidon gRPC service.
  */
-public interface GrpcService
-        extends ResponseHelper {
+public interface GrpcService {
 
     /**
      * Update service configuration.

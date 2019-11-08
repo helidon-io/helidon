@@ -86,7 +86,7 @@ public class GrpcServiceClient {
         for (ClientMethodDescriptor methodDescriptor : clientServiceDescriptor.methods()) {
             GrpcMethodStub methodStub = new GrpcMethodStub(channel, callOptions, methodDescriptor);
 
-            PriorityBag<ClientInterceptor> priorityInterceptors = new PriorityBag<>(InterceptorPriorities.USER);
+            PriorityBag<ClientInterceptor> priorityInterceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
             priorityInterceptors.addAll(clientServiceDescriptor.interceptors());
             priorityInterceptors.addAll(methodDescriptor.interceptors());
             List<ClientInterceptor> interceptors = priorityInterceptors.stream().collect(Collectors.toList());
@@ -185,7 +185,7 @@ public class GrpcServiceClient {
             proxyTypes[0] = type;
             System.arraycopy(extraTypes, 0, proxyTypes, 1, extraTypes.length);
         }
-        return (T) Proxy.newProxyInstance(type.getClassLoader(), proxyTypes, new ClientProxy(this, names));
+        return (T) Proxy.newProxyInstance(type.getClassLoader(), proxyTypes, ClientProxy.create(this, names));
     }
 
     /**

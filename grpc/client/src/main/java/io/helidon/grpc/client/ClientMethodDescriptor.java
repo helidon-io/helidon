@@ -300,7 +300,7 @@ public final class ClientMethodDescriptor {
         private io.grpc.MethodDescriptor.Builder descriptor;
         private Class<?> requestType;
         private Class<?> responseType;
-        private PriorityBag<ClientInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        private PriorityBag<ClientInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
         private MarshallerSupplier marshallerSupplier;
         private CallCredentials callCredentials;

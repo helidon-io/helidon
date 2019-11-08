@@ -40,14 +40,18 @@ class HealthServiceImpl
      */
     private final Map<String, HealthCheck> mapHealthChecks = new ConcurrentHashMap<>();
 
-    /**
-     * Create a {@link HealthServiceImpl}.
-     */
-    HealthServiceImpl() {
+    private HealthServiceImpl() {
         // register the empty service name to represent the global health check
         // see: https://github.com/grpc/grpc/blob/master/doc/health-checking.md
         mapHealthChecks.put(HealthStatusManager.SERVICE_NAME_ALL_SERVICES,
                             ConstantHealthCheck.up(HealthStatusManager.SERVICE_NAME_ALL_SERVICES));
+    }
+
+    /**
+     * Create a {@link HealthServiceImpl}.
+     */
+    static HealthServiceImpl create() {
+        return new HealthServiceImpl();
     }
 
     /**
