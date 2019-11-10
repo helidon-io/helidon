@@ -18,17 +18,12 @@
 package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public abstract class AbstractChannel {
@@ -46,17 +41,12 @@ public abstract class AbstractChannel {
     public boolean connected = false;
 
 
-
-    public AbstractChannel(String incomingChannelName, String outgoingChannelName, Method method, ChannelRouter router) {
-        this.incomingChannelName = incomingChannelName;
-        this.outgoingChannelName = outgoingChannelName;
+    public AbstractChannel(Method method, ChannelRouter router) {
         this.router = router;
         this.method = method;
     }
 
     abstract void validate();
-
-    protected abstract void connect();
 
     public void init(BeanManager beanManager, Config config) {
         this.beanInstance = getBeanInstance(bean, beanManager);
@@ -88,53 +78,15 @@ public abstract class AbstractChannel {
         return outgoingChannelName;
     }
 
-    protected PublisherBuilder getPublisherBuilder() {
-        try {
-            Object returnInstance = method.invoke(beanInstance);
-            if (returnInstance instanceof Publisher) {
-                // Called once at assembly time.
-                return ReactiveStreams.fromPublisher((Publisher) returnInstance);
-            } else if (returnInstance instanceof PublisherBuilder) {
-                // Called once at assembly time.
-                return (PublisherBuilder) returnInstance;
-            } else if (returnInstance instanceof Message) {
-                //TODO: Supported method signatures in the spec - Message !!!
-                // Called for each request made by the subscriber
-                throw new UnsupportedOperationException("Not implemented yet!!");
-            } else {
-                //TODO: Supported method signatures in the spec - Any type
-                // Called for each request made by the subscriber
-                throw new UnsupportedOperationException("Not implemented yet!!");
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+    public Type getType() {
+        return type;
     }
 
-    protected Publisher getPublisher() {
-        try {
-            Object returnInstance = method.invoke(beanInstance);
-            if (returnInstance instanceof Publisher) {
-                // Called once at assembly time.
-                return (Publisher) returnInstance;
-            } else if (returnInstance instanceof PublisherBuilder) {
-                // Called once at assembly time.
-                return ((PublisherBuilder) returnInstance).buildRs();
-            } else if (returnInstance instanceof Message) {
-                //TODO: Supported method signatures in the spec - Message !!!
-                // Called for each request made by the subscriber
-                throw new UnsupportedOperationException("Not implemented yet!!");
-            } else {
-                //TODO: Supported method signatures in the spec - Any type
-                // Called for each request made by the subscriber
-                throw new UnsupportedOperationException("Not implemented yet!!");
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+    public void setType(Type type) {
+        this.type = type;
     }
 
-    protected Object getBeanInstance(Bean<?> bean, BeanManager beanManager) {
+    public static Object getBeanInstance(Bean<?> bean, BeanManager beanManager) {
         javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {

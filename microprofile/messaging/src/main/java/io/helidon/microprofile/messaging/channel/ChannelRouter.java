@@ -19,6 +19,8 @@ package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.config.MpConfig;
+import io.helidon.microprofile.messaging.connector.IncomingConnector;
+import io.helidon.microprofile.messaging.connector.OutgoingConnector;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -26,6 +28,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 
+import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -35,14 +38,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class ChannelRouter {
-    private List<AbstractChannel> connectableBeanMethods = new ArrayList<>();
-    private Map<String, List<IncomingMethodChannel>> incomingSubscriberMap = new HashMap<>();
-    private Map<String, List<AbstractChannel>> outgoingSubscriberMap = new HashMap<>();
+    private Config config = ((MpConfig) ConfigProvider.getConfig()).helidonConfig();
 
-    private Map<String, Bean<?>> incomingConnectorFactoryMap = new HashMap<>();
-    private Map<String, Bean<?>> outgoingConnectorFactoryMap = new HashMap<>();
+    private List<AbstractChannel> connectableBeanMethods = new ArrayList<>();
+
+    private Map<String, UniversalChannel> channelMap = new HashMap<>();
+    private Map<String, IncomingConnector> incomingConnectorMap = new HashMap<>();
+    private Map<String, OutgoingConnector> outgoingConnectorMap = new HashMap<>();
+
+    private List<Bean<?>> incomingConnectorFactoryList = new ArrayList<>();
+    private List<Bean<?>> outgoingConnectorFactoryList = new ArrayList<>();
+    private BeanManager beanManager;
 
     public void registerBeanReference(Bean<?> bean) {
         connectableBeanMethods.stream()
@@ -51,40 +60,69 @@ public class ChannelRouter {
     }
 
     public void connect(BeanManager beanManager) {
-        Config config = ((MpConfig) ConfigProvider.getConfig()).helidonConfig();
+        this.beanManager = beanManager;
         //Needs to be initialized before connecting,
         // fast publishers would call onNext before all bean references are resolved
+        incomingConnectorFactoryList.forEach(this::addOutgoingConnector);
+        outgoingConnectorFactoryList.forEach(this::addIncomingConnector);
         connectableBeanMethods.forEach(m -> m.init(beanManager, config));
-        connectableBeanMethods.stream().filter(OutgoingMethodChannel.class::isInstance).forEach(AbstractChannel::connect);
-        connectableBeanMethods.stream().filter(IncomingMethodChannel.class::isInstance).forEach(AbstractChannel::connect);
-        connectableBeanMethods.stream().filter(m -> !m.connected).forEach(m -> {
-            throw new DeploymentException("Channel " + m.incomingChannelName + "/" + m.outgoingChannelName
-                    + " has no candidate to connect to method: " + m.method);
-        });
-//        connectableBeanMethods.stream().filter(ProcessorChannelMethod.class::isInstance).forEach(AbstractChannelMethod::connect);
+
+
+        channelMap.values().forEach(UniversalChannel::findConnectors);
+        channelMap.values().stream().filter(UniversalChannel::isLastInChain).forEach(UniversalChannel::connect);
     }
 
-    void addIncomingMethod(AnnotatedMethod m) {
-        IncomingMethodChannel incomingMethodChannel = new IncomingMethodChannel(m, this);
-        incomingMethodChannel.validate();
-        String channelName = incomingMethodChannel.getIncomingChannelName();
-        getIncomingSubscribers(channelName).add(incomingMethodChannel);
-        connectableBeanMethods.add(incomingMethodChannel);
+    private void addIncomingConnector(Bean<?> bean) {
+        OutgoingConnectorFactory outgoingConnectorFactory = lookup(bean, beanManager);
+        String connectorName = bean.getBeanClass().getAnnotation(Connector.class).value();
+        IncomingConnector incomingConnector = new IncomingConnector(connectorName, outgoingConnectorFactory, this);
+        incomingConnectorMap.put(connectorName, incomingConnector);
     }
 
-    void addOutgoingMethod(AnnotatedMethod m) {
-        OutgoingMethodChannel outgoingMethodChannel = new OutgoingMethodChannel(m, this);
-        outgoingMethodChannel.validate();
-        String channelName = outgoingMethodChannel.getOutgoingChannelName();
-        getOutgoingSubscribers(channelName).add(outgoingMethodChannel);
-        connectableBeanMethods.add(outgoingMethodChannel);
+    private void addOutgoingConnector(Bean<?> bean) {
+        IncomingConnectorFactory incomingConnectorFactory = lookup(bean, beanManager);
+        String connectorName = bean.getBeanClass().getAnnotation(Connector.class).value();
+        OutgoingConnector outgoingConnector = new OutgoingConnector(connectorName, incomingConnectorFactory, this);
+        outgoingConnectorMap.put(connectorName, outgoingConnector);
     }
 
-    void addProcessorMethod(AnnotatedMethod m) {
-        ProcessorMethodChannel channelMethod = new ProcessorMethodChannel(m, this);
+    private void addIncomingMethod(AnnotatedMethod m) {
+        IncomingMethod incomingMethod = new IncomingMethod(m, this);
+        incomingMethod.validate();
+
+        String channelName = incomingMethod.getIncomingChannelName();
+
+        UniversalChannel universalChannel = getOrCreateChannel(channelName);
+        universalChannel.setIncoming(incomingMethod);
+
+        connectableBeanMethods.add(incomingMethod);
+    }
+
+    private void addOutgoingMethod(AnnotatedMethod m) {
+        OutgoingMethod outgoingMethod = new OutgoingMethod(m, this);
+        outgoingMethod.validate();
+
+        String channelName = outgoingMethod.getOutgoingChannelName();
+
+        UniversalChannel universalChannel = getOrCreateChannel(channelName);
+        universalChannel.setOutgoing(outgoingMethod);
+
+        connectableBeanMethods.add(outgoingMethod);
+    }
+
+    private void addProcessorMethod(AnnotatedMethod m) {
+        ProcessorMethod channelMethod = new ProcessorMethod(m, this);
         channelMethod.validate();
-        getIncomingSubscribers(channelMethod.getIncomingChannelName()).add(channelMethod);
-        getOutgoingSubscribers(channelMethod.getOutgoingChannelName()).add(channelMethod);
+
+        String incomingChannelName = channelMethod.getIncomingChannelName();
+        String outgoingChannelName = channelMethod.getOutgoingChannelName();
+
+        UniversalChannel incomingUniversalChannel = getOrCreateChannel(incomingChannelName);
+        incomingUniversalChannel.setIncoming(channelMethod);
+
+        UniversalChannel outgoingUniversalChannel = getOrCreateChannel(outgoingChannelName);
+        outgoingUniversalChannel.setOutgoing(channelMethod);
+
         connectableBeanMethods.add(channelMethod);
     }
 
@@ -102,34 +140,44 @@ public class ChannelRouter {
         Class<?> beanType = bean.getBeanClass();
         Connector annotation = beanType.getAnnotation(Connector.class);
         if (IncomingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
-            incomingConnectorFactoryMap.put(annotation.value(), bean);
+            incomingConnectorFactoryList.add(bean);
         }
         if (OutgoingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
-            outgoingConnectorFactoryMap.put(annotation.value(), bean);
+            outgoingConnectorFactoryList.add(bean);
         }
     }
 
-    public List<IncomingMethodChannel> getIncomingSubscribers(String channelName) {
-        return getOrCreateList(channelName, incomingSubscriberMap);
+    public Optional<IncomingConnector> getIncomingConnector(String connectorName) {
+        return Optional.ofNullable(incomingConnectorMap.get(connectorName));
     }
 
-    public List<AbstractChannel> getOutgoingSubscribers(String channelName) {
-        return getOrCreateList(channelName, outgoingSubscriberMap);
+    public Optional<OutgoingConnector> getOutgoingConnector(String connectorName) {
+        return Optional.ofNullable(outgoingConnectorMap.get(connectorName));
     }
 
-    private static <T> List<T> getOrCreateList(String key, Map<String, List<T>> map) {
-        List<T> list = map.getOrDefault(key, new ArrayList<>());
-        if (list.isEmpty()) {
-            map.put(key, list);
+    public Config getConfig() {
+        return config;
+    }
+
+    private UniversalChannel getOrCreateChannel(String channelName) {
+        UniversalChannel universalChannel = channelMap.get(channelName);
+        if (universalChannel == null) {
+            universalChannel = new UniversalChannel(this);
+            channelMap.put(channelName, universalChannel);
         }
-        return list;
+        return universalChannel;
     }
 
-    public Bean<?> getIncomingConnectorFactory(String connectorName) {
-        return incomingConnectorFactoryMap.get(connectorName);
-    }
-
-    public Bean<?> getOutgoingConnectorFactory(String connectorName) {
-        return outgoingConnectorFactoryMap.get(connectorName);
+    public static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
+        javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
+        Object instance = context.get(bean);
+        if (instance == null) {
+            CreationalContext creationalContext = beanManager.createCreationalContext(bean);
+            instance = beanManager.getReference(bean, bean.getBeanClass(), creationalContext);
+        }
+        if (instance == null) {
+            throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
+        }
+        return (T) instance;
     }
 }

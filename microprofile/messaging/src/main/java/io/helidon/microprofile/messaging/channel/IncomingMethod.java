@@ -18,14 +18,8 @@
 package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.microprofile.messaging.AdHocConfigBuilder;
 import io.helidon.microprofile.messaging.reactive.InternalSubscriber;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
-import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Subscriber;
 
@@ -41,15 +35,15 @@ import java.util.logging.Logger;
  * Subscriber with reference to {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
  * /{@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotated method
  */
-public class IncomingMethodChannel extends AbstractChannel {
+public class IncomingMethod extends AbstractChannel {
 
-    private static final Logger LOGGER = Logger.getLogger(IncomingMethodChannel.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(IncomingMethod.class.getName());
 
-    protected PublisherBuilder<? extends Message<?>> publisherBuilder;
     private Subscriber subscriber;
 
-    public IncomingMethodChannel(AnnotatedMethod method, ChannelRouter router) {
-        super(method.getAnnotation(Incoming.class).value(), null, method.getJavaMember(), router);
+    public IncomingMethod(AnnotatedMethod method, ChannelRouter router) {
+        super(method.getJavaMember(), router);
+        super.incomingChannelName = method.getAnnotation(Incoming.class).value();
         resolveSignatureType();
     }
 
@@ -83,34 +77,6 @@ public class IncomingMethodChannel extends AbstractChannel {
             // Create brand new subscriber
             subscriber = new InternalSubscriber(method, beanInstance);
         }
-    }
-
-    @Override
-    protected void connect() {
-        Config channelConfig = config.get("mp.messaging.incoming").get(incomingChannelName);
-        ConfigValue<String> connectorName = channelConfig.get("connector").asString();
-        if (connectorName.isPresent()) {
-            Config connectorConfig = config.get("mp.messaging.connector")
-                    .get(connectorName.get());
-            org.eclipse.microprofile.config.Config augmentedConfig =
-                    AdHocConfigBuilder
-                            .from(channelConfig)
-                            //It seams useless but its required by the spec
-                            .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, incomingChannelName)
-                            .putAll(connectorConfig)
-                            .build();
-            publisherBuilder =
-                    ((IncomingConnectorFactory) getBeanInstance(
-                            getRouter().getIncomingConnectorFactory(connectorName.get()),
-                            beanManager))
-                            .getPublisherBuilder(augmentedConfig);
-
-            //TODO: iterate over multiple publishers / does spec even support multiple publishers?
-            publisherBuilder.buildRs().subscribe(this.subscriber);
-            LOGGER.info(String.format("Connected channel %s to connector %s, method: %s", incomingChannelName, connectorName.get(), method.toString()));
-            connected = true;
-        }
-
     }
 
     public Subscriber getSubscriber() {

@@ -15,8 +15,17 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging.connector;
 
-public class OutgoingConnectorChannel {
-    //TODO: Move connector logic here
+import io.helidon.config.Config;
+import org.reactivestreams.Subscriber;
+
+public interface SubscribingConnector extends ConfigurableConnector {
+
+    @Override
+    default Config getChannelsConfig() {
+        return getRootConfig().get("mp.messaging.outgoing");
+    }
+
+    Subscriber getSubscriber(String channelName);
 }

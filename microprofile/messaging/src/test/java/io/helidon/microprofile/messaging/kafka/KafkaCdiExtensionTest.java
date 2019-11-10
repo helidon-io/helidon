@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,12 +58,21 @@ public class KafkaCdiExtensionTest extends AbstractCDITest {
 
     @Override
     protected Map<String, String> cdiConfig() {
-        return mapOf(
-                "mp.messaging.incoming.test-channel.connector", KafkaConnectorFactory.CONNECTOR_NAME,
-                "mp.messaging.incoming.test-channel.bootstrap.servers", kafkaResource.getKafkaConnectString(),
-                "mp.messaging.incoming.test-channel.topic", TEST_TOPIC,
-                "mp.messaging.incoming.test-channel.key.deserializer", LongDeserializer.class.getName(),
-                "mp.messaging.incoming.test-channel.value.deserializer", StringDeserializer.class.getName());
+        Map<String, String> p = new HashMap<>();
+        p.putAll(mapOf(
+                "mp.messaging.incoming.test-channel-1.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-1.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel-1.topic", TEST_TOPIC,
+                "mp.messaging.incoming.test-channel-1.key.deserializer", LongDeserializer.class.getName(),
+                "mp.messaging.incoming.test-channel-1.value.deserializer", StringDeserializer.class.getName()));
+        p.putAll(mapOf(
+                "mp.messaging.incoming.test-channel-2.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-2.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel-2.topic", TEST_TOPIC,
+                "mp.messaging.incoming.test-channel-2.key.deserializer", LongDeserializer.class.getName(),
+                "mp.messaging.incoming.test-channel-2.value.deserializer", StringDeserializer.class.getName())
+        );
+        return p;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package io.helidon.microprofile.reactive;
 
 import io.helidon.common.reactive.Multi;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
@@ -26,24 +27,29 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
     @Override
     public <T> Publisher<T> buildPublisher(Graph graph) throws UnsupportedStageException {
         Collection<Stage> stages = graph.getStages();
-        if (stages.size() != 1) {
-            //TODO: Support more than one stage
-            throw new RuntimeException("Exactly one stage is supported for now");
+
+        Publisher<T> publisher = null;
+
+        for (Stage stage : stages) {
+            if (stage instanceof Stage.PublisherStage) {
+                Stage.PublisherStage publisherStage = (Stage.PublisherStage) stage;
+                publisher = (Publisher<T>) publisherStage.getRsPublisher();
+            } else if (stage instanceof Stage.Map) {
+                Stage.Map mapStage = (Stage.Map) stage;
+                //TODO: maps...
+                //mapStage.getMapper().apply(pub);
+            } else if (stage instanceof Stage.Of) {
+                //Collection
+                Stage.Of stageOf = (Stage.Of) stage;
+                return Multi.<T>justMP(StreamSupport.stream(stageOf.getElements().spliterator(), false)
+                        .map(e -> (T) e)
+                        .collect(Collectors.toList()));
+            } else {
+                throw new UnsupportedStageException(stage);
+            }
         }
 
-        Stage firstStage = stages.iterator().next();
-        if (firstStage instanceof Stage.PublisherStage) {
-            Stage.PublisherStage publisherStage = (Stage.PublisherStage) firstStage;
-            return (Publisher<T>) publisherStage.getRsPublisher();
-        } else if (firstStage instanceof Stage.Of) {
-            //Collection
-            Stage.Of stageOf = (Stage.Of) firstStage;
-            return Multi.<T>justMP(StreamSupport.stream(stageOf.getElements().spliterator(), false)
-                    .map(e -> (T) e)
-                    .collect(Collectors.toList()));
-        } else {
-            throw new UnsupportedStageException(firstStage);
-        }
+        return publisher;
     }
 
     @Override

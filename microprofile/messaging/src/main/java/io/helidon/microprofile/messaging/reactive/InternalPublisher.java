@@ -17,17 +17,30 @@
 
 package io.helidon.microprofile.messaging.reactive;
 
-import io.helidon.microprofile.messaging.channel.ProcessorMethodChannel;
-import org.eclipse.microprofile.reactive.messaging.Message;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
-public class OutgoingConnectorProcessor extends InternalProcessor {
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
-    public OutgoingConnectorProcessor(ProcessorMethodChannel processorMethodChannel) {
-        super(processorMethodChannel);
+public class InternalPublisher implements Publisher<Object> {
+
+    private Method method;
+    private Object beanInstance;
+
+    public InternalPublisher(Method method, Object beanInstance) {
+        this.method = method;
+        this.beanInstance = beanInstance;
     }
 
     @Override
-    protected Object wrapValue(Object value) {
-        return Message.of(value);
+    public void subscribe(Subscriber<? super Object> s) {
+        try {
+            s.onNext(method.invoke(beanInstance));
+            s.onComplete();
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            s.onError(e);
+        }
     }
+
 }

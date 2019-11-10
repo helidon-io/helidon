@@ -59,7 +59,7 @@ public class ConnectorTest extends AbstractCDITest {
                 "mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector",
                 "mp.messaging.outgoing.iterable-channel-out.connector", "iterable-connector");
         cdiContainer = startCdiContainer(p, IterableConnector.class, ConnectedOnlyProcessorBean.class);
-        assertTrue(IterableConnector.LATCH.await(20, TimeUnit.SECONDS));
+        assertTrue(IterableConnector.LATCH.await(2, TimeUnit.SECONDS));
     }
 
     @Test

@@ -18,7 +18,8 @@
 package io.helidon.microprofile.messaging.reactive;
 
 import io.helidon.microprofile.messaging.MessageUtils;
-import io.helidon.microprofile.messaging.channel.ProcessorMethodChannel;
+import io.helidon.microprofile.messaging.channel.ProcessorMethod;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -29,11 +30,11 @@ import java.lang.reflect.Method;
 public class InternalProcessor implements Processor<Object, Object> {
 
 
-    private ProcessorMethodChannel processorMethodChannel;
+    private ProcessorMethod processorMethod;
     private Subscriber<? super Object> subscriber;
 
-    public InternalProcessor(ProcessorMethodChannel processorMethodChannel) {
-        this.processorMethodChannel = processorMethodChannel;
+    public InternalProcessor(ProcessorMethod processorMethod) {
+        this.processorMethod = processorMethod;
     }
 
     @Override
@@ -50,9 +51,9 @@ public class InternalProcessor implements Processor<Object, Object> {
     public void onNext(Object incomingValue) {
         try {
             //TODO: Has to be always one param in the processor, validate and propagate better
-            Method method = processorMethodChannel.getMethod();
+            Method method = processorMethod.getMethod();
             Class<?> paramType = method.getParameterTypes()[0];
-            Object processedValue = method.invoke(processorMethodChannel.getBeanInstance(),
+            Object processedValue = method.invoke(processorMethod.getBeanInstance(),
                     MessageUtils.unwrap(incomingValue, paramType));
             subscriber.onNext(wrapValue(processedValue));
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -61,7 +62,7 @@ public class InternalProcessor implements Processor<Object, Object> {
     }
 
     protected Object wrapValue(Object value) {
-        return value;
+        return MessageUtils.unwrap(value, Message.class);
     }
 
     @Override

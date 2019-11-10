@@ -23,15 +23,15 @@ public class MessageUtils {
     public static Object unwrap(Object value, Class<?> type) {
         if (type.equals(Message.class)) {
             if (value instanceof Message) {
-                return type.cast(value);
+                return value;
             } else {
                 return Message.of(value);
             }
         } else {
             if (value instanceof Message) {
-                return type.cast(((Message) value).getPayload());
+                return ((Message) value).getPayload();
             } else if (type.isInstance(value)) {
-                return type.cast(value);
+                return value;
             } else {
                 return value;
             }

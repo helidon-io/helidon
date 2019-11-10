@@ -37,13 +37,13 @@ public class KafkaConsumingBean {
     //Two methods -> two consumers of same topic means twice as much received messages
     public static CountDownLatch testChannelLatch = new CountDownLatch(TEST_DATA.size() * 2);
 
-    @Incoming("test-channel")
+    @Incoming("test-channel-1")
     public void receiveMPMessage(Message<ConsumerRecord<Long, String>> msg) {
         assertTrue(TEST_DATA.contains(msg.getPayload().value()));
         testChannelLatch.countDown();
     }
 
-    @Incoming("test-channel")
+    @Incoming("test-channel-2")
     public void receiveKafkaConsumerRecord(ConsumerRecord<Long, String> msg) {
         assertTrue(TEST_DATA.contains(msg.value()));
         testChannelLatch.countDown();

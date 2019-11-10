@@ -18,6 +18,7 @@
 package io.helidon.microprofile.messaging.inner;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import javax.enterprise.inject.spi.DeploymentException;
@@ -52,6 +53,27 @@ public class InnerChannelTest extends AbstractCDITest {
         assertTrue(InnerProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
                 , "All messages not delivered in time, number of unreceived messages: "
                         + InnerProcessorBean.testLatch.getCount());
+    }
+
+    @Test
+    void multipleProcessorTest() throws InterruptedException {
+        cdiContainer = startCdiContainer(Collections.emptyMap(), MultipleProcessorBean.class);
+
+        // Wait till all messages are delivered
+        assertTrue(MultipleProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
+                , "All messages not delivered in time, number of unreceived messages: "
+                        + MultipleProcessorBean.testLatch.getCount());
+    }
+
+    @Test
+    @Disabled //TODO: Stream types
+    void multipleTypeProcessorTest() throws InterruptedException {
+        cdiContainer = startCdiContainer(Collections.emptyMap(), MultipleTypeProcessorChainBean.class);
+
+        // Wait till all messages are delivered
+        assertTrue(MultipleProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
+                , "All messages not delivered in time, number of unreceived messages: "
+                        + MultipleTypeProcessorChainBean.testLatch.getCount());
     }
 
     @Test
