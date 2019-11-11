@@ -15,20 +15,26 @@
  */
 package io.helidon.tests.integration.dbclient.mongodb.init;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
+
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
@@ -61,13 +67,15 @@ public class CheckIT extends AbstractIT {
         boolean retry = true;
         while (retry) {
             try {
-                dbClient.execute(exec -> exec.namedDml("ping")).toCompletableFuture().get();
+                dbClient.execute(exec -> exec.namedStatement("ping"))
+                        .toCompletableFuture().get().rsFuture().toCompletableFuture().get();
                 retry = false;
             } catch (ExecutionException | InterruptedException ex) {
                 if (System.currentTimeMillis() > endTm) {
                     fail("Database startup failed!", ex);
                 } else {
                     LOG.info(() -> String.format("Exception: %s", ex.getMessage()));
+                    LOG.log(Level.INFO, "Exception details: ", ex);
                 }
             }
         }
@@ -81,9 +89,9 @@ public class CheckIT extends AbstractIT {
     private static void initUser(DbClient dbClient) {
         try {
             dbClient.execute(exec -> exec
-                    .namedDml("use")
-                    .thenCompose(result -> exec.namedDml("create-user"))
-            ).toCompletableFuture().get();
+                    .namedStatement("use")
+                    .thenCompose(result -> exec.namedStatement("create-user"))
+            ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
         } catch (ExecutionException | InterruptedException ex) {
                 LOG.warning(() -> String.format("Exception: %s", ex.getMessage()));
                 fail("Database user setup failed!", ex);
@@ -113,8 +121,13 @@ public class CheckIT extends AbstractIT {
      */
     @Test
     public void testDmlStatementExecution() throws ExecutionException, InterruptedException {
-        long result = DB_CLIENT.execute(exec -> exec.namedDml("ping")).toCompletableFuture().get();
-        assertThat(result, equalTo(0L));
+        DbRows<DbRow> result = DB_CLIENT.execute(exec -> exec.namedStatement("ping"))
+                .toCompletableFuture().get().rsFuture().toCompletableFuture().get();
+        List<DbRow> rowsList = result.collect().toCompletableFuture().get();
+        DbRow row = rowsList.get(0);
+        Double ok = row.column("ok").as(Double.class);
+        assertThat(ok, equalTo(1.0));
+        LOG.info(() -> String.format("Command ping row: %s", row.toString()));
     }
 
 }

@@ -18,20 +18,26 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyDeletePokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC delete calls.
  */
 public class SimpleDeleteIT extends AbstractIT {
+
+    /** Local logger instance. */
+    private static final Logger LOG = Logger.getLogger(SimpleDeleteIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 30;
@@ -55,14 +61,19 @@ public class SimpleDeleteIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        int curId = BASE_ID;
-        addPokemon(new Pokemon(++curId, "Rayquaza", TYPES.get(3), TYPES.get(16))); // BASE_ID+1
-        addPokemon(new Pokemon(++curId, "Lugia", TYPES.get(3), TYPES.get(14)));    // BASE_ID+2
-        addPokemon(new Pokemon(++curId, "Ho-Oh", TYPES.get(3), TYPES.get(10)));    // BASE_ID+3
-        addPokemon(new Pokemon(++curId, "Raikou", TYPES.get(13)));                 // BASE_ID+4
-        addPokemon(new Pokemon(++curId, "Giratina", TYPES.get(8), TYPES.get(16))); // BASE_ID+5
-        addPokemon(new Pokemon(++curId, "Regirock", TYPES.get(6)));                // BASE_ID+6
-        addPokemon(new Pokemon(++curId, "Kyogre", TYPES.get(11)));                 // BASE_ID+7
+        try {
+            int curId = BASE_ID;
+            addPokemon(new Pokemon(++curId, "Rayquaza", TYPES.get(3), TYPES.get(16))); // BASE_ID+1
+            addPokemon(new Pokemon(++curId, "Lugia", TYPES.get(3), TYPES.get(14)));    // BASE_ID+2
+            addPokemon(new Pokemon(++curId, "Ho-Oh", TYPES.get(3), TYPES.get(10)));    // BASE_ID+3
+            addPokemon(new Pokemon(++curId, "Raikou", TYPES.get(13)));                 // BASE_ID+4
+            addPokemon(new Pokemon(++curId, "Giratina", TYPES.get(8), TYPES.get(16))); // BASE_ID+5
+            addPokemon(new Pokemon(++curId, "Regirock", TYPES.get(6)));                // BASE_ID+6
+            addPokemon(new Pokemon(++curId, "Kyogre", TYPES.get(11)));                 // BASE_ID+7
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            throw ex;
+        }
     }
 
 

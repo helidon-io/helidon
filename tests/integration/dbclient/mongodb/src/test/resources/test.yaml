@@ -23,18 +23,15 @@ dbadmin:
   statements:
     # required ping statement
     ping: '{
-            "collection": "pokemons",
-            "operation": "delete",
+            "operation": "command",
             "query": { ping: 1 }
         }'
     use: '{
-            "collection": "pokemons",
-            "operation": "delete",
+            "operation": "command",
             "query": { use: "${mongo.database}" }
         }'
     create-user: '{
-        "collection": "pokemons",
-        "operation": "insert",
+        "operation": "command",
         "query": {
                      "createUser": "${mongo.user}",
                      "pwd":  "${mongo.password}",
@@ -57,8 +54,7 @@ db:
   statements:
     # required ping statement
     ping: '{
-            "collection": "pokemons",
-            "operation": "delete",
+            "operation": "command",
             "query": { ping: 1 }
         }'
     # database schema cleanup statements

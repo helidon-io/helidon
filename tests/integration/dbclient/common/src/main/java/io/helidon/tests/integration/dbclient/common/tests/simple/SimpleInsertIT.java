@@ -16,9 +16,10 @@
 package io.helidon.tests.integration.dbclient.common.tests.simple;
 
 import java.util.concurrent.ExecutionException;
-import org.junit.jupiter.api.Test;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
+
+import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 

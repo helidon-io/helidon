@@ -228,6 +228,9 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
                                       MongoOperation.INSERT, MongoOperation.UPDATE,
                                       MongoOperation.DELETE, MongoOperation.COMMAND);
                     break;
+                case COMMAND:
+                    validateOperation(dbStatementType, operation, MongoOperation.COMMAND);
+                    break;
                 default:
                     throw new IllegalStateException(
                             "Operation type is not defined in statement, and cannot be inferred from statement type: "
@@ -249,6 +252,9 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
                     break;
                 case DELETE:
                     operation = MongoOperation.DELETE;
+                    break;
+                case COMMAND:
+                    operation = MongoOperation.COMMAND;
                     break;
                 case DML:
                 case UNKNOWN:

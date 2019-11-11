@@ -185,23 +185,33 @@ public class MongoDbStatementGeneric extends MongoDbStatement<DbStatementGeneric
     ) {
         switch (dbStatementType) {
             case QUERY:
-                CompletionStage<DbRows<DbRow>> dbRowsFuture = MongoDbQueryExecutor.executeQuery(
-                        this,
-                        dbContextFuture,
-                        statementFuture,
-                        queryFuture);
-                return CompletableFuture.completedFuture(new MongoDbQueryResult(dbRowsFuture));
+                return CompletableFuture.completedFuture(new MongoDbQueryResult(
+                        MongoDbQueryExecutor.executeQuery(
+                                this,
+                                dbContextFuture,
+                                statementFuture,
+                                queryFuture)
+                ));
             case INSERT:
             case UPDATE:
             case DELETE:
-                CompletionStage<Long> dmlResultFuture = MongoDbDMLExecutor.executeDml(
-                        this,
-                        dbStatementType,
-                        statement,
-                        dbContextFuture,
-                        statementFuture,
-                        queryFuture);
-                return CompletableFuture.completedFuture(new MongoDbDmlResult(dmlResultFuture));
+                return CompletableFuture.completedFuture(new MongoDbDmlResult(
+                        MongoDbDMLExecutor.executeDml(
+                                this,
+                                dbStatementType,
+                                statement,
+                                dbContextFuture,
+                                statementFuture,
+                                queryFuture)
+                ));
+            case COMMAND:
+                return CompletableFuture.completedFuture(new MongoDbQueryResult(
+                        MongoDbCommandExecutor.executeCommand(
+                                this,
+                                dbContextFuture,
+                                statementFuture,
+                                queryFuture)
+                ));
             default:
                 throw new UnsupportedOperationException("Operation " + dbStatementType.name() + " is not supported.");
         }
