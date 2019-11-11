@@ -14,11 +14,22 @@
 # 
 ---
 openapi: 3.0.0
+x-my-personal-map:
+  owner:
+    first: Me
+    last: Myself
+  value-1: 2.3
+x-other-item: 10
 info:
   title: Helidon SE OpenAPI test 
   description: OpenAPI document for testing
 
   version: 1.0.0
+  x-my-personal-seq:
+    - who: Prof. Plum
+      why: felt like it
+    - when: yesterday
+      how: with the lead pipe
 
 servers:
   - url: http://localhost:8000

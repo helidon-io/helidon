@@ -19,6 +19,7 @@ package io.helidon.openapi;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,6 +52,7 @@ import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.jboss.jandex.IndexView;
+
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -126,7 +128,10 @@ public class OpenAPISupport implements Service {
                 OpenApiDocument.INSTANCE.reset();
                 OpenApiDocument.INSTANCE.config(config);
                 OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
-                OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
+                if (staticFile != null) {
+                    OpenApiDocument.INSTANCE.modelFromStaticFile(Parser.parse(staticFile.getContent(),
+                            OpenAPIMediaType.byFormat(staticFile.getFormat())));
+                }
                 if (isAnnotationProcessingEnabled(config)) {
                     expandModelUsingAnnotations(config, indexView);
                 } else {
@@ -144,6 +149,8 @@ public class OpenAPISupport implements Service {
     private boolean isAnnotationProcessingEnabled(OpenApiConfig config) {
         return !config.scanDisable();
     }
+
+
 
     private void expandModelUsingAnnotations(OpenApiConfig config, IndexView indexView) throws IOException {
         if (indexView != null) {
@@ -196,15 +203,15 @@ public class OpenAPISupport implements Service {
             throw new IllegalStateException("OpenAPI model used but has not been initialized");
         }
 
-        OpenAPIMediaTypes matchingOpenAPIMediaType
-                = OpenAPIMediaTypes.byMediaType(resultMediaType)
-                        .orElseGet(() -> {
-                            LOGGER.log(Level.FINER,
-                                    () -> String.format(
-                                            "Requested media type %s not supported; using default",
-                                            resultMediaType.toString()));
-                            return OpenAPIMediaTypes.DEFAULT_TYPE;
-                        });
+        OpenAPIMediaType matchingOpenAPIMediaType
+                = OpenAPIMediaType.byMediaType(resultMediaType)
+                .orElseGet(() -> {
+                    LOGGER.log(Level.FINER,
+                            () -> String.format(
+                                    "Requested media type %s not supported; using default",
+                                    resultMediaType.toString()));
+                    return OpenAPIMediaType.DEFAULT_TYPE;
+                });
 
         final Format resultFormat = matchingOpenAPIMediaType.format();
 
@@ -220,11 +227,9 @@ public class OpenAPISupport implements Service {
     }
 
     private String formatDocument(Format fmt) {
-        try {
-            return OpenApiSerializer.serialize(model, fmt);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        StringWriter sw = new StringWriter();
+        Serializer.serialize(model, fmt, sw);
+        return sw.toString();
     }
 
     private MediaType chooseResponseMediaType(ServerRequest req) {
@@ -233,7 +238,7 @@ public class OpenAPISupport implements Service {
          * unless otherwise specified.
          */
         final Optional<MediaType> requestedMediaType = req.headers()
-                .bestAccepted(OpenAPIMediaTypes.preferredOrdering());
+                .bestAccepted(OpenAPIMediaType.preferredOrdering());
 
         final MediaType resultMediaType = requestedMediaType
                 .orElseGet(() -> {
@@ -255,28 +260,28 @@ public class OpenAPISupport implements Service {
      * yaml) and multiple actual media types (the proposed OpenAPI media type
      * vnd.oai.openapi and various other YAML types proposed or in use).
      */
-    private enum OpenAPIMediaTypes {
+    enum OpenAPIMediaType {
 
         JSON(Format.JSON,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_JSON,
-                    MediaType.APPLICATION_JSON},
+                        MediaType.APPLICATION_JSON},
                 "json"),
         YAML(Format.YAML,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML,
-                    MediaType.APPLICATION_X_YAML,
-                    MediaType.APPLICATION_YAML,
-                    MediaType.TEXT_PLAIN,
-                    MediaType.TEXT_X_YAML,
-                    MediaType.TEXT_YAML},
+                        MediaType.APPLICATION_X_YAML,
+                        MediaType.APPLICATION_YAML,
+                        MediaType.TEXT_PLAIN,
+                        MediaType.TEXT_X_YAML,
+                        MediaType.TEXT_YAML},
                 "yaml", "yml");
 
-        private static final OpenAPIMediaTypes DEFAULT_TYPE = YAML;
+        private static final OpenAPIMediaType DEFAULT_TYPE = YAML;
 
         private final Format format;
         private final List<String> fileTypes;
         private final List<MediaType> mediaTypes;
 
-        OpenAPIMediaTypes(Format format, MediaType[] mediaTypes, String... fileTypes) {
+        OpenAPIMediaType(Format format, MediaType[] mediaTypes, String... fileTypes) {
             this.format = format;
             this.mediaTypes = Arrays.asList(mediaTypes);
             this.fileTypes = new ArrayList<>(Arrays.asList(fileTypes));
@@ -290,8 +295,8 @@ public class OpenAPISupport implements Service {
             return fileTypes;
         }
 
-        private static OpenAPIMediaTypes byFileType(String fileType) {
-            for (OpenAPIMediaTypes candidateType : values()) {
+        private static OpenAPIMediaType byFileType(String fileType) {
+            for (OpenAPIMediaType candidateType : values()) {
                 if (candidateType.matchingTypes().contains(fileType)) {
                     return candidateType;
                 }
@@ -299,8 +304,8 @@ public class OpenAPISupport implements Service {
             return null;
         }
 
-        private static Optional<OpenAPIMediaTypes> byMediaType(MediaType mt) {
-            for (OpenAPIMediaTypes candidateType : values()) {
+        private static Optional<OpenAPIMediaType> byMediaType(MediaType mt) {
+            for (OpenAPIMediaType candidateType : values()) {
                 if (candidateType.mediaTypes.contains(mt)) {
                     return Optional.of(candidateType);
                 }
@@ -310,10 +315,19 @@ public class OpenAPISupport implements Service {
 
         private static List<String> recognizedFileTypes() {
             final List<String> result = new ArrayList<>();
-            for (OpenAPIMediaTypes type : values()) {
+            for (OpenAPIMediaType type : values()) {
                 result.addAll(type.fileTypes);
             }
             return result;
+        }
+
+        private static OpenAPIMediaType byFormat(Format format) {
+            for (OpenAPIMediaType candidateType : values()) {
+                if (candidateType.format.equals(format)) {
+                    return candidateType;
+                }
+            }
+            return null;
         }
 
         /**
@@ -324,12 +338,12 @@ public class OpenAPISupport implements Service {
          */
         private static MediaType[] preferredOrdering() {
             return new MediaType[]{
-                MediaType.APPLICATION_OPENAPI_YAML,
-                MediaType.APPLICATION_X_YAML,
-                MediaType.APPLICATION_YAML,
-                MediaType.APPLICATION_OPENAPI_JSON,
-                MediaType.APPLICATION_JSON,
-                MediaType.TEXT_PLAIN
+                    MediaType.APPLICATION_OPENAPI_YAML,
+                    MediaType.APPLICATION_X_YAML,
+                    MediaType.APPLICATION_YAML,
+                    MediaType.APPLICATION_OPENAPI_JSON,
+                    MediaType.APPLICATION_JSON,
+                    MediaType.TEXT_PLAIN
             };
         }
     }
@@ -354,7 +368,7 @@ public class OpenAPISupport implements Service {
 
     /**
      * Creates a new {@link OpenAPISupport} instance using the
-     * '{@value SEOpenAPISupportBuilder#CONFIG_PREFIX}' portion of the provided
+     * 'openapi' portion of the provided
      * {@link Config} object.
      *
      * @param config {@code Config} object containing OpenAPI-related settings
@@ -370,7 +384,7 @@ public class OpenAPISupport implements Service {
      *
      * @return Helidon SE {@code OpenAPISupport.Builder}
      */
-    public static SEOpenAPISupportBuilder builderSE() {
+    static SEOpenAPISupportBuilder builderSE() {
         return new SEOpenAPISupportBuilder();
     }
 
@@ -475,13 +489,13 @@ public class OpenAPISupport implements Service {
         private OpenApiStaticFile getExplicitStaticFile() {
             Path path = Paths.get(staticFilePath.get());
             final String specifiedFileType = typeFromPath(path);
-            final OpenAPIMediaTypes specifiedMediaType = OpenAPIMediaTypes.byFileType(specifiedFileType);
+            final OpenAPIMediaType specifiedMediaType = OpenAPIMediaType.byFileType(specifiedFileType);
 
             if (specifiedMediaType == null) {
                 throw new IllegalArgumentException("OpenAPI file path "
                         + path.toAbsolutePath().toString()
                         + " is not one of recognized types: "
-                        + OpenAPIMediaTypes.recognizedFileTypes());
+                        + OpenAPIMediaType.recognizedFileTypes());
             }
             final InputStream is;
             try {
@@ -510,7 +524,7 @@ public class OpenAPISupport implements Service {
 
         private OpenApiStaticFile getDefaultStaticFile() {
             final List<String> candidatePaths = LOGGER.isLoggable(Level.FINER) ? new ArrayList<>() : null;
-            for (OpenAPIMediaTypes candidate : OpenAPIMediaTypes.values()) {
+            for (OpenAPIMediaType candidate : OpenAPIMediaType.values()) {
                 for (String type : candidate.matchingTypes()) {
                     String candidatePath = DEFAULT_STATIC_FILE_PATH_PREFIX + type;
                     InputStream is = null;

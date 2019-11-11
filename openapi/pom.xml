@@ -14,8 +14,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -25,7 +25,7 @@
     </parent>
     <groupId>io.helidon.openapi</groupId>
     <artifactId>helidon-openapi</artifactId>
-    
+
     <name>Helidon OpenAPI</name>
 
     <description>
@@ -33,7 +33,7 @@
     </description>
 
     <packaging>jar</packaging>
-    
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -42,10 +42,37 @@
         <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>smallrye-open-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.media.jsonp</groupId>
             <artifactId>helidon-media-jsonp-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse</groupId>
+            <artifactId>yasson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -75,15 +102,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
 </project>
