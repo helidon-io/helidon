@@ -18,6 +18,9 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +33,9 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
  * Test set of basic JDBC updates.
  */
 public class SimpleUpdateIT extends AbstractIT {
+
+    /** Local logger instance. */
+    private static final Logger LOG = Logger.getLogger(SimpleUpdateIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 20;
@@ -53,14 +59,19 @@ public class SimpleUpdateIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        int curId = BASE_ID;
-        addPokemon(new Pokemon(++curId, "Spearow", TYPES.get(1), TYPES.get(3))); // BASE_ID+1
-        addPokemon(new Pokemon(++curId, "Fearow", TYPES.get(1), TYPES.get(3)));  // BASE_ID+2
-        addPokemon(new Pokemon(++curId, "Ekans", TYPES.get(4)));                 // BASE_ID+3
-        addPokemon(new Pokemon(++curId, "Arbok", TYPES.get(4)));                 // BASE_ID+4
-        addPokemon(new Pokemon(++curId, "Sandshrew", TYPES.get(5)));             // BASE_ID+5
-        addPokemon(new Pokemon(++curId, "Sandslash", TYPES.get(5)));             // BASE_ID+6
-        addPokemon(new Pokemon(++curId, "Diglett", TYPES.get(5)));               // BASE_ID+7
+        try {
+            int curId = BASE_ID;
+            addPokemon(new Pokemon(++curId, "Spearow", TYPES.get(1), TYPES.get(3))); // BASE_ID+1
+            addPokemon(new Pokemon(++curId, "Fearow", TYPES.get(1), TYPES.get(3)));  // BASE_ID+2
+            addPokemon(new Pokemon(++curId, "Ekans", TYPES.get(4)));                 // BASE_ID+3
+            addPokemon(new Pokemon(++curId, "Arbok", TYPES.get(4)));                 // BASE_ID+4
+            addPokemon(new Pokemon(++curId, "Sandshrew", TYPES.get(5)));             // BASE_ID+5
+            addPokemon(new Pokemon(++curId, "Sandslash", TYPES.get(5)));             // BASE_ID+6
+            addPokemon(new Pokemon(++curId, "Diglett", TYPES.get(5)));               // BASE_ID+7
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            throw ex;
+        }
     }
 
     /**
