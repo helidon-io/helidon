@@ -17,14 +17,15 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import org.junit.jupiter.api.Test;
 
 import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC get calls.

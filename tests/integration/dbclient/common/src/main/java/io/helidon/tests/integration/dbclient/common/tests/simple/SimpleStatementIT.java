@@ -18,26 +18,32 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyDeletePokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpdatePokemon;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC common statement calls.
  */
 public class SimpleStatementIT extends AbstractIT {
     
+    /** Local logger instance. */
+    private static final Logger LOG = Logger.getLogger(SimpleStatementIT.class.getName());
+
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 70;
 
@@ -60,23 +66,28 @@ public class SimpleStatementIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        // BASE_ID + 1 .. BASE_ID + 9 is reserved for inserts
-        // BASE_ID + 10 .. BASE_ID + 19 are pokemons for updates
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+10, "Smoochum", TYPES.get(14), TYPES.get(15))); // BASE_ID+10
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+11, "Jynx", TYPES.get(14), TYPES.get(15)));     // BASE_ID+11
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+12, "Krabby", TYPES.get(11)));                  // BASE_ID+12
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+13, "Kingler", TYPES.get(11)));                 // BASE_ID+13
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+14, "Dratini", TYPES.get(16)));                 // BASE_ID+14
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+15, "Dragonair", TYPES.get(16)));               // BASE_ID+15
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+16, "Dragonite", TYPES.get(3), TYPES.get(16))); // BASE_ID+16
-        // BASE_ID + 20 .. BASE_ID + 29 are pokemons for deletes
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+20, "Cleffa", TYPES.get(18)));    // BASE_ID+20
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+21, "Clefairy", TYPES.get(18)));  // BASE_ID+21
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+22, "Clefable", TYPES.get(18)));  // BASE_ID+22
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+23, "Misdreavus", TYPES.get(8))); // BASE_ID+23
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+24, "Mismagius", TYPES.get(8)));  // BASE_ID+24
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+25, "Growlithe", TYPES.get(10))); // BASE_ID+25
-        addPokemon(new AbstractIT.Pokemon(BASE_ID+26, "Arcanine", TYPES.get(10)));  // BASE_ID+26
+        try {
+            // BASE_ID + 1 .. BASE_ID + 9 is reserved for inserts
+            // BASE_ID + 10 .. BASE_ID + 19 are pokemons for updates
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 10, "Smoochum", TYPES.get(14), TYPES.get(15))); // BASE_ID+10
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 11, "Jynx", TYPES.get(14), TYPES.get(15)));     // BASE_ID+11
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 12, "Krabby", TYPES.get(11)));                  // BASE_ID+12
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 13, "Kingler", TYPES.get(11)));                 // BASE_ID+13
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 14, "Dratini", TYPES.get(16)));                 // BASE_ID+14
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 15, "Dragonair", TYPES.get(16)));               // BASE_ID+15
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 16, "Dragonite", TYPES.get(3), TYPES.get(16))); // BASE_ID+16
+            // BASE_ID + 20 .. BASE_ID + 29 are pokemons for deletes
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 20, "Cleffa", TYPES.get(18)));    // BASE_ID+20
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 21, "Clefairy", TYPES.get(18)));  // BASE_ID+21
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 22, "Clefable", TYPES.get(18)));  // BASE_ID+22
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 23, "Misdreavus", TYPES.get(8))); // BASE_ID+23
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 24, "Mismagius", TYPES.get(8)));  // BASE_ID+24
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 25, "Growlithe", TYPES.get(10))); // BASE_ID+25
+            addPokemon(new AbstractIT.Pokemon(BASE_ID + 26, "Arcanine", TYPES.get(10)));  // BASE_ID+26
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            throw ex;
+        }
     }
 
     /**

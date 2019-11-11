@@ -18,23 +18,29 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyDeletePokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpdatePokemon;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Test set of basic JDBC DML statement calls.
  */
 public class SimpleDmlIT extends AbstractIT {
     
+    /** Local logger instance. */
+    private static final Logger LOG = Logger.getLogger(SimpleDmlIT.class.getName());
+
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 40;
 
@@ -57,23 +63,28 @@ public class SimpleDmlIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        // BASE_ID + 1 .. BASE_ID + 9 is reserved for inserts
-        // BASE_ID + 10 .. BASE_ID + 19 are pokemons for updates
-        addPokemon(new Pokemon(BASE_ID+10, "Piplup", TYPES.get(11)));                 // BASE_ID+10
-        addPokemon(new Pokemon(BASE_ID+11, "Prinplup", TYPES.get(11)));               // BASE_ID+11
-        addPokemon(new Pokemon(BASE_ID+12, "Empoleon", TYPES.get(9), TYPES.get(11))); // BASE_ID+12
-        addPokemon(new Pokemon(BASE_ID+13, "Staryu", TYPES.get(11)));                 // BASE_ID+13
-        addPokemon(new Pokemon(BASE_ID+14, "Starmie", TYPES.get(11), TYPES.get(14))); // BASE_ID+14
-        addPokemon(new Pokemon(BASE_ID+15, "Horsea", TYPES.get(11)));                 // BASE_ID+15
-        addPokemon(new Pokemon(BASE_ID+16, "Seadra", TYPES.get(11)));                 // BASE_ID+16
-        // BASE_ID + 20 .. BASE_ID + 29 are pokemons for deletes
-        addPokemon(new Pokemon(BASE_ID+20, "Mudkip", TYPES.get(11)));                  // BASE_ID+20
-        addPokemon(new Pokemon(BASE_ID+21, "Marshtomp", TYPES.get(5), TYPES.get(11))); // BASE_ID+21
-        addPokemon(new Pokemon(BASE_ID+22, "Swampert", TYPES.get(5), TYPES.get(11)));  // BASE_ID+22
-        addPokemon(new Pokemon(BASE_ID+23, "Muk", TYPES.get(4)));                      // BASE_ID+23
-        addPokemon(new Pokemon(BASE_ID+24, "Grimer", TYPES.get(4)));                   // BASE_ID+24
-        addPokemon(new Pokemon(BASE_ID+25, "Cubchoo", TYPES.get(15)));                 // BASE_ID+25
-        addPokemon(new Pokemon(BASE_ID+26, "Beartic", TYPES.get(15)));                 // BASE_ID+26
+        try {
+            // BASE_ID + 1 .. BASE_ID + 9 is reserved for inserts
+            // BASE_ID + 10 .. BASE_ID + 19 are pokemons for updates
+            addPokemon(new Pokemon(BASE_ID + 10, "Piplup", TYPES.get(11)));                 // BASE_ID+10
+            addPokemon(new Pokemon(BASE_ID + 11, "Prinplup", TYPES.get(11)));               // BASE_ID+11
+            addPokemon(new Pokemon(BASE_ID + 12, "Empoleon", TYPES.get(9), TYPES.get(11))); // BASE_ID+12
+            addPokemon(new Pokemon(BASE_ID + 13, "Staryu", TYPES.get(11)));                 // BASE_ID+13
+            addPokemon(new Pokemon(BASE_ID + 14, "Starmie", TYPES.get(11), TYPES.get(14))); // BASE_ID+14
+            addPokemon(new Pokemon(BASE_ID + 15, "Horsea", TYPES.get(11)));                 // BASE_ID+15
+            addPokemon(new Pokemon(BASE_ID + 16, "Seadra", TYPES.get(11)));                 // BASE_ID+16
+            // BASE_ID + 20 .. BASE_ID + 29 are pokemons for deletes
+            addPokemon(new Pokemon(BASE_ID + 20, "Mudkip", TYPES.get(11)));                  // BASE_ID+20
+            addPokemon(new Pokemon(BASE_ID + 21, "Marshtomp", TYPES.get(5), TYPES.get(11))); // BASE_ID+21
+            addPokemon(new Pokemon(BASE_ID + 22, "Swampert", TYPES.get(5), TYPES.get(11)));  // BASE_ID+22
+            addPokemon(new Pokemon(BASE_ID + 23, "Muk", TYPES.get(4)));                      // BASE_ID+23
+            addPokemon(new Pokemon(BASE_ID + 24, "Grimer", TYPES.get(4)));                   // BASE_ID+24
+            addPokemon(new Pokemon(BASE_ID + 25, "Cubchoo", TYPES.get(15)));                 // BASE_ID+25
+            addPokemon(new Pokemon(BASE_ID + 26, "Beartic", TYPES.get(15)));                 // BASE_ID+26
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            throw ex;
+        }
     }
 
     /**
