@@ -60,6 +60,8 @@ class NettyWebServer implements WebServer {
     static final String TRACING_COMPONENT = "web-server";
 
     private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
+    private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
+    private static final boolean EXIT_ON_STARTED = System.getProperty(EXIT_ON_STARTED_KEY) != null;
 
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -168,7 +170,7 @@ class NettyWebServer implements WebServer {
     public synchronized CompletionStage<WebServer> start() {
         if (!started) {
 
-            channelsUpFuture.thenAccept(startFuture::complete)
+            channelsUpFuture.thenAccept(this::started)
                             .exceptionally(throwable -> {
                                 if (channels.isEmpty()) {
                                     startFailureHandler(throwable);
@@ -258,6 +260,15 @@ class NettyWebServer implements WebServer {
             LOGGER.fine(() -> "All channels startup routine initiated: " + bootstrapsSize);
         }
         return startFuture;
+    }
+
+    private void started(WebServer server) {
+        if (EXIT_ON_STARTED) {
+            LOGGER.info(String.format("Exiting, -D%s set.",  EXIT_ON_STARTED_KEY));
+            System.exit(0);
+        } else {
+            startFuture.complete(server);
+        }
     }
 
     private WebServer startFailureHandler(Throwable throwable) {
