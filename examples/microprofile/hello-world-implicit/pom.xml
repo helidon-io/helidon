@@ -32,13 +32,13 @@
     <name>Helidon Microprofile Examples Implicit Hello World</name>
 
     <description>
-        Microprofile 2.2 example with implicit bootstrapping (server.Main(new String[0])
+        Microprofile example with implicit bootstrapping (server.Main(new String[0])
     </description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-3.1</artifactId>
+            <artifactId>helidon-microprofile-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
