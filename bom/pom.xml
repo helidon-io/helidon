@@ -383,6 +383,16 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
+                <artifactId>helidon-microprofile-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.bundles</groupId>
+                <artifactId>helidon-microprofile</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.bundles</groupId>
                 <artifactId>internal-test-libs</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

@@ -45,6 +45,8 @@
         <module>helidon-microprofile-2.2</module>
         <module>helidon-microprofile-3.0</module>
         <module>helidon-microprofile-3.1</module>
+        <module>helidon-microprofile-core</module>
+        <module>helidon-microprofile</module>
     </modules>
 
     <profiles>
