@@ -21,6 +21,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.microprofile.messaging.connector.IncomingConnector;
 import io.helidon.microprofile.messaging.connector.OutgoingConnector;
+import io.helidon.microprofile.messaging.reactive.ProxyProcessor;
+import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 

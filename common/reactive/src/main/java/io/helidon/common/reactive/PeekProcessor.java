@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,21 +12,29 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging.inner;
+package io.helidon.common.reactive;
 
-import io.helidon.microprofile.reactive.MultiRS;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.reactivestreams.Publisher;
+import java.util.function.Consumer;
 
-import javax.enterprise.context.ApplicationScoped;
+/**
+ * Invoke supplied consumer for every item in the stream
+ *
+ * @param <T> both input/output type
+ */
+public class PeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
-@ApplicationScoped
-public class NotConnectedOutgoingChannelBean {
+    private Consumer<T> consumer;
 
-    @Outgoing("not-existing-channel")
-    public Publisher<String> produceMessage() {
-        return MultiRS.just("t1", "t2");
+    public PeekProcessor(Consumer<T> consumer) {
+        this.consumer = consumer;
+    }
+
+    @Override
+    protected void hookOnNext(T item) {
+        consumer.accept(item);
+        submit(item);
     }
 }

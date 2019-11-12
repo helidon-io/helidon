@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,21 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging.inner;
+package io.helidon.microprofile.messaging;
 
-import io.helidon.microprofile.reactive.MultiRS;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.reactivestreams.Publisher;
+import java.util.concurrent.CountDownLatch;
 
-import javax.enterprise.context.ApplicationScoped;
-
-@ApplicationScoped
-public class NotConnectedOutgoingChannelBean {
-
-    @Outgoing("not-existing-channel")
-    public Publisher<String> produceMessage() {
-        return MultiRS.just("t1", "t2");
-    }
+public interface CountableTestBean {
+    CountDownLatch getTestLatch();
 }

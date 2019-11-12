@@ -21,6 +21,7 @@ import io.helidon.microprofile.messaging.channel.AbstractChannel;
 import io.helidon.microprofile.messaging.channel.ProcessorMethod;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.jboss.weld.exceptions.DeploymentException;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -28,10 +29,22 @@ import org.reactivestreams.Subscription;
 
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * Passes publisher to processor method ex:
+ * <pre>{@code
+ *     @Incoming("inner-processor")
+ *     @Outgoing("inner-processor-2")
+ *     public PublisherBuilder<String> process(PublisherBuilder<String> msg) {
+ *         return msg;
+ *     }
+ * }</pre>
+ */
 public class ProxyProcessor implements Processor<Object, Object> {
 
     private final ProcessorMethod processorMethod;
     private final Publisher<Object> publisher;
+    private Subscriber subscriber;
+    private boolean subscribed = false;
 
     public ProxyProcessor(ProcessorMethod processorMethod) {
         this.processorMethod = processorMethod;
@@ -52,26 +65,33 @@ public class ProxyProcessor implements Processor<Object, Object> {
 
     @Override
     public void subscribe(Subscriber s) {
-        publisher.subscribe(s);
+        if (publisher == null) {
+            subscriber = s;
+        } else if(!subscribed){
+            subscribed = true;
+            publisher.subscribe(s);
+        }else{
+            throw new DeploymentException("Already subscribed");
+        }
     }
 
     @Override
     public void onSubscribe(Subscription s) {
-        throw new UnsupportedOperationException();
+        subscriber.onSubscribe(s);
     }
 
     @Override
     public void onNext(Object o) {
-        throw new UnsupportedOperationException();
+        subscriber.onNext(o);
     }
 
     @Override
     public void onError(Throwable t) {
-        throw new UnsupportedOperationException();
+        subscriber.onError(t);
     }
 
     @Override
     public void onComplete() {
-        throw new UnsupportedOperationException();
+        subscriber.onComplete();
     }
 }

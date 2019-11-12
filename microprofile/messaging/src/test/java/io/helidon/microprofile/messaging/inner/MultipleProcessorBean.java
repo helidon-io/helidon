@@ -17,7 +17,8 @@
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.common.reactive.Multi;
+import io.helidon.microprofile.messaging.CountableTestBean;
+import io.helidon.microprofile.reactive.MultiRS;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.reactivestreams.Publisher;
@@ -30,34 +31,41 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @ApplicationScoped
-public class MultipleProcessorBean {
+public class MultipleProcessorBean implements CountableTestBean {
     public static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("teST1", "TEst2", "tESt3"));
-    public static Set<String> EXPECTED_DATA = TEST_DATA.stream().map(String::toLowerCase).collect(Collectors.toSet());
+    public static Set<String> EXPECTED_DATA = TEST_DATA.stream()
+            .map(String::toLowerCase)
+            .map(s -> s + "-processed")
+            .collect(Collectors.toSet());
     public static CountDownLatch testLatch = new CountDownLatch(TEST_DATA.size());
 
     @Outgoing("inner-processor")
     public Publisher<String> produceMessage() {
-        return Multi.justMP(TEST_DATA.toArray(new String[0]));
+        return MultiRS.just(TEST_DATA.stream());
     }
 
     @Incoming("inner-processor")
     @Outgoing("inner-processor-2")
     public String process(String msg) {
-        return msg.toUpperCase();
+        return msg.toLowerCase();
     }
 
     @Incoming("inner-processor-2")
     @Outgoing("inner-consumer")
     public String process2(String msg) {
-        return msg.toLowerCase();
+        return msg + "-processed";
     }
 
     @Incoming("inner-consumer")
     public void receiveMessage(String msg) {
-        assertTrue(EXPECTED_DATA.contains(msg.toLowerCase()), "Unexpected message received");
-        testLatch.countDown();
+        if (EXPECTED_DATA.contains(msg)) {
+            testLatch.countDown();
+        }
+    }
+
+    @Override
+    public CountDownLatch getTestLatch() {
+        return testLatch;
     }
 }

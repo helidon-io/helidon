@@ -1,7 +1,22 @@
+/*
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
@@ -17,8 +32,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
 
@@ -26,30 +39,10 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
 
     @Override
     public <T> Publisher<T> buildPublisher(Graph graph) throws UnsupportedStageException {
+        MultiStagesCollector<T> multiStagesCollector = new MultiStagesCollector<>();
         Collection<Stage> stages = graph.getStages();
-
-        Publisher<T> publisher = null;
-
-        for (Stage stage : stages) {
-            if (stage instanceof Stage.PublisherStage) {
-                Stage.PublisherStage publisherStage = (Stage.PublisherStage) stage;
-                publisher = (Publisher<T>) publisherStage.getRsPublisher();
-            } else if (stage instanceof Stage.Map) {
-                Stage.Map mapStage = (Stage.Map) stage;
-                //TODO: maps...
-                //mapStage.getMapper().apply(pub);
-            } else if (stage instanceof Stage.Of) {
-                //Collection
-                Stage.Of stageOf = (Stage.Of) stage;
-                return Multi.<T>justMP(StreamSupport.stream(stageOf.getElements().spliterator(), false)
-                        .map(e -> (T) e)
-                        .collect(Collectors.toList()));
-            } else {
-                throw new UnsupportedStageException(stage);
-            }
-        }
-
-        return publisher;
+        stages.stream().collect(multiStagesCollector);
+        return multiStagesCollector.getPublisher();
     }
 
     @Override
@@ -127,9 +120,6 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
         MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
         graph.getStages().stream().collect(multiStagesCollector);
         CompletionStage<T> completionStage = (CompletionStage<T>) multiStagesCollector.toCompletableStage();
-        completionStage.exceptionally(t -> {
-            throw new RuntimeException(t);
-        });
         return completionStage;
     }
 }

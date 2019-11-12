@@ -27,6 +27,16 @@ import org.reactivestreams.Subscription;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+/**
+ * Process every item in stream by method ex:
+ * <pre>{@code
+ *      @Incoming("inner-processor")
+ *      @Outgoing("inner-consumer")
+ *      public String process2(String msg) {
+ *          return msg.toLowerCase();
+ *      }
+ * }</pre>
+ */
 public class InternalProcessor implements Processor<Object, Object> {
 
 

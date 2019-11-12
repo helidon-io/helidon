@@ -18,16 +18,18 @@
 package io.helidon.microprofile.messaging.inner;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
-import org.junit.jupiter.api.Disabled;
+import io.helidon.microprofile.messaging.CountableTestBean;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DeploymentException;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class InnerChannelTest extends AbstractCDITest {
 
@@ -36,54 +38,25 @@ public class InnerChannelTest extends AbstractCDITest {
         //Starting container manually
     }
 
-    @Test
-    void internalChannelsInSameBeanTest() throws InterruptedException {
-        cdiContainer = startCdiContainer(Collections.emptyMap(), InternalChannelsBean.class);
-        // Wait till all messages are delivered
-        assertTrue(InternalChannelsBean.publisher_string_latch.await(2, TimeUnit.SECONDS)
-                , "All messages not delivered in time, number of unreceived messages: "
-                        + InternalChannelsBean.publisher_string_latch.getCount());
+    static Stream<CdiTestCase> testCaseSource() {
+        return Stream.of(
+                CdiTestCase.from(InternalChannelsBean.class),
+                CdiTestCase.from(InnerProcessorBean.class),
+                CdiTestCase.from(MultipleProcessorBean.class),
+                CdiTestCase.from(MultipleTypeProcessorChainBean.class),
+                CdiTestCase.from(PrimitiveProcessorBean.class)
+        );
     }
 
-    @Test
-    void processorInSameBeanTest() throws InterruptedException {
-        cdiContainer = startCdiContainer(Collections.emptyMap(), InnerProcessorBean.class);
-
-        // Wait till all messages are delivered
-        assertTrue(InnerProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
-                , "All messages not delivered in time, number of unreceived messages: "
-                        + InnerProcessorBean.testLatch.getCount());
-    }
-
-    @Test
-    void multipleProcessorTest() throws InterruptedException {
-        cdiContainer = startCdiContainer(Collections.emptyMap(), MultipleProcessorBean.class);
-
-        // Wait till all messages are delivered
-        assertTrue(MultipleProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
-                , "All messages not delivered in time, number of unreceived messages: "
-                        + MultipleProcessorBean.testLatch.getCount());
-    }
-
-    @Test
-    @Disabled //TODO: Stream types
-    void multipleTypeProcessorTest() throws InterruptedException {
-        cdiContainer = startCdiContainer(Collections.emptyMap(), MultipleTypeProcessorChainBean.class);
-
-        // Wait till all messages are delivered
-        assertTrue(MultipleProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
-                , "All messages not delivered in time, number of unreceived messages: "
-                        + MultipleTypeProcessorChainBean.testLatch.getCount());
-    }
-
-    @Test
-    void primitiveProcessorTest() throws InterruptedException {
-        cdiContainer = startCdiContainer(Collections.emptyMap(), PrimitiveProcessorBean.class);
-
-        // Wait till all messages are delivered
-        assertTrue(PrimitiveProcessorBean.testLatch.await(2, TimeUnit.SECONDS)
-                , "All messages not delivered in time, number of unreceived messages: "
-                        + PrimitiveProcessorBean.testLatch.getCount());
+    @ParameterizedTest
+    @MethodSource("testCaseSource")
+    void innerChannelBeanTest(CdiTestCase testCase) {
+        cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes());
+        testCase.getCountableBeanClasses().forEach(c -> {
+            CountableTestBean countableTestBean = CDI.current().select(c).get();
+            // Wait till all messages are delivered
+            assertAllReceived(countableTestBean);
+        });
     }
 
     @Test

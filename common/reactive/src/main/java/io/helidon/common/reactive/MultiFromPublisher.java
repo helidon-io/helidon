@@ -27,7 +27,7 @@ import java.util.concurrent.Flow.Subscriber;
  *
  * @param <T> items type
  */
-final class MultiFromPublisher<T> implements Multi<T>, org.reactivestreams.Publisher<T> {
+final class MultiFromPublisher<T> implements Multi<T> {
 
     private final Flow.Publisher<? extends T> source;
 
@@ -39,41 +39,5 @@ final class MultiFromPublisher<T> implements Multi<T>, org.reactivestreams.Publi
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
         source.subscribe(subscriber);
-    }
-
-    //TODO: This is just POC
-    @Override
-    public void subscribe(org.reactivestreams.Subscriber<? super T> s) {
-        source.subscribe(new Subscriber<T>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                s.onSubscribe(new Subscription() {
-                    @Override
-                    public void request(long n) {
-                        subscription.request(n);
-                    }
-
-                    @Override
-                    public void cancel() {
-                        subscription.cancel();
-                    }
-                });
-            }
-
-            @Override
-            public void onNext(T item) {
-                s.onNext(item);
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                s.onError(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-                s.onComplete();
-            }
-        });
     }
 }

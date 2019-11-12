@@ -22,6 +22,9 @@ import java.util.concurrent.Flow.Subscriber;
 
 import io.helidon.common.mapper.Mapper;
 
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
 /**
  * Multiple items publisher facility.
  * @param <T> item type
@@ -38,6 +41,32 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default <U> Multi<U> map(Mapper<T, U> mapper) {
         MultiMappingProcessor<T, U> processor = new MultiMappingProcessor<>(mapper);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * Invoke provided consumer for every item in stream
+     *
+     * @param consumer consumer to be invoked
+     * @param <U> consumer argument type
+     * @return Multi
+     */
+    default <U> Multi<U> peek(Consumer<U> consumer) {
+        PeekProcessor processor = new PeekProcessor(consumer);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * Filter stream items with provided predicate
+     *
+     * @param predicate predicate to filter stream with
+     * @param <U> type of the predicate argument
+     * @return Multi
+     */
+    default <U> Multi<U> filter(Predicate<U> predicate) {
+        FilterProcessor processor = new FilterProcessor(predicate);
         this.subscribe(processor);
         return processor;
     }
@@ -114,17 +143,6 @@ public interface Multi<T> extends Subscribable<T> {
     @SafeVarargs
     static <T> Multi<T> just(T... items) {
         return new MultiFromPublisher<>(new FixedItemsPublisher<>(List.of(items)));
-    }
-
-    //TODO: This is just POC, hide it behind org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams
-    @SafeVarargs
-    static <T> org.reactivestreams.Publisher<T> justMP(T... items) {
-        return new MultiFromPublisher<>(new FixedItemsPublisher<>(listOf(items)));
-    }
-
-    //TODO: This is just POC, hide it behind org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams
-    static <T> org.reactivestreams.Publisher<T> justMP(Collection<T> items) {
-        return new MultiFromPublisher<>(new FixedItemsPublisher<>(items));
     }
 
     /**

@@ -37,15 +37,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.LogManager;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class AbstractCDITest {
@@ -97,8 +101,19 @@ public abstract class AbstractCDITest {
         }
     }
 
+
     protected <T> void forEachBean(Class<T> beanType, Annotation annotation, Consumer<T> consumer) {
         cdiContainer.select(beanType, annotation).stream().forEach(consumer);
+    }
+
+    public void assertAllReceived(CountableTestBean bean) {
+        try {
+            assertTrue(bean.getTestLatch().await(2, TimeUnit.SECONDS)
+                    , "All messages not delivered in time, number of unreceived messages: "
+                            + bean.getTestLatch().getCount());
+        } catch (InterruptedException e) {
+            fail(e);
+        }
     }
 
     public static SeContainer startCdiContainer(Map<String, String> p, Class<?>... beanClasses) {
@@ -121,5 +136,39 @@ public abstract class AbstractCDITest {
         assertThat(initializer, is(notNullValue()));
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
+    }
+
+    protected static final class CdiTestCase {
+        private String name;
+        private Class<?>[] clazzes;
+
+        private CdiTestCase(String name, Class<?>... clazzes) {
+            this.name = name;
+            this.clazzes = clazzes;
+        }
+
+        public static CdiTestCase from(Class<?> clazz) {
+            return new CdiTestCase(clazz.getSimpleName(), clazz);
+        }
+
+        public static CdiTestCase from(String name, Class<?>... clazzes) {
+            return new CdiTestCase(name, clazzes);
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public Class<?>[] getClazzes() {
+            return clazzes;
+        }
+
+        public List<Class<? extends CountableTestBean>> getCountableBeanClasses() {
+            return Arrays.stream(clazzes)
+                    .filter(CountableTestBean.class::isAssignableFrom)
+                    .map(c -> (Class<? extends CountableTestBean>) c)
+                    .collect(Collectors.toList());
+        }
     }
 }

@@ -31,7 +31,8 @@
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.common.reactive.Multi;
+import io.helidon.microprofile.messaging.CountableTestBean;
+import io.helidon.microprofile.reactive.MultiRS;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.reactivestreams.Publisher;
@@ -44,18 +45,18 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @ApplicationScoped
-public class InnerProcessorBean {
+public class InnerProcessorBean implements CountableTestBean {
 
     public static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("test1", "test2", "test3"));
-    public static Set<String> EXPECTED_DATA = TEST_DATA.stream().map(String::toUpperCase).collect(Collectors.toSet());
+    public static Set<String> EXPECTED_DATA = TEST_DATA.stream()
+            .map(String::toUpperCase)
+            .collect(Collectors.toSet());
     public static CountDownLatch testLatch = new CountDownLatch(TEST_DATA.size());
 
     @Outgoing("inner-processor")
     public Publisher<String> produceMessage() {
-        return Multi.justMP(TEST_DATA.toArray(new String[0]));
+        return MultiRS.just(TEST_DATA.stream());
     }
 
     @Incoming("inner-processor")
@@ -66,8 +67,13 @@ public class InnerProcessorBean {
 
     @Incoming("inner-consumer")
     public void receiveMessage(String msg) {
-        assertTrue(TEST_DATA.contains(msg.toLowerCase()), "Unexpected message received");
-        testLatch.countDown();
+        if (EXPECTED_DATA.contains(msg)) {
+            testLatch.countDown();
+        }
     }
 
+    @Override
+    public CountDownLatch getTestLatch() {
+        return testLatch;
+    }
 }

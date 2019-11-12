@@ -17,7 +17,7 @@
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.common.reactive.Multi;
+import io.helidon.microprofile.reactive.MultiRS;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.reactivestreams.Publisher;
@@ -25,7 +25,6 @@ import org.reactivestreams.Publisher;
 import javax.enterprise.context.ApplicationScoped;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @ApplicationScoped
@@ -35,7 +34,7 @@ public class PrimitiveProcessorBean {
 
     @Outgoing("inner-processor")
     public Publisher<Integer> produceMessage() {
-        return Multi.justMP(IntStream.range(0, 10).boxed().collect(Collectors.toList()));
+        return MultiRS.just(IntStream.range(0, 10).boxed());
     }
 
     @Incoming("inner-processor")

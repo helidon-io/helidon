@@ -16,20 +16,22 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
-import io.helidon.common.reactive.valve.Valves;
+import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
 import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -37,82 +39,75 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class MultiStagesCollector implements Collector<Stage, Multi<Object>, CompletionStage<Object>> {
+public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, CompletionStage<T>> {
 
-    private Multi<Object> multi = null;
-    private Single<Object> single = null;
+    private Multi<T> multi = null;
+    private CompletableFuture<T> completableFuture = null;
 
     @Override
-    public Supplier<Multi<Object>> supplier() {
+    public Supplier<Multi<T>> supplier() {
         return () -> multi != null ? multi : Multi.empty();
     }
 
+    public Publisher<T> getPublisher() {
+        return MultiRS.from(multi);
+    }
+
     @Override
-    public BiConsumer<Multi<Object>, Stage> accumulator() {
+    public BiConsumer<Multi<T>, Stage> accumulator() {
         //MP Stages to Helidon multi streams mapping
         return (m, stage) -> {
 
             // Create stream
             if (stage instanceof Stage.PublisherStage) {
                 Stage.PublisherStage publisherStage = (Stage.PublisherStage) stage;
-                if (publisherStage.getRsPublisher() instanceof Multi) {
-                    multi = (Multi) ((Stage.PublisherStage) stage).getRsPublisher();
-                } else {
+                Publisher<T> rsPublisher = (Publisher<T>) publisherStage.getRsPublisher();
+                multi = MultiRS.toMulti(rsPublisher);
 
-                    throw new UnsupportedStageException(stage);
-                }
             } else if (stage instanceof Stage.Of) {
                 //Collection
                 Stage.Of stageOf = (Stage.Of) stage;
-                multi = Multi.just(StreamSupport.stream(stageOf.getElements().spliterator(), false)
-                        .collect(Collectors.toList()));
+                List<?> fixedData = StreamSupport.stream(stageOf.getElements().spliterator(), false)
+                        .collect(Collectors.toList());
+                multi = (Multi<T>) Multi.just(fixedData);
 
             } else if (stage instanceof Stage.Map) {
                 // Transform stream
-                Stage.Map stageMap = (Stage.Map) stage;
-                multi = multi.map(new Mapper<Object, Object>() {
-                    @Override
-                    public Object map(Object t) {
-                        Function<Object, Object> mapper = (Function<Object, Object>) stageMap.getMapper();
-                        return mapper.apply(t);
-                    }
-                });
+                Stage.Map mapStage = (Stage.Map) stage;
+                Function<T, T> mapper = (Function<T, T>) mapStage.getMapper();
+                multi = Multi.from(multi).map(mapper::apply);
 
             } else if (stage instanceof Stage.Filter) {
                 //Filter stream
                 Stage.Filter stageFilter = (Stage.Filter) stage;
-                Predicate<Object> predicate = (Predicate<Object>) stageFilter.getPredicate();
-                //TODO: Valve is deprecated, plan is implement filter in Multi
-                multi = Multi.from(Valves.from(multi).filter(predicate).toPublisher());
+                Predicate<T> predicate = (Predicate<T>) stageFilter.getPredicate();
+                multi = multi.filter(predicate);
+
+            } else if (stage instanceof Stage.Peek) {
+                Stage.Peek peekStage = (Stage.Peek) stage;
+                Consumer<T> peekConsumer = (Consumer<T>) peekStage.getConsumer();
+                multi = multi.peek(peekConsumer::accept);
 
             } else if (stage instanceof Stage.SubscriberStage) {
                 //Subscribe to stream
                 Stage.SubscriberStage subscriberStage = (Stage.SubscriberStage) stage;
-                Subscriber<Object> subscriber = (Subscriber<Object>) subscriberStage.getRsSubscriber();
-                single = multi.collect(new io.helidon.common.reactive.Collector<Object, Object>() {
-                    @Override
-                    public void collect(Object item) {
-                        subscriber.onNext(item);
-                    }
-
-                    @Override
-                    public Object value() {
-                        return null;
-                    }
-                });
+                Subscriber<T> subscriber = (Subscriber<T>) subscriberStage.getRsSubscriber();
+                this.completableFuture = new CompletableFuture<>();
+                CompletionSubscriber<T, T> completionSubscriber = CompletionSubscriber.of(subscriber, completableFuture);
+                multi.subscribe(HybridSubscriber.from(completionSubscriber));
 
             } else if (stage instanceof Stage.Collect) {
                 //Collect stream
                 Stage.Collect stageFilter = (Stage.Collect) stage;
-                Collector<Object, Object, Object> collector = (Collector<Object, Object, Object>) stageFilter.getCollector();
-                single = multi.collect(new io.helidon.common.reactive.Collector<Object, Object>() {
+                Collector<T, T, T> collector = (Collector<T, T, T>) stageFilter.getCollector();
+                multi.collect(new io.helidon.common.reactive.Collector<T, T>() {
                     @Override
-                    public void collect(Object item) {
+                    public void collect(T item) {
                         collector.finisher().apply(item);
                     }
 
                     @Override
-                    public Object value() {
+                    public T value() {
                         return null;
                     }
                 });
@@ -123,12 +118,12 @@ public class MultiStagesCollector implements Collector<Stage, Multi<Object>, Com
     }
 
     @Override
-    public BinaryOperator<Multi<Object>> combiner() {
+    public BinaryOperator<Multi<T>> combiner() {
         return (a, b) -> null;
     }
 
     @Override
-    public Function<Multi<Object>, CompletionStage<Object>> finisher() {
+    public Function<Multi<T>, CompletionStage<T>> finisher() {
         return t -> toCompletableStage();
     }
 
@@ -137,15 +132,7 @@ public class MultiStagesCollector implements Collector<Stage, Multi<Object>, Com
         return new HashSet<>(Collections.singletonList(Characteristics.IDENTITY_FINISH));
     }
 
-    public Multi<Object> getMulti() {
-        return this.multi;
-    }
-
-    public Single<Object> getSingle() {
-        return this.single;
-    }
-
-    public CompletionStage<Object> toCompletableStage() {
-        return this.single != null ? single.toStage() : null;
+    public CompletionStage<T> toCompletableStage() {
+        return completableFuture;
     }
 }

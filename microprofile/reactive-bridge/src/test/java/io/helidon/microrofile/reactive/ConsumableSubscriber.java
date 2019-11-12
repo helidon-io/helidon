@@ -15,55 +15,35 @@
  *
  */
 
-package io.helidon.microprofile.messaging.reactive;
+package io.helidon.microrofile.reactive;
 
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
-import io.helidon.microprofile.messaging.MessageUtils;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.lang.reflect.Method;
-import java.util.UUID;
+import java.util.function.Consumer;
 
-public class InternalSubscriber implements Subscriber<Object> {
+public class ConsumableSubscriber<T> implements Subscriber<T> {
 
+    private Consumer<T> onNext;
     private Subscription subscription;
-    private Long chunkSize = 5L;
+    private Long chunkSize = 20L;
     private Long chunkPosition = 0L;
-    private Method method;
-    private Object beanInstance;
 
-    public InternalSubscriber(Method method, Object beanInstance) {
-        this.method = method;
-        this.beanInstance = beanInstance;
+    public ConsumableSubscriber(Consumer<T> onNext) {
+        this.onNext = onNext;
     }
 
     @Override
     public void onSubscribe(Subscription s) {
-        subscription = s;
+        this.subscription = s;
         //First chunk request
         subscription.request(chunkSize);
     }
 
     @Override
-    public void onNext(Object message) {
-        try {
-            Class<?> paramType = this.method.getParameterTypes()[0];
-
-            Context parentContext = Context.create();
-            Context context = Context
-                    .builder()
-                    .parent(parentContext)
-                    .id(parentContext.id() + ":message-" + UUID.randomUUID().toString())
-                    .build();
-            Contexts.runInContext(context, () -> this.method.invoke(this.beanInstance, MessageUtils.unwrap(message, paramType)));
-            incrementAndCheckChunkPosition();
-        } catch (Exception e) {
-            //Notify publisher to stop sending
-            subscription.cancel();
-            throw new RuntimeException(e);
-        }
+    public void onNext(T o) {
+        onNext.accept(o);
+        incrementAndCheckChunkPosition();
     }
 
     @Override
@@ -73,7 +53,6 @@ public class InternalSubscriber implements Subscriber<Object> {
 
     @Override
     public void onComplete() {
-
     }
 
     private void incrementAndCheckChunkPosition() {
