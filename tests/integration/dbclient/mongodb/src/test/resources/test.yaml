@@ -177,3 +177,16 @@ db:
             "operation": "delete",
             "query": { id: ? }
         }'
+    # test DbStatementQuery methods
+    select-pokemons-idrng-named-arg: '{
+            "collection": "pokemons",
+            "operation": "query",
+            "projection": { id: 1, name: 1, _id: 0 },
+            "query": { $and: [ { id: { $gt: $idmin } }, { id: { $lt: $idmax } } ] }
+        }'
+    select-pokemons-idrng-order-arg: '{
+            "collection": "pokemons",
+            "operation": "query",
+            "projection": { id: 1, name: 1, _id: 0 },
+            "query": { $and: [ { id: { $gt: ? } }, { id: { $lt: ? } } ] }
+        }'

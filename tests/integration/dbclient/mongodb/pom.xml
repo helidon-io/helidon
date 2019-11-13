@@ -132,6 +132,7 @@
                             </dependenciesToScan>
                             <includes>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.simple.*IT</include>
+                                <include>io.helidon.tests.integration.dbclient.common.tests.statement.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.jdbc.tests.*IT</include>
                             </includes>
                         </configuration>
