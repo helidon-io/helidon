@@ -56,3 +56,6 @@ db:
     # test DML delete
     delete-pokemon-named-arg: "DELETE FROM Pokemons WHERE id=:id"
     delete-pokemon-order-arg: "DELETE FROM Pokemons WHERE id=?"
+    # test DbStatementQuery methods
+    select-pokemons-idrng-named-arg: "SELECT id, name FROM Pokemons WHERE id > :idmin AND id < :idmax"
+    select-pokemons-idrng-order-arg: "SELECT id, name FROM Pokemons WHERE id > ? AND id < ?"

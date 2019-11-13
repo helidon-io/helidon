@@ -15,15 +15,21 @@
  */
 package io.helidon.tests.integration.dbclient.common.utils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
+import io.helidon.tests.integration.dbclient.common.tests.statement.GenericStatementIT;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -33,8 +39,72 @@ import static org.hamcrest.Matchers.*;
  */
 public class Utils {
 
+    /** Local logger instance. */
+    private static final Logger LOG = Logger.getLogger(Utils.class.getName());
+
     private Utils() {
         throw new IllegalStateException("No instances of this class are allowed!");
+    }
+
+    /**
+     * Verify that {@code DbRows<DbRow> rows} argument contains pokemons matching specified IDs range. 
+     * @param rows database query result to verify
+     * @param idMin beginning of ID range
+     * @param idMax end of ID range
+     * @throws InterruptedException when database query failed
+     * @throws ExecutionException if the current thread was interrupted
+     */
+    public static void verifyPokemonsIdRange(
+            DbRows<DbRow> rows, int idMin, int idMax
+    ) throws ExecutionException, InterruptedException {
+        assertThat(rows, notNullValue());
+        List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
+        // Build Map of valid pokemons
+        Map<Integer, Pokemon> valid = new HashMap<>(POKEMONS.size());
+        for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
+            int id = entry.getKey();
+            Pokemon pokemon = entry.getValue();
+            if (id > idMin && id < idMax) {
+                valid.put(id, pokemon);
+            }
+        }
+        // Compare result with valid pokemons
+        //assertThat(rowsList, hasSize(valid.size()));
+        for (DbRow row : rowsList) {
+            Integer id = row.column(1).as(Integer.class);
+            String name = row.column(2).as(String.class);
+            LOG.info(() -> String.format("Pokemon id=%d, name=%s", id, name));
+            assertThat(valid.containsKey(id), equalTo(true));
+            assertThat(name, equalTo( valid.get(id).getName()));
+        }
+    }
+
+    /**
+     * Verify that {@code DbRows<DbRow> rows} argument contains single pokemon matching specified IDs range. 
+     * @param maybeRow database query result to verify
+     * @param idMin beginning of ID range
+     * @param idMax end of ID range
+     * @throws InterruptedException when database query failed
+     * @throws ExecutionException if the current thread was interrupted
+     */
+    public static void verifyPokemonsIdRange(
+            Optional<DbRow> maybeRow, int idMin, int idMax
+    ) throws ExecutionException, InterruptedException {
+        assertThat(maybeRow.isPresent(), equalTo(true));
+        DbRow row = maybeRow.get();
+        // Build Map of valid pokemons
+        Map<Integer, Pokemon> valid = new HashMap<>(POKEMONS.size());
+        for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
+            int id = entry.getKey();
+            Pokemon pokemon = entry.getValue();
+            if (id > idMin && id < idMax) {
+                valid.put(id, pokemon);
+            }
+        }
+        Integer id = row.column(1).as(Integer.class);
+        String name = row.column(2).as(String.class);
+        assertThat(valid.containsKey(id), equalTo(true));
+        assertThat(name, equalTo(valid.get(id).getName()));
     }
 
     /**

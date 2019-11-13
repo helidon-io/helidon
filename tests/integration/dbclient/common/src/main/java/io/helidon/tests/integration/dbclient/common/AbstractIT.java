@@ -25,6 +25,8 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbMapper;
+import io.helidon.dbclient.DbRow;
 
 /**
  * Common testing code.
@@ -65,6 +67,36 @@ public abstract class AbstractIT {
         @Override
         public String toString() {
             return "Type: {id="+id+", name="+name+"}";
+        }
+
+    }
+
+    /**
+     * Pokemon POJO mapper.
+     */
+    public static final class PokemonMapper implements DbMapper<Pokemon> {
+
+        public static final PokemonMapper INSTANCE = new PokemonMapper();
+
+        @Override
+        public Pokemon read(DbRow row) {
+            throw new UnsupportedOperationException("Read operation is not implemented.");
+        }
+
+        @Override
+        public Map<String, ?> toNamedParameters(Pokemon value) {
+            Map<String, Object> params = new HashMap<>(2);
+            params.put("id", value.getId());
+            params.put("name", value.getName());
+            return params;
+        }
+
+        @Override
+        public List<?> toIndexedParameters(Pokemon value) {
+            List<Object> params = new ArrayList<>(2);
+            params.add(value.getName());
+            params.add(value.getId());
+            return params;
         }
 
     }
