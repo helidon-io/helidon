@@ -71,7 +71,7 @@ public class ServerImpl implements Server {
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
-    private static final boolean EXIT_ON_STARTED = System.getProperty(EXIT_ON_STARTED_KEY) != null;
+    private static final boolean EXIT_ON_STARTED = "✅".equals(System.getProperty(EXIT_ON_STARTED_KEY));
     private static final StartedServers STARTED_SERVERS = new StartedServers();
 
     private static long initStartupTime = System.nanoTime();
@@ -506,13 +506,17 @@ public class ServerImpl implements Server {
 
         if (throwRef.get() == null) {
             if (EXIT_ON_STARTED) {
-                LOGGER.info(String.format("Exiting, -D%s set.",  EXIT_ON_STARTED_KEY));
-                System.exit(0);
+                exitOnStarted();
             }
             return this;
         } else {
             throw new MpException("Failed to start server", throwRef.get());
         }
+    }
+
+    private void exitOnStarted() {
+        LOGGER.info(String.format("Exiting, -D%s set.",  EXIT_ON_STARTED_KEY));
+        System.exit(0);
     }
 
     @Override
