@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,20 +12,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.microprofile.messaging.AssertThrowException;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
+import io.helidon.microprofile.messaging.CountableTestBean;
 
-import javax.enterprise.context.ApplicationScoped;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
-@ApplicationScoped
-@AssertThrowException(Exception.class)
-public class NotConnectedIncommingChannelBean {
+public abstract class AbstractShapeTestBean implements CountableTestBean {
 
-    @Incoming("not-existing-channel")
-    public void receiveMethod(String msg) {
+    public static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("teST1", "TEst2", "tESt3"));
+
+    public static CountDownLatch testLatch = new CountDownLatch(TEST_DATA.size());
+
+    @Override
+    public CountDownLatch getTestLatch() {
+        return testLatch;
     }
 }

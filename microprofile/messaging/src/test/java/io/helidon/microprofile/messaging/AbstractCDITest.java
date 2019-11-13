@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -162,6 +163,13 @@ public abstract class AbstractCDITest {
 
         public Class<?>[] getClazzes() {
             return clazzes;
+        }
+
+        public Optional<? extends Class<? extends Throwable>> getExpectedThrowable() {
+            return Arrays.stream(clazzes)
+                    .filter(c -> c.getAnnotation(AssertThrowException.class) != null)
+                    .map(c -> c.getAnnotation(AssertThrowException.class).value())
+                    .findFirst();
         }
 
         public List<Class<? extends CountableTestBean>> getCountableBeanClasses() {

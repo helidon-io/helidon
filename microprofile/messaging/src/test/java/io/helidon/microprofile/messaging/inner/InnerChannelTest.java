@@ -27,6 +27,7 @@ import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DeploymentException;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,23 +41,44 @@ public class InnerChannelTest extends AbstractCDITest {
 
     static Stream<CdiTestCase> testCaseSource() {
         return Stream.of(
+                //Positive tests
+                CdiTestCase.from(PublisherPayloadV6Bean.class),
+                CdiTestCase.from(PublisherPayloadV5Bean.class),
+                CdiTestCase.from(PublisherPayloadV4Bean.class),
+                CdiTestCase.from(PublisherPayloadV3Bean.class),
+                CdiTestCase.from(PublisherPayloadV1Bean.class),
+                CdiTestCase.from(PublisherSubscriberBuilderV2Bean.class),
+                CdiTestCase.from(PublisherSubscriberBuilderV1Bean.class),
+                CdiTestCase.from(PublisherSubscriberV2Bean.class),
+                CdiTestCase.from(PublisherSubscriberV1Bean.class),
                 CdiTestCase.from(InternalChannelsBean.class),
                 CdiTestCase.from(InnerProcessorBean.class),
                 CdiTestCase.from(MultipleProcessorBean.class),
                 CdiTestCase.from(MultipleTypeProcessorChainBean.class),
-                CdiTestCase.from(PrimitiveProcessorBean.class)
+                CdiTestCase.from(PrimitiveProcessorBean.class),
+
+                //Negative tests
+                CdiTestCase.from(NotConnectedIncommingChannelBean.class),
+                CdiTestCase.from(NotConnectedOutgoingChannelBean.class),
+                CdiTestCase.from(BadSignaturePublisherPayloadBean.class)
         );
     }
 
     @ParameterizedTest
     @MethodSource("testCaseSource")
     void innerChannelBeanTest(CdiTestCase testCase) {
-        cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes());
-        testCase.getCountableBeanClasses().forEach(c -> {
-            CountableTestBean countableTestBean = CDI.current().select(c).get();
-            // Wait till all messages are delivered
-            assertAllReceived(countableTestBean);
-        });
+        Optional<? extends Class<? extends Throwable>> expectedThrowable = testCase.getExpectedThrowable();
+        if (expectedThrowable.isPresent()) {
+            assertThrows(expectedThrowable.get(), () ->
+                    cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes()));
+        } else {
+            cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes());
+            testCase.getCountableBeanClasses().forEach(c -> {
+                CountableTestBean countableTestBean = CDI.current().select(c).get();
+                // Wait till all messages are delivered
+                assertAllReceived(countableTestBean);
+            });
+        }
     }
 
     @Test

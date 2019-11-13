@@ -19,6 +19,7 @@ package io.helidon.microprofile.messaging.channel;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.messaging.reactive.InternalSubscriber;
+import io.helidon.microprofile.messaging.reactive.UnwrapProcessor;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Subscriber;
@@ -28,6 +29,7 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
@@ -62,13 +64,14 @@ public class IncomingMethod extends AbstractChannel {
             try {
                 switch (type) {
                     case INCOMING_VOID_2_SUBSCRIBER:
-                        subscriber = (Subscriber) method.invoke(beanInstance);
+                        subscriber = UnwrapProcessor.of(this.method, (Subscriber) method.invoke(beanInstance));
                         break;
                     case INCOMING_VOID_2_SUBSCRIBER_BUILDER:
-                        subscriber = ((SubscriberBuilder) method.invoke(beanInstance)).build();
+                        subscriber = UnwrapProcessor.of(this.method, ((SubscriberBuilder) method.invoke(beanInstance)).build());
                         break;
                     default:
-                        throw new DeploymentException("Unsupported method signature " + method);
+                        //TODO: Implement rest of the method signatures supported by spec
+                        throw new UnsupportedOperationException("Not implemented yet " + type);
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
@@ -85,7 +88,15 @@ public class IncomingMethod extends AbstractChannel {
 
     protected void resolveSignatureType() {
         Class<?> returnType = this.method.getReturnType();
-        Class<?> parameterType = this.method.getParameterTypes()[0];
+        Class<?> parameterType;
+        if (this.method.getParameterTypes().length == 1) {
+            parameterType = this.method.getParameterTypes()[0];
+        } else if (this.method.getParameterTypes().length == 0) {
+            parameterType = Void.TYPE;
+        } else {
+            throw new DeploymentException("Unsupported parameters on incoming method " + method);
+        }
+
         if (Void.TYPE.equals(parameterType)) {
             if (Subscriber.class.equals(returnType)) {
                 this.type = Type.INCOMING_VOID_2_SUBSCRIBER;
@@ -97,7 +108,15 @@ public class IncomingMethod extends AbstractChannel {
                 this.type = Type.INCOMING_MSG_2_COMPLETION_STAGE;
             } else if (Void.TYPE.equals(returnType)) {
                 this.type = Type.INCOMING_MSG_2_VOID;
+            } else {
+                //TODO: Remove when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
+                // see io.helidon.microprofile.messaging.inner.BadSignaturePublisherPayloadBean
+                this.type = Type.INCOMING_MSG_2_VOID;
             }
+        }
+
+        if (Objects.isNull(type)) {
+            throw new DeploymentException("Unsupported incoming method signature " + method);
         }
     }
 

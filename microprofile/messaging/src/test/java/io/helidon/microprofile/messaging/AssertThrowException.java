@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,20 +12,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.helidon.microprofile.messaging.inner;
+package io.helidon.microprofile.messaging;
 
-import io.helidon.microprofile.messaging.AssertThrowException;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-import javax.enterprise.context.ApplicationScoped;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-@ApplicationScoped
-@AssertThrowException(Exception.class)
-public class NotConnectedIncommingChannelBean {
-
-    @Incoming("not-existing-channel")
-    public void receiveMethod(String msg) {
-    }
+@Target({TYPE})
+@Retention(RUNTIME)
+public @interface AssertThrowException {
+    Class<? extends Throwable> value();
 }

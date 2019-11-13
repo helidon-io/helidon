@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,20 +12,31 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.microprofile.messaging.AssertThrowException;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-@AssertThrowException(Exception.class)
-public class NotConnectedIncommingChannelBean {
+public class PublisherPayloadV1Bean extends AbstractShapeTestBean {
 
-    @Incoming("not-existing-channel")
-    public void receiveMethod(String msg) {
+    @Outgoing("void-payload")
+    public Publisher<Message<String>> sourceForVoidPayload() {
+        return ReactiveStreams.fromIterable(TEST_DATA).map(Message::of).buildRs();
     }
+
+    @Incoming("void-payload")
+    public void consumePayload(String payload) {
+        testLatch.countDown();
+    }
+
 }
