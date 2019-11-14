@@ -21,18 +21,10 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="https://github.com/spotbugs/filter/3.0.0"
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
-
-    <Match>
-        <!-- False positive. See https://github.com/spotbugs/spotbugs/issues/756 -->
-        <Class name="io.helidon.webserver.ClassPathContentHandler"/>
-        <Method name="extractJarEntry"/>
-        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
-    </Match>
     <Match>
         <!-- Desired behavior -->
-        <Class name="io.helidon.webserver.NettyWebServer"/>
-        <Method name="started"/>
+        <Class name="io.helidon.microprofile.server"/>
+        <Method name="exitOnStarted"/>
         <Bug pattern="DM_EXIT"/>
     </Match>
-
 </FindBugsFilter>
