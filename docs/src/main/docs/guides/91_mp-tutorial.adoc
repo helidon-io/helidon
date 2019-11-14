@@ -682,29 +682,20 @@ Create a `logging.properties` file in `src/main/resources` with
 .Example logging.properties file
 ----
 # Send messages to the console
-handlers=java.util.logging.ConsoleHandler <1>
+handlers=io.helidon.common.HelidonConsoleHandler
 
-# Global default logging level. Can be overriden by specific handlers and loggers
-.level=INFO <2>
+# HelidonConsoleHandler uses a SimpleFormatter subclass that replaces "!thread!" with the current thread
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
 
-# Helidon Web Server has a custom log formatter that extends SimpleFormatter.
-# It replaces "!thread!" with the current thread name
-java.util.logging.ConsoleHandler.level=INFO
-java.util.logging.ConsoleHandler.formatter=io.helidon.webserver.WebServerLogFormatter <3>
-java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n <4>
+# Global logging level. Can be overridden by specific loggers
+.level=INFO
 ----
 
-<1> The console logging handler is configured.
-<2> The default logging level is set to `INFO`.
-<3> The Helidon custom log formatter is used, this formatter extends the 
- `SimpleFormatter`.
-<4> The format string is set using the standard options to include the timestamp,
+<1> The Helidon console logging handler is configured. This handler writes to `System.out`, does not filter by level
+and uses a custom `SimpleFormatter` that supports thread names.
+<2> The format string is set using the standard options to include the timestamp,
  thread name and message.
-
-TIP: Remember that when you set the default level to `INFO`, if you set an 
- individual logger to a higher level (like `FINER`) you will still only get
- `INFO` level messages.  A common practice is to set the default level higher
- and set the individual loggers to `INFO`.
+<3> The global logging level is set to `INFO`.
 
 Update the main class to configure logging as shown below:
 
