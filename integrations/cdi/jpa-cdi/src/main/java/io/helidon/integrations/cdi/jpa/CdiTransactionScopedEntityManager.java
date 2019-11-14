@@ -19,14 +19,17 @@ import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Vetoed;
 import javax.persistence.EntityManager;
 
 /**
  * A {@link DelegatingEntityManager} created in certain very specific
  * JPA-mandated transaction-related scenarios.
  */
+@Vetoed
 class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
 
 
@@ -38,6 +41,10 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
     private final Instance<Object> instance;
 
     private final Set<? extends Annotation> suppliedQualifiers;
+
+    private final TransactionSupport transactionSupport;
+
+    private final AtomicInteger priorTransactionStatus;
 
     private EntityManager delegate;
 
@@ -64,8 +71,10 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
     @Deprecated
     CdiTransactionScopedEntityManager() {
         super();
+        this.priorTransactionStatus = new AtomicInteger(6); // 6 == javax.transaction.Status.STATUS_NO_TRANSACTION
         this.closeDelegate = true;
         this.instance = null;
+        this.transactionSupport = null;
         this.suppliedQualifiers = Collections.emptySet();
     }
 
@@ -84,7 +93,9 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
     CdiTransactionScopedEntityManager(final Instance<Object> instance,
                                       final Set<? extends Annotation> suppliedQualifiers) {
         super();
+        this.priorTransactionStatus = new AtomicInteger(6); // 6 == javax.transaction.Status.STATUS_NO_TRANSACTION
         this.instance = Objects.requireNonNull(instance);
+        this.transactionSupport = instance.select(TransactionSupport.class).get();
         this.suppliedQualifiers = Objects.requireNonNull(suppliedQualifiers);
     }
 
@@ -93,6 +104,55 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
      * Instance methods.
      */
 
+
+    Number getPriorTransactionStatus() {
+        return this.priorTransactionStatus;
+    }
+
+    /**
+     * Disposes of this {@link CdiTransactionScopedEntityManager} by
+     * capturing the {@link TransactionSupport#getStatus() current
+     * transaction status} and then calling the {@link #close()}
+     * method.
+     *
+     * <p>If the {@link javax.transaction.TransactionScoped} scope is
+     * behaving the way it should, then this method will be invoked
+     * only when the underlying transaction has finished committing or
+     * rolling back, and in no other situations.  It follows that the
+     * current transaction status must be either {@link
+     * TransactionSupport#STATUS_COMMITTED} or {@link
+     * TransactionSupport#STATUS_ROLLEDBACK}.</p>
+     *
+     * <p>This method must not be overridden.  It is not {@code final}
+     * only due to CDI restrictions.</p>
+     *
+     * <h2>Thread Safety</h2>
+     *
+     * <p>This method may be (and often is) called by a thread that is
+     * not the CDI container thread, since transactions may roll back
+     * on such a thread.</p>
+     *
+     * @param ignoredInstance the {@link Instance} supplied by the CDI
+     * bean configuration machinery when the transaction scope is
+     * going away; ignored by this method; may be {@code null}
+     *
+     * @see #close()
+     *
+     * @see #getPriorTransactionStatus()
+     */
+    void dispose(final Instance<Object> ignoredInstance) {
+        try {
+            this.priorTransactionStatus.getAndSet(this.transactionSupport.getStatus());
+            final int currentTransactionStatus = this.priorTransactionStatus.get();
+            assert
+                currentTransactionStatus == TransactionSupport.STATUS_COMMITTED
+                || currentTransactionStatus == TransactionSupport.STATUS_ROLLEDBACK
+                : "Unexpected transaction status during dispose(): " + currentTransactionStatus;
+
+        } finally {
+            this.close();
+        }
+    }
 
     @Override
     protected EntityManager acquireDelegate() {

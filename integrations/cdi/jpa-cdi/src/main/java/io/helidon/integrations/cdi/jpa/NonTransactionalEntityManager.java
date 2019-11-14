@@ -20,21 +20,36 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Vetoed;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
+import javax.persistence.Query;
+import javax.persistence.StoredProcedureQuery;
 import javax.persistence.TransactionRequiredException;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaQuery;
 
 /**
  * A {@link DelegatingEntityManager} that is definitionally not backed
  * by an extended persistence context and that assumes there is no JTA
  * transaction in effect.
  *
+ * <p>This class obeys the requirements imposed upon it by sections
+ * 3.3.2, 3.3.3 and 7.6.2 of the JPA 2.2 specification.</p>
+ *
  * <p>Instances of this class are never directly seen by the end user.
  * Specifically, instances of this class are themselves returned by a
  * {@link DelegatingEntityManager} implementation's {@link
- * #acquireDelegate()} method.</p>
+ * #acquireDelegate()} method and only under appropriate
+ * circumstances.</p>
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * <p>As with all {@link EntityManager} implementations, instances of
+ * this class are not safe for concurrent use by multiple threads.</p>
  */
+@Vetoed
 final class NonTransactionalEntityManager extends DelegatingEntityManager {
 
 
@@ -80,6 +95,111 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
         throw new PersistenceException();
     }
 
+    @Override
+    public <T> TypedQuery<T> createNamedQuery(final String name, final Class<T> resultClass) {
+        return new ClearingTypedQuery<>(this, super.createNamedQuery(name, resultClass));
+    }
+
+    @Override
+    public <T> TypedQuery<T> createQuery(final CriteriaQuery<T> criteriaQuery) {
+        return new ClearingTypedQuery<>(this, super.createQuery(criteriaQuery));
+    }
+
+    @Override
+    public <T> TypedQuery<T> createQuery(String qlString, Class<T> resultClass) {
+        return new ClearingTypedQuery<>(this, super.createQuery(qlString, resultClass));
+    }
+
+    @Override
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey,
+                      final Map<String, Object> properties) {
+        final T returnValue = super.find(entityClass, primaryKey, properties);
+        this.clear();
+        return returnValue;
+    }
+
+    @Override
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey,
+                      final LockModeType lockMode) {
+        final T returnValue = super.find(entityClass, primaryKey, lockMode);
+        this.clear();
+        return returnValue;
+    }
+
+    @Override
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey,
+                      final LockModeType lockMode,
+                      final Map<String, Object> properties) {
+        final T returnValue = super.find(entityClass, primaryKey, lockMode, properties);
+        this.clear();
+        return returnValue;
+    }
+
+    @Override
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey) {
+        final T returnValue = super.find(entityClass, primaryKey);
+        this.clear();
+        return returnValue;
+    }
+
+    @Override
+    public Query createNamedQuery(final String name) {
+        return new ClearingQuery(this, super.createNamedQuery(name));
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public Query createNativeQuery(final String sqlString, final Class resultClass) {
+        return new ClearingQuery(this, super.createNativeQuery(sqlString, resultClass));
+    }
+
+    @Override
+    public Query createNativeQuery(final String sqlString, final String resultSetMapping) {
+        return new ClearingQuery(this, super.createNativeQuery(sqlString, resultSetMapping));
+    }
+
+    @Override
+    public Query createNativeQuery(final String sqlString) {
+        return new ClearingQuery(this, super.createNativeQuery(sqlString));
+    }
+
+    @Override
+    public Query createQuery(final String jpqlString) {
+        return new ClearingQuery(this, super.createQuery(jpqlString));
+    }
+
+    @Override
+    public <T> T getReference(final Class<T> entityClass, final Object primaryKey) {
+        final T returnValue = super.getReference(entityClass, primaryKey);
+        this.clear();
+        return returnValue;
+    }
+
+    @Override
+    public StoredProcedureQuery createNamedStoredProcedureQuery(final String name) {
+        return new ClearingStoredProcedureQuery(this, super.createNamedStoredProcedureQuery(name));
+    }
+
+    @Override
+    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName) {
+        return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName));
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final Class... resultClasses) {
+        return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultClasses));
+    }
+
+    @Override
+    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final String... resultSetMappings) {
+        return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultSetMappings));
+    }
+    
     /**
      * Throws a {@link TransactionRequiredException} when invoked.
      *
