@@ -82,13 +82,16 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
 
 
     /**
-     * Throws a {@link PersistenceException} when invoked, because it
-     * will never be invoked in the normal course of events.
+     * Throws a {@link PersistenceException} when invoked, because
+     * this method will never be invoked in the normal course of
+     * events.
      *
      * @return a non-{@code null} {@link EntityManager}, but this will
      * never happen
      *
      * @exception PersistenceException when invoked
+     *
+     * @see #delegate()
      */
     @Override
     protected EntityManager acquireDelegate() {
@@ -96,7 +99,8 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
     }
 
     @Override
-    public <T> TypedQuery<T> createNamedQuery(final String name, final Class<T> resultClass) {
+    public <T> TypedQuery<T> createNamedQuery(final String name,
+                                              final Class<T> resultClass) {
         return new ClearingTypedQuery<>(this, super.createNamedQuery(name, resultClass));
     }
 
@@ -106,8 +110,9 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
     }
 
     @Override
-    public <T> TypedQuery<T> createQuery(String qlString, Class<T> resultClass) {
-        return new ClearingTypedQuery<>(this, super.createQuery(qlString, resultClass));
+    public <T> TypedQuery<T> createQuery(final String jpql,
+                                         final Class<T> resultClass) {
+        return new ClearingTypedQuery<>(this, super.createQuery(jpql, resultClass));
     }
 
     @Override
@@ -134,27 +139,30 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
 
     @Override
     @SuppressWarnings("rawtypes")
-    public Query createNativeQuery(final String sqlString, final Class resultClass) {
-        return new ClearingQuery(this, super.createNativeQuery(sqlString, resultClass));
+    public Query createNativeQuery(final String sql,
+                                   final Class resultClass) {
+        return new ClearingQuery(this, super.createNativeQuery(sql, resultClass));
     }
 
     @Override
-    public Query createNativeQuery(final String sqlString, final String resultSetMapping) {
-        return new ClearingQuery(this, super.createNativeQuery(sqlString, resultSetMapping));
+    public Query createNativeQuery(final String sql,
+                                   final String resultSetMapping) {
+        return new ClearingQuery(this, super.createNativeQuery(sql, resultSetMapping));
     }
 
     @Override
-    public Query createNativeQuery(final String sqlString) {
-        return new ClearingQuery(this, super.createNativeQuery(sqlString));
+    public Query createNativeQuery(final String sql) {
+        return new ClearingQuery(this, super.createNativeQuery(sql));
     }
 
     @Override
-    public Query createQuery(final String jpqlString) {
-        return new ClearingQuery(this, super.createQuery(jpqlString));
+    public Query createQuery(final String jpql) {
+        return new ClearingQuery(this, super.createQuery(jpql));
     }
 
     @Override
-    public <T> T getReference(final Class<T> entityClass, final Object primaryKey) {
+    public <T> T getReference(final Class<T> entityClass,
+                              final Object primaryKey) {
         final T returnValue = super.getReference(entityClass, primaryKey);
         this.clear();
         return returnValue;
@@ -172,12 +180,14 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
 
     @Override
     @SuppressWarnings("rawtypes")
-    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final Class... resultClasses) {
+    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName,
+                                                           final Class... resultClasses) {
         return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultClasses));
     }
 
     @Override
-    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final String... resultSetMappings) {
+    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName,
+                                                           final String... resultSetMappings) {
         return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultSetMappings));
     }
 
@@ -297,8 +307,10 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
     }
 
     @Override
-    public <T> T find(final Class<T> entityClass, final Object primaryKey, final LockModeType lockMode) {
-        if (lockMode == null || !lockMode.equals(LockModeType.NONE)) {
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey,
+                      final LockModeType lockMode) {
+        if (lockMode != null && !lockMode.equals(LockModeType.NONE)) {
             throw new TransactionRequiredException();
         }
         final T returnValue = super.find(entityClass, primaryKey, lockMode);
@@ -311,7 +323,7 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
                       final Object primaryKey,
                       final LockModeType lockMode,
                       final Map<String, Object> properties) {
-        if (lockMode == null || !lockMode.equals(LockModeType.NONE)) {
+        if (lockMode != null && !lockMode.equals(LockModeType.NONE)) {
             throw new TransactionRequiredException();
         }
         final T returnValue = super.find(entityClass, primaryKey, lockMode, properties);

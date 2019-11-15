@@ -239,13 +239,42 @@ class TestRollbackScenarios {
         tm.commit();
         assertFalse(em.contains(author));
 
+        // Perform a rollback "in the middle" of a sequence of
+        // operations and observe that the EntityManager is in the
+        // proper state throughout.
         author = new Author("John Kennedy");
         tm.begin();
         em.persist(author);
         assertTrue(em.contains(author));
         tm.rollback();
+        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
         assertFalse(em.contains(author));
-        
+        try {
+          em.remove(author);
+          fail("remove() was allowed to complete without a transaction");
+        } catch (final IllegalArgumentException | TransactionRequiredException expected) {
+          // The javadocs say only that either of these exceptions may
+          // be thrown in this case but do not indicate which one is
+          // preferred.  EclipseLink 2.7.4 throws a
+          // TransactionRequiredException here.  It probably should
+          // throw an IllegalArgumentException; see
+          // https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117
+          // which is related.
+        }
+
+        // author is detached; prove it.
+        tm.begin();
+        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        assertTrue(em.isJoinedToTransaction());
+        assertFalse(em.contains(author));
+        em.detach(author); // redundant; just making a point
+        assertFalse(em.contains(author));
+        try {
+          em.remove(author);
+        } catch (final IllegalArgumentException expected) {
+          // see https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117
+        }
+        tm.commit();
 
     }
 
