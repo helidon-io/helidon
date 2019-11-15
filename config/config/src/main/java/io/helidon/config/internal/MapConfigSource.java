@@ -67,6 +67,15 @@ public class MapConfigSource extends AbstractMpSource<Instant> {
     }
 
     /**
+     * Create a new fluent API builder.
+     *
+     * @return a new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Create a new config source from the provided map, with strict mode set to {@code false}.
      *
      * @param map config properties
@@ -104,10 +113,9 @@ public class MapConfigSource extends AbstractMpSource<Instant> {
         return new Data<>(Optional.of(ConfigUtils.mapToObjectNode(map, strict)), Optional.of(Instant.EPOCH));
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
+    /**
+     * A fluent API builder for {@link io.helidon.config.internal.MapConfigSource}.
+     */
     public static final class Builder extends AbstractSource.Builder<Builder, String, MapConfigSource> {
         private Builder() {
             super(String.class);

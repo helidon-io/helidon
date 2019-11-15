@@ -1030,8 +1030,8 @@ class BuilderImpl implements Config.Builder {
                 return false;
             }
             ConfigSourceConfiguration that = (ConfigSourceConfiguration) o;
-            return compositeSource.equals(that.compositeSource) &&
-                    allSources.equals(that.allSources);
+            return compositeSource.equals(that.compositeSource)
+                    && allSources.equals(that.allSources);
         }
 
         @Override

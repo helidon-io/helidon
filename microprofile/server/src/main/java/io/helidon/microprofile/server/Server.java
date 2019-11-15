@@ -325,7 +325,7 @@ public interface Server {
             Weld initializer = new Weld();
             initializer.addBeanDefiningAnnotations(Path.class);
             initializer.setClassLoader(classLoader);
-            Map<String, Object> props = new HashMap<>(((io.helidon.config.Config)config)
+            Map<String, Object> props = new HashMap<>(((io.helidon.config.Config) config)
                                                               .get("cdi")
                                                               .detach()
                                                               .asMap()

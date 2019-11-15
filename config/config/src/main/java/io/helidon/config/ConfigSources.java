@@ -43,6 +43,7 @@ import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.internal.PrefixedConfigSource;
 import io.helidon.config.spi.AbstractMpSource;
+import io.helidon.config.spi.AbstractSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
@@ -720,15 +721,13 @@ public final class ConfigSources {
     /**
      * System properties config source.
      */
-    public static final class SystemPropertiesConfigSource extends MapConfigSource {
+    public static final class SystemPropertiesConfigSource extends AbstractMpSource<Instant> {
         /**
          * Constructor.
          */
         SystemPropertiesConfigSource() {
-            // TODO need builder to be able to customize polling strategy
-            super(builder().pollingStrategy(PollingStrategies.regular(Duration.of(5, ChronoUnit.SECONDS))),
-                  false,
-                  "");
+            // need builder to be able to customize polling strategy
+            super(new Builder().pollingStrategy(PollingStrategies.regular(Duration.of(5, ChronoUnit.SECONDS))));
         }
 
         @Override
@@ -763,6 +762,17 @@ public final class ConfigSources {
                     });
 
             return result;
+        }
+
+        private static final class Builder extends AbstractSource.Builder<Builder, Instant, SystemPropertiesConfigSource> {
+            private Builder() {
+                super(Instant.class);
+            }
+
+            @Override
+            public SystemPropertiesConfigSource build() {
+                return new SystemPropertiesConfigSource();
+            }
         }
     }
 }
