@@ -155,6 +155,7 @@ class TestRollbackScenarios {
     void testRollbackScenarios()
         throws HeuristicMixedException,
                HeuristicRollbackException,
+               InterruptedException,
                NotSupportedException,
                RollbackException,
                SystemException
@@ -271,10 +272,41 @@ class TestRollbackScenarios {
         assertFalse(em.contains(author));
         try {
           em.remove(author);
+          // We shouldn't get here because author is detached but with
+          // EclipseLink 2.7.4 we do.  See
+          // https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117.
         } catch (final IllegalArgumentException expected) {
-          // see https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117
+
         }
+        tm.rollback();
+
+        // Remove the author properly.
+        tm.begin();
+        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        assertTrue(em.isJoinedToTransaction());
+        assertFalse(em.contains(author));
+        author = em.merge(author);
+        em.remove(author);
         tm.commit();
+        assertFalse(em.contains(author));
+
+        // Cause a timeout-tripped rollback.
+        tm.setTransactionTimeout(1); // 1 second
+        author = new Author("Woodrow Wilson");
+        tm.begin();
+        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        Thread.sleep(1500L); // 1.5 seconds (arbitrarily greater than 1 second)
+        assertEquals(Status.STATUS_ROLLEDBACK, tm.getStatus());
+        try {
+          em.persist(author);
+          fail("Transaction rolled back but persist still happened");
+        } catch (final TransactionRequiredException expected) {
+          
+        }
+        tm.rollback();
+        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
+
+        tm.setTransactionTimeout(60); // 60 seconds; the usual default
 
     }
 
