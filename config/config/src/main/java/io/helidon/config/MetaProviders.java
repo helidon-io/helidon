@@ -28,13 +28,8 @@ import javax.annotation.Priority;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
-import io.helidon.config.internal.ClasspathConfigSource;
-import io.helidon.config.internal.ClasspathOverrideSource;
-import io.helidon.config.internal.DirectoryConfigSource;
-import io.helidon.config.internal.FileConfigSource;
 import io.helidon.config.internal.FileOverrideSource;
 import io.helidon.config.internal.PrefixedConfigSource;
-import io.helidon.config.internal.UrlConfigSource;
 import io.helidon.config.internal.UrlOverrideSource;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ConfigSourceProvider;

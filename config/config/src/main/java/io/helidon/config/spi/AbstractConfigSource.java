@@ -54,7 +54,7 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implem
      *
      * @param builder builder to be initialized from
      */
-    protected AbstractConfigSource(Builder<?, ?> builder) {
+    protected AbstractConfigSource(Builder<?, ?, ?> builder) {
         super(builder);
 
         mediaTypeMapping = builder.mediaTypeMapping();
@@ -156,15 +156,16 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implem
      *
      * @param <B> type of Builder implementation
      * @param <T> type of key source attributes (target) used to construct polling strategy from
+     * @param <S> Type of the source to be built
      */
-    public abstract static class Builder<B extends Builder<B, T>, T>
-            extends AbstractSource.Builder<B, T, AbstractMpSource<?>>
-            implements io.helidon.common.Builder<AbstractMpSource<?>> {
+    public abstract static class Builder<B extends Builder<B, T, S>, T, S extends AbstractMpSource<?>>
+            extends AbstractSource.Builder<B, T, S>
+            implements io.helidon.common.Builder<S> {
 
         private static final String MEDIA_TYPE_MAPPING_KEY = "media-type-mapping";
         private Function<Config.Key, String> mediaTypeMapping;
         private Function<Config.Key, ConfigParser> parserMapping;
-        private volatile AbstractMpSource<?> configSource;
+        private volatile S configSource;
 
         /**
          * Initialize builder.
@@ -179,7 +180,7 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implem
         }
 
         @Override
-        public AbstractMpSource<?> get() {
+        public S get() {
             if (configSource == null) {
                 configSource = build();
             }

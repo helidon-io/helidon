@@ -63,7 +63,8 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
  * are set, then {@code parser} has precedence.
  */
 public final class GitConfigSourceBuilder
-        extends AbstractParsableConfigSource.Builder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint> {
+        extends
+        AbstractParsableConfigSource.Builder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint, GitConfigSource> {
 
     private static final String PATH_KEY = "path";
     private static final String URI_KEY = "uri";

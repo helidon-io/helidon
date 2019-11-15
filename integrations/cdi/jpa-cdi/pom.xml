@@ -77,7 +77,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config-cdi</artifactId>
+            <artifactId>helidon-microprofile-config</artifactId>
             <scope>test</scope>
         </dependency>
 

@@ -127,8 +127,10 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      *
      * @param <B> type of Builder implementation
      * @param <T> type of key source attributes (target) used to construct polling strategy from
+     * @param <S> type of the config source to be built
      */
-    public abstract static class Builder<B extends Builder<B, T>, T> extends AbstractConfigSource.Builder<B, T> {
+    public abstract static class Builder<B extends Builder<B, T, S>, T, S extends AbstractMpSource<?>>
+            extends AbstractConfigSource.Builder<B, T, S> {
         private static final String MEDIA_TYPE_KEY = "media-type";
         private String mediaType;
         private ConfigParser parser;

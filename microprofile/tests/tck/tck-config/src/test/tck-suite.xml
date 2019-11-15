@@ -1,7 +1,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,20 +19,17 @@
 
 <suite name="microprofile-config-TCK" verbose="2" configfailurepolicy="continue">
 
-    <test name="microprofile-config 1.2 TCK">
+    <test name="microprofile-config TCK">
         <packages>
             <package name="org.eclipse.microprofile.config.tck.*"/>
         </packages>
-        <!-- TCK tests now fixed, this is no longer needed -->
-        <!--<classes>-->
-        <!--<class name="org.eclipse.microprofile.config.tck.ImplicitConverterTest">-->
-        <!--<methods>-->
-        <!--&lt;!&ndash; Excluded as the TCK test expects us to call a package private constructor,-->
-        <!--which we refuse to do &ndash;&gt;-->
-        <!--<exclude name="testImplicitConverterStringCt"/>-->
-        <!--</methods>-->
-        <!--</class>-->
-        <!--</classes>-->
+        <classes>
+<!--            <class name="org.eclipse.microprofile.config.tck.CdiOptionalInjectionTest">-->
+<!--                <methods>-->
+<!--                    <include name="testImplicitConverterCharSequenceParse"/>-->
+<!--                </methods>-->
+<!--            </class>-->
+        </classes>
     </test>
 
 </suite>

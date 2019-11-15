@@ -108,7 +108,7 @@ public class TestingConfigSource extends AbstractConfigSource<Instant> {
     /**
      * Testing implementation of {@link AbstractSource.Builder}.
      */
-    public static class TestingBuilder extends Builder<TestingBuilder, Void> {
+    public static class TestingBuilder extends Builder<TestingBuilder, Void, TestingConfigSource> {
         private ObjectNode objectNode;
 
         private TestingBuilder() {

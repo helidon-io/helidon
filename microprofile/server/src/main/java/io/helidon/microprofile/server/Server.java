@@ -43,7 +43,6 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.MetaConfig;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
 
 import org.eclipse.microprofile.config.Config;
@@ -165,7 +164,7 @@ public interface Server {
         private HelidonServiceLoader.Builder<MpService> extensionBuilder;
         private ResourceConfig resourceConfig;
         private SeContainer cdiContainer;
-        private MpConfig config;
+        private Config config;
         private String host;
         private String basePath;
         private int port = -1;
@@ -219,13 +218,10 @@ public interface Server {
                 Optional<io.helidon.config.Config> metaConfigured = MetaConfig.metaConfig()
                         .map(metaConfig -> io.helidon.config.Config.builder().config(metaConfig).build());
 
-                if (metaConfigured.isPresent()) {
-                    // if we have a meta configured config, let's use it
-                    this.config = (MpConfig) MpConfig.builder().config(metaConfigured.get()).build();
-                } else {
-                    // otherwise use the default
-                    this.config = (MpConfig) ConfigProviderResolver.instance().getConfig(classLoader);
-                }
+                // if we have a meta configured config, let's use it
+                // otherwise use the default
+                this.config = metaConfigured.map(value -> (Config) value)
+                        .orElseGet(() -> ConfigProviderResolver.instance().getConfig(classLoader));
             }
 
             // make sure the config is available to application
@@ -233,9 +229,10 @@ public interface Server {
 
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
-                                                                 .name("server")
-                                                                 .config(config.helidonConfig().get("server.executor-service"))
-                                                                 .build();
+                        .name("server")
+                        .config(((io.helidon.config.Config) config)
+                                        .get("server.executor-service"))
+                        .build();
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");
@@ -328,7 +325,7 @@ public interface Server {
             Weld initializer = new Weld();
             initializer.addBeanDefiningAnnotations(Path.class);
             initializer.setClassLoader(classLoader);
-            Map<String, Object> props = new HashMap<>(config.helidonConfig()
+            Map<String, Object> props = new HashMap<>(((io.helidon.config.Config)config)
                                                               .get("cdi")
                                                               .detach()
                                                               .asMap()
@@ -448,7 +445,7 @@ public interface Server {
          * @return modified builder
          */
         public Builder config(io.helidon.config.Config config) {
-            this.config = (MpConfig) MpConfig.builder().config(config).build();
+            this.config = (Config) config;
             return this;
         }
 
@@ -459,7 +456,7 @@ public interface Server {
          * @return modified builder
          */
         public Builder config(Config config) {
-            this.config = (MpConfig) config;
+            this.config = config;
             return this;
         }
 

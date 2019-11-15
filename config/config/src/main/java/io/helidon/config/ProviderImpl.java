@@ -53,7 +53,7 @@ class ProviderImpl implements Config.Context {
     private static final Logger LOGGER = Logger.getLogger(ConfigFactory.class.getName());
 
     private final ConfigMapperManager configMapperManager;
-    private final ConfigSource configSource;
+    private final BuilderImpl.ConfigSourceConfiguration configSource;
     private final OverrideSource overrideSource;
     private final List<Function<Config, ConfigFilter>> filterProviders;
     private final boolean cachingEnabled;
@@ -73,7 +73,7 @@ class ProviderImpl implements Config.Context {
 
     @SuppressWarnings("ParameterNumber")
     ProviderImpl(ConfigMapperManager configMapperManager,
-                 ConfigSource configSource,
+                 BuilderImpl.ConfigSourceConfiguration configSource,
                  OverrideSource overrideSource,
                  List<Function<Config, ConfigFilter>> filterProviders,
                  boolean cachingEnabled,
@@ -103,13 +103,13 @@ class ProviderImpl implements Config.Context {
     }
 
     public AbstractConfigImpl newConfig() {
-        lastConfig = build(configSource.load());
+        lastConfig = build(configSource.compositeSource().load());
         return lastConfig;
     }
 
     @Override
     public Config reload() {
-        rebuild(configSource.load(), true);
+        rebuild(configSource.compositeSource().load(), true);
         return lastConfig;
     }
 
@@ -140,7 +140,8 @@ class ProviderImpl implements Config.Context {
                                                   rootNode.orElseGet(ObjectNode::empty),
                                                   targetFilter,
                                                   this,
-                                                  aliasGenerator);
+                                                  aliasGenerator,
+                                                  configSource.allSources());
         AbstractConfigImpl config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);
@@ -148,6 +149,7 @@ class ProviderImpl implements Config.Context {
         if (cachingEnabled) {
             targetFilter.enableCaching();
         }
+        config.initMp();
         return config;
     }
 
@@ -252,7 +254,7 @@ class ProviderImpl implements Config.Context {
         subscribeConfigSource();
         subscribeOverrideSource();
         //check if source has changed - reload
-        rebuild(configSource.load(), false);
+        rebuild(configSource.compositeSource().load(), false);
     }
 
     private void cancelSourcesSubscriptions() {
@@ -262,7 +264,7 @@ class ProviderImpl implements Config.Context {
 
     private void subscribeConfigSource() {
         configSourceChangeEventSubscriber = new ConfigSourceChangeEventSubscriber();
-        configSource.changes().subscribe(configSourceChangeEventSubscriber);
+        configSource.compositeSource().changes().subscribe(configSourceChangeEventSubscriber);
     }
 
     private void cancelConfigSource() {
@@ -401,7 +403,7 @@ class ProviderImpl implements Config.Context {
             ProviderImpl.this.changesSubmitter
                     .closeExceptionally(new ConfigException(
                             String.format("'%s' config source changes support has failed. %s",
-                                          ProviderImpl.this.configSource.description(),
+                                          ProviderImpl.this.configSource.compositeSource().description(),
                                           throwable.getLocalizedMessage()),
                             throwable));
         }
@@ -409,7 +411,7 @@ class ProviderImpl implements Config.Context {
         @Override
         public void onComplete() {
             LOGGER.fine(String.format("'%s' config source changes support has completed.",
-                                      ProviderImpl.this.configSource.description()));
+                                      ProviderImpl.this.configSource.compositeSource().description()));
 
             ProviderImpl.this.configChangeComplete = true;
 

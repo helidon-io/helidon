@@ -36,7 +36,7 @@ public final class Priorities {
      * @param defaultPriority default priority of this class
      * @return priority from {@link Priority}or the default provided
      */
-    static int find(Class<?> aClass, int defaultPriority) {
+    public static int find(Class<?> aClass, int defaultPriority) {
         Priority priorityAnnot = aClass.getAnnotation(Priority.class);
         if (null != priorityAnnot) {
             return priorityAnnot.value();
@@ -57,6 +57,9 @@ public final class Priorities {
      * @return priority of the object or default provided
      */
     public static int find(Object anObject, int defaultPriority) {
+        if (anObject instanceof Class) {
+            return find((Class<?>) anObject, defaultPriority);
+        }
         if (anObject instanceof Prioritized) {
             return ((Prioritized) anObject).priority();
         }

@@ -16,13 +16,6 @@
 
 package io.helidon.config;
 
-import java.lang.reflect.Array;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -37,6 +30,9 @@ public class MpConfigBuilder implements ConfigBuilder {
     MpConfigBuilder() {
         delegate.disableSystemPropertiesSource();
         delegate.disableEnvironmentVariablesSource();
+        delegate.disableSourceServices();
+        delegate.disableMpMapperServices();
+        delegate.metaConfig();
     }
 
     @Override
@@ -83,86 +79,6 @@ public class MpConfigBuilder implements ConfigBuilder {
 
     @Override
     public Config build() {
-        AbstractConfigImpl helidonConfig = delegate.build();
-
-        AtomicReference<AbstractConfigImpl> configRef = new AtomicReference<>();
-        configRef.set(helidonConfig);
-
-        helidonConfig.onChange(it -> {
-            configRef.set((AbstractConfigImpl) it);
-        });
-
-        return new MpConfig(configRef);
-    }
-
-    private static final class MpConfig implements Config {
-        private final AtomicReference<AbstractConfigImpl> configRef;
-
-        private MpConfig(AtomicReference<AbstractConfigImpl> configRef) {
-            this.configRef = configRef;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <T> T getValue(String propertyName, Class<T> propertyType) {
-            try {
-                if (propertyType.isArray()) {
-                    Class<?> element = propertyType.getComponentType();
-                    return (T) findArrayValue(propertyName, element);
-                }
-
-                return findValue(propertyName, propertyType);
-            } catch (MissingValueException e) {
-                throw new NoSuchElementException(e.getMessage());
-            } catch (ConfigMappingException e) {
-                throw new IllegalArgumentException(e);
-            }
-        }
-
-        @Override
-        public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-            try {
-                return Optional.of(getValue(propertyName, propertyType));
-            } catch (NoSuchElementException e) {
-                return Optional.empty();
-            } catch (ConfigMappingException e) {
-                throw new IllegalArgumentException(e);
-            }
-        }
-
-        @Override
-        public Iterable<String> getPropertyNames() {
-            return configRef.get()
-                    .asMap()
-                    .orElseGet(Collections::emptyMap)
-                    .keySet();
-        }
-
-        @Override
-        public Iterable<ConfigSource> getConfigSources() {
-            return configRef.get()
-                    .sources();
-        }
-
-        private <T> T findValue(String propertyName, Class<T> propertyType) {
-            return configRef.get()
-                    .get(propertyName)
-                    .as(propertyType)
-                    .get();
-        }
-
-        private Object findArrayValue(String propertyName, Class<?> element) {
-            // there should not be io.helidon.Config[]
-            io.helidon.config.Config config = configRef.get().get(propertyName);
-
-            List<?> objects = config.asList(element).get();
-            Object array = Array.newInstance(element, objects.size());
-            for (int i = 0; i < objects.size(); i++) {
-                Array.set(array, i, objects.get(i));
-            }
-
-            return array;
-
-        }
+        return delegate.build();
     }
 }

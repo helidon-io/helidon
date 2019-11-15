@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,7 +192,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
 
-        List<Supplier<ConfigSource>> configSources = new LinkedList<>();
+        List<Supplier<? extends ConfigSource>> configSources = new LinkedList<>();
         configSources.add(ConfigSources.file(context.deployDir.resolve("META-INF/microprofile-config.properties").toString())
                                   .optional());
         // The following line supports MP OpenAPI, which allows an alternate

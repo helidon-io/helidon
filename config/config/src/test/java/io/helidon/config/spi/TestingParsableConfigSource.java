@@ -87,7 +87,7 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
     /**
      * Testing implementation of {@link AbstractParsableConfigSource.Builder}.
      */
-    public static class TestingBuilder extends Builder<TestingBuilder, Void> {
+    public static class TestingBuilder extends Builder<TestingBuilder, Void, TestingParsableConfigSource> {
         private Supplier<ConfigParser.Content<Instant>> contentSupplier;
 
         private TestingBuilder() {

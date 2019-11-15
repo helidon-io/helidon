@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.common.CollectionsHelper;
@@ -135,25 +134,26 @@ public final class MetaConfig {
         return source;
     }
 
-    static ConfigSource compositeSource(Config metaConfig) {
-        List<Supplier<ConfigSource>> configSources = new LinkedList<>();
+    static List<ConfigSource> configSources(Config metaConfig) {
+        List<ConfigSource> configSources = new LinkedList<>();
 
         metaConfig.get("sources")
                 .asNodeList()
                 .ifPresent(list -> list.forEach(it -> configSources.add(MetaConfig.configSource(it))));
 
-        return ConfigSources.create(configSources).build();
+        return configSources;
     }
 
     // only interested in config source
-    static ConfigSource compositeSource(Function<String, Boolean> supportedMediaType) {
+    static List<ConfigSource> configSources(Function<String, Boolean> supportedMediaType) {
         Optional<Config> metaConfigOpt = metaConfig();
-        if (metaConfigOpt.isPresent()) {
-            return compositeSource(metaConfigOpt.get());
-        }
-        // there is no meta configuration available, load default source (if available)
-        return MetaConfigFinder.findConfigSource(supportedMediaType)
-                .orElseGet(() -> ConfigSources.create(CollectionsHelper.mapOf()).get());
+
+        return metaConfigOpt
+                .map(MetaConfig::configSources)
+                .orElseGet(() -> MetaConfigFinder.findConfigSource(supportedMediaType)
+                        .map(CollectionsHelper::listOf)
+                        .orElseGet(CollectionsHelper::listOf));
+
     }
 
     private static Function<String, Boolean> supportedMediaTypes() {

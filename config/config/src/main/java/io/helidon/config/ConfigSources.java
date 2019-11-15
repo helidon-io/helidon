@@ -26,27 +26,24 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
-import io.helidon.config.internal.ClasspathConfigSource;
 import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.DirectoryConfigSource;
-import io.helidon.config.internal.FileConfigSource;
 import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.internal.PrefixedConfigSource;
-import io.helidon.config.internal.UrlConfigSource;
-import io.helidon.config.spi.AbstractConfigSource;
 import io.helidon.config.spi.AbstractMpSource;
-import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -247,8 +244,7 @@ public final class ConfigSources {
      * @param resource a name of the resource
      * @return builder for a {@code ConfigSource} for the classpath-based resource
      */
-    public static AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> classpath(String resource) {
+    public static ClasspathConfigSource.ClasspathBuilder classpath(String resource) {
         return ClasspathConfigSource.builder().resource(resource);
     }
 
@@ -257,11 +253,9 @@ public final class ConfigSources {
      * @param resource resource to look for
      * @return a list of classpath config source builders
      */
-    public static List<AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, URL>, URL>> classpathAll(String resource) {
+    public static List<UrlConfigSource.UrlBuilder> classpathAll(String resource) {
 
-        List<AbstractParsableConfigSource.Builder
-                <? extends AbstractParsableConfigSource.Builder<?, URL>, URL>> result = new LinkedList<>();
+        List<UrlConfigSource.UrlBuilder> result = new LinkedList<>();
         try {
             Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(resource);
             while (resources.hasMoreElements()) {
@@ -282,8 +276,7 @@ public final class ConfigSources {
      * @param path a file path
      * @return builder for the file-based {@code ConfigSource}
      */
-    public static AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> file(String path) {
+    public static FileConfigSource.FileBuilder file(String path) {
         return FileConfigSource.builder().path(Paths.get(path));
     }
 
@@ -294,11 +287,9 @@ public final class ConfigSources {
      * @param path a file path
      * @return builder for the file-based {@code ConfigSource}
      */
-    public static AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> file(Path path) {
+    public static FileConfigSource.FileBuilder file(Path path) {
         return FileConfigSource.builder().path(path);
     }
-
 
     /**
      * Provides a {@code Builder} for creating a {@code ConfigSource} from the specified
@@ -307,8 +298,7 @@ public final class ConfigSources {
      * @param path a directory path
      * @return new Builder instance
      */
-    public static AbstractConfigSource.Builder
-            <? extends AbstractConfigSource.Builder<?, Path>, Path> directory(String path) {
+    public static DirectoryConfigSource.DirectoryBuilder directory(String path) {
         return DirectoryConfigSource.builder().path(Paths.get(path));
     }
 
@@ -320,8 +310,7 @@ public final class ConfigSources {
      * @return new Builder instance
      * @see #url(URL)
      */
-    public static AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, URL>, URL> url(URL url) {
+    public static UrlConfigSource.UrlBuilder url(URL url) {
         return UrlConfigSource.builder().url(url);
     }
 
@@ -346,7 +335,7 @@ public final class ConfigSources {
      * @see Config#builder(Supplier[])
      */
     @SafeVarargs
-    public static CompositeBuilder create(Supplier<ConfigSource>... configSources) {
+    public static CompositeBuilder create(Supplier<? extends ConfigSource>... configSources) {
         return create(CollectionsHelper.listOf(configSources));
     }
 
@@ -370,7 +359,7 @@ public final class ConfigSources {
      * @see Config#create(Supplier[])
      * @see Config#builder(Supplier[])
      */
-    public static CompositeBuilder create(List<Supplier<ConfigSource>> configSources) {
+    public static CompositeBuilder create(List<Supplier<? extends ConfigSource>> configSources) {
         return new CompositeBuilder(configSources);
     }
 
@@ -512,7 +501,7 @@ public final class ConfigSources {
         private Duration debounceTimeout;
         private volatile ConfigSource configSource;
 
-        private CompositeBuilder(List<Supplier<ConfigSource>> configSources) {
+        private CompositeBuilder(List<Supplier<? extends ConfigSource>> configSources) {
             this.configSources = initConfigSources(configSources);
 
             changesExecutor = CompositeConfigSource.DEFAULT_CHANGES_EXECUTOR_SERVICE;
@@ -520,9 +509,9 @@ public final class ConfigSources {
             changesMaxBuffer = Flow.defaultBufferSize();
         }
 
-        private static List<ConfigSource> initConfigSources(List<Supplier<ConfigSource>> sourceSuppliers) {
+        private static List<ConfigSource> initConfigSources(List<Supplier<? extends ConfigSource>> sourceSuppliers) {
             List<ConfigSource> configSources = new LinkedList<>();
-            for (Supplier<ConfigSource> configSupplier : sourceSuppliers) {
+            for (Supplier<? extends ConfigSource> configSupplier : sourceSuppliers) {
                 configSources.add(configSupplier.get());
             }
             return configSources;
@@ -694,7 +683,7 @@ public final class ConfigSources {
      *
      * @see ConfigSources#empty()
      */
-    private static final class EmptyConfigSourceHolder {
+    static final class EmptyConfigSourceHolder {
 
         private EmptyConfigSourceHolder() {
             throw new AssertionError("Instantiation not allowed.");
@@ -703,7 +692,7 @@ public final class ConfigSources {
         /**
          * EMPTY singleton instance.
          */
-        private static final ConfigSource EMPTY = new ConfigSource() {
+        static final ConfigSource EMPTY = new ConfigSource() {
             @Override
             public String description() {
                 return "Empty";
@@ -731,7 +720,7 @@ public final class ConfigSources {
     /**
      * System properties config source.
      */
-    static final class SystemPropertiesConfigSource extends MapConfigSource {
+    public static final class SystemPropertiesConfigSource extends MapConfigSource {
         /**
          * Constructor.
          */
@@ -753,6 +742,27 @@ public final class ConfigSources {
         protected Optional<Instant> dataStamp() {
             // each polling event will trigger a load and comparison of config tree
             return Optional.of(Instant.now());
+        }
+
+        @Override
+        public Set<String> getPropertyNames() {
+            return System.getProperties().stringPropertyNames();
+        }
+
+        @Override
+        public void init(ConfigContext context) {
+        }
+
+        @Override
+        public Map<String, String> getProperties() {
+            Map<String, String> result = new HashMap<>();
+
+            System.getProperties().stringPropertyNames()
+                    .forEach(it -> {
+                        result.put(it, System.getProperty(it));
+                    });
+
+            return result;
         }
     }
 }

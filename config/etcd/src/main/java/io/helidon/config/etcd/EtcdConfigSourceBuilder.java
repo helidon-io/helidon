@@ -49,7 +49,7 @@ import io.helidon.config.spi.PollingStrategy;
  * are set, then {@code parser} has precedence.
  */
 public final class EtcdConfigSourceBuilder
-        extends AbstractParsableConfigSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint> {
+        extends AbstractParsableConfigSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint, EtcdConfigSource> {
 
     /**
      * Default Etcd API version ({@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi#v2}).

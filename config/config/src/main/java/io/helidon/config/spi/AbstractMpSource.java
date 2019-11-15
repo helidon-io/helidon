@@ -118,12 +118,15 @@ public abstract class AbstractMpSource<S> extends AbstractSource<ConfigNode.Obje
                 processNode(values, key(keyPrefix, key), ((ConfigNode.ListNode) configNode));
                 break;
             case VALUE:
-                values.put(key(keyPrefix, key), configNode.get());
                 break;
             default:
                 throw new IllegalStateException("Config node of type: " + configNode.nodeType() + " not supported");
             }
 
+            String directValue = configNode.get();
+            if (null != directValue) {
+                values.put(key(keyPrefix, key), directValue);
+            }
         });
     }
 

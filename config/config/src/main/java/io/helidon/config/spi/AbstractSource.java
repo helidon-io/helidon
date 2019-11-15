@@ -316,7 +316,9 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      * polling strategy from
      * @param <S> type of source that should be built
      */
-    public abstract static class Builder<B extends Builder<B, T, S>, T, S> {
+    public abstract static class Builder<B extends Builder<B, T, S>, T, S extends Source<?>>
+            implements io.helidon.common.Builder<S> {
+
         /**
          * Default executor where the changes threads are run.
          */

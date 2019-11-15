@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.Period;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -148,6 +149,7 @@ public final class ConfigMappers {
         builtIns.put(Instant.class, wrap(ConfigMappers::toInstant));
         builtIns.put(OffsetTime.class, wrap(ConfigMappers::toOffsetTime));
         builtIns.put(OffsetDateTime.class, wrap(ConfigMappers::toOffsetDateTime));
+        builtIns.put(YearMonth.class, wrap(YearMonth::parse));
         //java.io
         builtIns.put(File.class, wrap(ConfigMappers::toFile));
         //java.nio

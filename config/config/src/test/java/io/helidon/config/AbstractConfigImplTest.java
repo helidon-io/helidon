@@ -64,7 +64,8 @@ public class AbstractConfigImplTest {
                         mock(ConfigNode.ObjectNode.class),
                         mock(ConfigFilter.class),
                         providerMock,
-                        key -> Collections.emptyList()),
+                        key -> Collections.emptyList(),
+                        Collections.emptyList()),
                 mock(ConfigMapperManager.class));
 
         // WHEN we reproduce the issue https://github.com/oracle/helidon/issues/299

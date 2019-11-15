@@ -91,7 +91,7 @@ public class MapConfigSource extends AbstractMpSource<Instant> {
 
     @Override
     protected String uid() {
-        return "Map" + (mapSourceName.isEmpty() ? "" : "[" + mapSourceName + "]");
+        return mapSourceName.isEmpty() ? "" : mapSourceName;
     }
 
     @Override

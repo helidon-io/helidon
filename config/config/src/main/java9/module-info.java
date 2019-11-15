@@ -46,5 +46,6 @@ module io.helidon.config {
 
     provides io.helidon.config.spi.ConfigParser with io.helidon.config.internal.PropertiesConfigParser;
     provides java.nio.file.spi.FileTypeDetector with io.helidon.config.internal.ConfigFileTypeDetector;
+    provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.config.MpConfigProviderResolver;
 
 }

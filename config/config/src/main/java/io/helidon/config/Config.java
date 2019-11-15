@@ -270,30 +270,6 @@ public interface Config {
     }
 
     /**
-     * Create an empty configuration with mappers copied from another config.
-     *
-     * @param config config to get mappers from
-     * @return an empty config instance (empty Object)
-     */
-    static Config empty(Config config) {
-
-        return new BuilderImpl()
-                .sources(ConfigSources.empty())
-                .overrides(OverrideSources.empty())
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableMapperServices()
-                .disableParserServices()
-                .disableFilterServices()
-                .mappersFrom(config)
-                .build();
-    }
-
-    //
-    // tree (config nodes) method
-    //
-
-    /**
      * Returns a new default {@link Config} loaded using one of the
      * configuration files available on the classpath and/or using the runtime
      * environment.
@@ -383,7 +359,7 @@ public interface Config {
      * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
-    static Config create(Supplier<ConfigSource>... configSources) {
+    static Config create(Supplier<? extends ConfigSource>... configSources) {
         return builder(configSources).build();
     }
 
@@ -413,7 +389,7 @@ public interface Config {
      * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
-    static Builder builder(Supplier<ConfigSource>... configSources) {
+    static Builder builder(Supplier<? extends ConfigSource>... configSources) {
         return builder().sources(CollectionsHelper.listOf(configSources));
     }
 
@@ -1235,6 +1211,13 @@ public interface Config {
      * @see ConfigFilter
      */
     interface Builder {
+        /**
+         * Disable loading of config sources from Java service loader.
+         * This disables loading of MicroProfile Config sources.
+         *
+         * @return updated builder instance
+         */
+        Builder disableSourceServices();
 
         /**
          * Sets ordered list of {@link ConfigSource} instance to be used as single source of configuration
@@ -1280,6 +1263,10 @@ public interface Config {
          * @return updated builder instance
          */
         Builder addSource(ConfigSource source);
+
+        default Builder addSource(Supplier<? extends ConfigSource> source) {
+            return addSource(source.get());
+        }
 
         /**
          * Sets a {@link ConfigSource} instance to be used as a source of configuration to be wrapped into {@link Config} API.
@@ -1657,15 +1644,6 @@ public interface Config {
          * @return new instance of {@link Config}.
          */
         Config build();
-
-        /**
-         * Add mappers from another config instance.
-         * This may be useful if we need the same conversion behavior.
-         *
-         * @param config config to extract mappers from
-         * @return updated builder instance
-         */
-        Builder mappersFrom(Config config);
 
         /**
          * Check if meta configuration is present and if so, update this builder using

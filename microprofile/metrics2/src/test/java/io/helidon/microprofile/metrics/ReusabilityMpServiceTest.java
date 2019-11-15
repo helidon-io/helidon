@@ -16,17 +16,9 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-
-import org.jboss.weld.exceptions.DefinitionException;
-
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
@@ -36,7 +28,6 @@ public class ReusabilityMpServiceTest {
     private Server initServer(Class<?> resourceClass) {
         return Server.builder()
                 .addResourceClass(resourceClass)
-                .config(MpConfig.builder().config(Config.create()).build())
                 .host("localhost")
                 // choose a random available port
                 .port(-1)
