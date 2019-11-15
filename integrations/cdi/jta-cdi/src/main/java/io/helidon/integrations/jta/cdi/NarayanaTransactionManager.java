@@ -67,7 +67,7 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
      * <p>This field may be {@code null}.</p>
      */
     private final Event<Object> transactionScopeBeforeDestroyedBroadcaster;
-  
+
     /**
      * An {@link Event} capable of {@linkplain Event#fire(Object)
      * firing} an {@link Object} when {@linkplain TransactionScoped

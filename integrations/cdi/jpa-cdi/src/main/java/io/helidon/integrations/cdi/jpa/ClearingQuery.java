@@ -24,15 +24,15 @@ import javax.persistence.Query;
 final class ClearingQuery extends DelegatingQuery {
 
     private final EntityManager entityManager;
-    
+
     ClearingQuery(final EntityManager entityManager, final Query delegate) {
         super(delegate);
         this.entityManager = Objects.requireNonNull(entityManager);
     }
-    
+
     @Override
     @SuppressWarnings("rawtypes")
-    public final List getResultList() {
+    public List getResultList() {
         try {
             return super.getResultList();
         } finally {
@@ -48,5 +48,5 @@ final class ClearingQuery extends DelegatingQuery {
             this.entityManager.clear();
         }
     }
-  
+
 }

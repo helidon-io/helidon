@@ -25,8 +25,8 @@ import java.util.Set;
 import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.Parameter;
-import javax.persistence.TypedQuery;
 import javax.persistence.TemporalType;
+import javax.persistence.TypedQuery;
 
 abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
 
@@ -135,55 +135,70 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
 
 
     @Override
-    public <T> TypedQuery<X> setParameter(final Parameter<T> parameter, final T value) {
+    public <T> TypedQuery<X> setParameter(final Parameter<T> parameter,
+                                          final T value) {
         this.delegate.setParameter(parameter, value);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final Parameter<Calendar> parameter, final Calendar value, final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(final Parameter<Calendar> parameter,
+                                      final Calendar value,
+                                      final TemporalType temporalType) {
         this.delegate.setParameter(parameter, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final Parameter<Date> parameter, final Date value, final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(final Parameter<Date> parameter,
+                                      final Date value,
+                                      final TemporalType temporalType) {
         this.delegate.setParameter(parameter, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final int position, final Object value) {
+    public TypedQuery<X> setParameter(final int position,
+                                      final Object value) {
         this.delegate.setParameter(position, value);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final int position, final Calendar value, final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(final int position,
+                                      final Calendar value,
+                                      final TemporalType temporalType) {
         this.delegate.setParameter(position, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final int position, final Date value, final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(final int position,
+                                      final Date value,
+                                      final TemporalType temporalType) {
         this.delegate.setParameter(position, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final String name, final Object value) {
+    public TypedQuery<X> setParameter(final String name,
+                                      final Object value) {
         this.delegate.setParameter(name, value);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final String name, final Calendar value, final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(final String name,
+                                      final Calendar value,
+                                      final TemporalType temporalType) {
         this.delegate.setParameter(name, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final String name, final Date value, final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(final String name,
+                                      final Date value,
+                                      final TemporalType temporalType) {
         this.delegate.setParameter(name, value, temporalType);
         return this;
     }

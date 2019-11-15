@@ -199,7 +199,7 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
     public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final String... resultSetMappings) {
         return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultSetMappings));
     }
-    
+
     /**
      * Throws a {@link TransactionRequiredException} when invoked.
      *

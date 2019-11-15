@@ -32,7 +32,7 @@ final class ClearingStoredProcedureQuery extends DelegatingStoredProcedureQuery 
 
     @Override
     @SuppressWarnings("rawtypes")
-    public final List getResultList() {
+    public List getResultList() {
         try {
             return super.getResultList();
         } finally {
@@ -41,7 +41,7 @@ final class ClearingStoredProcedureQuery extends DelegatingStoredProcedureQuery 
     }
 
     @Override
-    public final Object getSingleResult() {
+    public Object getSingleResult() {
         try {
             return super.getSingleResult();
         } finally {

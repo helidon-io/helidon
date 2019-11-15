@@ -24,14 +24,14 @@ import javax.persistence.TypedQuery;
 final class ClearingTypedQuery<X> extends DelegatingTypedQuery<X> {
 
     private final EntityManager entityManager;
-    
+
     ClearingTypedQuery(final EntityManager entityManager, final TypedQuery<X> delegate) {
         super(delegate);
         this.entityManager = Objects.requireNonNull(entityManager);
     }
-    
+
     @Override
-    public final List<X> getResultList() {
+    public List<X> getResultList() {
       try {
           return super.getResultList();
       } finally {
@@ -40,12 +40,12 @@ final class ClearingTypedQuery<X> extends DelegatingTypedQuery<X> {
     }
 
     @Override
-    public final X getSingleResult() {
+    public X getSingleResult() {
         try {
             return super.getSingleResult();
         } finally {
             this.entityManager.clear();
         }
     }
-  
+
 }
