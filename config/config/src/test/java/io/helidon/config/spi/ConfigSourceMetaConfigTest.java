@@ -51,7 +51,7 @@ import static org.hamcrest.Matchers.instanceOf;
 /**
  * Tests meta configuration of config sources.
  */
-public class CofigSourceMetaConfigTest {
+public class ConfigSourceMetaConfigTest {
 
     private static final String TEST_SYS_PROP_NAME = "this_is_my_property-ConfigSourceConfigMapperTest";
     private static final String TEST_SYS_PROP_VALUE = "This Is My SYS PROPS Value.";
@@ -74,7 +74,7 @@ public class CofigSourceMetaConfigTest {
 
         ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
 
-        assertThat(source, is(instanceOf(MapConfigSource.class)));
+        assertThat(source, is(instanceOf(AbstractMpSource.class)));
 
         Config config = justFrom(source);
 
