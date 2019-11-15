@@ -1278,6 +1278,12 @@ public class JpaExtension implements Extension {
                         // On its own line to ease debugging.
                         return new NonTransactionalEntityManager(instance, suppliedQualifiers);
                     })
+                // Revisit: ReferenceCountedContext does not
+                // automatically pick up synthetic beans like this
+                // one.  So we have to tell it somehow to "work on"
+                // this bean.  Right now this bean is in what amounts
+                // to a thread-specific singleton scope.  As it
+                // happens, this might actually be OK.
                 .disposeWith((em, instance) -> em.close());
         }
 

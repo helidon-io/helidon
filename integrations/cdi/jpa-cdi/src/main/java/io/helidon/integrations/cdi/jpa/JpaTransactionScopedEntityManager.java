@@ -16,7 +16,6 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +79,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
     private final CdiTransactionScopedEntityManager cdiTransactionScopedEntityManager;
 
     private int lastTransactionStatus;
+
 
 
     /*
@@ -231,7 +231,8 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         case TransactionSupport.STATUS_UNKNOWN:
         case TransactionSupport.STATUS_COMMITTED:
         case TransactionSupport.STATUS_ROLLEDBACK:
-            throw new IllegalStateException(Messages.format("closedStatus", lastTransactionStatus));
+            returnValue = this.nonTransactionalEntityManagerProvider.get();
+            break;
 
         // Edge case.  Shouldn't ever happen.  See
         // CdiTransactionScopedEntityManager#dispose(Instance) for
@@ -278,13 +279,14 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
                                         existingContextualInstance);
                     throw new PersistenceException(message);
                 }
+                EntityManager temp = this.cdiTransactionScopedEntityManager;
                 try {
                     this.lastTransactionStatus = this.cdiTransactionScopedEntityManager.getPriorTransactionStatus().intValue();
                 } catch (final ContextNotActiveException contextNotActiveException) {
-                    throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                                    contextNotActiveException);
+                    temp = this.nonTransactionalEntityManagerProvider.get();
+                } finally {
+                    returnValue = temp;
                 }
-                returnValue = this.cdiTransactionScopedEntityManager;
                 break;
 
             // We're currently in the process of committing or rolling
@@ -298,7 +300,8 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
             case TransactionSupport.STATUS_UNKNOWN:
             case TransactionSupport.STATUS_COMMITTED:
             case TransactionSupport.STATUS_ROLLEDBACK:
-                throw new IllegalStateException(Messages.format("closedStatus", status));
+                returnValue = this.nonTransactionalEntityManagerProvider.get();
+                break;
 
             // We weren't in a transaction before, and we're not in
             // one now.  This is very common (e.g. em.find() outside
@@ -307,6 +310,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
                 returnValue = this.nonTransactionalEntityManagerProvider.get();
                 break;
 
+            // Illegal case.
             default:
                 throw new IllegalStateException(Messages.format("unexpectedCurrentStatus", status));
             }
@@ -320,15 +324,28 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         return returnValue;
     }
 
+    /**
+     * Throws an {@link IllegalStateException} when invoked.
+     *
+     * @return nothing
+     *
+     * @exception IllegalStateException when invoked
+     *
+     * @see EntityManager#getTransaction()
+     */
     @Override
     public EntityTransaction getTransaction() {
-        // See EntityManager#getTransaction() javadoc.
         throw new IllegalStateException(Messages.format("jpaTransactionScopedEntityManagerGetTransaction"));
     }
 
+    /**
+     * Throws an {@link IllegalStateException} when invoked.
+     *
+     * @exception IllegalStateException when invoked
+     */
     @Override
     public void close() {
-        // Revisit: Wildfly allows end users to close UNSYNCHRONIZED
+        // Wildfly allows end users to close UNSYNCHRONIZED
         // container-managed EntityManagers:
         // https://github.com/wildfly/wildfly/blob/7f80f0150297bbc418a38e7e23da7cf0431f7c28/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/UnsynchronizedEntityManagerWrapper.java#L75-L78
         // I don't know why.  Glassfish does not; it's the reference
@@ -354,12 +371,8 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
      * has rolled back.  Your method invocation will thus result in a
      * ContextNotActiveException.
      *
-     * The JPA specification indicates that when the transaction is
-     * rolled back, the EntityManager (that's this one) should be
-     * effectively closed.  An EntityManager's being closed seems to
-     * translate into "throws an IllegalStateException from every
-     * method", per the #close() javadoc.
-     *
+     * In this case we must revert to a non-transactional delegate,
+     * i.e. one whose underlying persistence context is always empty.
      * The overrides that follow perform this translation.
      */
 
@@ -369,8 +382,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.persist(entity);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().persist(entity);
         }
     }
 
@@ -379,8 +391,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.merge(entity);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().merge(entity);
         }
     }
 
@@ -389,38 +400,39 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.remove(entity);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().remove(entity);
         }
     }
 
     @Override
-    public <T> T find(final Class<T> entityClass, final Object primaryKey) {
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey) {
         try {
             return super.find(entityClass, primaryKey);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().find(entityClass, primaryKey);
         }
     }
 
     @Override
-    public <T> T find(final Class<T> entityClass, final Object primaryKey, final Map<String, Object> properties) {
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey,
+                      final Map<String, Object> properties) {
         try {
             return super.find(entityClass, primaryKey, properties);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().find(entityClass, primaryKey, properties);
         }
     }
 
     @Override
-    public <T> T find(final Class<T> entityClass, final Object primaryKey, final LockModeType lockMode) {
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey,
+                      final LockModeType lockMode) {
         try {
             return super.find(entityClass, primaryKey, lockMode);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().find(entityClass, primaryKey, lockMode);
         }
     }
 
@@ -432,18 +444,17 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.find(entityClass, primaryKey, lockMode, properties);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().find(entityClass, primaryKey, lockMode, properties);
         }
     }
 
     @Override
-    public <T> T getReference(final Class<T> entityClass, final Object primaryKey) {
+    public <T> T getReference(final Class<T> entityClass,
+                              final Object primaryKey) {
         try {
             return super.getReference(entityClass, primaryKey);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getReference(entityClass, primaryKey);
         }
     }
 
@@ -452,8 +463,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.flush();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().flush();
         }
     }
 
@@ -462,8 +472,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.setFlushMode(flushMode);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().setFlushMode(flushMode);
         }
     }
 
@@ -472,8 +481,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getFlushMode();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getFlushMode();
         }
     }
 
@@ -483,8 +491,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.lock(entity, lockMode);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().lock(entity, lockMode);
         }
     }
 
@@ -495,8 +502,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.lock(entity, lockMode, properties);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().lock(entity, lockMode, properties);
         }
     }
 
@@ -505,8 +511,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.refresh(entity);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().refresh(entity);
         }
     }
 
@@ -516,8 +521,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.refresh(entity, properties);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().refresh(entity, properties);
         }
     }
 
@@ -527,8 +531,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.refresh(entity, lockMode);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().refresh(entity, lockMode);
         }
     }
 
@@ -539,8 +542,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.refresh(entity, lockMode, properties);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().refresh(entity, lockMode, properties);
         }
     }
 
@@ -549,8 +551,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.clear();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().clear();
         }
     }
 
@@ -559,8 +560,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.detach(entity);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().detach(entity);
         }
     }
 
@@ -569,8 +569,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.contains(entity);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().contains(entity);
         }
     }
 
@@ -579,18 +578,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getLockMode(entity);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
-        }
-    }
-
-    @Override
-    public void setProperty(final String propertyName, final Object propertyValue) {
-        try {
-            super.setProperty(propertyName, propertyValue);
-        } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getLockMode(entity);
         }
     }
 
@@ -598,18 +586,27 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
     public Map<String, Object> getProperties() {
         try {
             return super.getProperties();
-        } catch (final ContextNotActiveException | IllegalStateException contextNotActiveException) {
-            return Collections.emptyMap(); // see EntityManager#close() javadoc
+        } catch (final ContextNotActiveException contextNotActiveException) {
+            return this.nonTransactionalEntityManagerProvider.get().getProperties();
         }
     }
 
     @Override
-    public Query createQuery(final String qlString) {
+    public void setProperty(final String propertyName,
+                            final Object propertyValue) {
         try {
-            return super.createQuery(qlString);
+            super.setProperty(propertyName, propertyValue);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().setProperty(propertyName, propertyValue);
+        }
+    }
+
+    @Override
+    public Query createQuery(final String jpql) {
+        try {
+            return super.createQuery(jpql);
+        } catch (final ContextNotActiveException contextNotActiveException) {
+            return this.nonTransactionalEntityManagerProvider.get().createQuery(jpql);
         }
     }
 
@@ -618,8 +615,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.createQuery(criteriaQuery);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createQuery(criteriaQuery);
         }
     }
 
@@ -629,8 +625,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.createQuery(criteriaUpdate);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createQuery(criteriaUpdate);
         }
     }
 
@@ -640,69 +635,62 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.createQuery(criteriaDelete);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createQuery(criteriaDelete);
         }
     }
 
     @Override
-    public <T> TypedQuery<T> createQuery(final String qlString, final Class<T> resultClass) {
+    public <T> TypedQuery<T> createQuery(final String jpql, final Class<T> resultClass) {
         try {
-            return super.createQuery(qlString, resultClass);
+            return super.createQuery(jpql, resultClass);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createQuery(jpql, resultClass);
         }
     }
 
     @Override
-    public Query createNamedQuery(final String sqlString) {
+    public Query createNamedQuery(final String sql) {
         try {
-            return super.createNamedQuery(sqlString);
+            return super.createNamedQuery(sql);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createNamedQuery(sql);
         }
     }
 
     @Override
-    public <T> TypedQuery<T> createNamedQuery(final String sqlString, final Class<T> resultClass) {
+    public <T> TypedQuery<T> createNamedQuery(final String sql, final Class<T> resultClass) {
         try {
-            return super.createNamedQuery(sqlString, resultClass);
+            return super.createNamedQuery(sql, resultClass);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createNamedQuery(sql, resultClass);
         }
     }
 
     @Override
-    public Query createNativeQuery(final String sqlString) {
+    public Query createNativeQuery(final String sql) {
         try {
-            return super.createNativeQuery(sqlString);
+            return super.createNativeQuery(sql);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createNativeQuery(sql);
         }
     }
 
     @Override
     @SuppressWarnings("rawtypes")
-    public Query createNativeQuery(final String sqlString, final Class resultClass) {
+    public Query createNativeQuery(final String sql, final Class resultClass) {
         try {
-            return super.createNativeQuery(sqlString, resultClass);
+            return super.createNativeQuery(sql, resultClass);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createNativeQuery(sql, resultClass);
         }
     }
 
     @Override
-    public Query createNativeQuery(final String sqlString, final String resultSetMapping) {
+    public Query createNativeQuery(final String sql, final String resultSetMapping) {
         try {
-            return super.createNativeQuery(sqlString, resultSetMapping);
+            return super.createNativeQuery(sql, resultSetMapping);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createNativeQuery(sql, resultSetMapping);
         }
     }
 
@@ -711,8 +699,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.createNamedStoredProcedureQuery(procedureName);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createNamedStoredProcedureQuery(procedureName);
         }
     }
 
@@ -721,29 +708,28 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.createStoredProcedureQuery(procedureName);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createStoredProcedureQuery(procedureName);
         }
     }
 
     @Override
     @SuppressWarnings("rawtypes")
-    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final Class... resultClasses) {
+    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName,
+                                                           final Class... resultClasses) {
         try {
             return super.createStoredProcedureQuery(procedureName, resultClasses);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createStoredProcedureQuery(procedureName, resultClasses);
         }
     }
 
     @Override
-    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final String... resultSetMappings) {
+    public StoredProcedureQuery createStoredProcedureQuery(final String procedureName,
+                                                           final String... resultSetMappings) {
         try {
             return super.createStoredProcedureQuery(procedureName, resultSetMappings);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createStoredProcedureQuery(procedureName, resultSetMappings);
         }
     }
 
@@ -752,8 +738,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             super.joinTransaction();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            this.nonTransactionalEntityManagerProvider.get().joinTransaction();
         }
     }
 
@@ -762,8 +747,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.isJoinedToTransaction();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().isJoinedToTransaction();
         }
     }
 
@@ -772,8 +756,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.unwrap(c);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().unwrap(c);
         }
     }
 
@@ -782,8 +765,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getDelegate();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getDelegate();
         }
     }
 
@@ -791,8 +773,8 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
     public boolean isOpen() {
         try {
             return super.isOpen();
-        } catch (final ContextNotActiveException | IllegalStateException contextNotActiveException) {
-            return false; // see EntityManager#close() javadoc
+        } catch (final ContextNotActiveException contextNotActiveException) {
+            return this.nonTransactionalEntityManagerProvider.get().isOpen();
         }
     }
 
@@ -801,8 +783,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getEntityManagerFactory();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getEntityManagerFactory();
         }
     }
 
@@ -811,8 +792,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getCriteriaBuilder();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getCriteriaBuilder();
         }
     }
 
@@ -821,8 +801,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getMetamodel();
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getMetamodel();
         }
     }
 
@@ -831,8 +810,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.createEntityGraph(rootType);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createEntityGraph(rootType);
         }
     }
 
@@ -841,8 +819,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.createEntityGraph(graphName);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().createEntityGraph(graphName);
         }
     }
 
@@ -851,8 +828,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getEntityGraph(graphName);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getEntityGraph(graphName);
         }
     }
 
@@ -861,8 +837,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         try {
             return super.getEntityGraphs(entityClass);
         } catch (final ContextNotActiveException contextNotActiveException) {
-            throw new IllegalStateException(Messages.format("closedNotActive", contextNotActiveException.getMessage()),
-                                            contextNotActiveException);
+            return this.nonTransactionalEntityManagerProvider.get().getEntityGraphs(entityClass);
         }
     }
 

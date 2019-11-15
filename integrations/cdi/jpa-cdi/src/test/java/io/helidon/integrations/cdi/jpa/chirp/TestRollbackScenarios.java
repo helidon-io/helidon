@@ -64,7 +64,7 @@ class TestRollbackScenarios {
 
     @Inject
     private TransactionManager transactionManager;
-    
+
     @PersistenceContext(
         type = PersistenceContextType.TRANSACTION,
         synchronization = SynchronizationType.SYNCHRONIZED,
@@ -107,6 +107,7 @@ class TestRollbackScenarios {
     /*
      * Support methods.
      */
+
 
     TestRollbackScenarios self() {
         return this.cdiContainer.select(TestRollbackScenarios.class).get();
@@ -191,19 +192,25 @@ class TestRollbackScenarios {
         Author author = new Author("Abraham Lincoln");
         em.persist(author);
 
-        // No trip to the database has happened yet, so the id isn't set yet.
+        // No trip to the database has happened yet, so the author's
+        // identifier isn't set yet.
         assertNull(author.getId());
-        
-        // Commit the transaction.
+
+        // Commit the transaction.  Because we're relying on the
+        // default flush mode, this will cause a flush to the
+        // database, which, in turn, will result in author identifier
+        // generation.
         tm.commit();
         assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
         assertEquals(Integer.valueOf(1), author.getId());
 
+        // We're no longer in a transaction.
         assertFalse(em.isJoinedToTransaction());
 
         // The persistence context should be cleared.
         assertFalse(em.contains(author));
 
+        // Ensure transaction statuses are what we think they are.
         tm.begin();
         tm.setRollbackOnly();
         try {
@@ -222,6 +229,23 @@ class TestRollbackScenarios {
         // transaction everything it touches is detached, per section
         // 7.6.2 of the JPA 2.2 specification.
         assertFalse(em.contains(author));
+
+        // Remove everything.
+        tm.begin();
+        author = em.merge(author);
+        assertNotNull(author);
+        assertTrue(em.contains(author));
+        em.remove(author);
+        tm.commit();
+        assertFalse(em.contains(author));
+
+        author = new Author("John Kennedy");
+        tm.begin();
+        em.persist(author);
+        assertTrue(em.contains(author));
+        tm.rollback();
+        assertFalse(em.contains(author));
+        
 
     }
 

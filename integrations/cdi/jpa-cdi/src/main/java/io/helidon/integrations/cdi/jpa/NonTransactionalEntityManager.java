@@ -121,25 +121,6 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
 
     @Override
     public <T> T find(final Class<T> entityClass,
-                      final Object primaryKey,
-                      final LockModeType lockMode) {
-        final T returnValue = super.find(entityClass, primaryKey, lockMode);
-        this.clear();
-        return returnValue;
-    }
-
-    @Override
-    public <T> T find(final Class<T> entityClass,
-                      final Object primaryKey,
-                      final LockModeType lockMode,
-                      final Map<String, Object> properties) {
-        final T returnValue = super.find(entityClass, primaryKey, lockMode, properties);
-        this.clear();
-        return returnValue;
-    }
-
-    @Override
-    public <T> T find(final Class<T> entityClass,
                       final Object primaryKey) {
         final T returnValue = super.find(entityClass, primaryKey);
         this.clear();
@@ -198,6 +179,25 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
     @Override
     public StoredProcedureQuery createStoredProcedureQuery(final String procedureName, final String... resultSetMappings) {
         return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultSetMappings));
+    }
+
+    /**
+     * Returns {@code false} when invoked.
+     *
+     * @return {@code false} in all cases
+     */
+    public boolean isJoinedToTransaction() {
+        return false;
+    }
+
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @exception TransactionRequiredException when invoked
+     */
+    @Override
+    public void joinTransaction() {
+        throw new TransactionRequiredException();
     }
 
     /**
@@ -293,6 +293,76 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
     public void refresh(final Object entity,
                         final LockModeType lockMode,
                         final Map<String, Object> properties) {
+        throw new TransactionRequiredException();
+    }
+
+    @Override
+    public <T> T find(final Class<T> entityClass, final Object primaryKey, final LockModeType lockMode) {
+        if (lockMode == null || !lockMode.equals(LockModeType.NONE)) {
+            throw new TransactionRequiredException();
+        }
+        final T returnValue = super.find(entityClass, primaryKey, lockMode);
+        this.clear();
+        return returnValue;
+    }
+
+    @Override
+    public <T> T find(final Class<T> entityClass,
+                      final Object primaryKey,
+                      final LockModeType lockMode,
+                      final Map<String, Object> properties) {
+        if (lockMode == null || !lockMode.equals(LockModeType.NONE)) {
+            throw new TransactionRequiredException();
+        }
+        final T returnValue = super.find(entityClass, primaryKey, lockMode, properties);
+        this.clear();
+        return returnValue;
+    }
+
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @param lockMode ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
+    @Override
+    public void lock(final Object entity,
+                     final LockModeType lockMode) {
+        throw new TransactionRequiredException();
+    }
+
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @param lockMode ignored
+     *
+     * @param properties ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
+    @Override
+    public void lock(final Object entity,
+                     final LockModeType lockMode,
+                     final Map<String, Object> properties) {
+        throw new TransactionRequiredException();
+    }
+
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @return nothing
+     *
+     * @exception TransactionRequiredException when invoked
+     */
+    @Override
+    public LockModeType getLockMode(final Object entity) {
         throw new TransactionRequiredException();
     }
 
