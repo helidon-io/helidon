@@ -59,7 +59,6 @@ public class InternalPublisher implements Publisher<Object>, Subscription {
                     subscriber.onNext(result);
                 }
             }
-            subscriber.onComplete();
         } catch (IllegalAccessException | InvocationTargetException | InterruptedException | ExecutionException e) {
             subscriber.onError(e);
         }
