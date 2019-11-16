@@ -37,4 +37,16 @@ public class PeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
         consumer.accept(item);
         submit(item);
     }
+
+    @Override
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        subscription.cancel();
+    }
+
+    @Override
+    public String toString() {
+        return "PeekProcessor{" +
+                "consumer=" + consumer +
+                '}';
+    }
 }

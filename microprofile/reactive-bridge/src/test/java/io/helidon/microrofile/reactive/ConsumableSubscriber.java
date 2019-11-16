@@ -20,30 +20,40 @@ package io.helidon.microrofile.reactive;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public class ConsumableSubscriber<T> implements Subscriber<T> {
 
     private Consumer<T> onNext;
+    private AtomicLong requestCount = new AtomicLong(1000);
     private Subscription subscription;
-    private Long chunkSize = 20L;
-    private Long chunkPosition = 0L;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public ConsumableSubscriber(Consumer<T> onNext) {
         this.onNext = onNext;
+    }
+    public ConsumableSubscriber(Consumer<T> onNext, long requestCount) {
+        this.onNext = onNext;
+        this.requestCount.set(requestCount);
     }
 
     @Override
     public void onSubscribe(Subscription s) {
         this.subscription = s;
         //First chunk request
-        subscription.request(chunkSize);
+        subscription.request(requestCount.get());
     }
 
     @Override
     public void onNext(T o) {
-        onNext.accept(o);
-        incrementAndCheckChunkPosition();
+        if (!closed.get()) {
+            onNext.accept(o);
+            if(0 == requestCount.decrementAndGet()){
+                subscription.cancel();
+            }
+        }
     }
 
     @Override
@@ -53,13 +63,7 @@ public class ConsumableSubscriber<T> implements Subscriber<T> {
 
     @Override
     public void onComplete() {
-    }
-
-    private void incrementAndCheckChunkPosition() {
-        chunkPosition++;
-        if (chunkPosition >= chunkSize) {
-            chunkPosition = 0L;
-            subscription.request(chunkSize);
-        }
+        closed.set(true);
+        subscription.cancel();
     }
 }

@@ -57,6 +57,11 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     @Override
     public final void cancel() {
         subscriber.cancel();
+        try {
+            hookOnCancel(subscription);
+        } catch (Throwable ex) {
+            onError(ex);
+        }
     }
 
     @Override
@@ -107,6 +112,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     /**
      * Submit an item to the subscriber.
+     *
      * @param item item to be submitted
      */
     protected void submit(U item) {
@@ -128,6 +134,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     /**
      * Hook for {@link Subscriber#onNext(java.lang.Object)}.
+     *
      * @param item next item
      */
     protected void hookOnNext(T item) {
@@ -135,6 +142,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     /**
      * Hook for {@link Subscriber#onError(java.lang.Throwable)}.
+     *
      * @param error error received
      */
     protected void hookOnError(Throwable error) {
@@ -147,7 +155,14 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     }
 
     /**
+     * Hook for {@link Flow.Subscription#cancel()}.
+     */
+    protected void hookOnCancel(Flow.Subscription subscription) {
+    }
+
+    /**
      * Subscribe the subscriber after the given delegate publisher.
+     *
      * @param delegate delegate publisher
      */
     protected final void doSubscribe(Publisher<U> delegate) {
@@ -181,7 +196,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
         sub.onError(ex);
     }
 
-    private void tryComplete() {
+    protected void tryComplete() {
         if (ready.get() && !subscriber.isClosed()) {
             if (error != null) {
                 subscriber.close(sub -> completeOnError(sub, error));

@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.messaging.reactive;
 
+import io.helidon.microprofile.messaging.MessageUtils;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Processor;
@@ -33,8 +34,6 @@ import java.security.InvalidParameterException;
 /**
  * Unwrap Message payload if incoming method Publisher or Publisher builder
  * has generic return type different than Message
- * <p>
- * This is not necessary with Helidon reactive stream engine, but small-rye would fail
  */
 public class UnwrapProcessor implements Processor<Object, Object> {
 
@@ -52,12 +51,7 @@ public class UnwrapProcessor implements Processor<Object, Object> {
     }
 
     Object unwrap(Object o) {
-        if (o instanceof Message && !isTypeMessage(method)) {
-            Message message = (Message) o;
-            return message.getPayload();
-        } else {
-            return o;
-        }
+        return MessageUtils.unwrap(o, isTypeMessage(method));
     }
 
     static boolean isTypeMessage(Method method) {

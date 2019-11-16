@@ -19,14 +19,20 @@ package io.helidon.microprofile.messaging.reactive;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class InternalPublisher implements Publisher<Object> {
+public class InternalPublisher implements Publisher<Object>, Subscription {
 
     private Method method;
     private Object beanInstance;
+    private Subscriber<? super Object> subscriber;
+    private AtomicBoolean closed = new AtomicBoolean(false);
 
     public InternalPublisher(Method method, Object beanInstance) {
         this.method = method;
@@ -35,12 +41,32 @@ public class InternalPublisher implements Publisher<Object> {
 
     @Override
     public void subscribe(Subscriber<? super Object> s) {
+        subscriber = s;
+        subscriber.onSubscribe(this);
+    }
+
+    @Override
+    public void request(long n) {
         try {
-            s.onNext(method.invoke(beanInstance));
-            s.onComplete();
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            s.onError(e);
+            for (long i = 0; i < n
+                    && !closed.get(); i++) {
+                Object result = method.invoke(beanInstance);
+                //TODO: Completion stage blocking in the spec seems useless
+                if (result instanceof CompletionStage) {
+                    CompletionStage completionStage = (CompletionStage) result;
+                    subscriber.onNext(completionStage.toCompletableFuture().get());
+                } else {
+                    subscriber.onNext(result);
+                }
+            }
+            subscriber.onComplete();
+        } catch (IllegalAccessException | InvocationTargetException | InterruptedException | ExecutionException e) {
+            subscriber.onError(e);
         }
     }
 
+    @Override
+    public void cancel() {
+        closed.set(true);
+    }
 }

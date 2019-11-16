@@ -72,6 +72,18 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Limit stream to allow only specified number of items to pass
+     *
+     * @param supplier with expected number of items to be produced
+     * @return Multi
+     */
+    default <U> Multi<U> limit(Long limit) {
+        LimitProcessor processor = new LimitProcessor(limit);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
      * Collect the items of this {@link Multi} instance into a {@link Single} of {@link List}.
      *
      * @return Single

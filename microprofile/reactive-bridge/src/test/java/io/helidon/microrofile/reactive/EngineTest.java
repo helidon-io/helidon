@@ -17,6 +17,7 @@
 
 package io.helidon.microrofile.reactive;
 
+import org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.Test;
 
@@ -55,9 +56,10 @@ public class EngineTest {
     void publisherWithMapAndPeekAndFilter() {
         AtomicInteger peekSum = new AtomicInteger();
         AtomicInteger sum = new AtomicInteger();
-        IntSequencePublisher intSequencePublisher = new IntSequencePublisher(10);
+        IntSequencePublisher intSequencePublisher = new IntSequencePublisher();
 
         ReactiveStreams.fromPublisher(intSequencePublisher)
+                .limit(10)
                 .filter(x -> (x % 2) == 0)
                 .peek(peekSum::addAndGet)
                 .map(String::valueOf)
@@ -73,7 +75,7 @@ public class EngineTest {
     @Test
     void fromTo() throws ExecutionException, InterruptedException, TimeoutException {
         AtomicInteger sum = new AtomicInteger();
-        IntSequencePublisher publisher = new IntSequencePublisher(10);
+        IntSequencePublisher publisher = new IntSequencePublisher();
         StringBuilder beforeFilter = new StringBuilder();
         StringBuilder afterFilter = new StringBuilder();
         ReactiveStreams
@@ -85,12 +87,39 @@ public class EngineTest {
                 .map(Integer::parseInt)
                 .filter(i -> i <= 5)
                 .peek(afterFilter::append)
-                .to(ReactiveStreams.fromSubscriber(new ConsumableSubscriber<>(sum::addAndGet)))
-                .run()
-                .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .to(ReactiveStreams.fromSubscriber(new ConsumableSubscriber<>(sum::addAndGet, 10)))
+                .run();
         assertEquals("1-2-3-4-5-6-7-8-9-10-", beforeFilter.toString());
         assertEquals("12345", afterFilter.toString());
+        assertEquals(1 + 2 + 3 + 4 + 5, sum.get());
+    }
+
+    @Test
+    void limit() {
+        AtomicInteger sum = new AtomicInteger();
+        IntSequencePublisher publisher = new IntSequencePublisher();
+        ConsumableSubscriber<Integer> subscriber = new ConsumableSubscriber<>(sum::addAndGet);
+        ReactiveStreams
+                .fromPublisher(publisher)
+                //TODO: peak clashes with limit, probably because of onComplete is not called in limit processor
+//                .peek(System.out::println)
+                .limit(5)
+//                .peek(System.out::println)
+                .buildRs()
+                .subscribe(subscriber);
+        assertEquals(1 + 2 + 3 + 4 + 5, sum.get());
+    }
+
+    @Test
+    void subscriberCreation() throws ExecutionException, InterruptedException {
+        AtomicInteger sum = new AtomicInteger();
+        IntSequencePublisher publisher = new IntSequencePublisher();
+        CompletionSubscriber<Integer, Void> subscriber = ReactiveStreams.<Integer>builder()
+                .limit(5)
+                .peek(System.out::println)
+                .forEach(sum::addAndGet)
+                .build();
+        publisher.subscribe(subscriber);
         assertEquals(1 + 2 + 3 + 4 + 5, sum.get());
     }
 }

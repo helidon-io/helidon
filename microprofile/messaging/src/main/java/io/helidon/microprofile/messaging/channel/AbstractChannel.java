@@ -169,8 +169,45 @@ public abstract class AbstractChannel {
          * <pre>CompletionStage&lt;?> method(Message&lt;I>msg)</pre>
          * <pre>CompletionStage&lt;?> method(I payload)</pre>
          */
-        INCOMING_MSG_2_COMPLETION_STAGE(false);
+        INCOMING_MSG_2_COMPLETION_STAGE(false),
 
+        /**
+         * Invoke at: assembly time
+         * <pre>Publisher&lt;Message&lt;U>> method()</pre>
+         * <pre>Publisher&lt;U> method()</pre>
+         */
+        OUTGOING_VOID_2_PUBLISHER(true),
+
+        /**
+         * Invoke at: assembly time
+         * <pre>PublisherBuilder&lt;Message&lt;U>> method()</pre>
+         * <pre>PublisherBuilder&lt;U> method()</pre>
+         */
+        OUTGOING_VOID_2_PUBLISHER_BUILDER(true),
+
+        /**
+         * Invoke at: Each request made by subscriber
+         * <pre>Message&lt;U> method()</pre>
+         * <pre>U method()</pre>
+         * <p>
+         * Produces an infinite stream of Message associated with the
+         * channel channel. The result is a CompletionStage. The method should not be
+         * called by the reactive messaging implementation until the CompletionStage
+         * returned previously is completed.
+         */
+        OUTGOING_VOID_2_MSG(false),
+
+        /**
+         * Invoke at: Each request made by subscriber
+         * <pre>CompletionStage&lt;Message&lt;U>> method()</pre>
+         * <pre>CompletionStage&lt;U> method()</pre>
+         * <p>
+         * Produces an infinite stream of Message associated with the
+         * channel channel. The result is a CompletionStage. The method should not be
+         * called by the reactive messaging implementation until the CompletionStage
+         * returned previously is completed.
+         */
+        OUTGOING_VOID_2_COMPLETION_STAGE(false);
 
         private boolean invokeAtAssembly;
 

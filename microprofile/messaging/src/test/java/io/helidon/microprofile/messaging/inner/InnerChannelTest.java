@@ -19,12 +19,10 @@ package io.helidon.microprofile.messaging.inner;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
 import io.helidon.microprofile.messaging.CountableTestBean;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.DeploymentException;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -42,6 +40,8 @@ public class InnerChannelTest extends AbstractCDITest {
     static Stream<CdiTestCase> testCaseSource() {
         return Stream.of(
                 //Positive tests
+                CdiTestCase.from(PullForEachBean.class),
+                CdiTestCase.from(CompletionStageV1Bean.class),
                 CdiTestCase.from(PublisherPayloadV6Bean.class),
                 CdiTestCase.from(PublisherPayloadV5Bean.class),
                 CdiTestCase.from(PublisherPayloadV4Bean.class),
@@ -79,17 +79,5 @@ public class InnerChannelTest extends AbstractCDITest {
                 assertAllReceived(countableTestBean);
             });
         }
-    }
-
-    @Test
-    void notConnectedIncomingChannelTest() {
-        assertThrows(DeploymentException.class, () ->
-                cdiContainer = startCdiContainer(Collections.emptyMap(), NotConnectedIncommingChannelBean.class));
-    }
-
-    @Test
-    void notConnectedOutgoingChannelTest() {
-        assertThrows(DeploymentException.class, () ->
-                cdiContainer = startCdiContainer(Collections.emptyMap(), NotConnectedOutgoingChannelBean.class));
     }
 }

@@ -51,7 +51,19 @@ public class CompletionSubscriber<T, R> implements org.eclipse.microprofile.reac
 
     @Override
     public void onSubscribe(Subscription s) {
-        subscriber.onSubscribe(s);
+        subscriber.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                s.request(n);
+            }
+
+            @Override
+            public void cancel() {
+                s.cancel();
+                //Base processor breaks cancel->onComplete loop, so listen even for downstream call
+                completion.toCompletableFuture().complete(null);
+            }
+        });
     }
 
     @Override
@@ -68,6 +80,7 @@ public class CompletionSubscriber<T, R> implements org.eclipse.microprofile.reac
     @Override
     public void onComplete() {
         subscriber.onComplete();
+        //Base processor breaks cancel->onComplete loop, so listen even for upstream call
         completion.toCompletableFuture().complete(null);
     }
 }

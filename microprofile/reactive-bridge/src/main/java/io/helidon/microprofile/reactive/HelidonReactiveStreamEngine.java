@@ -24,13 +24,9 @@ import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCom
 import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
@@ -47,67 +43,9 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
 
     @Override
     public <T, R> SubscriberWithCompletionStage<T, R> buildSubscriber(Graph graph) throws UnsupportedStageException {
-        Collection<Stage> stages = graph.getStages();
-        if (stages.size() != 1) {
-            //TODO: Support more than one stage
-            throw new RuntimeException("Exactly one stage is supported for now");
-        }
-        Stage firstStage = stages.iterator().next();
-        if (firstStage instanceof Stage.Collect) {
-            // Foreach
-            Stage.Collect collectStage = (Stage.Collect) firstStage;
-            CompletableFuture<R> completableFuture = new CompletableFuture<>();
-            return new SubscriberWithCompletionStage<T, R>() {
-                @Override
-                public CompletionStage<R> getCompletion() {
-                    return completableFuture;
-                }
-
-                @Override
-                public Subscriber<T> getSubscriber() {
-                    return new Subscriber<T>() {
-
-                        private Subscription subscription;
-                        private Long chunkSize = 5L;
-                        private Long chunkPosition = 0L;
-
-                        @Override
-                        public void onSubscribe(Subscription s) {
-                            this.subscription = s;
-                            subscription.request(chunkSize);
-                        }
-
-                        @Override
-                        public void onNext(Object t) {
-                            BiConsumer<Object, Object> accumulator = (BiConsumer) collectStage.getCollector().accumulator();
-                            accumulator.accept(null, t);
-                            accumulator.andThen((o, o2) -> {
-                                incrementAndCheckChunkPosition();
-                            });
-                        }
-
-                        @Override
-                        public void onError(Throwable t) {
-                            throw new RuntimeException(t);
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            completableFuture.complete(null);
-                        }
-
-                        private void incrementAndCheckChunkPosition() {
-                            chunkPosition++;
-                            if (chunkPosition >= chunkSize) {
-                                chunkPosition = 0L;
-                                subscription.request(chunkSize);
-                            }
-                        }
-                    };
-                }
-            };
-        }
-        throw new UnsupportedOperationException("Not implemented yet!!!");
+        MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
+        graph.getStages().stream().collect(multiStagesCollector);
+        return multiStagesCollector.getSubscriberWithCompletionStage();
     }
 
     @Override
@@ -119,7 +57,7 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
     public <T> CompletionStage<T> buildCompletion(Graph graph) throws UnsupportedStageException {
         MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
         graph.getStages().stream().collect(multiStagesCollector);
-        CompletionStage<T> completionStage = (CompletionStage<T>) multiStagesCollector.toCompletableStage();
+        CompletionStage<T> completionStage = (CompletionStage<T>) multiStagesCollector.getCompletableStage();
         return completionStage;
     }
 }

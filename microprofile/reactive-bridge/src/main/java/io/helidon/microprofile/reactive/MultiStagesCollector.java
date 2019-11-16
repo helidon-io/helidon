@@ -16,13 +16,20 @@
 
 package io.helidon.microprofile.reactive;
 
+import io.helidon.common.reactive.FilterProcessor;
+import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.LimitProcessor;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.MultiMappingProcessor;
+import io.helidon.common.reactive.PeekProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
+import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
 import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -42,14 +49,29 @@ import java.util.stream.StreamSupport;
 public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, CompletionStage<T>> {
 
     private Multi<T> multi = null;
-    private CompletableFuture<T> completableFuture = null;
+    private List<Flow.Processor<Object, Object>> processorList = new ArrayList<>();
+    private CompletionStage<Object> completionStage = null;
+    private HelidonSubscriberWithCompletionStage<T> subscriberWithCompletionStage = null;
 
     @Override
     public Supplier<Multi<T>> supplier() {
         return () -> multi != null ? multi : Multi.empty();
     }
 
+    private void subscribeUpStream() {
+        // If producer was supplied
+        if (multi != null) {
+            for (Flow.Processor p : processorList) {
+                multi.subscribe(p);
+                multi = (Multi<T>) p;
+            }
+        } else {
+            throw new RuntimeException("No producer was supplied");
+        }
+    }
+
     public Publisher<T> getPublisher() {
+        subscribeUpStream();
         return MultiRS.from(multi);
     }
 
@@ -74,43 +96,41 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
             } else if (stage instanceof Stage.Map) {
                 // Transform stream
                 Stage.Map mapStage = (Stage.Map) stage;
-                Function<T, T> mapper = (Function<T, T>) mapStage.getMapper();
-                multi = Multi.from(multi).map(mapper::apply);
+                Function<Object, Object> mapper = (Function<Object, Object>) mapStage.getMapper();
+                processorList.add(new MultiMappingProcessor<>(mapper::apply));
 
             } else if (stage instanceof Stage.Filter) {
                 //Filter stream
                 Stage.Filter stageFilter = (Stage.Filter) stage;
                 Predicate<T> predicate = (Predicate<T>) stageFilter.getPredicate();
-                multi = multi.filter(predicate);
+                processorList.add(new FilterProcessor(predicate));
 
             } else if (stage instanceof Stage.Peek) {
                 Stage.Peek peekStage = (Stage.Peek) stage;
-                Consumer<T> peekConsumer = (Consumer<T>) peekStage.getConsumer();
-                multi = multi.peek(peekConsumer::accept);
+                Consumer<Object> peekConsumer = (Consumer<Object>) peekStage.getConsumer();
+                processorList.add(new PeekProcessor<Object>(peekConsumer::accept));
+
+            } else if (stage instanceof Stage.Limit) {
+                Stage.Limit limitStage = (Stage.Limit) stage;
+                processorList.add(new LimitProcessor(limitStage.getLimit()));
 
             } else if (stage instanceof Stage.SubscriberStage) {
                 //Subscribe to stream
                 Stage.SubscriberStage subscriberStage = (Stage.SubscriberStage) stage;
                 Subscriber<T> subscriber = (Subscriber<T>) subscriberStage.getRsSubscriber();
-                this.completableFuture = new CompletableFuture<>();
-                CompletionSubscriber<T, T> completionSubscriber = CompletionSubscriber.of(subscriber, completableFuture);
+                this.completionStage = new CompletableFuture<>();
+                CompletionSubscriber<T, Object> completionSubscriber = CompletionSubscriber.of(subscriber, completionStage);
+                // If producer was supplied
+                subscribeUpStream();
                 multi.subscribe(HybridSubscriber.from(completionSubscriber));
 
             } else if (stage instanceof Stage.Collect) {
-                //Collect stream
-                Stage.Collect stageFilter = (Stage.Collect) stage;
-                Collector<T, T, T> collector = (Collector<T, T, T>) stageFilter.getCollector();
-                multi.collect(new io.helidon.common.reactive.Collector<T, T>() {
-                    @Override
-                    public void collect(T item) {
-                        collector.finisher().apply(item);
-                    }
+                // Foreach
+                Stage.Collect collectStage = (Stage.Collect) stage;
+                this.subscriberWithCompletionStage = new HelidonSubscriberWithCompletionStage<>(collectStage, processorList);
+                // If producer was supplied
+                //getPublisher().subscribe(HybridSubscriber.from(subscriberWithCompletionStage.getSubscriber()));
 
-                    @Override
-                    public T value() {
-                        return null;
-                    }
-                });
             } else {
                 throw new UnsupportedStageException(stage);
             }
@@ -124,7 +144,7 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
 
     @Override
     public Function<Multi<T>, CompletionStage<T>> finisher() {
-        return t -> toCompletableStage();
+        return t -> getCompletableStage();
     }
 
     @Override
@@ -132,7 +152,11 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
         return new HashSet<>(Collections.singletonList(Characteristics.IDENTITY_FINISH));
     }
 
-    public CompletionStage<T> toCompletableStage() {
-        return completableFuture;
+    public <U, W> SubscriberWithCompletionStage<U, W> getSubscriberWithCompletionStage() {
+        return (SubscriberWithCompletionStage<U, W>) subscriberWithCompletionStage;
+    }
+
+    public <U> CompletionStage<U> getCompletableStage() {
+        return (CompletionStage<U>) (completionStage != null ? completionStage : subscriberWithCompletionStage.getCompletion());
     }
 }

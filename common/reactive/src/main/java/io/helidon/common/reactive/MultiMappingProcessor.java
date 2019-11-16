@@ -35,6 +35,11 @@ final class MultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements M
     }
 
     @Override
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        subscription.cancel();
+    }
+
+    @Override
     protected void hookOnNext(T item) {
         U value = mapper.map(item);
         if (value == null) {

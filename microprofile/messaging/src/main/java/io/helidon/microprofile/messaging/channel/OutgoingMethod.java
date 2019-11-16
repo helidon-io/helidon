@@ -28,6 +28,8 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
 public class OutgoingMethod extends AbstractChannel {
@@ -39,23 +41,30 @@ public class OutgoingMethod extends AbstractChannel {
     public OutgoingMethod(AnnotatedMethod method, ChannelRouter router) {
         super(method.getJavaMember(), router);
         super.outgoingChannelName = method.getAnnotation(Outgoing.class).value();
+        resolveSignatureType();
     }
 
     @Override
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
-        // TODO: Rewrite with enum
-        try {
-            Class<?> returnType = method.getReturnType();
-            if (returnType.equals(Publisher.class)) {
-                publisher = (Publisher) method.invoke(beanInstance);
-            } else if (returnType.equals(PublisherBuilder.class)) {
-                publisher = ((PublisherBuilder) method.invoke(beanInstance)).buildRs();
-            } else {
-                publisher = new InternalPublisher(method, beanInstance);
+        if (type.isInvokeAtAssembly()) {
+            try {
+                switch (type) {
+                    case OUTGOING_VOID_2_PUBLISHER:
+                        publisher = (Publisher) method.invoke(beanInstance);
+                        break;
+                    case OUTGOING_VOID_2_PUBLISHER_BUILDER:
+                        publisher = ((PublisherBuilder) method.invoke(beanInstance)).buildRs();
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("Not implemented signature " + type);
+                }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+        } else {
+            // Invoke on each request publisher
+            publisher = new InternalPublisher(method, beanInstance);
         }
     }
 
@@ -73,4 +82,28 @@ public class OutgoingMethod extends AbstractChannel {
     public Publisher getPublisher() {
         return publisher;
     }
+
+    protected void resolveSignatureType() {
+        Class<?> returnType = this.method.getReturnType();
+        if (this.method.getParameterTypes().length != 0) {
+            throw new DeploymentException("Unsupported parameters on outgoing method " + method);
+        }
+
+        if (Void.class.isAssignableFrom(returnType)) {
+            type = null;
+        } else if (Publisher.class.isAssignableFrom(returnType)) {
+            this.type = Type.OUTGOING_VOID_2_PUBLISHER;
+        } else if (PublisherBuilder.class.isAssignableFrom(returnType)) {
+            this.type = Type.OUTGOING_VOID_2_PUBLISHER_BUILDER;
+        } else if (CompletionStage.class.isAssignableFrom(returnType)) {
+            this.type = Type.OUTGOING_VOID_2_COMPLETION_STAGE;
+        } else {
+            this.type = Type.OUTGOING_VOID_2_MSG;
+        }
+
+        if (Objects.isNull(type)) {
+            throw new DeploymentException("Unsupported outgoing method signature " + method);
+        }
+    }
+
 }

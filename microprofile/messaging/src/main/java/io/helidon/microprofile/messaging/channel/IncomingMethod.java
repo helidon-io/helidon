@@ -60,7 +60,6 @@ public class IncomingMethod extends AbstractChannel {
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
         if (type.isInvokeAtAssembly()) {
-            // Incoming methods returning custom subscriber
             try {
                 switch (type) {
                     case INCOMING_VOID_2_SUBSCRIBER:
@@ -70,14 +69,13 @@ public class IncomingMethod extends AbstractChannel {
                         subscriber = UnwrapProcessor.of(this.method, ((SubscriberBuilder) method.invoke(beanInstance)).build());
                         break;
                     default:
-                        //TODO: Implement rest of the method signatures supported by spec
-                        throw new UnsupportedOperationException("Not implemented yet " + type);
+                        throw new UnsupportedOperationException("Not implemented signature " + type);
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         } else {
-            // Create brand new subscriber
+            // Invoke on each message subscriber
             subscriber = new InternalSubscriber(method, beanInstance);
         }
     }

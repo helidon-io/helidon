@@ -46,12 +46,24 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        reactiveSubscriber.onSubscribe(HybridSubscription.from(subscription));
+        if (flowSubscriber != null) {
+            flowSubscriber.onSubscribe(HybridSubscription.from(subscription));
+        } else if (reactiveSubscriber != null) {
+            reactiveSubscriber.onSubscribe(HybridSubscription.from(subscription));
+        } else {
+            throw new InvalidParameterException("Hybrid subscriber has no subscriber");
+        }
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
-        flowSubscriber.onSubscribe(HybridSubscription.from(subscription));
+        if (flowSubscriber != null) {
+            flowSubscriber.onSubscribe(HybridSubscription.from(subscription));
+        } else if (reactiveSubscriber != null) {
+            reactiveSubscriber.onSubscribe(HybridSubscription.from(subscription));
+        } else {
+            throw new InvalidParameterException("Hybrid subscriber has no subscriber");
+        }
     }
 
     @Override

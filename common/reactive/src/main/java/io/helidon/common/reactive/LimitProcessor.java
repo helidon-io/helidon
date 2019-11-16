@@ -17,19 +17,28 @@
 
 package io.helidon.common.reactive;
 
-import java.util.function.Predicate;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Processor filtering stream with supplied predicate
+ * Invoke supplied consumer for every item in the stream
  *
  * @param <T> both input/output type
  */
-public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class LimitProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
-    private Predicate<T> predicate;
+    private final AtomicLong counter;
 
-    public FilterProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public LimitProcessor(Long limit) {
+        counter = new AtomicLong(limit);
+    }
+
+    @Override
+    protected void hookOnNext(T item) {
+        if (0 < counter.getAndDecrement()) {
+            submit(item);
+        } else {
+            tryComplete();
+        }
     }
 
     @Override
@@ -38,9 +47,9 @@ public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> 
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        if (predicate.test(item)) {
-            submit(item);
-        }
+    public String toString() {
+        return "LimitProcessor{" +
+                "counter=" + counter +
+                '}';
     }
 }

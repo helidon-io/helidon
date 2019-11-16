@@ -21,7 +21,11 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 
 public class MessageUtils {
     public static Object unwrap(Object value, Class<?> type) {
-        if (type.equals(Message.class)) {
+        return unwrap(value, type.equals(Message.class));
+    }
+
+    public static Object unwrap(Object value, Boolean isMessageType) {
+        if (isMessageType) {
             if (value instanceof Message) {
                 return value;
             } else {
@@ -30,8 +34,6 @@ public class MessageUtils {
         } else {
             if (value instanceof Message) {
                 return ((Message) value).getPayload();
-            } else if (type.isInstance(value)) {
-                return value;
             } else {
                 return value;
             }

@@ -29,10 +29,8 @@ public class IntSequencePublisher implements Publisher<Integer>, Subscription {
     private AtomicBoolean closed = new AtomicBoolean(false);
     private AtomicInteger sequence = new AtomicInteger(0);
     private Subscriber<? super Integer> subscriber;
-    private int count;
 
-    public IntSequencePublisher(int count) {
-        this.count = count;
+    public IntSequencePublisher() {
     }
 
     @Override
@@ -43,18 +41,15 @@ public class IntSequencePublisher implements Publisher<Integer>, Subscription {
 
     @Override
     public void request(long n) {
-        for (long i = 0; i < n
-                && !closed.get()
-                && sequence.get() < count; n++) {
+        for (long i = 0; i <= n
+                && !closed.get(); i++) {
             subscriber.onNext(sequence.incrementAndGet());
-            if(sequence.get() >= count){
-                subscriber.onComplete();
-            }
         }
     }
 
     @Override
     public void cancel() {
         closed.set(true);
+        subscriber.onComplete();
     }
 }
