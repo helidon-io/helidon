@@ -1240,8 +1240,9 @@ public class JpaExtension implements Extension {
             .produceWith(instance -> {
                     // On its own line to ease debugging.
                     return new JpaTransactionScopedEntityManager(instance, suppliedQualifiers);
-                });
-            // (deliberately no disposeWith())
+                })
+            .disposeWith(JpaTransactionScopedEntityManager::dispose);
+
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1284,7 +1285,9 @@ public class JpaExtension implements Extension {
                 // this bean.  Right now this bean is in what amounts
                 // to a thread-specific singleton scope.  As it
                 // happens, this might actually be OK.
-                .disposeWith((em, instance) -> em.close());
+                .disposeWith((em, instance) -> {
+                        em.close();
+                    });
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {

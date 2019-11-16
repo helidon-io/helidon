@@ -19,7 +19,6 @@ import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Vetoed;
@@ -28,6 +27,29 @@ import javax.persistence.EntityManager;
 /**
  * A {@link DelegatingEntityManager} created in certain very specific
  * JPA-mandated transaction-related scenarios.
+ *
+ * <p>Instances of this class are never directly seen by the end user.
+ * Specifically, instances of this class are themselves returned by a
+ * {@link DelegatingEntityManager} implementation's {@link
+ * DelegatingEntityManager#acquireDelegate()} method and only under
+ * appropriate circumstances.</p>
+ *
+ * <p>This class is added as a synthetic bean by the {@link
+ * JpaExtension} class.</p>
+ *
+ * <h2>Implementation Notes</h2>
+ *
+ * <p>Because instances of this class are typically placed in <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#normal_scope"
+ * target="_parent"><em>normal scopes</em></a>, this class is not
+ * declared {@code final}, but must be treated as if it were.</p>
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * <p>As with all {@link EntityManager} implementations, instances of
+ * this class are not safe for concurrent use by multiple threads.</p>
+ *
+ * @see JpaExtension
  */
 @Vetoed
 class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
@@ -43,8 +65,6 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
     private final Set<? extends Annotation> suppliedQualifiers;
 
     private final TransactionSupport transactionSupport;
-
-    private final AtomicInteger priorTransactionStatus;
 
     private EntityManager delegate;
 
@@ -71,7 +91,6 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
     @Deprecated
     CdiTransactionScopedEntityManager() {
         super();
-        this.priorTransactionStatus = new AtomicInteger(6); // 6 == javax.transaction.Status.STATUS_NO_TRANSACTION
         this.closeDelegate = true;
         this.instance = null;
         this.transactionSupport = null;
@@ -93,7 +112,6 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
     CdiTransactionScopedEntityManager(final Instance<Object> instance,
                                       final Set<? extends Annotation> suppliedQualifiers) {
         super();
-        this.priorTransactionStatus = new AtomicInteger(6); // 6 == javax.transaction.Status.STATUS_NO_TRANSACTION
         this.instance = Objects.requireNonNull(instance);
         this.transactionSupport = instance.select(TransactionSupport.class).get();
         this.suppliedQualifiers = Objects.requireNonNull(suppliedQualifiers);
@@ -105,15 +123,9 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
      */
 
 
-    Number getPriorTransactionStatus() {
-        return this.priorTransactionStatus;
-    }
-
     /**
      * Disposes of this {@link CdiTransactionScopedEntityManager} by
-     * capturing the {@link TransactionSupport#getStatus() current
-     * transaction status} and then calling the {@link #close()}
-     * method.
+     * calling the {@link #close()} method.
      *
      * <p>If the {@link javax.transaction.TransactionScoped} scope is
      * behaving the way it should, then this method will be invoked
@@ -137,21 +149,9 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
      * going away; ignored by this method; may be {@code null}
      *
      * @see #close()
-     *
-     * @see #getPriorTransactionStatus()
      */
     void dispose(final Instance<Object> ignoredInstance) {
-        try {
-            this.priorTransactionStatus.getAndSet(this.transactionSupport.getStatus());
-            final int currentTransactionStatus = this.priorTransactionStatus.get();
-            assert
-                currentTransactionStatus == TransactionSupport.STATUS_COMMITTED
-                || currentTransactionStatus == TransactionSupport.STATUS_ROLLEDBACK
-                : "Unexpected transaction status during dispose(): " + currentTransactionStatus;
-
-        } finally {
-            this.close();
-        }
+        this.close();
     }
 
     @Override

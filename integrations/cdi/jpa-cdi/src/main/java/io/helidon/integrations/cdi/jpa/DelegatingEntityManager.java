@@ -42,7 +42,7 @@ import javax.persistence.metamodel.Metamodel;
  * <p>As with all {@link EntityManager} implementations, instances of
  * this class are not safe for concurrent use by multiple threads.</p>
  */
-abstract class DelegatingEntityManager implements EntityManager {
+abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
 
 
     /*

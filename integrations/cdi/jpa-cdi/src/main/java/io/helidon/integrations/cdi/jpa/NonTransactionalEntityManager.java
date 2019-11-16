@@ -44,13 +44,25 @@ import javax.persistence.criteria.CriteriaQuery;
  * #acquireDelegate()} method and only under appropriate
  * circumstances.</p>
  *
+ * <p>This class is added as a synthetic bean by the {@link
+ * JpaExtension} class.</p>
+ *
+ * <h2>Implementation Notes</h2>
+ *
+ * <p>Because instances of this class are typically placed in <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#normal_scope"
+ * target="_parent"><em>normal scopes</em></a>, this class is not
+ * declared {@code final}, but must be treated as if it were.</p>
+ *
  * <h2>Thread Safety</h2>
  *
  * <p>As with all {@link EntityManager} implementations, instances of
  * this class are not safe for concurrent use by multiple threads.</p>
+ *
+ * @see JpaExtension
  */
 @Vetoed
-final class NonTransactionalEntityManager extends DelegatingEntityManager {
+class NonTransactionalEntityManager extends DelegatingEntityManager {
 
 
     /*
