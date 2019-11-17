@@ -40,6 +40,12 @@ public class InnerChannelTest extends AbstractCDITest {
     static Stream<CdiTestCase> testCaseSource() {
         return Stream.of(
                 //Positive tests
+                CdiTestCase.from(PublisherBuilderTransformerV2Bean.class),
+                CdiTestCase.from(PublisherBuilderTransformerV1Bean.class),
+                CdiTestCase.from(PublisherFromPublisherV2Bean.class),
+                CdiTestCase.from(PublisherFromPublisherV1Bean.class),
+                CdiTestCase.from(ProcessorBean.class),
+                CdiTestCase.from(ProcessorBuilderBean.class),
                 CdiTestCase.from(PullForEachBean.class),
                 CdiTestCase.from(CompletionStageV1Bean.class),
                 CdiTestCase.from(PublisherPayloadV6Bean.class),

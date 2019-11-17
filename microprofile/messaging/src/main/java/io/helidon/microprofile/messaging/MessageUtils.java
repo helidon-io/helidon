@@ -18,6 +18,17 @@
 package io.helidon.microprofile.messaging;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
+import org.reactivestreams.Processor;
+import org.reactivestreams.Subscriber;
+
+import javax.enterprise.inject.spi.DeploymentException;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.security.InvalidParameterException;
 
 public class MessageUtils {
     public static Object unwrap(Object value, Class<?> type) {
@@ -39,4 +50,44 @@ public class MessageUtils {
             }
         }
     }
+
+    public static Object unwrap(Object o, Method method) {
+        return unwrap(o, isTypeMessage(method));
+    }
+
+    public static boolean isTypeMessage(Method method) {
+        Type returnType = method.getGenericReturnType();
+        ParameterizedType parameterizedType = (ParameterizedType) returnType;
+        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+
+        if (SubscriberBuilder.class.equals(method.getReturnType())) {
+            if (actualTypeArguments.length != 2) {
+                throw new DeploymentException("Invalid method return type " + method);
+            }
+            return isMessageType(actualTypeArguments[0]);
+
+        } else if (Subscriber.class.equals(method.getReturnType())) {
+            if (actualTypeArguments.length != 1) {
+                throw new DeploymentException("Invalid method return type " + method);
+            }
+            return isMessageType(actualTypeArguments[0]);
+
+        } else if (Processor.class.equals(method.getReturnType())) {
+            return isMessageType(actualTypeArguments[0]);
+
+        } else if (ProcessorBuilder.class.equals(method.getReturnType())) {
+            return isMessageType(actualTypeArguments[0]);
+
+        }
+        throw new InvalidParameterException("Unsupported method for unwrapping " + method);
+    }
+
+    private static boolean isMessageType(Type type) {
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            return Message.class.equals(parameterizedType.getRawType());
+        }
+        return false;
+    }
+
 }

@@ -18,23 +18,18 @@
 package io.helidon.microprofile.messaging.reactive;
 
 import io.helidon.microprofile.messaging.MessageUtils;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import javax.enterprise.inject.spi.DeploymentException;
-
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.security.InvalidParameterException;
 
 /**
  * Unwrap Message payload if incoming method Publisher or Publisher builder
  * has generic return type different than Message
  */
+//TODO: Remove and replace with MessageUtils static call
+@Deprecated
 public class UnwrapProcessor implements Processor<Object, Object> {
 
     private Method method;
@@ -51,34 +46,9 @@ public class UnwrapProcessor implements Processor<Object, Object> {
     }
 
     Object unwrap(Object o) {
-        return MessageUtils.unwrap(o, isTypeMessage(method));
+        return MessageUtils.unwrap(o, method);
     }
 
-    static boolean isTypeMessage(Method method) {
-        Type returnType = method.getGenericReturnType();
-        ParameterizedType parameterizedType = (ParameterizedType) returnType;
-        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-        if (SubscriberBuilder.class.equals(method.getReturnType())) {
-            if (actualTypeArguments.length != 2) {
-                throw new DeploymentException("Invalid method return type " + method);
-            }
-            return isMessageType(actualTypeArguments[0]);
-        } else if (Subscriber.class.equals(method.getReturnType())) {
-            if (actualTypeArguments.length != 1) {
-                throw new DeploymentException("Invalid method return type " + method);
-            }
-            return isMessageType(actualTypeArguments[0]);
-        }
-        throw new InvalidParameterException("Only methods with Subscriber or Subscriber builder should be unwrapped by processor");
-    }
-
-    private static boolean isMessageType(Type type) {
-        if (type instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) type;
-            return Message.class.equals(parameterizedType.getRawType());
-        }
-        return false;
-    }
 
     @Override
     public void subscribe(Subscriber<? super Object> subscriber) {

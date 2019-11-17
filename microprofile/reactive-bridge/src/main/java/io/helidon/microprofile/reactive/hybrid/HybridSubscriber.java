@@ -22,6 +22,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.security.InvalidParameterException;
+import java.util.Objects;
 
 public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
@@ -37,10 +38,12 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
     }
 
     public static <T> HybridSubscriber<T> from(Flow.Subscriber<T> subscriber) {
+        Objects.requireNonNull(subscriber);
         return new HybridSubscriber<T>(subscriber);
     }
 
     public static <T> HybridSubscriber<T> from(Subscriber<T> subscriber) {
+        Objects.requireNonNull(subscriber);
         return new HybridSubscriber<T>(subscriber);
     }
 

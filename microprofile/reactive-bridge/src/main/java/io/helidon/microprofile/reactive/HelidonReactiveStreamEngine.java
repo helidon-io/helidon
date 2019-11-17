@@ -50,7 +50,9 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
 
     @Override
     public <T, R> Processor<T, R> buildProcessor(Graph graph) throws UnsupportedStageException {
-        throw new UnsupportedOperationException("Not implemented yet!!!");
+        MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
+        graph.getStages().stream().collect(multiStagesCollector);
+        return multiStagesCollector.getProcessor();
     }
 
     @Override

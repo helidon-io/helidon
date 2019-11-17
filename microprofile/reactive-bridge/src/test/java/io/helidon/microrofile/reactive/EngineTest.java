@@ -17,12 +17,14 @@
 
 package io.helidon.microrofile.reactive;
 
+import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -101,10 +103,9 @@ public class EngineTest {
         ConsumableSubscriber<Integer> subscriber = new ConsumableSubscriber<>(sum::addAndGet);
         ReactiveStreams
                 .fromPublisher(publisher)
-                //TODO: peak clashes with limit, probably because of onComplete is not called in limit processor
-//                .peek(System.out::println)
+                .peek(System.out::println)
                 .limit(5)
-//                .peek(System.out::println)
+                .peek(System.out::println)
                 .buildRs()
                 .subscribe(subscriber);
         assertEquals(1 + 2 + 3 + 4 + 5, sum.get());
@@ -121,5 +122,49 @@ public class EngineTest {
                 .build();
         publisher.subscribe(subscriber);
         assertEquals(1 + 2 + 3 + 4 + 5, sum.get());
+    }
+
+    @Test
+    void processorBuilder() {
+        StringBuffer stringBuffer = new StringBuffer();
+
+        Publisher<Integer> publisherBuilder =
+                ReactiveStreams
+                        .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+                        .buildRs();
+
+        Processor<Integer, String> processor = ReactiveStreams.<Integer>builder()
+                .map(i -> i + 1)
+                .flatMap(i -> ReactiveStreams.of(i, i))
+                .map(i -> Integer.toString(i))
+                .buildRs();
+
+        ConsumableSubscriber<String> subscriber = new ConsumableSubscriber<>(stringBuffer::append);
+
+        publisherBuilder.subscribe(processor);
+        processor.subscribe(HybridSubscriber.from(subscriber));
+
+        assertEquals("1122334455667788991010", stringBuffer.toString());
+    }
+
+    @Test
+    void ofForEach() throws ExecutionException, InterruptedException {
+        AtomicInteger sum = new AtomicInteger();
+        ReactiveStreams
+                .of(3, 4)
+                .forEach(sum::addAndGet)
+                .run();
+                //.toCompletableFuture().get();
+        assertEquals(3 + 4, sum.get());
+    }
+    @Test
+    void publisherToForEach() {
+        AtomicInteger sum = new AtomicInteger();
+        Publisher<Integer> publisher = ReactiveStreams.of(3, 4).buildRs();
+        ReactiveStreams
+                .fromPublisher(publisher)
+                .forEach(sum::addAndGet)
+                .run();
+        assertEquals(3 + 4, sum.get());
     }
 }

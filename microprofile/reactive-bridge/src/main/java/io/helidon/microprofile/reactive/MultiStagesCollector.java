@@ -23,9 +23,11 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.MultiMappingProcessor;
 import io.helidon.common.reactive.PeekProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
+import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
 import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
+import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
@@ -114,6 +116,11 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
                 Stage.Limit limitStage = (Stage.Limit) stage;
                 processorList.add(new LimitProcessor(limitStage.getLimit()));
 
+            } else if (stage instanceof Stage.FlatMap) {
+                Stage.FlatMap flatMapStage = (Stage.FlatMap) stage;
+                Function<?, Graph> mapper = flatMapStage.getMapper();
+                processorList.add(new FlatMapProcessor(mapper));
+
             } else if (stage instanceof Stage.SubscriberStage) {
                 //Subscribe to stream
                 Stage.SubscriberStage subscriberStage = (Stage.SubscriberStage) stage;
@@ -129,7 +136,9 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
                 Stage.Collect collectStage = (Stage.Collect) stage;
                 this.subscriberWithCompletionStage = new HelidonSubscriberWithCompletionStage<>(collectStage, processorList);
                 // If producer was supplied
-                //getPublisher().subscribe(HybridSubscriber.from(subscriberWithCompletionStage.getSubscriber()));
+                if(multi != null){
+                    multi.subscribe(HybridSubscriber.from(subscriberWithCompletionStage.getSubscriber()));
+                }
 
             } else {
                 throw new UnsupportedStageException(stage);
@@ -158,5 +167,9 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
 
     public <U> CompletionStage<U> getCompletableStage() {
         return (CompletionStage<U>) (completionStage != null ? completionStage : subscriberWithCompletionStage.getCompletion());
+    }
+
+    public <T, R> Processor<T, R> getProcessor() {
+        return (Processor<T, R>) new HelidonCumulativeProcessor(processorList);
     }
 }

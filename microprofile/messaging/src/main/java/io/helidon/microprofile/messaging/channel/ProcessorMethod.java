@@ -102,7 +102,12 @@ public class ProcessorMethod extends AbstractChannel {
 
     private void resolveSignatureType() {
         Class<?> returnType = this.method.getReturnType();
-        Class<?> parameterType = this.method.getParameterTypes()[0];
+            Class<?> parameterType = Void.TYPE;
+        if (this.method.getParameterTypes().length == 1) {
+            parameterType = this.method.getParameterTypes()[0];
+        } else if (this.method.getParameterTypes().length > 1) {
+            throw new DeploymentException("Bad processor method signature " + method);
+        }
         if (Void.TYPE.equals(parameterType)) {
             if (Processor.class.equals(returnType)) {
                 this.type = Type.PROCESSOR_VOID_2_PROCESSOR;

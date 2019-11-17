@@ -27,6 +27,7 @@ import java.util.concurrent.CountDownLatch;
 public abstract class AbstractShapeTestBean implements CountableTestBean {
 
     public static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("teST1", "TEst2", "tESt3"));
+    public static Set<Integer> TEST_INT_DATA = new HashSet<>(Arrays.asList(1, 2, 3));
 
     public static CountDownLatch testLatch = new CountDownLatch(TEST_DATA.size());
 

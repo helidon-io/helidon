@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.messaging.reactive;
 
+import io.helidon.microprofile.messaging.MessageUtils;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
@@ -60,10 +61,10 @@ public class UnwrapProcessorTest {
         unwrapProcessor.setMethod(method);
         Object unwrappedValue = unwrapProcessor.unwrap(Message.of("test"));
         if (method.getName().endsWith("Message")) {
-            assertTrue(UnwrapProcessor.isTypeMessage(method));
+            assertTrue(MessageUtils.isTypeMessage(method));
             assertTrue(unwrappedValue instanceof Message);
         } else {
-            assertFalse(UnwrapProcessor.isTypeMessage(method));
+            assertFalse(MessageUtils.isTypeMessage(method));
             assertFalse(unwrappedValue instanceof Message);
         }
     }

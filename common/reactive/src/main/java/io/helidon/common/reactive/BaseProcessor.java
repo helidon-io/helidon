@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <T> subscribed type (input)
  * @param <U> published type (output)
  */
-abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
+public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     private Subscription subscription;
     private final SingleSubscriberHolder<U> subscriber;
@@ -38,7 +38,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     private volatile boolean done;
     private Throwable error;
 
-    BaseProcessor() {
+    public BaseProcessor() {
         requested = new RequestedCounter();
         ready = new AtomicBoolean();
         subscribed = new AtomicBoolean();
