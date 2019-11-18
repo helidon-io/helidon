@@ -22,13 +22,16 @@ import java.util.logging.LogManager;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
-import io.helidon.microprofile.server.Server;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
+import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.providers.oidc.OidcSupport;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.jersey.JerseySupport;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -58,26 +61,31 @@ public final class IdcsMain {
 
         Config config = buildConfig();
 
-
         Security security = Security.create(config.get("security"));
 
-        Server.builder()
-                .config(config)
-                .addExtension(context -> {
-                    Routing.Builder routing = context.serverRoutingBuilder();
-                    routing.register(WebSecurity.create(security, config))
-                            .get("/rest/profile", (req, res) -> {
-                                Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                                res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
-                                res.send("Response from config based service, you are: \n" + securityContext
-                                        .flatMap(SecurityContext::user)
-                                        .map(Subject::toString)
-                                        .orElse("Security context is null"));
-                            });
-                })
-                .addApplication(JerseyApplication.class)
-                .build()
-                .start();
+        Routing.Builder routing = Routing.builder()
+                .register(WebSecurity.create(security, config.get("security")))
+                // IDCS requires a web resource for redirects
+                .register(OidcSupport.create(config))
+                // and a Jersey resource, also protected
+                .register("/jersey", JerseySupport.builder()
+                        .register(SecurityFeature.builder(security).build())
+                        .register(JerseyResource.class)
+                        .build())
+                // web server does not (yet) have possibility to configure routes in config files, so explicit...
+                .get("/rest/profile", (req, res) -> {
+                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                    res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
+                    res.send("Response from config based service, you are: \n" + securityContext
+                            .flatMap(SecurityContext::user)
+                            .map(Subject::toString)
+                            .orElse("Security context is null"));
+                });
+
+        theServer = WebServer.create(ServerConfiguration.create(config.get("server")),
+                                     routing);
+
+        IdcsUtil.start(theServer);
     }
 
     private static Config buildConfig() {
