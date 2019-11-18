@@ -26,8 +26,10 @@
     </parent>
 
     <artifactId>helidon-microprofile-messaging</artifactId>
-    <name>Helidon Microprofile Messaging</name>
-    <description>The microprofile messaging implementation</description>
+    <name>Helidon MicroProfile Reactive Messaging</name>
+    <description>
+        Helidon MicroProfile Reactive Messaging 1.0
+    </description>
 
     <dependencies>
         <dependency>
@@ -67,7 +69,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
-            <artifactId>helidon-microprofile-reactive-bridge</artifactId>
+            <artifactId>helidon-microprofile-reactive-streams</artifactId>
             <version>1.3.2-SNAPSHOT</version>
         </dependency>
         <dependency>

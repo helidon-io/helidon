@@ -29,8 +29,6 @@ import java.util.concurrent.ExecutionException;
  * Unwrap Message payload if incoming method Publisher or Publisher builder
  * has generic return type different than Message
  */
-//TODO: Remove and replace with MessageUtils static call
-@Deprecated
 public class UnwrapProcessor implements Processor<Object, Object> {
 
     private Method method;

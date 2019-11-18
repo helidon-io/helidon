@@ -23,11 +23,12 @@ import io.helidon.microprofile.messaging.channel.ProcessorMethod;
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.jboss.weld.exceptions.DeploymentException;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+
+import javax.enterprise.inject.spi.DeploymentException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
@@ -78,10 +79,10 @@ public class ProxyProcessor implements Processor<Object, Object> {
                 publisher = processor;
 
             } else {
-                throw new UnsupportedOperationException("Not implemented yet!");
+                throw new UnsupportedOperationException("Unknown signature type " + processorMethod.getType());
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new DeploymentException(e);
         }
 
     }
@@ -91,6 +92,7 @@ public class ProxyProcessor implements Processor<Object, Object> {
         if (processor != null) {
             // Backed by real  processor
             processor.subscribe(s);
+            subscriber = processor;
         } else if (!subscribed && publisher != null) {
             // Backed by publisher
             subscribed = true;
@@ -102,46 +104,26 @@ public class ProxyProcessor implements Processor<Object, Object> {
 
     @Override
     public void onSubscribe(Subscription s) {
-        if (processor != null) {
-            // Backed by real  processor
-            processor.onSubscribe(s);
-        } else {
-            subscriber.onSubscribe(s);
-        }
+        subscriber.onSubscribe(s);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onNext(Object o) {
         try {
-            //TODO: Cleanup by assigning processor to publisher and subscriber instead of all those ifs
-            if (processor != null) {
-                // Backed by real  processor
-                processor.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
-            } else {
-                subscriber.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
-            }
-        }catch (ExecutionException | InterruptedException e){
+            subscriber.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
+        } catch (ExecutionException | InterruptedException e) {
             onError(e);
         }
     }
 
     @Override
     public void onError(Throwable t) {
-        if (processor != null) {
-            // Backed by real  processor
-            processor.onError(t);
-        } else {
-            subscriber.onError(t);
-        }
+        subscriber.onError(t);
     }
 
     @Override
     public void onComplete() {
-        if (processor != null) {
-            // Backed by real  processor
-            processor.onComplete();
-        } else {
-            subscriber.onComplete();
-        }
+        subscriber.onComplete();
     }
 }

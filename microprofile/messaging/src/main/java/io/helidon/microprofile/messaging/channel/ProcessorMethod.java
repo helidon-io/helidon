@@ -55,7 +55,6 @@ public class ProcessorMethod extends AbstractChannel {
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
         if (type.isInvokeAtAssembly()) {
-            // TODO: Incoming methods returning custom processor
             processor = new ProxyProcessor(this);
         } else {
             // Create brand new subscriber

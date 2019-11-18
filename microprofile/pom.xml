@@ -48,5 +48,7 @@
         <module>rest-client</module>
         <module>access-log</module>
         <module>grpc</module>
+        <module>reactive-streams</module>
+        <module>messaging</module>
     </modules>
 </project>

@@ -28,8 +28,12 @@
     </parent>
 
     <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-reactive-bridge</artifactId>
-    <name>Helidon Reactive Bridge</name>
+    <artifactId>helidon-microprofile-reactive-streams</artifactId>
+    <name>Helidon Microprofile Reactive Streams Operators</name>
+
+    <description>
+        Helidon Microprofile Reactive Streams Operators 1.0
+    </description>
 
     <dependencies>
         <dependency>

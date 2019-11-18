@@ -112,7 +112,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     /**
      * Submit an item to the subscriber.
-     *
      * @param item item to be submitted
      */
     protected void submit(U item) {
@@ -134,7 +133,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     /**
      * Hook for {@link Subscriber#onNext(java.lang.Object)}.
-     *
      * @param item next item
      */
     protected void hookOnNext(T item) {
@@ -142,7 +140,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     /**
      * Hook for {@link Subscriber#onError(java.lang.Throwable)}.
-     *
      * @param error error received
      */
     protected void hookOnError(Throwable error) {
@@ -162,7 +159,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     /**
      * Subscribe the subscriber after the given delegate publisher.
-     *
      * @param delegate delegate publisher
      */
     protected final void doSubscribe(Publisher<U> delegate) {
