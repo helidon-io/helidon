@@ -23,6 +23,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Unwrap Message payload if incoming method Publisher or Publisher builder
@@ -45,7 +46,7 @@ public class UnwrapProcessor implements Processor<Object, Object> {
         return unwrapProcessor;
     }
 
-    Object unwrap(Object o) {
+    Object unwrap(Object o) throws ExecutionException, InterruptedException {
         return MessageUtils.unwrap(o, method);
     }
 
@@ -62,7 +63,11 @@ public class UnwrapProcessor implements Processor<Object, Object> {
 
     @Override
     public void onNext(Object o) {
-        subscriber.onNext(unwrap(o));
+        try {
+            subscriber.onNext(unwrap(o));
+        } catch (ExecutionException | InterruptedException e) {
+            onError(e);
+        }
     }
 
     @Override

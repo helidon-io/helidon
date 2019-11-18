@@ -30,6 +30,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Passes publisher to processor method ex:
@@ -90,14 +91,12 @@ public class ProxyProcessor implements Processor<Object, Object> {
         if (processor != null) {
             // Backed by real  processor
             processor.subscribe(s);
-        } else if (publisher == null) {
-            //Differences between small-rye and Multi impl
-            subscriber = s;
-        } else if (!subscribed) {
+        } else if (!subscribed && publisher != null) {
+            // Backed by publisher
             subscribed = true;
             publisher.subscribe(s);
         } else {
-            throw new DeploymentException("Already subscribed");
+            subscriber = s;
         }
     }
 
@@ -113,12 +112,16 @@ public class ProxyProcessor implements Processor<Object, Object> {
 
     @Override
     public void onNext(Object o) {
-        //TODO: Cleanup by assigning processor to publisher and subscriber instead of all those ifs
-        if (processor != null) {
-            // Backed by real  processor
-            processor.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
-        } else {
-            subscriber.onNext(o);
+        try {
+            //TODO: Cleanup by assigning processor to publisher and subscriber instead of all those ifs
+            if (processor != null) {
+                // Backed by real  processor
+                processor.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
+            } else {
+                subscriber.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
+            }
+        }catch (ExecutionException | InterruptedException e){
+            onError(e);
         }
     }
 

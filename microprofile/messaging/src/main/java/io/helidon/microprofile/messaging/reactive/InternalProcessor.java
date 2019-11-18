@@ -20,12 +20,16 @@ package io.helidon.microprofile.messaging.reactive;
 import io.helidon.microprofile.messaging.MessageUtils;
 import io.helidon.microprofile.messaging.channel.ProcessorMethod;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Process every item in stream by method ex:
@@ -58,20 +62,39 @@ public class InternalProcessor implements Processor<Object, Object> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onNext(Object incomingValue) {
         try {
-            //TODO: Has to be always one param in the processor, validate and propagate better
             Method method = processorMethod.getMethod();
+            //TODO: Has to be always one param in the processor, validate and propagate better
             Class<?> paramType = method.getParameterTypes()[0];
             Object processedValue = method.invoke(processorMethod.getBeanInstance(),
                     MessageUtils.unwrap(incomingValue, paramType));
-            subscriber.onNext(wrapValue(processedValue));
-        } catch (IllegalAccessException | InvocationTargetException e) {
+            //TODO: Extract as some sensible util
+            if (processedValue instanceof Publisher || processedValue instanceof PublisherBuilder) {
+                //Flatten, we are sure its invoke on every request method now
+                PublisherBuilder<Object> publisherBuilder = null;
+                if (processedValue instanceof Publisher) {
+                    publisherBuilder = ReactiveStreams.fromPublisher((Publisher<Object>) processedValue);
+                } else {
+                    publisherBuilder = (PublisherBuilder<Object>) processedValue;
+                }
+                publisherBuilder.forEach(subVal -> {
+                    try {
+                        subscriber.onNext(wrapValue(subVal));
+                    } catch (ExecutionException | InterruptedException e) {
+                        subscriber.onError(e);
+                    }
+                }).run();
+            } else {
+                subscriber.onNext(wrapValue(processedValue));
+            }
+        } catch (IllegalAccessException | InvocationTargetException | ExecutionException | InterruptedException e) {
             subscriber.onError(e);
         }
     }
 
-    protected Object wrapValue(Object value) {
+    protected Object wrapValue(Object value) throws ExecutionException, InterruptedException {
         return MessageUtils.unwrap(value, Message.class);
     }
 

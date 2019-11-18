@@ -33,7 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class MultipleTypeProcessorChainBean implements CountableTestBean {
+public class MultipleTypeProcessorChainV2Bean implements CountableTestBean {
     public static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("teST1", "TEst2", "tESt3"));
     public static Set<String> EXPECTED_DATA = TEST_DATA.stream()
             .map(String::toLowerCase)
@@ -48,11 +48,17 @@ public class MultipleTypeProcessorChainBean implements CountableTestBean {
 
     @Incoming("inner-processor")
     @Outgoing("inner-processor-2")
+    public String toUpperCase(String payload) {
+        return payload;
+    }
+
+    @Incoming("inner-processor-2")
+    @Outgoing("inner-processor-3")
     public PublisherBuilder<String> process(PublisherBuilder<String> msg) {
         return msg.map(s -> s.toLowerCase());
     }
 
-    @Incoming("inner-processor-2")
+    @Incoming("inner-processor-3")
     @Outgoing("inner-consumer")
     public String process2(String msg) {
         return msg + "-processed";

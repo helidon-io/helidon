@@ -26,6 +26,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.reactivestreams.Subscriber;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -56,7 +57,7 @@ public class UnwrapProcessorTest {
 
     @ParameterizedTest
     @MethodSource("methodSource")
-    void innerChannelBeanTest(Method method) {
+    void innerChannelBeanTest(Method method) throws ExecutionException, InterruptedException {
         UnwrapProcessor unwrapProcessor = new UnwrapProcessor();
         unwrapProcessor.setMethod(method);
         Object unwrappedValue = unwrapProcessor.unwrap(Message.of("test"));

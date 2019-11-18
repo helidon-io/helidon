@@ -17,35 +17,39 @@
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.microprofile.reactive.MultiRS;
+import io.helidon.microprofile.messaging.CountableTestBean;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.reactivestreams.Publisher;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.IntStream;
 
 @ApplicationScoped
-public class PrimitiveProcessorBean {
+public class ByRequestProcessorV2Bean implements CountableTestBean {
 
     public static CountDownLatch testLatch = new CountDownLatch(10);
 
-    @Outgoing("inner-processor")
-    public Publisher<Integer> produceMessage() {
-        return MultiRS.just(IntStream.range(0, 10).boxed());
+    @Outgoing("publisher-synchronous-payload")
+    public PublisherBuilder<Integer> streamForProcessorOfPayloads() {
+        return ReactiveStreams.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     }
 
-    @Incoming("inner-processor")
-    @Outgoing("inner-consumer")
-    public int process(int i) {
-        return i++;
+    @Incoming("publisher-synchronous-payload")
+    @Outgoing("synchronous-payload")
+    public String payloadSynchronous(int value) {
+        return Integer.toString(value + 1);
     }
 
-    @Incoming("inner-consumer")
-    public void receiveMessage(int i) {
-        testLatch.countDown();
+    @Incoming("synchronous-payload")
+    public void getMessgesFromProcessorOfPayloads(String value) {
+        getTestLatch().countDown();
     }
 
+    @Override
+    public CountDownLatch getTestLatch() {
+        return testLatch;
+    }
 }

@@ -61,6 +61,7 @@ public class InternalSubscriber implements Subscriber<Object> {
             incrementAndCheckChunkPosition();
         } catch (Exception e) {
             //Notify publisher to stop sending
+            // TODO: Maybe should not notify to stop sending, check the spec
             subscription.cancel();
             throw new RuntimeException(e);
         }
