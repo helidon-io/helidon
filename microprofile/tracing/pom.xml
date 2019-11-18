@@ -49,6 +49,10 @@
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-common</artifactId>
         </dependency>
