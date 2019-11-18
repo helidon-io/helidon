@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,9 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 
+import static io.helidon.config.ConfigSources.classpath;
+import static io.helidon.config.ConfigSources.file;
+
 /**
  * IDCS Login example main class using configuration .
  */
@@ -59,7 +62,7 @@ public final class IdcsBuilderMain {
         // load logging configuration
         LogManager.getLogManager().readConfiguration(IdcsBuilderMain.class.getResourceAsStream("/logging.properties"));
 
-        Config config = Config.create();
+        Config config = buildConfig();
 
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("clientId.of.your.application")
@@ -78,8 +81,7 @@ public final class IdcsBuilderMain {
                 .build();
 
         Routing.Builder routing = Routing.builder()
-                // helper method to load both security and web server security from configuration
-                .register(WebSecurity.create(security, config))
+                .register(WebSecurity.create(security, config.get("security")))
                 // IDCS requires a web resource for redirects
                 .register(OidcSupport.create(config))
                 // and a Jersey resource, also protected
@@ -91,12 +93,22 @@ public final class IdcsBuilderMain {
                 .get("/rest/profile", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
-                    res.send("Response from config based service, you are: \n" + securityContext
+                    res.send("Response from builder based service, you are: \n" + securityContext
                             .flatMap(SecurityContext::user)
                             .map(Subject::toString)
                             .orElse("Security context is null"));
                 });
 
         theServer = IdcsUtil.startIt(routing);
+    }
+
+    private static Config buildConfig() {
+        return Config.builder()
+                .sources(
+                        // you can use this file to override the defaults built-in
+                        file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
+                        // in jar file (see src/main/resources/application.yaml)
+                        classpath("application.yaml"))
+                .build();
     }
 }

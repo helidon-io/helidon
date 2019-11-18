@@ -14,9 +14,6 @@
 # limitations under the License.
 #
 
-tracing:
-  service: idcs-example
-
 server:
   port: 7987
 
