@@ -39,12 +39,15 @@ public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Long> 
 
     private MongoStatement statement;
 
-    MongoDbStatementDml(DbStatementType dbStatementType, MongoDatabase db,
-                        String statementName,
-                        String statement,
-                        DbMapperManager dbMapperManager,
-                        MapperManager mapperManager,
-                        InterceptorSupport interceptors) {
+    MongoDbStatementDml(
+            DbStatementType dbStatementType,
+            MongoDatabase db,
+            String statementName,
+            String statement,
+            DbMapperManager dbMapperManager,
+            MapperManager mapperManager,
+            InterceptorSupport interceptors
+    ) {
         super(dbStatementType,
               db,
               statementName,

@@ -19,9 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Flow;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 
 import org.bson.Document;
@@ -36,21 +34,19 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
 
     private final AtomicLong count = new AtomicLong();
     private final CompletableFuture<Long> queryFuture;
-    private final DbMapperManager dbMapperManager;
-    private final MapperManager mapperManager;
+    private final MongoDbStatement dbStatement;
     private final CompletableFuture<Void> statementFuture;
     private Flow.Subscriber<? super DbRow> subscriber;
     private Subscription subscription;
 
-    MongoDbQueryProcessor(DbMapperManager dbMapperManager,
-            MapperManager mapperManager,
+    MongoDbQueryProcessor(
+            MongoDbStatement dbStatement,
             CompletableFuture<Void> statementFuture,
-            CompletableFuture<Long> queryFuture) {
-
+            CompletableFuture<Long> queryFuture
+    ) {
         this.statementFuture = statementFuture;
         this.queryFuture = queryFuture;
-        this.dbMapperManager = dbMapperManager;
-        this.mapperManager = mapperManager;
+        this.dbStatement = dbStatement;
     }
 
     @Override
@@ -60,11 +56,11 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
 
     @Override
     public void onNext(Document doc) {
-        MongoDbRow dbRow = new MongoDbRow(dbMapperManager, mapperManager, doc.size());
+        MongoDbRow dbRow = new MongoDbRow(dbStatement.dbMapperManager(), dbStatement.mapperManager(), doc.size());
         doc.forEach((name, value) -> {
             LOGGER.fine(() -> String
                     .format("Column name = %s, value = %s", name, (value != null ? value.toString() : "N/A")));
-            dbRow.add(name, new MongoDbColumn(dbMapperManager, mapperManager, name, value));
+            dbRow.add(name, new MongoDbColumn(dbStatement.dbMapperManager(), dbStatement.mapperManager(), name, value));
         });
         count.incrementAndGet();
         subscriber.onNext(dbRow);
@@ -75,7 +71,11 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
         LOGGER.warning(() -> String.format("Query error: %s", t.getMessage()));
         statementFuture.completeExceptionally(t);
         queryFuture.completeExceptionally(t);
+        if (dbStatement.txManager() != null) {
+            dbStatement.txManager().stmtFailed(dbStatement);
+        }
         subscriber.onError(t);
+        LOGGER.fine(() -> String.format("Query %s execution failed", dbStatement.statementName()));
     }
 
     @Override
@@ -83,7 +83,11 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
         LOGGER.fine(() -> "Query finished");
         statementFuture.complete(null);
         queryFuture.complete(count.get());
+        if (dbStatement.txManager() != null) {
+            dbStatement.txManager().stmtFinished(dbStatement);
+        }
         subscriber.onComplete();
+        LOGGER.fine(() -> String.format("Query %s execution succeeded", dbStatement.statementName()));
     }
 
     @Override
@@ -92,4 +96,5 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
         //TODO this MUST use flow control (e.g. only request what our subscriber requested)
         this.subscription.request(Long.MAX_VALUE);
     }
+
 }

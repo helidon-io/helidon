@@ -18,6 +18,7 @@ package io.helidon.dbclient.mongodb;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbClient;
@@ -30,14 +31,19 @@ import io.helidon.dbclient.common.InterceptorSupport;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
+import com.mongodb.reactivestreams.client.ClientSession;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+import org.reactivestreams.Subscription;
 
 /**
  * MongoDB driver handler.
  */
 public class MongoDbClient implements DbClient {
+
+    private static final Logger LOGGER = Logger.getLogger(MongoDbClient.class.getName());
+
     private final MongoDbClientConfig config;
     private final DbStatements statements;
     private final MongoClient client;
@@ -47,6 +53,11 @@ public class MongoDbClient implements DbClient {
     private final ConnectionString connectionString;
     private final InterceptorSupport interceptors;
 
+    /**
+     * Creates an instance of MongoDB driver handler.
+     *
+     * @param builder builder for mongoDB database
+     */
     MongoDbClient(MongoDbClientProviderBuilder builder) {
         this.config = builder.dbConfig();
         this.connectionString = new ConnectionString(config.url());
@@ -58,9 +69,60 @@ public class MongoDbClient implements DbClient {
         this.interceptors = builder.interceptors();
     }
 
+    private static final class MongoSessionSubscriber implements org.reactivestreams.Subscriber<ClientSession> {
+
+        private final CompletableFuture<ClientSession> txFuture;
+        private ClientSession tx;
+        private Subscription subscription;
+
+        MongoSessionSubscriber(CompletableFuture<ClientSession> txFuture) {
+            this.txFuture = txFuture;
+            this.tx = null;
+        }
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            this.subscription = subscription;
+            this.subscription.request(1);
+        }
+
+        @Override
+        public void onNext(ClientSession session) {
+            this.tx = session;
+            this.subscription.cancel();
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            LOGGER.warning(() -> String.format("Transaction error: %s", t.getMessage()));
+            txFuture.completeExceptionally(t);
+        }
+
+        @Override
+        public void onComplete() {
+            txFuture.complete(tx);
+        }
+
+    }
+
     @Override
     public <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor) {
-        return executor.apply(new MongoDbExecute(db, statements, dbMapperManager, mapperManager, interceptors));
+        // Disable MongoDB transactions until they are tested.
+        if (true) {
+            throw new UnsupportedOperationException("Transactions are not yet supported in MongoDB");
+        }
+        CompletableFuture<ClientSession> txFuture = new CompletableFuture<>();
+        client.startSession().subscribe(new MongoSessionSubscriber(txFuture));
+        return txFuture.thenCompose(tx -> {
+            MongoDbTransaction mongoTx = new MongoDbTransaction(
+                    db, tx, statements, dbMapperManager, mapperManager, interceptors);
+            CompletionStage<T> future = executor.apply(mongoTx);
+            // FIXME: Commit and rollback return Publisher so another future must be introduced here
+            // to cover commit or rollback. This future may be passed using allRegistered call
+            // and combined with transaction future
+            future.thenRun(mongoTx.txManager()::allRegistered);
+            return future;
+        });
     }
 
     @Override

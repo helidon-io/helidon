@@ -27,6 +27,7 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.mongodb.MongoDbTransaction.TransactionManager;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
@@ -93,6 +94,17 @@ public class MongoDbStatementGet implements DbStatementGet {
         return theQuery.execute()
                 .thenApply(dbRows -> Single.from(dbRows.publisher()))
                 .thenCompose(Single::toOptionalStage);
+    }
+
+    /**
+     * Set target transaction for this statement.
+     *
+     * @param tx MongoDB transaction session
+     * @return MongoDB statement builder
+     */
+    MongoDbStatementGet inTransaction(TransactionManager tx) {
+        theQuery.inTransaction(tx);
+        return this;
     }
 
 }
