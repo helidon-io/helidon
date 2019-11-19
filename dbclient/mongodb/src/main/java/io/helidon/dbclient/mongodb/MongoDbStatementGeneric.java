@@ -135,12 +135,15 @@ public class MongoDbStatementGeneric extends MongoDbStatement<DbStatementGeneric
 
     private MongoStatement statement;
 
-    MongoDbStatementGeneric(DbStatementType dbStatementType, MongoDatabase db,
-                        String statementName,
-                        String statement,
-                        DbMapperManager dbMapperManager,
-                        MapperManager mapperManager,
-                        InterceptorSupport interceptors) {
+    MongoDbStatementGeneric(
+            DbStatementType dbStatementType,
+            MongoDatabase db,
+            String statementName,
+            String statement,
+            DbMapperManager dbMapperManager,
+            MapperManager mapperManager,
+            InterceptorSupport interceptors
+    ) {
         super(dbStatementType,
               db,
               statementName,

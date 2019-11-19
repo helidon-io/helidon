@@ -28,9 +28,8 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.Success;
 import org.bson.Document;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
-
-import static io.helidon.dbclient.mongodb.MongoDbStatement.EMPTY;
 
 /**
  * Executes Mongo specific DML statement and returns result.
@@ -82,16 +81,19 @@ final class MongoDbDMLExecutor {
 
     private abstract static class DmlResultSubscriber<T> implements org.reactivestreams.Subscriber<T> {
 
+        private final MongoDbStatement dbStatement;
         private final DbStatementType dbStatementType;
         private final CompletableFuture<Void> statementFuture;
         private final CompletableFuture<Long> queryFuture;
         private final LongAdder count;
 
         private DmlResultSubscriber(
+                MongoDbStatement dbStatement,
                 DbStatementType dbStatementType,
                 CompletableFuture<Long> queryFuture,
                 CompletableFuture<Void> statementFuture
         ) {
+            this.dbStatement = dbStatement;
             this.dbStatementType = dbStatementType;
             this.statementFuture = statementFuture;
             this.queryFuture = queryFuture;
@@ -108,13 +110,22 @@ final class MongoDbDMLExecutor {
         public void onError(Throwable t) {
             statementFuture.completeExceptionally(t);
             queryFuture.completeExceptionally(t);
+            if (dbStatement.txManager() != null) {
+                dbStatement.txManager().stmtFailed(dbStatement);
+            }
+            LOGGER.fine(() -> String.format(
+                    "%s DML %s execution failed", dbStatementType.name(), dbStatement.statementName()));
         }
 
         @Override
         public void onComplete() {
             statementFuture.complete(null);
             queryFuture.complete(count.sum());
-            LOGGER.fine(() -> String.format("%s DML execution succeeded", dbStatementType.name()));
+            if (dbStatement.txManager() != null) {
+                dbStatement.txManager().stmtFinished(dbStatement);
+            }
+            LOGGER.fine(() -> String.format(
+                    "%s DML %s execution succeeded", dbStatementType.name(), dbStatement.statementName()));
         }
 
         LongAdder count() {
@@ -126,11 +137,12 @@ final class MongoDbDMLExecutor {
     private static final class InsertResultSubscriber extends DmlResultSubscriber<Success> {
 
         private InsertResultSubscriber(
+                MongoDbStatement dbStatement,
                 DbStatementType dbStatementType,
                 CompletableFuture<Long> queryFuture,
                 CompletableFuture<Void> statementFuture
         ) {
-            super(dbStatementType, queryFuture, statementFuture);
+            super(dbStatement, dbStatementType, queryFuture, statementFuture);
         }
 
         @Override
@@ -143,11 +155,12 @@ final class MongoDbDMLExecutor {
     private static final class UpdateResultSubscriber extends DmlResultSubscriber<UpdateResult> {
 
         private UpdateResultSubscriber(
+                MongoDbStatement dbStatement,
                 DbStatementType dbStatementType,
                 CompletableFuture<Long> queryFuture,
                 CompletableFuture<Void> statementFuture
         ) {
-            super(dbStatementType, queryFuture, statementFuture);
+            super(dbStatement, dbStatementType, queryFuture, statementFuture);
         }
 
         @Override
@@ -160,11 +173,12 @@ final class MongoDbDMLExecutor {
     private static final class DeleteResultSubscriber extends DmlResultSubscriber<DeleteResult> {
 
         private DeleteResultSubscriber(
+                MongoDbStatement dbStatement,
                 DbStatementType dbStatementType,
                 CompletableFuture<Long> queryFuture,
                 CompletableFuture<Void> statementFuture
         ) {
-            super(dbStatementType, queryFuture, statementFuture);
+            super(dbStatement, dbStatementType, queryFuture, statementFuture);
         }
 
         @Override
@@ -182,8 +196,10 @@ final class MongoDbDMLExecutor {
             CompletableFuture<Long> queryFuture
     ) {
         MongoCollection<Document> mc = dbStatement.db().getCollection(mongoStatement.getCollection());
-        mc.insertOne(mongoStatement.getValue())
-                .subscribe(new InsertResultSubscriber(dbStatementType, queryFuture, statementFuture));
+        Publisher<Success> insertPublisher = dbStatement.noTx()
+                ? mc.insertOne(mongoStatement.getValue())
+                : mc.insertOne(dbStatement.txManager().tx(), mongoStatement.getValue());
+        insertPublisher.subscribe(new InsertResultSubscriber(dbStatement, dbStatementType, queryFuture, statementFuture));
         return queryFuture;
     }
 
@@ -199,8 +215,10 @@ final class MongoDbDMLExecutor {
         Document query = mongoStatement.getQuery();
         // TODO should the next line be used?
         //Document value = mongoStatement.getValue();
-        mc.updateMany((query != null) ? query : EMPTY, mongoStatement.getValue())
-                .subscribe(new UpdateResultSubscriber(dbStatementType, queryFuture, statementFuture));
+        Publisher<UpdateResult> updatePublisher = dbStatement.noTx()
+                ? mc.updateMany(query, mongoStatement.getValue())
+                : mc.updateMany(dbStatement.txManager().tx(), query, mongoStatement.getValue());
+        updatePublisher.subscribe(new UpdateResultSubscriber(dbStatement, dbStatementType, queryFuture, statementFuture));
         return queryFuture;
     }
 
@@ -214,9 +232,10 @@ final class MongoDbDMLExecutor {
     ) {
         MongoCollection<Document> mc = dbStatement.db().getCollection(mongoStatement.getCollection());
         Document query = mongoStatement.getQuery();
-
-        mc.deleteMany((query != null) ? query : EMPTY)
-                .subscribe(new DeleteResultSubscriber(dbStatementType, queryFuture, statementFuture));
+        Publisher<DeleteResult> deletePublisher = dbStatement.noTx()
+                ? mc.deleteMany(query)
+                : mc.deleteMany(dbStatement.txManager().tx(), query);
+        deletePublisher.subscribe(new DeleteResultSubscriber(dbStatement, dbStatementType, queryFuture, statementFuture));
         return queryFuture;
     }
 
