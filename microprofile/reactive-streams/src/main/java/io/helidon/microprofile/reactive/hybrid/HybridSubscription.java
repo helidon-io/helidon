@@ -17,15 +17,21 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
-import io.helidon.common.reactive.Flow;
-import org.reactivestreams.Subscription;
-
 import java.security.InvalidParameterException;
 
+import io.helidon.common.reactive.Flow;
+
+import org.reactivestreams.Subscription;
+
+/**
+ * Wrapper for {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscription}
+ * or {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Subscription},
+ * to be used interchangeably.
+ */
 public class HybridSubscription implements Flow.Subscription, Subscription {
 
-    Flow.Subscription flowSubscription;
-    Subscription reactiveSubscription;
+    private Flow.Subscription flowSubscription;
+    private Subscription reactiveSubscription;
 
     private HybridSubscription(Flow.Subscription flowSubscription) {
         this.flowSubscription = flowSubscription;
@@ -35,10 +41,28 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
         this.reactiveSubscription = reactiveSubscription;
     }
 
+    /**
+     * Create new {@link HybridSubscription}
+     * from {@link io.helidon.common.reactive.Flow.Processor}.
+     *
+     * @param subscription {@link io.helidon.common.reactive.Flow.Subscription} to wrap
+     * @return {@link HybridSubscription}
+     * compatible with {@link org.reactivestreams Reactive Streams}
+     * and {@link io.helidon.common.reactive Helidon reactive streams}
+     */
     public static HybridSubscription from(Flow.Subscription subscription) {
         return new HybridSubscription(subscription);
     }
 
+    /**
+     * Create new {@link HybridSubscription}
+     * from {@link io.helidon.common.reactive.Flow.Subscription}.
+     *
+     * @param subscription {@link io.helidon.common.reactive.Flow.Subscription} to wrap
+     * @return {@link HybridSubscription}
+     * compatible with {@link org.reactivestreams Reactive Streams}
+     * and {@link io.helidon.common.reactive Helidon reactive streams}
+     */
     public static HybridSubscription from(Subscription subscription) {
         return new HybridSubscription(subscription);
     }

@@ -17,25 +17,33 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.concurrent.CompletionStage;
+
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.util.concurrent.CompletionStage;
-
 /**
- * Replacement for buggy DefaultCompletionSubscriber
+ * Replacement for non redeeming {@link org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber}'s DefaultCompletionSubscriber.
  * <p>
- * https://github.com/eclipse/microprofile-reactive-streams-operators/issues/129#issue-521492223
  *
- * @param <T>
- * @param <R>
+ * @param <T> {@link org.reactivestreams.Subscriber} item type
+ * @param <R> {@link java.util.concurrent.CompletionStage} payload type
+ * @see <a href="https://github.com/eclipse/microprofile-reactive-streams-operators/issues/129#issue-521492223">microprofile-reactive-streams-operators #129</a>
  */
-public class CompletionSubscriber<T, R> implements org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber<T, R> {
+class CompletionSubscriber<T, R> implements org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber<T, R> {
 
     private final Subscriber<T> subscriber;
     private final CompletionStage<R> completion;
 
-    public static <T, R> CompletionSubscriber<T, R> of(Subscriber<T> subscriber, CompletionStage<R> completion) {
+    /**
+     * Create a {@link io.helidon.microprofile.reactive.CompletionSubscriber} by combining the given subscriber and completion stage.
+     * The objects passed to this method should not be associated with more than one stream instance.
+     *
+     * @param subscriber subscriber to associate with completion stage
+     * @param completion completion stage to associate with subscriber
+     * @return {@link io.helidon.microprofile.reactive.CompletionSubscriber}
+     */
+    static <T, R> CompletionSubscriber<T, R> of(Subscriber<T> subscriber, CompletionStage<R> completion) {
         return new CompletionSubscriber<>(subscriber, completion);
     }
 

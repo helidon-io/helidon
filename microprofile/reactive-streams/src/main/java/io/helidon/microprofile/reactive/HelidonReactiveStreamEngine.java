@@ -17,6 +17,11 @@
 
 package io.helidon.microprofile.reactive;
 
+
+import java.util.Collection;
+import java.util.concurrent.CompletionStage;
+import java.util.logging.Logger;
+
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
@@ -25,15 +30,18 @@ import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageE
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 
-import java.util.Collection;
-import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
-
+/**
+ * Implementation of {@link org.reactivestreams Reactive Streams} with operators
+ * backed by {@link io.helidon.common.reactive Helidon reactive streams}.
+ *
+ * @see org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine
+ */
 public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonReactiveStreamEngine.class.getName());
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> Publisher<T> buildPublisher(Graph graph) throws UnsupportedStageException {
         MultiStagesCollector<T> multiStagesCollector = new MultiStagesCollector<>();
         Collection<Stage> stages = graph.getStages();
@@ -42,6 +50,7 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T, R> SubscriberWithCompletionStage<T, R> buildSubscriber(Graph graph) throws UnsupportedStageException {
         MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
         graph.getStages().stream().collect(multiStagesCollector);
@@ -49,6 +58,7 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T, R> Processor<T, R> buildProcessor(Graph graph) throws UnsupportedStageException {
         MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
         graph.getStages().stream().collect(multiStagesCollector);
@@ -56,10 +66,11 @@ public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> CompletionStage<T> buildCompletion(Graph graph) throws UnsupportedStageException {
         MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
         graph.getStages().stream().collect(multiStagesCollector);
-        CompletionStage<T> completionStage = (CompletionStage<T>) multiStagesCollector.getCompletableStage();
+        CompletionStage<T> completionStage = (CompletionStage<T>) multiStagesCollector.getCompletionStage();
         return completionStage;
     }
 }

@@ -38,6 +38,9 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     private volatile boolean done;
     private Throwable error;
 
+    /**
+     * Generic processor used for the implementation of {@link Multi} and {@link Single}.
+     */
     public BaseProcessor() {
         requested = new RequestedCounter();
         ready = new AtomicBoolean();
@@ -111,7 +114,36 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     /**
+     * Processor's {@link io.helidon.common.reactive.Flow.Subscription} registered by
+     * {@link BaseProcessor#onSubscribe(io.helidon.common.reactive.Flow.Subscription)}.
+     *
+     * @return {@link io.helidon.common.reactive.Flow.Subscription}
+     */
+    protected Subscription getSubscription() {
+        return subscription;
+    }
+
+    /**
+     * Processor's {@link SingleSubscriberHolder}.
+     *
+     * @return {@link SingleSubscriberHolder}
+     */
+    protected SingleSubscriberHolder<U> getSubscriber() {
+        return subscriber;
+    }
+
+    /**
+     * Returns {@link RequestedCounter} with information about requested vs. submitted items.
+     *
+     * @return {@link RequestedCounter}
+     */
+    protected RequestedCounter getRequestedCounter() {
+        return requested;
+    }
+
+    /**
      * Submit an item to the subscriber.
+     *
      * @param item item to be submitted
      */
     protected void submit(U item) {
@@ -133,6 +165,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     /**
      * Hook for {@link Subscriber#onNext(java.lang.Object)}.
+     *
      * @param item next item
      */
     protected void hookOnNext(T item) {
@@ -140,6 +173,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     /**
      * Hook for {@link Subscriber#onError(java.lang.Throwable)}.
+     *
      * @param error error received
      */
     protected void hookOnError(Throwable error) {
@@ -152,13 +186,16 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     /**
-     * Hook for {@link Flow.Subscription#cancel()}.
+     * Hook for {@link SingleSubscriberHolder#cancel()}.
+     *
+     * @param subscription of the processor for optional passing cancel event
      */
     protected void hookOnCancel(Flow.Subscription subscription) {
     }
 
     /**
      * Subscribe the subscriber after the given delegate publisher.
+     *
      * @param delegate delegate publisher
      */
     protected final void doSubscribe(Publisher<U> delegate) {
@@ -192,6 +229,9 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         sub.onError(ex);
     }
 
+    /**
+     * Try close processor's subscriber.
+     */
     protected void tryComplete() {
         if (ready.get() && !subscriber.isClosed()) {
             if (error != null) {
@@ -208,11 +248,16 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         }
     }
 
-    private void tryRequest(Subscription s) {
-        if (s != null && !subscriber.isClosed()) {
+    /**
+     * Responsible for calling {@link io.helidon.common.reactive.Flow.Subscription#request(long)}.
+     *
+     * @param subscription {@link io.helidon.common.reactive.Flow.Subscription} to make a request from
+     */
+    protected void tryRequest(Subscription subscription) {
+        if (subscription != null && !subscriber.isClosed()) {
             long n = requested.get();
             if (n > 0) {
-                s.request(n);
+                subscription.request(n);
             }
         }
     }

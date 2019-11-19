@@ -16,21 +16,6 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.FilterProcessor;
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.LimitProcessor;
-import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.MultiMappingProcessor;
-import io.helidon.common.reactive.PeekProcessor;
-import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
-import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
-import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
-import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
-import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
-import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -48,7 +33,32 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, CompletionStage<T>> {
+import io.helidon.common.reactive.FilterProcessor;
+import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.LimitProcessor;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.MultiMappingProcessor;
+import io.helidon.common.reactive.PeekProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
+
+import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
+import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
+import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
+import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
+import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
+
+/**
+ * Collect {@link org.reactivestreams Reactive Streams}
+ * {@link org.eclipse.microprofile.reactive.streams.operators.spi.Stage Stages}
+ * to {@link org.reactivestreams.Publisher}, {@link org.reactivestreams.Processor}
+ * or {@link org.reactivestreams.Subscriber}.
+ *
+ * @param <T>
+ */
+class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, CompletionStage<T>> {
 
     private Multi<T> multi = null;
     private List<Flow.Processor<Object, Object>> processorList = new ArrayList<>();
@@ -60,8 +70,8 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
         return () -> multi != null ? multi : Multi.empty();
     }
 
+    @SuppressWarnings("unchecked")
     private void subscribeUpStream() {
-        // If producer was supplied
         if (multi != null) {
             for (Flow.Processor p : processorList) {
                 multi.subscribe(p);
@@ -72,37 +82,29 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
         }
     }
 
-    public Publisher<T> getPublisher() {
-        subscribeUpStream();
-        return MultiRS.from(multi);
-    }
-
     @Override
+    @SuppressWarnings("unchecked")
     public BiConsumer<Multi<T>, Stage> accumulator() {
         //MP Stages to Helidon multi streams mapping
         return (m, stage) -> {
 
-            // Create stream
             if (stage instanceof Stage.PublisherStage) {
                 Stage.PublisherStage publisherStage = (Stage.PublisherStage) stage;
                 Publisher<T> rsPublisher = (Publisher<T>) publisherStage.getRsPublisher();
                 multi = MultiRS.toMulti(rsPublisher);
 
             } else if (stage instanceof Stage.Of) {
-                //Collection
                 Stage.Of stageOf = (Stage.Of) stage;
                 List<?> fixedData = StreamSupport.stream(stageOf.getElements().spliterator(), false)
                         .collect(Collectors.toList());
                 multi = (Multi<T>) Multi.just(fixedData);
 
             } else if (stage instanceof Stage.Map) {
-                // Transform stream
                 Stage.Map mapStage = (Stage.Map) stage;
                 Function<Object, Object> mapper = (Function<Object, Object>) mapStage.getMapper();
                 processorList.add(new MultiMappingProcessor<>(mapper::apply));
 
             } else if (stage instanceof Stage.Filter) {
-                //Filter stream
                 Stage.Filter stageFilter = (Stage.Filter) stage;
                 Predicate<T> predicate = (Predicate<T>) stageFilter.getPredicate();
                 processorList.add(new FilterProcessor(predicate));
@@ -110,7 +112,7 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
             } else if (stage instanceof Stage.Peek) {
                 Stage.Peek peekStage = (Stage.Peek) stage;
                 Consumer<Object> peekConsumer = (Consumer<Object>) peekStage.getConsumer();
-                processorList.add(new PeekProcessor<Object>(peekConsumer::accept));
+                processorList.add(new PeekProcessor<Object>(peekConsumer));
 
             } else if (stage instanceof Stage.Limit) {
                 Stage.Limit limitStage = (Stage.Limit) stage;
@@ -122,7 +124,6 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
                 processorList.add(new FlatMapProcessor(mapper));
 
             } else if (stage instanceof Stage.SubscriberStage) {
-                //Subscribe to stream
                 Stage.SubscriberStage subscriberStage = (Stage.SubscriberStage) stage;
                 Subscriber<T> subscriber = (Subscriber<T>) subscriberStage.getRsSubscriber();
                 this.completionStage = new CompletableFuture<>();
@@ -136,7 +137,7 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
                 Stage.Collect collectStage = (Stage.Collect) stage;
                 this.subscriberWithCompletionStage = new HelidonSubscriberWithCompletionStage<>(collectStage, processorList);
                 // If producer was supplied
-                if(multi != null){
+                if (multi != null) {
                     multi.subscribe(HybridSubscriber.from(subscriberWithCompletionStage.getSubscriber()));
                 }
 
@@ -153,7 +154,7 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
 
     @Override
     public Function<Multi<T>, CompletionStage<T>> finisher() {
-        return t -> getCompletableStage();
+        return t -> getCompletionStage();
     }
 
     @Override
@@ -161,15 +162,70 @@ public class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, Compl
         return new HashSet<>(Collections.singletonList(Characteristics.IDENTITY_FINISH));
     }
 
-    public <U, W> SubscriberWithCompletionStage<U, W> getSubscriberWithCompletionStage() {
+    /**
+     * Return subscriber from even incomplete graph,
+     * in case of incomplete graph does subscriptions downstream automatically in the
+     * {@link io.helidon.microprofile.reactive.HelidonSubscriberWithCompletionStage}.
+     *
+     * @param <U> type of items subscriber consumes
+     * @param <W> type of items subscriber emits
+     * @return {@link org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage}
+     */
+    @SuppressWarnings("unchecked")
+    <U, W> SubscriberWithCompletionStage<U, W> getSubscriberWithCompletionStage() {
         return (SubscriberWithCompletionStage<U, W>) subscriberWithCompletionStage;
     }
 
-    public <U> CompletionStage<U> getCompletableStage() {
+    /**
+     * Return {@link java.util.concurrent.CompletionStage}
+     * either from supplied {@link org.reactivestreams.Subscriber}
+     * for example by {@link org.reactivestreams.Publisher#subscribe(org.reactivestreams.Subscriber)}
+     * or from completion stage for example
+     * {@link org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder#forEach(java.util.function.Consumer)}.
+     *
+     * @param <U> type of items subscriber consumes
+     * @return {@link io.helidon.microprofile.reactive.HelidonSubscriberWithCompletionStage}
+     */
+    @SuppressWarnings("unchecked")
+    <U> CompletionStage<U> getCompletionStage() {
         return (CompletionStage<U>) (completionStage != null ? completionStage : subscriberWithCompletionStage.getCompletion());
     }
 
-    public <T, R> Processor<T, R> getProcessor() {
+    /**
+     * Return {@link org.reactivestreams.Processor} wrapping all processor stages from processor builder.
+     * <p/>See example:
+     * <pre>{@code
+     *   Processor<Integer, String> processor = ReactiveStreams.<Integer>builder()
+     *       .map(i -> i + 1)
+     *       .flatMap(i -> ReactiveStreams.of(i, i))
+     *       .map(i -> Integer.toString(i))
+     *       .buildRs();
+     * }</pre>
+     *
+     * @param <T> type of items subscriber consumes
+     * @param <R> type of items subscriber emits
+     * @return {@link org.reactivestreams.Processor} wrapping all processor stages
+     */
+    @SuppressWarnings("unchecked")
+    <T, R> Processor<T, R> getProcessor() {
         return (Processor<T, R>) new HelidonCumulativeProcessor(processorList);
+    }
+
+    /**
+     * Returns {@link org.reactivestreams.Publisher} made from supplied stages.
+     * <p/>See example:
+     * <pre>{@code
+     *   ReactiveStreams
+     *      .of("10", "20", "30")
+     *      .map(a -> a.replaceAll("0", ""))
+     *      .map(Integer::parseInt)
+     *      .buildRs()
+     * }</pre>
+     *
+     * @return {@link org.reactivestreams.Publisher}
+     */
+    Publisher<T> getPublisher() {
+        subscribeUpStream();
+        return MultiRS.from(multi);
     }
 }

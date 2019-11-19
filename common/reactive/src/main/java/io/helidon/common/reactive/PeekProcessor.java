@@ -20,7 +20,7 @@ package io.helidon.common.reactive;
 import java.util.function.Consumer;
 
 /**
- * Invoke supplied consumer for every item in the stream
+ * Invoke supplied consumer for every item in the stream.
  *
  * @param <T> both input/output type
  */
@@ -28,6 +28,11 @@ public class PeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private Consumer<T> consumer;
 
+    /**
+     * Invoke supplied consumer for every item in the stream.
+     *
+     * @param consumer supplied consumer to be invoke for every item
+     */
     public PeekProcessor(Consumer<T> consumer) {
         this.consumer = consumer;
     }
@@ -45,8 +50,6 @@ public class PeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     @Override
     public String toString() {
-        return "PeekProcessor{" +
-                "consumer=" + consumer +
-                '}';
+        return "PeekProcessor{" + "consumer=" + consumer + '}';
     }
 }

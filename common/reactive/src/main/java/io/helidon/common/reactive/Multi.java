@@ -46,41 +46,49 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Invoke provided consumer for every item in stream
+     * Invoke provided consumer for every item in stream.
      *
      * @param consumer consumer to be invoked
-     * @param <U> consumer argument type
      * @return Multi
      */
-    default <U> Multi<U> peek(Consumer<U> consumer) {
-        PeekProcessor processor = new PeekProcessor(consumer);
+    default Multi<T> peek(Consumer<T> consumer) {
+        PeekProcessor<T> processor = new PeekProcessor<T>(consumer);
         this.subscribe(processor);
         return processor;
     }
 
     /**
-     * Filter stream items with provided predicate
+     * Filter stream items with provided predicate.
      *
      * @param predicate predicate to filter stream with
-     * @param <U> type of the predicate argument
      * @return Multi
      */
-    default <U> Multi<U> filter(Predicate<U> predicate) {
-        FilterProcessor processor = new FilterProcessor(predicate);
+    default Multi<T> filter(Predicate<T> predicate) {
+        FilterProcessor<T> processor = new FilterProcessor<>(predicate);
         this.subscribe(processor);
         return processor;
     }
 
     /**
-     * Limit stream to allow only specified number of items to pass
+     * Limit stream to allow only specified number of items to pass.
      *
-     * @param supplier with expected number of items to be produced
+     * @param limit with expected number of items to be produced
      * @return Multi
      */
-    default <U> Multi<U> limit(Long limit) {
-        LimitProcessor processor = new LimitProcessor(limit);
+    default Multi<T> limit(long limit) {
+        LimitProcessor<T> processor = new LimitProcessor<>(limit);
         this.subscribe(processor);
         return processor;
+    }
+
+    /**
+     * Terminal stage, invokes provided consumer for every item in the stream.
+     *
+     * @param consumer consumer to be invoked for each item
+     */
+    default void forEach(Consumer<T> consumer) {
+        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer, null, null, null);
+        this.subscribe(subscriber);
     }
 
     /**

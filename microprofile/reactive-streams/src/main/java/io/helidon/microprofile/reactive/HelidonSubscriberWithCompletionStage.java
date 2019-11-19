@@ -17,15 +17,6 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
-import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
-import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
-import org.reactivestreams.Processor;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +24,21 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
+import io.helidon.common.reactive.Flow;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
+
+import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
+import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
+import org.reactivestreams.Processor;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+/**
+ * Subscriber with preceding processors included,
+ * automatically makes all downstream subscriptions when its subscribe method is called.
+ *
+ * @param <T> type of streamed item
+ */
 public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCompletionStage<T, Object> {
 
     private final Processor<Object, Object> connectingProcessor;
@@ -43,12 +49,16 @@ public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCo
 
 
     /**
-     * Subscriber with preceding processors included, automatically makes all downstream subscriptions when its subscribe method is called.
+     * Subscriber with preceding processors included,
+     * automatically makes all downstream subscriptions when its subscribe method is called.
      *
-     * @param collectStage
-     * @param precedingProcessorList
+     * @param collectStage {@link org.eclipse.microprofile.reactive.streams.operators.spi.Stage.Collect}
+     *                     for example {@link org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder#forEach(java.util.function.Consumer)}
+     * @param precedingProcessorList ordered list of preceding processors(needed for automatic subscription in case of incomplete graph)
      */
-    public HelidonSubscriberWithCompletionStage(Stage.Collect collectStage, List<Flow.Processor<Object, Object>> precedingProcessorList) {
+    @SuppressWarnings("unchecked")
+    HelidonSubscriberWithCompletionStage(Stage.Collect collectStage,
+                                         List<Flow.Processor<Object, Object>> precedingProcessorList) {
         this.collectStage = collectStage;
         //preceding processors
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
@@ -62,9 +72,11 @@ public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCo
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Subscriber<T> getSubscriber() {
         return (Subscriber<T>) connectingProcessor;
     }
+
 
     private Subscriber<T> prepareSubscriber() {
         return new Subscriber<T>() {
@@ -79,6 +91,7 @@ public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCo
             }
 
             @Override
+            @SuppressWarnings("unchecked")
             public void onNext(Object t) {
                 if (!closed.get()) {
                     BiConsumer<Object, Object> accumulator = (BiConsumer) collectStage.getCollector().accumulator();
@@ -101,6 +114,11 @@ public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCo
         };
     }
 
+    /**
+     * Artificial processor, in case of incomplete graph does subscriptions downstream automatically.
+     *
+     * @return Artificial {@link org.reactivestreams.Processor}
+     */
     private Processor<Object, Object> prepareConnectingProcessor() {
         return new Processor<Object, Object>() {
             @Override
@@ -112,8 +130,7 @@ public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCo
             public void onSubscribe(Subscription s) {
                 // This is a time for connecting all pre-processors and subscriber
                 Processor<Object, Object> lastProcessor = null;
-                for (Iterator<Processor<Object, Object>> it = processorList.iterator(); it.hasNext(); ) {
-                    Processor<Object, Object> processor = it.next();
+                for (Processor<Object, Object> processor : processorList) {
                     if (lastProcessor != null) {
                         lastProcessor.subscribe(processor);
                     }

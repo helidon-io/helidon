@@ -50,6 +50,5 @@ public class IntSequencePublisher implements Publisher<Integer>, Subscription {
     @Override
     public void cancel() {
         closed.set(true);
-        subscriber.onComplete();
     }
 }

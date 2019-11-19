@@ -20,7 +20,7 @@ package io.helidon.common.reactive;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Invoke supplied consumer for every item in the stream
+ * Let pass only specified number of items.
  *
  * @param <T> both input/output type
  */
@@ -28,16 +28,38 @@ public class LimitProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private final AtomicLong counter;
 
+    /**
+     * Processor with specified number of allowed items.
+     *
+     * @param limit number of items to pass
+     */
     public LimitProcessor(Long limit) {
         counter = new AtomicLong(limit);
     }
 
+
+    @Override
+    protected void tryRequest(Flow.Subscription s) {
+        if (s != null && !getSubscriber().isClosed()) {
+            long n = getRequestedCounter().get();
+            if (n > 0) {
+                //Request one by one with limit
+                s.request(1);
+            }
+        }
+    }
+
     @Override
     protected void hookOnNext(T item) {
-        if (0 < counter.getAndDecrement()) {
+        long actCounter = this.counter.getAndDecrement();
+        if (0 < actCounter) {
             submit(item);
-        } else {
-            tryComplete();
+            if (1 < actCounter) {
+                // Don't request after last run
+                tryRequest(getSubscription());
+            } else {
+                tryComplete();
+            }
         }
     }
 
@@ -48,8 +70,6 @@ public class LimitProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     @Override
     public String toString() {
-        return "LimitProcessor{" +
-                "counter=" + counter +
-                '}';
+        return "LimitProcessor{" + "counter=" + counter + '}';
     }
 }

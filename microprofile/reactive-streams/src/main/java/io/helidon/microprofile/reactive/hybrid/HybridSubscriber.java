@@ -17,13 +17,21 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
-import io.helidon.common.reactive.Flow;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
 import java.security.InvalidParameterException;
 import java.util.Objects;
 
+import io.helidon.common.reactive.Flow;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+/**
+ * Wrapper for {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscriber}
+ * or {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Subscriber},
+ * to be used interchangeably.
+ *
+ * @param <T> type of items
+ */
 public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
     private Flow.Subscriber<T> flowSubscriber;
@@ -37,11 +45,31 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
         this.reactiveSubscriber = subscriber;
     }
 
+    /**
+     * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
+     * from {@link io.helidon.common.reactive.Flow.Subscriber}.
+     *
+     * @param subscriber {@link io.helidon.common.reactive.Flow.Subscriber} to wrap
+     * @param <T>        type of items
+     * @return {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
+     * compatible with {@link org.reactivestreams Reactive Streams}
+     * and {@link io.helidon.common.reactive Helidon reactive streams}
+     */
     public static <T> HybridSubscriber<T> from(Flow.Subscriber<T> subscriber) {
         Objects.requireNonNull(subscriber);
         return new HybridSubscriber<T>(subscriber);
     }
 
+    /**
+     * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
+     * from {@link org.reactivestreams.Subscriber}.
+     *
+     * @param subscriber {@link org.reactivestreams.Subscriber} to wrap
+     * @param <T>       type of items
+     * @return {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
+     * compatible with {@link org.reactivestreams Reactive Streams}
+     * and {@link io.helidon.common.reactive Helidon reactive streams}
+     */
     public static <T> HybridSubscriber<T> from(Subscriber<T> subscriber) {
         Objects.requireNonNull(subscriber);
         return new HybridSubscriber<T>(subscriber);

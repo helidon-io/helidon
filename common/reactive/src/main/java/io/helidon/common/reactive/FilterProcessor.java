@@ -20,14 +20,17 @@ package io.helidon.common.reactive;
 import java.util.function.Predicate;
 
 /**
- * Processor filtering stream with supplied predicate
- *
+ * Processor filtering stream with supplied predicate.
  * @param <T> both input/output type
  */
 public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private Predicate<T> predicate;
 
+    /**
+     * Processor filtering stream with supplied predicate.
+     * @param predicate provided predicate to filter stream with
+     */
     public FilterProcessor(Predicate<T> predicate) {
         this.predicate = predicate;
     }

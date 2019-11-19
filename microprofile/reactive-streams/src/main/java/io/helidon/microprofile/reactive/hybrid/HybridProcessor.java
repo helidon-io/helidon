@@ -17,13 +17,22 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
+import java.security.InvalidParameterException;
+
 import io.helidon.common.reactive.Flow;
+
 import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.security.InvalidParameterException;
-
+/**
+ * Wrapper for {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Processor}
+ * or {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Processor},
+ * to be used interchangeably.
+ *
+ * @param <T> type of items processor consumes
+ * @param <R> type of items processor emits
+ */
 public class HybridProcessor<T, R> implements Flow.Processor<T, R>, Processor<T, R> {
     private Processor<T, R> reactiveProcessor;
     private Flow.Processor<T, R> flowProcessor;
@@ -36,10 +45,32 @@ public class HybridProcessor<T, R> implements Flow.Processor<T, R>, Processor<T,
         this.flowProcessor = processor;
     }
 
+    /**
+     * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridProcessor}
+     * from {@link io.helidon.common.reactive.Flow.Processor}.
+     *
+     * @param processor {@link io.helidon.common.reactive.Flow.Processor} to wrap
+     * @param <T>       type of items processor consumes
+     * @param <R>       type of items processor emits
+     * @return {@link io.helidon.microprofile.reactive.hybrid.HybridProcessor}
+     * compatible with {@link org.reactivestreams Reactive Streams}
+     * and {@link io.helidon.common.reactive Helidon reactive streams}
+     */
     public static <T, R> HybridProcessor<T, R> from(Flow.Processor<T, R> processor) {
         return new HybridProcessor<T, R>(processor);
     }
 
+    /**
+     * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridProcessor}
+     * from {@link org.reactivestreams.Processor}.
+     *
+     * @param processor {@link org.reactivestreams.Processor} to wrap
+     * @param <T>       type of items processor consumes
+     * @param <R>       type of items processor emits
+     * @return {@link io.helidon.microprofile.reactive.hybrid.HybridProcessor}
+     * compatible with {@link org.reactivestreams Reactive Streams}
+     * and {@link io.helidon.common.reactive Helidon reactive streams}
+     */
     public static <T, R> HybridProcessor<T, R> from(Processor<T, R> processor) {
         return new HybridProcessor<T, R>(processor);
     }

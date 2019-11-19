@@ -17,21 +17,29 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+
 import io.helidon.common.reactive.BaseProcessor;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
+
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.reactivestreams.Publisher;
 
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-
+/**
+ * Flatten the elements emitted by publishers produced by the mapper function to this stream.
+ */
 public class FlatMapProcessor extends BaseProcessor<Object, Object> implements Multi<Object> {
 
     private final Function<Object, Graph> mapper;
-    private Flow.Subscriber<? super Object> subscriber;
 
+    /**
+     * Flatten the elements emitted by publishers produced by the mapper function to this stream.
+     * @param mapper publisher to flatten his data to this stream
+     */
+    @SuppressWarnings("unchecked")
     public FlatMapProcessor(Function<?, Graph> mapper) {
         this.mapper = (Function<Object, Graph>) mapper;
     }
@@ -44,7 +52,7 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
         try {
             ReactiveStreams
                     .fromPublisher(publisher)
-                    .forEach(subItem -> submit(subItem))
+                    .forEach(this::submit)
                     .run().toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             onError(e);
@@ -59,9 +67,6 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
 
     @Override
     public String toString() {
-        return "FlatMapProcessor{" +
-                "mapper=" + mapper +
-                ", subscriber=" + subscriber +
-                '}';
+        return String.format("FlatMapProcessor{mapper=%s}", mapper);
     }
 }

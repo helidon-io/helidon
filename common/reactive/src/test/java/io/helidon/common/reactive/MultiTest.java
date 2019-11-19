@@ -15,9 +15,12 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 import java.util.concurrent.Flow.Subscription;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -243,6 +246,71 @@ public class MultiTest {
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    void testPeekInt() {
+        AtomicInteger sum1 = new AtomicInteger();
+        AtomicInteger sum2 = new AtomicInteger();
+        Multi.just(1, 2, 3)
+                .peek(sum1::addAndGet)
+                .forEach(sum2::addAndGet);
+
+        assertThat(sum1.get(), is(equalTo(1 + 2 + 3)));
+        assertThat(sum1.get(), is(equalTo(sum2.get())));
+    }
+
+    @Test
+    void testPeekString() {
+        StringBuilder sbBefore = new StringBuilder();
+        AtomicInteger sum = new AtomicInteger();
+        Multi.just("1", "2", "3")
+                .peek(sbBefore::append)
+                .map(Integer::parseInt)
+                .forEach(sum::addAndGet);
+        assertThat(sbBefore.toString(), is(equalTo("123")));
+        assertThat(sum.get(), is(equalTo(1 + 2 + 3)));
+    }
+
+    @Test
+    void testFilter() {
+        StringBuilder sbBefore = new StringBuilder();
+        AtomicInteger sum = new AtomicInteger();
+        Multi.just("1", "2", "3")
+                .peek(sbBefore::append)
+                .map(Integer::parseInt)
+                .filter(i -> i != 2)
+                .forEach(sum::addAndGet);
+        assertThat(sbBefore.toString(), is(equalTo("123")));
+        assertThat(sum.get(), is(equalTo(1 + 3)));
+    }
+
+    @Test
+    void testLimit() {
+        final List<Integer> TEST_DATA = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 9);
+        final long TEST_LIMIT = 3;
+        final int EXPECTED_SUM = 1 + 2 + 3;
+
+        AtomicInteger multiSum1 = new AtomicInteger();
+        AtomicInteger multiSum2 = new AtomicInteger();
+
+        Multi.just(TEST_DATA)
+                .peek(multiSum1::addAndGet)
+                .limit(TEST_LIMIT)
+                .forEach(multiSum2::addAndGet);
+
+        AtomicInteger streamSum1 = new AtomicInteger();
+        AtomicInteger streamSum2 = new AtomicInteger();
+
+        TEST_DATA.stream()
+                .peek(streamSum1::addAndGet)
+                .limit(TEST_LIMIT)
+                .forEach(streamSum2::addAndGet);
+
+        assertThat(multiSum1.get(), is(equalTo(EXPECTED_SUM)));
+        assertThat(multiSum2.get(), is(equalTo(EXPECTED_SUM)));
+        assertThat(streamSum1.get(), is(equalTo(EXPECTED_SUM)));
+        assertThat(streamSum2.get(), is(equalTo(EXPECTED_SUM)));
     }
 
     private static class MultiTestSubscriber<T> extends TestSubscriber<T> {

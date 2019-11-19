@@ -17,21 +17,28 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.helidon.common.reactive.Flow;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
+
 import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
+/**
+ * {@link org.reactivestreams.Processor} wrapping ordered list of {@link org.reactivestreams.Processor}s.
+ */
 public class HelidonCumulativeProcessor implements Processor<Object, Object> {
     private LinkedList<Processor<Object, Object>> processorList = new LinkedList<>();
-    private Processor<Object, Object> subscriber;
 
-    public HelidonCumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
+    /**
+     * Create {@link org.reactivestreams.Processor} wrapping ordered list of {@link io.helidon.common.reactive.Flow.Processor}s.
+     *
+     * @param precedingProcessorList ordered list of {@link io.helidon.common.reactive.Flow.Processor}s
+     */
+    HelidonCumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
         //preceding processors
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
     }
@@ -45,8 +52,7 @@ public class HelidonCumulativeProcessor implements Processor<Object, Object> {
     public void onSubscribe(Subscription subscription) {
         // This is the time for connecting all processors
         Processor<Object, Object> lastProcessor = null;
-        for (Iterator<Processor<Object, Object>> it = processorList.iterator(); it.hasNext(); ) {
-            Processor<Object, Object> processor = it.next();
+        for (Processor<Object, Object> processor : processorList) {
             if (lastProcessor != null) {
                 lastProcessor.subscribe(processor);
             }

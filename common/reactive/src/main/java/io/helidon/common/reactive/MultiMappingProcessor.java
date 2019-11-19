@@ -30,7 +30,11 @@ final class MultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements M
 
     private final Mapper<T, U> mapper;
 
-    MultiMappingProcessor(Mapper<T, U> mapper) {
+    /**
+     * Processor of {@link Publisher} to {@link Single} that publishes and maps each received item.
+     * @param mapper supplied for all items to be mapped with
+     */
+    public MultiMappingProcessor(Mapper<T, U> mapper) {
         this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
     }
 
