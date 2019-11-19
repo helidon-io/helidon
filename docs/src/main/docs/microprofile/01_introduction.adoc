@@ -47,11 +47,27 @@ how you should declare dependency management for Helidon applications.
 Then declare the following dependency in your project:
 
 [source,xml]
-.Maven Dependency
+.Maven Dependency for full MicroProfile
 ----
 <dependency>
   <groupId>io.helidon.microprofile.bundles</groupId>
-  <artifactId>helidon-microprofile-3.0</artifactId>
+  <artifactId>helidon-microprofile</artifactId>
+</dependency>
+----
+
+The above dependency adds all the features available in MicroProfile. If you
+want to start with a smaller core set of features then you can use the
+`core` bundle instead. This bundle includes the base feature in MicroProfile
+(such as JAX-RS, CDI, JSON-P/B, and Config) and leaves out some of the
+additional features such as Metrics and Tracing. You can add those dependencies
+individually if you choose.
+
+[source,xml]
+.Maven Dependency for MicroProfile core features only
+----
+<dependency>
+  <groupId>io.helidon.microprofile.bundles</groupId>
+  <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
 ----
 

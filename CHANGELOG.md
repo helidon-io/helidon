@@ -43,6 +43,14 @@ It also includes a number of additional bug fixes and enhancements.
 - Remove com.google.code.findbugs:jsr305 [1119](https://github.com/oracle/helidon/pull/1119)
 - Documentation [1075](https://github.com/oracle/helidon/pull/1075) [1123](https://github.com/oracle/helidon/pull/1123) [1118](https://github.com/oracle/helidon/pull/1118) [1105](https://github.com/oracle/helidon/pull/1105) [1079](https://github.com/oracle/helidon/pull/1079)
 
+### Deprecations
+
+- The following MicroProfile bundles are deprecated: `helidon-microprofile-3.0`,
+  `helidon-microprofile-2.2`, `helidon-microprofile-1.2`, `helidon-microprofile-1.1`,
+  `helidon-microprofile-1.0`. Use `helidon-microprofile` or
+  `helidon-microprofile-core` instead.
+
+
 ## Experimental
 
 The following enhancements are experimental. They should be considered unstable and subject

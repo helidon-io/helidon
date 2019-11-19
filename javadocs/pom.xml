@@ -326,7 +326,7 @@
         <!-- microprofile -->
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-1.2</artifactId>
+            <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>

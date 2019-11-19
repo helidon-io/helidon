@@ -50,6 +50,16 @@
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-webserver</artifactId>
         </dependency>
+        <!--
+            The following dependency simplifies developers' poms so they can add
+            dependencies on this artifact without having to depend on the
+            security jersey client integration themselves.
+        -->
+        <dependency>
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-jersey-client</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
