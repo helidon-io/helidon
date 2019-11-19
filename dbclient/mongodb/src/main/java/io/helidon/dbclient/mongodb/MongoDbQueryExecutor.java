@@ -77,13 +77,15 @@ final class MongoDbQueryExecutor {
     ) {
 
         return stmtFuture.thenApply(mongoStmt -> {
-            MongoCollection<Document> mc = dbStatement.db()
+            final MongoCollection<Document> mc = dbStatement.db()
                     .getCollection(mongoStmt.getCollection());
-            Document query = mongoStmt.getQuery();
-            Document projection = mongoStmt.getProjection();
+            final Document query = mongoStmt.getQuery();
+            final Document projection = mongoStmt.getProjection();
             LOGGER.fine(() -> String.format(
                     "Query: %s, Projection: %s", query.toString(), (projection != null ? projection : "N/A")));
-            FindPublisher<Document> publisher = mc.find((query != null) ? query : MongoDbStatement.EMPTY);
+            FindPublisher<Document> publisher = dbStatement.noTx()
+                     ? mc.find(query)
+                     : mc.find(dbStatement.txManager().tx(), query);
             if (projection != null) {
                 publisher = publisher.projection(projection);
             }
@@ -91,8 +93,7 @@ final class MongoDbQueryExecutor {
         }).thenApply(mongoPublisher -> {
             return new MongoDbRows<>(
                     mongoPublisher,
-                    dbStatement.dbMapperManager(),
-                    dbStatement.mapperManager(),
+                    dbStatement,
                     DbRow.class,
                     statementFuture,
                     queryFuture);

@@ -23,11 +23,9 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbInterceptorContext;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementType;
@@ -50,21 +48,18 @@ final class MongoDbCommandExecutor {
 
         private final AtomicBoolean resultRequested = new AtomicBoolean(false);
         private final Publisher<Document> publisher;
-        private final DbMapperManager dbMapperManager;
-        private final MapperManager mapperManager;
+        private final MongoDbStatement dbStatement;
         private final CompletableFuture<Void> statementFuture;
         private final CompletableFuture<Long> commandFuture;
 
         CommandRows(
                 Publisher<Document> publisher,
-                DbMapperManager dbMapperManager,
-                MapperManager mapperManager,
+                MongoDbStatement dbStatement,
                 CompletableFuture<Void> statementFuture,
                 CompletableFuture<Long> commandFuture
         ) {
             this.publisher = publisher;
-            this.dbMapperManager = dbMapperManager;
-            this.mapperManager = mapperManager;
+            this.dbStatement = dbStatement;
             this.statementFuture = statementFuture;
             this.commandFuture = commandFuture;
         }
@@ -100,8 +95,7 @@ final class MongoDbCommandExecutor {
 
         private Flow.Publisher<DbRow> toDbPublisher() {
             MongoDbQueryProcessor qp = new MongoDbQueryProcessor(
-                    dbMapperManager,
-                    mapperManager,
+                    dbStatement,
                     statementFuture,
                     commandFuture);
             publisher.subscribe(qp);
@@ -158,13 +152,14 @@ final class MongoDbCommandExecutor {
             MongoDatabase db = dbStatement.db();
             Document command = mongoStmt.getQuery();
             LOGGER.fine(() -> String.format("Command: %s", command.toString()));
-            Publisher<Document> publisher = db.runCommand(command);
+            Publisher<Document> publisher = dbStatement.noTx()
+                    ? db.runCommand(command)
+                    : db.runCommand(dbStatement.txManager().tx(), command);
             return publisher;
         }).thenApply(publisher -> {
             return new CommandRows(
                     publisher,
-                    dbStatement.dbMapperManager(),
-                    dbStatement.mapperManager(),
+                    dbStatement,
                     statementFuture,
                     commandFuture);
         });

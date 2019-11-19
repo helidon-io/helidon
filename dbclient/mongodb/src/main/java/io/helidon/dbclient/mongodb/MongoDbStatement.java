@@ -29,6 +29,7 @@ import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.AbstractStatement;
 import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.mongodb.MongoDbTransaction.TransactionManager;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
 import org.bson.Document;
@@ -73,8 +74,22 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
      */
     protected static final JsonReaderFactory READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
 
+    /** MongoDB database. */
     private final MongoDatabase db;
+    /** MongoDB transaction manager. Set to {@code null} when not running in transaction. */
+    private TransactionManager txManager;
 
+    /**
+     * Creates an instance of MongoDB statement builder.
+     *
+     * @param dbStatementType type of this statement
+     * @param db              mongo database handler
+     * @param statementName   name of this statement
+     * @param statement       text of this statement
+     * @param dbMapperManager db mapper manager to use when mapping types to parameters
+     * @param mapperManager   mapper manager to use when mapping results
+     * @param interceptors    interceptors to be executed
+     */
     MongoDbStatement(DbStatementType dbStatementType,
                      MongoDatabase db,
                      String statementName,
@@ -91,6 +106,20 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
               interceptors);
 
         this.db = db;
+        this.txManager = null;
+    }
+
+    /**
+     * Set target transaction for this statement.
+     *
+     * @param tx MongoDB transaction session
+     * @return MongoDB statement builder
+     */
+    @SuppressWarnings("unchecked")
+    <B extends MongoDbStatement> B inTransaction(TransactionManager tx) {
+        this.txManager = tx;
+        this.txManager.addStatement(this);
+        return (B) this;
     }
 
     String build() {
@@ -120,6 +149,14 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
 
     MongoDatabase db() {
         return db;
+    }
+
+    boolean noTx() {
+        return txManager == null;
+    }
+
+    TransactionManager txManager() {
+        return txManager;
     }
 
     /**
@@ -301,7 +338,7 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
         }
 
         Document getQuery() {
-            return query;
+            return query != null ? query : EMPTY;
         }
 
         Document getValue() {

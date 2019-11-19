@@ -133,6 +133,8 @@
                             <includes>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.simple.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.statement.*IT</include>
+                                <!-- Do not have MongoDB with sessions support yet. -->
+                                <!--include>io.helidon.tests.integration.dbclient.common.tests.transaction.*IT</include-->
                                 <include>io.helidon.tests.integration.dbclient.jdbc.tests.*IT</include>
                             </includes>
                         </configuration>

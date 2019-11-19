@@ -16,6 +16,7 @@
 package io.helidon.dbclient.mongodb;
 
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGeneric;
@@ -23,7 +24,6 @@ import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
-import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.common.AbstractDbExecute;
 import io.helidon.dbclient.common.InterceptorSupport;
 
@@ -32,7 +32,7 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 /**
  * Execute implementation for MongoDB.
  */
-public class MongoDbExecute extends AbstractDbExecute implements DbTransaction {
+public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
 
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
@@ -97,8 +97,4 @@ public class MongoDbExecute extends AbstractDbExecute implements DbTransaction {
                 mapperManager, interceptors);
     }
 
-    @Override
-    public void rollback() {
-
-    }
-}
+ }

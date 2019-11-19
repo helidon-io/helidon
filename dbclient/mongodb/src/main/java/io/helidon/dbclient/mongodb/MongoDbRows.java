@@ -23,7 +23,6 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.MappingProcessor;
 import io.helidon.common.reactive.Multi;
@@ -41,26 +40,22 @@ import org.bson.Document;
  */
 public final class MongoDbRows<T> implements DbRows<T> {
 
-        private final AtomicBoolean resultRequested = new AtomicBoolean();
-        private final FindPublisher<Document> documentFindPublisher;
-        private final DbMapperManager dbMapperManager;
-        private final MapperManager mapperManager;
-        private final CompletableFuture<Long> queryFuture;
-        private final GenericType<T> currentType;
-        private final Function<?, T> resultMapper;
-        private final MongoDbRows<?> parent;
-        private final CompletableFuture<Void> statementFuture;
+    private final AtomicBoolean resultRequested = new AtomicBoolean();
+    private final FindPublisher<Document> documentFindPublisher;
+    private final MongoDbStatement dbStatement;
+    private final CompletableFuture<Long> queryFuture;
+    private final GenericType<T> currentType;
+    private final Function<?, T> resultMapper;
+    private final MongoDbRows<?> parent;
+    private final CompletableFuture<Void> statementFuture;
 
         MongoDbRows(FindPublisher<Document> documentFindPublisher,
-                            DbMapperManager dbMapperManager,
-                            MapperManager mapperManager,
+                            MongoDbStatement dbStatement,
                             Class<T> initialType,
                             CompletableFuture<Void> statementFuture,
                             CompletableFuture<Long> queryFuture) {
             this.documentFindPublisher = documentFindPublisher;
-
-            this.dbMapperManager = dbMapperManager;
-            this.mapperManager = mapperManager;
+            this.dbStatement = dbStatement;
             this.statementFuture = statementFuture;
             this.queryFuture = queryFuture;
             this.currentType = GenericType.create(initialType);
@@ -69,16 +64,14 @@ public final class MongoDbRows<T> implements DbRows<T> {
         }
 
         private MongoDbRows(FindPublisher<Document> documentFindPublisher,
-                            DbMapperManager dbMapperManager,
-                            MapperManager mapperManager,
+                            MongoDbStatement dbStatement,
                             CompletableFuture<Void> statementFuture,
                             CompletableFuture<Long> queryFuture,
                             GenericType<T> nextType,
                             Function<?, T> resultMapper,
                             MongoDbRows<?> parent) {
             this.documentFindPublisher = documentFindPublisher;
-            this.dbMapperManager = dbMapperManager;
-            this.mapperManager = mapperManager;
+            this.dbStatement = dbStatement;
             this.statementFuture = statementFuture;
             this.queryFuture = queryFuture;
             this.resultMapper = resultMapper;
@@ -88,14 +81,14 @@ public final class MongoDbRows<T> implements DbRows<T> {
 
         @Override
         public <U> DbRows<U> map(Function<T, U> mapper) {
-            return new MongoDbRows<>(documentFindPublisher,
-                                     dbMapperManager,
-                                     mapperManager,
-                                     statementFuture,
-                                     queryFuture,
-                                     null,
-                                     mapper,
-                                     this);
+            return new MongoDbRows<>(
+                    documentFindPublisher,
+                    dbStatement,
+                    statementFuture,
+                    queryFuture,
+                    null,
+                    mapper,
+                    this);
         }
 
         @Override
@@ -111,7 +104,7 @@ public final class MongoDbRows<T> implements DbRows<T> {
             Function<T, U> theMapper;
 
             if (null == localCurrentType) {
-                theMapper = value -> mapperManager.map(value,
+                theMapper = value -> dbStatement.mapperManager().map(value,
                                                        GenericType.create(value.getClass()),
                                                        type);
             } else if (localCurrentType.equals(DbMapperManager.TYPE_DB_ROW)) {
@@ -123,11 +116,11 @@ public final class MongoDbRows<T> implements DbRows<T> {
                 theMapper = value -> {
                     //first try db mapper
                     try {
-                        return dbMapperManager.read((DbRow) value, type);
+                        return dbStatement.dbMapperManager().read((DbRow) value, type);
                     } catch (MapperException originalException) {
                         // not found in db mappers, use generic mappers
                         try {
-                            return mapperManager.map(value,
+                            return dbStatement.mapperManager().map(value,
                                                      DbMapperManager.TYPE_DB_ROW,
                                                      type);
                         } catch (MapperException ignored) {
@@ -137,18 +130,18 @@ public final class MongoDbRows<T> implements DbRows<T> {
                 };
             } else {
                 // one type to another
-                theMapper = value -> mapperManager.map(value,
+                theMapper = value -> dbStatement.mapperManager().map(value,
                                                        localCurrentType,
                                                        type);
             }
-            return new MongoDbRows<>(documentFindPublisher,
-                                     dbMapperManager,
-                                     mapperManager,
-                                     statementFuture,
-                                     queryFuture,
-                                     type,
-                                     theMapper,
-                                     this);
+            return new MongoDbRows<>(
+                    documentFindPublisher,
+                    dbStatement,
+                    statementFuture,
+                    queryFuture,
+                    type,
+                    theMapper,
+                    this);
         }
 
         @Override
@@ -183,10 +176,10 @@ public final class MongoDbRows<T> implements DbRows<T> {
         }
 
         private Flow.Publisher<DbRow> toDbPublisher() {
-            MongoDbQueryProcessor qp = new MongoDbQueryProcessor(dbMapperManager,
-                                                   mapperManager,
-                                                   statementFuture,
-                                                   queryFuture);
+            MongoDbQueryProcessor qp = new MongoDbQueryProcessor(
+                    dbStatement,
+                    statementFuture,
+                    queryFuture);
             documentFindPublisher.subscribe(qp);
 
             return qp;

@@ -40,7 +40,7 @@ public class SimpleInsertIT extends AbstractIT {
     @Test
     public void testCreateNamedInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
         Pokemon pokemon = new Pokemon(BASE_ID+1, "Bulbasaur", TYPES.get(4), TYPES.get(12));
-       Long result = DB_CLIENT.execute(exec -> exec
+        Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedInsert("insert-bulbasaur", INSERT_POKEMON_NAMED_ARG)
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
         ).toCompletableFuture().get();
