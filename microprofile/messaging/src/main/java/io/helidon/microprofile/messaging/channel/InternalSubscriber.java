@@ -15,18 +15,22 @@
  *
  */
 
-package io.helidon.microprofile.messaging.reactive;
-
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
-import io.helidon.microprofile.messaging.MessageUtils;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
+package io.helidon.microprofile.messaging.channel;
 
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-public class InternalSubscriber implements Subscriber<Object> {
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.microprofile.messaging.MessagingStreamException;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+/**
+ * Publisher calling underlined messaging method for every received.
+ */
+class InternalSubscriber implements Subscriber<Object> {
 
     private Subscription subscription;
     private Long chunkSize = 5L;
@@ -34,7 +38,7 @@ public class InternalSubscriber implements Subscriber<Object> {
     private Method method;
     private Object beanInstance;
 
-    public InternalSubscriber(Method method, Object beanInstance) {
+    InternalSubscriber(Method method, Object beanInstance) {
         this.method = method;
         this.beanInstance = beanInstance;
     }
@@ -61,15 +65,14 @@ public class InternalSubscriber implements Subscriber<Object> {
             incrementAndCheckChunkPosition();
         } catch (Exception e) {
             //Notify publisher to stop sending
-            // TODO: Maybe should not notify to stop sending, check the spec
             subscription.cancel();
-            throw new RuntimeException(e);
+            throw new MessagingStreamException(e);
         }
     }
 
     @Override
     public void onError(Throwable t) {
-        throw new RuntimeException(t);
+        throw new MessagingStreamException(t);
     }
 
     @Override

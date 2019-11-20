@@ -15,21 +15,19 @@
  *
  */
 
-package io.helidon.microprofile.messaging.connector;
+package io.helidon.microprofile.messaging;
 
-import io.helidon.config.Config;
+/**
+ * Wrapper for all exceptions raised during stream passage.
+ */
+public class MessagingStreamException extends RuntimeException {
 
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-
-interface PublishingConnector extends ConfigurableConnector {
-
-    @Override
-    default Config getChannelsConfig() {
-        return getRootConfig().get("mp.messaging.incoming");
+    /**
+     * Create new {@link MessagingStreamException}.
+     *
+     * @param cause wrapped exception
+     */
+    public MessagingStreamException(Throwable cause) {
+        super(cause);
     }
-
-    Publisher getPublisher(String channelName);
-
-    void subscribe(String channelName, Subscriber subscriber);
 }

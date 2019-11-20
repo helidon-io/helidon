@@ -17,14 +17,14 @@
 
 package io.helidon.microprofile.messaging.connector;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.microprofile.messaging.AdHocConfigBuilder;
-import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
-
 import javax.enterprise.inject.spi.DeploymentException;
 
-public interface ConfigurableConnector {
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
+
+interface ConfigurableConnector {
 
     String getConnectorName();
 
@@ -40,10 +40,12 @@ public interface ConfigurableConnector {
                 .asString();
 
         if (!connectorName.isPresent()) {
-            throw new DeploymentException("No connector configured for channel " + channelName);
+            throw new DeploymentException(String
+                    .format("No connector configured for channel %s", channelName));
         }
         if (!connectorName.get().equals(getConnectorName())) {
-            throw new DeploymentException("Connector name miss match for channel" + channelName);
+            throw new DeploymentException(String
+                    .format("Connector name miss match for channel%s", channelName));
         }
 
         Config connectorConfig = getRootConfig()

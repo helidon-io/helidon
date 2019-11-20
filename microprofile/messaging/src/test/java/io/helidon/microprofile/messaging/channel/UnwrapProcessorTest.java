@@ -15,22 +15,25 @@
  *
  */
 
-package io.helidon.microprofile.messaging.reactive;
+package io.helidon.microprofile.messaging.channel;
 
-import io.helidon.microprofile.messaging.MessageUtils;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.reactivestreams.Subscriber;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.reactivestreams.Subscriber;
 
 public class UnwrapProcessorTest {
 
@@ -62,10 +65,10 @@ public class UnwrapProcessorTest {
         unwrapProcessor.setMethod(method);
         Object unwrappedValue = unwrapProcessor.unwrap(Message.of("test"));
         if (method.getName().endsWith("Message")) {
-            assertTrue(MessageUtils.isTypeMessage(method));
+            Assertions.assertTrue(MessageUtils.isMessageType(method));
             assertTrue(unwrappedValue instanceof Message);
         } else {
-            assertFalse(MessageUtils.isTypeMessage(method));
+            assertFalse(MessageUtils.isMessageType(method));
             assertFalse(unwrappedValue instanceof Message);
         }
     }

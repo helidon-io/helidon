@@ -17,26 +17,45 @@
 
 package io.helidon.microprofile.messaging.connector;
 
-import io.helidon.config.Config;
-import io.helidon.microprofile.messaging.channel.ChannelRouter;
-import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
-import org.reactivestreams.Subscriber;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.config.Config;
+import io.helidon.microprofile.messaging.channel.ChannelRouter;
+
+import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
+import org.reactivestreams.Subscriber;
+
+/**
+ * Connector as defined in configuration.
+ * <p/>
+ * <pre>{@code
+ * mp.messaging.incoming.[channel-name].connector=[connector-name]
+ * ...
+ * mp.messaging.outgoing.[channel-name].connector=[connector-name]
+ * ...
+ * mp.messaging.connector.[connector-name].[attribute]=[value]
+ * ...
+ * }</pre>
+ */
 public class IncomingConnector implements SubscribingConnector {
 
     private final Config config;
     private String connectorName;
     private OutgoingConnectorFactory connectorFactory;
-    private ChannelRouter router;
     private Map<String, Subscriber> subscriberMap = new HashMap<>();
 
+    /**
+     * Create new {@link IncomingConnector}.
+     *
+     * @param connectorName    {@code [connector-name]} as defined in config
+     * @param connectorFactory actual instance of connector bean found in cdi context
+     *                         with annotation {@link org.eclipse.microprofile.reactive.messaging.spi.Connector}
+     * @param router           {@link io.helidon.microprofile.messaging.channel.ChannelRouter} main orchestrator with root config
+     */
     public IncomingConnector(String connectorName, OutgoingConnectorFactory connectorFactory, ChannelRouter router) {
         this.connectorName = connectorName;
         this.connectorFactory = connectorFactory;
-        this.router = router;
         this.config = router.getConfig();
     }
 

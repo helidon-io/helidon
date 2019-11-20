@@ -15,21 +15,20 @@
  *
  */
 
-package io.helidon.microprofile.messaging.reactive;
-
-import io.helidon.microprofile.messaging.MessageUtils;
-import org.reactivestreams.Processor;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
+package io.helidon.microprofile.messaging.channel;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 
+import org.reactivestreams.Processor;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
 /**
  * Unwrap Message payload if incoming method Publisher or Publisher builder
- * has generic return type different than Message
+ * has generic return type different than Message.
  */
-public class UnwrapProcessor implements Processor<Object, Object> {
+class UnwrapProcessor implements Processor<Object, Object> {
 
     private Method method;
     private Subscriber<? super Object> subscriber;
@@ -37,7 +36,7 @@ public class UnwrapProcessor implements Processor<Object, Object> {
     UnwrapProcessor() {
     }
 
-    public static UnwrapProcessor of(Method method, Subscriber<Object> subscriber) {
+    static UnwrapProcessor of(Method method, Subscriber<Object> subscriber) {
         UnwrapProcessor unwrapProcessor = new UnwrapProcessor();
         unwrapProcessor.subscribe(subscriber);
         unwrapProcessor.setMethod(method);
@@ -78,7 +77,7 @@ public class UnwrapProcessor implements Processor<Object, Object> {
         subscriber.onComplete();
     }
 
-    public void setMethod(Method method) {
+    void setMethod(Method method) {
         this.method = method;
     }
 }

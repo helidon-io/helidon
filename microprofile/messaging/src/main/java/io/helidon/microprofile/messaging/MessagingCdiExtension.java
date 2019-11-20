@@ -16,10 +16,7 @@
 
 package io.helidon.microprofile.messaging;
 
-import io.helidon.microprofile.messaging.channel.ChannelRouter;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import java.util.logging.Logger;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -29,32 +26,37 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 
-import java.util.logging.Logger;
+import io.helidon.microprofile.messaging.channel.ChannelRouter;
+
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 
 /**
- * Extension with partial implementation of MicroProfile Reactive Messaging Specification
+ * MicroProfile Reactive Messaging CDI Extension.
  */
 public class MessagingCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
 
     private ChannelRouter channelRouter = new ChannelRouter();
 
-    private void registerChannelMethods(@Observes @WithAnnotations({Incoming.class, Outgoing.class}) ProcessAnnotatedType<?> pat) {
+    private void registerChannelMethods(
+            @Observes
+            @WithAnnotations({Incoming.class, Outgoing.class}) ProcessAnnotatedType<?> pat) {
         // Lookup channel methods
-        pat.getAnnotatedType().getMethods().forEach(m -> channelRouter.addMethod(m));
+        pat.getAnnotatedType().getMethods().forEach(m -> channelRouter.registerMethod(m));
     }
 
-    public void onProcessBean(@Observes ProcessManagedBean event) {
+    private void onProcessBean(@Observes ProcessManagedBean event) {
         // Lookup connectors
         if (null != event.getAnnotatedBeanClass().getAnnotation(Connector.class)) {
-            channelRouter.addConnectorFactory(event.getBean());
+            channelRouter.registerConnectorFactory(event.getBean());
         }
         // Gather bean references
-        //TODO: Multiple bean references(not singleton)
         channelRouter.registerBeanReference(event.getBean());
     }
 
-    public void makeConnections(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
+    private void makeConnections(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
         LOGGER.info("Final connect");
         // Subscribe subscribers and publish publishers
         channelRouter.connect(beanManager);

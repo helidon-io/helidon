@@ -15,7 +15,16 @@
  *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.security.InvalidParameterException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import javax.enterprise.inject.spi.DeploymentException;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
@@ -25,19 +34,29 @@ import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
-import javax.enterprise.inject.spi.DeploymentException;
+class MessageUtils {
 
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.security.InvalidParameterException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+    private MessageUtils() {
+    }
 
-public class MessageUtils {
-
-    public static Object unwrap(Object value, Class<?> type) throws ExecutionException, InterruptedException {
-        //TODO: Stream-line case by case
+    /**
+     * Unwrap values to expected types.
+     * <p/>
+     * Examples:
+     * <pre>{@code
+     * Message<CompletableFuture<Message<String>>>
+     * Message<CompletableFuture<String>>
+     * CompletableFuture<Message<String>>
+     * Message<String>
+     * }</pre>
+     *
+     * @param value value for unwrap
+     * @param type  expected type
+     * @return unwrapped value
+     * @throws ExecutionException   can happen when unwrapping completable
+     * @throws InterruptedException can happen when unwrapping completable
+     */
+    static Object unwrap(Object value, Class<?> type) throws ExecutionException, InterruptedException {
         if (type.equals(Message.class)) {
             if (value instanceof Message) {
                 return value;
@@ -57,7 +76,8 @@ public class MessageUtils {
         }
     }
 
-    public static Object unwrapCompletableFuture(Object o, Class<?> expectedType) throws ExecutionException, InterruptedException {
+    private static Object unwrapCompletableFuture(Object o, Class<?> expectedType)
+            throws ExecutionException, InterruptedException {
         if (CompletableFuture.class.isInstance(o) && !CompletableFuture.class.isAssignableFrom(expectedType)) {
             //Recursion for Message<CompletableFuture<Message<String>>>
             return unwrap(((CompletableFuture) o).get(), expectedType);
@@ -65,19 +85,34 @@ public class MessageUtils {
         return o;
     }
 
-    public static Object unwrap(Object o, Method method) throws ExecutionException, InterruptedException {
-        if (isTypeMessage(method)) {
-            return unwrap(o, Message.class);
+    /**
+     * Same as {@link io.helidon.microprofile.messaging.channel.MessageUtils#unwrap(java.lang.Object, java.lang.Class)}.
+     * But extracts expected type from method reflexively.
+     *
+     * @param value  to unwrap
+     * @param method to extract expected type from
+     * @return unwrapped value
+     * @throws ExecutionException   can happen when unwrapping completable
+     * @throws InterruptedException can happen when unwrapping completable
+     */
+    static Object unwrap(Object value, Method method) throws ExecutionException, InterruptedException {
+        if (isMessageType(method)) {
+            return unwrap(value, Message.class);
         }
-        return unwrap(o, getFirstGenericType(method));
+        return unwrap(value, getFirstGenericType(method));
     }
 
-    public static boolean isTypeMessage(Method method) {
+    /**
+     * Check if expected type is {@link org.eclipse.microprofile.reactive.messaging.Message}.
+     *
+     * @param method {@link java.lang.reflect.Method} to check
+     * @return true is expected type of method is {@link org.eclipse.microprofile.reactive.messaging.Message}
+     */
+    static boolean isMessageType(Method method) {
         Type returnType = method.getGenericReturnType();
         ParameterizedType parameterizedType = (ParameterizedType) returnType;
         Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
 
-        //TODO: Use AbstractChannel.Type enum instead
         if (SubscriberBuilder.class.equals(method.getReturnType())) {
             if (actualTypeArguments.length != 2) {
                 throw new DeploymentException("Invalid method return type " + method);

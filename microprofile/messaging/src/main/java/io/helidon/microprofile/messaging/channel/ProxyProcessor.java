@@ -15,11 +15,13 @@
  *
  */
 
-package io.helidon.microprofile.messaging.reactive;
+package io.helidon.microprofile.messaging.channel;
 
-import io.helidon.microprofile.messaging.MessageUtils;
-import io.helidon.microprofile.messaging.channel.AbstractChannel;
-import io.helidon.microprofile.messaging.channel.ProcessorMethod;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
+
+import javax.enterprise.inject.spi.DeploymentException;
+
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -28,13 +30,8 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import javax.enterprise.inject.spi.DeploymentException;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutionException;
-
 /**
- * Passes publisher to processor method ex:
+ * Passes publisher to processor method. ex:
  * <pre>{@code
  *     @Incoming("inner-processor")
  *     @Outgoing("inner-processor-2")
@@ -43,7 +40,7 @@ import java.util.concurrent.ExecutionException;
  *     }
  * }</pre>
  */
-public class ProxyProcessor implements Processor<Object, Object> {
+class ProxyProcessor implements Processor<Object, Object> {
 
     private final ProcessorMethod processorMethod;
     private final Publisher<Object> publisher;
@@ -52,27 +49,27 @@ public class ProxyProcessor implements Processor<Object, Object> {
     private boolean subscribed = false;
 
     @SuppressWarnings("unchecked")
-    public ProxyProcessor(ProcessorMethod processorMethod) {
+    ProxyProcessor(ProcessorMethod processorMethod) {
         this.processorMethod = processorMethod;
         try {
-            if (processorMethod.getType() == AbstractChannel.Type.PROCESSOR_PUBLISHER_BUILDER_2_PUBLISHER_BUILDER) {
+            if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_2_PUBLISHER_BUILDER) {
                 PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
                 publisher = ((PublisherBuilder<Object>) processorMethod
                         .getMethod()
                         .invoke(processorMethod.getBeanInstance(), paramPublisherBuilder)).buildRs();
 
-            } else if (processorMethod.getType() == AbstractChannel.Type.PROCESSOR_PUBLISHER_2_PUBLISHER) {
+            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PUBLISHER_2_PUBLISHER) {
                 publisher = ((Publisher<Object>) processorMethod
                         .getMethod()
                         .invoke(processorMethod.getBeanInstance(), this));
 
-            } else if (processorMethod.getType() == AbstractChannel.Type.PROCESSOR_VOID_2_PROCESSOR_BUILDER) {
+            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_VOID_2_PROCESSOR_BUILDER) {
                 processor = ((ProcessorBuilder<Object, Object>) processorMethod
                         .getMethod()
                         .invoke(processorMethod.getBeanInstance())).buildRs();
                 publisher = processor;
 
-            } else if (processorMethod.getType() == AbstractChannel.Type.PROCESSOR_VOID_2_PROCESSOR) {
+            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_VOID_2_PROCESSOR) {
                 processor = ((Processor<Object, Object>) processorMethod
                         .getMethod()
                         .invoke(processorMethod.getBeanInstance()));
@@ -88,6 +85,7 @@ public class ProxyProcessor implements Processor<Object, Object> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void subscribe(Subscriber s) {
         if (processor != null) {
             // Backed by real  processor

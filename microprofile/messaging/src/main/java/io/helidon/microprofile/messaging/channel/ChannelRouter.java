@@ -17,16 +17,11 @@
 
 package io.helidon.microprofile.messaging.channel;
 
-import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.messaging.connector.IncomingConnector;
-import io.helidon.microprofile.messaging.connector.OutgoingConnector;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
-import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedMethod;
@@ -34,16 +29,25 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import io.helidon.config.Config;
+import io.helidon.microprofile.config.MpConfig;
+import io.helidon.microprofile.messaging.connector.IncomingConnector;
+import io.helidon.microprofile.messaging.connector.OutgoingConnector;
 
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
+import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
+
+/**
+ * Orchestrator for all found channels, methods and connectors.
+ */
 public class ChannelRouter {
     private Config config = ((MpConfig) ConfigProvider.getConfig()).helidonConfig();
 
-    private List<AbstractChannel> connectableBeanMethods = new ArrayList<>();
+    private List<AbstractMethod> connectableBeanMethods = new ArrayList<>();
 
     private Map<String, UniversalChannel> channelMap = new HashMap<>();
     private Map<String, IncomingConnector> incomingConnectorMap = new HashMap<>();
@@ -53,12 +57,24 @@ public class ChannelRouter {
     private List<Bean<?>> outgoingConnectorFactoryList = new ArrayList<>();
     private BeanManager beanManager;
 
+    /**
+     * Register bean reference with at least one annotated messaging method method.
+     *
+     * @param bean {@link javax.enterprise.inject.spi.Bean} with messaging methods reference
+     * @see org.eclipse.microprofile.reactive.messaging.Incoming
+     * @see org.eclipse.microprofile.reactive.messaging.Outgoing
+     */
     public void registerBeanReference(Bean<?> bean) {
         connectableBeanMethods.stream()
                 .filter(m -> m.getDeclaringType() == bean.getBeanClass())
                 .forEach(m -> m.setDeclaringBean(bean));
     }
 
+    /**
+     * Connect all discovered channel graphs.
+     *
+     * @param beanManager {@link javax.enterprise.inject.spi.BeanManager} for looking-up bean instances of discovered methods
+     */
     public void connect(BeanManager beanManager) {
         this.beanManager = beanManager;
         //Needs to be initialized before connecting,
@@ -67,9 +83,56 @@ public class ChannelRouter {
         outgoingConnectorFactoryList.forEach(this::addIncomingConnector);
         connectableBeanMethods.forEach(m -> m.init(beanManager, config));
 
-
         channelMap.values().forEach(UniversalChannel::findConnectors);
         channelMap.values().stream().filter(UniversalChannel::isLastInChain).forEach(UniversalChannel::connect);
+    }
+
+    /**
+     * Register messaging method.
+     *
+     * @param m {@link javax.enterprise.inject.spi.AnnotatedMethod}
+     *          with {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
+     *          or {@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotation
+     */
+    public void registerMethod(AnnotatedMethod<?> m) {
+        if (m.isAnnotationPresent(Incoming.class) && m.isAnnotationPresent(Outgoing.class)) {
+            this.addProcessorMethod(m);
+        } else if (m.isAnnotationPresent(Incoming.class)) {
+            this.addIncomingMethod(m);
+        } else if (m.isAnnotationPresent(Outgoing.class)) {
+            this.addOutgoingMethod(m);
+        }
+    }
+
+    /**
+     * Register connector bean, can be recognized as a bean implementing
+     * {@link org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory}
+     * or {@link org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory}
+     * or both with annotation {@link org.eclipse.microprofile.reactive.messaging.spi.Connector}.
+     *
+     * @param bean connector bean
+     */
+    public void registerConnectorFactory(Bean<?> bean) {
+        Class<?> beanType = bean.getBeanClass();
+        Connector annotation = beanType.getAnnotation(Connector.class);
+        if (IncomingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
+            incomingConnectorFactoryList.add(bean);
+        }
+        if (OutgoingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
+            outgoingConnectorFactoryList.add(bean);
+        }
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
+    Optional<IncomingConnector> getIncomingConnector(String connectorName) {
+        return Optional.ofNullable(incomingConnectorMap.get(connectorName));
+    }
+
+    Optional<OutgoingConnector> getOutgoingConnector(String connectorName) {
+        return Optional.ofNullable(outgoingConnectorMap.get(connectorName));
     }
 
     private void addIncomingConnector(Bean<?> bean) {
@@ -87,7 +150,7 @@ public class ChannelRouter {
     }
 
     private void addIncomingMethod(AnnotatedMethod m) {
-        IncomingMethod incomingMethod = new IncomingMethod(m, this);
+        IncomingMethod incomingMethod = new IncomingMethod(m);
         incomingMethod.validate();
 
         String channelName = incomingMethod.getIncomingChannelName();
@@ -99,7 +162,7 @@ public class ChannelRouter {
     }
 
     private void addOutgoingMethod(AnnotatedMethod m) {
-        OutgoingMethod outgoingMethod = new OutgoingMethod(m, this);
+        OutgoingMethod outgoingMethod = new OutgoingMethod(m);
         outgoingMethod.validate();
 
         String channelName = outgoingMethod.getOutgoingChannelName();
@@ -111,7 +174,7 @@ public class ChannelRouter {
     }
 
     private void addProcessorMethod(AnnotatedMethod m) {
-        ProcessorMethod channelMethod = new ProcessorMethod(m, this);
+        ProcessorMethod channelMethod = new ProcessorMethod(m);
         channelMethod.validate();
 
         String incomingChannelName = channelMethod.getIncomingChannelName();
@@ -126,39 +189,6 @@ public class ChannelRouter {
         connectableBeanMethods.add(channelMethod);
     }
 
-    public void addMethod(AnnotatedMethod<?> m) {
-        if (m.isAnnotationPresent(Incoming.class) && m.isAnnotationPresent(Outgoing.class)) {
-            this.addProcessorMethod(m);
-        } else if (m.isAnnotationPresent(Incoming.class)) {
-            this.addIncomingMethod(m);
-        } else if (m.isAnnotationPresent(Outgoing.class)) {
-            this.addOutgoingMethod(m);
-        }
-    }
-
-    public void addConnectorFactory(Bean<?> bean) {
-        Class<?> beanType = bean.getBeanClass();
-        Connector annotation = beanType.getAnnotation(Connector.class);
-        if (IncomingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
-            incomingConnectorFactoryList.add(bean);
-        }
-        if (OutgoingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
-            outgoingConnectorFactoryList.add(bean);
-        }
-    }
-
-    public Optional<IncomingConnector> getIncomingConnector(String connectorName) {
-        return Optional.ofNullable(incomingConnectorMap.get(connectorName));
-    }
-
-    public Optional<OutgoingConnector> getOutgoingConnector(String connectorName) {
-        return Optional.ofNullable(outgoingConnectorMap.get(connectorName));
-    }
-
-    public Config getConfig() {
-        return config;
-    }
-
     private UniversalChannel getOrCreateChannel(String channelName) {
         UniversalChannel universalChannel = channelMap.get(channelName);
         if (universalChannel == null) {
@@ -168,7 +198,8 @@ public class ChannelRouter {
         return universalChannel;
     }
 
-    public static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
+    @SuppressWarnings("unchecked")
+    static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
         javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {

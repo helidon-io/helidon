@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging;
+package io.helidon.microprofile.messaging.channel;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,6 +24,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
+
+import io.helidon.microprofile.messaging.channel.MessageUtils;
+
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

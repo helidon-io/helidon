@@ -18,9 +18,10 @@
 package io.helidon.microprofile.messaging.connector;
 
 import io.helidon.config.Config;
+
 import org.reactivestreams.Subscriber;
 
-public interface SubscribingConnector extends ConfigurableConnector {
+interface SubscribingConnector extends ConfigurableConnector {
 
     @Override
     default Config getChannelsConfig() {

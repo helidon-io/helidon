@@ -15,21 +15,21 @@
  *
  */
 
-package io.helidon.microprofile.messaging.connector;
+package io.helidon.microprofile.messaging;
 
-import io.helidon.config.Config;
+import javax.enterprise.inject.spi.DeploymentException;
 
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
+/**
+ * Raised when no connector of given name has been found.
+ */
+public class NoConnectorFoundException extends DeploymentException {
 
-interface PublishingConnector extends ConfigurableConnector {
-
-    @Override
-    default Config getChannelsConfig() {
-        return getRootConfig().get("mp.messaging.incoming");
+    /**
+     * Create new {@link NoConnectorFoundException}.
+     *
+     * @param connectorName name of the connector
+     */
+    public NoConnectorFoundException(String connectorName) {
+        super(String.format("No connector %s found!", connectorName));
     }
-
-    Publisher getPublisher(String channelName);
-
-    void subscribe(String channelName, Subscriber subscriber);
 }

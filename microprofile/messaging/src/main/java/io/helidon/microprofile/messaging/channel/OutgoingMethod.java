@@ -17,65 +17,63 @@
 
 package io.helidon.microprofile.messaging.channel;
 
-import io.helidon.config.Config;
-import io.helidon.microprofile.messaging.reactive.InternalPublisher;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.reactivestreams.Publisher;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
-import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
+import io.helidon.config.Config;
 
-public class OutgoingMethod extends AbstractChannel {
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.reactivestreams.Publisher;
 
-    private static final Logger LOGGER = Logger.getLogger(OutgoingMethod.class.getName());
+class OutgoingMethod extends AbstractMethod {
 
     private Publisher publisher;
 
-    public OutgoingMethod(AnnotatedMethod method, ChannelRouter router) {
-        super(method.getJavaMember(), router);
-        super.outgoingChannelName = method.getAnnotation(Outgoing.class).value();
+    OutgoingMethod(AnnotatedMethod method) {
+        super(method.getJavaMember());
+        super.setOutgoingChannelName(method.getAnnotation(Outgoing.class).value());
         resolveSignatureType();
     }
 
     @Override
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
-        if (type.isInvokeAtAssembly()) {
+        if (getType().isInvokeAtAssembly()) {
             try {
-                switch (type) {
+                switch (getType()) {
                     case OUTGOING_VOID_2_PUBLISHER:
-                        publisher = (Publisher) method.invoke(beanInstance);
+                        publisher = (Publisher) getMethod().invoke(getBeanInstance());
                         break;
                     case OUTGOING_VOID_2_PUBLISHER_BUILDER:
-                        publisher = ((PublisherBuilder) method.invoke(beanInstance)).buildRs();
+                        publisher = ((PublisherBuilder) getMethod().invoke(getBeanInstance())).buildRs();
                         break;
                     default:
-                        throw new UnsupportedOperationException("Not implemented signature " + type);
+                        throw new UnsupportedOperationException(String
+                                .format("Not implemented signature %s", getType()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         } else {
             // Invoke on each request publisher
-            publisher = new InternalPublisher(method, beanInstance);
+            publisher = new InternalPublisher(getMethod(), getBeanInstance());
         }
     }
 
-    public void validate() {
-        if (outgoingChannelName == null || outgoingChannelName.trim().isEmpty()) {
-            throw new DeploymentException("Missing channel name in annotation @Outgoing, method: "
-                    + method.toString());
+    void validate() {
+        if (getOutgoingChannelName() == null || getOutgoingChannelName().trim().isEmpty()) {
+            throw new DeploymentException(String
+                    .format("Missing channel name in annotation @Outgoing, method: %s", getMethod()));
         }
-        if (method.getReturnType().equals(Void.TYPE)) {
-            throw new DeploymentException("Method annotated as @Outgoing channel cannot have return type void, method: "
-                    + method.toString());
+        if (getMethod().getReturnType().equals(Void.TYPE)) {
+            throw new DeploymentException(String
+                    .format("Method annotated as @Outgoing channel cannot have return type void, method: %s", getMethod()));
         }
     }
 
@@ -83,26 +81,28 @@ public class OutgoingMethod extends AbstractChannel {
         return publisher;
     }
 
-    protected void resolveSignatureType() {
-        Class<?> returnType = this.method.getReturnType();
-        if (this.method.getParameterTypes().length != 0) {
-            throw new DeploymentException("Unsupported parameters on outgoing method " + method);
+    private void resolveSignatureType() {
+        Class<?> returnType = this.getMethod().getReturnType();
+        if (this.getMethod().getParameterTypes().length != 0) {
+            throw new DeploymentException(String
+                    .format("Unsupported parameters on outgoing method %s", getMethod()));
         }
 
         if (Void.class.isAssignableFrom(returnType)) {
-            type = null;
+            setType(null);
         } else if (Publisher.class.isAssignableFrom(returnType)) {
-            this.type = Type.OUTGOING_VOID_2_PUBLISHER;
+            setType(MethodSignatureType.OUTGOING_VOID_2_PUBLISHER);
         } else if (PublisherBuilder.class.isAssignableFrom(returnType)) {
-            this.type = Type.OUTGOING_VOID_2_PUBLISHER_BUILDER;
+            setType(MethodSignatureType.OUTGOING_VOID_2_PUBLISHER_BUILDER);
         } else if (CompletionStage.class.isAssignableFrom(returnType)) {
-            this.type = Type.OUTGOING_VOID_2_COMPLETION_STAGE;
+            setType(MethodSignatureType.OUTGOING_VOID_2_COMPLETION_STAGE);
         } else {
-            this.type = Type.OUTGOING_VOID_2_MSG;
+            setType(MethodSignatureType.OUTGOING_VOID_2_MSG);
         }
 
-        if (Objects.isNull(type)) {
-            throw new DeploymentException("Unsupported outgoing method signature " + method);
+        if (Objects.isNull(getType())) {
+            throw new DeploymentException(String
+                    .format("Unsupported outgoing method signature %s", getMethod()));
         }
     }
 

@@ -15,10 +15,12 @@
  *
  */
 
-package io.helidon.microprofile.messaging.reactive;
+package io.helidon.microprofile.messaging.channel;
 
-import io.helidon.microprofile.messaging.MessageUtils;
-import io.helidon.microprofile.messaging.channel.ProcessorMethod;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
+
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -27,27 +29,25 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.concurrent.ExecutionException;
-
 /**
- * Process every item in stream by method ex:
+ * Processor calling underlined messaging method for every received item.
+ * <p/>
+ * Example:
  * <pre>{@code
- *      @Incoming("inner-processor")
- *      @Outgoing("inner-consumer")
+ *      @Incoming("channel-one")
+ *      @Outgoing("channel-two")
  *      public String process2(String msg) {
  *          return msg.toLowerCase();
  *      }
  * }</pre>
  */
-public class InternalProcessor implements Processor<Object, Object> {
+class InternalProcessor implements Processor<Object, Object> {
 
 
     private ProcessorMethod processorMethod;
     private Subscriber<? super Object> subscriber;
 
-    public InternalProcessor(ProcessorMethod processorMethod) {
+    InternalProcessor(ProcessorMethod processorMethod) {
         this.processorMethod = processorMethod;
     }
 
@@ -66,11 +66,11 @@ public class InternalProcessor implements Processor<Object, Object> {
     public void onNext(Object incomingValue) {
         try {
             Method method = processorMethod.getMethod();
-            //TODO: Has to be always one param in the processor, validate and propagate better
+            //Params size is already validated by ProcessorMethod
             Class<?> paramType = method.getParameterTypes()[0];
             Object processedValue = method.invoke(processorMethod.getBeanInstance(),
                     MessageUtils.unwrap(incomingValue, paramType));
-            //TODO: Extract as some sensible util
+            //Method returns publisher, time for flattening its PROCESSOR_MSG_2_PUBLISHER or *_BUILDER
             if (processedValue instanceof Publisher || processedValue instanceof PublisherBuilder) {
                 //Flatten, we are sure its invoke on every request method now
                 PublisherBuilder<Object> publisherBuilder = null;
@@ -94,7 +94,7 @@ public class InternalProcessor implements Processor<Object, Object> {
         }
     }
 
-    protected Object wrapValue(Object value) throws ExecutionException, InterruptedException {
+    private Object wrapValue(Object value) throws ExecutionException, InterruptedException {
         return MessageUtils.unwrap(value, Message.class);
     }
 

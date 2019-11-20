@@ -17,20 +17,23 @@
 
 package io.helidon.microprofile.messaging.channel;
 
+import java.util.Optional;
+import java.util.logging.Logger;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.microprofile.messaging.NoConnectorFoundException;
+import io.helidon.microprofile.messaging.NotConnectableChannelException;
 import io.helidon.microprofile.messaging.connector.IncomingConnector;
 import io.helidon.microprofile.messaging.connector.OutgoingConnector;
-import io.helidon.microprofile.messaging.reactive.ProxyProcessor;
-import org.reactivestreams.Processor;
+
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
-import javax.enterprise.inject.spi.DeploymentException;
+class UniversalChannel {
 
-import java.util.Optional;
+    private static final Logger LOGGER = Logger.getLogger(UniversalChannel.class.getName());
 
-public class UniversalChannel {
     private String name;
     private IncomingConnector incomingConnector;
     private ProcessorMethod incomingProcessorMethod;
@@ -39,94 +42,103 @@ public class UniversalChannel {
     private OutgoingConnector outgoingConnector;
     private ProcessorMethod outgoingProcessorMethod;
     private Publisher publisher;
-    private Subscriber subscriber;
     private Config config;
     private ChannelRouter router;
     private Optional<UniversalChannel> upstreamChannel = Optional.empty();
 
-    public UniversalChannel(ChannelRouter router) {
+    UniversalChannel(ChannelRouter router) {
         this.router = router;
         this.config = router.getConfig();
     }
 
-    public void setIncoming(IncomingMethod incomingMethod) {
+    void setIncoming(IncomingMethod incomingMethod) {
         this.name = incomingMethod.getIncomingChannelName();
         this.incomingMethod = incomingMethod;
     }
 
-    public void setIncoming(ProcessorMethod processorMethod) {
+    void setIncoming(ProcessorMethod processorMethod) {
         this.name = processorMethod.getIncomingChannelName();
         this.incomingProcessorMethod = processorMethod;
         this.incomingProcessorMethod.setOutgoingChannel(this);
     }
 
-    public void setOutgoing(ProcessorMethod processorMethod) {
+    void setOutgoing(ProcessorMethod processorMethod) {
         this.name = processorMethod.getOutgoingChannelName();
         this.outgoingProcessorMethod = processorMethod;
-        this.outgoingProcessorMethod.setIncomingChannel(this);
     }
 
-    public void setOutgoing(OutgoingMethod outgoingMethod) {
+    void setOutgoing(OutgoingMethod outgoingMethod) {
         this.name = outgoingMethod.getOutgoingChannelName();
         this.outgoingMethod = outgoingMethod;
     }
 
-    public String getName() {
-        return name;
-    }
+    @SuppressWarnings("unchecked")
+    void connect() {
+        StringBuilder connectMessage = new StringBuilder("Connecting channel ")
+                .append(name).append(" with outgoing method ");
 
-    public void connect() {
         if (outgoingMethod != null) {
             publisher = outgoingMethod.getPublisher();
-            System.out.print(outgoingMethod.method.getName() + " >> ");
+            connectMessage.append(outgoingMethod.getMethod().getName());
+
         } else if (outgoingProcessorMethod != null) {
             publisher = outgoingProcessorMethod.getProcessor();
             upstreamChannel = Optional.of(outgoingProcessorMethod.getOutgoingChannel());
-            System.out.print(outgoingProcessorMethod.method.getName() + " >> ");
-        } else if(outgoingConnector != null){
+            connectMessage.append(outgoingProcessorMethod.getMethod().getName());
+
+        } else if (outgoingConnector != null) {
             publisher = outgoingConnector.getPublisher(name);
-            System.out.print(outgoingConnector.getConnectorName() + " >> ");
+            connectMessage.append(outgoingConnector.getConnectorName());
         } else {
-            throw new DeploymentException("No outgoing channel " + name + " found!");
+            LOGGER.severe(connectMessage.append("and no outgoing method found!").toString());
+            throw new NotConnectableChannelException(name, NotConnectableChannelException.Type.OUTGOING);
         }
 
+        connectMessage.append(" and incoming method ");
+
+        Subscriber subscriber1;
         if (incomingMethod != null) {
-            subscriber = incomingMethod.getSubscriber();
-            System.out.println(name + " >> " + incomingMethod.method.getName());
-            publisher.subscribe(subscriber);
+            subscriber1 = incomingMethod.getSubscriber();
+            connectMessage.append(incomingMethod.getMethod().getName());
+            publisher.subscribe(subscriber1);
             //Continue connecting processor chain
             upstreamChannel.ifPresent(UniversalChannel::connect);
+
         } else if (incomingProcessorMethod != null) {
-            subscriber = incomingProcessorMethod.getProcessor();
-            System.out.println(name + " >> " + incomingProcessorMethod.method.getName());
-            publisher.subscribe(subscriber);
+            subscriber1 = incomingProcessorMethod.getProcessor();
+            connectMessage.append(incomingProcessorMethod.getMethod().getName());
+            publisher.subscribe(subscriber1);
             //Continue connecting processor chain
             upstreamChannel.ifPresent(UniversalChannel::connect);
+
         } else if (incomingConnector != null) {
-            Subscriber subscriber = incomingConnector.getSubscriber(name);
-            System.out.println(name + " >> " + incomingConnector.getConnectorName());
-            publisher.subscribe(subscriber);
+            subscriber1 = incomingConnector.getSubscriber(name);
+            connectMessage.append(incomingConnector.getConnectorName());
+            publisher.subscribe(subscriber1);
             //Continue connecting processor chain
             upstreamChannel.ifPresent(UniversalChannel::connect);
+
         } else {
-            throw new DeploymentException("No incoming channel " + name + " found!");
+            LOGGER.severe(connectMessage.append("and no incoming method found!").toString());
+            throw new NotConnectableChannelException(name, NotConnectableChannelException.Type.INCOMING);
         }
     }
 
-    public boolean isLastInChain() {
+    boolean isLastInChain() {
         return incomingProcessorMethod == null;
     }
 
-    public void findConnectors() {
+    void findConnectors() {
+        //Looks suspicious but incoming connector configured for outgoing channel is ok
         ConfigValue<String> incomingConnectorName = config.get("mp.messaging.outgoing").get(name).get("connector").asString();
         ConfigValue<String> outgoingConnectorName = config.get("mp.messaging.incoming").get(name).get("connector").asString();
         if (incomingConnectorName.isPresent()) {
             incomingConnector = router.getIncomingConnector(incomingConnectorName.get())
-                    .orElseThrow(() -> new DeploymentException("No connector " + incomingConnectorName.get() + " found!"));
+                    .orElseThrow(() -> new NoConnectorFoundException(incomingConnectorName.get()));
         }
         if (outgoingConnectorName.isPresent()) {
             outgoingConnector = router.getOutgoingConnector(outgoingConnectorName.get())
-                    .orElseThrow(() -> new DeploymentException("No connector " + outgoingConnectorName.get() + " found!"));
+                    .orElseThrow(() -> new NoConnectorFoundException(outgoingConnectorName.get()));
         }
     }
 

@@ -88,10 +88,9 @@ public abstract class AbstractCDITest {
 
     @BeforeEach
     public void setUp() {
-        Map<String, String> p = new HashMap<>();
         Set<Class<?>> classes = new HashSet<>();
         cdiBeanClasses(classes);
-        p.putAll(cdiConfig());
+        Map<String, String> p = new HashMap<>(cdiConfig());
         cdiContainer = startCdiContainer(p, classes);
     }
 
@@ -107,7 +106,7 @@ public abstract class AbstractCDITest {
         cdiContainer.select(beanType, annotation).stream().forEach(consumer);
     }
 
-    public void assertAllReceived(CountableTestBean bean) {
+    protected void assertAllReceived(CountableTestBean bean) {
         try {
             assertTrue(bean.getTestLatch().await(2, TimeUnit.SECONDS)
                     , "All messages not delivered in time, number of unreceived messages: "
@@ -117,11 +116,11 @@ public abstract class AbstractCDITest {
         }
     }
 
-    public static SeContainer startCdiContainer(Map<String, String> p, Class<?>... beanClasses) {
+    protected static SeContainer startCdiContainer(Map<String, String> p, Class<?>... beanClasses) {
         return startCdiContainer(p, new HashSet<>(Arrays.asList(beanClasses)));
     }
 
-    public static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
+    private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
                 .build();
@@ -172,6 +171,7 @@ public abstract class AbstractCDITest {
                     .findFirst();
         }
 
+        @SuppressWarnings("unchecked")
         public List<Class<? extends CountableTestBean>> getCountableBeanClasses() {
             return Arrays.stream(clazzes)
                     .filter(CountableTestBean.class::isAssignableFrom)

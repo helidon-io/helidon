@@ -17,66 +17,75 @@
 
 package io.helidon.microprofile.messaging.channel;
 
-import io.helidon.config.Config;
-import io.helidon.microprofile.messaging.reactive.InternalSubscriber;
-import io.helidon.microprofile.messaging.reactive.UnwrapProcessor;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
-import org.reactivestreams.Subscriber;
-
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.spi.AnnotatedMethod;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.DeploymentException;
+
+import io.helidon.config.Config;
+
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
+import org.reactivestreams.Subscriber;
+
 /**
- * Subscriber with reference to {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
- * /{@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotated method
+ * Subscriber method with reference to processor method.
+ * <p/>Example:
+ * <pre>{@code
+ *     @Incoming("channel-name")
+ *     public void exampleIncomingMethod(String msg) {
+ *         ...
+ *     }
+ * }</pre>
  */
-public class IncomingMethod extends AbstractChannel {
+class IncomingMethod extends AbstractMethod {
 
     private static final Logger LOGGER = Logger.getLogger(IncomingMethod.class.getName());
 
     private Subscriber subscriber;
 
-    public IncomingMethod(AnnotatedMethod method, ChannelRouter router) {
-        super(method.getJavaMember(), router);
-        super.incomingChannelName = method.getAnnotation(Incoming.class).value();
+    IncomingMethod(AnnotatedMethod method) {
+        super(method.getJavaMember());
+        super.setIncomingChannelName(method.getAnnotation(Incoming.class).value());
         resolveSignatureType();
     }
 
     void validate() {
-        if (incomingChannelName == null || incomingChannelName.trim().isEmpty()) {
-            throw new DeploymentException("Missing channel name in annotation @Incoming on method "
-                    + method.toString());
+        if (getIncomingChannelName() == null || getIncomingChannelName().trim().isEmpty()) {
+            throw new DeploymentException(String
+                    .format("Missing channel name in annotation @Incoming on method %s", getMethod().toString()));
         }
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
-        if (type.isInvokeAtAssembly()) {
+        if (getType().isInvokeAtAssembly()) {
             try {
-                switch (type) {
+                switch (getType()) {
                     case INCOMING_VOID_2_SUBSCRIBER:
-                        subscriber = UnwrapProcessor.of(this.method, (Subscriber) method.invoke(beanInstance));
+                        subscriber = UnwrapProcessor.of(this.getMethod(), (Subscriber) getMethod()
+                                .invoke(getBeanInstance()));
                         break;
                     case INCOMING_VOID_2_SUBSCRIBER_BUILDER:
-                        subscriber = UnwrapProcessor.of(this.method, ((SubscriberBuilder) method.invoke(beanInstance)).build());
+                        subscriber = UnwrapProcessor.of(this.getMethod(),
+                                ((SubscriberBuilder) getMethod().invoke(getBeanInstance())).build());
                         break;
                     default:
-                        throw new UnsupportedOperationException("Not implemented signature " + type);
+                        throw new UnsupportedOperationException(String
+                                .format("Not implemented signature %s", getType()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         } else {
             // Invoke on each message subscriber
-            subscriber = new InternalSubscriber(method, beanInstance);
+            subscriber = new InternalSubscriber(getMethod(), getBeanInstance());
         }
     }
 
@@ -85,36 +94,38 @@ public class IncomingMethod extends AbstractChannel {
     }
 
     protected void resolveSignatureType() {
-        Class<?> returnType = this.method.getReturnType();
+        Class<?> returnType = this.getMethod().getReturnType();
         Class<?> parameterType;
-        if (this.method.getParameterTypes().length == 1) {
-            parameterType = this.method.getParameterTypes()[0];
-        } else if (this.method.getParameterTypes().length == 0) {
+        if (this.getMethod().getParameterTypes().length == 1) {
+            parameterType = this.getMethod().getParameterTypes()[0];
+        } else if (this.getMethod().getParameterTypes().length == 0) {
             parameterType = Void.TYPE;
         } else {
-            throw new DeploymentException("Unsupported parameters on incoming method " + method);
+            throw new DeploymentException(String
+                    .format("Unsupported parameters on incoming method %s", getMethod()));
         }
 
         if (Void.TYPE.equals(parameterType)) {
             if (Subscriber.class.equals(returnType)) {
-                this.type = Type.INCOMING_VOID_2_SUBSCRIBER;
+                setType(MethodSignatureType.INCOMING_VOID_2_SUBSCRIBER);
             } else if (SubscriberBuilder.class.equals(returnType)) {
-                this.type = Type.INCOMING_VOID_2_SUBSCRIBER_BUILDER;
+                setType(MethodSignatureType.INCOMING_VOID_2_SUBSCRIBER_BUILDER);
             }
         } else {
             if (CompletionStage.class.equals(returnType)) {
-                this.type = Type.INCOMING_MSG_2_COMPLETION_STAGE;
+                setType(MethodSignatureType.INCOMING_MSG_2_COMPLETION_STAGE);
             } else if (Void.TYPE.equals(returnType)) {
-                this.type = Type.INCOMING_MSG_2_VOID;
+                setType(MethodSignatureType.INCOMING_MSG_2_VOID);
             } else {
-                //TODO: Remove when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
+                // Remove when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
                 // see io.helidon.microprofile.messaging.inner.BadSignaturePublisherPayloadBean
-                this.type = Type.INCOMING_MSG_2_VOID;
+                setType(MethodSignatureType.INCOMING_MSG_2_VOID);
             }
         }
 
-        if (Objects.isNull(type)) {
-            throw new DeploymentException("Unsupported incoming method signature " + method);
+        if (Objects.isNull(getType())) {
+            throw new DeploymentException(String
+                    .format("Unsupported incoming method signature %s", getMethod()));
         }
     }
 
