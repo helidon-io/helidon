@@ -32,35 +32,31 @@ final class StatementParsers {
 
     private static final Logger LOGGER = Logger.getLogger(StatementParsers.class.getName());
 
-    // Should be done much better!
     static String toJson(Object value) {
-        if (value == null) {
-            return "null";
+        if ((value instanceof Integer)  || (value instanceof Short)  || (value instanceof Byte)){
+            return Json.createValue(((Number) value).intValue()).toString();
         }
-        if (value instanceof Number) {
-            if (value instanceof Integer) {
-                return Json.createValue((Integer) value).toString();
-            }
-            if (value instanceof Long) {
-                return Json.createValue((Long) value).toString();
-            }
-            if (value instanceof Double) {
-                return Json.createValue((Double) value).toString();
-            }
-            if (value instanceof BigInteger) {
-                return Json.createValue((BigInteger) value).toString();
-            }
-            if (value instanceof BigDecimal) {
-                return Json.createValue((BigDecimal) value).toString();
-            }
+        if (value instanceof Long) {
+            return Json.createValue((Long) value).toString();
         }
-        if (value instanceof String) {
-            return Json.createValue((String) value).toString();
+        if ((value instanceof Double) || (value instanceof Float)) {
+            return Json.createValue(((Number) value).doubleValue()).toString();
+        }
+        if (value instanceof BigInteger) {
+            return Json.createValue((BigInteger) value).toString();
+        }
+        if (value instanceof BigDecimal) {
+            return Json.createValue((BigDecimal) value).toString();
         }
         if (value instanceof Boolean) {
-            return ((Boolean) value) ? "true" : "false";
+            return value.toString();
         }
-        return '"' + value.toString() + '"';
+        // Check instanceof Number is more expensive than final types, it shall be at the end
+        if (value instanceof Number) {
+            return value.toString();
+        }
+        // String.valueOf handles null value
+        return Json.createValue(String.valueOf(value)).toString();
     }
 
     private StatementParsers() {
