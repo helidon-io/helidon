@@ -45,7 +45,7 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
@@ -325,7 +325,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
 
         tracer.inject(currentSpan.context(),
                       Format.Builtin.HTTP_HEADERS,
-                      new TextMapInjectAdapter(tracerHeaders));
+                      new TextMapAdapter(tracerHeaders));
 
         return new HashMap<>(tracerHeaders.entrySet()
                                      .stream()
