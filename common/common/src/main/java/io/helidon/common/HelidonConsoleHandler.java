@@ -23,13 +23,18 @@ import java.util.logging.StreamHandler;
 import java.util.regex.Pattern;
 
 /**
- * Logging handler that writes to {@link System#out} and uses a formatter that will replace {@code "!thread!"} substrings
- * with the current thread.
+ * A {@link StreamHandler} that writes to {@link System#out standard out} and uses a {@link ThreadFormatter} for formatting.
+ * Sets the level to {@link Level#ALL} so that level filtering is performed solely by the loggers.
  */
 public class HelidonConsoleHandler extends StreamHandler {
 
     /**
-     * Constructor.
+     * Creates a new {@link HelidonConsoleHandler} configured with:
+     * <ul>
+     *     <li>the output stream set to {@link System#out}</li>
+     *     <li>the formatter set to a {@link ThreadFormatter}</li>
+     *     <li>the level set to {@link Level#ALL}</li>
+     * </ul>.
      */
     public HelidonConsoleHandler() {
         setOutputStream(System.out);
@@ -48,7 +53,10 @@ public class HelidonConsoleHandler extends StreamHandler {
         flush();
     }
 
-    private static class ThreadFormatter extends SimpleFormatter {
+    /**
+     * A {@link SimpleFormatter} that replaces all occurrences of {@code "!thread!"} with the current thread.
+     */
+    public static class ThreadFormatter extends SimpleFormatter {
         private static final Pattern THREAD_PATTERN = Pattern.compile("!thread!");
 
         @Override
