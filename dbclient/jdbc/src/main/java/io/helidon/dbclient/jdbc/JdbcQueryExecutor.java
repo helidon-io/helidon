@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 class JdbcQueryExecutor {
     private final Random random = new Random();
-    private final List<MyRunnable> runnables = new ArrayList<>();
+    private final List<StmtRunnable> runnables = new ArrayList<>();
 
     void submit(QueryProcessor processor) {
         /*
@@ -39,13 +39,13 @@ class JdbcQueryExecutor {
         The number of threads to use must be configurable (and may be changing over time such as in an executor service
         Once the query processor completes, we remove it from teh cycle of that thread
         */
-        for (MyRunnable runnable : runnables) {
+        for (StmtRunnable runnable : runnables) {
             if (runnable.processors.isEmpty()) {
                 runnable.addProcessor(processor);
                 return;
             }
         }
-        for (MyRunnable runnable : runnables) {
+        for (StmtRunnable runnable : runnables) {
             if (runnable.idle.get()) {
                 runnable.addProcessor(processor);
                 return;
@@ -64,7 +64,8 @@ class JdbcQueryExecutor {
         boolean isCompleted();
     }
 
-    private class MyRunnable implements Runnable {
+    // FIXME: This may need some review and redesign.
+    private static class StmtRunnable implements Runnable {
         private final Set<QueryProcessor> processors = Collections.newSetFromMap(new IdentityHashMap<>());
         private final AtomicBoolean idle = new AtomicBoolean();
         private final AtomicBoolean enabled = new AtomicBoolean(true);
