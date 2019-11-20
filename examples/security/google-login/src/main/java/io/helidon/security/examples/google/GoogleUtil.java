@@ -53,7 +53,7 @@ public final class GoogleUtil {
             System.out.printf("You can access this example at http://localhost:%d/index.html%n", webServer.port());
             System.out.println();
             System.out.println();
-            System.out.println("Check application.conf in case you are behind a proxy to configure it");
+            System.out.println("Check application.yaml in case you are behind a proxy to configure it");
             cdl.countDown();
         });
 
