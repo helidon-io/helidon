@@ -44,7 +44,7 @@
         <version.lib.eclipselink>2.7.4</version.lib.eclipselink>
         <version.lib.el-api>3.0.0</version.lib.el-api>
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
-        <version.lib.etcd4j>2.16.0</version.lib.etcd4j>
+        <version.lib.etcd4j>2.17.0</version.lib.etcd4j>
         <version.lib.google-api-client>1.23.0</version.lib.google-api-client>
         <version.lib.graalvm>19.2.0</version.lib.graalvm>
         <version.lib.grpc>1.22.1</version.lib.grpc>
