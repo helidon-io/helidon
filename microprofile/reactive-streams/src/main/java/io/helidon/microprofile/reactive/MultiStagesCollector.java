@@ -127,7 +127,8 @@ class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, CompletionSt
                 Stage.SubscriberStage subscriberStage = (Stage.SubscriberStage) stage;
                 Subscriber<T> subscriber = (Subscriber<T>) subscriberStage.getRsSubscriber();
                 this.completionStage = new CompletableFuture<>();
-                CompletionSubscriber<T, Object> completionSubscriber = CompletionSubscriber.of(subscriber, completionStage);
+                RedeemingCompletionSubscriber<T, Object> completionSubscriber =
+                        RedeemingCompletionSubscriber.of(subscriber, completionStage);
                 // If producer was supplied
                 subscribeUpStream();
                 multi.subscribe(HybridSubscriber.from(completionSubscriber));

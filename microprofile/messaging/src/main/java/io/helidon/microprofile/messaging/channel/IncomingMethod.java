@@ -114,12 +114,12 @@ class IncomingMethod extends AbstractMethod {
         } else {
             if (CompletionStage.class.equals(returnType)) {
                 setType(MethodSignatureType.INCOMING_MSG_2_COMPLETION_STAGE);
-            } else if (Void.TYPE.equals(returnType)) {
+// Uncomment when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
+// see io.helidon.microprofile.messaging.inner.BadSignaturePublisherPayloadBean
+            } else /*if (Void.TYPE.equals(returnType))*/ {
                 setType(MethodSignatureType.INCOMING_MSG_2_VOID);
-            } else {
-                // Remove when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
-                // see io.helidon.microprofile.messaging.inner.BadSignaturePublisherPayloadBean
-                setType(MethodSignatureType.INCOMING_MSG_2_VOID);
+//            } else {
+//                throw new DeploymentException("Not supported method signature.");
             }
         }
 

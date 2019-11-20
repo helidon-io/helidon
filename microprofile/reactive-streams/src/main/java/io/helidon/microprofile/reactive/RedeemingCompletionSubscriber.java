@@ -30,24 +30,24 @@ import org.reactivestreams.Subscription;
  * @param <R> {@link java.util.concurrent.CompletionStage} payload type
  * @see <a href="https://github.com/eclipse/microprofile-reactive-streams-operators/issues/129#issue-521492223">microprofile-reactive-streams-operators #129</a>
  */
-class CompletionSubscriber<T, R> implements org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber<T, R> {
+class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber<T, R> {
 
     private final Subscriber<T> subscriber;
     private final CompletionStage<R> completion;
 
     /**
-     * Create a {@link io.helidon.microprofile.reactive.CompletionSubscriber} by combining the given subscriber and completion stage.
+     * Create a {@link RedeemingCompletionSubscriber} by combining the given subscriber and completion stage.
      * The objects passed to this method should not be associated with more than one stream instance.
      *
      * @param subscriber subscriber to associate with completion stage
      * @param completion completion stage to associate with subscriber
-     * @return {@link io.helidon.microprofile.reactive.CompletionSubscriber}
+     * @return {@link RedeemingCompletionSubscriber}
      */
-    static <T, R> CompletionSubscriber<T, R> of(Subscriber<T> subscriber, CompletionStage<R> completion) {
-        return new CompletionSubscriber<>(subscriber, completion);
+    static <T, R> RedeemingCompletionSubscriber<T, R> of(Subscriber<T> subscriber, CompletionStage<R> completion) {
+        return new RedeemingCompletionSubscriber<>(subscriber, completion);
     }
 
-    private CompletionSubscriber(Subscriber<T> subscriber, CompletionStage<R> completion) {
+    private RedeemingCompletionSubscriber(Subscriber<T> subscriber, CompletionStage<R> completion) {
         this.subscriber = subscriber;
         this.completion = completion;
     }

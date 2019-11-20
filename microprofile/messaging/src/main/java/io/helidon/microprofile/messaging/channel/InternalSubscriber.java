@@ -28,13 +28,11 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 /**
- * Publisher calling underlined messaging method for every received.
+ * Publisher calling underlined messaging method for every received item.
  */
 class InternalSubscriber implements Subscriber<Object> {
 
     private Subscription subscription;
-    private Long chunkSize = 5L;
-    private Long chunkPosition = 0L;
     private Method method;
     private Object beanInstance;
 
@@ -46,8 +44,8 @@ class InternalSubscriber implements Subscriber<Object> {
     @Override
     public void onSubscribe(Subscription s) {
         subscription = s;
-        //First chunk request
-        subscription.request(chunkSize);
+        // request one by one
+        subscription.request(1);
     }
 
     @Override
@@ -59,10 +57,10 @@ class InternalSubscriber implements Subscriber<Object> {
             Context context = Context
                     .builder()
                     .parent(parentContext)
-                    .id(parentContext.id() + ":message-" + UUID.randomUUID().toString())
+                    .id(String.format("%s:message-%s", parentContext.id(), UUID.randomUUID().toString()))
                     .build();
             Contexts.runInContext(context, () -> this.method.invoke(this.beanInstance, MessageUtils.unwrap(message, paramType)));
-            incrementAndCheckChunkPosition();
+            subscription.request(1);
         } catch (Exception e) {
             //Notify publisher to stop sending
             subscription.cancel();
@@ -80,11 +78,4 @@ class InternalSubscriber implements Subscriber<Object> {
 
     }
 
-    private void incrementAndCheckChunkPosition() {
-        chunkPosition++;
-        if (chunkPosition >= chunkSize) {
-            chunkPosition = 0L;
-            subscription.request(chunkSize);
-        }
-    }
 }

@@ -93,7 +93,13 @@ public class HybridProcessor<T, R> implements Flow.Processor<T, R>, Processor<T,
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        this.onSubscribe(subscription);
+        if (reactiveProcessor != null) {
+            reactiveProcessor.onSubscribe(HybridSubscription.from(subscription));
+        } else if (flowProcessor != null) {
+            flowProcessor.onSubscribe(subscription);
+        } else {
+            throw new InvalidParameterException("Hybrid processor has no processor");
+        }
     }
 
     @Override
