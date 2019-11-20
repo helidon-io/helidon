@@ -88,7 +88,6 @@
         <version.lib.opentracing.grpc>0.0.12</version.lib.opentracing.grpc>
         <version.lib.persistence-api>2.2</version.lib.persistence-api>
         <version.lib.prometheus>0.6.0</version.lib.prometheus>
-        <version.lib.protobuf.java>3.5.1</version.lib.protobuf.java>
         <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
         <version.lib.reactor>3.1.5.RELEASE</version.lib.reactor>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
@@ -313,11 +312,6 @@
               <groupId>io.opentracing.contrib</groupId>
               <artifactId>opentracing-grpc</artifactId>
               <version>${version.lib.opentracing.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${version.lib.protobuf.java}</version>
             </dependency>
 
             <!-- Webserver related -->
