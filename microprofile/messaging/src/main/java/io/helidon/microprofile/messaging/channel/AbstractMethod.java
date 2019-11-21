@@ -24,15 +24,18 @@ import javax.enterprise.inject.spi.BeanManager;
 
 import io.helidon.config.Config;
 
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+
 abstract class AbstractMethod {
 
     private String incomingChannelName;
     private String outgoingChannelName;
 
-    private  Bean<?> bean;
+    private Bean<?> bean;
     private Method method;
     private Object beanInstance;
     private MethodSignatureType type;
+    private Acknowledgment.Strategy ackStrategy;
 
 
     AbstractMethod(Method method) {
@@ -41,8 +44,12 @@ abstract class AbstractMethod {
 
     abstract void validate();
 
+    abstract void resolveSignatureType();
+
     public void init(BeanManager beanManager, Config config) {
         this.beanInstance = ChannelRouter.lookup(bean, beanManager);
+        resolveSignatureType();
+        resolveAckStrategy();
     }
 
     public Method getMethod() {
@@ -83,5 +90,14 @@ abstract class AbstractMethod {
 
     public void setType(MethodSignatureType type) {
         this.type = type;
+    }
+
+    public Acknowledgment.Strategy getAckStrategy() {
+        return ackStrategy;
+    }
+
+    private void resolveAckStrategy() {
+        //Only default for now
+        ackStrategy = type.getDefaultAckType();
     }
 }

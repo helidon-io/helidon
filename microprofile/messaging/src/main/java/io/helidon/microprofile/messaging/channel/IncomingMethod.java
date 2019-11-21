@@ -20,7 +20,6 @@ package io.helidon.microprofile.messaging.channel;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
@@ -44,14 +43,11 @@ import org.reactivestreams.Subscriber;
  */
 class IncomingMethod extends AbstractMethod {
 
-    private static final Logger LOGGER = Logger.getLogger(IncomingMethod.class.getName());
-
     private Subscriber subscriber;
 
     IncomingMethod(AnnotatedMethod method) {
         super(method.getJavaMember());
         super.setIncomingChannelName(method.getAnnotation(Incoming.class).value());
-        resolveSignatureType();
     }
 
     void validate() {
@@ -68,11 +64,11 @@ class IncomingMethod extends AbstractMethod {
         if (getType().isInvokeAtAssembly()) {
             try {
                 switch (getType()) {
-                    case INCOMING_VOID_2_SUBSCRIBER:
+                    case INCOMING_SUBSCRIBER_MSG_2_VOID:
                         subscriber = UnwrapProcessor.of(this.getMethod(), (Subscriber) getMethod()
                                 .invoke(getBeanInstance()));
                         break;
-                    case INCOMING_VOID_2_SUBSCRIBER_BUILDER:
+                    case INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID:
                         subscriber = UnwrapProcessor.of(this.getMethod(),
                                 ((SubscriberBuilder) getMethod().invoke(getBeanInstance())).build());
                         break;
@@ -81,7 +77,7 @@ class IncomingMethod extends AbstractMethod {
                                 .format("Not implemented signature %s", getType()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
+                throw new DeploymentException(e);
             }
         } else {
             // Invoke on each message subscriber
@@ -93,6 +89,7 @@ class IncomingMethod extends AbstractMethod {
         return subscriber;
     }
 
+    @Override
     protected void resolveSignatureType() {
         Class<?> returnType = this.getMethod().getReturnType();
         Class<?> parameterType;
@@ -107,17 +104,17 @@ class IncomingMethod extends AbstractMethod {
 
         if (Void.TYPE.equals(parameterType)) {
             if (Subscriber.class.equals(returnType)) {
-                setType(MethodSignatureType.INCOMING_VOID_2_SUBSCRIBER);
+                setType(MethodSignatureType.INCOMING_SUBSCRIBER_MSG_2_VOID);
             } else if (SubscriberBuilder.class.equals(returnType)) {
-                setType(MethodSignatureType.INCOMING_VOID_2_SUBSCRIBER_BUILDER);
+                setType(MethodSignatureType.INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID);
             }
         } else {
             if (CompletionStage.class.equals(returnType)) {
-                setType(MethodSignatureType.INCOMING_MSG_2_COMPLETION_STAGE);
+                setType(MethodSignatureType.INCOMING_COMPLETION_STAGE_2_MSG);
 // Uncomment when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
 // see io.helidon.microprofile.messaging.inner.BadSignaturePublisherPayloadBean
             } else /*if (Void.TYPE.equals(returnType))*/ {
-                setType(MethodSignatureType.INCOMING_MSG_2_VOID);
+                setType(MethodSignatureType.INCOMING_VOID_2_PAYL);
 //            } else {
 //                throw new DeploymentException("Not supported method signature.");
             }

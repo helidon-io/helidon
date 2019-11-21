@@ -63,13 +63,13 @@ class ProxyProcessor implements Processor<Object, Object> {
                         .getMethod()
                         .invoke(processorMethod.getBeanInstance(), this));
 
-            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_VOID_2_PROCESSOR_BUILDER) {
+            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID) {
                 processor = ((ProcessorBuilder<Object, Object>) processorMethod
                         .getMethod()
                         .invoke(processorMethod.getBeanInstance())).buildRs();
                 publisher = processor;
 
-            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_VOID_2_PROCESSOR) {
+            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PROCESSOR_MSG_2_VOID) {
                 processor = ((Processor<Object, Object>) processorMethod
                         .getMethod()
                         .invoke(processorMethod.getBeanInstance()));

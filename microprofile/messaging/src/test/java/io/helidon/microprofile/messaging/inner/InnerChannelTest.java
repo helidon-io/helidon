@@ -17,18 +17,28 @@
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.microprofile.messaging.AbstractCDITest;
-import io.helidon.microprofile.messaging.CountableTestBean;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 import javax.enterprise.inject.spi.CDI;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.stream.Stream;
+import io.helidon.microprofile.messaging.AbstractCDITest;
+import io.helidon.microprofile.messaging.CompletableTestBean;
+import io.helidon.microprofile.messaging.CountableTestBean;
+import io.helidon.microprofile.messaging.inner.ack.ManualAckBean;
+import io.helidon.microprofile.messaging.inner.ack.ChainWithPayloadAckBean;
+
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class InnerChannelTest extends AbstractCDITest {
 
@@ -71,6 +81,9 @@ public class InnerChannelTest extends AbstractCDITest {
                 PublisherProcessorV3Bean.class,
                 PublisherProcessorV2Bean.class,
                 PublisherProcessorV1Bean.class,
+                //Ack tests
+//                ChainWithPayloadAckBean.class,
+//                ManualAckBean.class,
 
                 //Negative tests
                 NotConnectedIncommingChannelBean.class,
@@ -92,6 +105,14 @@ public class InnerChannelTest extends AbstractCDITest {
                 CountableTestBean countableTestBean = CDI.current().select(c).get();
                 // Wait till all messages are delivered
                 assertAllReceived(countableTestBean);
+            });
+            testCase.getCompletableBeanClasses().forEach(c -> {
+                CompletableTestBean completableTestBean = CDI.current().select(c).get();
+                try {
+                    completableTestBean.getTestCompletion().toCompletableFuture().get(1, TimeUnit.SECONDS);
+                } catch (InterruptedException | TimeoutException | ExecutionException e) {
+                    fail(e);
+                }
             });
         }
     }

@@ -178,5 +178,13 @@ public abstract class AbstractCDITest {
                     .map(c -> (Class<? extends CountableTestBean>) c)
                     .collect(Collectors.toList());
         }
+
+        @SuppressWarnings("unchecked")
+        public List<Class<? extends CompletableTestBean>> getCompletableBeanClasses() {
+            return Arrays.stream(clazzes)
+                    .filter(CompletableTestBean.class::isAssignableFrom)
+                    .map(c -> (Class<? extends CompletableTestBean>) c)
+                    .collect(Collectors.toList());
+        }
     }
 }

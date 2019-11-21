@@ -38,7 +38,6 @@ class OutgoingMethod extends AbstractMethod {
     OutgoingMethod(AnnotatedMethod method) {
         super(method.getJavaMember());
         super.setOutgoingChannelName(method.getAnnotation(Outgoing.class).value());
-        resolveSignatureType();
     }
 
     @Override
@@ -47,10 +46,10 @@ class OutgoingMethod extends AbstractMethod {
         if (getType().isInvokeAtAssembly()) {
             try {
                 switch (getType()) {
-                    case OUTGOING_VOID_2_PUBLISHER:
+                    case OUTGOING_PUBLISHER_2_VOID:
                         publisher = (Publisher) getMethod().invoke(getBeanInstance());
                         break;
-                    case OUTGOING_VOID_2_PUBLISHER_BUILDER:
+                    case OUTGOING_PUBLISHER_BUILDER_2_VOID:
                         publisher = ((PublisherBuilder) getMethod().invoke(getBeanInstance())).buildRs();
                         break;
                     default:
@@ -81,7 +80,8 @@ class OutgoingMethod extends AbstractMethod {
         return publisher;
     }
 
-    private void resolveSignatureType() {
+    @Override
+    protected void resolveSignatureType() {
         Class<?> returnType = this.getMethod().getReturnType();
         if (this.getMethod().getParameterTypes().length != 0) {
             throw new DeploymentException(String
@@ -91,13 +91,13 @@ class OutgoingMethod extends AbstractMethod {
         if (Void.class.isAssignableFrom(returnType)) {
             setType(null);
         } else if (Publisher.class.isAssignableFrom(returnType)) {
-            setType(MethodSignatureType.OUTGOING_VOID_2_PUBLISHER);
+            setType(MethodSignatureType.OUTGOING_PUBLISHER_2_VOID);
         } else if (PublisherBuilder.class.isAssignableFrom(returnType)) {
-            setType(MethodSignatureType.OUTGOING_VOID_2_PUBLISHER_BUILDER);
+            setType(MethodSignatureType.OUTGOING_PUBLISHER_BUILDER_2_VOID);
         } else if (CompletionStage.class.isAssignableFrom(returnType)) {
-            setType(MethodSignatureType.OUTGOING_VOID_2_COMPLETION_STAGE);
+            setType(MethodSignatureType.OUTGOING_COMPLETION_STAGE_2_VOID);
         } else {
-            setType(MethodSignatureType.OUTGOING_VOID_2_MSG);
+            setType(MethodSignatureType.OUTGOING_MSG_2_VOID);
         }
 
         if (Objects.isNull(getType())) {

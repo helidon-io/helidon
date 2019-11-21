@@ -42,7 +42,6 @@ class ProcessorMethod extends AbstractMethod {
         super(method.getJavaMember());
         super.setIncomingChannelName(method.getAnnotation(Incoming.class).value());
         super.setOutgoingChannelName(method.getAnnotation(Outgoing.class).value());
-        resolveSignatureType();
     }
 
     @Override
@@ -85,7 +84,8 @@ class ProcessorMethod extends AbstractMethod {
         this.outgoingChannel = outgoingChannel;
     }
 
-    private void resolveSignatureType() {
+    @Override
+    protected void resolveSignatureType() {
         Method method = getMethod();
         Class<?> returnType = method.getReturnType();
         Class<?> parameterType = Void.TYPE;
@@ -99,10 +99,10 @@ class ProcessorMethod extends AbstractMethod {
         }
         if (Void.TYPE.equals(parameterType)) {
             if (Processor.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_VOID_2_PROCESSOR);
+                setType(MethodSignatureType.PROCESSOR_PROCESSOR_MSG_2_VOID);
 
             } else if (ProcessorBuilder.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_VOID_2_PROCESSOR_BUILDER);
+                setType(MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID);
 
             } else {
                 throw new DeploymentException(String
@@ -116,10 +116,10 @@ class ProcessorMethod extends AbstractMethod {
 
         } else {
             if (Publisher.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_MSG_2_PUBLISHER);
+                setType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG);
 
             } else if (CompletionStage.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_MSG_2_COMPL_STAGE);
+                setType(MethodSignatureType.PROCESSOR_COMPL_STAGE_MSG_2_MSG);
 
             } else {
                 setType(MethodSignatureType.PROCESSOR_MSG_2_MSG);
