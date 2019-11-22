@@ -1228,7 +1228,7 @@ atomicops_internals_generic_gcc.h
 
 
 =======================
-grpc-java 1.22.1
+grpc-java 1.25.0
 =======================
 Copyright 2014 The gRPC Authors
 Apache License, Version 2.0
