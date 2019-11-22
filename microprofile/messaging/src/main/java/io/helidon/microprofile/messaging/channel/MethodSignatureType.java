@@ -81,14 +81,41 @@ public enum MethodSignatureType {
      * Processor method signature type.
      * <p>
      * Invoke at: assembly time
-     * <pre>Publisher&lt;Message&lt;O>> method(Message&lt;I> msg);</pre>
-     * <pre>Publisher&lt;O> method(I payload);</pre>
+     * <pre>Publisher&lt;Message&lt;O>> method(Publisher&lt;Message&lt;I>> pub);</pre>
+     * <pre></pre>
+     * <li/>Default acknowledgment strategy: PRE_PROCESSING
+     * <li/>Supported acknowledgment strategies: NONE, MANUAL, PRE_PROCESSING
+     */
+    PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG(true, Acknowledgment.Strategy.PRE_PROCESSING,
+            Acknowledgment.Strategy.NONE,
+            Acknowledgment.Strategy.MANUAL,
+            Acknowledgment.Strategy.PRE_PROCESSING
+    ),
+    /**
+     * Processor method signature type.
+     * <p>
+     * Invoke at: assembly time
+     * <pre>Publisher&lt;O> method(Publisher&lt;I> pub);</pre>
      * <pre></pre>
      * <li/>Default acknowledgment strategy: PRE_PROCESSING
      * <li/>Supported acknowledgment strategies: NONE, PRE_PROCESSING
      */
-    PROCESSOR_PUBLISHER_2_PUBLISHER(true, Acknowledgment.Strategy.PRE_PROCESSING,
+    PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL(true, Acknowledgment.Strategy.PRE_PROCESSING,
             Acknowledgment.Strategy.NONE,
+            Acknowledgment.Strategy.PRE_PROCESSING
+    ),
+    /**
+     * Processor method signature type.
+     * <p>
+     * Invoke at: assembly time
+     * <pre>PublisherBuilder&lt;Message&lt;O>> method(PublisherBuilder&lt;Message&lt;I>> pub);</pre>
+     * <pre></pre>
+     * <li/>Default acknowledgment strategy: PRE_PROCESSING
+     * <li/>Supported acknowledgment strategies: NONE, MANUAL, PRE_PROCESSING
+     */
+    PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG(true, Acknowledgment.Strategy.PRE_PROCESSING,
+            Acknowledgment.Strategy.NONE,
+            Acknowledgment.Strategy.MANUAL,
             Acknowledgment.Strategy.PRE_PROCESSING
     ),
     /**
@@ -100,7 +127,7 @@ public enum MethodSignatureType {
      * <li/>Default acknowledgment strategy: PRE_PROCESSING
      * <li/>Supported acknowledgment strategies: NONE, PRE_PROCESSING
      */
-    PROCESSOR_PUBLISHER_BUILDER_2_PUBLISHER_BUILDER(true, Acknowledgment.Strategy.PRE_PROCESSING,
+    PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PUBLISHER_BUILDER_PAYL(true, Acknowledgment.Strategy.PRE_PROCESSING,
             Acknowledgment.Strategy.NONE,
             Acknowledgment.Strategy.PRE_PROCESSING
     ),
@@ -108,7 +135,7 @@ public enum MethodSignatureType {
      * Processor method signature type.
      * <p>
      * Invoke at: every incoming
-     * <pre>Publisher&lt;Message&lt;O>> method(Message&lt;I>msg);</pre>
+     * <pre>Publisher&lt;Message&lt;O>> method(Message&lt;I> msg);</pre>
      * <li/>Default acknowledgment strategy: PRE_PROCESSING
      * <li/>Supported acknowledgment strategies: NONE, MANUAL, PRE_PROCESSING
      */
@@ -120,12 +147,12 @@ public enum MethodSignatureType {
     /**
      * Processor method signature type.
      * <p>
-     * Invoke at: assembly time
+     * Invoke at: every incoming
      * <pre>Publisher&lt;O> method(I payload);</pre>
      * <li/>Default acknowledgment strategy: PRE_PROCESSING
      * <li/>Supported acknowledgment strategies: NONE, PRE_PROCESSING
      */
-    PROCESSOR_PUBLISHER_PAYL_2_PAYL(true, Acknowledgment.Strategy.PRE_PROCESSING,
+    PROCESSOR_PUBLISHER_PAYL_2_PAYL(false, Acknowledgment.Strategy.PRE_PROCESSING,
             Acknowledgment.Strategy.NONE,
             Acknowledgment.Strategy.PRE_PROCESSING
     ),
@@ -133,7 +160,7 @@ public enum MethodSignatureType {
      * Processor method signature type.
      * <p>
      * Invoke at: every incoming
-     * <pre>PublisherBuilder&lt;Message&lt;O>> method(Message&lt;I>msg);</pre>
+     * <pre>PublisherBuilder&lt;Message&lt;O>> method(Message&lt;I> msg);</pre>
      * <li/>Default acknowledgment strategy: PRE_PROCESSING
      * <li/>Supported acknowledgment strategies: NONE, MANUAL, PRE_PROCESSING
      */
@@ -146,7 +173,7 @@ public enum MethodSignatureType {
      * Processor method signature type.
      * <p>
      * Invoke at: every incoming
-     * <pre>PublisherBuilder&lt;O> method(&lt;I> msg);</pre>
+     * <pre>PublisherBuilder&lt;O> method(I payload);</pre>
      * <li/>Default acknowledgment strategy: PRE_PROCESSING
      * <li/>Supported acknowledgment strategies: NONE, PRE_PROCESSING
      */
@@ -278,7 +305,7 @@ public enum MethodSignatureType {
      * Subscriber method signature type.
      * <p>
      * Invoke at: every incoming
-     * <pre>CompletionStage&lt;?> method(Message&lt;I>msg)</pre>
+     * <pre>CompletionStage&lt;?> method(Message&lt;I> msg)</pre>
      * <li/>Default acknowledgment strategy: PRE_PROCESSING
      * <li/>Supported acknowledgment strategies: NONE, MANUAL, PRE_PROCESSING, POST_PROCESSING
      */
@@ -307,25 +334,38 @@ public enum MethodSignatureType {
      * <p>
      * Invoke at: assembly time
      * <pre>Publisher&lt;Message&lt;U>> method()</pre>
+     */
+    OUTGOING_PUBLISHER_MSG_2_VOID(true, null),
+
+    /**
+     * Publisher method signature type.
+     * <p>
+     * Invoke at: assembly time
      * <pre>Publisher&lt;U> method()</pre>
      */
-    OUTGOING_PUBLISHER_2_VOID(true, null),
+    OUTGOING_PUBLISHER_PAYL_2_VOID(true, null),
 
     /**
      * Publisher method signature type.
      * <p>
      * Invoke at: assembly time
      * <pre>PublisherBuilder&lt;Message&lt;U>> method()</pre>
+     */
+    OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID(true, null),
+
+    /**
+     * Publisher method signature type.
+     * <p>
+     * Invoke at: assembly time
      * <pre>PublisherBuilder&lt;U> method()</pre>
      */
-    OUTGOING_PUBLISHER_BUILDER_2_VOID(true, null),
+    OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID(true, null),
 
     /**
      * Publisher method signature type.
      * <p>
      * Invoke at: Each request made by subscriber
      * <pre>Message&lt;U> method()</pre>
-     * <pre>U method()</pre>
      * <p>
      * Produces an infinite stream of Message associated with the
      * channel channel. The result is a CompletionStage. The method should not be
@@ -338,7 +378,32 @@ public enum MethodSignatureType {
      * Publisher method signature type.
      * <p>
      * Invoke at: Each request made by subscriber
+     * <pre>U method()</pre>
+     * <p>
+     * Produces an infinite stream of Message associated with the
+     * channel channel. The result is a CompletionStage. The method should not be
+     * called by the reactive messaging implementation until the CompletionStage
+     * returned previously is completed.
+     */
+    OUTGOING_PAYL_2_VOID(false, null),
+
+    /**
+     * Publisher method signature type.
+     * <p>
+     * Invoke at: Each request made by subscriber
      * <pre>CompletionStage&lt;Message&lt;U>> method()</pre>
+     * <p>
+     * Produces an infinite stream of Message associated with the
+     * channel channel. The result is a CompletionStage. The method should not be
+     * called by the reactive messaging implementation until the CompletionStage
+     * returned previously is completed.
+     */
+    OUTGOING_COMPLETION_STAGE_MSG_2_VOID(false, null),
+
+    /**
+     * Publisher method signature type.
+     * <p>
+     * Invoke at: Each request made by subscriber
      * <pre>CompletionStage&lt;U> method()</pre>
      * <p>
      * Produces an infinite stream of Message associated with the
@@ -346,7 +411,7 @@ public enum MethodSignatureType {
      * called by the reactive messaging implementation until the CompletionStage
      * returned previously is completed.
      */
-    OUTGOING_COMPLETION_STAGE_2_VOID(false, null);
+    OUTGOING_COMPLETION_STAGE_PAYL_2_VOID(false, null);
 
     private boolean invokeAtAssembly;
     private Acknowledgment.Strategy defaultAckType;

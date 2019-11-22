@@ -52,31 +52,36 @@ class ProxyProcessor implements Processor<Object, Object> {
     ProxyProcessor(ProcessorMethod processorMethod) {
         this.processorMethod = processorMethod;
         try {
-            if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_2_PUBLISHER_BUILDER) {
-                PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
-                publisher = ((PublisherBuilder<Object>) processorMethod
-                        .getMethod()
-                        .invoke(processorMethod.getBeanInstance(), paramPublisherBuilder)).buildRs();
-
-            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PUBLISHER_2_PUBLISHER) {
-                publisher = ((Publisher<Object>) processorMethod
-                        .getMethod()
-                        .invoke(processorMethod.getBeanInstance(), this));
-
-            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID) {
-                processor = ((ProcessorBuilder<Object, Object>) processorMethod
-                        .getMethod()
-                        .invoke(processorMethod.getBeanInstance())).buildRs();
-                publisher = processor;
-
-            } else if (processorMethod.getType() == MethodSignatureType.PROCESSOR_PROCESSOR_MSG_2_VOID) {
-                processor = ((Processor<Object, Object>) processorMethod
-                        .getMethod()
-                        .invoke(processorMethod.getBeanInstance()));
-                publisher = processor;
-
-            } else {
-                throw new UnsupportedOperationException("Unknown signature type " + processorMethod.getType());
+            switch (processorMethod.getType()) {
+                case PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG:
+                case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PUBLISHER_BUILDER_PAYL:
+                    PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
+                    publisher = ((PublisherBuilder<Object>) processorMethod
+                            .getMethod()
+                            .invoke(processorMethod.getBeanInstance(), paramPublisherBuilder)).buildRs();
+                    break;
+                case PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG:
+                case PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL:
+                    publisher = ((Publisher<Object>) processorMethod
+                            .getMethod()
+                            .invoke(processorMethod.getBeanInstance(), this));
+                    break;
+                case PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID:
+                case PROCESSOR_PROCESSOR_BUILDER_PAYL_2_VOID:
+                    processor = ((ProcessorBuilder<Object, Object>) processorMethod
+                            .getMethod()
+                            .invoke(processorMethod.getBeanInstance())).buildRs();
+                    publisher = processor;
+                    break;
+                case PROCESSOR_PROCESSOR_MSG_2_VOID:
+                case PROCESSOR_PROCESSOR_PAYL_2_VOID:
+                    processor = ((Processor<Object, Object>) processorMethod
+                            .getMethod()
+                            .invoke(processorMethod.getBeanInstance()));
+                    publisher = processor;
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unknown signature type " + processorMethod.getType());
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new DeploymentException(e);

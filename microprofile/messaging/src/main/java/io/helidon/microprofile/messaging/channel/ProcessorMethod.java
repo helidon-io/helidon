@@ -17,9 +17,6 @@
 
 package io.helidon.microprofile.messaging.channel;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.CompletionStage;
-
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
@@ -28,10 +25,7 @@ import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
 
 class ProcessorMethod extends AbstractMethod {
 
@@ -82,49 +76,6 @@ class ProcessorMethod extends AbstractMethod {
 
     void setOutgoingChannel(UniversalChannel outgoingChannel) {
         this.outgoingChannel = outgoingChannel;
-    }
-
-    @Override
-    protected void resolveSignatureType() {
-        Method method = getMethod();
-        Class<?> returnType = method.getReturnType();
-        Class<?> parameterType = Void.TYPE;
-
-        if (method.getParameterTypes().length == 1) {
-            parameterType = method.getParameterTypes()[0];
-
-        } else if (method.getParameterTypes().length > 1) {
-            throw new DeploymentException(String
-                    .format("Bad processor method signature %s", method));
-        }
-        if (Void.TYPE.equals(parameterType)) {
-            if (Processor.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_PROCESSOR_MSG_2_VOID);
-
-            } else if (ProcessorBuilder.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID);
-
-            } else {
-                throw new DeploymentException(String
-                        .format("Bad processor method signature %s", method));
-            }
-        } else if (Publisher.class.equals(parameterType) && Publisher.class.equals(returnType)) {
-            setType(MethodSignatureType.PROCESSOR_PUBLISHER_2_PUBLISHER);
-
-        } else if (PublisherBuilder.class.equals(parameterType) && PublisherBuilder.class.equals(returnType)) {
-            setType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_2_PUBLISHER_BUILDER);
-
-        } else {
-            if (Publisher.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG);
-
-            } else if (CompletionStage.class.equals(returnType)) {
-                setType(MethodSignatureType.PROCESSOR_COMPL_STAGE_MSG_2_MSG);
-
-            } else {
-                setType(MethodSignatureType.PROCESSOR_MSG_2_MSG);
-            }
-        }
     }
 
 }

@@ -62,7 +62,7 @@ class InternalSubscriber implements Subscriber<Object> {
             Contexts.runInContext(context, () -> this.method.invoke(this.beanInstance, MessageUtils.unwrap(message, paramType)));
             subscription.request(1);
         } catch (Exception e) {
-            //Notify publisher to stop sending
+            // Notify publisher to stop sending
             subscription.cancel();
             throw new MessagingStreamException(e);
         }

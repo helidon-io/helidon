@@ -44,11 +44,9 @@ abstract class AbstractMethod {
 
     abstract void validate();
 
-    abstract void resolveSignatureType();
-
     public void init(BeanManager beanManager, Config config) {
         this.beanInstance = ChannelRouter.lookup(bean, beanManager);
-        resolveSignatureType();
+        type = MethodSignatureResolver.create(method).resolve();
         resolveAckStrategy();
     }
 

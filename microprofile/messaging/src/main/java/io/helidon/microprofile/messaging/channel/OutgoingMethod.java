@@ -18,8 +18,6 @@
 package io.helidon.microprofile.messaging.channel;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
-import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
@@ -46,10 +44,12 @@ class OutgoingMethod extends AbstractMethod {
         if (getType().isInvokeAtAssembly()) {
             try {
                 switch (getType()) {
-                    case OUTGOING_PUBLISHER_2_VOID:
+                    case OUTGOING_PUBLISHER_MSG_2_VOID:
+                    case OUTGOING_PUBLISHER_PAYL_2_VOID:
                         publisher = (Publisher) getMethod().invoke(getBeanInstance());
                         break;
-                    case OUTGOING_PUBLISHER_BUILDER_2_VOID:
+                    case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
+                    case OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID:
                         publisher = ((PublisherBuilder) getMethod().invoke(getBeanInstance())).buildRs();
                         break;
                     default:
@@ -78,32 +78,6 @@ class OutgoingMethod extends AbstractMethod {
 
     public Publisher getPublisher() {
         return publisher;
-    }
-
-    @Override
-    protected void resolveSignatureType() {
-        Class<?> returnType = this.getMethod().getReturnType();
-        if (this.getMethod().getParameterTypes().length != 0) {
-            throw new DeploymentException(String
-                    .format("Unsupported parameters on outgoing method %s", getMethod()));
-        }
-
-        if (Void.class.isAssignableFrom(returnType)) {
-            setType(null);
-        } else if (Publisher.class.isAssignableFrom(returnType)) {
-            setType(MethodSignatureType.OUTGOING_PUBLISHER_2_VOID);
-        } else if (PublisherBuilder.class.isAssignableFrom(returnType)) {
-            setType(MethodSignatureType.OUTGOING_PUBLISHER_BUILDER_2_VOID);
-        } else if (CompletionStage.class.isAssignableFrom(returnType)) {
-            setType(MethodSignatureType.OUTGOING_COMPLETION_STAGE_2_VOID);
-        } else {
-            setType(MethodSignatureType.OUTGOING_MSG_2_VOID);
-        }
-
-        if (Objects.isNull(getType())) {
-            throw new DeploymentException(String
-                    .format("Unsupported outgoing method signature %s", getMethod()));
-        }
     }
 
 }

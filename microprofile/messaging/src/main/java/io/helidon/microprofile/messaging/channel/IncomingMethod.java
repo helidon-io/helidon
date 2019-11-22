@@ -18,8 +18,6 @@
 package io.helidon.microprofile.messaging.channel;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
-import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
@@ -65,10 +63,14 @@ class IncomingMethod extends AbstractMethod {
             try {
                 switch (getType()) {
                     case INCOMING_SUBSCRIBER_MSG_2_VOID:
+                        subscriber = (Subscriber) getMethod().invoke(getBeanInstance());
+                        break;
+                    case INCOMING_SUBSCRIBER_PAYL_2_VOID:
                         subscriber = UnwrapProcessor.of(this.getMethod(), (Subscriber) getMethod()
                                 .invoke(getBeanInstance()));
                         break;
                     case INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID:
+                    case INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID:
                         subscriber = UnwrapProcessor.of(this.getMethod(),
                                 ((SubscriberBuilder) getMethod().invoke(getBeanInstance())).build());
                         break;
@@ -87,43 +89,6 @@ class IncomingMethod extends AbstractMethod {
 
     public Subscriber getSubscriber() {
         return subscriber;
-    }
-
-    @Override
-    protected void resolveSignatureType() {
-        Class<?> returnType = this.getMethod().getReturnType();
-        Class<?> parameterType;
-        if (this.getMethod().getParameterTypes().length == 1) {
-            parameterType = this.getMethod().getParameterTypes()[0];
-        } else if (this.getMethod().getParameterTypes().length == 0) {
-            parameterType = Void.TYPE;
-        } else {
-            throw new DeploymentException(String
-                    .format("Unsupported parameters on incoming method %s", getMethod()));
-        }
-
-        if (Void.TYPE.equals(parameterType)) {
-            if (Subscriber.class.equals(returnType)) {
-                setType(MethodSignatureType.INCOMING_SUBSCRIBER_MSG_2_VOID);
-            } else if (SubscriberBuilder.class.equals(returnType)) {
-                setType(MethodSignatureType.INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID);
-            }
-        } else {
-            if (CompletionStage.class.equals(returnType)) {
-                setType(MethodSignatureType.INCOMING_COMPLETION_STAGE_2_MSG);
-// Uncomment when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
-// see io.helidon.microprofile.messaging.inner.BadSignaturePublisherPayloadBean
-            } else /*if (Void.TYPE.equals(returnType))*/ {
-                setType(MethodSignatureType.INCOMING_VOID_2_PAYL);
-//            } else {
-//                throw new DeploymentException("Not supported method signature.");
-            }
-        }
-
-        if (Objects.isNull(getType())) {
-            throw new DeploymentException(String
-                    .format("Unsupported incoming method signature %s", getMethod()));
-        }
     }
 
 }

@@ -17,18 +17,20 @@
 
 package io.helidon.microprofile.messaging.kafka;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Message;
-
-import javax.enterprise.context.ApplicationScoped;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 
+import javax.enterprise.context.ApplicationScoped;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
 @ApplicationScoped
 public class KafkaConsumingBean {
@@ -38,9 +40,10 @@ public class KafkaConsumingBean {
     public static CountDownLatch testChannelLatch = new CountDownLatch(TEST_DATA.size() * 2);
 
     @Incoming("test-channel-1")
-    public void receiveMPMessage(Message<ConsumerRecord<Long, String>> msg) {
+    public CompletionStage<String> receiveMPMessage(Message<ConsumerRecord<Long, String>> msg) {
         assertTrue(TEST_DATA.contains(msg.getPayload().value()));
         testChannelLatch.countDown();
+        return CompletableFuture.completedFuture(null);
     }
 
     @Incoming("test-channel-2")
