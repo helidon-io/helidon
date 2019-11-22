@@ -39,7 +39,7 @@ In this guide you will learn how to build a native image locally on your machine
 |===
 |About 10 minutes
 | <<about/03_prerequisites.adoc,Helidon Prerequisites>>
-| GraalVM CE https://github.com/oracle/graal/releases[19.2.0+ or 19.1.1+]
+| GraalVM CE https://www.graalvm.org/downloads[19.2+ or 19.3+]
 |===
 
 == Install GraalVM and the Native Image Command
