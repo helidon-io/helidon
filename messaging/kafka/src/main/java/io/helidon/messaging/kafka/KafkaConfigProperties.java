@@ -16,13 +16,12 @@
 
 package io.helidon.messaging.kafka;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
+import io.helidon.config.Config;
 
 /**
  * Prepare Kafka properties from Helidon {@link io.helidon.config.Config Config}.
@@ -52,15 +51,15 @@ import java.util.stream.Collectors;
  *
  * @see io.helidon.config.Config
  */
-public class KafkaConfigProperties extends Properties {
+class KafkaConfigProperties extends Properties {
 
     /**
-     * Topic or topics delimited by commas
+     * Topic or topics delimited by commas.
      */
     static final String TOPIC_NAME = "topic";
 
     /**
-     * Consumer group id
+     * Consumer group id.
      */
     static final String GROUP_ID = "group.id";
 
@@ -68,14 +67,14 @@ public class KafkaConfigProperties extends Properties {
      * Prepare Kafka properties from Helidon {@link io.helidon.config.Config Config},
      * underscores in keys are translated to dots.
      *
-     * @param config   parent config of kafka key
+     * @param config parent config of kafka key
      */
     KafkaConfigProperties(Config config) {
         config.asNodeList().get().forEach(this::addProperty);
     }
 
     /**
-     * Split comma separated topic names
+     * Split comma separated topic names.
      *
      * @return list of topic names
      */

@@ -16,34 +16,43 @@
 
 package io.helidon.messaging.kafka.connector;
 
-import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.config.Config;
-import io.helidon.messaging.kafka.SimpleKafkaConsumer;
-import io.helidon.microprofile.config.MpConfig;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.event.Observes;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.Config;
+import io.helidon.messaging.kafka.SimpleKafkaConsumer;
+import io.helidon.microprofile.config.MpConfig;
+
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 
 /**
- * Partial implementation of Connector as described in the MicroProfile Reactive Messaging Specification
+ * Partial implementation of Connector as described in the MicroProfile Reactive Messaging Specification.
  */
 @ApplicationScoped
 @Connector(KafkaConnectorFactory.CONNECTOR_NAME)
 public class KafkaConnectorFactory implements IncomingConnectorFactory {
 
+    /**
+     * Microprofile messaging Kafka connector name.
+     */
     public static final String CONNECTOR_NAME = "helidon-kafka";
 
     private List<SimpleKafkaConsumer<Object, Object>> consumers = new CopyOnWriteArrayList<>();
     private ThreadPoolSupplier threadPoolSupplier = null;
 
+    /**
+     * Called when container is terminated.
+     *
+     * @param event termination event
+     */
     public void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
         consumers.forEach(SimpleKafkaConsumer::close);
     }
@@ -61,9 +70,6 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory {
     }
 
     private ThreadPoolSupplier getThreadPoolSupplier(Config config) {
-        if (this.threadPoolSupplier != null) {
-            return this.threadPoolSupplier;
-        }
         synchronized (this) {
             if (this.threadPoolSupplier != null) {
                 return this.threadPoolSupplier;

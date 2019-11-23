@@ -16,12 +16,6 @@
 
 package io.helidon.messaging.kafka;
 
-import io.helidon.config.Config;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.header.Header;
-
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,10 +25,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.header.Header;
+
 /**
  * Simple Kafka producer covering basic use-cases.
  * Configurable by Helidon {@link io.helidon.config.Config Config},
- * For more info about configuration see {@link KafkaConfigProperties}
+ * For more info about configuration see {@link KafkaConfigProperties}.
  * <p/>
  * Usage:
  * <pre>{@code new SimpleKafkaProducer<Long, String>("job-done-producer", Config.create())
@@ -67,6 +68,12 @@ public class SimpleKafkaProducer<K, V> implements Closeable {
         producer = new KafkaProducer<>(properties);
     }
 
+    /**
+     * Kafka producer created from {@link io.helidon.config.Config config} under kafka->producerId,
+     * see configuration {@link KafkaConfigProperties example}.
+     *
+     * @param config Helidon {@link io.helidon.config.Config config}
+     */
     public SimpleKafkaProducer(Config config) {
         properties = new KafkaConfigProperties(config);
         producer = new KafkaProducer<>(properties);
@@ -74,7 +81,7 @@ public class SimpleKafkaProducer<K, V> implements Closeable {
 
     /**
      * Send record to all provided topics,
-     * blocking until all records are acknowledged by broker
+     * blocking until all records are acknowledged by broker.
      *
      * @param value Will be serialized by <b>value.serializer</b> class
      *              defined in {@link KafkaConfigProperties configuration}
@@ -95,12 +102,18 @@ public class SimpleKafkaProducer<K, V> implements Closeable {
         return metadataList;
     }
 
+    /**
+     * Produce asynchronously.
+     *
+     * @param value value to be produced
+     * @return list of futures
+     */
     public List<Future<RecordMetadata>> produceAsync(V value) {
         return this.produceAsync(null, null, null, null, value, null);
     }
 
     /**
-     * Send record to all provided topics, don't wait for server acknowledgement
+     * Send record to all provided topics, don't wait for server acknowledgement.
      *
      * @param customTopics Can be null, list of topics appended to the list from configuration,
      *                     record will be sent to all topics iteratively

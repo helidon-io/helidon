@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,21 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-
-package io.helidon.messaging.kafka;
 
 /**
- * Runtime exception for Consumer validation errors.
+ * Kafka connector.
  */
-class InvalidKafkaConsumerState extends RuntimeException {
-
-    /**
-     * Creates {@link io.helidon.messaging.kafka.InvalidKafkaConsumerState} runtime exception.
-     *
-     * @param message the message
-     */
-    InvalidKafkaConsumerState(String message) {
-        super(message);
-    }
-}
+package io.helidon.messaging.kafka;

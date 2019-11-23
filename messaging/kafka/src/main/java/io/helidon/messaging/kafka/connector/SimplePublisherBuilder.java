@@ -16,15 +16,6 @@
 
 package io.helidon.messaging.kafka.connector;
 
-import org.eclipse.microprofile.reactive.streams.operators.CompletionRunner;
-import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
-import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -36,8 +27,17 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
+import org.eclipse.microprofile.reactive.streams.operators.CompletionRunner;
+import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
+import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
 /**
- * Simple stub to create MicroProfile Reactive Messaging connector without reactive streams
+ * Simple stub to create MicroProfile Reactive Messaging connector without reactive streams.
  *
  * @param <K> kafka record key type
  * @param <V> kafka record value type
@@ -46,25 +46,29 @@ public class SimplePublisherBuilder<K, V> implements PublisherBuilder<KafkaMessa
 
     private Consumer<Subscriber<? super KafkaMessage<K, V>>> publisher;
 
+    /**
+     * Create new Stub.
+     *
+     * @param publisher {@link java.util.function.Consumer}
+     * @deprecated use helidon reactive streams instead
+     */
+    @Deprecated
     public SimplePublisherBuilder(Consumer<Subscriber<? super KafkaMessage<K, V>>> publisher) {
         this.publisher = publisher;
     }
 
     @Override
     public Publisher<KafkaMessage<K, V>> buildRs() {
-        //TODO: Implement ReactiveStreamsEngine instead if simple stub
         return new SimplePublisher<K, V>(publisher);
     }
 
     @Override
     public CompletionRunner<Void> to(Subscriber<? super KafkaMessage<K, V>> subscriber) {
-        //TODO: Gonna need this for outgoing
         throw new UnsupportedOperationException();
     }
 
     @Override
     public <R> CompletionRunner<R> to(SubscriberBuilder<? super KafkaMessage<K, V>, ? extends R> subscriber) {
-        //TODO: Gonna need this for outgoing
         throw new UnsupportedOperationException();
     }
 
@@ -79,22 +83,26 @@ public class SimplePublisherBuilder<K, V> implements PublisherBuilder<KafkaMessa
     }
 
     @Override
-    public <S> PublisherBuilder<S> flatMap(Function<? super KafkaMessage<K, V>, ? extends PublisherBuilder<? extends S>> mapper) {
+    public <S> PublisherBuilder<S> flatMap(
+            Function<? super KafkaMessage<K, V>, ? extends PublisherBuilder<? extends S>> mapper) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <S> PublisherBuilder<S> flatMapRsPublisher(Function<? super KafkaMessage<K, V>, ? extends Publisher<? extends S>> mapper) {
+    public <S> PublisherBuilder<S> flatMapRsPublisher(
+            Function<? super KafkaMessage<K, V>, ? extends Publisher<? extends S>> mapper) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <S> PublisherBuilder<S> flatMapCompletionStage(Function<? super KafkaMessage<K, V>, ? extends CompletionStage<? extends S>> mapper) {
+    public <S> PublisherBuilder<S> flatMapCompletionStage(
+            Function<? super KafkaMessage<K, V>, ? extends CompletionStage<? extends S>> mapper) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <S> PublisherBuilder<S> flatMapIterable(Function<? super KafkaMessage<K, V>, ? extends Iterable<? extends S>> mapper) {
+    public <S> PublisherBuilder<S> flatMapIterable(
+            Function<? super KafkaMessage<K, V>, ? extends Iterable<? extends S>> mapper) {
         throw new UnsupportedOperationException();
     }
 
@@ -164,7 +172,8 @@ public class SimplePublisherBuilder<K, V> implements PublisherBuilder<KafkaMessa
     }
 
     @Override
-    public CompletionRunner<KafkaMessage<K, V>> reduce(KafkaMessage<K, V> identity, BinaryOperator<KafkaMessage<K, V>> accumulator) {
+    public CompletionRunner<KafkaMessage<K, V>> reduce(
+            KafkaMessage<K, V> identity, BinaryOperator<KafkaMessage<K, V>> accumulator) {
         throw new UnsupportedOperationException();
     }
 
@@ -199,12 +208,14 @@ public class SimplePublisherBuilder<K, V> implements PublisherBuilder<KafkaMessa
     }
 
     @Override
-    public PublisherBuilder<KafkaMessage<K, V>> onErrorResumeWith(Function<Throwable, ? extends PublisherBuilder<? extends KafkaMessage<K, V>>> errorHandler) {
+    public PublisherBuilder<KafkaMessage<K, V>> onErrorResumeWith(
+            Function<Throwable, ? extends PublisherBuilder<? extends KafkaMessage<K, V>>> errorHandler) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PublisherBuilder<KafkaMessage<K, V>> onErrorResumeWithRsPublisher(Function<Throwable, ? extends Publisher<? extends KafkaMessage<K, V>>> errorHandler) {
+    public PublisherBuilder<KafkaMessage<K, V>> onErrorResumeWithRsPublisher(
+            Function<Throwable, ? extends Publisher<? extends KafkaMessage<K, V>>> errorHandler) {
         throw new UnsupportedOperationException();
     }
 

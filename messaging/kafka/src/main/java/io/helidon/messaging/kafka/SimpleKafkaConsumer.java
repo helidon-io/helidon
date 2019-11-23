@@ -16,14 +16,6 @@
 
 package io.helidon.messaging.kafka;
 
-import io.helidon.config.Config;
-import io.helidon.messaging.kafka.connector.KafkaMessage;
-import io.helidon.messaging.kafka.connector.SimplePublisherBuilder;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.errors.WakeupException;
-
 import java.io.Closeable;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -39,6 +31,15 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+
+import io.helidon.config.Config;
+import io.helidon.messaging.kafka.connector.KafkaMessage;
+import io.helidon.messaging.kafka.connector.SimplePublisherBuilder;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.WakeupException;
 
 /**
  * Simple Kafka consumer covering basic use-cases.
@@ -101,6 +102,12 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
         consumer = new KafkaConsumer<>(properties);
     }
 
+    /**
+     * Kafka consumer created from {@link io.helidon.config.Config config}
+     * see configuration {@link KafkaConfigProperties example}.
+     *
+     * @param config Helidon {@link io.helidon.config.Config config}
+     */
     public SimpleKafkaConsumer(Config config) {
         properties = new KafkaConfigProperties(config);
         properties.setProperty(KafkaConfigProperties.GROUP_ID, getOrGenerateGroupId(null));
@@ -110,16 +117,17 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
     }
 
     /**
-     * Execute supplied consumer for each received record
+     * Execute supplied consumer for each received record.
      *
      * @param function to be executed for each received record
+     * @return {@link java.util.concurrent.Future}
      */
     public Future<?> consumeAsync(Consumer<ConsumerRecord<K, V>> function) {
         return this.consumeAsync(Executors.newWorkStealingPool(), null, function);
     }
 
     /**
-     * Execute supplied consumer by provided executor service for each received record
+     * Execute supplied consumer by provided executor service for each received record.
      *
      * @param executorService Custom executor service used for spinning up polling thread and record consuming threads
      * @param customTopics    Can be null, list of topics appended to the list from configuration
@@ -159,6 +167,12 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
         });
     }
 
+    /**
+     * Create publisher builder.
+     *
+     * @param executorService {@link java.util.concurrent.ExecutorService}
+     * @return {@link io.helidon.messaging.kafka.connector.SimplePublisherBuilder}
+     */
     public SimplePublisherBuilder<K, V> createPublisherBuilder(ExecutorService executorService) {
         validateConsumer();
         this.externalExecutorService = executorService;
@@ -211,7 +225,7 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
 
     /**
      * Close consumer gracefully. Stops polling loop,
-     * wakes possible blocked poll and shuts down executor service
+     * wakes possible blocked poll and shuts down executor service.
      */
     @Override
     public void close() {
@@ -223,9 +237,10 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
     /**
      * Use supplied customGroupId if not null
      * or take it from configuration if exist
-     * or generate random in this order
+     * or generate random in this order.
      *
      * @param customGroupId custom group.id, overrides group.id from configuration
+     * @return returns or generate new groupId
      */
     protected String getOrGenerateGroupId(String customGroupId) {
         return Optional.ofNullable(customGroupId)

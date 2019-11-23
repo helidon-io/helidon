@@ -16,13 +16,13 @@
 
 package io.helidon.messaging.kafka.connector;
 
+import java.util.function.Consumer;
+
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
-import java.util.function.Consumer;
-
 /**
- * Reactive streams publisher using {@link java.util.function.Consumer} instead of reactive streams
+ * Reactive streams publisher using {@link java.util.function.Consumer} instead of reactive streams.
  *
  * @param <K> kafka record key type
  * @param <V> kafka record value type
@@ -31,6 +31,10 @@ public class SimplePublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
 
     private Consumer<Subscriber<? super KafkaMessage<K, V>>> publisher;
 
+    /**
+     * Create new Reactive Streams publisher using {@link java.util.function.Consumer} instead of reactive streams.
+     * @param publisher {@link java.util.function.Consumer}
+     */
     public SimplePublisher(Consumer<Subscriber<? super KafkaMessage<K, V>>> publisher) {
         this.publisher = publisher;
     }

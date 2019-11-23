@@ -22,6 +22,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>io.helidon.messaging</groupId>
+        <artifactId>helidon-messaging-project</artifactId>
+        <version>1.3.2-SNAPSHOT</version>
+    </parent>
+
     <groupId>io.helidon.messaging.connectors</groupId>
     <artifactId>kafka-connector</artifactId>
     <version>1.3.2-SNAPSHOT</version>
@@ -54,7 +60,7 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
-            <version>1.2.2-SNAPSHOT</version>
+            <version>1.3.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
@@ -99,11 +105,35 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${version.plugin.checkstyle}</version>
+                    <configuration>
+                        <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${version.lib.checkstyle}</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>com.sun</groupId>
+                                    <artifactId>tools</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M3</version>
                 <configuration>
                     <systemProperties>
                         <property>

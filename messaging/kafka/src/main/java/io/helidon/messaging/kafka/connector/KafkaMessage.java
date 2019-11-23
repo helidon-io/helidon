@@ -16,14 +16,14 @@
 
 package io.helidon.messaging.kafka.connector;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.eclipse.microprofile.reactive.messaging.Message;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.eclipse.microprofile.reactive.messaging.Message;
+
 /**
- * Kafka specific MP messaging message
+ * Kafka specific MP messaging message.
  *
  * @param <K> kafka record key type
  * @param <V> kafka record value type
@@ -32,6 +32,11 @@ public class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
 
     private ConsumerRecord<K, V> consumerRecord;
 
+    /**
+     * Kafka specific MP messaging message.
+     *
+     * @param consumerRecord {@link org.apache.kafka.clients.consumer.ConsumerRecord}
+     */
     public KafkaMessage(ConsumerRecord<K, V> consumerRecord) {
         this.consumerRecord = consumerRecord;
     }
@@ -43,11 +48,12 @@ public class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
 
     @Override
     public CompletionStage<Void> ack() {
-        //TODO: implement acknowledge
+        //implement acknowledge
         return new CompletableFuture<>();
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <C> C unwrap(Class<C> unwrapType) {
         if (consumerRecord.getClass().isAssignableFrom(unwrapType)) {
             return (C) consumerRecord;

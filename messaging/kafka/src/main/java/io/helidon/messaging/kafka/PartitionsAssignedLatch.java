@@ -16,18 +16,18 @@
 
 package io.helidon.messaging.kafka;
 
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.common.TopicPartition;
-
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.common.TopicPartition;
+
 /**
- * Waiting latch for partition assigment, after that is consumer ready to receive
+ * Waiting latch for partition assigment, after that is consumer ready to receive.
  */
 public class PartitionsAssignedLatch extends CountDownLatch implements ConsumerRebalanceListener {
 
-    public PartitionsAssignedLatch() {
+    PartitionsAssignedLatch() {
         super(1);
     }
 

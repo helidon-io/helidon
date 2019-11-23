@@ -65,10 +65,10 @@ public class SimpleKafkaTest {
     @Test
     public void sendAndReceive() throws ExecutionException, InterruptedException, TimeoutException {
         Properties p = new Properties();
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".bootstrap.servers", kafkaResource.getKafkaConnectString());
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".topic", TEST_TOPIC);
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".key.serializer", LongSerializer.class.getName());
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".value.serializer", StringSerializer.class.getName());
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".bootstrap.servers", kafkaResource.getKafkaConnectString());
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".topic", TEST_TOPIC);
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".key.serializer", LongSerializer.class.getName());
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".value.serializer", StringSerializer.class.getName());
         p.setProperty("mp.messaging.incoming." + TEST_CONSUMER_1 + ".bootstrap.servers", kafkaResource.getKafkaConnectString());
         p.setProperty("mp.messaging.incoming." + TEST_CONSUMER_1 + ".topic", TEST_TOPIC);
         p.setProperty("mp.messaging.incoming." + TEST_CONSUMER_1 + ".key.deserializer", LongDeserializer.class.getName());
@@ -103,10 +103,10 @@ public class SimpleKafkaTest {
         final String TEST_GROUP = "XXX";
 
         Properties p = new Properties();
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".bootstrap.servers", kafkaResource.getKafkaConnectString());
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".topic", TEST_TOPIC);
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".key.serializer", LongSerializer.class.getName());
-        p.setProperty("mp.messaging.outcoming." + TEST_PRODUCER + ".value.serializer", StringSerializer.class.getName());
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".bootstrap.servers", kafkaResource.getKafkaConnectString());
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".topic", TEST_TOPIC);
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".key.serializer", LongSerializer.class.getName());
+        p.setProperty("mp.messaging.outgoing." + TEST_PRODUCER + ".value.serializer", StringSerializer.class.getName());
         p.setProperty("mp.messaging.incoming." + TEST_CONSUMER_2 + ".bootstrap.servers", kafkaResource.getKafkaConnectString());
         p.setProperty("mp.messaging.incoming." + TEST_CONSUMER_2 + ".topic", TEST_TOPIC);
         p.setProperty("mp.messaging.incoming." + TEST_CONSUMER_2 + ".group.id", TEST_GROUP);
