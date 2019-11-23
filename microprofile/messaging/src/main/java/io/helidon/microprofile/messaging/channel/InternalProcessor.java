@@ -31,7 +31,7 @@ import org.reactivestreams.Subscription;
 
 /**
  * Processor calling underlined messaging method for every received item.
- * <p/>
+ * <p>
  * Example:
  * <pre>{@code
  *      @Incoming("channel-one")

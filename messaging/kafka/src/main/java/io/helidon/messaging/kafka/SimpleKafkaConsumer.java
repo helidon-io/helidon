@@ -45,7 +45,7 @@ import org.apache.kafka.common.errors.WakeupException;
  * Simple Kafka consumer covering basic use-cases.
  * Configurable by Helidon {@link io.helidon.config.Config Config},
  * For more info about configuration see {@link KafkaConfigProperties}
- * <p/>
+ * <p>
  * Usage:
  * <pre>{@code
  *   try (SimpleKafkaConsumer<Long, String> c = new SimpleKafkaConsumer<>("test-channel", Config.create())) {

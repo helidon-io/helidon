@@ -41,7 +41,7 @@ class MessageUtils {
 
     /**
      * Unwrap values to expected types.
-     * <p/>
+     * <p>
      * Examples:
      * <pre>{@code
      * Message<CompletableFuture<Message<String>>>

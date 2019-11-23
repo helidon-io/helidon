@@ -36,7 +36,7 @@ import org.apache.kafka.common.header.Header;
  * Simple Kafka producer covering basic use-cases.
  * Configurable by Helidon {@link io.helidon.config.Config Config},
  * For more info about configuration see {@link KafkaConfigProperties}.
- * <p/>
+ * <p>
  * Usage:
  * <pre>{@code new SimpleKafkaProducer<Long, String>("job-done-producer", Config.create())
  *             .produce("Hello world!");
@@ -55,7 +55,7 @@ public class SimpleKafkaProducer<K, V> implements Closeable {
     private KafkaProducer<K, V> producer;
 
     /**
-     * Kafka producer created from {@link io.helidon.config.Config config} under kafka->producerId,
+     * Kafka producer created from {@link io.helidon.config.Config config} under kafka-producerId,
      * see configuration {@link KafkaConfigProperties example}.
      *
      * @param producerId key in configuration
@@ -69,7 +69,7 @@ public class SimpleKafkaProducer<K, V> implements Closeable {
     }
 
     /**
-     * Kafka producer created from {@link io.helidon.config.Config config} under kafka->producerId,
+     * Kafka producer created from {@link io.helidon.config.Config config} under kafka-producerId,
      * see configuration {@link KafkaConfigProperties example}.
      *
      * @param config Helidon {@link io.helidon.config.Config config}

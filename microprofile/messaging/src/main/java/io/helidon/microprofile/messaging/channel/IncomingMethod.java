@@ -31,7 +31,7 @@ import org.reactivestreams.Subscriber;
 
 /**
  * Subscriber method with reference to processor method.
- * <p/>Example:
+ * <p>Example:
  * <pre>{@code
  *     @Incoming("channel-name")
  *     public void exampleIncomingMethod(String msg) {

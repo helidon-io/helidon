@@ -29,7 +29,7 @@ import org.reactivestreams.Subscriber;
 
 /**
  * Connector as defined in configuration.
- * <p/>
+ * <p>
  * <pre>{@code
  * mp.messaging.incoming.[channel-name].connector=[connector-name]
  * ...

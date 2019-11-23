@@ -194,7 +194,7 @@ class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, CompletionSt
 
     /**
      * Return {@link org.reactivestreams.Processor} wrapping all processor stages from processor builder.
-     * <p/>See example:
+     * <p>See example:
      * <pre>{@code
      *   Processor<Integer, String> processor = ReactiveStreams.<Integer>builder()
      *       .map(i -> i + 1)
@@ -214,7 +214,7 @@ class MultiStagesCollector<T> implements Collector<Stage, Multi<T>, CompletionSt
 
     /**
      * Returns {@link org.reactivestreams.Publisher} made from supplied stages.
-     * <p/>See example:
+     * <p>See example:
      * <pre>{@code
      *   ReactiveStreams
      *      .of("10", "20", "30")
