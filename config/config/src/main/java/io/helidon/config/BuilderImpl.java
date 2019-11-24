@@ -64,7 +64,6 @@ import org.eclipse.microprofile.config.spi.Converter;
  * {@link Config} Builder implementation.
  */
 class BuilderImpl implements Config.Builder {
-
     static final Executor DEFAULT_CHANGES_EXECUTOR = Executors.newCachedThreadPool(new ConfigThreadFactory("config"));
 
     /*
@@ -154,9 +153,6 @@ class BuilderImpl implements Config.Builder {
 
     @Override
     public Config.Builder addSource(ConfigSource source) {
-        if (null == sources) {
-            sources = new LinkedList<>();
-        }
         sources.add(source);
         if (source instanceof ConfigSources.EnvironmentVariablesConfigSource) {
             envVarAliasGeneratorEnabled = true;
@@ -608,39 +604,6 @@ class BuilderImpl implements Config.Builder {
     //
     // utils
     //
-
-    private static ConfigSource defaultConfigSource() {
-        final List<ConfigSource> sources = new ArrayList<>();
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        final List<ConfigSource> meta = defaultConfigSources(classLoader, "meta-config");
-        if (!meta.isEmpty()) {
-            sources.add(ConfigSources.load(toDefaultConfigSource(meta)).build());
-        }
-        sources.addAll(defaultConfigSources(classLoader, "application"));
-        return ConfigSources.create(toDefaultConfigSource(sources)).build();
-    }
-
-    private static List<ConfigSource> defaultConfigSources(final ClassLoader classLoader, final String baseResourceName) {
-        final List<ConfigSource> sources = new ArrayList<>();
-        for (final String extension : DEFAULT_FILE_EXTENSIONS) {
-            final String resource = baseResourceName + "." + extension;
-            if (classLoader.getResource(resource) != null) {
-                sources.add(classpath(resource).optional().build());
-            }
-        }
-        return sources;
-    }
-
-    private static ConfigSource toDefaultConfigSource(final List<ConfigSource> sources) {
-        if (sources.isEmpty()) {
-            return ConfigSources.empty();
-        } else if (sources.size() == 1) {
-            return sources.get(0);
-        } else {
-            return new UseFirstAvailableConfigSource(sources);
-        }
-    }
-
     static List<ConfigParser> buildParsers(boolean servicesEnabled, List<ConfigParser> userDefinedParsers) {
         List<ConfigParser> parsers = new LinkedList<>(userDefinedParsers);
         if (servicesEnabled) {
