@@ -17,17 +17,15 @@
 
 package io.helidon.microprofile.messaging.connector;
 
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.messaging.connector.AdHocConfigBuilder;
-
-import org.apache.kafka.common.serialization.LongSerializer;
-import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 class AdHocConfigBuilderTest {
 
@@ -43,7 +41,7 @@ class AdHocConfigBuilderTest {
     @Test
     void currentContext() {
         Map<String, String> propMap = mapOf(
-                "mp.messaging.outcoming.test-channel.key.serializer", LongSerializer.class.getName()
+                "mp.messaging.outcoming.test-channel.key.serializer", AdHocConfigBuilderTest.class.getName()
         );
 
         Config config = Config.builder()
@@ -56,14 +54,14 @@ class AdHocConfigBuilderTest {
                 .build();
 
         assertEquals(TEST_TOPIC_CUSTOM, c.getValue(TEST_KEY, String.class));
-        assertEquals(LongSerializer.class.getName(), c.getValue("key.serializer", String.class));
+        assertEquals(AdHocConfigBuilderTest.class.getName(), c.getValue("key.serializer", String.class));
     }
 
     @Test
     void customValueOverride() {
         Map<String, String> propMap = mapOf(
                 "mp.messaging.outcoming.test-channel." + TEST_KEY, TEST_TOPIC_CONFIG,
-                "mp.messaging.outcoming.test-channel.key.serializer", LongSerializer.class.getName()
+                "mp.messaging.outcoming.test-channel.key.serializer", AdHocConfigBuilderTest.class.getName()
         );
 
         Config config = Config.builder()

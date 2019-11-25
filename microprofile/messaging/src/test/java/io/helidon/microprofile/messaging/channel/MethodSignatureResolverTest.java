@@ -30,10 +30,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -46,8 +47,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-
-import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
 
 class MethodSignatureResolverTest {
 

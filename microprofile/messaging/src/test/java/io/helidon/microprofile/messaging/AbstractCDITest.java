@@ -16,20 +16,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.messaging.kafka.connector.KafkaConnectorFactory;
-import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.config.MpConfigProviderResolver;
-import io.helidon.microprofile.messaging.kafka.KafkaCdiExtensionTest;
-import io.helidon.microprofile.server.Server;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -46,35 +32,31 @@ import java.util.function.Consumer;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
+
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.microprofile.config.MpConfig;
+import io.helidon.microprofile.config.MpConfigProviderResolver;
+import io.helidon.microprofile.server.Server;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+
 public abstract class AbstractCDITest {
 
     static {
-        try (InputStream is = KafkaCdiExtensionTest.class.getResourceAsStream("/logging.properties")) {
+        try (InputStream is = AbstractCDITest.class.getResourceAsStream("/logging.properties")) {
             LogManager.getLogManager().readConfiguration(is);
         } catch (IOException e) {
             fail(e);
         }
     }
-
-    protected static final Connector KAFKA_CONNECTOR_LITERAL = new Connector() {
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Connector.class;
-        }
-
-        @Override
-        public String value() {
-            return KafkaConnectorFactory.CONNECTOR_NAME;
-        }
-    };
 
     protected SeContainer cdiContainer;
 
@@ -133,7 +115,7 @@ public abstract class AbstractCDITest {
                                 .config(config).build(),
                         Thread.currentThread().getContextClassLoader());
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertThat(initializer, is(notNullValue()));
+        assertNotNull(initializer);
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
     }
@@ -180,10 +162,10 @@ public abstract class AbstractCDITest {
         }
 
         @SuppressWarnings("unchecked")
-        public List<Class<? extends CompletableTestBean>> getCompletableBeanClasses() {
+        public List<Class<? extends AssertableTestBean>> getCompletableBeanClasses() {
             return Arrays.stream(clazzes)
-                    .filter(CompletableTestBean.class::isAssignableFrom)
-                    .map(c -> (Class<? extends CompletableTestBean>) c)
+                    .filter(AssertableTestBean.class::isAssignableFrom)
+                    .map(c -> (Class<? extends AssertableTestBean>) c)
                     .collect(Collectors.toList());
         }
     }

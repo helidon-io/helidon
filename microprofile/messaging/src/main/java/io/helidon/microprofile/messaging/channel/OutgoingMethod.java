@@ -66,6 +66,7 @@ class OutgoingMethod extends AbstractMethod {
     }
 
     void validate() {
+        super.validate();
         if (getOutgoingChannelName() == null || getOutgoingChannelName().trim().isEmpty()) {
             throw new DeploymentException(String
                     .format("Missing channel name in annotation @Outgoing, method: %s", getMethod()));

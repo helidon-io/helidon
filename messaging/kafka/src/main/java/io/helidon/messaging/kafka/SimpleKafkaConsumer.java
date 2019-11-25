@@ -23,6 +23,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -30,16 +34,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.messaging.kafka.connector.KafkaMessage;
-import io.helidon.messaging.kafka.connector.SimplePublisherBuilder;
+import io.helidon.messaging.kafka.connector.SimplePublisher;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.Subscription;
 
 /**
  * Simple Kafka consumer covering basic use-cases.
@@ -70,6 +81,9 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
     private ExecutorService externalExecutorService;
     private List<String> topicNameList;
     private KafkaConsumer<K, V> consumer;
+
+    private ConcurrentLinkedDeque<ConsumerRecord<K, V>> recordBuffer = new ConcurrentLinkedDeque<>();
+    private CopyOnWriteArrayList<CompletableFuture<Void>> ackFutures = new CopyOnWriteArrayList<>();
 
     /**
      * Kafka consumer created from {@link io.helidon.config.Config config}
@@ -171,21 +185,33 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
      * Create publisher builder.
      *
      * @param executorService {@link java.util.concurrent.ExecutorService}
-     * @return {@link io.helidon.messaging.kafka.connector.SimplePublisherBuilder}
+     * @return {@link org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder}
      */
-    public SimplePublisherBuilder<K, V> createPublisherBuilder(ExecutorService executorService) {
+    public PublisherBuilder<? extends Message<?>> createPushPublisherBuilder(ExecutorService executorService) {
         validateConsumer();
         this.externalExecutorService = executorService;
-        return new SimplePublisherBuilder<>(subscriber -> {
+        return ReactiveStreams.fromPublisher(new SimplePublisher<K, V>(subscriber -> {
+            subscriber.onSubscribe(new Subscription() {
+                @Override
+                public void request(long n) {
+                    LOGGER.log(Level.FINE, "Pushing Kafka consumer doesn't support requests.");
+                }
+
+                @Override
+                public void cancel() {
+                    SimpleKafkaConsumer.this.close();
+                }
+            });
             externalExecutorService.submit(() -> {
                 consumer.subscribe(topicNameList, partitionsAssignedLatch);
                 try {
                     while (!closed.get()) {
-                        ConsumerRecords<K, V> consumerRecords = consumer.poll(Duration.ofSeconds(5));
-                        consumerRecords.forEach(cr -> {
-                            KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
-                            executorService.execute(() -> subscriber.onNext(kafkaMessage));
-                        });
+                        waitForAcksAndPoll();
+                        if (recordBuffer.isEmpty()) continue;
+                        ConsumerRecord<K, V> cr = recordBuffer.poll();
+                        KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
+                        ackFutures.add(kafkaMessage.getAckFuture());
+                        runInNewContext(() -> subscriber.onNext(kafkaMessage));
                     }
                 } catch (WakeupException ex) {
                     if (!closed.get()) {
@@ -196,7 +222,21 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                     consumer.close();
                 }
             });
-        });
+        }));
+    }
+
+    private void waitForAcksAndPoll() {
+        if (recordBuffer.isEmpty()) {
+            try {
+                if (!ackFutures.isEmpty()) {
+                    CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
+                    consumer.commitSync();
+                }
+                consumer.poll(Duration.ofSeconds(1)).forEach(recordBuffer::add);
+            } catch (InterruptedException | ExecutionException e) {
+                LOGGER.log(Level.SEVERE, "Error when waiting for all polled records acknowledgements.", e);
+            }
+        }
     }
 
     private void validateConsumer() {
@@ -246,6 +286,17 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
         return Optional.ofNullable(customGroupId)
                 .orElse(Optional.ofNullable(properties.getProperty(KafkaConfigProperties.GROUP_ID))
                         .orElse(UUID.randomUUID().toString()));
+    }
+
+    //Move to messaging incoming connector
+    private void runInNewContext(Runnable runnable) {
+        Context parentContext = Context.create();
+        Context context = Context
+                .builder()
+                .parent(parentContext)
+                .id(String.format("%s:message-%s", parentContext.id(), UUID.randomUUID().toString()))
+                .build();
+        Contexts.runInContext(context, runnable);
     }
 
 }

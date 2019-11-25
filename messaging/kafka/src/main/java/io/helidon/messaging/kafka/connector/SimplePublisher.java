@@ -33,6 +33,7 @@ public class SimplePublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
 
     /**
      * Create new Reactive Streams publisher using {@link java.util.function.Consumer} instead of reactive streams.
+     *
      * @param publisher {@link java.util.function.Consumer}
      */
     public SimplePublisher(Consumer<Subscriber<? super KafkaMessage<K, V>>> publisher) {

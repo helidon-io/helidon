@@ -66,7 +66,7 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory {
         Config helidonConfig = ((MpConfig) config).helidonConfig();
         SimpleKafkaConsumer<Object, Object> simpleKafkaConsumer = new SimpleKafkaConsumer<>(helidonConfig);
         consumers.add(simpleKafkaConsumer);
-        return simpleKafkaConsumer.createPublisherBuilder(getThreadPoolSupplier(helidonConfig).get());
+        return simpleKafkaConsumer.createPushPublisherBuilder(getThreadPoolSupplier(helidonConfig).get());
     }
 
     private ThreadPoolSupplier getThreadPoolSupplier(Config config) {

@@ -18,6 +18,7 @@
 package io.helidon.microprofile.messaging.channel;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -40,14 +41,23 @@ abstract class AbstractMethod {
 
     AbstractMethod(Method method) {
         this.method = method;
+        type = MethodSignatureResolver.create(method).resolve();
+        resolveAckStrategy();
     }
 
-    abstract void validate();
+    void validate() {
+        Optional.ofNullable(method.getAnnotation(Acknowledgment.class))
+                .map(Acknowledgment::value)
+                .filter(s -> !type.getSupportedAckStrategies().contains(s))
+                .ifPresent(strategy -> {
+                    throw new RuntimeException(
+                            String.format("Acknowledgment strategy %s is not supported for method signature: %s",
+                                    strategy, type));
+                });
+    }
 
     public void init(BeanManager beanManager, Config config) {
         this.beanInstance = ChannelRouter.lookup(bean, beanManager);
-        type = MethodSignatureResolver.create(method).resolve();
-        resolveAckStrategy();
     }
 
     public Method getMethod() {
@@ -95,7 +105,9 @@ abstract class AbstractMethod {
     }
 
     private void resolveAckStrategy() {
-        //Only default for now
-        ackStrategy = type.getDefaultAckType();
+        ackStrategy =
+                Optional.ofNullable(method.getAnnotation(Acknowledgment.class))
+                        .map(Acknowledgment::value)
+                        .orElse(type.getDefaultAckType());
     }
 }

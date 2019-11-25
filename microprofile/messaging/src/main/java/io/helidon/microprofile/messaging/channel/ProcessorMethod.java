@@ -51,6 +51,7 @@ class ProcessorMethod extends AbstractMethod {
 
     @Override
     public void validate() {
+        super.validate();
         if (getIncomingChannelName() == null || getIncomingChannelName().trim().isEmpty()) {
             throw new DeploymentException(String
                     .format("Missing channel name in annotation @Incoming on method %s", getMethod()));

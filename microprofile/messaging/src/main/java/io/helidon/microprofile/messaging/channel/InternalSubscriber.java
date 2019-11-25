@@ -18,12 +18,14 @@
 package io.helidon.microprofile.messaging.channel;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
+import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
 import io.helidon.microprofile.messaging.MessagingStreamException;
 
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -33,12 +35,10 @@ import org.reactivestreams.Subscription;
 class InternalSubscriber implements Subscriber<Object> {
 
     private Subscription subscription;
-    private Method method;
-    private Object beanInstance;
+    private IncomingMethod incomingMethod;
 
-    InternalSubscriber(Method method, Object beanInstance) {
-        this.method = method;
-        this.beanInstance = beanInstance;
+    InternalSubscriber(IncomingMethod incomingMethod) {
+        this.incomingMethod = incomingMethod;
     }
 
     @Override
@@ -49,22 +49,49 @@ class InternalSubscriber implements Subscriber<Object> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onNext(Object message) {
+        Method method = incomingMethod.getMethod();
         try {
-            Class<?> paramType = this.method.getParameterTypes()[0];
-
-            Context parentContext = Context.create();
-            Context context = Context
-                    .builder()
-                    .parent(parentContext)
-                    .id(String.format("%s:message-%s", parentContext.id(), UUID.randomUUID().toString()))
-                    .build();
-            Contexts.runInContext(context, () -> this.method.invoke(this.beanInstance, MessageUtils.unwrap(message, paramType)));
+            Class<?> paramType = method.getParameterTypes()[0];
+            Object preProcessedMessage = preProcess(message, paramType);
+            Object methodResult = method.invoke(incomingMethod.getBeanInstance(), preProcessedMessage);
+            postProcess(message, methodResult);
             subscription.request(1);
         } catch (Exception e) {
             // Notify publisher to stop sending
             subscription.cancel();
             throw new MessagingStreamException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object preProcess(Object incomingValue, Class<?> expectedParamType) throws ExecutionException, InterruptedException {
+        if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
+                && incomingValue instanceof Message) {
+            Message incomingMessage = (Message) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(incomingMessage.getPayload());
+        }
+
+        return MessageUtils.unwrap(incomingValue, expectedParamType);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
+        if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
+                && incomingValue instanceof Message
+                && Objects.nonNull(outgoingValue)
+                && outgoingValue instanceof CompletionStage) {
+            Message incomingMessage = (Message) incomingValue;
+            CompletionStage completionStage = (CompletionStage) outgoingValue;
+            Object result = completionStage.toCompletableFuture().get();
+            incomingMessage.ack().toCompletableFuture()
+                    .complete(result);
+
+        } else if (Objects.nonNull(outgoingValue)
+                && outgoingValue instanceof CompletionStage) {
+            CompletionStage completionStage = (CompletionStage) outgoingValue;
+            completionStage.toCompletableFuture().get();
         }
     }
 

@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -69,11 +70,11 @@ class InternalProcessor implements Processor<Object, Object> {
             //Params size is already validated by ProcessorMethod
             Class<?> paramType = method.getParameterTypes()[0];
             Object processedValue = method.invoke(processorMethod.getBeanInstance(),
-                    MessageUtils.unwrap(incomingValue, paramType));
+                    preProcess(incomingValue, paramType));
             //Method returns publisher, time for flattening its PROCESSOR_MSG_2_PUBLISHER or *_BUILDER
             if (processedValue instanceof Publisher || processedValue instanceof PublisherBuilder) {
                 //Flatten, we are sure its invoke on every request method now
-                PublisherBuilder<Object> publisherBuilder = null;
+                PublisherBuilder<Object> publisherBuilder;
                 if (processedValue instanceof Publisher) {
                     publisherBuilder = ReactiveStreams.fromPublisher((Publisher<Object>) processedValue);
                 } else {
@@ -81,21 +82,38 @@ class InternalProcessor implements Processor<Object, Object> {
                 }
                 publisherBuilder.forEach(subVal -> {
                     try {
-                        subscriber.onNext(wrapValue(subVal));
+                        subscriber.onNext(postProcess(incomingValue, subVal));
                     } catch (ExecutionException | InterruptedException e) {
                         subscriber.onError(e);
                     }
                 }).run();
             } else {
-                subscriber.onNext(wrapValue(processedValue));
+                subscriber.onNext(postProcess(incomingValue, processedValue));
             }
         } catch (IllegalAccessException | InvocationTargetException | ExecutionException | InterruptedException e) {
             subscriber.onError(e);
         }
     }
 
-    private Object wrapValue(Object value) throws ExecutionException, InterruptedException {
-        return MessageUtils.unwrap(value, Message.class);
+    @SuppressWarnings("unchecked")
+    private Object preProcess(Object incomingValue, Class<?> expectedParamType) throws ExecutionException, InterruptedException {
+        if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
+                && incomingValue instanceof Message) {
+            Message incomingMessage = (Message) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(incomingMessage.getPayload());
+        }
+
+        return MessageUtils.unwrap(incomingValue, expectedParamType);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
+        Message wrappedOutgoing = (Message) MessageUtils.unwrap(outgoingValue, Message.class);
+        if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
+            Message wrappedIncoming = (Message) MessageUtils.unwrap(incomingValue, Message.class);
+            wrappedOutgoing = (Message) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
+        }
+        return wrappedOutgoing;
     }
 
     @Override

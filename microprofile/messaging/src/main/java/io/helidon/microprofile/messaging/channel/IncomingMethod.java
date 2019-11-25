@@ -49,6 +49,7 @@ class IncomingMethod extends AbstractMethod {
     }
 
     void validate() {
+        super.validate();
         if (getIncomingChannelName() == null || getIncomingChannelName().trim().isEmpty()) {
             throw new DeploymentException(String
                     .format("Missing channel name in annotation @Incoming on method %s", getMethod().toString()));
@@ -83,7 +84,7 @@ class IncomingMethod extends AbstractMethod {
             }
         } else {
             // Invoke on each message subscriber
-            subscriber = new InternalSubscriber(getMethod(), getBeanInstance());
+            subscriber = new InternalSubscriber(this);
         }
     }
 

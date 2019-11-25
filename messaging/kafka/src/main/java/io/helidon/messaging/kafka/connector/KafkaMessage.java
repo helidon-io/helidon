@@ -31,6 +31,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 public class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
 
     private ConsumerRecord<K, V> consumerRecord;
+    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
 
     /**
      * Kafka specific MP messaging message.
@@ -46,10 +47,14 @@ public class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
         return consumerRecord;
     }
 
+    public CompletableFuture<Void> getAckFuture() {
+        return ackFuture;
+    }
+
     @Override
     public CompletionStage<Void> ack() {
-        //implement acknowledge
-        return new CompletableFuture<>();
+        ackFuture.complete(null);
+        return ackFuture;
     }
 
     @Override

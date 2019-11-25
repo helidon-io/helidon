@@ -18,27 +18,23 @@
 package io.helidon.microprofile.messaging.inner;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
-import io.helidon.microprofile.messaging.CompletableTestBean;
+import io.helidon.microprofile.messaging.AssertableTestBean;
 import io.helidon.microprofile.messaging.CountableTestBean;
-import io.helidon.microprofile.messaging.inner.ack.ManualAckBean;
-import io.helidon.microprofile.messaging.inner.ack.ChainWithPayloadAckBean;
-
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.platform.commons.util.ClassFilter;
+import org.junit.platform.commons.util.ReflectionUtils;
 
 public class InnerChannelTest extends AbstractCDITest {
 
@@ -48,48 +44,11 @@ public class InnerChannelTest extends AbstractCDITest {
     }
 
     static Stream<CdiTestCase> testCaseSource() {
-        return Stream.of(
-                //Positive tests
-                PublisherBuilderTransformerV2Bean.class,
-                PublisherBuilderTransformerV1Bean.class,
-                PublisherFromPublisherV2Bean.class,
-                PublisherFromPublisherV1Bean.class,
-                ProcessorBean.class,
-                ProcessorBuilderBean.class,
-                PullForEachBean.class,
-                CompletionStageV1Bean.class,
-                PublisherPayloadV6Bean.class,
-                PublisherPayloadV5Bean.class,
-                PublisherPayloadV4Bean.class,
-                PublisherPayloadV3Bean.class,
-                PublisherPayloadV1Bean.class,
-                PublisherSubscriberBuilderV2Bean.class,
-                PublisherSubscriberBuilderV1Bean.class,
-                PublisherSubscriberV2Bean.class,
-                PublisherSubscriberV1Bean.class,
-                InternalChannelsBean.class,
-                InnerProcessorBean.class,
-                MultipleProcessorBean.class,
-                MultipleTypeProcessorChainV1Bean.class,
-                MultipleTypeProcessorChainV2Bean.class,
-                ByRequestProcessorV5Bean.class,
-                ByRequestProcessorV4Bean.class,
-                ByRequestProcessorV3Bean.class,
-                ByRequestProcessorV2Bean.class,
-                ByRequestProcessorV1Bean.class,
-                PublisherProcessorV4Bean.class,
-                PublisherProcessorV3Bean.class,
-                PublisherProcessorV2Bean.class,
-                PublisherProcessorV1Bean.class,
-                //Ack tests
-//                ChainWithPayloadAckBean.class,
-//                ManualAckBean.class,
-
-                //Negative tests
-                NotConnectedIncommingChannelBean.class,
-                NotConnectedOutgoingChannelBean.class,
-                BadSignaturePublisherPayloadBean.class
-        ).map(CdiTestCase::from);
+        return ReflectionUtils
+                .findAllClassesInPackage(
+                        InnerChannelTest.class.getPackage().getName(),
+                        ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
+                .stream().map(CdiTestCase::from);
     }
 
     @ParameterizedTest
@@ -107,12 +66,8 @@ public class InnerChannelTest extends AbstractCDITest {
                 assertAllReceived(countableTestBean);
             });
             testCase.getCompletableBeanClasses().forEach(c -> {
-                CompletableTestBean completableTestBean = CDI.current().select(c).get();
-                try {
-                    completableTestBean.getTestCompletion().toCompletableFuture().get(1, TimeUnit.SECONDS);
-                } catch (InterruptedException | TimeoutException | ExecutionException e) {
-                    fail(e);
-                }
+                AssertableTestBean assertableTestBean = CDI.current().select(c).get();
+                assertableTestBean.assertValid();
             });
         }
     }

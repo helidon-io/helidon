@@ -224,13 +224,14 @@ public enum MethodSignatureType {
      * Invoke at: every incoming
      * <pre>O method(I payload)</pre>
      * <ul>
-     *  <li>Default acknowledgment strategy: PRE_PROCESSING</li>
-     *  <li>Supported acknowledgment strategies: NONE, PRE_PROCESSING</li>
+     *  <li>Default acknowledgment strategy: POST_PROCESSING</li>
+     *  <li>Supported acknowledgment strategies: NONE, PRE_PROCESSING, POST_PROCESSING</li>
      * </ul>
      */
-    PROCESSOR_PAYL_2_PAYL(false, Acknowledgment.Strategy.PRE_PROCESSING,
+    PROCESSOR_PAYL_2_PAYL(false, Acknowledgment.Strategy.POST_PROCESSING,
             Acknowledgment.Strategy.NONE,
-            Acknowledgment.Strategy.PRE_PROCESSING
+            Acknowledgment.Strategy.PRE_PROCESSING,
+            Acknowledgment.Strategy.POST_PROCESSING
     ),
     /**
      * Processor method signature type.
