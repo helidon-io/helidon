@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.inner.ack;
+package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -28,7 +28,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -39,27 +39,29 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class ProcessorManualAckBean implements AssertableTestBean {
+public class ProcessorMsg2MsgPrepImplicitAckBean implements AssertableTestBean {
 
     private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
     private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of("test-data", () -> {
+            ackFuture.complete(null);
+            return ackFuture;
+        })).buildRs();
     }
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
-    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     public Message<String> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());
-        return Message.of(msg.getPayload(), msg::ack);
+        return Message.of(msg.getPayload());
     }
 
     @Incoming("inner-consumer")
+    @Acknowledgment(Acknowledgment.Strategy.NONE)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        msg.ack().toCompletableFuture().complete(null);
         return CompletableFuture.completedFuture(null);
     }
 
@@ -70,6 +72,6 @@ public class ProcessorManualAckBean implements AssertableTestBean {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }
-        assertFalse(completedBeforeProcessor.get());
+        assertTrue(completedBeforeProcessor.get());
     }
 }

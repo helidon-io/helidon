@@ -15,60 +15,61 @@
  *
  */
 
-package io.helidon.microprofile.messaging.inner.ack;
+package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class ProcessorPreProcessAckBean implements AssertableTestBean {
+public class ProcessorProcessorBuilderPayl2PaylNoneAckBean implements AssertableTestBean {
 
+    public static final String TEST_DATA = "test-data";
     private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
     private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private AtomicReference<String> RESULT_DATA = new AtomicReference<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
+            ackFuture.complete(null);
+            return ackFuture;
+        })).buildRs();
     }
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
-    @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
-    public String process(String msg) {
-        completedBeforeProcessor.set(ackFuture.isDone());
-        return msg.toUpperCase();
+    @Acknowledgment(Acknowledgment.Strategy.NONE)
+    public ProcessorBuilder<String, String> process() {
+        return ReactiveStreams.<String>builder()
+                .peek(m -> completedBeforeProcessor.set(ackFuture.isDone()));
     }
 
     @Incoming("inner-consumer")
-    public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        return CompletableFuture.completedFuture(null);
+    @Acknowledgment(Acknowledgment.Strategy.NONE)
+    public void receiveMessage(String msg) {
+        RESULT_DATA.set(msg);
     }
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertTrue(completedBeforeProcessor.get());
+        assertFalse(ackFuture.isDone());
+        assertFalse(completedBeforeProcessor.get());
+        assertEquals(TEST_DATA, RESULT_DATA.get());
     }
 }

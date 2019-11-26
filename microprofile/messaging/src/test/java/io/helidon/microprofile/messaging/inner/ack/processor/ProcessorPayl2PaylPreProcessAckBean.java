@@ -15,18 +15,20 @@
  *
  */
 
-package io.helidon.microprofile.messaging.inner.ack;
+package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -37,9 +39,10 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class ProcessorPostProcessExplicitAckBean implements AssertableTestBean {
+public class ProcessorPayl2PaylPreProcessAckBean implements AssertableTestBean {
 
     private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
@@ -48,8 +51,9 @@ public class ProcessorPostProcessExplicitAckBean implements AssertableTestBean {
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
-    @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
+    @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public String process(String msg) {
+        completedBeforeProcessor.set(ackFuture.isDone());
         return msg.toUpperCase();
     }
 
@@ -65,5 +69,6 @@ public class ProcessorPostProcessExplicitAckBean implements AssertableTestBean {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }
+        assertTrue(completedBeforeProcessor.get());
     }
 }

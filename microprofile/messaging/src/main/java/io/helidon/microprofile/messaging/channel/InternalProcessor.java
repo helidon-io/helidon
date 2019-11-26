@@ -19,6 +19,7 @@ package io.helidon.microprofile.messaging.channel;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -108,6 +109,11 @@ class InternalProcessor implements Processor<Object, Object> {
 
     @SuppressWarnings("unchecked")
     private Object postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
+        if (outgoingValue instanceof CompletionStage) {
+            //Wait for completable stages to finish, yes it means to block see the spec
+            outgoingValue = ((CompletionStage) outgoingValue).toCompletableFuture().get();
+        }
+
         Message wrappedOutgoing = (Message) MessageUtils.unwrap(outgoingValue, Message.class);
         if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
             Message wrappedIncoming = (Message) MessageUtils.unwrap(incomingValue, Message.class);

@@ -22,6 +22,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.enterprise.inject.spi.DeploymentException;
 
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -114,6 +116,7 @@ class ProxyProcessor implements Processor<Object, Object> {
     @SuppressWarnings("unchecked")
     public void onNext(Object o) {
         try {
+            preProcess(o);
             subscriber.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
         } catch (ExecutionException | InterruptedException e) {
             onError(e);
@@ -128,5 +131,14 @@ class ProxyProcessor implements Processor<Object, Object> {
     @Override
     public void onComplete() {
         subscriber.onComplete();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void preProcess(Object incomingValue) {
+        if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
+                && incomingValue instanceof Message) {
+            Message incomingMessage = (Message) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(incomingMessage.getPayload());
+        }
     }
 }

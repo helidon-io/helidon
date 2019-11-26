@@ -90,24 +90,11 @@ class MessageUtils {
             }
         } else {
             if (value instanceof Message) {
-                Object payload = ((Message) value).getPayload();
-                return unwrapCompletableFuture(payload, type);
-            } else if (value instanceof CompletableFuture) {
-                //Recursion for Message<CompletableFuture<Message<String>>>
-                return unwrap(((CompletableFuture) value).get(), type);
+                return ((Message) value).getPayload();
             } else {
                 return value;
             }
         }
-    }
-
-    private static Object unwrapCompletableFuture(Object o, Class<?> expectedType)
-            throws ExecutionException, InterruptedException {
-        if (CompletableFuture.class.isInstance(o) && !CompletableFuture.class.isAssignableFrom(expectedType)) {
-            //Recursion for Message<CompletableFuture<Message<String>>>
-            return unwrap(((CompletableFuture) o).get(), expectedType);
-        }
-        return o;
     }
 
     /**

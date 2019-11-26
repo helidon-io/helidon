@@ -15,20 +15,24 @@
  *
  */
 
-package io.helidon.microprofile.messaging.inner.ack;
+package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -36,24 +40,34 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class ProcessorPostProcessImplicitAckBean implements AssertableTestBean {
+public class ProcessorPublisherMsg2MsgManualAckBean implements AssertableTestBean {
 
+    public static final String TEST_DATA = "test-data";
     private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
+            ackFuture.complete(null);
+            return ackFuture;
+        })).buildRs();
     }
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
-    public String process(String msg) {
-        return msg.toUpperCase();
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    public Publisher<Message<String>> process(Message<String> msg) {
+        completedBeforeProcessor.set(ackFuture.isDone());
+        msg.ack();
+        return ReactiveStreams.of(Message.of(msg.getPayload()), Message.of(msg.getPayload())).buildRs();
     }
 
     @Incoming("inner-consumer")
-    public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        return CompletableFuture.completedFuture(null);
+    @Acknowledgment(Acknowledgment.Strategy.NONE)
+    public void receiveMessage(String msg) {
+        RESULT_DATA.add(msg);
     }
 
     @Override
@@ -63,5 +77,8 @@ public class ProcessorPostProcessImplicitAckBean implements AssertableTestBean {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }
+        assertFalse(completedBeforeProcessor.get());
+        assertEquals(2, RESULT_DATA.size());
+        RESULT_DATA.forEach(s -> assertEquals(TEST_DATA, s));
     }
 }
