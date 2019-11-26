@@ -15,20 +15,23 @@
  *
  */
 
-package io.helidon.microprofile.messaging.inner.ack;
+package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -36,9 +39,10 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class IncomingPostProcessImplicitAckBean implements AssertableTestBean {
+public class IncomingMsgManualAckBean implements AssertableTestBean {
 
     private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
@@ -46,7 +50,12 @@ public class IncomingPostProcessImplicitAckBean implements AssertableTestBean {
     }
 
     @Incoming("test-channel")
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
+        completedBeforeProcessor.set(ackFuture.isDone());
+
+        CompletionStage<Void> ack = msg.ack();
+        ack.toCompletableFuture().complete(null);
         return CompletableFuture.completedFuture(null);
     }
 
@@ -57,5 +66,6 @@ public class IncomingPostProcessImplicitAckBean implements AssertableTestBean {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }
+        assertFalse(completedBeforeProcessor.get());
     }
 }

@@ -15,10 +15,9 @@
  *
  */
 
-package io.helidon.microprofile.messaging.inner.ack;
+package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -28,7 +27,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -36,27 +35,33 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class IncomingManualAckBean implements AssertableTestBean {
+public class IncomingSubscriberBuilderMsgPreAckBean implements AssertableTestBean {
 
+    private static final String TEST_MSG = "test-data";
     private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
     private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private AtomicBoolean interceptedMessage = new AtomicBoolean(false);
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of(TEST_MSG, () -> {
+            ackFuture.complete(null);
+            return CompletableFuture.completedFuture(null);
+        })).buildRs();
     }
 
     @Incoming("test-channel")
-    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-    public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        completedBeforeProcessor.set(ackFuture.isDone());
-
-        CompletionStage<Void> ack = msg.ack();
-        ack.toCompletableFuture().complete(null);
-        return CompletableFuture.completedFuture(null);
+    @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
+    public SubscriberBuilder<Message<String>, Void> receiveMessage() {
+        return ReactiveStreams.<Message<String>>builder()
+                .forEach(m -> {
+                    completedBeforeProcessor.set(ackFuture.isDone());
+                    interceptedMessage.set(TEST_MSG.equals(m.getPayload()));
+                });
     }
 
     @Override
@@ -66,6 +71,7 @@ public class IncomingManualAckBean implements AssertableTestBean {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }
-        assertFalse(completedBeforeProcessor.get());
+        assertTrue(completedBeforeProcessor.get());
+        assertTrue(interceptedMessage.get());
     }
 }

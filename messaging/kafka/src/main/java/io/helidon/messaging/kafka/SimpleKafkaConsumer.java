@@ -82,7 +82,7 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
     private List<String> topicNameList;
     private KafkaConsumer<K, V> consumer;
 
-    private ConcurrentLinkedDeque<ConsumerRecord<K, V>> recordBuffer = new ConcurrentLinkedDeque<>();
+    private final ConcurrentLinkedDeque<ConsumerRecord<K, V>> backPressureBuffer = new ConcurrentLinkedDeque<>();
     private CopyOnWriteArrayList<CompletableFuture<Void>> ackFutures = new CopyOnWriteArrayList<>();
 
     /**
@@ -207,8 +207,8 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                 try {
                     while (!closed.get()) {
                         waitForAcksAndPoll();
-                        if (recordBuffer.isEmpty()) continue;
-                        ConsumerRecord<K, V> cr = recordBuffer.poll();
+                        if (backPressureBuffer.isEmpty()) continue;
+                        ConsumerRecord<K, V> cr = backPressureBuffer.poll();
                         KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
                         ackFutures.add(kafkaMessage.getAckFuture());
                         runInNewContext(() -> subscriber.onNext(kafkaMessage));
@@ -225,16 +225,22 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
         }));
     }
 
+    /**
+     * Naive impl of back pressure wise lazy poll.
+     * Wait for the last batch of records to be acknowledged before commit and another poll.
+     */
     private void waitForAcksAndPoll() {
-        if (recordBuffer.isEmpty()) {
-            try {
-                if (!ackFutures.isEmpty()) {
-                    CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
-                    consumer.commitSync();
+        synchronized (backPressureBuffer) {
+            if (backPressureBuffer.isEmpty()) {
+                try {
+                    if (!ackFutures.isEmpty()) {
+                        CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
+                        consumer.commitSync();
+                    }
+                    consumer.poll(Duration.ofSeconds(1)).forEach(backPressureBuffer::add);
+                } catch (InterruptedException | ExecutionException e) {
+                    LOGGER.log(Level.SEVERE, "Error when waiting for all polled records acknowledgements.", e);
                 }
-                consumer.poll(Duration.ofSeconds(1)).forEach(recordBuffer::add);
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.log(Level.SEVERE, "Error when waiting for all polled records acknowledgements.", e);
             }
         }
     }

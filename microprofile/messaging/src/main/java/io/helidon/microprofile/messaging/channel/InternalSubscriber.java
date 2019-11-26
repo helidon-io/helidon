@@ -79,15 +79,18 @@ class InternalSubscriber implements Subscriber<Object> {
     @SuppressWarnings("unchecked")
     private void postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
         if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
-                && incomingValue instanceof Message
-                && Objects.nonNull(outgoingValue)
-                && outgoingValue instanceof CompletionStage) {
-            Message incomingMessage = (Message) incomingValue;
-            CompletionStage completionStage = (CompletionStage) outgoingValue;
-            Object result = completionStage.toCompletableFuture().get();
-            incomingMessage.ack().toCompletableFuture()
-                    .complete(result);
+                && incomingValue instanceof Message) {
 
+            Message incomingMessage = (Message) incomingValue;
+            if (Objects.nonNull(outgoingValue) && outgoingValue instanceof CompletionStage) {
+                CompletionStage completionStage = (CompletionStage) outgoingValue;
+                Object result = completionStage.toCompletableFuture().get();
+                incomingMessage.ack().toCompletableFuture().complete(result);
+
+            } else {
+                // returns void
+                incomingMessage.ack().toCompletableFuture().complete(null);
+            }
         } else if (Objects.nonNull(outgoingValue)
                 && outgoingValue instanceof CompletionStage) {
             CompletionStage completionStage = (CompletionStage) outgoingValue;

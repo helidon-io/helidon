@@ -64,16 +64,19 @@ class IncomingMethod extends AbstractMethod {
             try {
                 switch (getType()) {
                     case INCOMING_SUBSCRIBER_MSG_2_VOID:
-                        subscriber = (Subscriber) getMethod().invoke(getBeanInstance());
+                        Subscriber originalMsgSubscriber = (Subscriber) getMethod().invoke(getBeanInstance());
+                        subscriber = new ProxySubscriber(this, originalMsgSubscriber);
                         break;
                     case INCOMING_SUBSCRIBER_PAYL_2_VOID:
-                        subscriber = UnwrapProcessor.of(this.getMethod(), (Subscriber) getMethod()
-                                .invoke(getBeanInstance()));
+                        Subscriber originalPaylSubscriber = (Subscriber) getMethod().invoke(getBeanInstance());
+                        Subscriber unwrappedSubscriber = UnwrapProcessor.of(this.getMethod(), originalPaylSubscriber);
+                        subscriber = new ProxySubscriber(this, unwrappedSubscriber);
                         break;
                     case INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID:
                     case INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID:
-                        subscriber = UnwrapProcessor.of(this.getMethod(),
-                                ((SubscriberBuilder) getMethod().invoke(getBeanInstance())).build());
+                        SubscriberBuilder originalSubscriberBuilder = (SubscriberBuilder) getMethod().invoke(getBeanInstance());
+                        Subscriber unwrappedBuilder = UnwrapProcessor.of(this.getMethod(), originalSubscriberBuilder.build());
+                        subscriber = new ProxySubscriber(this, unwrappedBuilder);
                         break;
                     default:
                         throw new UnsupportedOperationException(String
