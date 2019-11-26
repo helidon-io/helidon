@@ -20,12 +20,11 @@ import java.io.Closeable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,8 +81,8 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
     private List<String> topicNameList;
     private KafkaConsumer<K, V> consumer;
 
-    private final ConcurrentLinkedDeque<ConsumerRecord<K, V>> backPressureBuffer = new ConcurrentLinkedDeque<>();
-    private CopyOnWriteArrayList<CompletableFuture<Void>> ackFutures = new CopyOnWriteArrayList<>();
+    private final LinkedList<ConsumerRecord<K, V>> backPressureBuffer = new LinkedList<>();
+    private ArrayList<CompletableFuture<Void>> ackFutures = new ArrayList<>();
 
     /**
      * Kafka consumer created from {@link io.helidon.config.Config config}
@@ -206,12 +205,14 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                 consumer.subscribe(topicNameList, partitionsAssignedLatch);
                 try {
                     while (!closed.get()) {
-                        waitForAcksAndPoll();
-                        if (backPressureBuffer.isEmpty()) continue;
-                        ConsumerRecord<K, V> cr = backPressureBuffer.poll();
-                        KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
-                        ackFutures.add(kafkaMessage.getAckFuture());
-                        runInNewContext(() -> subscriber.onNext(kafkaMessage));
+                        synchronized (backPressureBuffer) {
+                            waitForAcksAndPoll();
+                            if (backPressureBuffer.isEmpty()) continue;
+                            ConsumerRecord<K, V> cr = backPressureBuffer.poll();
+                            KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
+                            ackFutures.add(kafkaMessage.getAckFuture());
+                            runInNewContext(() -> subscriber.onNext(kafkaMessage));
+                        }
                     }
                 } catch (WakeupException ex) {
                     if (!closed.get()) {
@@ -230,18 +231,17 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
      * Wait for the last batch of records to be acknowledged before commit and another poll.
      */
     private void waitForAcksAndPoll() {
-        synchronized (backPressureBuffer) {
-            if (backPressureBuffer.isEmpty()) {
-                try {
-                    if (!ackFutures.isEmpty()) {
-                        CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
-                        consumer.commitSync();
-                    }
-                    consumer.poll(Duration.ofSeconds(1)).forEach(backPressureBuffer::add);
-                } catch (InterruptedException | ExecutionException e) {
-                    LOGGER.log(Level.SEVERE, "Error when waiting for all polled records acknowledgements.", e);
+        if (backPressureBuffer.isEmpty()) {
+            try {
+                if (!ackFutures.isEmpty()) {
+                    CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
+                    consumer.commitSync();
                 }
+                consumer.poll(Duration.ofSeconds(1)).forEach(backPressureBuffer::add);
+            } catch (InterruptedException | ExecutionException e) {
+                LOGGER.log(Level.SEVERE, "Error when waiting for all polled records acknowledgements.", e);
             }
+
         }
     }
 
