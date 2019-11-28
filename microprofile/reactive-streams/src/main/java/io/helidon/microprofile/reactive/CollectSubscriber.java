@@ -23,6 +23,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
 import io.helidon.common.reactive.Flow;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
@@ -39,9 +41,13 @@ import org.reactivestreams.Subscription;
  *
  * @param <T> type of streamed item
  */
-public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCompletionStage<T, Object> {
+public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Object> {
 
     private final Processor<Object, Object> connectingProcessor;
+    private final BiConsumer accumulator;
+    private final BinaryOperator combiner;
+    private Object cumulatedVal;
+    private final Function finisher;
     private Subscriber<Object> subscriber;
     private CompletableFuture<Object> completableFuture = new CompletableFuture<>();
     private Stage.Collect collectStage;
@@ -52,14 +58,17 @@ public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCo
      * Subscriber with preceding processors included,
      * automatically makes all downstream subscriptions when its subscribe method is called.
      *
-     * @param collectStage {@link org.eclipse.microprofile.reactive.streams.operators.spi.Stage.Collect}
-     *                     for example {@link org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder#forEach(java.util.function.Consumer)}
+     * @param collectStage           {@link org.eclipse.microprofile.reactive.streams.operators.spi.Stage.Collect}
+     *                               for example {@link org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder#forEach(java.util.function.Consumer)}
      * @param precedingProcessorList ordered list of preceding processors(needed for automatic subscription in case of incomplete graph)
      */
     @SuppressWarnings("unchecked")
-    HelidonSubscriberWithCompletionStage(Stage.Collect collectStage,
-                                         List<Flow.Processor<Object, Object>> precedingProcessorList) {
+    CollectSubscriber(Stage.Collect collectStage,
+                      List<Flow.Processor<Object, Object>> precedingProcessorList) {
         this.collectStage = collectStage;
+        accumulator = (BiConsumer) collectStage.getCollector().accumulator();
+        combiner = (BinaryOperator) collectStage.getCollector().combiner();
+        finisher = (Function) collectStage.getCollector().finisher();
         //preceding processors
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
         subscriber = (Subscriber<Object>) prepareSubscriber();
@@ -86,29 +95,44 @@ public class HelidonSubscriberWithCompletionStage<T> implements SubscriberWithCo
 
             @Override
             public void onSubscribe(Subscription s) {
+                try {
+                    cumulatedVal = collectStage.getCollector().supplier().get();
+                } catch (Throwable t) {
+                    onError(t);
+                    s.cancel();
+                }
                 this.subscription = s;
                 subscription.request(1);
             }
 
             @Override
             @SuppressWarnings("unchecked")
-            public void onNext(Object t) {
+            public void onNext(Object item) {
                 if (!closed.get()) {
-                    BiConsumer<Object, Object> accumulator = (BiConsumer) collectStage.getCollector().accumulator();
-                    accumulator.accept(null, t);
-                    subscription.request(1);
+                    try {
+                        accumulator.accept(cumulatedVal, item);
+                        subscription.request(1);
+                    } catch (Throwable t) {
+                        onError(t);
+                        subscription.cancel();
+                    }
                 }
             }
 
             @Override
             public void onError(Throwable t) {
-                throw new RuntimeException(t);
+                completableFuture.completeExceptionally(t);
             }
 
             @Override
+            @SuppressWarnings("unchecked")
             public void onComplete() {
                 closed.set(true);
-                completableFuture.complete(null);
+                try {
+                    completableFuture.complete(finisher.apply(cumulatedVal));
+                } catch (Throwable t) {
+                    onError(t);
+                }
                 subscription.cancel();
             }
         };

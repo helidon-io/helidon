@@ -56,6 +56,7 @@ public class LimitProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
             submit(item);
             if (1 < actCounter) {
                 // Don't request after last run
+                getRequestedCounter().increment(1, this::onError);
                 tryRequest(getSubscription());
             } else {
                 tryComplete();

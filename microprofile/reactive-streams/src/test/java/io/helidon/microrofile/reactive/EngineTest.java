@@ -17,19 +17,33 @@
 
 package io.helidon.microrofile.reactive;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.StringJoiner;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.reactivestreams.Subscription;
 
 public class EngineTest {
     @Test
@@ -62,7 +76,7 @@ public class EngineTest {
 
         ReactiveStreams.fromPublisher(intSequencePublisher)
                 .limit(10)
-                .filter(x -> (x % 2) == 0)
+                .filter(x -> x % 2 == 0)
                 .peek(peekSum::addAndGet)
                 .map(String::valueOf)
                 .map(s -> s + "0")
@@ -87,13 +101,14 @@ public class EngineTest {
                 .peek(beforeFilter::append)
                 .map(s -> s.replaceAll("-", ""))
                 .map(Integer::parseInt)
-                .filter(i -> i <= 5)
+                .filter(i -> i % 2 == 0)
                 .peek(afterFilter::append)
+                .limit(5L)
                 .to(ReactiveStreams.fromSubscriber(new ConsumableSubscriber<>(sum::addAndGet, 10)))
                 .run();
         assertEquals("1-2-3-4-5-6-7-8-9-10-", beforeFilter.toString());
-        assertEquals("12345", afterFilter.toString());
-        assertEquals(1 + 2 + 3 + 4 + 5, sum.get());
+        assertEquals("246810", afterFilter.toString());
+        assertEquals(2 + 4 + 6 + 8 + 10, sum.get());
     }
 
     @Test
@@ -112,16 +127,19 @@ public class EngineTest {
     }
 
     @Test
-    void subscriberCreation() throws ExecutionException, InterruptedException {
+    void subscriberCreation() throws ExecutionException, InterruptedException, TimeoutException {
+        AtomicInteger peekedSum = new AtomicInteger();
         AtomicInteger sum = new AtomicInteger();
         IntSequencePublisher publisher = new IntSequencePublisher();
         CompletionSubscriber<Integer, Void> subscriber = ReactiveStreams.<Integer>builder()
                 .limit(5)
-                .peek(System.out::println)
+                .peek(peekedSum::addAndGet)
                 .forEach(sum::addAndGet)
                 .build();
         publisher.subscribe(subscriber);
+        subscriber.getCompletion().toCompletableFuture().get(1, TimeUnit.SECONDS);
         assertEquals(1 + 2 + 3 + 4 + 5, sum.get());
+        assertEquals(1 + 2 + 3 + 4 + 5, peekedSum.get());
     }
 
     @Test
@@ -143,7 +161,6 @@ public class EngineTest {
 
         publisherBuilder.subscribe(processor);
         processor.subscribe(HybridSubscriber.from(subscriber));
-
         assertEquals("1122334455667788991010", stringBuffer.toString());
     }
 
@@ -153,10 +170,10 @@ public class EngineTest {
         ReactiveStreams
                 .of(3, 4)
                 .forEach(sum::addAndGet)
-                .run();
-                //.toCompletableFuture().get();
+                .run().toCompletableFuture().get();
         assertEquals(3 + 4, sum.get());
     }
+
     @Test
     void publisherToForEach() {
         AtomicInteger sum = new AtomicInteger();
@@ -166,5 +183,228 @@ public class EngineTest {
                 .forEach(sum::addAndGet)
                 .run();
         assertEquals(3 + 4, sum.get());
+    }
+
+    @Test
+    void concat() throws InterruptedException, ExecutionException, TimeoutException {
+        final List<Integer> resultList = new ArrayList<>();
+        ReactiveStreams
+                .concat(ReactiveStreams.of(1, 2, 3),
+                        ReactiveStreams.of(4, 5, 6))
+                .forEach(resultList::add).run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList(1, 2, 3, 4, 5, 6), resultList);
+    }
+
+    @Test
+    void complStage() throws InterruptedException, ExecutionException, TimeoutException {
+        final List<Integer> resultList = new ArrayList<>();
+        CompletionStage<Void> run = ReactiveStreams.of(1, 2, 3)
+                .forEach(resultList::add).run();
+        run.toCompletableFuture().get(2, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList(1, 2, 3), resultList);
+    }
+
+    @Test
+    void collect() throws ExecutionException, InterruptedException {
+        assertEquals(ReactiveStreams.of(1, 2, 3)
+                .collect(() -> new AtomicInteger(0), AtomicInteger::addAndGet
+                ).run().toCompletableFuture().get().get(), 6);
+    }
+
+    @Test
+    void cancel() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> cancelled = new CompletableFuture<>();
+        CompletionStage<Void> result = ReactiveStreams.fromPublisher(s -> s.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+                cancelled.complete(null);
+            }
+        }))
+                .cancel()
+                .run();
+
+        cancelled.get(1, TimeUnit.SECONDS);
+        result.toCompletableFuture().get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void cancelWithFailures() {
+        ReactiveStreams
+                .failed(new TestThrowable())
+                .cancel()
+                .run();
+    }
+
+    @Test
+    void findFirst() throws InterruptedException, ExecutionException, TimeoutException {
+        Optional<Integer> result = ReactiveStreams
+                .of(1, 2, 3)
+                .findFirst()
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+
+        assertEquals(Integer.valueOf(1), result.get());
+    }
+
+    @Test
+    void failed() {
+        assertThrows(TestThrowable.class, () -> ReactiveStreams
+                .failed(new TestThrowable())
+                .findFirst()
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void finisherTest() throws InterruptedException, ExecutionException, TimeoutException {
+        assertEquals("1, 2, 3", ReactiveStreams
+                .of("1", "2", "3")
+                .collect(Collectors.joining(", "))
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void collectorExceptionPropagation() {
+        //supplier
+        assertThrows(ExecutionException.class, () -> ReactiveStreams.of("1", "2", "3")
+                .collect(Collector.<String, StringJoiner, String>of(
+                        () -> {
+                            throw new TestRuntimeException();
+                        },
+                        StringJoiner::add,
+                        StringJoiner::merge,
+                        StringJoiner::toString
+                ))
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS), TestRuntimeException.TEST_MSG);
+        //accumulator
+        assertThrows(ExecutionException.class, () -> ReactiveStreams.of("1", "2", "3")
+                .collect(Collector.<String, StringJoiner, String>of(
+                        () -> new StringJoiner(","),
+                        (s, t) -> {
+                            throw new TestRuntimeException();
+                        },
+                        StringJoiner::merge,
+                        StringJoiner::toString
+                ))
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS), TestRuntimeException.TEST_MSG);
+
+        //finisher
+        assertThrows(ExecutionException.class, () -> ReactiveStreams.of("1", "2", "3")
+                .collect(Collector.<String, StringJoiner, String>of(
+                        () -> new StringJoiner(","),
+                        StringJoiner::add,
+                        StringJoiner::merge,
+                        f -> {
+                            throw new TestRuntimeException();
+                        }
+                ))
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS), TestRuntimeException.TEST_MSG);
+    }
+
+
+    @Test
+    void onTerminate() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> terminator = new CompletableFuture<>();
+        ReactiveStreams
+                .of("1", "2", "3")
+                .onTerminate(() -> terminator.complete(null))
+                .collect(Collectors.joining(", "))
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+        terminator.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void publisherWithTerminate() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> terminator = new CompletableFuture<>();
+        Publisher<? extends Number> publisher = ReactiveStreams.of(1, 2, 3)
+                .onTerminate(() -> {
+                    terminator.complete(null);
+                })
+                .buildRs();
+
+        Optional<? extends Number> result = ReactiveStreams.fromPublisher(publisher)
+                .findFirst().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+        assertEquals(1, result.get());
+        terminator.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void flatMapCancelPropagation() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> outerCancelled = new CompletableFuture<>();
+        CompletableFuture<Void> innerCancelled = new CompletableFuture<>();
+        ReactiveStreams.of("1", "2", "3", "1", "2", "3")
+                .onTerminate(() -> outerCancelled.complete(null))
+                .flatMap((i) -> ReactiveStreams.of("1", "2", "3", "1", "2", "3")
+                        .onTerminate(() -> innerCancelled.complete(null))
+                )
+                .limit(5L)
+                .toList()
+                .run()
+                .toCompletableFuture()
+                .get(2, TimeUnit.SECONDS);
+        innerCancelled.get(1, TimeUnit.SECONDS);
+        outerCancelled.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void concatCancel() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> cancelled = new CompletableFuture<>();
+        CompletionStage<Void> completion = ReactiveStreams
+                .concat(
+                        ReactiveStreams.failed(new TestRuntimeException()),
+                        ReactiveStreams.of(1, 2, 3)
+                                .onTerminate(() -> {
+                                    cancelled.complete(null);
+                                })
+                )
+                .ignore()
+                .run();
+        cancelled.get(1, TimeUnit.SECONDS);
+        assertThrows(ExecutionException.class, () -> completion.toCompletableFuture().get(1, TimeUnit.SECONDS), TestRuntimeException.TEST_MSG);
+    }
+
+    @Test
+    void filter() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletionStage<List<Integer>> cs = ReactiveStreams.of(1, 2, 3, 4, 5, 6)
+                .filter((i) -> {
+                    return (i & 1) == 1;
+                }).toList()
+                .run();
+        assertEquals(Arrays.asList(1, 3, 5), cs.toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    //@Test
+    void cancellationException() throws InterruptedException, ExecutionException, TimeoutException {
+        assertThrows(CancellationException.class, () -> ReactiveStreams.fromPublisher(subscriber -> subscriber.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+            }
+        })).to(
+                ReactiveStreams.builder().cancel().build()
+        ).run().toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    //@Test
+    void publisherToSubscriber() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletionSubscriber<Object, Optional<Object>> subscriber = ReactiveStreams.builder()
+                .limit(5L)
+                .findFirst()
+                .build();
+        assertEquals(1, ReactiveStreams.of(1, 2, 3)
+                .to(subscriber)
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS));
+
     }
 }

@@ -21,6 +21,7 @@ import java.util.function.Predicate;
 
 /**
  * Processor filtering stream with supplied predicate.
+ *
  * @param <T> both input/output type
  */
 public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
@@ -29,6 +30,7 @@ public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> 
 
     /**
      * Processor filtering stream with supplied predicate.
+     *
      * @param predicate provided predicate to filter stream with
      */
     public FilterProcessor(Predicate<T> predicate) {
@@ -44,6 +46,8 @@ public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> 
     protected void hookOnNext(T item) {
         if (predicate.test(item)) {
             submit(item);
+        } else {
+            tryRequest(getSubscription());
         }
     }
 }

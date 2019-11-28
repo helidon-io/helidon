@@ -30,7 +30,7 @@ import org.reactivestreams.Subscription;
 /**
  * {@link org.reactivestreams.Processor} wrapping ordered list of {@link org.reactivestreams.Processor}s.
  */
-public class HelidonCumulativeProcessor implements Processor<Object, Object> {
+public class CumulativeProcessor implements Processor<Object, Object> {
     private LinkedList<Processor<Object, Object>> processorList = new LinkedList<>();
 
     /**
@@ -38,7 +38,7 @@ public class HelidonCumulativeProcessor implements Processor<Object, Object> {
      *
      * @param precedingProcessorList ordered list of {@link io.helidon.common.reactive.Flow.Processor}s
      */
-    HelidonCumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
+    CumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
         //preceding processors
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
     }

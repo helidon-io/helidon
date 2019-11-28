@@ -43,7 +43,7 @@ public class ConsumableSubscriber<T> implements Subscriber<T> {
     public void onSubscribe(Subscription s) {
         this.subscription = s;
         //First chunk request
-        subscription.request(requestCount.get());
+        subscription.request(requestCount.decrementAndGet());
     }
 
     @Override

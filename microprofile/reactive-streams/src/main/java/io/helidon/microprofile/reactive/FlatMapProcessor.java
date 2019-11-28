@@ -37,6 +37,7 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
 
     /**
      * Flatten the elements emitted by publishers produced by the mapper function to this stream.
+     *
      * @param mapper publisher to flatten his data to this stream
      */
     @SuppressWarnings("unchecked")
@@ -52,7 +53,10 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
         try {
             ReactiveStreams
                     .fromPublisher(publisher)
-                    .forEach(this::submit)
+                    .forEach(i -> {
+                        this.getRequestedCounter().increment(1L, this::onError);
+                        this.submit(i);
+                    })
                     .run().toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             onError(e);

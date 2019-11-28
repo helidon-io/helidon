@@ -18,13 +18,10 @@
 package io.helidon.microprofile.reactive;
 
 
-import java.util.Collection;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
-import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
 import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
 import org.reactivestreams.Processor;
@@ -38,40 +35,28 @@ import org.reactivestreams.Publisher;
  */
 public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
 
-    private static final Logger LOGGER = Logger.getLogger(HelidonReactiveStreamEngine.class.getName());
-
     @Override
     @SuppressWarnings("unchecked")
     public <T> Publisher<T> buildPublisher(Graph graph) throws UnsupportedStageException {
-        MultiStagesCollector<T> multiStagesCollector = new MultiStagesCollector<>();
-        Collection<Stage> stages = graph.getStages();
-        stages.stream().collect(multiStagesCollector);
-        return multiStagesCollector.getPublisher();
+        return GraphBuilder.create().from(graph).getPublisher();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T, R> SubscriberWithCompletionStage<T, R> buildSubscriber(Graph graph) throws UnsupportedStageException {
-        MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
-        graph.getStages().stream().collect(multiStagesCollector);
-        return multiStagesCollector.getSubscriberWithCompletionStage();
+        return GraphBuilder.create().from(graph).getSubscriberWithCompletionStage();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T, R> Processor<T, R> buildProcessor(Graph graph) throws UnsupportedStageException {
-        MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
-        graph.getStages().stream().collect(multiStagesCollector);
-        return multiStagesCollector.getProcessor();
+        return GraphBuilder.create().from(graph).getProcessor();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> CompletionStage<T> buildCompletion(Graph graph) throws UnsupportedStageException {
-        MultiStagesCollector multiStagesCollector = new MultiStagesCollector();
-        graph.getStages().stream().collect(multiStagesCollector);
-        CompletionStage<T> completionStage = (CompletionStage<T>) multiStagesCollector.getCompletionStage();
-        return completionStage;
+        return GraphBuilder.create().from(graph).getCompletionStage();
     }
 }
 
