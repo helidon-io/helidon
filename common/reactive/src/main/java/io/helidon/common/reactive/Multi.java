@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 
 /**
  * Multiple items publisher facility.
+ *
  * @param <T> item type
  */
 public interface Multi<T> extends Subscribable<T> {
@@ -34,7 +35,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Mapper}.
      *
-     * @param <U> mapped item type
+     * @param <U>    mapped item type
      * @param mapper mapper
      * @return Multi
      * @throws NullPointerException if mapper is {@code null}
@@ -58,6 +59,17 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Filter out all duplicates.
+     *
+     * @return Multi
+     */
+    default Multi<T> distinct() {
+        DistinctProcessor<T> processor = new DistinctProcessor<>();
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
      * Filter stream items with provided predicate.
      *
      * @param predicate predicate to filter stream with
@@ -70,6 +82,30 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Take the longest prefix of elements from this stream that satisfy the given predicate.
+     *
+     * @param predicate predicate to filter stream with
+     * @return Multi
+     */
+    default Multi<T> takeWhile(Predicate<T> predicate) {
+        TakeWhileProcessor<T> processor = new TakeWhileProcessor<>(predicate);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * Drop the longest prefix of elements from this stream that satisfy the given predicate.
+     *
+     * @param predicate predicate to filter stream with
+     * @return Multi
+     */
+    default Multi<T> dropWhile(Predicate<T> predicate) {
+        DropWhileProcessor<T> processor = new DropWhileProcessor<>(predicate);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
      * Limit stream to allow only specified number of items to pass.
      *
      * @param limit with expected number of items to be produced
@@ -77,6 +113,18 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default Multi<T> limit(long limit) {
         LimitProcessor<T> processor = new LimitProcessor<>(limit);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * Skip first n items, all the others are emitted.
+     *
+     * @param skip number of items to be skipped
+     * @return Multi
+     */
+    default Multi<T> skip(long skip) {
+        SkipProcessor<T> processor = new SkipProcessor<>(skip);
         this.subscribe(processor);
         return processor;
     }
@@ -103,7 +151,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Collect the items of this {@link Multi} instance into a {@link Single}.
      *
-     * @param <U> collector container type
+     * @param <U>       collector container type
      * @param collector collector to use
      * @return Single
      * @throws NullPointerException if collector is {@code null}
@@ -116,6 +164,7 @@ public interface Multi<T> extends Subscribable<T> {
 
     /**
      * Get the first item of this {@link Multi} instance as a {@link Single}.
+     *
      * @return Single
      */
     default Single<T> first() {
@@ -127,7 +176,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Create a {@link Multi} instance wrapped around the given publisher.
      *
-     * @param <T> item type
+     * @param <T>    item type
      * @param source source publisher
      * @return Multi
      * @throws NullPointerException if source is {@code null}
@@ -143,7 +192,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Create a {@link Multi} instance that publishes the given items to a single subscriber.
      *
-     * @param <T> item type
+     * @param <T>   item type
      * @param items items to publish
      * @return Multi
      * @throws NullPointerException if items is {@code null}
@@ -155,7 +204,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Create a {@link Multi} instance that publishes the given items to a single subscriber.
      *
-     * @param <T> item type
+     * @param <T>   item type
      * @param items items to publish
      * @return Multi
      * @throws NullPointerException if items is {@code null}
@@ -169,7 +218,7 @@ public interface Multi<T> extends Subscribable<T> {
      * Create a {@link Multi} instance that reports the given exception to its subscriber(s). The exception is reported by
      * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
      *
-     * @param <T> item type
+     * @param <T>   item type
      * @param error exception to hold
      * @return Multi
      * @throws NullPointerException if error is {@code null}

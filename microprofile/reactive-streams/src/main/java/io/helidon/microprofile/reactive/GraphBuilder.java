@@ -25,12 +25,15 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.reactive.DistinctProcessor;
+import io.helidon.common.reactive.DropWhileProcessor;
 import io.helidon.common.reactive.FilterProcessor;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.LimitProcessor;
 import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.MultiMappingProcessor;
 import io.helidon.common.reactive.PeekProcessor;
+import io.helidon.common.reactive.SkipProcessor;
+import io.helidon.common.reactive.TakeWhileProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
@@ -69,10 +72,16 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         });
         registerStage(Stage.Map.class, stage -> {
             Function<Object, Object> mapper = (Function<Object, Object>) stage.getMapper();
-            processorList.add(new MultiMappingProcessor<>(mapper::apply));
+            processorList.add(new MapProcessor<>(mapper::apply));
         });
         registerStage(Stage.Filter.class, stage -> {
             processorList.add(new FilterProcessor(stage.getPredicate()));
+        });
+        registerStage(Stage.TakeWhile.class, stage -> {
+            processorList.add(new TakeWhileProcessor(stage.getPredicate()));
+        });
+        registerStage(Stage.DropWhile.class, stage -> {
+            processorList.add(new DropWhileProcessor(stage.getPredicate()));
         });
         registerStage(Stage.Peek.class, stage -> {
             Consumer<Object> peekConsumer = (Consumer<Object>) stage.getConsumer();
@@ -80,6 +89,12 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         });
         registerStage(Stage.Limit.class, stage -> {
             processorList.add(new LimitProcessor(stage.getLimit()));
+        });
+        registerStage(Stage.Skip.class, stage -> {
+            processorList.add(new SkipProcessor(stage.getSkip()));
+        });
+        registerStage(Stage.Distinct.class, stage -> {
+            processorList.add(new DistinctProcessor<>());
         });
         registerStage(Stage.FlatMap.class, stage -> {
             processorList.add(new FlatMapProcessor(stage.getMapper()));

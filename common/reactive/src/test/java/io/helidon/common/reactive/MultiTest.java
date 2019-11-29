@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.concurrent.Flow.Subscription;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.mapper.Mapper;
@@ -311,6 +312,55 @@ public class MultiTest {
         assertThat(multiSum2.get(), is(equalTo(EXPECTED_SUM)));
         assertThat(streamSum1.get(), is(equalTo(EXPECTED_SUM)));
         assertThat(streamSum2.get(), is(equalTo(EXPECTED_SUM)));
+    }
+
+    @Test
+    void testSkip() throws ExecutionException, InterruptedException {
+        final List<Integer> TEST_DATA = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 9);
+        final long TEST_SKIP = 3;
+        final List<Integer> EXPECTED = Arrays.asList(4, 5, 6, 7, 9);
+
+        List<Integer> result = Multi.just(TEST_DATA)
+                .skip(TEST_SKIP)
+                .collectList().get();
+
+        assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void testTakeWhile() throws ExecutionException, InterruptedException {
+        final List<Integer> TEST_DATA = Arrays.asList(1, 2, 3, 4, 3, 2, 1, 0);
+        final List<Integer> EXPECTED = Arrays.asList(1, 2, 3);
+
+        List<Integer> result = Multi.just(TEST_DATA)
+                .takeWhile(i -> i < 4)
+                .collectList().get();
+
+        assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void testDropWhile() throws ExecutionException, InterruptedException {
+        final List<Integer> TEST_DATA = Arrays.asList(1, 2, 3, 4, 3, 2, 1, 0);
+        final List<Integer> EXPECTED = Arrays.asList(4, 3, 2, 1, 0);
+
+        List<Integer> result = Multi.just(TEST_DATA)
+                .dropWhile(i -> i < 4)
+                .collectList().get();
+
+        assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void distinct() throws ExecutionException, InterruptedException {
+        final List<Integer> TEST_DATA = Arrays.asList(1, 2, 1, 2, 3, 2, 1, 3);
+        final List<Integer> EXPECTED = Arrays.asList(1, 2, 3);
+
+        List<Integer> result = Multi.just(TEST_DATA)
+                .distinct()
+                .collectList().get();
+
+        assertThat(result, is(equalTo(EXPECTED)));
     }
 
     private static class MultiTestSubscriber<T> extends TestSubscriber<T> {

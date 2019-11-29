@@ -18,6 +18,7 @@
 package io.helidon.microprofile.reactive;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -50,19 +51,21 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
 
     @Override
     protected void hookOnNext(Object item) {
-        Graph graph = mapper.apply(item);
-        HelidonReactiveStreamEngine streamEngine = new HelidonReactiveStreamEngine();
-        Publisher<Object> publisher = streamEngine.buildPublisher(graph);
         try {
+            Graph graph = mapper.apply(item);
+            HelidonReactiveStreamEngine streamEngine = new HelidonReactiveStreamEngine();
+            Publisher<Object> publisher = streamEngine.buildPublisher(graph);
             ReactiveStreams
                     .fromPublisher(publisher)
                     .forEach(i -> {
                         this.getRequestedCounter().increment(1L, this::onError);
                         this.submit(i);
                     })
-                    .run().toCompletableFuture().get();
+                    //TODO: Timeout is bad solution!
+                    .run().toCompletableFuture().get(10, TimeUnit.SECONDS);
             tryRequest(getSubscription());
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Throwable e) {
+            super.getSubscription().cancel();
             onError(e);
         }
     }
