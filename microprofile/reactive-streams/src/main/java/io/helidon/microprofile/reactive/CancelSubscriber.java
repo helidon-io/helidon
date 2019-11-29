@@ -17,18 +17,26 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.helidon.common.reactive.Flow;
 
 public class CancelSubscriber implements Flow.Subscriber<Object> {
 
+    AtomicBoolean cancelled = new AtomicBoolean(false);
+
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        subscription.cancel();
+        if (cancelled.compareAndSet(false, true)) {
+            subscription.cancel();
+        } else {
+            throw new CancellationException();
+        }
     }
 
     @Override
     public void onNext(Object item) {
-        System.out.println();
     }
 
     @Override
@@ -38,6 +46,5 @@ public class CancelSubscriber implements Flow.Subscriber<Object> {
 
     @Override
     public void onComplete() {
-        System.out.println();
     }
 }

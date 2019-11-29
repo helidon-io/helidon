@@ -44,10 +44,15 @@ public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> 
 
     @Override
     protected void hookOnNext(T item) {
-        if (predicate.test(item)) {
-            submit(item);
-        } else {
-            tryRequest(getSubscription());
+        try {
+            if (predicate.test(item)) {
+                submit(item);
+            } else {
+                tryRequest(getSubscription());
+            }
+        } catch (Throwable t) {
+            getSubscription().cancel();
+            onError(t);
         }
     }
 }

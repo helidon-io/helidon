@@ -49,7 +49,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     @Override
-    public final void request(long n) {
+    public void request(long n) {
         requested.increment(n, ex -> onError(ex));
         tryRequest(subscription);
         if (done) {

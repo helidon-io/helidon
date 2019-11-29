@@ -22,11 +22,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.reactive.Flow;
+import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
-public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object> {
+import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
+import org.reactivestreams.Subscriber;
+
+public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, SubscriberWithCompletionStage<Object, Object> {
     private Flow.Subscription subscription;
     private CompletableFuture<Object> completionStage = new CompletableFuture<>();
-    private Optional<Object> firstItem = Optional.empty();
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
@@ -51,12 +54,19 @@ public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object> {
     @Override
     @SuppressWarnings("unchecked")
     public void onComplete() {
-        Object optItem = (Object) Optional.empty();
-        completionStage.complete(optItem);
+        if (!completionStage.isDone()) {
+            Object optItem = (Object) Optional.empty();
+            completionStage.complete(optItem);
+        }
     }
 
-
+    @Override
     public CompletionStage<Object> getCompletion() {
         return completionStage;
+    }
+
+    @Override
+    public Subscriber<Object> getSubscriber() {
+        return HybridSubscriber.from(this);
     }
 }

@@ -31,8 +31,10 @@ import io.helidon.common.reactive.LimitProcessor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.MultiMappingProcessor;
 import io.helidon.common.reactive.PeekProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
+import org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
@@ -46,7 +48,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
     private Multi<Object> multi = null;
     private List<Flow.Processor<Object, Object>> processorList = new ArrayList<>();
     private CompletionStage<Object> completionStage = null;
-    private CollectSubscriber<Object> subscriberWithCompletionStage = null;
+    private SubscriberWithCompletionStage<Object, Object> subscriberWithCompletionStage = null;
 
     @SuppressWarnings("unchecked")
     private GraphBuilder() {
@@ -90,24 +92,26 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         });
         registerStage(Stage.Cancel.class, stage -> {
             CancelSubscriber cancelSubscriber = new CancelSubscriber();
-            subscribeUpStream();
-            multi.subscribe(cancelSubscriber);
-            this.completionStage = CompletableFuture.completedFuture(null);
+            subscribe(cancelSubscriber);
+            this.subscriberWithCompletionStage =
+                    RedeemingCompletionSubscriber.of(HybridSubscriber.from(cancelSubscriber),
+                            CompletableFuture.completedFuture(null));
         });
         registerStage(Stage.FindFirst.class, stage -> {
             FindFirstSubscriber<Object> firstSubscriber = new FindFirstSubscriber<>();
-            subscribeUpStream();
-            multi.subscribe(firstSubscriber);
-            this.completionStage = firstSubscriber.getCompletion();
+            subscribe(firstSubscriber);
+            this.subscriberWithCompletionStage = firstSubscriber;
         });
         registerStage(Stage.SubscriberStage.class, stage -> {
             Subscriber<Object> subscriber = (Subscriber<Object>) stage.getRsSubscriber();
-            this.completionStage = new CompletableFuture<>();
-            RedeemingCompletionSubscriber<Object, Object> completionSubscriber =
-                    RedeemingCompletionSubscriber.of(subscriber, completionStage);
-            // If producer was supplied
-            subscribeUpStream();
-            multi.subscribe(HybridSubscriber.from(completionSubscriber));
+            RedeemingCompletionSubscriber<Object, Object> completionSubscriber;
+            if (subscriber instanceof CompletionSubscriber) {
+                completionSubscriber = RedeemingCompletionSubscriber.of(subscriber, ((CompletionSubscriber) subscriber).getCompletion());
+            } else {
+                completionSubscriber = RedeemingCompletionSubscriber.of(subscriber, new CompletableFuture<>());
+            }
+            subscribe(completionSubscriber);
+            this.subscriberWithCompletionStage = completionSubscriber;
         });
         registerStage(Stage.Collect.class, stage -> {
             // Foreach
@@ -211,6 +215,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
     }
 
     @SuppressWarnings("unchecked")
+    @Deprecated
     private void subscribeUpStream() {
         if (multi != null) {
             for (Flow.Processor p : processorList) {
@@ -220,6 +225,18 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         } else {
             throw new RuntimeException("No producer was supplied");
         }
+    }
+
+    private void subscribe(Subscriber<Object> subscriber) {
+        CumulativeProcessor cumulativeProcessor = new CumulativeProcessor(processorList);
+        if (multi != null) {
+            multi.subscribe(HybridProcessor.from(cumulativeProcessor));
+        }
+        cumulativeProcessor.subscribe(subscriber);
+    }
+
+    private void subscribe(Flow.Subscriber<Object> subscriber) {
+        subscribe((Subscriber<Object>) HybridSubscriber.from(subscriber));
     }
 
     @SuppressWarnings("unchecked")

@@ -41,6 +41,8 @@ public class CumulativeProcessor implements Processor<Object, Object> {
     CumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
         //preceding processors
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
+        //pass-thru if no processors provided
+        this.processorList.add(HybridProcessor.from(TappedProcessor.create()));
     }
 
     @Override

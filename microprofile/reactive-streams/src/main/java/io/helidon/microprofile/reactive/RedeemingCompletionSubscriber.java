@@ -19,6 +19,7 @@ package io.helidon.microprofile.reactive;
 
 import java.util.concurrent.CompletionStage;
 
+import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -30,7 +31,7 @@ import org.reactivestreams.Subscription;
  * @param <R> {@link java.util.concurrent.CompletionStage} payload type
  * @see <a href="https://github.com/eclipse/microprofile-reactive-streams-operators/issues/129#issue-521492223">microprofile-reactive-streams-operators #129</a>
  */
-class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber<T, R> {
+class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber<T, R>, SubscriberWithCompletionStage<T, R> {
 
     private final Subscriber<T> subscriber;
     private final CompletionStage<R> completion;
@@ -58,6 +59,11 @@ class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.re
     }
 
     @Override
+    public Subscriber<T> getSubscriber() {
+        return this;
+    }
+
+    @Override
     public void onSubscribe(Subscription s) {
         subscriber.onSubscribe(new Subscription() {
             @Override
@@ -69,7 +75,7 @@ class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.re
             public void cancel() {
                 s.cancel();
                 //Base processor breaks cancel->onComplete loop, so listen even for downstream call
-                completion.toCompletableFuture().complete(null);
+                //completion.toCompletableFuture().complete(null);
             }
         });
     }
@@ -89,6 +95,6 @@ class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.re
     public void onComplete() {
         subscriber.onComplete();
         //Base processor breaks cancel->onComplete loop, so listen even for upstream call
-        completion.toCompletableFuture().complete(null);
+        //completion.toCompletableFuture().complete(null);
     }
 }

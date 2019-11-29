@@ -18,6 +18,7 @@
 package io.helidon.microprofile.reactive;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import io.helidon.common.reactive.BaseProcessor;
@@ -34,6 +35,8 @@ import org.reactivestreams.Publisher;
 public class FlatMapProcessor extends BaseProcessor<Object, Object> implements Multi<Object> {
 
     private final Function<Object, Graph> mapper;
+
+    private final AtomicBoolean alreadyRunning = new AtomicBoolean(false);
 
     /**
      * Flatten the elements emitted by publishers produced by the mapper function to this stream.
@@ -58,11 +61,18 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
                         this.submit(i);
                     })
                     .run().toCompletableFuture().get();
+            tryRequest(getSubscription());
         } catch (InterruptedException | ExecutionException e) {
             onError(e);
         }
     }
 
+    @Override
+    public void request(long n) {
+        if (alreadyRunning.compareAndSet(false, true)) {
+            super.request(n);
+        }
+    }
 
     @Override
     protected void hookOnCancel(Flow.Subscription subscription) {
