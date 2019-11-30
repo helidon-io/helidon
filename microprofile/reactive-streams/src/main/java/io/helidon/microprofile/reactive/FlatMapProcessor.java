@@ -61,8 +61,8 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
                         this.getRequestedCounter().increment(1L, this::onError);
                         this.submit(i);
                     })
-                    //TODO: Timeout is bad solution!
-                    .run().toCompletableFuture().get(10, TimeUnit.SECONDS);
+                    //TODO: Timeout is bad solution! whenComplete should do the trick??
+                    .run().toCompletableFuture().get(2, TimeUnit.SECONDS);
             tryRequest(getSubscription());
         } catch (Throwable e) {
             super.getSubscription().cancel();

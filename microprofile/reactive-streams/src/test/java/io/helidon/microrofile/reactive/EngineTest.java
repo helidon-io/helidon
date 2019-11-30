@@ -19,6 +19,7 @@ package io.helidon.microrofile.reactive;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -542,5 +543,28 @@ public class EngineTest {
                 .toList().run();
         cancelled.get(1, TimeUnit.SECONDS);
         assertThrows(ExecutionException.class, () -> result.toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void fromCompletionStage() throws InterruptedException, ExecutionException, TimeoutException {
+        assertEquals(Collections.singletonList("TEST"),
+                ReactiveStreams.fromCompletionStage(CompletableFuture.completedFuture("TEST"))
+                        .toList()
+                        .run().toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void fromCompletionStageWithNullNegative() throws InterruptedException, ExecutionException, TimeoutException {
+        assertThrows(ExecutionException.class, () -> ReactiveStreams.fromCompletionStage(CompletableFuture.completedFuture(null))
+                .toList()
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void fromCompletionStageWithNullPositive() throws InterruptedException, ExecutionException, TimeoutException {
+        assertEquals(Optional.empty(),
+                ReactiveStreams.fromCompletionStageNullable(CompletableFuture.completedFuture(null))
+                        .findFirst()
+                        .run().toCompletableFuture().get(1, TimeUnit.SECONDS));
     }
 }

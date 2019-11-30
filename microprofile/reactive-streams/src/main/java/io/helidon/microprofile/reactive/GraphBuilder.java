@@ -70,6 +70,12 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         registerStage(Stage.Failed.class, stage -> {
             multi = Multi.from(new FailedPublisher(stage.getError()));
         });
+        registerStage(Stage.FromCompletionStage.class, stage -> {
+            multi = MultiRS.toMulti(new FromCompletionStagePublisher(stage.getCompletionStage(), false));
+        });
+        registerStage(Stage.FromCompletionStageNullable.class, stage -> {
+            multi = MultiRS.toMulti(new FromCompletionStagePublisher(stage.getCompletionStage(), true));
+        });
         registerStage(Stage.Map.class, stage -> {
             Function<Object, Object> mapper = (Function<Object, Object>) stage.getMapper();
             processorList.add(new MapProcessor<>(mapper::apply));
