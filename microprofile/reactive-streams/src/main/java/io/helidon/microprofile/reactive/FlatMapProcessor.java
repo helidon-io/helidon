@@ -17,8 +17,6 @@
 
 package io.helidon.microprofile.reactive;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -61,9 +59,14 @@ public class FlatMapProcessor extends BaseProcessor<Object, Object> implements M
                         this.getRequestedCounter().increment(1L, this::onError);
                         this.submit(i);
                     })
-                    //TODO: Timeout is bad solution! whenComplete should do the trick??
-                    .run().toCompletableFuture().get(2, TimeUnit.SECONDS);
-            tryRequest(getSubscription());
+                    .run().whenComplete((aVoid, throwable) -> {
+                if (throwable != null) {
+                    super.getSubscription().cancel();
+                    onError(throwable);
+                } else {
+                    tryRequest(getSubscription());
+                }
+            });
         } catch (Throwable e) {
             super.getSubscription().cancel();
             onError(e);

@@ -34,6 +34,7 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.PeekProcessor;
 import io.helidon.common.reactive.SkipProcessor;
 import io.helidon.common.reactive.TakeWhileProcessor;
+import io.helidon.microprofile.reactive.hybrid.CoupledProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
@@ -93,6 +94,9 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             Consumer<Object> peekConsumer = (Consumer<Object>) stage.getConsumer();
             processorList.add(new PeekProcessor<>(peekConsumer));
         });
+        registerStage(Stage.ProcessorStage.class, stage -> {
+            processorList.add(HybridProcessor.from((Processor<Object, Object>) stage.getRsProcessor()));
+        });
         registerStage(Stage.Limit.class, stage -> {
             processorList.add(new LimitProcessor(stage.getLimit()));
         });
@@ -105,11 +109,26 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         registerStage(Stage.FlatMap.class, stage -> {
             processorList.add(new FlatMapProcessor(stage.getMapper()));
         });
+        registerStage(Stage.Coupled.class, stage -> {
+            Subscriber<Object> subscriber = GraphBuilder.create()
+                    .from(stage.getSubscriber()).getSubscriberWithCompletionStage().getSubscriber();
+            Publisher<Object> publisher = GraphBuilder.create().from(stage.getPublisher()).getPublisher();
+            processorList.add(HybridProcessor.from(new CoupledProcessor<>(subscriber, publisher)));
+        });
         registerStage(Stage.OnTerminate.class, stage -> {
             processorList.add(TappedProcessor.create()
                     .onComplete(stage.getAction())
                     .onCancel((s) -> stage.getAction().run())
                     .onError((t) -> stage.getAction().run()));
+        });
+        registerStage(Stage.OnComplete.class, stage -> {
+            processorList.add(TappedProcessor.create().onComplete(stage.getAction()));
+        });
+        registerStage(Stage.OnError.class, stage -> {
+            processorList.add(TappedProcessor.create().onError(stage.getConsumer()));
+        });
+        registerStage(Stage.OnErrorResume.class, stage -> {
+            processorList.add(new OnErrorResumeProcessor(stage.getFunction()));
         });
         registerStage(Stage.Cancel.class, stage -> {
             CancelSubscriber cancelSubscriber = new CancelSubscriber();

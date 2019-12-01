@@ -17,7 +17,7 @@
 
 package io.helidon.microprofile.reactive;
 
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.reactivestreams.Processor;
@@ -26,54 +26,91 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 public class ConcatPublisher<T> implements Publisher<T> {
+    private FirstProcessor firstProcessor;
+    private SecondProcessor secondProcessor;
     private Subscriber<T> subscriber;
     private Publisher<T> firstPublisher;
     private Publisher<T> secondPublisher;
-    private TransparentProcessor firstTransparentProcessor;
+    private AtomicLong requested = new AtomicLong();
+
 
     public ConcatPublisher(Publisher<T> firstPublisher, Publisher<T> secondPublisher) {
         this.firstPublisher = firstPublisher;
         this.secondPublisher = secondPublisher;
-
     }
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
         this.subscriber = (Subscriber<T>) subscriber;
-        firstTransparentProcessor = new TransparentProcessor(firstPublisher, secondPublisher);
+
+        this.firstProcessor = new FirstProcessor();
+        this.secondProcessor = new SecondProcessor();
+
+        firstPublisher.subscribe(firstProcessor);
 
         subscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
-                firstTransparentProcessor.request(n);
-
+                requested.set(n);
+                if (!firstProcessor.complete) {
+                    firstProcessor.subscription.request(n);
+                } else {
+                    secondProcessor.subscription.request(n);
+                }
             }
 
             @Override
             public void cancel() {
-                firstTransparentProcessor.cancel();
+                firstProcessor.subscription.cancel();
+                secondProcessor.subscription.cancel();
             }
         });
     }
 
-    private class TransparentProcessor implements Processor<Object, Object> {
+    private class FirstProcessor implements Processor<Object, Object> {
 
         private Subscription subscription;
-        private boolean isCompleted = false;
-        private AtomicLong requests = new AtomicLong();
-        private TransparentProcessor secondTransparentProcessor;
+        private boolean complete = false;
 
-        private TransparentProcessor() {
-        }
-
-        private TransparentProcessor(Publisher<T> firstPublisher, Publisher<T> secondPublisher) {
-            firstPublisher.subscribe(this);
-            secondTransparentProcessor = new TransparentProcessor();
-            secondPublisher.subscribe(secondTransparentProcessor);
+        @Override
+        public void subscribe(Subscriber<? super Object> s) {
         }
 
         @Override
-        public void subscribe(Subscriber<? super Object> subscriber) {
+        public void onSubscribe(Subscription subscription) {
+            this.subscription = subscription;
+            secondPublisher.subscribe(secondProcessor);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void onNext(Object o) {
+            requested.decrementAndGet();
+            ConcatPublisher.this.subscriber.onNext((T) o);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            complete = true;
+            Optional.ofNullable(secondProcessor.subscription).ifPresent(Subscription::cancel);
+            subscription.cancel();
+            ConcatPublisher.this.subscriber.onError(t);
+        }
+
+        @Override
+        public void onComplete() {
+            complete = true;
+            Optional.ofNullable(secondProcessor.subscription).ifPresent(s -> s.request(requested.get()));
+        }
+    }
+
+
+    private class SecondProcessor implements Processor<Object, Object> {
+
+        private Subscription subscription;
+
+        @Override
+        public void subscribe(Subscriber<? super Object> s) {
         }
 
         @Override
@@ -81,41 +118,22 @@ public class ConcatPublisher<T> implements Publisher<T> {
             this.subscription = subscription;
         }
 
-        private void request(long n) {
-            requests.set(n);
-            if (!isCompleted) {
-                this.subscription.request(n);
-            } else {
-                secondTransparentProcessor.subscription.request(n);
-            }
-        }
-
-        private void cancel() {
-            this.subscription.cancel();
-            this.secondTransparentProcessor.subscription.cancel();
-        }
-
         @Override
         @SuppressWarnings("unchecked")
-        public void onNext(Object t) {
-            requests.decrementAndGet();
-            ConcatPublisher.this.subscriber.onNext((T) t);
+        public void onNext(Object o) {
+            ConcatPublisher.this.subscriber.onNext((T) o);
         }
 
         @Override
         public void onError(Throwable t) {
-                this.isCompleted = true;
-                ConcatPublisher.this.subscriber.onError(t);
+            firstProcessor.subscription.cancel();
+            subscription.cancel();
+            ConcatPublisher.this.subscriber.onError(t);
         }
 
         @Override
         public void onComplete() {
-            if (!Objects.isNull(secondTransparentProcessor)) {
-                this.isCompleted = true;
-                this.secondTransparentProcessor.subscription.request(requests.get());
-            } else {
-                ConcatPublisher.this.subscriber.onComplete();
-            }
+            ConcatPublisher.this.subscriber.onComplete();
         }
     }
 }

@@ -88,7 +88,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     @Override
-    public final void onError(Throwable ex) {
+    public void onError(Throwable ex) {
         done = true;
         if (error == null) {
             error = ex;

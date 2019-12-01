@@ -17,29 +17,29 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.function.Function;
+
+import io.helidon.common.reactive.BaseProcessor;
 import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.Multi;
 
-public class FailedPublisher implements Flow.Publisher {
+public class OnErrorResumeProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
-    private Throwable throwable;
 
-    public FailedPublisher(Throwable throwable) {
-        this.throwable = throwable;
+    private Function<Throwable, T> supplier;
+
+    public OnErrorResumeProcessor(Function<Throwable, T> supplier) {
+        this.supplier = supplier;
     }
 
     @Override
-    public void subscribe(Flow.Subscriber subscriber) {
-        subscriber.onSubscribe(new Flow.Subscription() {
-            @Override
-            public void request(long n) {
+    public void onError(Throwable ex) {
+        submit(supplier.apply(ex));
+        tryComplete();
+    }
 
-            }
-
-            @Override
-            public void cancel() {
-
-            }
-        });
-        subscriber.onError(throwable);
+    @Override
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        subscription.cancel();
     }
 }
