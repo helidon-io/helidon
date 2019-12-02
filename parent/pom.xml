@@ -47,7 +47,7 @@
     <scm>
         <developerConnection>scm:git:git@github.com:oracle/helidon.git</developerConnection>
         <connection>scm:git:git@github.com:oracle/helidon.git</connection>
-        <tag>HEAD</tag>
+        <tag>1.4.0</tag>
         <url>https://github.com/oracle/helidon</url>
     </scm>
 
