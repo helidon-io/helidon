@@ -107,7 +107,22 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             processorList.add(new DistinctProcessor<>());
         });
         registerStage(Stage.FlatMap.class, stage -> {
-            processorList.add(new FlatMapProcessor(stage.getMapper()));
+            processorList.add(
+                    HybridProcessor.from(
+                            FlatMapProcessor.fromPublisherMapper(
+                                    stage.getMapper())));
+        });
+        registerStage(Stage.FlatMapIterable.class, stage -> {
+            processorList.add(
+                    HybridProcessor.from(
+                            FlatMapProcessor.fromIterableMapper(
+                                    stage.getMapper())));
+        });
+        registerStage(Stage.FlatMapCompletionStage.class, stage -> {
+            processorList.add(
+                    HybridProcessor.from(
+                            FlatMapProcessor.fromCompletionStage(
+                                    stage.getMapper())));
         });
         registerStage(Stage.Coupled.class, stage -> {
             Subscriber<Object> subscriber = GraphBuilder.create()

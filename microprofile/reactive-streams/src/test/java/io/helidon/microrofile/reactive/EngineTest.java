@@ -148,7 +148,7 @@ public class EngineTest {
 
     @Test
     void processorBuilder() {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuffer = new StringBuilder();
 
         Publisher<Integer> publisherBuilder =
                 ReactiveStreams
@@ -620,6 +620,16 @@ public class EngineTest {
 
     @Test
     void flatMapCancelPropagation() throws InterruptedException, ExecutionException, TimeoutException {
+        try {
+            ReactiveStreams.of(1, 2, 3)
+                    // .onTerminate(() -> cancelled.complete(null))
+                    //  .flatMap(f -> ReactiveStreams.failed(new TestRuntimeException()))
+                    .toList()
+                    .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+        } catch (ExecutionException ignored) {
+
+        }
+
         CompletableFuture<Void> outerCancelled = new CompletableFuture<>();
         CompletableFuture<Void> innerCancelled = new CompletableFuture<>();
         ReactiveStreams.generate(() -> 4)
@@ -628,8 +638,19 @@ public class EngineTest {
                         .onTerminate(() -> innerCancelled.complete(null)))
                 .limit(5)
                 .toList()
-                .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
-        outerCancelled.get(1, TimeUnit.SECONDS);
-        innerCancelled.get(1, TimeUnit.SECONDS);
+                .run().toCompletableFuture().get(200, TimeUnit.MILLISECONDS);
+        outerCancelled.get(200, TimeUnit.MILLISECONDS);
+        innerCancelled.get(200, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    void flatMap() throws InterruptedException, ExecutionException, TimeoutException {
+        List<Integer> result = ReactiveStreams.generate(() -> 4)
+                .flatMap(i -> ReactiveStreams.of(9, 8, 7))
+                .limit(4)
+                .toList()
+                .run().toCompletableFuture().get(200, TimeUnit.MILLISECONDS);
+
+        assertEquals(Arrays.asList(9, 8, 7, 9), result);
     }
 }

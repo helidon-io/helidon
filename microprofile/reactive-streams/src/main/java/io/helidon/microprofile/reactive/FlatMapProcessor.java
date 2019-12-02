@@ -17,76 +17,160 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-
-import io.helidon.common.reactive.BaseProcessor;
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.Multi;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
+import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 /**
  * Flatten the elements emitted by publishers produced by the mapper function to this stream.
  */
-public class FlatMapProcessor extends BaseProcessor<Object, Object> implements Multi<Object> {
+public class FlatMapProcessor implements Processor<Object, Object> {
 
-    private final Function<Object, Graph> mapper;
+    private Function<Object, Publisher> mapper;
 
-    private final AtomicBoolean alreadyRunning = new AtomicBoolean(false);
+    private final AtomicBoolean innerPublisherCompleted = new AtomicBoolean(true);
+    private Subscriber<? super Object> subscriber;
+    private Subscription subscription;
+    private final AtomicLong requestCounter = new AtomicLong();
+    private Subscription innerSubscription;
 
-    /**
-     * Flatten the elements emitted by publishers produced by the mapper function to this stream.
-     *
-     * @param mapper publisher to flatten his data to this stream
-     */
+
+    private FlatMapProcessor() {
+    }
+
     @SuppressWarnings("unchecked")
-    public FlatMapProcessor(Function<?, Graph> mapper) {
-        this.mapper = (Function<Object, Graph>) mapper;
+    static FlatMapProcessor fromIterableMapper(Function<?, Iterable<?>> mapper) {
+        Function<Object, Iterable<?>> iterableMapper = (Function<Object, Iterable<?>>) mapper;
+        FlatMapProcessor flatMapProcessor = new FlatMapProcessor();
+        flatMapProcessor.mapper = o -> ReactiveStreams.fromIterable(iterableMapper.apply(o)).buildRs();
+        return flatMapProcessor;
+    }
+
+    @SuppressWarnings("unchecked")
+    static FlatMapProcessor fromPublisherMapper(Function<?, Graph> mapper) {
+        Function<Object, Graph> publisherMapper = (Function<Object, Graph>) mapper;
+        FlatMapProcessor flatMapProcessor = new FlatMapProcessor();
+        flatMapProcessor.mapper = o -> new HelidonReactiveStreamEngine().buildPublisher(publisherMapper.apply(o));
+        return flatMapProcessor;
+    }
+
+    @SuppressWarnings("unchecked")
+    static FlatMapProcessor fromCompletionStage(Function<?, CompletionStage<?>> mapper) {
+        Function<Object, CompletionStage<?>> csMapper = (Function<Object, CompletionStage<?>>) mapper;
+        FlatMapProcessor flatMapProcessor = new FlatMapProcessor();
+        flatMapProcessor.mapper = o -> (Publisher<Object>) s -> s.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                csMapper.apply(o).whenComplete((payload, throwable) -> {
+                    if (Objects.nonNull(throwable)) {
+                        s.onError(throwable);
+                    } else {
+                        s.onNext(payload);
+                    }
+                });
+            }
+
+            @Override
+            public void cancel() {
+
+            }
+        });
+        return flatMapProcessor;
+    }
+
+    private class FlatMapSubscription implements Subscription {
+        @Override
+        public void request(long n) {
+            requestCounter.addAndGet(n);
+            if (innerPublisherCompleted.getAndSet(false)) {
+                subscription.request(requestCounter.get());
+            }
+        }
+
+        @Override
+        public void cancel() {
+            subscription.cancel();
+            innerSubscription.cancel();
+        }
     }
 
     @Override
-    protected void hookOnNext(Object item) {
+    public void subscribe(Subscriber<? super Object> subscriber) {
+        this.subscriber = subscriber;
+        if (Objects.nonNull(this.subscription)) {
+            subscriber.onSubscribe(new FlatMapSubscription());
+        }
+    }
+
+    @Override
+    public void onSubscribe(Subscription subscription) {
+        this.subscription = subscription;
+        if (Objects.nonNull(subscriber)) {
+            subscriber.onSubscribe(new FlatMapSubscription());
+        }
+    }
+
+    @Override
+    public void onNext(Object o) {
+        onNextInner(o);
+    }
+
+    @Override
+    public void onError(Throwable t) {
+        subscriber.onError(t);
+    }
+
+    @Override
+    public void onComplete() {
+        subscriber.onComplete();
+        innerSubscription.cancel();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void onNextInner(Object item) {
         try {
-            Graph graph = mapper.apply(item);
-            HelidonReactiveStreamEngine streamEngine = new HelidonReactiveStreamEngine();
-            Publisher<Object> publisher = streamEngine.buildPublisher(graph);
-            ReactiveStreams
-                    .fromPublisher(publisher)
-                    .forEach(i -> {
-                        this.getRequestedCounter().increment(1L, this::onError);
-                        this.submit(i);
-                    })
-                    .run().whenComplete((aVoid, throwable) -> {
-                if (throwable != null) {
-                    super.getSubscription().cancel();
-                    onError(throwable);
-                } else {
-                    tryRequest(getSubscription());
-                }
-            });
+            Publisher<Object> publisher = mapper.apply(item);
+            publisher.subscribe(new InnerSubscriber());
         } catch (Throwable e) {
-            super.getSubscription().cancel();
-            onError(e);
+            this.subscription.cancel();
+            this.onError(e);
         }
     }
 
-    @Override
-    public void request(long n) {
-        if (alreadyRunning.compareAndSet(false, true)) {
-            super.request(n);
+    private class InnerSubscriber implements Subscriber<Object> {
+
+        @Override
+        public void onSubscribe(Subscription innerSubscription) {
+            FlatMapProcessor.this.innerSubscription = innerSubscription;
+            innerSubscription.request(1L);
         }
-    }
 
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
-    }
+        @Override
+        public void onNext(Object o) {
+            FlatMapProcessor.this.subscriber.onNext(o);
+            requestCounter.decrementAndGet();
+            innerSubscription.request(1L);
+        }
 
-    @Override
-    public String toString() {
-        return String.format("FlatMapProcessor{mapper=%s}", mapper);
+        @Override
+        public void onError(Throwable t) {
+            FlatMapProcessor.this.subscription.cancel();
+            FlatMapProcessor.this.onError(t);
+        }
+
+        @Override
+        public void onComplete() {
+            innerPublisherCompleted.set(true);
+            subscription.request(requestCounter.get());
+        }
     }
 }
