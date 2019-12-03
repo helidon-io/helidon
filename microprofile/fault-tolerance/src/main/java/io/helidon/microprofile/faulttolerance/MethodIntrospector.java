@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
-
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
@@ -61,16 +60,11 @@ class MethodIntrospector {
         this.beanClass = beanClass;
         this.method = method;
 
-        // Only process annotations if FT is enabled
-        if (FaultToleranceExtension.isFaultToleranceEnabled()) {
-            this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(beanClass, method) : null;
-            this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class)
-                    ? new CircuitBreakerAntn(beanClass, method) : null;
-            this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(beanClass, method) : null;
-            this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(beanClass, method) : null;
-        }
-
-        // Fallback is always enabled
+        this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(beanClass, method) : null;
+        this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class)
+                ? new CircuitBreakerAntn(beanClass, method) : null;
+        this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(beanClass, method) : null;
+        this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(beanClass, method) : null;
         this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(beanClass, method) : null;
     }
 
@@ -227,6 +221,6 @@ class MethodIntrospector {
         }
 
         // Default is enabled
-        return true;
+        return clazz == Fallback.class || FaultToleranceExtension.isFaultToleranceEnabled();
     }
 }
