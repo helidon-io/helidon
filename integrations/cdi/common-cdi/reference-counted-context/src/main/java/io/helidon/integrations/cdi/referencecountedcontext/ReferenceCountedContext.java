@@ -108,12 +108,44 @@ public final class ReferenceCountedContext implements AlterableContext {
      * @see Contextual#destroy(Object, CreationalContext)
      *
      * @see #get(Contextual, CreationalContext)
+     */
+    public int decrementReferenceCount(final Contextual<?> c) {
+        return this.decrementReferenceCount(c, 1);
+    }
+
+    /**
+     * Decrements the reference count of the contextual instance, if
+     * any, associated with the combination of the current thread and
+     * the supplied {@link Contextual}, {@linkplain
+     * Contextual#destroy(Object, CreationalContext) destroying} the
+     * instance if and only if the reference count becomes less than
+     * or equal to zero, and returns the resulting reference count.
+     *
+     * <p>Most users will never have to call this method.</p>
+     *
+     * @param c the {@link Contextual} whose instance's reference
+     * count should be decremented; may be {@code null} in which case
+     * no action will be taken and {@code 0} will be returned
+     *
+     * @param amount the amount by which to decrement; must be greater
+     * than or (trivially) equal to {@code 0}
+     *
+     * @return the resulting reference count
+     *
+     * @exception IllegalArgumentException if {@code amount} is less
+     * than {@code 0}
+     *
+     * @see Contextual#destroy(Object, CreationalContext)
+     *
+     * @see #get(Contextual, CreationalContext)
      *
      * @see #decrementReferenceCount(Contextual)
      */
-    public int decrementReferenceCount(final Contextual<?> c) {
+    public int decrementReferenceCount(final Contextual<?> c, final int amount) {
         final int returnValue;
-        if (c == null) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("amount < 0: " + amount);
+        } else if (c == null) {
             returnValue = 0;
         } else {
             final Map<?, ? extends Instance<?>> instances = ALL_INSTANCES.get().get(this);
@@ -128,10 +160,46 @@ public final class ReferenceCountedContext implements AlterableContext {
                     // will cause c.destroy(theObject,
                     // creationalContext) to be called if needed; no
                     // need to do it explicitly here.
-                    returnValue = instance.decrementReferenceCount();
+                    returnValue = instance.decrementReferenceCount(amount);
                     if (returnValue <= 0) {
                         instances.remove(c);
                     }
+                }
+            }
+        }
+        return returnValue;
+    }
+
+    /**
+     * Returns the reference count of the contextual instance, if
+     * any, associated with the combination of the current thread and
+     * the supplied {@link Contextual}.
+     *
+     * <p>Most users will never have to call this method.</p>
+     *
+     * <p>This method never returns a negative number.</p>
+     *
+     * @param c the {@link Contextual} whose instance's reference
+     * count should be returned; may be {@code null} in which case
+     * {@code 0} will be returned
+     *
+     * @return the reference count in question; never a negative
+     * number
+     */
+    public int getReferenceCount(final Contextual<?> c) {
+        final int returnValue;
+        if (c == null) {
+            returnValue = 0;
+        } else {
+            final Map<?, ? extends Instance<?>> instances = ALL_INSTANCES.get().get(this);
+            if (instances == null) {
+                returnValue = 0;
+            } else {
+                final Instance<?> instance = instances.get(c);
+                if (instance == null) {
+                    returnValue = 0;
+                } else {
+                    returnValue = Math.max(0, instance.getReferenceCount());
                 }
             }
         }
@@ -350,7 +418,7 @@ public final class ReferenceCountedContext implements AlterableContext {
          * #get()} invocations will throw {@link
          * IllegalStateException}.</p>
          *
-         * @see #decrementReferenceCount()
+         * @see #decrementReferenceCount(int)
          *
          * @see #get()
          */
@@ -423,7 +491,7 @@ public final class ReferenceCountedContext implements AlterableContext {
          *
          * @exception IllegalStateException if the reference count
          * internally is less than zero, such as when an invocation of
-         * {@link #decrementReferenceCount()} has resulted in
+         * {@link #decrementReferenceCount(int)} has resulted in
          * destruction
          */
         private T get() {
@@ -435,26 +503,42 @@ public final class ReferenceCountedContext implements AlterableContext {
             return this.object;
         }
 
+        private int getReferenceCount() {
+            return this.referenceCount;
+        }
+
         /**
-         * Decrements this {@link Instance}'s reference count, unless
-         * it is {@code 0}, and returns the result.
+         * Decrements this {@link Instance}'s reference count by the
+         * supplied amount, unless it is already {@code 0}, and
+         * returns the result.
          *
          * <p>If the result of decrementing the reference count is
-         * {@code 0}, then this {@link Instance}'s contextual instance
-         * is {@linkplain Contextual#destroy(Object,
-         * CreationalContext) destroyed}, and its internal object
-         * reference is set to {@code null}.  Subsequent invocations
-         * of {@link #get()} will throw {@link
+         * less than or equal to {@code 0}, then this {@link
+         * Instance}'s contextual instance is {@linkplain
+         * Contextual#destroy(Object, CreationalContext) destroyed},
+         * and its internal object reference is set to {@code null}.
+         * Subsequent invocations of {@link #get()} will throw {@link
          * IllegalStateException}.</p>
          *
+         * <p>Internally, if a reference count ever drops below {@code
+         * 0}, it is set to {@code 0}.</p>
+         *
+         * @param amount the amount to decrement by; must be greater
+         * than or (trivially) equal to {@code 0}
+         *
          * @return the resulting decremented reference count
+         *
+         * @exception IllegalArgumentException if {@code amount} is
+         * less than {@code 0}
          *
          * @exception IllegalStateException if the internal reference
          * count is already less than or equal to zero
          */
-        private int decrementReferenceCount() {
-            if (this.referenceCount > 0) {
-                --this.referenceCount;
+        private int decrementReferenceCount(final int amount) {
+            if (amount < 0) {
+                throw new IllegalArgumentException("amount < 0: " + amount);
+            } else if (this.referenceCount > 0) {
+                this.referenceCount = Math.max(0, this.referenceCount - amount);
                 if (this.referenceCount == 0) {
                     this.contextual.destroy(this.object, this.creationalContext);
                     if (this.creationalContext != null) {

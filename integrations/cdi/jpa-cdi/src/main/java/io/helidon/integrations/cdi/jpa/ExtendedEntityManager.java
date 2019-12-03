@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.Context;
 import javax.enterprise.inject.CreationException;
 import javax.enterprise.inject.Instance;
@@ -68,8 +67,8 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
         this.suppliedQualifiers = Objects.requireNonNull(suppliedQualifiers);
         this.beanManager = Objects.requireNonNull(beanManager);
         this.transactionSupport = Objects.requireNonNull(instance.select(TransactionSupport.class).get());
-        if (!transactionSupport.isActive()) {
-            throw new IllegalArgumentException("!transactionSupport.isActive()");
+        if (!transactionSupport.isEnabled()) {
+            throw new IllegalArgumentException("!transactionSupport.isEnabled()");
         }
         this.isSynchronized = !suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE);
         assert
@@ -252,7 +251,7 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
                 final Bean<?> cdiTransactionScopedEntityManagerBean =
                     (Bean<CdiTransactionScopedEntityManager>) this.beanManager.resolve(cdiTransactionScopedEntityManagerBeans);
                 assert cdiTransactionScopedEntityManagerBean != null;
-                assert !Dependent.class.equals(cdiTransactionScopedEntityManagerBean.getScope());
+                assert context.getScope().equals(cdiTransactionScopedEntityManagerBean.getScope());
 
                 // Using that bean, check the Context to see if there's
                 // already a container-managed EntityManager enrolled in
