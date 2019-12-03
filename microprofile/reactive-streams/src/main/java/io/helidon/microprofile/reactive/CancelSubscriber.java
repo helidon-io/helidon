@@ -24,7 +24,7 @@ import io.helidon.common.reactive.Flow;
 
 public class CancelSubscriber implements Flow.Subscriber<Object> {
 
-    AtomicBoolean cancelled = new AtomicBoolean(false);
+    private AtomicBoolean cancelled = new AtomicBoolean(false);
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {

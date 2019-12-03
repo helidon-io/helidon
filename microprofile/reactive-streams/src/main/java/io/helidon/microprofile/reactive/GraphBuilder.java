@@ -34,7 +34,6 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.PeekProcessor;
 import io.helidon.common.reactive.SkipProcessor;
 import io.helidon.common.reactive.TakeWhileProcessor;
-import io.helidon.microprofile.reactive.hybrid.CoupledProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
@@ -143,7 +142,10 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             processorList.add(TappedProcessor.create().onError(stage.getConsumer()));
         });
         registerStage(Stage.OnErrorResume.class, stage -> {
-            processorList.add(new OnErrorResumeProcessor(stage.getFunction()));
+            processorList.add(OnErrorResumeProcessor.resume(stage.getFunction()));
+        });
+        registerStage(Stage.OnErrorResumeWith.class, stage -> {
+            processorList.add(OnErrorResumeProcessor.resumeWith(stage.getFunction()));
         });
         registerStage(Stage.Cancel.class, stage -> {
             CancelSubscriber cancelSubscriber = new CancelSubscriber();
@@ -286,8 +288,8 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         CumulativeProcessor cumulativeProcessor = new CumulativeProcessor(processorList);
         if (multi != null) {
             multi.subscribe(HybridProcessor.from(cumulativeProcessor));
+            cumulativeProcessor.subscribe(subscriber);
         }
-        cumulativeProcessor.subscribe(subscriber);
     }
 
     private void subscribe(Flow.Subscriber<Object> subscriber) {

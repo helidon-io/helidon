@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -384,21 +383,6 @@ public class EngineTest {
     }
 
     @Test
-    void cancellationException() throws InterruptedException, ExecutionException, TimeoutException {
-        assertThrows(CancellationException.class, () -> ReactiveStreams.fromPublisher(subscriber -> subscriber.onSubscribe(new Subscription() {
-            @Override
-            public void request(long n) {
-            }
-
-            @Override
-            public void cancel() {
-            }
-        })).to(
-                ReactiveStreams.builder().cancel().build()
-        ).run().toCompletableFuture().get(1, TimeUnit.SECONDS));
-    }
-
-    @Test
     void publisherToSubscriber() throws InterruptedException, ExecutionException, TimeoutException {
         CompletionSubscriber<Object, Optional<Object>> subscriber = ReactiveStreams.builder()
                 .limit(5L)
@@ -619,15 +603,29 @@ public class EngineTest {
     }
 
     @Test
+    void onErrorResumeWith() throws InterruptedException, ExecutionException, TimeoutException {
+        assertEquals(Arrays.asList(1, 2, 3),
+                ReactiveStreams
+                        .generate(() -> 1)
+                        .limit(3L)
+                        .peek(i -> {
+                            throw new TestRuntimeException();
+                        })
+                        .onErrorResumeWith(throwable -> ReactiveStreams.of(1, 2, 3))
+                        .toList()
+                        .run()
+                        .toCompletableFuture()
+                        .get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
     void flatMapCancelPropagation() throws InterruptedException, ExecutionException, TimeoutException {
         try {
             ReactiveStreams.of(1, 2, 3)
-                    // .onTerminate(() -> cancelled.complete(null))
-                    //  .flatMap(f -> ReactiveStreams.failed(new TestRuntimeException()))
                     .toList()
                     .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
         } catch (ExecutionException ignored) {
-
+            //There was a bug with non-reentrant BaseProcessor used in flatMap
         }
 
         CompletableFuture<Void> outerCancelled = new CompletableFuture<>();
@@ -653,4 +651,83 @@ public class EngineTest {
 
         assertEquals(Arrays.asList(9, 8, 7, 9), result);
     }
+
+    @Test
+    void flatMapIterable() throws InterruptedException, ExecutionException, TimeoutException {
+        List<Integer> result = ReactiveStreams.of(1, 2, 3)
+                .flatMapIterable(n -> Arrays.asList(n, n, n))
+                .toList()
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList(1, 1, 1, 2, 2, 2, 3, 3, 3), result);
+    }
+
+    @Test
+    void flatMapIterableFailOnNull() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> cancelled = new CompletableFuture<>();
+        CompletionStage<List<Object>> result = ReactiveStreams.generate(() -> 4).onTerminate(() -> cancelled.complete(null))
+                .flatMapIterable(t -> Collections.singletonList(null))
+                .toList().run();
+        cancelled.get(1, TimeUnit.SECONDS);
+        assertThrows(ExecutionException.class, () -> result.toCompletableFuture().get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void flatMapCompletionStage() throws InterruptedException, ExecutionException, TimeoutException {
+        ProcessorBuilder<Integer, Integer> mapper = ReactiveStreams.<Integer>builder()
+                .flatMapCompletionStage(i -> CompletableFuture.completedFuture(i + 1));
+        List<Integer> result1 = ReactiveStreams.of(1, 2, 3).via(mapper).toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+        List<Integer> result2 = ReactiveStreams.of(4, 5, 6).via(mapper).toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList(2, 3, 4), result1);
+        assertEquals(Arrays.asList(5, 6, 7), result2);
+    }
+
+    @Test
+    void coupledCompleteOnCancel() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> publisherCancelled = new CompletableFuture<>();
+        CompletableFuture<Void> downstreamCompleted = new CompletableFuture<>();
+
+        ReactiveStreams
+                .fromCompletionStage(new CompletableFuture<>())
+                .via(
+                        ReactiveStreams
+                                .coupled(ReactiveStreams.builder()
+                                                .cancel(),
+                                        ReactiveStreams
+                                                .fromCompletionStage(new CompletableFuture<>())
+                                                .onTerminate(() -> {
+                                                    publisherCancelled.complete(null);
+                                                }))
+                )
+                .onComplete(() -> downstreamCompleted.complete(null))
+                .ignore()
+                .run();
+
+        publisherCancelled.get(1, TimeUnit.SECONDS);
+        downstreamCompleted.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void coupledCompleteUpStreamOnCancel() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> subscriberCompleted = new CompletableFuture<>();
+        CompletableFuture<Void> upstreamCancelled = new CompletableFuture<>();
+
+        ReactiveStreams
+                .fromCompletionStage(new CompletableFuture<>())
+                .onTerminate(() -> upstreamCancelled.complete(null))
+                .via(ReactiveStreams
+                        .coupled(ReactiveStreams.builder().onComplete(() -> {
+                                    subscriberCompleted.complete(null);
+                                })
+                                        .ignore(),
+                                ReactiveStreams
+                                        .fromCompletionStage(new CompletableFuture<>())))
+                .cancel()
+                .run();
+
+        subscriberCompleted.get(1, TimeUnit.SECONDS);
+        upstreamCancelled.get(1, TimeUnit.SECONDS);
+    }
+
 }

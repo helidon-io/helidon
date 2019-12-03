@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.reactive.hybrid;
+package io.helidon.microprofile.reactive;
 
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
@@ -72,6 +72,8 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void cancel() {
+                subscriber.onComplete();
+                downStreamSubscriber.onComplete();
                 downStreamsSubscription.cancel();
             }
         });
@@ -80,7 +82,19 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
     @Override
     public void onSubscribe(Subscription upStreamSubscription) {
         this.upStreamSubscription = upStreamSubscription;
-        subscriber.onSubscribe(upStreamSubscription);
+        subscriber.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                upStreamSubscription.request(n);
+            }
+
+            @Override
+            public void cancel() {
+                upStreamSubscription.cancel();
+                downStreamsSubscription.cancel();
+                downStreamSubscriber.onComplete();
+            }
+        });
     }
 
     @Override
@@ -97,5 +111,8 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
     @Override
     public void onComplete() {
         subscriber.onComplete();
+        upStreamSubscription.cancel();
+        downStreamSubscriber.onComplete();
+        downStreamsSubscription.cancel();
     }
 }

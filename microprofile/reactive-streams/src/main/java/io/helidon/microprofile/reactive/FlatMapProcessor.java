@@ -67,23 +67,33 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     static FlatMapProcessor fromCompletionStage(Function<?, CompletionStage<?>> mapper) {
         Function<Object, CompletionStage<?>> csMapper = (Function<Object, CompletionStage<?>>) mapper;
         FlatMapProcessor flatMapProcessor = new FlatMapProcessor();
-        flatMapProcessor.mapper = o -> (Publisher<Object>) s -> s.onSubscribe(new Subscription() {
-            @Override
-            public void request(long n) {
-                csMapper.apply(o).whenComplete((payload, throwable) -> {
-                    if (Objects.nonNull(throwable)) {
-                        s.onError(throwable);
-                    } else {
-                        s.onNext(payload);
+        flatMapProcessor.mapper = o -> (Publisher<Object>) s -> {
+            AtomicBoolean requested = new AtomicBoolean(false);
+            s.onSubscribe(new Subscription() {
+                @Override
+                public void request(long n) {
+                    //Only one request supported
+                    if (!requested.getAndSet(true)) {
+                        csMapper.apply(o).whenComplete((payload, throwable) -> {
+                            if (Objects.nonNull(throwable)) {
+                                s.onError(throwable);
+                            } else {
+                                if (Objects.isNull(payload)) {
+                                    s.onError(new NullPointerException());
+                                } else {
+                                    s.onNext(payload);
+                                    s.onComplete();
+                                }
+                            }
+                        });
                     }
-                });
-            }
+                }
 
-            @Override
-            public void cancel() {
-
-            }
-        });
+                @Override
+                public void cancel() {
+                }
+            });
+        };
         return flatMapProcessor;
     }
 
@@ -120,8 +130,15 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onNext(Object o) {
-        onNextInner(o);
+        try {
+            Publisher<Object> publisher = mapper.apply(o);
+            publisher.subscribe(new InnerSubscriber());
+        } catch (Throwable e) {
+            this.subscription.cancel();
+            this.onError(e);
+        }
     }
 
     @Override
@@ -135,27 +152,18 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         innerSubscription.cancel();
     }
 
-    @SuppressWarnings("unchecked")
-    private void onNextInner(Object item) {
-        try {
-            Publisher<Object> publisher = mapper.apply(item);
-            publisher.subscribe(new InnerSubscriber());
-        } catch (Throwable e) {
-            this.subscription.cancel();
-            this.onError(e);
-        }
-    }
-
     private class InnerSubscriber implements Subscriber<Object> {
 
         @Override
         public void onSubscribe(Subscription innerSubscription) {
+            innerPublisherCompleted.set(false);
             FlatMapProcessor.this.innerSubscription = innerSubscription;
             innerSubscription.request(1L);
         }
 
         @Override
         public void onNext(Object o) {
+            Objects.requireNonNull(o);
             FlatMapProcessor.this.subscriber.onNext(o);
             requestCounter.decrementAndGet();
             innerSubscription.request(1L);
