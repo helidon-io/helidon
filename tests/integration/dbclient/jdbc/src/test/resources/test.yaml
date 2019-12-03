@@ -59,3 +59,5 @@ db:
     # test DbStatementQuery methods
     select-pokemons-idrng-named-arg: "SELECT id, name FROM Pokemons WHERE id > :idmin AND id < :idmax"
     select-pokemons-idrng-order-arg: "SELECT id, name FROM Pokemons WHERE id > ? AND id < ?"
+    # Test query with both named and ordered parameters (shall cause an exception)
+    select-pokemons-error-arg: "SELECT id, name FROM Pokemons WHERE id > :id AND name = ?"

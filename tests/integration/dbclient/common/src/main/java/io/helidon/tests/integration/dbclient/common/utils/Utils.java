@@ -25,11 +25,10 @@ import java.util.logging.Logger;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
-import io.helidon.tests.integration.dbclient.common.tests.statement.GenericStatementIT;
+import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;

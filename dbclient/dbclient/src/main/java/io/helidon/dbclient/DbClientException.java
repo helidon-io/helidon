@@ -19,6 +19,7 @@ package io.helidon.dbclient;
  * A {@link RuntimeException} used by Helidon DB component.
  */
 public class DbClientException extends RuntimeException {
+
     /**
      * Create a new exception for a message.
      * @param message descriptive message
@@ -36,4 +37,5 @@ public class DbClientException extends RuntimeException {
     public DbClientException(String message, Throwable cause) {
         super(message, cause);
     }
+
 }

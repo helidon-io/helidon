@@ -20,6 +20,7 @@
 module io.helidon.dbclient.jdbc {
     requires java.logging;
     requires java.sql;
+    requires com.zaxxer.hikari;
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.configurable;

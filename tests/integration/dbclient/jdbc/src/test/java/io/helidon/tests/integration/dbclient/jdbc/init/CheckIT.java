@@ -15,28 +15,33 @@
  */
 package io.helidon.tests.integration.dbclient.jdbc.init;
 
-import java.util.concurrent.ExecutionException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import io.helidon.dbclient.DbClient;
-import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Check minimal functionality needed before running database schema initialization.
  * First test class being executed after database startup.
  */
-public class CheckIT extends AbstractIT {
+public class CheckIT {
 
     /** Local logger instance. */
     private static final Logger LOG = Logger.getLogger(CheckIT.class.getName());
+
+    /** Test configuration. */
+    public static final Config CONFIG = Config.create(ConfigSources.classpath("test.yaml"));
 
     /** Timeout in seconds to wait for database to come up. */
     private static final int TIMEOUT = 60;
@@ -46,14 +51,17 @@ public class CheckIT extends AbstractIT {
      *
      * @param dbClient Helidon database client
      */
-    private static void waitForStart(DbClient dbClient) {
+    private static void waitForStart() {
+        String url = CONFIG.get("db.url").asString().get();
+        String username = CONFIG.get("db.username").asString().get();
+        String password = CONFIG.get("db.password").asString().get();
         long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
         boolean retry = true;
         while (retry) {
             try {
-                dbClient.execute(exec -> exec.namedDml("ping")).toCompletableFuture().get();
+                DriverManager.getConnection(url, username, password);
                 retry = false;
-            } catch (ExecutionException | InterruptedException ex) {
+            } catch (SQLException ex) {
                 if (System.currentTimeMillis() > endTm) {
                     fail("Database startup failed!", ex);
                 }
@@ -68,20 +76,24 @@ public class CheckIT extends AbstractIT {
     @BeforeAll
     public static void setup() {
         LOG.log(Level.INFO, "Initializing Integration Tests");
-        waitForStart(DB_CLIENT);
+        waitForStart();
     }
 
     /**
      * Simple test to verify that DML query execution works.
      * Used before running database schema initialization.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
+     * @throws SQLException when database query failed
      */
     @Test
-    public void testDmlStatementExecution() throws ExecutionException, InterruptedException {
-        long result = DB_CLIENT.execute(exec -> exec.namedDml("ping")).toCompletableFuture().get();
-        assertThat(result, equalTo(0L));
+    public void testDmlStatementExecution() throws SQLException {
+        String url = CONFIG.get("db.url").asString().get();
+        String username = CONFIG.get("db.username").asString().get();
+        String password = CONFIG.get("db.password").asString().get();
+        String ping = CONFIG.get("db.statements.ping").asString().get();
+        Connection conn = DriverManager.getConnection(url, username, password);
+        int result = conn.createStatement().executeUpdate(ping);
+        assertThat(result, equalTo(0));
     }
 
 }

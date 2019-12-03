@@ -74,7 +74,6 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
     public CompletionStage<R> execute() {
         CompletableFuture<Long> queryFuture = new CompletableFuture<>();
         CompletableFuture<Void> statementFuture = new CompletableFuture<>();
-
         DbInterceptorContext dbContext = DbInterceptorContext.create(dbType())
                 .resultFuture(queryFuture)
                 .statementFuture(statementFuture);
@@ -82,7 +81,12 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
         update(dbContext);
         CompletionStage<DbInterceptorContext> dbContextFuture = invokeInterceptors(dbContext);
 
-        return doExecute(dbContextFuture, statementFuture, queryFuture);
+        CompletionStage<R> rFuture = doExecute(dbContextFuture, statementFuture, queryFuture);
+        statementFuture.exceptionally(ex -> {
+            rFuture.toCompletableFuture().completeExceptionally(ex);
+            return null;
+        });
+        return rFuture;
     }
 
     /**

@@ -16,13 +16,10 @@
 package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbClientException;
 
 /**
  * JDBC Configuration parameters.
@@ -107,33 +104,11 @@ public interface ConnectionPool {
 
         @Override
         public ConnectionPool build() {
-            final String url = this.url;
-            final String username = this.username;
-            final String password = this.password;
-
-            Matcher matcher = URL_PATTERN.matcher(url);
-            String dbType;
-            if (matcher.matches()) {
-                dbType = matcher.group(1);
-            } else {
-                dbType = JdbcDbClientProvider.JDBC_DB_TYPE;
-            }
-            return new ConnectionPool() {
-                @Override
-                public Connection connection() {
-                    try {
-                        // TODO replace this with an actual connection pool
-                        return DriverManager.getConnection(url, username, password);
-                    } catch (SQLException e) {
-                        throw new DbClientException("Failed to create a connection to " + url, e);
-                    }
-                }
-
-                @Override
-                public String dbType() {
-                    return dbType;
-                }
-            };
+            final Matcher matcher = URL_PATTERN.matcher(url);
+            String dbType = matcher.matches()
+                    ? matcher.group(1)
+                    : JdbcDbClientProvider.JDBC_DB_TYPE;
+            return new HikariConnectionPool(url, username, password, dbType);
         }
 
         public Builder config(Config config) {

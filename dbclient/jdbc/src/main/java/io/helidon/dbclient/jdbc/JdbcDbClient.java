@@ -67,7 +67,7 @@ class JdbcDbClient implements DbClient {
                                                   dbMapperManager,
                                                   mapperManager);
 
-        return executor.apply(execute)
+        CompletionStage<T> stage = executor.apply(execute)
                 .thenApply(it -> {
                     execute.context()
                             .whenComplete()
@@ -76,12 +76,15 @@ class JdbcDbClient implements DbClient {
                                 execute.doCommit();
                             });
                     return it;
-                })
-                .exceptionally(throwable -> {
+                });
+
+                stage.exceptionally(throwable -> {
                     System.out.println("Rollback");
                     execute.doRollback();
                     return null;
                 });
+
+                return stage;
     }
 
     @Override
@@ -92,7 +95,6 @@ class JdbcDbClient implements DbClient {
                                               connectionPool,
                                               dbMapperManager,
                                               mapperManager);
-
         T resultFuture = executor.apply(execute);
         resultFuture
                 .handle((t, throwable) -> {
