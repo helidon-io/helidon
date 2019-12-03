@@ -66,6 +66,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>test</scope>
@@ -163,6 +172,32 @@
     </build>
 
     <profiles>
+        <!--
+             mvn -pl common,jdbc -Pdebug,docker install \
+                 -Dit.jdbc.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8787 -Xnoagent -Djava.compiler=NONE" \
+                 -Dit.jdbc.test='**/ExceptionalStmtIT#testCreateNamedQueryNamedArgsSetOrderArg'
+        -->
+        <profile>
+            <id>debug</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${version.plugin.surefire}</version>
+                        <executions>
+                            <execution>
+                                <id>test</id>
+                                <configuration>
+                                    <debugForkedProcess>${it.jdbc.debug}</debugForkedProcess>
+                                    <test>${it.jdbc.test}</test>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>docker</id>
             <build>

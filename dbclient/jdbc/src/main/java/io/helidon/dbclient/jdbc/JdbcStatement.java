@@ -18,9 +18,12 @@ package io.helidon.dbclient.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -138,6 +141,11 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
             PreparedStatement preparedStatement = connection.prepareStatement(jdbcStatement);
             List<String> namesOrder = parser.namesOrder();
+            // SQL statement and provided parameters integrity check
+            if (namesOrder.size() != parameters.size()) {
+                throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+            }
+            // Set parameters into prepared statement
             int i = 1;
             for (String name : namesOrder) {
                 Object value = parameters.get(name);
@@ -169,6 +177,50 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         } catch (SQLException e) {
             throw new DbClientException("Failed to prepare statement with indexed params: " + statementName, e);
         }
+    }
+
+    private static String namedStatementErrorMessage(final List<String> namesOrder, final Map<String, Object> parameters) {
+        // Parameters in parameters map missing in query
+        Set<String> notInQuery = new HashSet<>(parameters.keySet());
+        // Parameters in query missing in parameters Map
+        List<String> notInParams = new ArrayList<>(namesOrder.size());
+        for (String name : namesOrder) {
+            if (!notInQuery.remove(name)) {
+                notInParams.add(name);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        if (!notInQuery.isEmpty()) {
+            sb.append("Parameters missing in query: ");
+            boolean first = true;
+            for (String name : notInQuery) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
+                sb.append(name);
+            }
+            if (!notInParams.isEmpty()) {
+                sb.append(", p");
+            }
+        }
+        if (!notInParams.isEmpty()) {
+            if (notInQuery.isEmpty()) {
+                sb.append(", q");
+            }
+            sb.append("Query parameters missing in Map: ");
+            boolean first = true;
+            for (String name : notInParams) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
+                sb.append(name);
+            }
+        }
+        return sb.toString();
     }
 
     /**

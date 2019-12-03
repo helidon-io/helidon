@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbMapperManager;
 
 /**
@@ -61,21 +62,21 @@ class IndexedStatementParameters implements StatementParameters {
 
     @Override
     public StatementParameters params(Map<String, ?> parameters) {
-        throw new IllegalStateException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
     }
 
     @Override
     public <T> StatementParameters namedParam(T parameters) {
-        throw new IllegalStateException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
     }
 
     @Override
     public StatementParameters addParam(String name, Object parameter) {
-        throw new IllegalStateException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
     }
 
     @Override
     public Map<String, Object> namedParams() {
-        throw new IllegalStateException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
     }
 }
