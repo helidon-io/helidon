@@ -15,31 +15,20 @@
  */
 package io.helidon.integrations.cdi.jpa.chirp;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import java.util.Objects;
 
 import javax.annotation.sql.DataSourceDefinition;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.ContextNotActiveException;
-import javax.enterprise.context.spi.Context;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
 import javax.persistence.SynchronizationType;
 import javax.persistence.TransactionRequiredException;
-import javax.sql.DataSource;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
@@ -47,7 +36,6 @@ import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
-import javax.transaction.TransactionScoped;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,21 +58,13 @@ import static org.junit.jupiter.api.Assertions.fail;
         "user=sa"
     }
 )
-class TestJpaTransactionScopedSynchronizedEntityManager {
-
-    static {
-        System.setProperty("jpaAnnotationRewritingEnabled", "true");
-    }
+class TestRollbackScenarios {
 
     private SeContainer cdiContainer;
 
     @Inject
     private TransactionManager transactionManager;
 
-    @Inject
-    @Named("chirp")
-    private DataSource dataSource;
-    
     @PersistenceContext(
         type = PersistenceContextType.TRANSACTION,
         synchronization = SynchronizationType.SYNCHRONIZED,
@@ -98,7 +78,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
      */
 
 
-    TestJpaTransactionScopedSynchronizedEntityManager() {
+    TestRollbackScenarios() {
         super();
     }
 
@@ -129,9 +109,13 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
      */
 
 
+    TestRollbackScenarios self() {
+        return this.cdiContainer.select(TestRollbackScenarios.class).get();
+    }
+
     /**
      * A "business method" providing access to one of this {@link
-     * TestJpaTransactionScopedEntityManager}'s {@link EntityManager}
+     * TestRollbackScenarios}' {@link EntityManager}
      * instances for use by {@link Test}-annotated methods.
      *
      * @return a non-{@code null} {@link EntityManager}
@@ -142,10 +126,6 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
 
     TransactionManager getTransactionManager() {
         return this.transactionManager;
-    }
-
-    DataSource getDataSource() {
-        return this.dataSource;
     }
 
     private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event,
@@ -172,23 +152,18 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
 
 
     @Test
-    void testJpaTransactionScopedSynchronizedEntityManager()
+    void testRollbackScenarios()
         throws HeuristicMixedException,
                HeuristicRollbackException,
+               InterruptedException,
                NotSupportedException,
                RollbackException,
-               SQLException,
                SystemException
     {
 
-        // Get a BeanManager for later use.
-        final BeanManager beanManager = this.cdiContainer.getBeanManager();
-        assertNotNull(beanManager);
-        
         // Get a CDI contextual reference to this test instance.  It
         // is important to use "self" in this test instead of "this".
-        final TestJpaTransactionScopedSynchronizedEntityManager self =
-            this.cdiContainer.select(TestJpaTransactionScopedSynchronizedEntityManager.class).get();
+        final TestRollbackScenarios self = self();
         assertNotNull(self);
 
         // Get the EntityManager that is synchronized with and scoped
@@ -197,10 +172,6 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertNotNull(em);
         assertTrue(em.isOpen());
 
-        // Get a DataSource for JPA-independent testing and assertions.
-        final DataSource dataSource = self.getDataSource();
-        assertNotNull(dataSource);
-        
         // We haven't started any kind of transaction yet and we
         // aren't testing anything using
         // the @javax.transaction.Transactional annotation so there is
@@ -208,141 +179,135 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // joined to one.
         assertFalse(em.isJoinedToTransaction());
 
-        // Create a JPA entity and try to insert it.  This should fail
-        // because according to JPA a TransactionRequiredException
-        // will be thrown.
-        Author author = new Author("Abraham Lincoln");
-        try {
-            em.persist(author);
-            fail("A TransactionRequiredException should have been thrown");
-        } catch (final TransactionRequiredException expected) {
-            
-        }
-
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
         final TransactionManager tm = self.getTransactionManager();
         assertNotNull(tm);
-        tm.setTransactionTimeout(60 * 20); // TODO: set to 20 minutes for debugging purposes only
         tm.begin();
-
-        // Grab the TransactionScoped context while the transaction is
-        // active.  We want to make sure it's active at various
-        // points.
-        final Context transactionScopedContext = beanManager.getContext(TransactionScoped.class);
-        assertNotNull(transactionScopedContext);
-        assertTrue(transactionScopedContext.isActive());
+        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
 
         // Now magically our EntityManager should be joined to it.
         assertTrue(em.isJoinedToTransaction());
 
-        // Roll the transaction back and note that our EntityManager
-        // is no longer joined to it.
-        tm.rollback();
-        assertFalse(em.isJoinedToTransaction());
-        assertFalse(transactionScopedContext.isActive());
+        // Create a JPA entity and insert it.
+        Author author = new Author("Abraham Lincoln");
+        em.persist(author);
 
-        // Start another transaction.
-        tm.begin();
-        assertTrue(transactionScopedContext.isActive());
-
-        // Persist our Author.
+        // No trip to the database has happened yet, so the author's
+        // identifier isn't set yet.
         assertNull(author.getId());
+
+        // Commit the transaction.  Because we're relying on the
+        // default flush mode, this will cause a flush to the
+        // database, which, in turn, will result in author identifier
+        // generation.
+        tm.commit();
+        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
+        assertEquals(Integer.valueOf(1), author.getId());
+
+        // We're no longer in a transaction.
+        assertFalse(em.isJoinedToTransaction());
+
+        // The persistence context should be cleared.
+        assertFalse(em.contains(author));
+
+        // Ensure transaction statuses are what we think they are.
+        tm.begin();
+        tm.setRollbackOnly();
+        try {
+          assertEquals(Status.STATUS_MARKED_ROLLBACK, tm.getStatus());
+        } finally {
+          tm.rollback();
+        }
+        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
+
+        // We can do non-transactional things.
+        assertTrue(em.isOpen());
+        author = em.find(Author.class, Integer.valueOf(1));
+        assertNotNull(author);
+
+        // Note that because we've invoked this somehow outside of a
+        // transaction everything it touches is detached, per section
+        // 7.6.2 of the JPA 2.2 specification.
+        assertFalse(em.contains(author));
+
+        // Remove everything.
+        tm.begin();
+        author = em.merge(author);
+        assertNotNull(author);
+        assertTrue(em.contains(author));
+        em.remove(author);
+        tm.commit();
+        assertFalse(em.contains(author));
+
+        // Perform a rollback "in the middle" of a sequence of
+        // operations and observe that the EntityManager is in the
+        // proper state throughout.
+        author = new Author("John Kennedy");
+        tm.begin();
         em.persist(author);
         assertTrue(em.contains(author));
-        tm.commit();
-
-        // After the transaction commits, a flush should happen, and
-        // the author is managed, so we should see his ID.
-        assertEquals(Integer.valueOf(1), author.getId());
-
-        // The transaction is over, so our EntityManager is not joined
-        // to one anymore.
-        assertFalse(em.isJoinedToTransaction());
-        assertFalse(transactionScopedContext.isActive());
-        
-        // Our PersistenceContextType is TRANSACTION, not EXTENDED, so
-        // the underlying persistence context dies with the
-        // transaction so the EntityManager's persistence context
-        // should be empty, so the contains() operation should return
-        // false.
+        tm.rollback();
+        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
         assertFalse(em.contains(author));
+        try {
+          em.remove(author);
+          fail("remove() was allowed to complete without a transaction");
+        } catch (final IllegalArgumentException | TransactionRequiredException expected) {
+          // The javadocs say only that either of these exceptions may
+          // be thrown in this case but do not indicate which one is
+          // preferred.  EclipseLink 2.7.4 throws a
+          // TransactionRequiredException here.  It probably should
+          // throw an IllegalArgumentException; see
+          // https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117
+          // which is related.
+        }
 
-        // Start a transaction.
+        // author is detached; prove it.
         tm.begin();
-        assertTrue(transactionScopedContext.isActive());
+        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        assertTrue(em.isJoinedToTransaction());
+        assertFalse(em.contains(author));
+        em.detach(author); // redundant; just making a point
+        assertFalse(em.contains(author));
+        try {
+          em.remove(author);
+          // We shouldn't get here because author is detached but with
+          // EclipseLink 2.7.4 we do.  See
+          // https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117.
+        } catch (final IllegalArgumentException expected) {
 
-        // Remove the Author we successfully committed before.  We
-        // have to merge because the author became detached a few
-        // lines above.
+        }
+        tm.rollback();
+
+        // Remove the author properly.
+        tm.begin();
+        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        assertTrue(em.isJoinedToTransaction());
+        assertFalse(em.contains(author));
         author = em.merge(author);
         em.remove(author);
-        assertFalse(em.contains(author));
         tm.commit();
+        assertFalse(em.contains(author));
 
-        assertFalse(em.isJoinedToTransaction());
-        assertFalse(transactionScopedContext.isActive());
-        
-        // Note that its ID is still 1.
-        assertEquals(Integer.valueOf(1), author.getId());
-
-        assertDatabaseIsEmpty(dataSource);
-
+        // Cause a timeout-tripped rollback.
+        tm.setTransactionTimeout(1); // 1 second
+        author = new Author("Woodrow Wilson");
         tm.begin();
-        
+        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        Thread.sleep(1500L); // 1.5 seconds (arbitrarily greater than 1 second)
+        assertEquals(Status.STATUS_ROLLEDBACK, tm.getStatus());
         try {
-            assertTrue(em.isJoinedToTransaction());
-            assertTrue(transactionScopedContext.isActive());
-
-            // This is interesting. author is now detached, but it
-            // still has a persistent identifier set to 1.
-            em.persist(author);
-
-            // The act of persisting doesn't flush anything, so our id
-            // is still 1.
-            assertEquals(Integer.valueOf(1), author.getId());
-
-            assertTrue(transactionScopedContext.isActive());
-            assertTrue(em.contains(author));
-            assertTrue(em.isJoinedToTransaction());
-
-            // Persisting the same thing again is a no-op.
-            em.persist(author);
-
-            // The act of persisting doesn't flush anything, so our id
-            // is still 1.
-            assertEquals(Integer.valueOf(1), author.getId());
-
-            // Make sure the TransactionContext is active.
-            assertTrue(transactionScopedContext.isActive());
-            assertTrue(em.contains(author));
-            assertTrue(em.isJoinedToTransaction());
-            
-            tm.commit();
-
-            // Make sure the TransactionContext is NOT active.
-            assertFalse(em.isJoinedToTransaction());
-            assertFalse(em.contains(author));
-            assertFalse(transactionScopedContext.isActive());
-
-            // Now that the commit and accompanying flush have
-            // happened, our author's ID has changed.
-            assertEquals(Integer.valueOf(2), author.getId());
-        } catch (final EntityExistsException expected) {
-
-        } catch (final Exception somethingUnexpected) {
-            fail(somethingUnexpected);
+          em.persist(author);
+          fail("Transaction rolled back but persist still happened");
+        } catch (final TransactionRequiredException expected) {
+          
         }
-    }
+        tm.rollback();
+        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
 
-    private static final void assertDatabaseIsEmpty(final DataSource dataSource) throws SQLException {
-        try (final Connection connection = dataSource.getConnection();
-             final Statement statement = connection.createStatement();
-             final ResultSet resultSet = statement.executeQuery("SELECT COUNT(a.id) FROM AUTHOR a");) {
-            assertNotNull(resultSet);
-            assertTrue(resultSet.next());
-            assertEquals(0, resultSet.getInt(1));
-        }
+        tm.setTransactionTimeout(60); // 60 seconds; the usual default
+
     }
 
 }

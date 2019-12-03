@@ -31,6 +31,7 @@
 
     <properties>
       <doclint>-syntax</doclint>
+      <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>

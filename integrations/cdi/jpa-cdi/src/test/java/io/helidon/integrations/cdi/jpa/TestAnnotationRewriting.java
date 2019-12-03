@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DataSourceDefinition(
     name = "test",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
+    url = "jdbc:h2:mem:test",
     serverName = "",
     properties = {
         "user=sa"
