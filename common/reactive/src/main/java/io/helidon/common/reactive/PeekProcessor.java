@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  *
  * @param <T> both input/output type
  */
-public class PeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class PeekProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
 
     private Consumer<T> consumer;
 
@@ -41,11 +41,6 @@ public class PeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
     protected void hookOnNext(T item) {
         consumer.accept(item);
         submit(item);
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
     }
 
     @Override

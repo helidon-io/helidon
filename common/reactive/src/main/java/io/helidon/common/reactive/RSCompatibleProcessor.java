@@ -17,26 +17,29 @@
 
 package io.helidon.common.reactive;
 
-import java.util.function.Predicate;
+public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
-public class TakeWhileProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
-    private Predicate<T> predicate;
+    private boolean rsCompatible = false;
 
-    public TakeWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public void setIsRSCompatible(boolean rsCompatible) {
+        this.rsCompatible = rsCompatible;
+    }
+
+    public boolean isRsCompatible() {
+        return rsCompatible;
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        try {
-            if (predicate.test(item)) {
-                submit(item);
-            } else {
-                tryComplete();
-            }
-        } catch (Throwable t) {
-            getSubscription().cancel();
-            onError(t);
+    protected boolean isSubscriberClosed() {
+        // avoid checking for closed subscriber
+        // https://github.com/reactive-streams/reactive-streams-jvm#2.8
+        return !rsCompatible && super.isSubscriberClosed();
+    }
+
+    @Override
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        if (rsCompatible) {
+            subscription.cancel();
         }
     }
 }

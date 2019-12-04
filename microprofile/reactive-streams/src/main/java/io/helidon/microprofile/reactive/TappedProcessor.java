@@ -21,11 +21,10 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.BaseProcessor;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.RSCompatibleProcessor;
 
-public class TappedProcessor extends BaseProcessor<Object, Object> implements Multi<Object> {
+public class TappedProcessor extends RSCompatibleProcessor<Object, Object> {
 
     private Optional<Function<Object, Object>> onNextFunction = Optional.empty();
     private Optional<Consumer<Throwable>> onErrorConsumer = Optional.empty();

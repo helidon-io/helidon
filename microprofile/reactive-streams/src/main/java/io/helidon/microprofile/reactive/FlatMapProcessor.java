@@ -149,7 +149,9 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     @Override
     public void onComplete() {
         subscriber.onComplete();
-        innerSubscription.cancel();
+        if (Objects.nonNull(innerSubscription)) {
+            innerSubscription.cancel();
+        }
     }
 
     private class InnerSubscriber implements Subscriber<Object> {

@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  *
  * @param <T> both input/output type
  */
-public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class FilterProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
 
     private Predicate<T> predicate;
 
@@ -35,11 +35,6 @@ public class FilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> 
      */
     public FilterProcessor(Predicate<T> predicate) {
         this.predicate = predicate;
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
     }
 
     @Override

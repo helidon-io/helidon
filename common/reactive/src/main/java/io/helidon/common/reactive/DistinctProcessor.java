@@ -19,7 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.HashSet;
 
-public class DistinctProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class DistinctProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
     private final HashSet<T> distinctSet;
 
     public DistinctProcessor() {

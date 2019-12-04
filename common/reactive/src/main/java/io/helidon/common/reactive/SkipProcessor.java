@@ -19,7 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SkipProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class SkipProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
 
     private final AtomicLong counter;
 
@@ -41,11 +41,6 @@ public class SkipProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
                 s.request(1);
             }
         }
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
     }
 
     @Override

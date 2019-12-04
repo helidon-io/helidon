@@ -20,16 +20,15 @@ package io.helidon.microprofile.reactive;
 import java.util.Objects;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.BaseProcessor;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.RSCompatibleProcessor;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-public class OnErrorResumeProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
 
     private Function<Throwable, T> supplier;

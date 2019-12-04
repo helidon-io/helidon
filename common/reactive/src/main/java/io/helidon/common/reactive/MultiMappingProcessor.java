@@ -26,7 +26,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class MultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
+public final class MultiMappingProcessor<T, U> extends RSCompatibleProcessor<T, U> implements Multi<U> {
 
     private final Mapper<T, U> mapper;
 
@@ -36,11 +36,6 @@ final class MultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements M
      */
     public MultiMappingProcessor(Mapper<T, U> mapper) {
         this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
     }
 
     @Override

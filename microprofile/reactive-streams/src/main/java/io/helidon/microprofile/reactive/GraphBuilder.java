@@ -32,6 +32,7 @@ import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.LimitProcessor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.PeekProcessor;
+import io.helidon.common.reactive.RSCompatibleProcessor;
 import io.helidon.common.reactive.SkipProcessor;
 import io.helidon.common.reactive.TakeWhileProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
@@ -71,81 +72,72 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             multi = Multi.from(new FailedPublisher(stage.getError()));
         });
         registerStage(Stage.FromCompletionStage.class, stage -> {
-            multi = MultiRS.toMulti(new FromCompletionStagePublisher(stage.getCompletionStage(), false));
+            multi = MultiRS.toMulti(new FromCompletionStagePublisher<>(stage.getCompletionStage(), false));
         });
         registerStage(Stage.FromCompletionStageNullable.class, stage -> {
-            multi = MultiRS.toMulti(new FromCompletionStagePublisher(stage.getCompletionStage(), true));
+            multi = MultiRS.toMulti(new FromCompletionStagePublisher<>(stage.getCompletionStage(), true));
         });
         registerStage(Stage.Map.class, stage -> {
             Function<Object, Object> mapper = (Function<Object, Object>) stage.getMapper();
-            processorList.add(new MapProcessor<>(mapper::apply));
+            addProcessor(new MapProcessor<>(mapper::apply));
         });
         registerStage(Stage.Filter.class, stage -> {
-            processorList.add(new FilterProcessor(stage.getPredicate()));
+            addProcessor(new FilterProcessor<>(stage.getPredicate()));
         });
         registerStage(Stage.TakeWhile.class, stage -> {
-            processorList.add(new TakeWhileProcessor(stage.getPredicate()));
+            addProcessor(new TakeWhileProcessor<>(stage.getPredicate()));
         });
         registerStage(Stage.DropWhile.class, stage -> {
-            processorList.add(new DropWhileProcessor(stage.getPredicate()));
+            addProcessor(new DropWhileProcessor<>(stage.getPredicate()));
         });
         registerStage(Stage.Peek.class, stage -> {
             Consumer<Object> peekConsumer = (Consumer<Object>) stage.getConsumer();
-            processorList.add(new PeekProcessor<>(peekConsumer));
+            addProcessor(new PeekProcessor<>(peekConsumer));
         });
         registerStage(Stage.ProcessorStage.class, stage -> {
-            processorList.add(HybridProcessor.from((Processor<Object, Object>) stage.getRsProcessor()));
+            addProcessor(stage.getRsProcessor());
         });
         registerStage(Stage.Limit.class, stage -> {
-            processorList.add(new LimitProcessor(stage.getLimit()));
+            addProcessor(new LimitProcessor<>(stage.getLimit()));
         });
         registerStage(Stage.Skip.class, stage -> {
-            processorList.add(new SkipProcessor(stage.getSkip()));
+            addProcessor(new SkipProcessor<>(stage.getSkip()));
         });
         registerStage(Stage.Distinct.class, stage -> {
-            processorList.add(new DistinctProcessor<>());
+            addProcessor(new DistinctProcessor<>());
         });
         registerStage(Stage.FlatMap.class, stage -> {
-            processorList.add(
-                    HybridProcessor.from(
-                            FlatMapProcessor.fromPublisherMapper(
-                                    stage.getMapper())));
+            addProcessor(FlatMapProcessor.fromPublisherMapper(stage.getMapper()));
         });
         registerStage(Stage.FlatMapIterable.class, stage -> {
-            processorList.add(
-                    HybridProcessor.from(
-                            FlatMapProcessor.fromIterableMapper(
-                                    stage.getMapper())));
+            addProcessor(FlatMapProcessor.fromIterableMapper(stage.getMapper()));
         });
         registerStage(Stage.FlatMapCompletionStage.class, stage -> {
-            processorList.add(
-                    HybridProcessor.from(
-                            FlatMapProcessor.fromCompletionStage(
-                                    stage.getMapper())));
+            addProcessor(FlatMapProcessor.fromCompletionStage(stage.getMapper()));
         });
         registerStage(Stage.Coupled.class, stage -> {
             Subscriber<Object> subscriber = GraphBuilder.create()
                     .from(stage.getSubscriber()).getSubscriberWithCompletionStage().getSubscriber();
             Publisher<Object> publisher = GraphBuilder.create().from(stage.getPublisher()).getPublisher();
-            processorList.add(HybridProcessor.from(new CoupledProcessor<>(subscriber, publisher)));
+            addProcessor(new CoupledProcessor<>(subscriber, publisher));
         });
         registerStage(Stage.OnTerminate.class, stage -> {
-            processorList.add(TappedProcessor.create()
+            addProcessor(TappedProcessor.create()
                     .onComplete(stage.getAction())
                     .onCancel((s) -> stage.getAction().run())
                     .onError((t) -> stage.getAction().run()));
         });
         registerStage(Stage.OnComplete.class, stage -> {
-            processorList.add(TappedProcessor.create().onComplete(stage.getAction()));
+            addProcessor(TappedProcessor.create().onComplete(stage.getAction()));
         });
         registerStage(Stage.OnError.class, stage -> {
-            processorList.add(TappedProcessor.create().onError(stage.getConsumer()));
+            addProcessor(TappedProcessor.create().onError(stage.getConsumer()));
         });
         registerStage(Stage.OnErrorResume.class, stage -> {
-            processorList.add(OnErrorResumeProcessor.resume(stage.getFunction()));
+            addProcessor(OnErrorResumeProcessor.resume(stage.getFunction()));
         });
         registerStage(Stage.OnErrorResumeWith.class, stage -> {
-            processorList.add(OnErrorResumeProcessor.resumeWith(stage.getFunction()));
+            addProcessor(OnErrorResumeProcessor.resumeWith(stage.getFunction()));
         });
         registerStage(Stage.Cancel.class, stage -> {
             CancelSubscriber cancelSubscriber = new CancelSubscriber();
@@ -163,7 +155,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             Subscriber<Object> subscriber = (Subscriber<Object>) stage.getRsSubscriber();
             RedeemingCompletionSubscriber<Object, Object> completionSubscriber;
             if (subscriber instanceof CompletionSubscriber) {
-                completionSubscriber = RedeemingCompletionSubscriber.of(subscriber, ((CompletionSubscriber) subscriber).getCompletion());
+                completionSubscriber = RedeemingCompletionSubscriber.of(subscriber, ((CompletionSubscriber<Object, Object>) subscriber).getCompletion());
             } else {
                 completionSubscriber = RedeemingCompletionSubscriber.of(subscriber, new CompletableFuture<>());
             }
@@ -178,6 +170,22 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
                 multi.subscribe(HybridSubscriber.from(subscriberWithCompletionStage.getSubscriber()));
             }
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addProcessor(Processor<?, ?> processor) {
+        processorList.add(HybridProcessor.from((Processor<Object, Object>) processor));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T, U> void addProcessor(RSCompatibleProcessor<T, U> processor) {
+        processor.setIsRSCompatible(true);
+        processorList.add(HybridProcessor.from((RSCompatibleProcessor<Object, Object>) processor));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T, U> void addProcessor(Flow.Processor<T, U> processor) {
+        processorList.add((Flow.Processor<Object, Object>) processor);
     }
 
     public static GraphBuilder create() {

@@ -18,9 +18,8 @@ package io.helidon.microprofile.reactive;
 import java.util.Objects;
 
 import io.helidon.common.mapper.Mapper;
-import io.helidon.common.reactive.BaseProcessor;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.RSCompatibleProcessor;
 
 /**
  * Processor of {@link io.helidon.common.reactive.Flow.Publisher} to {@link io.helidon.common.reactive.Single} that publishes and maps each received item.
@@ -28,7 +27,7 @@ import io.helidon.common.reactive.Multi;
  * @param <T> subscribed type
  * @param <U> published type
  */
-public final class MapProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
+public final class MapProcessor<T, U> extends RSCompatibleProcessor<T, U> {
 
     private final Mapper<T, U> mapper;
 

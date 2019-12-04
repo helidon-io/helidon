@@ -19,7 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.function.Predicate;
 
-public class DropWhileProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class DropWhileProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 
     private boolean foundNotMatching = false;
@@ -31,11 +31,6 @@ public class DropWhileProcessor<T> extends BaseProcessor<T, T> implements Multi<
      */
     public DropWhileProcessor(Predicate<T> predicate) {
         this.predicate = predicate;
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
     }
 
     @Override
