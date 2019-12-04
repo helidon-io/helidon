@@ -55,6 +55,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void onError(Throwable t) {
+                subscriber.onError(t);
                 downStreamSubscriber.onError(t);
             }
 
@@ -73,7 +74,6 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
             @Override
             public void cancel() {
                 subscriber.onComplete();
-                downStreamSubscriber.onComplete();
                 downStreamsSubscription.cancel();
             }
         });

@@ -30,8 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
@@ -43,6 +45,7 @@ import org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
@@ -730,4 +733,89 @@ public class EngineTest {
         upstreamCancelled.get(1, TimeUnit.SECONDS);
     }
 
+
+    @Test
+    void onErrorResume2() throws InterruptedException, ExecutionException, TimeoutException {
+        ReactiveStreams.failed(new TestThrowable())
+                .onErrorResumeWith(
+                        t -> ReactiveStreams.of(1, 2, 3)
+                )
+                .forEach(System.out::println).run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void onErrorResume3() throws InterruptedException, ExecutionException, TimeoutException {
+        ReactiveStreams.failed(new TestThrowable())
+                .onErrorResumeWith(
+                        t -> ReactiveStreams.of(1, 2, 3)
+                )
+                .toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void coupledStageReentrant() {
+        ProcessorBuilder<Object, Integer> coupled = ReactiveStreams.coupled(ReactiveStreams.builder().ignore(), ReactiveStreams.of(1, 2, 3));
+        Supplier<List<Integer>> coupledTest = () -> {
+            try {
+                return ReactiveStreams
+                        .fromCompletionStage(new CompletableFuture<>())
+                        .via(coupled)
+                        .toList()
+                        .run()
+                        .toCompletableFuture()
+                        .get(1, TimeUnit.SECONDS);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                throw new RuntimeException(e);
+            }
+        };
+
+        IntStream.range(0, 20).forEach(i -> {
+            assertEquals(Arrays.asList(1, 2, 3), coupledTest.get());
+        });
+    }
+
+    @Test
+    @Disabled //TODO: Lot of regression
+    void coupledCancelOnPublisherFail() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Throwable> subscriberFailed = new CompletableFuture<>();
+        CompletableFuture<Void> upstreamCancelled = new CompletableFuture<>();
+
+        ReactiveStreams
+                .fromCompletionStage(new CompletableFuture<>())
+                .onTerminate(() -> upstreamCancelled.complete(null))
+                .via(
+                        ReactiveStreams
+                                .coupled(ReactiveStreams
+                                                .builder()
+                                                .onError(value -> {
+                                                    subscriberFailed.complete(value);
+                                                })
+                                                .ignore(),
+                                        ReactiveStreams
+                                                .failed(new TestRuntimeException())))
+                .ignore()
+                .run();
+
+        assertTrue(subscriberFailed.get(1, TimeUnit.SECONDS) instanceof TestRuntimeException);
+        upstreamCancelled.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @Disabled //TODO: Lot of regression
+    void coupledCancelOnUpstreamFail() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> publisherCancelled = new CompletableFuture<>();
+        CompletableFuture<Throwable> downstreamFailed = new CompletableFuture<>();
+
+        ReactiveStreams.failed(new TestRuntimeException())
+                .via(
+                        ReactiveStreams.coupled(ReactiveStreams.builder().ignore(),
+                                ReactiveStreams
+                                        .fromCompletionStage(new CompletableFuture<>()).onTerminate(() -> publisherCancelled.complete(null)))
+                ).onError(downstreamFailed::complete)
+                .ignore()
+                .run();
+
+        publisherCancelled.get(1, TimeUnit.SECONDS);
+        assertTrue(downstreamFailed.get(1, TimeUnit.SECONDS) instanceof TestRuntimeException);
+    }
 }

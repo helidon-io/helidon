@@ -19,6 +19,7 @@ package io.helidon.microprofile.reactive;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -133,7 +134,9 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
                 } catch (Throwable t) {
                     onError(t);
                 }
-                subscription.cancel();
+                if (Objects.nonNull(subscription)) {
+                    subscription.cancel();
+                }
             }
         };
     }
