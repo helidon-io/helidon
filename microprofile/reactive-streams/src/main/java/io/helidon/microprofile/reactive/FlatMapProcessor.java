@@ -132,6 +132,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     @Override
     @SuppressWarnings("unchecked")
     public void onNext(Object o) {
+        Objects.requireNonNull(o);
         try {
             Publisher<Object> publisher = mapper.apply(o);
             publisher.subscribe(new InnerSubscriber());
@@ -143,6 +144,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
 
     @Override
     public void onError(Throwable t) {
+        Objects.requireNonNull(t);
         subscriber.onError(t);
     }
 
@@ -158,6 +160,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
 
         @Override
         public void onSubscribe(Subscription innerSubscription) {
+            Objects.requireNonNull(innerSubscription);
             innerPublisherCompleted.set(false);
             FlatMapProcessor.this.innerSubscription = innerSubscription;
             innerSubscription.request(1L);
@@ -173,6 +176,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
 
         @Override
         public void onError(Throwable t) {
+            Objects.requireNonNull(t);
             FlatMapProcessor.this.subscription.cancel();
             FlatMapProcessor.this.onError(t);
         }
