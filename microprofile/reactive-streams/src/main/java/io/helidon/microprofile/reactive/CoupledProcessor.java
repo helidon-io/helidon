@@ -22,6 +22,8 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.Objects;
+
 public class CoupledProcessor<T, R> implements Processor<T, R> {
 
     private Subscriber<T> subscriber;
@@ -44,6 +46,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void onSubscribe(Subscription downStreamsSubscription) {
+                Objects.requireNonNull(downStreamsSubscription);
                 CoupledProcessor.this.downStreamsSubscription = downStreamsSubscription;
             }
 
@@ -81,6 +84,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
     @Override
     public void onSubscribe(Subscription upStreamSubscription) {
+        Objects.requireNonNull(upStreamSubscription);
         this.upStreamSubscription = upStreamSubscription;
         subscriber.onSubscribe(new Subscription() {
             @Override

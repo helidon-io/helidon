@@ -61,6 +61,8 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
             } else {
                 tryComplete();
             }
+        } else {
+            tryComplete();
         }
     }
 

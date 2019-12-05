@@ -20,6 +20,7 @@ import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -69,6 +70,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public final void onSubscribe(Subscription s) {
+        Objects.requireNonNull(s);
         if (subscription == null) {
             this.subscription = s;
             tryRequest(s);
@@ -77,6 +79,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void onNext(T item) {
+        Objects.requireNonNull(item);
         if (isSubscriberClosed()) {
             throw new IllegalStateException("Subscriber is closed!");
         }
@@ -93,6 +96,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void onError(Throwable ex) {
+        Objects.requireNonNull(ex);
         done = true;
         if (error == null) {
             error = ex;
@@ -156,8 +160,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
                 subscriber.get().onNext(item);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
-                onError(ex);
-            } catch (ExecutionException ex) {
                 onError(ex);
             } catch (Throwable ex) {
                 onError(ex);

@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -78,6 +79,7 @@ public class ConcatPublisher<T> implements Publisher<T> {
 
         @Override
         public void onSubscribe(Subscription subscription) {
+            Objects.requireNonNull(subscription);
             this.subscription = subscription;
             secondPublisher.subscribe(secondProcessor);
         }
@@ -115,6 +117,7 @@ public class ConcatPublisher<T> implements Publisher<T> {
 
         @Override
         public void onSubscribe(Subscription subscription) {
+            Objects.requireNonNull(subscription);
             this.subscription = subscription;
         }
 

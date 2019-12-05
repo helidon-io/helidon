@@ -19,6 +19,7 @@ package io.helidon.microprofile.reactive;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import io.helidon.common.reactive.Flow;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
@@ -52,6 +53,7 @@ public class CumulativeProcessor implements Processor<Object, Object> {
 
     @Override
     public void onSubscribe(Subscription subscription) {
+        Objects.requireNonNull(subscription);
         // This is the time for connecting all processors
         Processor<Object, Object> lastProcessor = null;
         for (Processor<Object, Object> processor : processorList) {

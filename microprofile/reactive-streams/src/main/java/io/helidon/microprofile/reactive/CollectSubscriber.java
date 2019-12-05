@@ -96,6 +96,7 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
 
             @Override
             public void onSubscribe(Subscription s) {
+                Objects.requireNonNull(s);
                 try {
                     cumulatedVal = collectStage.getCollector().supplier().get();
                 } catch (Throwable t) {

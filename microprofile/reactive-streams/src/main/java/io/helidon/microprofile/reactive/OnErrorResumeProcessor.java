@@ -52,6 +52,7 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
     @Override
     public void onError(Throwable ex) {
+        Objects.requireNonNull(ex);
         if (Objects.nonNull(supplier)) {
             submit(supplier.apply(ex));
             tryComplete();
@@ -61,6 +62,7 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
                 @Override
                 public void onSubscribe(Subscription subscription) {
+                    Objects.requireNonNull(subscription);
                     this.subscription = subscription;
                     subscription.request(getRequestedCounter().get());
                 }
@@ -73,6 +75,7 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
                 @Override
                 public void onError(Throwable t) {
+                    Objects.requireNonNull(t);
                     superError(t);
                 }
 

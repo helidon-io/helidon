@@ -17,6 +17,7 @@
 
 package io.helidon.microrofile.reactive;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -775,7 +776,8 @@ public class EngineTest {
     }
 
     @Test
-    @Disabled //TODO: Lot of regression
+    @Disabled
+        //TODO: Lot of regression
     void coupledCancelOnPublisherFail() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Throwable> subscriberFailed = new CompletableFuture<>();
         CompletableFuture<Void> upstreamCancelled = new CompletableFuture<>();
@@ -801,7 +803,8 @@ public class EngineTest {
     }
 
     @Test
-    @Disabled //TODO: Lot of regression
+    @Disabled
+        //TODO: Lot of regression
     void coupledCancelOnUpstreamFail() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> publisherCancelled = new CompletableFuture<>();
         CompletableFuture<Throwable> downstreamFailed = new CompletableFuture<>();
@@ -817,5 +820,16 @@ public class EngineTest {
 
         publisherCancelled.get(1, TimeUnit.SECONDS);
         assertTrue(downstreamFailed.get(1, TimeUnit.SECONDS) instanceof TestRuntimeException);
+    }
+
+    @Test
+    void limitToZero() throws InterruptedException, ExecutionException, TimeoutException {
+        assertEquals(Collections.emptyList(), ReactiveStreams
+                .generate(() -> 4)
+                .limit(0L)
+                .toList()
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS));
     }
 }

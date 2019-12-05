@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -33,6 +34,7 @@ public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, Sub
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
+        Objects.requireNonNull(subscription);
         this.subscription = subscription;
         this.subscription.request(1);
     }

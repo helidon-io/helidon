@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
@@ -65,6 +66,7 @@ class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.re
 
     @Override
     public void onSubscribe(Subscription s) {
+        Objects.requireNonNull(s);
         subscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
