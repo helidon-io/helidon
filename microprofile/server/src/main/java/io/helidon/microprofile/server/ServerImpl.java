@@ -51,7 +51,6 @@ import io.helidon.common.Prioritized;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
@@ -101,8 +100,9 @@ public class ServerImpl implements Server {
     }
 
     ServerImpl(Builder builder) {
-        MpConfig mpConfig = (MpConfig) builder.config();
-        Config config = mpConfig.helidonConfig();
+        org.eclipse.microprofile.config.Config mpConfig = builder.config();
+        Config config = (Config) mpConfig;
+
         this.container = builder.cdiContainer();
         this.containerCreated = builder.containerCreated();
         this.context = builder.context();
@@ -353,7 +353,7 @@ public class ServerImpl implements Server {
     }
 
     private void loadExtensions(Builder builder,
-                                MpConfig mpConfig,
+                                org.eclipse.microprofile.config.Config mpConfig,
                                 Config config,
                                 List<JaxRsApplication> apps,
                                 Routing.Builder routingBuilder,
@@ -379,7 +379,7 @@ public class ServerImpl implements Server {
                 });
     }
 
-    private MpServiceContext createExtensionContext(MpConfig mpConfig,
+    private MpServiceContext createExtensionContext(org.eclipse.microprofile.config.Config mpConfig,
                                                     Config config,
                                                     List<JaxRsApplication> apps,
                                                     Routing.Builder routingBuilder,

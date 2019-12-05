@@ -20,7 +20,7 @@ import java.net.URI;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.git.GitConfigSourceBuilder;
+import io.helidon.config.git.GitConfigSource;
 
 /**
  * Git source example.
@@ -66,7 +66,7 @@ public class Main {
         System.out.println("Loading from branch " + env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("null"));
 
         Config config = Config.create(
-                GitConfigSourceBuilder.create("application.conf")
+                GitConfigSource.builder("application.conf")
                         .uri(URI.create("https://github.com/helidonrobot/test-config.git"))
                         .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
                         .build());

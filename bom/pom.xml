@@ -422,11 +422,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.config</groupId>
-                <artifactId>helidon-microprofile-config-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.microprofile</groupId>
                 <artifactId>helidon-microprofile-fault-tolerance</artifactId>
                 <version>${helidon.version}</version>

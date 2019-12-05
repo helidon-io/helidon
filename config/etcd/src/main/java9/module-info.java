@@ -30,4 +30,7 @@ module io.helidon.config.etcd {
     requires io.helidon.common;
 
     exports io.helidon.config.etcd;
+
+    provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.config.etcd.EtcdConfigSourceProvider;
+    provides io.helidon.config.spi.PollingStrategyProvider with io.helidon.config.etcd.EtcdPollingStrategyProvider;
 }

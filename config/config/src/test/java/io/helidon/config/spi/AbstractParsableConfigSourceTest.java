@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -528,7 +528,7 @@ public class AbstractParsableConfigSourceTest {
     @Test
     public void testInitAll() {
         TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder()
-                .init(Config.create(ConfigSources.create(CollectionsHelper.mapOf("media-type", "application/x-yaml"))));
+                .config(Config.create(ConfigSources.create(CollectionsHelper.mapOf("media-type", "application/x-yaml"))));
 
         //media-type
         assertThat(builder.mediaType(), is("application/x-yaml"));
@@ -536,7 +536,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testInitNothing() {
-        TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder().init((Config.empty()));
+        TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder().config((Config.empty()));
 
         //media-type
         assertThat(builder.mediaType(), is(nullValue()));

@@ -49,6 +49,10 @@
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-common</artifactId>
         </dependency>
@@ -60,11 +64,6 @@
             <!-- Jersey on java 9 -->
             <groupId>javax.activation</groupId>
             <artifactId>javax.activation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config-cdi</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

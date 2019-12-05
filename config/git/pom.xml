@@ -51,15 +51,6 @@
             <artifactId>org.eclipse.jgit</artifactId>
         </dependency>
         <dependency>
-            <!--
-            This dependency is needed to load config source from
-            meta configuration.
-            Unless you need this feature, test scope is sufficient -->
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-object-mapping</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-testing</artifactId>
             <scope>test</scope>

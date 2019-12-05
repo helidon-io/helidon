@@ -18,7 +18,6 @@
  * Aggregator module for microprofile core.
  */
 module io.helidon.microprofile.bundle.core {
-    requires transitive io.helidon.microprofile.config.cdi;
     requires transitive io.helidon.microprofile.config;
     requires transitive io.helidon.microprofile.server;
 

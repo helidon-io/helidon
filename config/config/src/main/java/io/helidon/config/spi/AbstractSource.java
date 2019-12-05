@@ -30,6 +30,7 @@ import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
+import io.helidon.config.MetaConfig;
 import io.helidon.config.PollingStrategies;
 import io.helidon.config.RetryPolicies;
 import io.helidon.config.internal.ConfigThreadFactory;
@@ -315,7 +316,9 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      * polling strategy from
      * @param <S> type of source that should be built
      */
-    public abstract static class Builder<B extends Builder<B, T, S>, T, S> {
+    public abstract static class Builder<B extends Builder<B, T, S>, T, S extends Source<?>>
+            implements io.helidon.common.Builder<S> {
+
         /**
          * Default executor where the changes threads are run.
          */
@@ -358,31 +361,36 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
-         * Initialize builder from specified configuration properties.
+         * Configure this builder from an existing configuration (we use the term meta configuration for this
+         * type of configuration, as it is a configuration that builds configuration).
          * <p>
          * Supported configuration {@code properties}:
          * <ul>
-         * <li>{@code optional} - type {@code boolean}, see {@link #optional()}</li>
-         * <li>{@code polling-strategy} - see {@link PollingStrategy} for details about configuration format,
-         * see {@link #pollingStrategy(Supplier)} or {@link #pollingStrategy(Function)}</li>
+         *  <li>{@code optional} - type {@code boolean}, see {@link #optional()}</li>
+         *  <li>{@code polling-strategy} - see {@link PollingStrategy} for details about configuration format,
+         *          see {@link #pollingStrategy(Supplier)} or {@link #pollingStrategy(Function)}</li>
+         *  <li>{@code retry-policy} - see {@link io.helidon.config.spi.RetryPolicy} for details about
+         *      configuration format</li>
          * </ul>
          *
-         * @param metaConfig configuration properties used to initialize a builder instance.
+         *
+         * @param metaConfig configuration to configure this source
          * @return modified builder instance
          */
-        protected B init(Config metaConfig) {
+        @SuppressWarnings("unchecked")
+        public B config(Config metaConfig) {
             //optional / mandatory
             metaConfig.get(OPTIONAL_KEY)
                     .asBoolean()
-                    .filter(value -> value) //filter `true` only
-                    .ifPresent(value -> optional());
+                    .ifPresent(this::optional);
+
             //polling-strategy
             metaConfig.get(POLLING_STRATEGY_KEY)
-                    .ifExists(cfg -> pollingStrategy(PollingStrategyConfigMapper.instance().apply(cfg, targetType)));
+                    .ifExists(cfg -> pollingStrategy((t -> MetaConfig.pollingStrategy(cfg).apply(t))));
+
             //retry-policy
             metaConfig.get(RETRY_POLICY_KEY)
-                    .as(RetryPolicy::create)
-                    .ifPresent(this::retryPolicy);
+                    .ifExists(cfg -> retryPolicy(MetaConfig.retryPolicy(cfg)));
 
             return thisBuilder;
         }
@@ -434,12 +442,33 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
+         * Type of target used by this builder.
+         *
+         * @return target type, used by {@link #pollingStrategy(java.util.function.Function)}
+         */
+        public Class<T> targetType() {
+            return targetType;
+        }
+
+        /**
          * Built {@link ConfigSource} will not be mandatory, i.e. it is ignored if configuration target does not exists.
          *
          * @return a modified builder instance
          */
         public B optional() {
             this.mandatory = false;
+
+            return thisBuilder;
+        }
+
+        /**
+         * Built {@link ConfigSource} will be optional ({@code true}) or mandatory ({@code false}).
+         *
+         * @param optional set to {@code true} to mark this source optional.
+         * @return a modified builder instance
+         */
+        public B optional(boolean optional) {
+            this.mandatory = !optional;
 
             return thisBuilder;
         }
@@ -498,6 +527,20 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         public B retryPolicy(Supplier<RetryPolicy> retryPolicySupplier) {
             this.retryPolicySupplier = retryPolicySupplier;
             return thisBuilder;
+        }
+
+        /**
+         * Set a {@link RetryPolicy} that will be responsible for invocation of {@link AbstractSource#load()}.
+         * <p>
+         * The default reply policy is {@link RetryPolicies#justCall()}.
+         * <p>
+         * Create a custom policy or use the built-in policy constructed with a {@link RetryPolicies#repeat(int) builder}.
+         *
+         * @param retryPolicy retry policy
+         * @return a modified builder instance
+         */
+        public B retryPolicy(RetryPolicy retryPolicy) {
+            return retryPolicy(() -> retryPolicy);
         }
 
         /**

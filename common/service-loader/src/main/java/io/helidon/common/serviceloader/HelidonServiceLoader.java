@@ -28,8 +28,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.Prioritized;
 
 /**
@@ -338,7 +336,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
             }
 
             private ServiceWithPriority(T service) {
-                this(service, findPriority(service));
+                this(service, Priorities.find(service, Prioritized.DEFAULT_PRIORITY));
             }
 
             private int priority() {
@@ -351,17 +349,6 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
 
             private String instanceClassName() {
                 return instance.getClass().getName();
-            }
-
-            private static int findPriority(Object o) {
-                if (o instanceof Prioritized) {
-                    return ((Prioritized) o).priority();
-                }
-                Priority prio = o.getClass().getAnnotation(Priority.class);
-                if (null == prio) {
-                    return Prioritized.DEFAULT_PRIORITY;
-                }
-                return prio.value();
             }
 
             @Override

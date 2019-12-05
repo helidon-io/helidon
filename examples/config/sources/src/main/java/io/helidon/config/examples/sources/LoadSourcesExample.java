@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,11 @@ public class LoadSourcesExample {
            with a filter which convert values with keys ending with "level" to upper case
          */
 
-        Config config = Config.builderLoadSourcesFrom(file("conf/meta-config.yaml").optional(),
-                                                      classpath("meta-config.yaml"))
+        Config metaConfig = Config.create(file("conf/meta-config.yaml").optional(),
+                                           classpath("meta-config.yaml"));
+
+        Config config = Config.builder()
+                .config(metaConfig)
                 .addFilter((key, stringValue) -> key.name().equals("level") ? stringValue.toUpperCase() : stringValue)
                 .build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config.etcd;
 
 import java.io.StringReader;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -106,14 +107,39 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
     }
 
     /**
+     * Create a configured instance with the provided options.
+     *
+     * @param uri Remote etcd URI
+     * @param key key the configuration is associated with
+     * @param api api version
+     * @return a new etcd config source
+     */
+    public static EtcdConfigSource create(URI uri, String key, EtcdConfigSourceBuilder.EtcdApi api) {
+        return builder()
+                .uri(uri)
+                .key(key)
+                .api(api)
+                .build();
+    }
+
+    /**
      * Create a new instance from configuration.
      *
-     * @param config configuration to load from
+     * @param metaConfig meta configuration to load config source from
      * @return configured source instance
      */
-    public static EtcdConfigSource create(Config config) {
-        return EtcdConfigSourceBuilder
-                .create(config)
+    public static EtcdConfigSource create(Config metaConfig) {
+        return builder()
+                .config(metaConfig)
                 .build();
+    }
+
+    /**
+     * Create a new fluent API builder for etcd.
+     *
+     * @return a new builder
+     */
+    public static EtcdConfigSourceBuilder builder() {
+        return new EtcdConfigSourceBuilder();
     }
 }

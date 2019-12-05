@@ -30,6 +30,7 @@ module io.helidon.microprofile.tracing {
     requires static javax.interceptor.api;
 
     requires io.helidon.microprofile.server;
+    requires transitive io.helidon.microprofile.config;
     requires io.helidon.common;
     requires io.helidon.webserver;
     requires io.helidon.jersey.common;
