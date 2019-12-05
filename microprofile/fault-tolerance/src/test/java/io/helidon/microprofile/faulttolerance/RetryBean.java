@@ -16,7 +16,9 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -88,5 +90,34 @@ public class RetryBean {
         printStatus("RetryBean::retryWithDelayAndJitter()",
                     "success " + System.currentTimeMillis());
         return "success";
+    }
+
+    @Asynchronous
+    @Retry(maxRetries = 2)
+    public CompletionStage<String> retryWithException() {
+        invocations.incrementAndGet();
+        // always fail
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new IOException("Simulated error"));
+        return future;
+    }
+
+    /**
+     * Service will retry a method returning CompletionStages but throwing an exception.
+     * fail twice.
+     *
+     * @return a {@link CompletionStage}
+     */
+    @Asynchronous
+    @Retry(maxRetries = 2)
+    public CompletionStage<String> retryWithUltimateSuccess() {
+        if (invocations.incrementAndGet() < 3) {
+        // fails twice
+            throw new RuntimeException("Simulated error");
+        }
+
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.complete("Success");
+        return future;
     }
 }

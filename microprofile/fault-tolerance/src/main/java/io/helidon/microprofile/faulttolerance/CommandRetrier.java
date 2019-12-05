@@ -17,9 +17,11 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
@@ -33,12 +35,14 @@ import javax.interceptor.InvocationContext;
 
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
-import net.jodah.failsafe.AsyncFailsafe;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
+import net.jodah.failsafe.FailsafeExecutor;
 import net.jodah.failsafe.FailsafeFuture;
+import net.jodah.failsafe.Fallback;
+import net.jodah.failsafe.Policy;
 import net.jodah.failsafe.RetryPolicy;
-import net.jodah.failsafe.SyncFailsafe;
+import net.jodah.failsafe.event.ExecutionAttemptedEvent;
 import net.jodah.failsafe.function.CheckedFunction;
 import net.jodah.failsafe.util.concurrent.Scheduler;
 import org.apache.commons.configuration.AbstractConfiguration;
@@ -82,7 +86,7 @@ public class CommandRetrier {
 
     private final InvocationContext context;
 
-    private final RetryPolicy retryPolicy;
+    private final RetryPolicy<Object> retryPolicy;
 
     private final boolean isAsynchronous;
 
@@ -105,24 +109,6 @@ public class CommandRetrier {
     private final long bulkheadTaskQueueingPeriod;
 
     private CompletableFuture<?> taskQueued = new CompletableFuture<>();
-
-    class CommandCallable<T> implements Callable<T> {
-
-        private final Callable<T> delegate;
-
-        CommandCallable(Callable<T> delegate) {
-            this.delegate = delegate;
-        }
-
-        public FaultToleranceCommand getCommand() {
-            return command;
-        }
-
-        @Override
-        public T call() throws Exception {
-            return delegate.call();
-        }
-    }
 
     /**
      * Constructor.
@@ -150,11 +136,10 @@ public class CommandRetrier {
         final Retry retry = introspector.getRetry();
         if (retry != null) {
             // Initial setting for retry policy
-            this.retryPolicy = new RetryPolicy()
+            this.retryPolicy = new RetryPolicy<>()
                                    .withMaxRetries(retry.maxRetries())
-                                   .withMaxDuration(retry.maxDuration(),
-                                                    TimeUtil.chronoUnitToTimeUnit(retry.durationUnit()))
-                                   .retryOn(retry.retryOn());
+                                   .withMaxDuration(Duration.of(retry.maxDuration(), retry.durationUnit()));
+            this.retryPolicy.handle(retry.retryOn());
 
             // Set abortOn if defined
             if (retry.abortOn().length > 0) {
@@ -187,13 +172,13 @@ public class CommandRetrier {
                 } else {
                     factor = ((double) jitter) / delay;
                 }
-                this.retryPolicy.withDelay(correction.apply(delay), TimeUnit.NANOSECONDS);
+                this.retryPolicy.withDelay(Duration.of(correction.apply(delay), ChronoUnit.NANOS));
                 this.retryPolicy.withJitter(factor);
             } else if (retry.delay() > 0) {
-                this.retryPolicy.withDelay(correction.apply(delay), TimeUnit.NANOSECONDS);
+                this.retryPolicy.withDelay(Duration.of(correction.apply(delay), ChronoUnit.NANOS));
             }
         } else {
-            this.retryPolicy = new RetryPolicy().withMaxRetries(0);     // no retries
+            this.retryPolicy = new RetryPolicy<>().withMaxRetries(0);     // no retries
         }
     }
 
@@ -215,16 +200,20 @@ public class CommandRetrier {
         return threadWaitingPeriod;
     }
 
+    FaultToleranceCommand getCommand() {
+        return command;
+    }
+
     /**
      * Retries running a command according to retry policy.
      *
      * @return Object returned by command.
      * @throws Exception If something goes wrong.
      */
-    @SuppressWarnings("unchecked")
     public Object execute() throws Exception {
         LOGGER.fine(() -> "Executing command with isAsynchronous = " + isAsynchronous);
 
+        /*
         CheckedFunction<? extends Throwable, ?> fallbackFunction = t -> {
             final CommandFallback fallback = new CommandFallback(context, introspector, t);
             Object result = fallback.execute();
@@ -234,31 +223,31 @@ public class CommandRetrier {
             }
             return result;
         };
+         */
+
+        FailsafeExecutor<Object> failsafe = prepareFailsafeExecutor();
 
         try {
             if (isAsynchronous) {
                 Scheduler scheduler = CommandScheduler.create(commandThreadPoolSize);
-                AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
+                failsafe = failsafe.with(scheduler);
 
                 // Store context class loader to access config
                 contextClassLoader = Thread.currentThread().getContextClassLoader();
 
                 // Check CompletionStage first to process CompletableFuture here
                 if (introspector.isReturnType(CompletionStage.class)) {
-                    CompletionStage<?> completionStage = (introspector.hasFallback()
-                            ? failsafe.withFallback(fallbackFunction)
-                                      .future(() -> (CompletionStage<?>) retryExecute())
-                            : failsafe.future(() -> (CompletionStage<?>) retryExecute()));
+                    CompletionStage<?> completionStage =
+                            CommandCompletableFuture.create(failsafe.getAsync(this::retryExecute), this::getCommand);
                     awaitBulkheadAsyncTaskQueued();
                     return completionStage;
                 }
 
                 // If not, it must be a subtype of Future
                 if (introspector.isReturnType(Future.class)) {
-                    FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
-                            ? failsafe.withFallback(fallbackFunction)
-                                      .get(new CommandCallable<>(this::retryExecute))
-                            : failsafe.get(new CommandCallable<>(this::retryExecute)));
+//                    Future<?> chainedFuture =
+//                            CommandCompletableFuture.create(failsafe.getAsync(this::retryExecute), this::getCommand);
+                    Future<?> chainedFuture = failsafe.getAsync(this::retryExecute);
                     awaitBulkheadAsyncTaskQueued();
                     return new FailsafeChainedFuture<>(chainedFuture);
                 }
@@ -266,17 +255,28 @@ public class CommandRetrier {
                 // Oops, something went wrong during validation
                 throw new InternalError("Validation failed, return type must be Future or CompletionStage");
             } else {
-                SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
-                return introspector.hasFallback()
-                        ? failsafe.withFallback(fallbackFunction)
-                                  .get(new CommandCallable<>(this::retryExecute))
-                        : failsafe.get(new CommandCallable<>(this::retryExecute));
+                return failsafe.get(this::retryExecute);
             }
         } catch (FailsafeException e) {
             throw toException(e.getCause());
         }
     }
 
+    private FailsafeExecutor<Object> prepareFailsafeExecutor() {
+
+        // Add any fallback first, per Failsafe doc about "typical" policy composition.
+        List<Policy<Object>> policies = new ArrayList<>();
+        if (introspector.hasFallback()) {
+            CheckedFunction<ExecutionAttemptedEvent<?>, ?> fallbackFunction = event -> {
+                final CommandFallback fallback = new CommandFallback(context, introspector, event);
+                return fallback.execute();
+            };
+            policies.add(Fallback.of(fallbackFunction));
+        }
+        policies.add(retryPolicy);
+
+        return Failsafe.with(policies);
+    }
 
     /**
      * Creates a new command for each retry since Hystrix commands can only be
