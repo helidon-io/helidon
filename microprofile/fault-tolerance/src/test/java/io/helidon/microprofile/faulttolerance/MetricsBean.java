@@ -143,6 +143,18 @@ public class MetricsBean {
         }
     }
 
+    static class TestException extends Exception {
+    }
+
+    @CircuitBreaker(requestVolumeThreshold = 2,
+            failureRatio = 1.0D,
+            delay = 1000,
+            successThreshold = 2,
+            failOn = {TestException.class})
+    public void exerciseBreakerException(boolean runtime) throws Exception {
+        throw runtime ? new RuntimeException("oops") : new TestException();
+    }
+
     @Fallback(fallbackMethod = "onFailure")
     public String fallback() {
         FaultToleranceTest.printStatus("MetricsBean::fallback()", "failure");

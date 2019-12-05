@@ -337,13 +337,16 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                  * throwable to fail on, restore underlying breaker and return.
                  */
                 if (hasFailed) {
-                    final Throwable throwableFinal = throwable;
+                    final Throwable unwrappedThrowable = ExceptionUtil.unwrapHystrix(throwable);
                     Class<? extends Throwable>[] throwableClasses = introspector.getCircuitBreaker().failOn();
                     boolean failOn = Arrays.asList(throwableClasses)
                             .stream()
-                            .anyMatch(c -> c.isAssignableFrom(throwableFinal.getClass()));
+                            .anyMatch(c -> c.isAssignableFrom(unwrappedThrowable.getClass()));
                     if (!failOn) {
-                        updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerOpening);
+                        // If underlying circuit breaker is not open, this counts as successful
+                        // run since it failed on an exception not listed in failOn.
+                        updateMetricsAfter(breakerHelper.getState() != State.OPEN_MP ? null : throwable,
+                                wasBreakerOpen, isClosedNow, breakerOpening);
                         logCircuitBreakerState("Exit 1");
                         throw ExceptionUtil.toWrappedException(throwable);
                     }
@@ -422,6 +425,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             getCounter(method, BREAKER_CALLS_FAILED_TOTAL).inc();
             // If it will open, increment counter
             if (breakerWillOpen) {
+                System.out.println("### incrementing breaker");
                 getCounter(method, BREAKER_OPENED_TOTAL).inc();
             }
         }

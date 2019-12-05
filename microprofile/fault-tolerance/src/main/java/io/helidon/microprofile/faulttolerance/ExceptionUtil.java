@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import com.netflix.hystrix.exception.HystrixRuntimeException;
+
 /**
  * Class ExceptionUtil.
  */
@@ -50,6 +52,16 @@ public class ExceptionUtil {
     public static WrappedException toWrappedException(Throwable throwable) {
         return throwable instanceof WrappedException ? (WrappedException) throwable
                 : new WrappedException(throwable);
+    }
+
+    /**
+     * Unwrap an throwable wrapped by {@code HystrixRuntimeException}.
+     *
+     * @param throwable Throwable to unwrap.
+     * @return Unwrapped throwable.
+     */
+    public static Throwable unwrapHystrix(Throwable throwable) {
+        return throwable instanceof HystrixRuntimeException ? throwable.getCause() : throwable;
     }
 
     private ExceptionUtil() {
