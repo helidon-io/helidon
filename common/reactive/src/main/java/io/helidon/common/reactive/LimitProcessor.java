@@ -50,6 +50,13 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
     }
 
     @Override
+    public void onError(Throwable ex) {
+        if (0 < this.counter.get()) {
+            super.onError(ex);
+        }
+    }
+
+    @Override
     protected void hookOnNext(T item) {
         long actCounter = this.counter.getAndDecrement();
         if (0 < actCounter) {

@@ -41,7 +41,7 @@ public class IntSequencePublisher implements Publisher<Integer>, Subscription {
 
     @Override
     public void request(long n) {
-        for (long i = 0; i <= n
+        for (long i = 0; i < n
                 && !closed.get(); i++) {
             subscriber.onNext(sequence.incrementAndGet());
         }
@@ -50,5 +50,6 @@ public class IntSequencePublisher implements Publisher<Integer>, Subscription {
     @Override
     public void cancel() {
         closed.set(true);
+        subscriber.onComplete();
     }
 }

@@ -179,7 +179,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
 
     @SuppressWarnings("unchecked")
     private <T, U> void addProcessor(RSCompatibleProcessor<T, U> processor) {
-        processor.setIsRSCompatible(true);
+        processor.setRSCompatible(true);
         processorList.add(HybridProcessor.from((RSCompatibleProcessor<Object, Object>) processor));
     }
 

@@ -59,7 +59,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     @Override
-    public final void cancel() {
+    public void cancel() {
         subscriber.cancel();
         try {
             hookOnCancel(subscription);
@@ -69,8 +69,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     @Override
-    public final void onSubscribe(Subscription s) {
-        Objects.requireNonNull(s);
+    public void onSubscribe(Subscription s) {
         if (subscription == null) {
             this.subscription = s;
             tryRequest(s);
@@ -79,7 +78,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void onNext(T item) {
-        Objects.requireNonNull(item);
         if (isSubscriberClosed()) {
             throw new IllegalStateException("Subscriber is closed!");
         }
@@ -96,7 +94,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void onError(Throwable ex) {
-        Objects.requireNonNull(ex);
         done = true;
         if (error == null) {
             error = ex;

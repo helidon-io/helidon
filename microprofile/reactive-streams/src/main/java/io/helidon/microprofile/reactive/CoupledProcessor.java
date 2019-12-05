@@ -58,6 +58,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void onError(Throwable t) {
+                upStreamSubscription.cancel();
                 subscriber.onError(t);
                 downStreamSubscriber.onError(t);
             }
@@ -85,6 +86,10 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
     @Override
     public void onSubscribe(Subscription upStreamSubscription) {
         Objects.requireNonNull(upStreamSubscription);
+        // https://github.com/reactive-streams/reactive-streams-jvm#2.5
+        if (Objects.nonNull(this.upStreamSubscription)) {
+            upStreamSubscription.cancel();
+        }
         this.upStreamSubscription = upStreamSubscription;
         subscriber.onSubscribe(new Subscription() {
             @Override

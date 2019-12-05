@@ -65,7 +65,7 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
      * from {@link org.reactivestreams.Subscriber}.
      *
      * @param subscriber {@link org.reactivestreams.Subscriber} to wrap
-     * @param <T>       type of items
+     * @param <T>        type of items
      * @return {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
@@ -88,6 +88,7 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
     @Override
     public void onSubscribe(Subscription subscription) {
+        Objects.requireNonNull(subscription);
         if (flowSubscriber != null) {
             flowSubscriber.onSubscribe(HybridSubscription.from(subscription));
         } else if (reactiveSubscriber != null) {

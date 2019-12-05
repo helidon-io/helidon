@@ -17,11 +17,13 @@
 
 package io.helidon.common.reactive;
 
+import java.util.Objects;
+
 public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
     private boolean rsCompatible = false;
 
-    public void setIsRSCompatible(boolean rsCompatible) {
+    public void setRSCompatible(boolean rsCompatible) {
         this.rsCompatible = rsCompatible;
     }
 
@@ -41,5 +43,36 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
         if (rsCompatible) {
             subscription.cancel();
         }
+    }
+
+    @Override
+    public void onNext(T item) {
+        if (rsCompatible) {
+            // https://github.com/reactive-streams/reactive-streams-jvm#2.13
+            Objects.requireNonNull(item);
+        }
+        super.onNext(item);
+    }
+
+    @Override
+    public void onSubscribe(Flow.Subscription s) {
+        if (rsCompatible) {
+            // https://github.com/reactive-streams/reactive-streams-jvm#2.13
+            Objects.requireNonNull(s);
+            // https://github.com/reactive-streams/reactive-streams-jvm#2.5
+            if (Objects.nonNull(super.getSubscription())) {
+                s.cancel();
+            }
+        }
+        super.onSubscribe(s);
+    }
+
+    @Override
+    public void onError(Throwable ex) {
+        if (rsCompatible) {
+            // https://github.com/reactive-streams/reactive-streams-jvm#2.13
+            Objects.requireNonNull(ex);
+        }
+        super.onError(ex);
     }
 }

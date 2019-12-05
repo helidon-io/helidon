@@ -17,7 +17,6 @@
 
 package io.helidon.microrofile.reactive;
 
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,12 +29,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import io.helidon.common.reactive.DropWhileProcessor;
+import io.helidon.common.reactive.FilterProcessor;
+import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.PeekProcessor;
+import io.helidon.common.reactive.RSCompatibleProcessor;
+import io.helidon.common.reactive.TakeWhileProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -776,8 +783,6 @@ public class EngineTest {
     }
 
     @Test
-    @Disabled
-        //TODO: Lot of regression
     void coupledCancelOnPublisherFail() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Throwable> subscriberFailed = new CompletableFuture<>();
         CompletableFuture<Void> upstreamCancelled = new CompletableFuture<>();
@@ -804,7 +809,6 @@ public class EngineTest {
 
     @Test
     @Disabled
-        //TODO: Lot of regression
     void coupledCancelOnUpstreamFail() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> publisherCancelled = new CompletableFuture<>();
         CompletableFuture<Throwable> downstreamFailed = new CompletableFuture<>();
@@ -831,5 +835,68 @@ public class EngineTest {
                 .run()
                 .toCompletableFuture()
                 .get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void mapOnError() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> cancelled = new CompletableFuture<>();
+        CompletionStage<List<Object>> result = ReactiveStreams.generate(() -> "test")
+                .onTerminate(() -> cancelled.complete(null))
+                .map(foo -> {
+                    throw new TestRuntimeException();
+                })
+                .toList()
+                .run();
+        cancelled.get(1, TimeUnit.SECONDS);
+        assertThrows(ExecutionException.class, () -> result.toCompletableFuture().get(1, TimeUnit.SECONDS), TestRuntimeException.TEST_MSG);
+    }
+
+    @Test
+    void finiteStream() throws InterruptedException, ExecutionException, TimeoutException {
+        finiteOnCompleteTest(new PeekProcessor<>(integer -> Function.identity()));
+        finiteOnCompleteTest(new FilterProcessor<>(integer -> true));
+        finiteOnCompleteTest(new TakeWhileProcessor<>(integer -> true));
+        finiteOnCompleteTest(new DropWhileProcessor<>(integer -> false));
+    }
+
+    @Test
+    void limitProcessorTest() throws InterruptedException, TimeoutException, ExecutionException {
+        testProcessor(new FilterProcessor<>(n -> n < 3), s -> {
+            s.request(1);
+            s.request(2);
+        }, 3);
+        testProcessor(new FilterProcessor<>(n -> n < 6), s -> {
+            s.request(1);
+            s.request(2);
+        }, 6);
+        testProcessor(new FilterProcessor<>(n -> n < 5), s -> {
+            s.request(1);
+            s.request(2);
+        }, 6);
+    }
+
+    private <T, U> void finiteOnCompleteTest(Flow.Processor<Integer, Integer> processor)
+            throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> completed = new CompletableFuture<>();
+        ReactiveStreams.of(1, 2, 3)
+                .via(HybridProcessor.from(processor))
+                .onComplete(() -> completed.complete(null))
+                .toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+
+        completed.get(1, TimeUnit.SECONDS);
+    }
+
+    private void testProcessor(Flow.Processor<Integer, Integer> processor,
+                               Consumer<CountingSubscriber> testBody,
+                               int expectedSum) {
+        if (processor instanceof RSCompatibleProcessor) {
+            ((RSCompatibleProcessor<Integer, Integer>) processor).setRSCompatible(true);
+        }
+        CountingSubscriber subscriber = new CountingSubscriber();
+        IntSequencePublisher intSequencePublisher = new IntSequencePublisher();
+        intSequencePublisher.subscribe(HybridProcessor.from(processor));
+        processor.subscribe(HybridSubscriber.from(subscriber));
+        testBody.accept(subscriber);
+        assertEquals(expectedSum, subscriber.getSum().get());
     }
 }

@@ -18,6 +18,7 @@
 package io.helidon.microprofile.reactive;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -110,6 +111,8 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         public void cancel() {
             subscription.cancel();
             innerSubscription.cancel();
+            // https://github.com/reactive-streams/reactive-streams-jvm#3.13
+            subscriber = null;
         }
     }
 
@@ -145,7 +148,8 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     @Override
     public void onError(Throwable t) {
         Objects.requireNonNull(t);
-        subscriber.onError(t);
+        Optional.ofNullable(subscriber)
+                .ifPresent(s -> s.onError(t));
     }
 
     @Override

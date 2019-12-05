@@ -97,6 +97,10 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
             @Override
             public void onSubscribe(Subscription s) {
                 Objects.requireNonNull(s);
+                // https://github.com/reactive-streams/reactive-streams-jvm#2.5
+                if (Objects.nonNull(this.subscription)) {
+                    s.cancel();
+                }
                 try {
                     cumulatedVal = collectStage.getCollector().supplier().get();
                 } catch (Throwable t) {

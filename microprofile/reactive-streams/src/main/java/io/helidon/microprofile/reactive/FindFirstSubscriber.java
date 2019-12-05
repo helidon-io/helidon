@@ -35,6 +35,10 @@ public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, Sub
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
         Objects.requireNonNull(subscription);
+        // https://github.com/reactive-streams/reactive-streams-jvm#2.5
+        if (Objects.nonNull(this.subscription)) {
+            subscription.cancel();
+        }
         this.subscription = subscription;
         this.subscription.request(1);
     }

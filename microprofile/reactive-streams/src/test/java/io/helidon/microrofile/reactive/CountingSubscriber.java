@@ -15,30 +15,49 @@
  *
  */
 
-package io.helidon.microprofile.reactive;
+package io.helidon.microrofile.reactive;
 
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.reactive.Flow;
+import io.helidon.microprofile.reactive.ExceptionUtils;
 
-public class CancelSubscriber implements Flow.Subscriber<Object> {
-    
+public class CountingSubscriber implements Flow.Subscriber<Integer> {
+    private Flow.Subscription subscription;
+    public AtomicInteger sum = new AtomicInteger(0);
+    public CompletableFuture<AtomicInteger> completed = new CompletableFuture<>();
+
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        subscription.cancel();
+        this.subscription = subscription;
     }
 
     @Override
-    public void onNext(Object item) {
-        throw new CancellationException();
+    public void onNext(Integer item) {
+        System.out.println(item);
+        sum.addAndGet((int) item);
     }
 
     @Override
     public void onError(Throwable throwable) {
-        // Cancel ignores upstream failures
+        ExceptionUtils.throwUncheckedException(throwable);
     }
 
     @Override
     public void onComplete() {
+        completed.complete(sum);
+    }
+
+    public void request(long n) {
+        subscription.request(n);
+    }
+
+    public void cancel(){
+        subscription.cancel();
+    }
+
+    public AtomicInteger getSum(){
+        return sum;
     }
 }
