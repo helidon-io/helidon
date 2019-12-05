@@ -227,7 +227,12 @@ public class CommandRetrier {
 
         CheckedFunction<? extends Throwable, ?> fallbackFunction = t -> {
             final CommandFallback fallback = new CommandFallback(context, introspector, t);
-            return fallback.execute();
+            Object result = fallback.execute();
+            // If fallback for @Asynchronous method, get result of future
+            if (result instanceof Future<?>) {
+                result = ((Future<?>) result).get();
+            }
+            return result;
         };
 
         try {
