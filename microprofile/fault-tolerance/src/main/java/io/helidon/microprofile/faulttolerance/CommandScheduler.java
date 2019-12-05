@@ -111,7 +111,8 @@ public class CommandScheduler implements Scheduler {
 
             @Override
             public boolean cancel(boolean mayInterruptIfRunning) {
-                CommandRetrier.CommandCallable<?> unwrapped = unwrapCallable(callable);
+
+                CommandCompletableFuture<?> unwrapped = unwrapFuture(callable);
                 if (unwrapped != null) {
                     FaultToleranceCommand command = unwrapped.getCommand();
                     BulkheadHelper bulkheadHelper = command.getBulkheadHelper();
@@ -145,21 +146,44 @@ public class CommandScheduler implements Scheduler {
         };
     }
 
+//    /**
+//     * Get access to underlying command from wrapped future. First unwrap wrapper
+//     * created by Failsafe and then access our wrapper.
+//     *
+//     * @param callable Callable to be unwrapped
+//     * @return Unwrapped callable or {@code null} if cannot be unwrapped.
+//     */
+//    private static CommandCompletableFuture<?> unwrapFuture(Callable<?> callable) {
+//        Field[] fields = callable.getClass().getDeclaredFields();
+//        if (fields.length > 0) {
+//            try {
+//                fields[0].setAccessible(true);
+//                Object unwrapped = fields[0].get(callable);
+//                if (unwrapped instanceof CommandCompletableFuture<?>) {
+//                    return (CommandCompletableFuture<?>) unwrapped;
+//                }
+//            } catch (IllegalAccessException e) {
+//                // falls through
+//            }
+//        }
+//        return null;        // could not unwrap
+//    }
+
     /**
-     * Get access to underlying command from wrapped callable. First unwrap wrapper
+     * Get access to underlying command from wrapped future. First unwrap wrapper
      * created by Failsafe and then access our wrapper.
      *
      * @param callable Callable to be unwrapped
      * @return Unwrapped callable or {@code null} if cannot be unwrapped.
      */
-    private static CommandRetrier.CommandCallable<?> unwrapCallable(Callable<?> callable) {
+    private static CommandCompletableFuture<?> unwrapFuture(Callable<?> callable) {
         Field[] fields = callable.getClass().getDeclaredFields();
         if (fields.length > 0) {
             try {
                 fields[0].setAccessible(true);
-                Callable<?> unwrapped = (Callable<?>) fields[0].get(callable);
-                if (unwrapped instanceof CommandRetrier.CommandCallable<?>) {
-                    return (CommandRetrier.CommandCallable<?>) unwrapped;
+                Object unwrapped = fields[0].get(callable);
+                if (unwrapped instanceof CommandCompletableFuture<?>) {
+                    return (CommandCompletableFuture<?>) unwrapped;
                 }
             } catch (IllegalAccessException e) {
                 // falls through

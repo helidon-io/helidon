@@ -26,16 +26,16 @@ import net.jodah.failsafe.FailsafeFuture;
 import net.jodah.failsafe.internal.util.Assert;
 
 /**
- * A future whose delegate is a {@code FailsafeFuture} whose delegate, in
+ * A future whose delegate is a {@code Future} (e.g., a {@code FailsafeFuture} whose delegate, in
  * turn, is a future returned by a bean's method or the value returned
  * by a fallback method. Calling a getter will undo the chain of futures
  * (if necessary) and return the final value.
  */
 class FailsafeChainedFuture<T> implements Future<T> {
 
-    private final FailsafeFuture<T> delegate;
+    private final Future<T> delegate;
 
-    FailsafeChainedFuture(FailsafeFuture<T> delegate) {
+    FailsafeChainedFuture(Future<T> delegate) {
         this.delegate = delegate;
     }
 
