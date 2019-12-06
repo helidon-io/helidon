@@ -37,6 +37,13 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
         counter = new AtomicLong(limit);
     }
 
+    @Override
+    public void subscribe(Flow.Subscriber<? super T> s) {
+        super.subscribe(s);
+        if (counter.get() == 0L) {
+            tryComplete();
+        }
+    }
 
     @Override
     protected void tryRequest(Flow.Subscription s) {

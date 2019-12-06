@@ -20,22 +20,28 @@ package io.helidon.microrofile.reactive;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.microprofile.reactive.ExceptionUtils;
 
-public class CountingSubscriber implements Flow.Subscriber<Integer> {
-    private Flow.Subscription subscription;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+public class CountingSubscriber implements Subscriber<Integer> {
+    private Subscription subscription;
     public AtomicInteger sum = new AtomicInteger(0);
+    public AtomicInteger requestCount = new AtomicInteger(0);
     public CompletableFuture<AtomicInteger> completed = new CompletableFuture<>();
 
     @Override
-    public void onSubscribe(Flow.Subscription subscription) {
+    public void onSubscribe(Subscription subscription) {
         this.subscription = subscription;
     }
 
     @Override
     public void onNext(Integer item) {
-        System.out.println(item);
+        System.out.println("Received: " + item);
+        requestCount.incrementAndGet();
         sum.addAndGet((int) item);
     }
 
@@ -50,14 +56,23 @@ public class CountingSubscriber implements Flow.Subscriber<Integer> {
     }
 
     public void request(long n) {
+        System.out.println("Requested: " + n);
         subscription.request(n);
     }
 
-    public void cancel(){
+    public void cancel() {
         subscription.cancel();
     }
 
-    public AtomicInteger getSum(){
+    public AtomicInteger getSum() {
         return sum;
+    }
+
+    public void expectRequestCount(int n) {
+        assertEquals(n, requestCount.get());
+    }
+
+    public void expectSum(int n) {
+        assertEquals(n, sum.get());
     }
 }

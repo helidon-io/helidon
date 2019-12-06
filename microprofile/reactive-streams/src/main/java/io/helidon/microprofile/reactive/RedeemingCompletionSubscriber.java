@@ -18,6 +18,7 @@
 package io.helidon.microprofile.reactive;
 
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
@@ -76,6 +77,7 @@ class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.re
             @Override
             public void cancel() {
                 s.cancel();
+                completion.toCompletableFuture().completeExceptionally(new CancellationException());
                 //Base processor breaks cancel->onComplete loop, so listen even for downstream call
                 //completion.toCompletableFuture().complete(null);
             }

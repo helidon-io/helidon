@@ -53,37 +53,43 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
     @Override
     public void onError(Throwable ex) {
         Objects.requireNonNull(ex);
-        if (Objects.nonNull(supplier)) {
-            submit(supplier.apply(ex));
-            tryComplete();
-        } else {
-            publisherSupplier.apply(ex).subscribe(new Subscriber<T>() {
-                private Subscription subscription;
+        try {
+            if (Objects.nonNull(supplier)) {
 
-                @Override
-                public void onSubscribe(Subscription subscription) {
-                    Objects.requireNonNull(subscription);
-                    this.subscription = subscription;
-                    subscription.request(getRequestedCounter().get());
-                }
+                submit(supplier.apply(ex));
+                tryComplete();
 
-                @Override
-                public void onNext(T t) {
-                    submit(t);
-                    subscription.request(1);
-                }
+            } else {
+                publisherSupplier.apply(ex).subscribe(new Subscriber<T>() {
+                    private Subscription subscription;
 
-                @Override
-                public void onError(Throwable t) {
-                    Objects.requireNonNull(t);
-                    superError(t);
-                }
+                    @Override
+                    public void onSubscribe(Subscription subscription) {
+                        Objects.requireNonNull(subscription);
+                        this.subscription = subscription;
+                        subscription.request(getRequestedCounter().get());
+                    }
 
-                @Override
-                public void onComplete() {
-                    OnErrorResumeProcessor.this.onComplete();
-                }
-            });
+                    @Override
+                    public void onNext(T t) {
+                        submit(t);
+                        subscription.request(1);
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        Objects.requireNonNull(t);
+                        superError(t);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        OnErrorResumeProcessor.this.onComplete();
+                    }
+                });
+            }
+        } catch (Throwable t) {
+            superError(t);
         }
     }
 

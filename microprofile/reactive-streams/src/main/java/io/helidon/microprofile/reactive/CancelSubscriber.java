@@ -17,28 +17,54 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.reactive.Flow;
+import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
-public class CancelSubscriber implements Flow.Subscriber<Object> {
-    
+import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
+import org.reactivestreams.Subscriber;
+
+public class CancelSubscriber implements Flow.Subscriber<Object>, SubscriberWithCompletionStage<Object, Object> {
+
+    private CompletableFuture<Object> completionStage = new CompletableFuture<>();
+
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
         subscription.cancel();
+        this.onComplete();
     }
 
     @Override
     public void onNext(Object item) {
+        Objects.requireNonNull(item);
         throw new CancellationException();
     }
 
     @Override
     public void onError(Throwable throwable) {
-        // Cancel ignores upstream failures
+        completionStage.completeExceptionally(throwable);
     }
 
     @Override
     public void onComplete() {
+        if (!completionStage.isDone()) {
+            Object optItem = (Object) Optional.empty();
+            completionStage.complete(optItem);
+        }
+    }
+
+    @Override
+    public CompletionStage<Object> getCompletion() {
+        return completionStage;
+    }
+
+    @Override
+    public Subscriber<Object> getSubscriber() {
+        return HybridSubscriber.from(this);
     }
 }

@@ -36,6 +36,10 @@ public class OfPublisher implements Flow.Publisher<Object> {
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
+                if (n <= 0) {
+                    // https://github.com/reactive-streams/reactive-streams-jvm#3.9
+                    subscriber.onError(new IllegalArgumentException("non-positive subscription request"));
+                }
                 for (long i = 0; i < n; i++) {
                     if (iterator.hasNext() && !cancelled.get()) {
                         subscriber.onNext(iterator.next());

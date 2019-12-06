@@ -44,6 +44,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     private final AtomicLong requestCounter = new AtomicLong();
     private Subscription innerSubscription;
 
+    private Optional<Throwable> error = Optional.empty();
 
     private FlatMapProcessor() {
     }
@@ -110,7 +111,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         @Override
         public void cancel() {
             subscription.cancel();
-            innerSubscription.cancel();
+            Optional.ofNullable(innerSubscription).ifPresent(Subscription::cancel);
             // https://github.com/reactive-streams/reactive-streams-jvm#3.13
             subscriber = null;
         }
@@ -122,10 +123,14 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         if (Objects.nonNull(this.subscription)) {
             subscriber.onSubscribe(new FlatMapSubscription());
         }
+        error.ifPresent(subscriber::onError);
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
+        if (Objects.nonNull(this.subscription)) {
+            subscription.cancel();
+        }
         this.subscription = subscription;
         if (Objects.nonNull(subscriber)) {
             subscriber.onSubscribe(new FlatMapSubscription());
@@ -147,17 +152,14 @@ public class FlatMapProcessor implements Processor<Object, Object> {
 
     @Override
     public void onError(Throwable t) {
-        Objects.requireNonNull(t);
+        this.error = Optional.of(t);
         Optional.ofNullable(subscriber)
-                .ifPresent(s -> s.onError(t));
+                .ifPresent(s -> s.onError(this.error.get()));
     }
 
     @Override
     public void onComplete() {
         subscriber.onComplete();
-        if (Objects.nonNull(innerSubscription)) {
-            innerSubscription.cancel();
-        }
     }
 
     private class InnerSubscriber implements Subscriber<Object> {

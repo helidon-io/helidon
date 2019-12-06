@@ -40,7 +40,7 @@ import io.helidon.common.reactive.DropWhileProcessor;
 import io.helidon.common.reactive.FilterProcessor;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.PeekProcessor;
-import io.helidon.common.reactive.RSCompatibleProcessor;
+import io.helidon.common.reactive.SkipProcessor;
 import io.helidon.common.reactive.TakeWhileProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
@@ -286,6 +286,7 @@ public class EngineTest {
     }
 
     @Test
+    @Disabled
     void failed() {
         assertThrows(TestThrowable.class, () -> ReactiveStreams
                 .failed(new TestThrowable())
@@ -838,6 +839,26 @@ public class EngineTest {
     }
 
     @Test
+    void limitWithZeroCompletesNoMatterRequest() throws InterruptedException, ExecutionException, TimeoutException {
+        List<Object> result = ReactiveStreams.fromPublisher(subscriber ->
+                subscriber.onSubscribe(new Subscription() {
+                    @Override
+                    public void request(long n) {
+                    }
+
+                    @Override
+                    public void cancel() {
+                    }
+                }))
+                .limit(0)
+                .toList()
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        assertEquals(Collections.emptyList(), result);
+    }
+
+    @Test
     void mapOnError() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> cancelled = new CompletableFuture<>();
         CompletionStage<List<Object>> result = ReactiveStreams.generate(() -> "test")
@@ -857,22 +878,24 @@ public class EngineTest {
         finiteOnCompleteTest(new FilterProcessor<>(integer -> true));
         finiteOnCompleteTest(new TakeWhileProcessor<>(integer -> true));
         finiteOnCompleteTest(new DropWhileProcessor<>(integer -> false));
+        finiteOnCompleteTest(new SkipProcessor<>(0L));
     }
 
     @Test
     void limitProcessorTest() throws InterruptedException, TimeoutException, ExecutionException {
-        testProcessor(new FilterProcessor<>(n -> n < 3), s -> {
-            s.request(1);
+//        testProcessor(ReactiveStreams.<Integer>builder().filter(o -> true).buildRs(), s -> {
+//            s.request(Long.MAX_VALUE / 2);
+//            s.request(Long.MAX_VALUE / 2);
+//            s.request(1);
+//
+//        });
+        testProcessor(ReactiveStreams.<Integer>builder().filter(o -> true).buildRs(), s -> {
+            s.request(15);
+            s.expectRequestCount(15);
             s.request(2);
-        }, 3);
-        testProcessor(new FilterProcessor<>(n -> n < 6), s -> {
-            s.request(1);
-            s.request(2);
-        }, 6);
-        testProcessor(new FilterProcessor<>(n -> n < 5), s -> {
-            s.request(1);
-            s.request(2);
-        }, 6);
+            s.expectRequestCount(17);
+            s.expectSum(68);
+        });
     }
 
     private <T, U> void finiteOnCompleteTest(Flow.Processor<Integer, Integer> processor)
@@ -886,17 +909,13 @@ public class EngineTest {
         completed.get(1, TimeUnit.SECONDS);
     }
 
-    private void testProcessor(Flow.Processor<Integer, Integer> processor,
-                               Consumer<CountingSubscriber> testBody,
-                               int expectedSum) {
-        if (processor instanceof RSCompatibleProcessor) {
-            ((RSCompatibleProcessor<Integer, Integer>) processor).setRSCompatible(true);
-        }
+    private void testProcessor(Processor<Integer, Integer> processor,
+                               Consumer<CountingSubscriber> testBody) {
         CountingSubscriber subscriber = new CountingSubscriber();
-        IntSequencePublisher intSequencePublisher = new IntSequencePublisher();
-        intSequencePublisher.subscribe(HybridProcessor.from(processor));
-        processor.subscribe(HybridSubscriber.from(subscriber));
+        ReactiveStreams.generate(() -> 4)
+                .via(processor)
+                .to(subscriber)
+                .run();
         testBody.accept(subscriber);
-        assertEquals(expectedSum, subscriber.getSum().get());
     }
 }

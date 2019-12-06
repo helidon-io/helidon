@@ -35,7 +35,9 @@ public class TappedProcessor extends RSCompatibleProcessor<Object, Object> {
     }
 
     public static TappedProcessor create() {
-        return new TappedProcessor();
+        TappedProcessor processor = new TappedProcessor();
+        processor.setRSCompatible(true);
+        return processor;
     }
 
     public TappedProcessor onNext(Function<Object, Object> function) {

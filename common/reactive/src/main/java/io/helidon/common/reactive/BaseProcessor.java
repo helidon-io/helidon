@@ -78,7 +78,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void onNext(T item) {
-        if (isSubscriberClosed()) {
+        if (subscriber.isClosed()) {
             throw new IllegalStateException("Subscriber is closed!");
         }
         try {
@@ -86,10 +86,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         } catch (Throwable ex) {
             onError(ex);
         }
-    }
-
-    protected boolean isSubscriberClosed() {
-        return subscriber.isClosed();
     }
 
     @Override

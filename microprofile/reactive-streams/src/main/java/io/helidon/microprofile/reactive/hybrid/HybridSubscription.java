@@ -18,6 +18,7 @@
 package io.helidon.microprofile.reactive.hybrid;
 
 import java.security.InvalidParameterException;
+import java.util.Optional;
 
 import io.helidon.common.reactive.Flow;
 
@@ -32,6 +33,7 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
 
     private Flow.Subscription flowSubscription;
     private Subscription reactiveSubscription;
+    private Optional<Runnable> onCancel = Optional.empty();
 
     private HybridSubscription(Flow.Subscription flowSubscription) {
         this.flowSubscription = flowSubscription;
@@ -67,6 +69,11 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
         return new HybridSubscription(subscription);
     }
 
+    public HybridSubscription onCancel(Runnable runnable){
+        this.onCancel = Optional.of(runnable);
+        return this;
+    }
+
     @Override
     public void request(long n) {
         if (flowSubscription != null) {
@@ -87,5 +94,6 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
         } else {
             throw new InvalidParameterException("Hybrid subscription has no subscription");
         }
+        onCancel.ifPresent(Runnable::run);
     }
 }

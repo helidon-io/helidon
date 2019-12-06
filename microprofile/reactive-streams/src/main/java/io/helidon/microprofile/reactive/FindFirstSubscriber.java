@@ -38,9 +38,10 @@ public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, Sub
         // https://github.com/reactive-streams/reactive-streams-jvm#2.5
         if (Objects.nonNull(this.subscription)) {
             subscription.cancel();
+        } else {
+            this.subscription = subscription;
+            this.subscription.request(1);
         }
-        this.subscription = subscription;
-        this.subscription.request(1);
     }
 
 
@@ -54,7 +55,7 @@ public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, Sub
 
     @Override
     public void onError(Throwable throwable) {
-        ExceptionUtils.throwUncheckedException(throwable);
+        completionStage.completeExceptionally(throwable);
     }
 
     @Override

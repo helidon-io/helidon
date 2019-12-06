@@ -22,6 +22,7 @@ import java.util.Objects;
 public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
     private boolean rsCompatible = false;
+    private ReferencedSubscriber<? super U> referencedSubscriber;
 
     public void setRSCompatible(boolean rsCompatible) {
         this.rsCompatible = rsCompatible;
@@ -32,16 +33,25 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     }
 
     @Override
-    protected boolean isSubscriberClosed() {
-        // avoid checking for closed subscriber
-        // https://github.com/reactive-streams/reactive-streams-jvm#2.8
-        return !rsCompatible && super.isSubscriberClosed();
+    public void request(long n) {
+        if (rsCompatible && n <= 0) {
+            // https://github.com/reactive-streams/reactive-streams-jvm#3.9
+            onError(new IllegalArgumentException("non-positive subscription request"));
+        }
+        super.request(n);
+    }
+
+    @Override
+    public void subscribe(Flow.Subscriber<? super U> s) {
+        referencedSubscriber = ReferencedSubscriber.create(s);
+        super.subscribe(referencedSubscriber);
     }
 
     @Override
     protected void hookOnCancel(Flow.Subscription subscription) {
         if (rsCompatible) {
             subscription.cancel();
+            referencedSubscriber.releaseReference();
         }
     }
 
@@ -50,8 +60,14 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
         if (rsCompatible) {
             // https://github.com/reactive-streams/reactive-streams-jvm#2.13
             Objects.requireNonNull(item);
+            try {
+                hookOnNext(item);
+            } catch (Throwable ex) {
+                onError(ex);
+            }
+        } else {
+            super.onNext(item);
         }
-        super.onNext(item);
     }
 
     @Override
@@ -74,5 +90,42 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
             Objects.requireNonNull(ex);
         }
         super.onError(ex);
+    }
+
+    private static class ReferencedSubscriber<T> implements Flow.Subscriber<T> {
+
+        private Flow.Subscriber<T> subscriber;
+
+        private ReferencedSubscriber(Flow.Subscriber<T> subscriber) {
+            this.subscriber = subscriber;
+        }
+
+        public static <T> ReferencedSubscriber<T> create(Flow.Subscriber<T> subscriber) {
+            return new ReferencedSubscriber<>(subscriber);
+        }
+
+        public void releaseReference() {
+            this.subscriber = null;
+        }
+
+        @Override
+        public void onSubscribe(Flow.Subscription subscription) {
+            subscriber.onSubscribe(subscription);
+        }
+
+        @Override
+        public void onNext(T item) {
+            subscriber.onNext(item);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            subscriber.onError(throwable);
+        }
+
+        @Override
+        public void onComplete() {
+            subscriber.onComplete();
+        }
     }
 }

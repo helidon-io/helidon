@@ -142,9 +142,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         registerStage(Stage.Cancel.class, stage -> {
             CancelSubscriber cancelSubscriber = new CancelSubscriber();
             subscribe(cancelSubscriber);
-            this.subscriberWithCompletionStage =
-                    RedeemingCompletionSubscriber.of(HybridSubscriber.from(cancelSubscriber),
-                            CompletableFuture.completedFuture(null));
+            this.subscriberWithCompletionStage = cancelSubscriber;
         });
         registerStage(Stage.FindFirst.class, stage -> {
             FindFirstSubscriber<Object> firstSubscriber = new FindFirstSubscriber<>();

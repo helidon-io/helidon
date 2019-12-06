@@ -52,6 +52,10 @@ public class ConcatPublisher<T> implements Publisher<T> {
         subscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
+                if (n <= 0) {
+                    // https://github.com/reactive-streams/reactive-streams-jvm#3.9
+                    subscriber.onError(new IllegalArgumentException("non-positive subscription request"));
+                }
                 requested.set(n);
                 if (!firstProcessor.complete) {
                     firstProcessor.subscription.request(n);
