@@ -425,7 +425,6 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             getCounter(method, BREAKER_CALLS_FAILED_TOTAL).inc();
             // If it will open, increment counter
             if (breakerWillOpen) {
-                System.out.println("### incrementing breaker");
                 getCounter(method, BREAKER_OPENED_TOTAL).inc();
             }
         }
