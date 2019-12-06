@@ -23,8 +23,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
@@ -32,12 +34,13 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.MissingValueException;
+import io.helidon.config.MetaConfig;
 import io.helidon.config.git.GitConfigSourceBuilder.GitEndpoint;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.PollingStrategyProvider;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import org.eclipse.jgit.api.Git;
@@ -96,8 +99,8 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testMaster() throws Exception {
-        try (ConfigSource source = GitConfigSourceBuilder
-                .create("application.properties")
+        try (ConfigSource source = GitConfigSource
+                .builder("application.properties")
                 .uri(URI.create(fileUri()))
                 .parser(ConfigParsers.properties())
                 .build()) {
@@ -111,8 +114,8 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testBranch() throws Exception {
-        try (ConfigSource source = GitConfigSourceBuilder
-                .create("application.properties")
+        try (ConfigSource source = GitConfigSource
+                .builder("application.properties")
                 .uri(URI.create(fileUri()))
                 .branch("test")
                 .parser(ConfigParsers.properties())
@@ -133,13 +136,13 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .setURI(fileUri())
                 .setDirectory(tempDir)
                 .call();
-             ConfigSource source = GitConfigSourceBuilder
-                .create("application.properties")
-                .directory(tempDir.toPath())
-                .parser(ConfigParsers.properties())
-                .build()) {
+                ConfigSource source = GitConfigSource
+                        .builder("application.properties")
+                        .directory(tempDir.toPath())
+                        .parser(ConfigParsers.properties())
+                        .build()) {
 
-             assertThat(tempDir.toPath().resolve("application.properties").toFile().exists(), is(true));
+            assertThat(tempDir.toPath().resolve("application.properties").toFile().exists(), is(true));
         }
     }
 
@@ -147,8 +150,8 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
     public void testDirectoryEmpty() throws IOException, Exception {
         Path tempDir = folder.newFolder().toPath();
 
-        try (ConfigSource source = GitConfigSourceBuilder
-                .create("application.properties")
+        try (ConfigSource source = GitConfigSource
+                .builder("application.properties")
                 .uri(URI.create(fileUri()))
                 .directory(tempDir)
                 .parser(ConfigParsers.properties())
@@ -163,24 +166,26 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         Path tempDir = folder.newFolder().toPath();
         final ConfigException ce = assertThrows(ConfigException.class, () -> {
             tempDir.resolve("dust").toFile().createNewFile();
-        GitConfigSourceBuilder
-                .create("application.properties")
-                .uri(URI.create(fileUri()))
-                .directory(tempDir)
-                .parser(ConfigParsers.properties())
-                .build();
-                });
+            GitConfigSource
+                    .builder("application.properties")
+                    .uri(URI.create(fileUri()))
+                    .directory(tempDir)
+                    .parser(ConfigParsers.properties())
+                    .build();
+        });
 
-        assertThat(ce.getMessage(), startsWith(String.format("Directory '%s' is not empty and it is not a valid repository.", tempDir.toString())));
+        assertThat(ce.getMessage(),
+                   startsWith(String.format("Directory '%s' is not empty and it is not a valid repository.",
+                                            tempDir.toString())));
     }
 
     @Test
     public void testDirAndUriIsEmpty() throws IOException {
         final ConfigException ce = assertThrows(ConfigException.class, () -> {
-            GitConfigSourceBuilder
-                .create("application.properties")
-                .parser(ConfigParsers.properties())
-                .build();
+            GitConfigSource
+                    .builder("application.properties")
+                    .parser(ConfigParsers.properties())
+                    .build();
         });
         assertThat(ce.getMessage(), startsWith("Directory or Uri must be set."));
     }
@@ -190,8 +195,8 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
         checkoutBranch("refs/heads/master");
 
-        try (ConfigSource source = GitConfigSourceBuilder
-                .create("application.properties")
+        try (ConfigSource source = GitConfigSource
+                .builder("application.properties")
                 .uri(URI.create(fileUri()))
                 .pollingStrategy(regular(Duration.ofMillis(50)))
                 .parser(ConfigParsers.properties())
@@ -237,10 +242,10 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .setURI(fileUri())
                 .setDirectory(dir.toFile())
                 .call();
-            ConfigSource source = GitConfigSourceBuilder.create("application.conf")
-                .uri(URI.create(fileUri()))
-                .directory(dir)
-                .build()) {
+                ConfigSource source = GitConfigSource.builder("application.conf")
+                        .uri(URI.create(fileUri()))
+                        .directory(dir)
+                        .build()) {
 
             assertThat(source.description(), is(String.format("GitConfig[%s|%s#application.conf]", dir, fileUri())));
         }
@@ -254,9 +259,9 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .setURI(fileUri())
                 .setDirectory(dir.toFile())
                 .call();
-            ConfigSource source = GitConfigSourceBuilder.create("application.conf")
-                .directory(dir)
-                .build())  {
+                ConfigSource source = GitConfigSource.builder("application.conf")
+                        .directory(dir)
+                        .build()) {
 
             assertThat(source.description(), is(String.format("GitConfig[%s#application.conf]", dir)));
         }
@@ -270,9 +275,9 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .setURI(fileUri())
                 .setDirectory(dir.toFile())
                 .call();
-            ConfigSource source = GitConfigSourceBuilder.create("application.conf")
-                .uri(URI.create(fileUri()))
-                .build()) {
+                ConfigSource source = GitConfigSource.builder("application.conf")
+                        .uri(URI.create(fileUri()))
+                        .build()) {
 
             assertThat(source.description(), is(String.format("GitConfig[%s#application.conf]", fileUri())));
         }
@@ -280,8 +285,8 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testFromConfigNothing() {
-        assertThrows(MissingValueException.class, () -> {
-            GitConfigSourceBuilder.create(Config.empty());
+        assertThrows(IllegalArgumentException.class, () -> {
+            GitConfigSource.create(Config.empty());
         });
     }
 
@@ -291,7 +296,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
-        GitConfigSourceBuilder builder = GitConfigSourceBuilder.create(metaConfig);
+        GitConfigSourceBuilder builder = GitConfigSource.builder().config(metaConfig);
 
         assertThat(builder.target().path(), is("application.properties"));
         assertThat(builder.target().uri(), is(nullValue()));
@@ -310,7 +315,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
-        GitConfigSourceBuilder builder = GitConfigSourceBuilder.create(metaConfig);
+        GitConfigSourceBuilder builder = GitConfigSource.builder().config(metaConfig);
 
         assertThat(builder.target().path(), is("application.properties"));
         assertThat(builder.target().uri(), is(URI.create(fileUri())));
@@ -327,11 +332,11 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 "uri", fileUri(),
                 "branch", "test",
                 "directory", directory.toString(),
-                "polling-strategy.class", TestingGitEndpointPollingStrategy.class.getName())))
+                "polling-strategy.type", TestingGitEndpointPollingStrategyProvider.TYPE)))
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
-        GitConfigSourceBuilder builder = GitConfigSourceBuilder.create(metaConfig);
+        GitConfigSourceBuilder builder = GitConfigSource.builder().config(metaConfig);
 
         assertThat(builder.target().path(), is("application.properties"));
         assertThat(builder.target().uri(), is(URI.create(fileUri())));
@@ -353,21 +358,20 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         Path directory = folder.newFolder().toPath();
 
         Config metaConfig = Config.builder(ConfigSources.create(ObjectNode.builder()
-                                                                          .addValue("class",
-                                                                                    GitConfigSource.class.getName())
-                                                                          .addObject("properties", ObjectNode.builder()
-                                                                                  .addValue("path", "application.properties")
-                                                                                  .addValue("uri", fileUri())
-                                                                                  .addValue("branch", "test")
-                                                                                  .addValue("directory", directory.toString())
-                                                                                  .build())
-                                                                          .build()))
+                                                                        .addValue("type",
+                                                                                  GitConfigSourceProvider.TYPE)
+                                                                        .addObject("properties", ObjectNode.builder()
+                                                                                .addValue("path", "application.properties")
+                                                                                .addValue("uri", fileUri())
+                                                                                .addValue("branch", "test")
+                                                                                .addValue("directory", directory.toString())
+                                                                                .build())
+                                                                        .build()))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
-        try (ConfigSource source = metaConfig.as(ConfigSource.class).get()) {
-
+        try (ConfigSource source = MetaConfig.configSource(metaConfig)) {
             assertThat(source, is(instanceOf(GitConfigSource.class)));
 
             GitConfigSource gitSource = (GitConfigSource) source;
@@ -383,19 +387,19 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         Path directory = folder.newFolder().toPath();
 
         Config metaConfig = Config.builder(ConfigSources.create(ObjectNode.builder()
-                                                                          .addValue("type", "git")
-                                                                          .addObject("properties", ObjectNode.builder()
-                                                                                  .addValue("path", "application.properties")
-                                                                                  .addValue("uri", fileUri())
-                                                                                  .addValue("branch", "test")
-                                                                                  .addValue("directory", directory.toString())
-                                                                                  .build())
-                                                                          .build()))
+                                                                        .addValue("type", "git")
+                                                                        .addObject("properties", ObjectNode.builder()
+                                                                                .addValue("path", "application.properties")
+                                                                                .addValue("uri", fileUri())
+                                                                                .addValue("branch", "test")
+                                                                                .addValue("directory", directory.toString())
+                                                                                .build())
+                                                                        .build()))
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        try (ConfigSource source = metaConfig.as(ConfigSource.class).get()) {
+        try (ConfigSource source = MetaConfig.configSource(metaConfig)) {
 
             assertThat(source, is(instanceOf(GitConfigSource.class)));
 
@@ -404,6 +408,30 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
             assertThat(gitSource.gitEndpoint().uri(), is(URI.create(fileUri())));
             assertThat(gitSource.gitEndpoint().branch(), is("test"));
             assertThat(gitSource.gitEndpoint().directory(), is(directory));
+        }
+    }
+
+    public static class TestingGitEndpointPollingStrategyProvider implements PollingStrategyProvider {
+        private static final String TYPE = "git-test";
+
+        @Override
+        public boolean supports(String type) {
+            return TYPE.equals(type);
+        }
+
+        @Override
+        public Function<Object, PollingStrategy> create(String type, Config metaConfig) {
+            return object -> {
+                if (object instanceof GitEndpoint) {
+                    return new TestingGitEndpointPollingStrategy((GitEndpoint) object);
+                }
+                throw new IllegalArgumentException("Testing polling strategy expects GitEndpoint, but got " + object);
+            };
+        }
+
+        @Override
+        public Set<String> supported() {
+            return CollectionsHelper.setOf(TYPE);
         }
     }
 
@@ -440,7 +468,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         private volatile Flow.Subscription subscription = null;
 
         CancelableSubscriber(CountDownLatch subscribeLatch,
-                CountDownLatch changeLatch) {
+                             CountDownLatch changeLatch) {
             this.subscribeLatch = subscribeLatch;
             this.changeLatch = changeLatch;
         }

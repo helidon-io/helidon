@@ -46,7 +46,6 @@ import io.helidon.security.jwt.jwk.JwkEC;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkOctet;
 import io.helidon.security.jwt.jwk.JwkRSA;
-import io.helidon.security.providers.jwt.JwtProvider;
 
 import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.jwt.Claims;

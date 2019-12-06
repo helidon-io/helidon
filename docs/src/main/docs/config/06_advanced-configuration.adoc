@@ -20,7 +20,7 @@
 
 = Advanced Configuration Topics
 :description: Helidon config advanced configuration
-:keywords: helidon, config
+:keywords: helidon, config, meta
 :toc: preamble
 :toclevels: 4
 
@@ -478,19 +478,14 @@ list of possible sources.
 
 ==== Loading Config by Specifying a Meta-configuration File [[Config-Advanced-Sources-MetaSource]]
 Your application loads
-the configuration specified by a meta-config file by:
-
-* invoking the link:{javadoc-base-url-api}/ConfigSources.html#load-io.helidon.config.Config-[`ConfigSources.load(Config)`]
+the configuration specified by a meta-config file by invoking the link:{javadoc-base-url-api}/MetaConfig.html#config-io.helidon.config.Config-[`MetaConfig.config(Config)`]
 method, passing a config object read from the meta-config source as the argument;
-* invoking the link:{javadoc-base-url-api}/Config.html#loadSourcesFrom-java.util.function.Supplier...[`Config.loadSourcesFrom`]
-method, or
-* invoking the link:{javadoc-base-url-api}/Config.html#builderLoadSourcesFrom-java.util.function.Supplier...[`Config.builderLoadSourceFrom`]
-method.
 
-These methods return either a `Config` tree or a `Config.Builder` which
-your application can further fine-tune before using to construct a `Config`
-tree. The config system interprets the meta-config as directions for how to
-build a config tree, rather than as the config data itself.
+If you desire a `Config.Builder` instead of a fully built `Config` instance,
+you can use the `Config.Builder.config(Config)` method to update the builder with
+meta configuration. Your application can further fine-tune this builder
+before using it to construct a `Config` tree. The config system interprets the meta-config
+as directions for how to build a config tree, rather than as the config data itself.
 
 ==== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
 The <<config/01_introduction.adoc,introduction>> section shows how to use
@@ -501,7 +496,8 @@ from which to load config sources to be used for the default config.
 The `Config.create()` method determines the default configuration from
 the following search:
 
-. Attempt to load _meta-config_ from at most one of the following, checked in this order:
+. Attempt to load _meta-config_ from at most one of the following files,
+first on the file system in current directory, then on classpath, checked in this order:
 .. `meta-config.yaml` - meta configuration file in YAML format
 .. `meta-config.conf` - meta configuration file in HOCON format
 .. `meta-config.json` - meta configuration file in JSON format
@@ -520,32 +516,17 @@ only if the classpath includes the corresponding parsers. The introduction secti
 section describes this further.
 
 ==== Meta-configuration File Format
-Each meta-configuration file must contain the top-level `sources` property that is an
-array (ordered list) of config sources. The meta-config file can contain other
-top-level keys as well but the config system ignores them when it interprets the contents as
-meta-configuration.
+See javadoc link:{javadoc-base-url-api}/Config.Builder.html#config-io.helidon.config.Config-[`Config.Builder.config(Config)`].
 
-Each `sources` property must contain exactly one of following top level properties:
+Meta configuration can be used to configure various options that are available on configuration
+builder.
+It must contain at least the list of sources to use to load configuration from.
 
-.Meta-configuration Required Top-level Property
-|===
-|Property Name |Usage
-
-|`type` a|Either: +
-
-* a predefined type (see <<MetaConfig-built-in-types,below>>), or
-* a custom config source ID
-|`class` a|Fully-qualified class name of either: +
-
-* a custom config source implementation, or
-* a builder class with a `build()` method that returns `ConfigSource`
-|===
-
-If you specify both `type` and `class`, the config system ignores the `class`
-setting.
-
-In addition, each `sources` property can optionally have a `properties` property
-which assigns type-specific attributes for the config source being defined.
+The root `sources` property contains an array (ordered) of objects defining each config source to
+be used.
+Each element of the array must contain at least the `type` property, determining the
+config source type (such as `system-properties`, `file`). It may also contain a `properties`
+property with additional configuration of the config source.
 
 ===== Built-in Types [[MetaConfig-built-in-types]]
 The config system supports these built-in types:
@@ -561,7 +542,7 @@ The config system supports these built-in types:
 |`directory` |Each file in directory used as config entry, with key = file name and value = file contents |`ConfigSources.directory(String)` |`path` - path to the directory to use
 |`url` |Specified URL is read as a config source |`ConfigSources.url(URL)` | `url` - URL from which to load the config
 |`prefixed` |Associated config source is loaded with the specified prefix |`ConfigSources.prefixed(String,Supplier)` a|* `key` - key of config element in associated source to load
-* `type` or `class` - associated config source specification
+* `type` - associated config source specification
 * `properties` - as needed to further qualify the associated config source
 |===
 
@@ -571,75 +552,50 @@ corresponding config source type. The JavaDoc for the related config source
 type builders lists the supported properties for each type. (For example,
 link:{javadoc-base-url-api}/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
 
-Here is example meta-configuration in HOCON format. Note how the `properties` sections
+Here is example meta-configuration in YAML format. Note how the `properties` sections
 are at the same level as the `type` or `class` within a `sources` array entry.
 
-[source,hocon]
-.Meta-configuration `config-meta-all.conf` illustrating all built-in sources available on the classpath
+[source,yaml]
+.Meta-configuration `meta-config.yaml` illustrating all built-in sources available on the classpath
 ----
-sources = [
-    {
-        type = "environment-variables"
-    }
-    {
-        type = "system-properties"
-    }
-    {
-        type = "directory"
-        properties {
-            path = "conf/secrets"
-            media-type-mapping {
-                yaml = "application/x-yaml"
-                password = "application/base64"
-            }
-            polling-strategy {
-                type = "regular"
-                properties {
-                    interval = "PT15S"
-                }
-            }
-        }
-    }
-    {
-        type = "url"
-        properties {
-            url = "http://config-service/my-config"
-            media-type = "application/hocon"
-            optional = true
-            retry-policy {
-                type = "repeat"
-                properties {
-                    retries = 3
-                }
-            }
-        }
-    }
-    {
-        type = "file"
-        properties {
-            path = "conf/env.yaml"
-            polling-strategy {
-                type = "watch"
-            }
-        }
-    }
-    {
-        type = "prefixed"
-        properties {
-            key = "app"
-            type = "classpath"
-            properties {
-                resource = "app.conf"
-            }
-        }
-    }
-    {
-        type = "classpath"
-        properties {
-            resource = "application.conf"
-        }
-    }
-]
+caching.enabled: false
+sources:
+  - type: "system-properties"
+  - type: "environment-variables"
+  - type: "directory"
+    properties:
+      path: "conf/secrets"
+      media-type-mapping:
+        yaml: "application/x-yaml"
+        password: "application/base64"
+        polling-strategy:
+          type: "regular"
+          properties:
+            interval: "PT15S"
+  - type: "url"
+    properties:
+      url: "http://config-service/my-config"
+      media-type: "application/hocon"
+      optional: true
+      retry-policy:
+        type: "repeat"
+        properties:
+          retries: 3
+  - type: "file"
+    properties:
+      optional: true
+      path: "conf/env.yaml"
+      polling-strategy:
+        type: "watch"
+  - type: "prefixed"
+    properties:
+      key: "app"
+      type: "classpath"
+      properties:
+        resource: "app.conf"
+  - type: "classpath"
+    properties:
+      resource: "application.conf"
 ----
 
 Note that the example shows how your meta-configuration can configure optional features such as polling
@@ -647,59 +603,54 @@ strategies and retry policies for config sources.
 
 ==== Meta-config for Custom Source Types
 You can use meta-config to set up custom config source types as well as the
-built-in ones described above. Meta-config supports this in two ways:
+built-in ones described above.
 
-* by class name
-* by custom type name
+A custom config source can easily support meta configuration by implementing the
+`io.helidon.config.spi.ConfigSourceProvider` interface and registering it as a Java service loader service.
+Note that the provider can be used for multiple ConfigSource implementations.
 
-===== Custom Source Types using `class`
-Use the `class` property in one of your `sources` entries and as its value
-give the fully-qualified class name of your custom source type. The config
-system will use that class as the `ConfigSource` (or as a builder for one)
-for that source.
 
-[source,hocon]
+Implement the `ConfigSourceProvider`
+[source,java]
 ----
-{
-    class = "io.helidon.config.git.GitConfigSourceBuilder"
-    properties {
-        path = "application.conf"
-        directory = "/app-config"
+public class MyConfigSourceProvider implements ConfigSourceProvider {
+    private static final String TYPE = "my-type";
+
+    @Override
+    public boolean supports(String type) {
+        return TYPE.equals(type);
+    }
+
+    @Override
+    public ConfigSource create(String type, Config metaConfig) {
+        // as we only support one in this implementation, we can just return it
+        return MyConfigSource.create(metaConfig);
+    }
+
+    @Override
+    public Set<String> supported() {
+        return Collections.singleton(TYPE);
     }
 }
 ----
 
-===== Custom Source Type using `type`
-You can add your own custom type names to the built-in ones by adding to a
-`META-INF/resources/meta-config-sources.properties` file on the classpath.
-In this file each property name is a custom config source type name and its
-value is the fully-qualified class name for a custom `ConfigSource` implementation
-or a builder for it.
-
-For example, the Helidon module `helidon-config-git` provides this
-`META-INF/resources/meta-config-sources.properties` file:
-
+Register it as a java service loader service
 [source]
-.Definition of `git` Config Source Type
+.File `META-INF/services/io.helidon.config.spi.ConfigSourceProvider`
 ----
-git = io.helidon.config.git.GitConfigSourceBuilder
-----
-
-This definition lets you configure a git config source in meta-configuration as
-follows:
-
-[source,hocon]
-----
-{
-    type = "git"
-    properties {
-        path = "application.conf"
-        directory = "/app-config"
-    }
-}
+io.helidon.examples.MyConfigSourceProvider
 ----
 
-You can define and use your own custom config source type names similarly.
+Now you can use the following meta configuration:
+[source,yaml]
+----
+sources:
+  - type: "system-properties"
+  - type: "environment-variables"
+  - type: "my-type"
+    properties:
+        my-property: "some-value"
+----
 
 Note that it is the `AbstractSource` SPI class that provides support for
 polling strategies and retry policies. If you create custom config sources that
@@ -713,24 +664,18 @@ classpath to load a `Config` tree:
 [source,java]
 .Loading Config using Meta-configuration
 ----
-ConfigSource sourceFromMetaConfig = ConfigSources.load(  // <1>
-        classpath("config-meta-all.conf")).build();      // <2>
-
-Config config = Config.create(sourceFromMetaConfig);       // <3>
+Config metaConfig = Config.create(classpath("config-meta-all.conf")); // <1>
+Config config = MetaConfig.config(metaConfig); // <2>
 ----
-<1> The `ConfigSources.load` method creates a config source for the eventual config
-from the config source argument which specifies the meta-config.
-<2> This example uses meta-config from a resource on the classpath but you can
-use meta-config from any valid config source.
-<3> The `load` method populates the `sourceFromMetaConfig` `ConfigSource` from
-all the actual sources declared in the meta-configuration. The returned `ConfigSource`
-is ready for use in creating a `Config` instance.
+<1> We create a meta configuration from our meta configuration source
+<2> This method populates the config sources from
+all the actual sources declared in the meta-configuration.
 
 ==== Meta-config for Polling Strategies and Retry Policies
 
 Your meta-config can include the set-up for polling strategies and retry
 policies if the config source supports them. Declare them in a way similar to
-how you declare the config sources themselves: by `type` or `class` and with
+how you declare the config sources themselves: by `type` and with
 accompanying `properties`.
 
 .Meta-config Support for Built-in Polling Strategies
@@ -764,10 +709,13 @@ the delay for each successive retry
 * `overall-timeout` (`Duration`) - total timeout for all retry calls and delays
 |===
 
-To specify a custom polling strategy or custom retry policy, specify `class` (instead of
-`type`) and give the fully-qualified class name for the implementation class.
-If your custom class needs parameters to control its behavior the config system
-uses `io.helidon.config.ConfigMapper` to initialize the class instance.
+To specify a custom polling strategy or custom retry policy, implement the interface
+and then implement the `io.helidon.config.spi.PollingStrategyProvider` or
+`io.helidon.config.spi.RetryPolicyProvider` to enable your custom implementations for
+meta configuration.
+You can then use any custom properties - these are provided as a `Config` instance to
+the `create` method of the Provider implementation.
+
 See link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`] and
 link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
 sections.

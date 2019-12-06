@@ -18,7 +18,6 @@
  * Aggregator module for microprofile 3.0.
  */
 module io.helidon.microprofile.v3_0 {
-    requires transitive io.helidon.microprofile.config.cdi;
     requires transitive io.helidon.microprofile.config;
     requires transitive io.helidon.microprofile.server;
     requires transitive io.helidon.microprofile.health;

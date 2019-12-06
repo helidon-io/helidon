@@ -55,11 +55,11 @@ import io.helidon.config.PollingStrategies;
  * {@link AbstractParsableConfigSource} can use a different
  * {@code PollingStrategy}.
  * <p>
- * As described with {@link ConfigSource#create(Config)}, the config system can
+ * As described with {@link io.helidon.config.MetaConfig#configSource(io.helidon.config.Config)}, the config system can
  * load {@code ConfigSource}s using meta-configuration, which supports
  * specifying polling strategies. All {@link PollingStrategies built-in polling
  * strategies} and custom ones are supported. (The support is tightly connected
- * with {@link AbstractSource.Builder#init(Config) AbstractSource extensions}
+ * with {@link AbstractSource.Builder#config(Config) AbstractSource extensions}
  * and will not be automatically provided by any another config source
  * implementations.)
  * <p>

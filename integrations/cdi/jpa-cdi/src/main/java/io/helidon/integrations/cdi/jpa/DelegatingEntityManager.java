@@ -36,8 +36,13 @@ import javax.persistence.metamodel.Metamodel;
 /**
  * A partial {@link EntityManager} implementation that forwards all
  * calls to an underlying {@link EntityManager}.
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * <p>As with all {@link EntityManager} implementations, instances of
+ * this class are not safe for concurrent use by multiple threads.</p>
  */
-abstract class DelegatingEntityManager implements EntityManager {
+abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
 
 
     /*
@@ -48,6 +53,8 @@ abstract class DelegatingEntityManager implements EntityManager {
     /**
      * The {@link EntityManager} to which all operations will be
      * forwarded if it is non-{@code null}.
+     *
+     * <p>This field may be {@code null}.</p>
      *
      * @see #DelegatingEntityManager(EntityManager)
      *
@@ -64,9 +71,13 @@ abstract class DelegatingEntityManager implements EntityManager {
 
 
     /**
-     * Creates a new {@link DelegatingEntityManager}.
+     * Creates a new {@link DelegatingEntityManager} that will
+     * indirectly invoke the {@link #acquireDelegate()} method as part
+     * of each method invocation to acquire its delegate.
      *
      * @see #delegate()
+     *
+     * @see #acquireDelegate()
      */
     DelegatingEntityManager() {
         this(null);
@@ -135,7 +146,8 @@ abstract class DelegatingEntityManager implements EntityManager {
      *
      * <p>This method is called by the {@link #delegate()} method and
      * potentially on every method invocation of instances of this
-     * class so implementations of it must be fast.</p>
+     * class so implementations of it should be as fast as
+     * possible.</p>
      *
      * <p>Implementations of this method must not call the {@link
      * #delegate()} method.</p>

@@ -21,7 +21,7 @@ import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
-import io.helidon.microprofile.config.MpConfig;
+import io.helidon.config.Config;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -35,8 +35,8 @@ public class MpTracingClientRegistrar implements ClientTracingRegistrarProvider 
     static final ThreadPoolSupplier EXECUTOR_SERVICE;
 
     static {
-        MpConfig config = (MpConfig) ConfigProvider.getConfig();
-        EXECUTOR_SERVICE = ThreadPoolSupplier.create(config.helidonConfig().get("tracing.executor-service"));
+        Config config = (Config) ConfigProvider.getConfig();
+        EXECUTOR_SERVICE = ThreadPoolSupplier.create(config.get("tracing.executor-service"));
     }
 
     @Override

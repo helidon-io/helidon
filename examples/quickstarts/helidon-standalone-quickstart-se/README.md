@@ -80,8 +80,8 @@ You can build a native executable in 2 different ways:
 
 ### Local build
 
-Download Graal VM at https://github.com/oracle/graal/releases, the versions
- currently supported for Helidon is `19.1.1` and `19.2.0`.
+Download Graal VM at https://www.graalvm.org/downloads, the versions
+ currently supported for Helidon are `19.2` and `19.3`.
 
 ```
 # Setup the environment

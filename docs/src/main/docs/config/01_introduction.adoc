@@ -221,7 +221,7 @@ link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`].
 +
 or
 * creating a <<config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
-file on the runtime classpath to control how the config system prepares the 
+file on the runtime classpath or file system to control how the config system prepares the
 default configuration.
 
 Once created, the `Config` object provides many methods the application can use to 

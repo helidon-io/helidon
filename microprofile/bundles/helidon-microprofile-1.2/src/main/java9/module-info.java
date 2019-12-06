@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
  * Aggregator module for microprofile 1.2.
  */
 module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.microprofile.config.cdi;
     requires transitive io.helidon.microprofile.config;
     requires transitive io.helidon.microprofile.server;
     requires transitive io.helidon.microprofile.health;

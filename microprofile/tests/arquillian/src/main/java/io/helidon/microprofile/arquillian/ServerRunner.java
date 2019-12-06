@@ -26,7 +26,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
 import org.glassfish.jersey.server.ResourceConfig;
@@ -52,13 +51,10 @@ class ServerRunner {
     }
 
     void start(Config config, HelidonContainerConfiguration containerConfig, Set<String> classNames, ClassLoader cl) {
-        //cl.getResources("beans.xml")
         Server.Builder builder = Server.builder()
                 .port(containerConfig.getPort())
-                .config(MpConfig.builder()
-                                .config(config)
-                                .addDiscoveredSources()
-                                .build());
+                .config(config);
+
 
         handleClasses(cl, classNames, builder, containerConfig.getAddResourcesToApps());
 
