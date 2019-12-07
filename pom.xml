@@ -56,7 +56,7 @@
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.18</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jgit>4.11.9.201909030838-r</version.lib.jgit>
+        <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
         <version.lib.netty.tcnative>2.0.25.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
