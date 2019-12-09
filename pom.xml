@@ -194,8 +194,8 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
-                        <source>11</source>
-                        <release>11</release>
+                        <source>8</source>
+                        <release>8</release>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <!--<verbose>true</verbose>-->
@@ -318,6 +318,7 @@
                             <additionalOption>--add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>
                         </additionalOptions>
                         <sourceFileExcludes>
+                            <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>
                         </sourceFileExcludes>
                     </configuration>
