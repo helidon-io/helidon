@@ -296,19 +296,18 @@ public class MultiTest {
         AtomicInteger multiSum2 = new AtomicInteger();
 
         Multi.just(TEST_DATA)
-                .peek(multiSum1::addAndGet)
                 .limit(TEST_LIMIT)
+                .peek(multiSum1::addAndGet)
                 .forEach(multiSum2::addAndGet);
 
         AtomicInteger streamSum1 = new AtomicInteger();
         AtomicInteger streamSum2 = new AtomicInteger();
 
         TEST_DATA.stream()
-                .peek(streamSum1::addAndGet)
                 .limit(TEST_LIMIT)
+                .peek(streamSum1::addAndGet)
                 .forEach(streamSum2::addAndGet);
 
-        assertThat(multiSum1.get(), is(equalTo(EXPECTED_SUM)));
         assertThat(multiSum2.get(), is(equalTo(EXPECTED_SUM)));
         assertThat(streamSum1.get(), is(equalTo(EXPECTED_SUM)));
         assertThat(streamSum2.get(), is(equalTo(EXPECTED_SUM)));

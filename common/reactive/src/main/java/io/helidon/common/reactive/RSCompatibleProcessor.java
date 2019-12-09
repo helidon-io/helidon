@@ -17,12 +17,18 @@
 
 package io.helidon.common.reactive;
 
+import java.lang.ref.WeakReference;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
+    private static final int BACK_PRESSURE_BUFFER_SIZE = 1024;
+
     private boolean rsCompatible = false;
     private ReferencedSubscriber<? super U> referencedSubscriber;
+    private BlockingQueue<U> buffer = new ArrayBlockingQueue<U>(BACK_PRESSURE_BUFFER_SIZE);
 
     public void setRSCompatible(boolean rsCompatible) {
         this.rsCompatible = rsCompatible;
@@ -39,6 +45,19 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
             onError(new IllegalArgumentException("non-positive subscription request"));
         }
         super.request(n);
+    }
+
+    @Override
+    protected void tryRequest(Flow.Subscription subscription) {
+        if (rsCompatible && !getSubscriber().isClosed() && !buffer.isEmpty()) {
+            try {
+                submit(buffer.take());
+            } catch (InterruptedException e) {
+                onError(e);
+            }
+        } else {
+            super.tryRequest(subscription);
+        }
     }
 
     @Override
@@ -84,6 +103,29 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     }
 
     @Override
+    protected void notEnoughRequest(U item) {
+        if (rsCompatible) {
+            if (!buffer.offer(item)) {
+                onError(new BackPressureOverflowException(BACK_PRESSURE_BUFFER_SIZE));
+            }
+        } else {
+            super.notEnoughRequest(item);
+        }
+    }
+
+    @Override
+    protected void submit(U item) {
+        super.submit(item);
+    }
+
+    @Override
+    public void onComplete() {
+        if (buffer.isEmpty()) {
+            super.onComplete();
+        }
+    }
+
+    @Override
     public void onError(Throwable ex) {
         if (rsCompatible) {
             // https://github.com/reactive-streams/reactive-streams-jvm#2.13
@@ -92,11 +134,13 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
         super.onError(ex);
     }
 
-    private static class ReferencedSubscriber<T> implements Flow.Subscriber<T> {
+    public static class ReferencedSubscriber<T> implements Flow.Subscriber<T> {
 
         private Flow.Subscriber<T> subscriber;
+        private WeakReference<Flow.Subscriber<T>> subscriberWeakReference;
 
         private ReferencedSubscriber(Flow.Subscriber<T> subscriber) {
+            //Objects.requireNonNull(subscriber);
             this.subscriber = subscriber;
         }
 
@@ -105,7 +149,17 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
         }
 
         public void releaseReference() {
+            this.subscriberWeakReference = new WeakReference<>(this.subscriber);
             this.subscriber = null;
+        }
+
+        private Flow.Subscriber<T> getSubscriberReference() {
+            if (Objects.nonNull(subscriber)) {
+                return subscriber;
+            } else if (Objects.nonNull(subscriberWeakReference)) {
+                return subscriberWeakReference.get();
+            }
+            return null;
         }
 
         @Override
@@ -115,17 +169,17 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
         @Override
         public void onNext(T item) {
-            subscriber.onNext(item);
+            getSubscriberReference().onNext(item);
         }
 
         @Override
         public void onError(Throwable throwable) {
-            subscriber.onError(throwable);
+            getSubscriberReference().onError(throwable);
         }
 
         @Override
         public void onComplete() {
-            subscriber.onComplete();
+            getSubscriberReference().onComplete();
         }
     }
 }

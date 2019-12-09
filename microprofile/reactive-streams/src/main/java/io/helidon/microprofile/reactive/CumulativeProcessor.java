@@ -33,6 +33,7 @@ import org.reactivestreams.Subscription;
  */
 public class CumulativeProcessor implements Processor<Object, Object> {
     private LinkedList<Processor<Object, Object>> processorList = new LinkedList<>();
+    private Subscription subscription;
 
     /**
      * Create {@link org.reactivestreams.Processor} wrapping ordered list of {@link io.helidon.common.reactive.Flow.Processor}s.
@@ -51,9 +52,15 @@ public class CumulativeProcessor implements Processor<Object, Object> {
         processorList.getLast().subscribe(s);
     }
 
+
     @Override
     public void onSubscribe(Subscription subscription) {
         Objects.requireNonNull(subscription);
+        if (Objects.nonNull(this.subscription)) {
+            subscription.cancel();
+            return;
+        }
+        this.subscription = subscription;
         // This is the time for connecting all processors
         Processor<Object, Object> lastProcessor = null;
         for (Processor<Object, Object> processor : processorList) {

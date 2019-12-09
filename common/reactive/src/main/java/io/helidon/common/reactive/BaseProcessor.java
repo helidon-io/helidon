@@ -15,12 +15,10 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -51,7 +49,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void request(long n) {
-        requested.increment(n, ex -> onError(ex));
+        requested.increment(n, this::onError);
         tryRequest(subscription);
         if (done) {
             tryComplete();
@@ -98,7 +96,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     @Override
-    public final void onComplete() {
+    public void onComplete() {
         done = true;
         tryComplete();
     }
@@ -158,8 +156,12 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
                 onError(ex);
             }
         } else {
-            onError(new IllegalStateException("Not enough request to submit item"));
+            notEnoughRequest(item);
         }
+    }
+
+    protected void notEnoughRequest(U item) {
+        onError(new IllegalStateException("Not enough request to submit item"));
     }
 
     /**

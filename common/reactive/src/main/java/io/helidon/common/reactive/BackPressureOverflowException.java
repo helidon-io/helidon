@@ -17,26 +17,8 @@
 
 package io.helidon.common.reactive;
 
-import java.util.function.Predicate;
-
-public class    TakeWhileProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
-    private Predicate<T> predicate;
-
-    public TakeWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
-    }
-
-    @Override
-    protected void hookOnNext(T item) {
-        try {
-            if (predicate.test(item)) {
-                submit(item);
-            } else {
-                tryComplete();
-            }
-        } catch (Throwable t) {
-            getSubscription().cancel();
-            onError(t);
-        }
+public class BackPressureOverflowException extends Exception {
+    public BackPressureOverflowException(int limit) {
+        super(String.format("Buffer limit %d exceeded.", limit));
     }
 }

@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
+
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.reactivestreams.Processor;
@@ -39,7 +41,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     private Function<Object, Publisher> mapper;
 
     private final AtomicBoolean innerPublisherCompleted = new AtomicBoolean(true);
-    private Subscriber<? super Object> subscriber;
+    private HybridSubscriber<? super Object> subscriber;
     private Subscription subscription;
     private final AtomicLong requestCounter = new AtomicLong();
     private Subscription innerSubscription;
@@ -103,8 +105,10 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         @Override
         public void request(long n) {
             requestCounter.addAndGet(n);
-            if (innerPublisherCompleted.getAndSet(false)) {
+            if (innerPublisherCompleted.getAndSet(false) || Objects.isNull(innerSubscription)) {
                 subscription.request(requestCounter.get());
+            } else {
+                innerSubscription.request(requestCounter.get());
             }
         }
 
@@ -113,13 +117,13 @@ public class FlatMapProcessor implements Processor<Object, Object> {
             subscription.cancel();
             Optional.ofNullable(innerSubscription).ifPresent(Subscription::cancel);
             // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-            subscriber = null;
+            subscriber.releaseReferences();
         }
     }
 
     @Override
     public void subscribe(Subscriber<? super Object> subscriber) {
-        this.subscriber = subscriber;
+        this.subscriber = HybridSubscriber.from(subscriber);
         if (Objects.nonNull(this.subscription)) {
             subscriber.onSubscribe(new FlatMapSubscription());
         }
@@ -153,8 +157,11 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     @Override
     public void onError(Throwable t) {
         this.error = Optional.of(t);
-        Optional.ofNullable(subscriber)
-                .ifPresent(s -> s.onError(this.error.get()));
+        if (Objects.nonNull(subscriber)) {
+            subscriber.onError(t);
+        } else {
+            throw new RuntimeException(t);
+        }
     }
 
     @Override
@@ -169,15 +176,20 @@ public class FlatMapProcessor implements Processor<Object, Object> {
             Objects.requireNonNull(innerSubscription);
             innerPublisherCompleted.set(false);
             FlatMapProcessor.this.innerSubscription = innerSubscription;
-            innerSubscription.request(1L);
+            long requestCount = requestCounter.get();
+            if (requestCount > 0) {
+                innerSubscription.request(requestCount);
+            }
         }
 
         @Override
         public void onNext(Object o) {
             Objects.requireNonNull(o);
             FlatMapProcessor.this.subscriber.onNext(o);
-            requestCounter.decrementAndGet();
-            innerSubscription.request(1L);
+            long requestCount = requestCounter.decrementAndGet();
+            if (requestCount > 0) {
+                innerSubscription.request(requestCount);
+            }
         }
 
         @Override
@@ -190,7 +202,10 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         @Override
         public void onComplete() {
             innerPublisherCompleted.set(true);
-            subscription.request(requestCounter.get());
+            long requestCount = requestCounter.get();
+            if (requestCount > 0) {
+                subscription.request(requestCount);
+            }
         }
     }
 }

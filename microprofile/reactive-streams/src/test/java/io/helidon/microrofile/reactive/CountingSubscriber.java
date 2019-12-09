@@ -18,20 +18,28 @@
 package io.helidon.microrofile.reactive;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.microprofile.reactive.ExceptionUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 public class CountingSubscriber implements Subscriber<Integer> {
     private Subscription subscription;
-    public AtomicInteger sum = new AtomicInteger(0);
+    public AtomicLong sum = new AtomicLong(0);
     public AtomicInteger requestCount = new AtomicInteger(0);
-    public CompletableFuture<AtomicInteger> completed = new CompletableFuture<>();
+    public CompletableFuture<AtomicLong> completed = new CompletableFuture<>();
+    private AtomicBoolean expectError = new AtomicBoolean(false);
 
     @Override
     public void onSubscribe(Subscription subscription) {
@@ -40,14 +48,15 @@ public class CountingSubscriber implements Subscriber<Integer> {
 
     @Override
     public void onNext(Integer item) {
-        System.out.println("Received: " + item);
         requestCount.incrementAndGet();
         sum.addAndGet((int) item);
     }
 
     @Override
     public void onError(Throwable throwable) {
-        ExceptionUtils.throwUncheckedException(throwable);
+        if(!expectError.get()){
+            ExceptionUtils.throwUncheckedException(throwable);
+        }
     }
 
     @Override
@@ -56,7 +65,6 @@ public class CountingSubscriber implements Subscriber<Integer> {
     }
 
     public void request(long n) {
-        System.out.println("Requested: " + n);
         subscription.request(n);
     }
 
@@ -64,15 +72,28 @@ public class CountingSubscriber implements Subscriber<Integer> {
         subscription.cancel();
     }
 
-    public AtomicInteger getSum() {
+    public AtomicLong getSum() {
         return sum;
     }
 
     public void expectRequestCount(int n) {
-        assertEquals(n, requestCount.get());
+        assertEquals(n, requestCount.get(), String.format("Expected %d requests but only %d received.", n, requestCount.get()));
     }
 
-    public void expectSum(int n) {
+    public void expectSum(long n) {
         assertEquals(n, sum.get());
+    }
+
+    public void expectError(){
+        expectError.set(true);
+    }
+
+    public void expectOnComplete() {
+        try {
+            request(1);
+            completed.get(1, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            fail(e);
+        }
     }
 }

@@ -17,8 +17,11 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
+import java.lang.ref.WeakReference;
 import java.security.InvalidParameterException;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Flow;
 
@@ -36,12 +39,17 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
     private Flow.Subscriber<T> flowSubscriber;
     private Subscriber<T> reactiveSubscriber;
+    private WeakReference<Subscriber<T>> reactiveSubscriberWeakRefecence;
+    private WeakReference<Flow.Subscriber<T>> flowSubscriberWeakRefecence;
+    private Type type;
 
     private HybridSubscriber(Flow.Subscriber<T> subscriber) {
+        this.type = Type.FLOW;
         this.flowSubscriber = subscriber;
     }
 
     private HybridSubscriber(Subscriber<T> subscriber) {
+        this.type = Type.RS;
         this.reactiveSubscriber = subscriber;
     }
 
@@ -100,13 +108,9 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
     @Override
     public void onNext(T item) {
-        if (flowSubscriber != null) {
-            flowSubscriber.onNext(item);
-        } else if (reactiveSubscriber != null) {
-            reactiveSubscriber.onNext(item);
-        } else {
-            throw new InvalidParameterException("Hybrid subscriber has no subscriber");
-        }
+        doWithAvailableSubscriber(
+                rsSubscriber -> rsSubscriber.onNext(item),
+                flowSubscriber -> flowSubscriber.onNext(item));
     }
 
     @Override
@@ -129,9 +133,33 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
         }
     }
 
-    public void releaseReferences(){
+    private void doWithAvailableSubscriber(Consumer<Subscriber<T>> rsConsumer, Consumer<Flow.Subscriber<T>> flowConsumer) {
+        if (type == Type.FLOW) {
+            if (Objects.nonNull(flowSubscriber)) {
+                flowConsumer.accept(flowSubscriber);
+            } else {
+                Optional.ofNullable(flowSubscriberWeakRefecence.get())
+                        .ifPresent(flowConsumer::accept);
+            }
+        } else if (type == Type.RS) {
+            if (Objects.nonNull(reactiveSubscriber)) {
+                rsConsumer.accept(reactiveSubscriber);
+            } else {
+                Optional.ofNullable(reactiveSubscriberWeakRefecence.get())
+                        .ifPresent(rsConsumer::accept);
+            }
+        }
+    }
+
+    public void releaseReferences() {
+        flowSubscriberWeakRefecence = new WeakReference<>(flowSubscriber);
+        reactiveSubscriberWeakRefecence = new WeakReference<>(reactiveSubscriber);
         flowSubscriber = null;
         reactiveSubscriber = null;
+    }
+
+    private enum Type {
+        RS, FLOW
     }
 
 }

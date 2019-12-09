@@ -46,17 +46,6 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
     }
 
     @Override
-    protected void tryRequest(Flow.Subscription s) {
-        if (s != null && !getSubscriber().isClosed()) {
-            long n = getRequestedCounter().get();
-            if (n > 0) {
-                //Request one by one with limit
-                s.request(1);
-            }
-        }
-    }
-
-    @Override
     public void onError(Throwable ex) {
         if (0 < this.counter.get()) {
             super.onError(ex);
@@ -68,14 +57,8 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
         long actCounter = this.counter.getAndDecrement();
         if (0 < actCounter) {
             submit(item);
-            if (1 < actCounter) {
-                // Don't request after last run
-                getRequestedCounter().increment(1, this::onError);
-                tryRequest(getSubscription());
-            } else {
-                tryComplete();
-            }
         } else {
+            getSubscription().cancel();
             tryComplete();
         }
     }

@@ -45,6 +45,7 @@ public class OfPublisher implements Flow.Publisher<Object> {
                         subscriber.onNext(iterator.next());
                     } else {
                         subscriber.onComplete();
+                        break;
                     }
                 }
             }

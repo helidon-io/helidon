@@ -15,28 +15,19 @@
  *
  */
 
-package io.helidon.common.reactive;
+package io.helidon.microrofile.reactive;
 
-import java.util.function.Predicate;
+import io.helidon.common.reactive.Flow;
+import io.helidon.microprofile.reactive.TappedProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
-public class    TakeWhileProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
-    private Predicate<T> predicate;
+import org.reactivestreams.Processor;
 
-    public TakeWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
-    }
-
+public class TappedProcessorTest extends AbstractProcessorTest {
     @Override
-    protected void hookOnNext(T item) {
-        try {
-            if (predicate.test(item)) {
-                submit(item);
-            } else {
-                tryComplete();
-            }
-        } catch (Throwable t) {
-            getSubscription().cancel();
-            onError(t);
-        }
+    @SuppressWarnings("unchecked")
+    protected Processor<Integer, Integer> getProcessor() {
+        Flow.Processor processor = TappedProcessor.create();
+        return HybridProcessor.from(processor);
     }
 }

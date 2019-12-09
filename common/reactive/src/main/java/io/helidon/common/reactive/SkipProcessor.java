@@ -33,25 +33,13 @@ public class SkipProcessor<T> extends RSCompatibleProcessor<T, T> implements Mul
     }
 
     @Override
-    protected void tryRequest(Flow.Subscription s) {
-        if (s != null && !getSubscriber().isClosed()) {
-            long n = getRequestedCounter().get();
-            if (n > 0) {
-                //Request one by one with skip
-                s.request(1);
-            }
-        }
-    }
-
-    @Override
     protected void hookOnNext(T item) {
         long actCounter = this.counter.getAndDecrement();
         if (0 >= actCounter) {
             submit(item);
         } else {
             getRequestedCounter().tryDecrement();
+            request(1);
         }
-        getRequestedCounter().increment(1, this::onError);
-        tryRequest(getSubscription());
     }
 }

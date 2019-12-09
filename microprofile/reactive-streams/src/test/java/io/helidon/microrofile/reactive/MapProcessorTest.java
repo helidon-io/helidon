@@ -15,28 +15,16 @@
  *
  */
 
-package io.helidon.common.reactive;
+package io.helidon.microrofile.reactive;
 
-import java.util.function.Predicate;
+import java.util.function.Function;
 
-public class    TakeWhileProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
-    private Predicate<T> predicate;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.Processor;
 
-    public TakeWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
-    }
-
+public class MapProcessorTest extends AbstractProcessorTest {
     @Override
-    protected void hookOnNext(T item) {
-        try {
-            if (predicate.test(item)) {
-                submit(item);
-            } else {
-                tryComplete();
-            }
-        } catch (Throwable t) {
-            getSubscription().cancel();
-            onError(t);
-        }
+    protected Processor<Integer, Integer> getProcessor() {
+        return ReactiveStreams.<Integer>builder().map(Function.identity()).buildRs();
     }
 }
