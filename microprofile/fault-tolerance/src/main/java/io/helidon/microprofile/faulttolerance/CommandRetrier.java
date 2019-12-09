@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -31,14 +32,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import javax.interceptor.InvocationContext;
-
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import net.jodah.failsafe.FailsafeExecutor;
-import net.jodah.failsafe.FailsafeFuture;
 import net.jodah.failsafe.Fallback;
 import net.jodah.failsafe.Policy;
 import net.jodah.failsafe.RetryPolicy;
@@ -213,18 +211,6 @@ public class CommandRetrier {
     public Object execute() throws Exception {
         LOGGER.fine(() -> "Executing command with isAsynchronous = " + isAsynchronous);
 
-        /*
-        CheckedFunction<? extends Throwable, ?> fallbackFunction = t -> {
-            final CommandFallback fallback = new CommandFallback(context, introspector, t);
-            Object result = fallback.execute();
-            // If fallback for @Asynchronous method, get result of future
-            if (result instanceof Future<?>) {
-                result = ((Future<?>) result).get();
-            }
-            return result;
-        };
-         */
-
         FailsafeExecutor<Object> failsafe = prepareFailsafeExecutor();
 
         try {
@@ -237,19 +223,25 @@ public class CommandRetrier {
 
                 // Check CompletionStage first to process CompletableFuture here
                 if (introspector.isReturnType(CompletionStage.class)) {
-                    CompletionStage<?> completionStage =
-                            CommandCompletableFuture.create(failsafe.getAsync(this::retryExecute), this::getCommand);
+                    CompletionStage<?> completionStage = CommandCompletableFuture.create(
+                            failsafe.getStageAsync(() -> (CompletionStage<?>) retryExecute()),
+                            this::getCommand);
                     awaitBulkheadAsyncTaskQueued();
                     return completionStage;
                 }
 
                 // If not, it must be a subtype of Future
                 if (introspector.isReturnType(Future.class)) {
-//                    Future<?> chainedFuture =
-//                            CommandCompletableFuture.create(failsafe.getAsync(this::retryExecute), this::getCommand);
+                    /*
                     Future<?> chainedFuture = failsafe.getAsync(this::retryExecute);
                     awaitBulkheadAsyncTaskQueued();
                     return new FailsafeChainedFuture<>(chainedFuture);
+                     */
+                    Future<?> future = CommandCompletableFuture.create(
+                            failsafe.getAsync(() -> (Future<?>) retryExecute()),
+                            this::getCommand);
+                    awaitBulkheadAsyncTaskQueued();
+                    return future;
                 }
 
                 // Oops, something went wrong during validation
@@ -262,19 +254,29 @@ public class CommandRetrier {
         }
     }
 
+    /**
+     * Set up the Failsafe executor. Add any fallback first, per Failsafe doc
+     * about "typical" policy composition
+     *
+     * @return Failsafe executor.
+     */
     private FailsafeExecutor<Object> prepareFailsafeExecutor() {
-
-        // Add any fallback first, per Failsafe doc about "typical" policy composition.
         List<Policy<Object>> policies = new ArrayList<>();
         if (introspector.hasFallback()) {
             CheckedFunction<ExecutionAttemptedEvent<?>, ?> fallbackFunction = event -> {
                 final CommandFallback fallback = new CommandFallback(context, introspector, event);
-                return fallback.execute();
+                Object result = fallback.execute();
+                if (result instanceof CompletionStage<?>) {
+                    result = ((CompletionStage<?>) result).toCompletableFuture();
+                }
+                if (result instanceof Future<?>) {
+                    result = ((Future<?>) result).get();
+                }
+                return result;
             };
             policies.add(Fallback.of(fallbackFunction));
         }
         policies.add(retryPolicy);
-
         return Failsafe.with(policies);
     }
 

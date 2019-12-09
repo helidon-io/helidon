@@ -16,8 +16,6 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
-import net.jodah.failsafe.function.CheckedSupplier;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -47,10 +45,10 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     private final CompletableFuture<T> delegate;
-    private final FaultToleranceCommand command ;
+    private final FaultToleranceCommand command;
 
     private CommandCompletableFuture(CompletableFuture<T> delegate,
-    Supplier<FaultToleranceCommand> commandSupplier) {
+                                     Supplier<FaultToleranceCommand> commandSupplier) {
         this.delegate = delegate;
         command = commandSupplier.get();
     }
@@ -80,12 +78,15 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
 
     @SuppressWarnings("unchecked")
     T getResult(long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
-            final T result = timeout < 0 ? delegate.get() : delegate.get(timeout, unit);
-            if (result instanceof Future) {
-                final Future<T> future = (Future<T>) result;
-                return timeout < 0 ? future.get() : future.get(timeout, unit);
-            }
-            return result;
+        Object result = timeout < 0 ? delegate.get() : delegate.get(timeout, unit);
+        if (result instanceof CompletionStage<?>) {
+            result = ((CompletionStage<T>) result).toCompletableFuture();
+        }
+        if (result instanceof Future<?>) {
+            final Future<T> future = (Future<T>) result;
+            return timeout < 0 ? future.get() : future.get(timeout, unit);
+        }
+        return (T) result;
     }
 
     @Override
@@ -291,7 +292,6 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public CompletableFuture<T> toCompletableFuture() {
-        // return delegate.toCompletableFuture();
         return this;
     }
 
