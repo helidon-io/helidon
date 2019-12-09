@@ -17,13 +17,19 @@
 
 package io.helidon.microrofile.reactive;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
@@ -31,7 +37,9 @@ import org.reactivestreams.Subscription;
 
 public abstract class AbstractProcessorTest {
 
-    protected abstract Processor<Integer, Integer> getProcessor();
+    protected abstract Processor<Long, Long> getProcessor();
+
+    protected abstract Processor<Long, Long> getFailedProcessor(RuntimeException t);
 
     /**
      * https://github.com/reactive-streams/reactive-streams-jvm#1.1
@@ -76,7 +84,7 @@ public abstract class AbstractProcessorTest {
     void cancel2ndSubscription() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> cancelled = new CompletableFuture<>();
         MockPublisher p = new MockPublisher();
-        Processor<Integer, Integer> processor = getProcessor();
+        Processor<Long, Long> processor = getProcessor();
         testProcessor(ReactiveStreams.fromPublisher(p).via(processor).buildRs(), s -> {
             s.request(2);
         });
@@ -99,7 +107,7 @@ public abstract class AbstractProcessorTest {
 
     @Test
     void onCompletePropagation() {
-        testProcessor(ReactiveStreams.of(1, 2, 3).via(getProcessor()).buildRs(), s -> {
+        testProcessor(ReactiveStreams.of(1L, 2L, 3L).via(getProcessor()).buildRs(), s -> {
             s.request(1);
             s.expectRequestCount(1);
             s.request(2);
@@ -110,7 +118,7 @@ public abstract class AbstractProcessorTest {
 
     @Test
     void requestCountProcessorTest() {
-        testProcessor(ReactiveStreams.generate(() -> 4).via(getProcessor()).buildRs(), s -> {
+        testProcessor(ReactiveStreams.generate(() -> 4L).via(getProcessor()).buildRs(), s -> {
             s.request(15);
             s.expectRequestCount(15);
             s.request(2);
@@ -120,14 +128,37 @@ public abstract class AbstractProcessorTest {
     }
 
     @Test
+    void longOverFlow() {
+        testProcessor(ReactiveStreams.generate(() -> 4L).via(getProcessor()).buildRs(), s -> {
+            s.cancelAfter(1_000_000L);
+            s.request(Long.MAX_VALUE - 1);
+            s.request(Long.MAX_VALUE - 1);
+        });
+    }
+
+    @Test
+    void cancelOnError() throws InterruptedException, ExecutionException, TimeoutException {
+        Processor<Long, Long> failedProcessor = getFailedProcessor(new TestRuntimeException());
+        Assumptions.assumeTrue(Objects.nonNull(failedProcessor));
+        CompletableFuture<Void> cancelled = new CompletableFuture<>();
+        CompletionStage<List<Long>> result = ReactiveStreams.generate(() -> 4L)
+                .onTerminate(() -> cancelled.complete(null))
+                .via(failedProcessor)
+                .toList()
+                .run();
+        cancelled.get(1, TimeUnit.SECONDS);
+        assertThrows(ExecutionException.class, () -> result.toCompletableFuture().get(1, TimeUnit.SECONDS), TestRuntimeException.TEST_MSG);
+    }
+
+    @Test
     void finiteOnCompleteTest() throws InterruptedException, ExecutionException, TimeoutException {
         finiteOnCompleteTest(getProcessor());
     }
 
-    private <T, U> void finiteOnCompleteTest(Processor<Integer, Integer> processor)
+    private <T, U> void finiteOnCompleteTest(Processor<Long, Long> processor)
             throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> completed = new CompletableFuture<>();
-        ReactiveStreams.of(1, 2, 3)
+        ReactiveStreams.of(1L, 2L, 3L)
                 .via(processor)
                 .onComplete(() -> completed.complete(null))
                 .toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
@@ -135,8 +166,8 @@ public abstract class AbstractProcessorTest {
         completed.get(1, TimeUnit.SECONDS);
     }
 
-    protected void testProcessor(Publisher<Integer> publisher,
-                               Consumer<CountingSubscriber> testBody) {
+    protected void testProcessor(Publisher<Long> publisher,
+                                 Consumer<CountingSubscriber> testBody) {
         CountingSubscriber subscriber = new CountingSubscriber();
         publisher.subscribe(subscriber);
         testBody.accept(subscriber);

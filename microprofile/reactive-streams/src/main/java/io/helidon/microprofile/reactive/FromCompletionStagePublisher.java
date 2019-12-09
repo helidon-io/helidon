@@ -60,7 +60,7 @@ public class FromCompletionStagePublisher<T> implements Publisher<T> {
     }
 
     private void emit(T item) {
-        if (!Objects.isNull(item)) {
+        if (Objects.nonNull(item)) {
             subscriber.onNext(item);
             subscriber.onComplete();
         } else {

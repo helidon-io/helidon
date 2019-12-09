@@ -22,7 +22,14 @@ import org.reactivestreams.Processor;
 
 public class TakeWhileProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().takeWhile(integer -> true).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().takeWhile(i -> true).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().takeWhile(i -> {
+            throw t;
+        }).buildRs();
     }
 }

@@ -23,14 +23,19 @@ import org.reactivestreams.Processor;
 
 public class LimitProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().limit(Long.MAX_VALUE).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().limit(Long.MAX_VALUE).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return null;
     }
 
     @Test
     void ignoreErrorsAfterDone() {
         MockPublisher p = new MockPublisher();
-        testProcessor(ReactiveStreams.fromPublisher(p).limit(2).buildRs(), s -> {
+        testProcessor(ReactiveStreams.<Long>fromPublisher(p).limit(2).buildRs(), s -> {
             s.request(4);
             p.sendNext(2);
             p.sendNext(4);

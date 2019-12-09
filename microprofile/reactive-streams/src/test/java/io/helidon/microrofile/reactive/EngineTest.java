@@ -35,7 +35,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 import io.helidon.common.reactive.DropWhileProcessor;
 import io.helidon.common.reactive.FilterProcessor;
@@ -594,37 +593,6 @@ public class EngineTest {
                         .get(1, TimeUnit.SECONDS));
     }
 
-    @Test
-    void onErrorResume() throws InterruptedException, ExecutionException, TimeoutException {
-        assertEquals(Collections.singletonList(4),
-                ReactiveStreams
-                        .generate(() -> 1)
-                        .limit(3L)
-                        .peek(i -> {
-                            throw new TestRuntimeException();
-                        })
-                        .onErrorResume(throwable -> 4)
-                        .toList()
-                        .run()
-                        .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS));
-    }
-
-    @Test
-    void onErrorResumeWith() throws InterruptedException, ExecutionException, TimeoutException {
-        assertEquals(Arrays.asList(1, 2, 3),
-                ReactiveStreams
-                        .generate(() -> 1)
-                        .limit(3L)
-                        .peek(i -> {
-                            throw new TestRuntimeException();
-                        })
-                        .onErrorResumeWith(throwable -> ReactiveStreams.of(1, 2, 3))
-                        .toList()
-                        .run()
-                        .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS));
-    }
 
     @Test
     void flatMapCancelPropagation() throws InterruptedException, ExecutionException, TimeoutException {
@@ -738,24 +706,6 @@ public class EngineTest {
         upstreamCancelled.get(1, TimeUnit.SECONDS);
     }
 
-
-    @Test
-    void onErrorResume2() throws InterruptedException, ExecutionException, TimeoutException {
-        ReactiveStreams.failed(new TestThrowable())
-                .onErrorResumeWith(
-                        t -> ReactiveStreams.of(1, 2, 3)
-                )
-                .forEach(System.out::println).run().toCompletableFuture().get(1, TimeUnit.SECONDS);
-    }
-
-    @Test
-    void onErrorResume3() throws InterruptedException, ExecutionException, TimeoutException {
-        ReactiveStreams.failed(new TestThrowable())
-                .onErrorResumeWith(
-                        t -> ReactiveStreams.of(1, 2, 3)
-                )
-                .toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
-    }
 
     @Test
     void coupledStageReentrant() {
@@ -878,8 +828,8 @@ public class EngineTest {
     }
 
     @Test
-    void limitProcessorTest() throws InterruptedException, TimeoutException, ExecutionException {
-        testProcessor(ReactiveStreams.<Integer>builder().limit(Long.MAX_VALUE).buildRs(), s -> {
+    void limitProcessorTest() {
+        testProcessor(ReactiveStreams.<Long>builder().limit(Long.MAX_VALUE).buildRs(), s -> {
             s.request(10);
             s.expectRequestCount(10);
             s.request(2);
@@ -889,8 +839,8 @@ public class EngineTest {
     }
 
     @Test
-    void filterProcessorTest() throws InterruptedException, TimeoutException, ExecutionException {
-        testProcessor(ReactiveStreams.<Integer>builder().filter(o -> true).buildRs(), s -> {
+    void filterProcessorTest() {
+        testProcessor(ReactiveStreams.<Long>builder().filter(o -> true).buildRs(), s -> {
             s.request(15);
             s.expectRequestCount(15);
             s.request(2);
@@ -910,10 +860,10 @@ public class EngineTest {
         completed.get(1, TimeUnit.SECONDS);
     }
 
-    private void testProcessor(Processor<Integer, Integer> processor,
+    private void testProcessor(Processor<Long, Long> processor,
                                Consumer<CountingSubscriber> testBody) {
         CountingSubscriber subscriber = new CountingSubscriber();
-        ReactiveStreams.generate(() -> 4)
+        ReactiveStreams.generate(() -> 4L)
                 .via(processor)
                 .to(subscriber)
                 .run();

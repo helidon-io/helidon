@@ -39,15 +39,10 @@ public class FilterProcessor<T> extends RSCompatibleProcessor<T, T> implements M
 
     @Override
     protected void hookOnNext(T item) {
-        try {
-            if (predicate.test(item)) {
-                submit(item);
-            } else {
-                tryRequest(getSubscription());
-            }
-        } catch (Throwable t) {
-            getSubscription().cancel();
-            onError(t);
+        if (predicate.test(item)) {
+            submit(item);
+        } else {
+            tryRequest(getSubscription().get());
         }
     }
 }

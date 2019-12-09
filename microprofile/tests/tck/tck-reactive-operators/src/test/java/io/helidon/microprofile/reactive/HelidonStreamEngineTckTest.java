@@ -23,7 +23,7 @@ import org.reactivestreams.tck.TestEnvironment;
 public class HelidonStreamEngineTckTest extends ReactiveStreamsTck<HelidonReactiveStreamEngine> {
 
     public HelidonStreamEngineTckTest() {
-        super(new TestEnvironment());
+        super(new TestEnvironment(200,200,false));
     }
 
     @Override

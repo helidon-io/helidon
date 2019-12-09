@@ -19,6 +19,7 @@ import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -49,7 +50,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void request(long n) {
-        requested.increment(n, this::onError);
+        requested.increment(n, this::fail);
         tryRequest(subscription);
         if (done) {
             tryComplete();
@@ -62,7 +63,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         try {
             hookOnCancel(subscription);
         } catch (Throwable ex) {
-            onError(ex);
+            fail(ex);
         }
     }
 
@@ -82,8 +83,18 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         try {
             hookOnNext(item);
         } catch (Throwable ex) {
-            onError(ex);
+            fail(ex);
         }
+    }
+
+    /**
+     * Proxy caller of {@link BaseProcessor#onError(java.lang.Throwable)} to avoid
+     * https://github.com/reactive-streams/reactive-streams-jvm#2.3c .
+     *
+     * @param ex Exception to be reported downstream
+     */
+    protected void fail(Throwable ex) {
+        onError(ex);
     }
 
     @Override
@@ -118,8 +129,8 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      *
      * @return {@link io.helidon.common.reactive.Flow.Subscription}
      */
-    protected Subscription getSubscription() {
-        return subscription;
+    protected Optional<Subscription> getSubscription() {
+        return Optional.ofNullable(subscription);
     }
 
     /**
@@ -151,9 +162,9 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
                 subscriber.get().onNext(item);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
-                onError(ex);
+                fail(ex);
             } catch (Throwable ex) {
-                onError(ex);
+                fail(ex);
             }
         } else {
             notEnoughRequest(item);
@@ -214,7 +225,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
                 @Override
                 public void onError(Throwable ex) {
-                    BaseProcessor.this.onError(ex);
+                    BaseProcessor.this.fail(ex);
                 }
 
                 @Override

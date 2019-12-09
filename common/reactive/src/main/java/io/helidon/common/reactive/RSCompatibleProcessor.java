@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 
 import java.lang.ref.WeakReference;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -42,7 +43,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     public void request(long n) {
         if (rsCompatible && n <= 0) {
             // https://github.com/reactive-streams/reactive-streams-jvm#3.9
-            onError(new IllegalArgumentException("non-positive subscription request"));
+            fail(new IllegalArgumentException("non-positive subscription request"));
         }
         super.request(n);
     }
@@ -53,7 +54,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
             try {
                 submit(buffer.take());
             } catch (InterruptedException e) {
-                onError(e);
+                fail(e);
             }
         } else {
             super.tryRequest(subscription);
@@ -69,7 +70,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     @Override
     protected void hookOnCancel(Flow.Subscription subscription) {
         if (rsCompatible) {
-            subscription.cancel();
+            Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
             referencedSubscriber.releaseReference();
         }
     }
@@ -82,7 +83,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
             try {
                 hookOnNext(item);
             } catch (Throwable ex) {
-                onError(ex);
+                fail(ex);
             }
         } else {
             super.onNext(item);
@@ -95,9 +96,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
             // https://github.com/reactive-streams/reactive-streams-jvm#2.13
             Objects.requireNonNull(s);
             // https://github.com/reactive-streams/reactive-streams-jvm#2.5
-            if (Objects.nonNull(super.getSubscription())) {
-                s.cancel();
-            }
+            getSubscription().ifPresent(firstSubscription -> s.cancel());
         }
         super.onSubscribe(s);
     }
@@ -106,7 +105,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     protected void notEnoughRequest(U item) {
         if (rsCompatible) {
             if (!buffer.offer(item)) {
-                onError(new BackPressureOverflowException(BACK_PRESSURE_BUFFER_SIZE));
+                fail(new BackPressureOverflowException(BACK_PRESSURE_BUFFER_SIZE));
             }
         } else {
             super.notEnoughRequest(item);
@@ -123,6 +122,16 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
         if (buffer.isEmpty()) {
             super.onComplete();
         }
+    }
+
+    @Override
+    public void fail(Throwable ex) {
+        ex.printStackTrace();//TODO: remove
+        if (rsCompatible) {
+            //Upstream cancel on error with fail method proxy to avoid spec rule 2.3
+            getSubscription().ifPresent(Flow.Subscription::cancel);
+        }
+        super.fail(ex);
     }
 
     @Override

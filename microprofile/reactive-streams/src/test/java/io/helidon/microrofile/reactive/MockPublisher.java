@@ -21,11 +21,11 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-public class MockPublisher implements Publisher<Integer> {
-    private Subscriber<? super Integer> subscriber;
+public class MockPublisher implements Publisher<Long> {
+    private Subscriber<? super Long> subscriber;
 
     @Override
-    public void subscribe(Subscriber<? super Integer> subscriber) {
+    public void subscribe(Subscriber<? super Long> subscriber) {
         this.subscriber = subscriber;
         subscriber.onSubscribe(new Subscription() {
             @Override
@@ -40,7 +40,7 @@ public class MockPublisher implements Publisher<Integer> {
         });
     }
 
-    public void sendNext(Integer value) {
+    public void sendNext(long value) {
         subscriber.onNext(value);
     }
 

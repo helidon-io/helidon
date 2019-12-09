@@ -24,7 +24,14 @@ import org.reactivestreams.Processor;
 
 public class FlatMapCompletionStageProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().flatMapCompletionStage(CompletableFuture::completedFuture).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().flatMapCompletionStage(CompletableFuture::completedFuture).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().<Long>flatMapCompletionStage(i -> {
+            throw t;
+        }).buildRs();
     }
 }

@@ -100,7 +100,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
             @Override
             public void cancel() {
                 upStreamSubscription.cancel();
-                downStreamsSubscription.cancel();
+                //downStreamsSubscription.cancel();//LIVELOCK!!!
                 downStreamSubscriber.onComplete();
             }
         });

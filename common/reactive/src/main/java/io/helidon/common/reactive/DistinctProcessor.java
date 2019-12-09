@@ -33,16 +33,11 @@ public class DistinctProcessor<T> extends RSCompatibleProcessor<T, T> implements
 
     @Override
     protected void hookOnNext(T item) {
-        try {
-            if (!distinctSet.contains(item)) {
-                distinctSet.add(item);
-                submit(item);
-            } else {
-                tryRequest(getSubscription());
-            }
-        } catch (Throwable t) {
-            getSubscription().cancel();
-            onError(t);
+        if (!distinctSet.contains(item)) {
+            distinctSet.add(item);
+            submit(item);
+        } else {
+            tryRequest(getSubscription().get());
         }
     }
 }

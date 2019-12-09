@@ -31,17 +31,22 @@ import org.reactivestreams.Processor;
 
 public class SkipProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().skip(0).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().skip(0).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return null;
     }
 
     @Test
     void skipItems() throws InterruptedException, ExecutionException, TimeoutException {
-        List<Integer> result = ReactiveStreams.of(1, 2, 3, 4)
+        List<Long> result = ReactiveStreams.of(1L, 2L, 3L, 4L)
                 .peek(System.out::println)
                 .skip(2)
                 .toList()
                 .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
-        assertEquals(Arrays.asList(3, 4), result);
+        assertEquals(Arrays.asList(3L, 4L), result);
     }
 }

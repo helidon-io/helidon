@@ -35,16 +35,12 @@ public class DropWhileProcessor<T> extends RSCompatibleProcessor<T, T> implement
 
     @Override
     protected void hookOnNext(T item) {
-        try {
-            if (foundNotMatching || !predicate.test(item)) {
-                foundNotMatching = true;
-                submit(item);
-            } else {
-                tryRequest(getSubscription());
-            }
-        } catch (Throwable t) {
-            getSubscription().cancel();
-            onError(t);
+        if (foundNotMatching || !predicate.test(item)) {
+            foundNotMatching = true;
+            submit(item);
+        } else {
+            tryRequest(getSubscription().get());
         }
+
     }
 }

@@ -24,7 +24,14 @@ import org.reactivestreams.Processor;
 
 public class FlatMapIterableProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().flatMapIterable(Collections::singleton).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().flatMapIterable(Collections::singleton).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().<Long>flatMapIterable(i -> {
+            throw t;
+        }).buildRs();
     }
 }

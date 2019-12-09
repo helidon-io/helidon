@@ -18,10 +18,12 @@
 package io.helidon.microprofile.reactive;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.RSCompatibleProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridSubscription;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.reactivestreams.Publisher;
@@ -33,6 +35,8 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
     private Function<Throwable, T> supplier;
     private Function<Throwable, Publisher<T>> publisherSupplier;
+    //TODO: sync access - onError can do async write
+    private Optional<Subscription> onErrorPublisherSubscription = Optional.empty();
 
     private OnErrorResumeProcessor() {
     }
@@ -48,6 +52,15 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
         OnErrorResumeProcessor<T> processor = new OnErrorResumeProcessor<>();
         processor.publisherSupplier = throwable -> GraphBuilder.create().from(supplier.apply(throwable)).getPublisher();
         return processor;
+    }
+
+    @Override
+    protected void tryRequest(Flow.Subscription subscription) {
+        if (onErrorPublisherSubscription.isPresent()) {
+            super.tryRequest(HybridSubscription.from(onErrorPublisherSubscription.get()));
+        } else {
+            super.tryRequest(subscription);
+        }
     }
 
     @Override
@@ -67,13 +80,15 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
                     public void onSubscribe(Subscription subscription) {
                         Objects.requireNonNull(subscription);
                         this.subscription = subscription;
-                        subscription.request(getRequestedCounter().get());
+                        onErrorPublisherSubscription = Optional.of(subscription);
+                        if (getRequestedCounter().get() > 0) {
+                            subscription.request(getRequestedCounter().get());
+                        }
                     }
 
                     @Override
                     public void onNext(T t) {
                         submit(t);
-                        subscription.request(1);
                     }
 
                     @Override
@@ -85,6 +100,7 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
                     @Override
                     public void onComplete() {
                         OnErrorResumeProcessor.this.onComplete();
+                        onErrorPublisherSubscription = Optional.empty();
                     }
                 });
             }
@@ -100,5 +116,6 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
     @Override
     protected void hookOnCancel(Flow.Subscription subscription) {
         subscription.cancel();
+        onErrorPublisherSubscription.ifPresent(Subscription::cancel);
     }
 }

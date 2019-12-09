@@ -47,17 +47,12 @@ public final class MapProcessor<T, U> extends RSCompatibleProcessor<T, U> {
 
     @Override
     protected void hookOnNext(T item) {
-        try {
-            U value = mapper.map(item);
-            if (value == null) {
-                getSubscription().cancel();
-                onError(new NullPointerException("Mapper returned a null value"));
-            } else {
-                submit(value);
-            }
-        } catch (Throwable e) {
-            getSubscription().cancel();
-            onError(e);
+        U value = mapper.map(item);
+        if (value == null) {
+            getSubscription().get().cancel();
+            onError(new NullPointerException("Mapper returned a null value"));
+        } else {
+            submit(value);
         }
     }
 }

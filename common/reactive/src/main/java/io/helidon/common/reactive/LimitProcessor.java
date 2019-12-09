@@ -58,7 +58,7 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
         if (0 < actCounter) {
             submit(item);
         } else {
-            getSubscription().cancel();
+            getSubscription().get().cancel();
             tryComplete();
         }
     }

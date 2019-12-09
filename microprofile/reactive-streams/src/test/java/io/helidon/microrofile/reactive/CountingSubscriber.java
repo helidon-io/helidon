@@ -18,12 +18,10 @@
 package io.helidon.microrofile.reactive;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.microprofile.reactive.ExceptionUtils;
@@ -34,12 +32,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-public class CountingSubscriber implements Subscriber<Integer> {
+public class CountingSubscriber implements Subscriber<Long> {
     private Subscription subscription;
     public AtomicLong sum = new AtomicLong(0);
-    public AtomicInteger requestCount = new AtomicInteger(0);
+    public AtomicLong requestCount = new AtomicLong(0);
     public CompletableFuture<AtomicLong> completed = new CompletableFuture<>();
     private AtomicBoolean expectError = new AtomicBoolean(false);
+    private AtomicLong cancelAfter = new AtomicLong(0);
 
     @Override
     public void onSubscribe(Subscription subscription) {
@@ -47,14 +46,17 @@ public class CountingSubscriber implements Subscriber<Integer> {
     }
 
     @Override
-    public void onNext(Integer item) {
+    public void onNext(Long item) {
         requestCount.incrementAndGet();
-        sum.addAndGet((int) item);
+        sum.addAndGet(item);
+        if (cancelAfter.get() != 0 && requestCount.get() > cancelAfter.get()) {
+            cancel();
+        }
     }
 
     @Override
     public void onError(Throwable throwable) {
-        if(!expectError.get()){
+        if (!expectError.get()) {
             ExceptionUtils.throwUncheckedException(throwable);
         }
     }
@@ -72,6 +74,10 @@ public class CountingSubscriber implements Subscriber<Integer> {
         subscription.cancel();
     }
 
+    public void cancelAfter(long max) {
+        cancelAfter.set(max);
+    }
+
     public AtomicLong getSum() {
         return sum;
     }
@@ -84,7 +90,7 @@ public class CountingSubscriber implements Subscriber<Integer> {
         assertEquals(n, sum.get());
     }
 
-    public void expectError(){
+    public void expectError() {
         expectError.set(true);
     }
 

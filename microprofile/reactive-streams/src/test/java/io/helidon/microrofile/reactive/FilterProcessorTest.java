@@ -22,7 +22,14 @@ import org.reactivestreams.Processor;
 
 public class FilterProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().filter(integer -> true).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().filter(i -> true).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().filter(i -> {
+            throw t;
+        }).buildRs();
     }
 }

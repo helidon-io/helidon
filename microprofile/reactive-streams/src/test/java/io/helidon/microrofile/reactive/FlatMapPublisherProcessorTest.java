@@ -22,7 +22,14 @@ import org.reactivestreams.Processor;
 
 public class FlatMapPublisherProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().flatMap(ReactiveStreams::of).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().flatMap(ReactiveStreams::of).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().<Long>flatMap(i -> {
+            throw t;
+        }).buildRs();
     }
 }

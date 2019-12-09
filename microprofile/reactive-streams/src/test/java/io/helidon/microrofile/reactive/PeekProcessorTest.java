@@ -24,7 +24,14 @@ import org.reactivestreams.Processor;
 
 public class PeekProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().peek(integer -> Function.identity()).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().peek(i -> Function.identity()).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().peek(i -> {
+            throw t;
+        }).buildRs();
     }
 }

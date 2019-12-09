@@ -159,8 +159,6 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         this.error = Optional.of(t);
         if (Objects.nonNull(subscriber)) {
             subscriber.onError(t);
-        } else {
-            throw new RuntimeException(t);
         }
     }
 

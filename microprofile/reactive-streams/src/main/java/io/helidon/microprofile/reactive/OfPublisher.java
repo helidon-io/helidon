@@ -18,6 +18,7 @@
 package io.helidon.microprofile.reactive;
 
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.reactive.Flow;
@@ -42,7 +43,9 @@ public class OfPublisher implements Flow.Publisher<Object> {
                 }
                 for (long i = 0; i < n; i++) {
                     if (iterator.hasNext() && !cancelled.get()) {
-                        subscriber.onNext(iterator.next());
+                        Object next = iterator.next();
+                        Objects.requireNonNull(next);
+                        subscriber.onNext(next);
                     } else {
                         subscriber.onComplete();
                         break;

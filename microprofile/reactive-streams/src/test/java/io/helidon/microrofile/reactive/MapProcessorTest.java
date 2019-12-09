@@ -24,7 +24,14 @@ import org.reactivestreams.Processor;
 
 public class MapProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().map(Function.identity()).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().map(Function.identity()).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().<Long>map(i -> {
+            throw t;
+        }).buildRs();
     }
 }

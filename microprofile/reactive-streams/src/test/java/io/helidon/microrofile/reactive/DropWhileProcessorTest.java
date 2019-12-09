@@ -22,7 +22,14 @@ import org.reactivestreams.Processor;
 
 public class DropWhileProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Processor<Integer, Integer> getProcessor() {
-        return ReactiveStreams.<Integer>builder().dropWhile(integer -> false).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().dropWhile(integer -> false).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().dropWhile(i -> {
+            throw t;
+        }).buildRs();
     }
 }

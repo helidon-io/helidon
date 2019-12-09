@@ -26,8 +26,17 @@ import org.reactivestreams.Processor;
 public class TappedProcessorTest extends AbstractProcessorTest {
     @Override
     @SuppressWarnings("unchecked")
-    protected Processor<Integer, Integer> getProcessor() {
+    protected Processor<Long, Long> getProcessor() {
         Flow.Processor processor = TappedProcessor.create();
+        return HybridProcessor.from(processor);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        Flow.Processor processor = TappedProcessor.create().onNext(o -> {
+            throw t;
+        });
         return HybridProcessor.from(processor);
     }
 }
