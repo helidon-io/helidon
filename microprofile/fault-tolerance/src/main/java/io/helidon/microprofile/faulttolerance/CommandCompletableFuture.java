@@ -78,6 +78,7 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
         return getResult(timeout, unit);
     }
 
+    @SuppressWarnings("unchecked")
     T getResult(long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
             final T result = timeout < 0 ? delegate.get() : delegate.get(timeout, unit);
             if (result instanceof Future) {
@@ -290,7 +291,8 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public CompletableFuture<T> toCompletableFuture() {
-        return delegate.toCompletableFuture();
+        // return delegate.toCompletableFuture();
+        return this;
     }
 
     @Override
