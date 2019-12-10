@@ -21,12 +21,37 @@ import java.util.Objects;
 import java.util.Set;
 
 import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Vetoed;
 import javax.persistence.EntityManager;
 
 /**
  * A {@link DelegatingEntityManager} created in certain very specific
  * JPA-mandated transaction-related scenarios.
+ *
+ * <p>Instances of this class are never directly seen by the end user.
+ * Specifically, instances of this class are themselves returned by a
+ * {@link DelegatingEntityManager} implementation's {@link
+ * DelegatingEntityManager#acquireDelegate()} method and only under
+ * appropriate circumstances.</p>
+ *
+ * <p>This class is added as a synthetic bean by the {@link
+ * JpaExtension} class.</p>
+ *
+ * <h2>Implementation Notes</h2>
+ *
+ * <p>Because instances of this class are typically placed in <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#normal_scope"
+ * target="_parent"><em>normal scopes</em></a>, this class is not
+ * declared {@code final}, but must be treated as if it were.</p>
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * <p>As with all {@link EntityManager} implementations, instances of
+ * this class are not safe for concurrent use by multiple threads.</p>
+ *
+ * @see JpaExtension
  */
+@Vetoed
 class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
 
 
@@ -38,6 +63,8 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
     private final Instance<Object> instance;
 
     private final Set<? extends Annotation> suppliedQualifiers;
+
+    private final TransactionSupport transactionSupport;
 
     private EntityManager delegate;
 
@@ -66,6 +93,7 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
         super();
         this.closeDelegate = true;
         this.instance = null;
+        this.transactionSupport = null;
         this.suppliedQualifiers = Collections.emptySet();
     }
 
@@ -85,6 +113,7 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
                                       final Set<? extends Annotation> suppliedQualifiers) {
         super();
         this.instance = Objects.requireNonNull(instance);
+        this.transactionSupport = instance.select(TransactionSupport.class).get();
         this.suppliedQualifiers = Objects.requireNonNull(suppliedQualifiers);
     }
 
@@ -93,6 +122,37 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
      * Instance methods.
      */
 
+
+    /**
+     * Disposes of this {@link CdiTransactionScopedEntityManager} by
+     * calling the {@link #close()} method.
+     *
+     * <p>If the {@link javax.transaction.TransactionScoped} scope is
+     * behaving the way it should, then this method will be invoked
+     * only when the underlying transaction has finished committing or
+     * rolling back, and in no other situations.  It follows that the
+     * current transaction status must be either {@link
+     * TransactionSupport#STATUS_COMMITTED} or {@link
+     * TransactionSupport#STATUS_ROLLEDBACK}.</p>
+     *
+     * <p>This method must not be overridden.  It is not {@code final}
+     * only due to CDI restrictions.</p>
+     *
+     * <h2>Thread Safety</h2>
+     *
+     * <p>This method may be (and often is) called by a thread that is
+     * not the CDI container thread, since transactions may roll back
+     * on such a thread.</p>
+     *
+     * @param ignoredInstance the {@link Instance} supplied by the CDI
+     * bean configuration machinery when the transaction scope is
+     * going away; ignored by this method; may be {@code null}
+     *
+     * @see #close()
+     */
+    void dispose(final Instance<Object> ignoredInstance) {
+        this.close();
+    }
 
     @Override
     protected EntityManager acquireDelegate() {

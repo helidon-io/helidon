@@ -1024,7 +1024,8 @@ public class JpaExtension implements Extension {
      * #addJpaTransactionScopedEntityManagerBeans(AfterBeanDiscovery,
      * Set)
      */
-    private void addContainerManagedJpaBeans(final AfterBeanDiscovery event, final BeanManager beanManager) {
+    private void addContainerManagedJpaBeans(final AfterBeanDiscovery event, final BeanManager beanManager)
+        throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "addContainerManagedJpaBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1110,7 +1111,8 @@ public class JpaExtension implements Extension {
     }
 
     private void addCdiTransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
-                                                          final Set<Annotation> suppliedQualifiers) {
+                                                           final Set<Annotation> suppliedQualifiers)
+        throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "addCdiTransactionScopedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1127,15 +1129,16 @@ public class JpaExtension implements Extension {
         //   @Inject
         //   @ContainerManaged
         //   @CdiTransactionScoped
-        //   @Synchronized
+        //   @Synchronized // <-- NOTE
         //   @Named("test")
         //   private final EntityManager cdiTransactionScopedEm;
         //
         // ...AND:
+        //
         //   @Inject
         //   @ContainerManaged
         //   @CdiTransactionScoped
-        //   @Unynchronized
+        //   @Unsynchronized // <-- NOTE
         //   @Named("test")
         //   private final EntityManager cdiTransactionScopedEm;
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
@@ -1171,7 +1174,7 @@ public class JpaExtension implements Extension {
 
             qualifiers.add(Synchronized.Literal.INSTANCE);
             final Set<Annotation> synchronizedQualifiers = new HashSet<>(qualifiers);
-            event.addBean()
+            event.<CdiTransactionScopedEntityManager>addBean()
                 .addTransitiveTypeClosure(CdiTransactionScopedEntityManager.class)
                 .scope(scope)
                 .addQualifiers(synchronizedQualifiers)
@@ -1179,12 +1182,12 @@ public class JpaExtension implements Extension {
                         // On its own line to ease debugging.
                         return new CdiTransactionScopedEntityManager(instance, synchronizedQualifiers);
                     })
-                .disposeWith((em, instance) -> em.close());
+                .disposeWith(CdiTransactionScopedEntityManager::dispose);
 
             qualifiers.remove(Synchronized.Literal.INSTANCE);
             qualifiers.add(Unsynchronized.Literal.INSTANCE);
             final Set<Annotation> unsynchronizedQualifiers = new HashSet<>(qualifiers);
-            event.addBean()
+            event.<CdiTransactionScopedEntityManager>addBean()
                 .addTransitiveTypeClosure(CdiTransactionScopedEntityManager.class)
                 .scope(scope)
                 .addQualifiers(unsynchronizedQualifiers)
@@ -1192,7 +1195,7 @@ public class JpaExtension implements Extension {
                         // On its own line to ease debugging.
                         return new CdiTransactionScopedEntityManager(instance, unsynchronizedQualifiers);
                     })
-                .disposeWith((em, instance) -> em.close());
+                .disposeWith(CdiTransactionScopedEntityManager::dispose);
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1237,8 +1240,9 @@ public class JpaExtension implements Extension {
             .produceWith(instance -> {
                     // On its own line to ease debugging.
                     return new JpaTransactionScopedEntityManager(instance, suppliedQualifiers);
-                });
-            // (deliberately no disposeWith())
+                })
+            .disposeWith(JpaTransactionScopedEntityManager::dispose);
+
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1275,7 +1279,15 @@ public class JpaExtension implements Extension {
                         // On its own line to ease debugging.
                         return new NonTransactionalEntityManager(instance, suppliedQualifiers);
                     })
-                .disposeWith((em, instance) -> em.close());
+                // Revisit: ReferenceCountedContext does not
+                // automatically pick up synthetic beans like this
+                // one.  So we have to tell it somehow to "work on"
+                // this bean.  Right now this bean is in what amounts
+                // to a thread-specific singleton scope.  As it
+                // happens, this might actually be OK.
+                .disposeWith((em, instance) -> {
+                        em.close();
+                    });
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {

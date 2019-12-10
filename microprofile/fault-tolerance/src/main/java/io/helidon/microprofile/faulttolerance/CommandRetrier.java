@@ -213,7 +213,6 @@ public class CommandRetrier {
         LOGGER.fine(() -> "Executing command with isAsynchronous = " + isAsynchronous);
 
         FailsafeExecutor<Object> failsafe = prepareFailsafeExecutor();
-
         try {
             if (isAsynchronous) {
                 Scheduler scheduler = CommandScheduler.create(commandThreadPoolSize);
