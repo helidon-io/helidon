@@ -45,16 +45,12 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     private final CompletableFuture<T> delegate;
-    private final FaultToleranceCommand command;
+    private final Supplier<FaultToleranceCommand> commandSupplier;
 
     private CommandCompletableFuture(CompletableFuture<T> delegate,
                                      Supplier<FaultToleranceCommand> commandSupplier) {
         this.delegate = delegate;
-        command = commandSupplier.get();
-    }
-
-    FaultToleranceCommand getCommand() {
-        return command;
+        this.commandSupplier = commandSupplier;
     }
 
     @Override
@@ -156,32 +152,39 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     @Override
-    public <U, V> CompletableFuture<V> thenCombine(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn) {
+    public <U, V> CompletableFuture<V> thenCombine(CompletionStage<? extends U> other,
+                                                   BiFunction<? super T, ? super U, ? extends V> fn) {
         return delegate.thenCombine(other, fn);
     }
 
     @Override
-    public <U, V> CompletableFuture<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn) {
+    public <U, V> CompletableFuture<V> thenCombineAsync(CompletionStage<? extends U> other,
+                                                        BiFunction<? super T, ? super U, ? extends V> fn) {
         return delegate.thenCombineAsync(other, fn);
     }
 
     @Override
-    public <U, V> CompletableFuture<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn, Executor executor) {
+    public <U, V> CompletableFuture<V> thenCombineAsync(CompletionStage<? extends U> other,
+                                                        BiFunction<? super T, ? super U, ? extends V> fn,
+                                                        Executor executor) {
         return delegate.thenCombineAsync(other, fn, executor);
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBoth(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action) {
+    public <U> CompletableFuture<Void> thenAcceptBoth(CompletionStage<? extends U> other,
+                                                      BiConsumer<? super T, ? super U> action) {
         return delegate.thenAcceptBoth(other, action);
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action) {
+    public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
+                                                           BiConsumer<? super T, ? super U> action) {
         return delegate.thenAcceptBothAsync(other, action);
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action, Executor executor) {
+    public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
+                                                           BiConsumer<? super T, ? super U> action, Executor executor) {
         return delegate.thenAcceptBothAsync(other, action, executor);
     }
 
@@ -211,7 +214,8 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn, Executor executor) {
+    public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn,
+                                                       Executor executor) {
         return delegate.applyToEitherAsync(other, fn, executor);
     }
 
@@ -226,7 +230,8 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     @Override
-    public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action, Executor executor) {
+    public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action,
+                                                     Executor executor) {
         return delegate.acceptEitherAsync(other, action, executor);
     }
 
@@ -256,7 +261,8 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     @Override
-    public <U> CompletableFuture<U> thenComposeAsync(Function<? super T, ? extends CompletionStage<U>> fn, Executor executor) {
+    public <U> CompletableFuture<U> thenComposeAsync(Function<? super T, ? extends CompletionStage<U>> fn,
+                                                     Executor executor) {
         return delegate.thenComposeAsync(fn, executor);
     }
 
@@ -302,6 +308,11 @@ class CommandCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
+        FaultToleranceCommand command = commandSupplier.get();
+        BulkheadHelper bulkheadHelper = command.getBulkheadHelper();
+        if (bulkheadHelper != null && !bulkheadHelper.isInvocationRunning(command)) {
+            return delegate.cancel(true);      // overridden
+        }
         return delegate.cancel(mayInterruptIfRunning);
     }
 
