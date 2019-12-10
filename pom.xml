@@ -186,6 +186,10 @@
                         <release>11</release>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
+                            <!--
+                            https://issues.apache.org/jira/browse/MCOMPILER-368
+                             -->
+                            <arg>-Xpkginfo:always</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
