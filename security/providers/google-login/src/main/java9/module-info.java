@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ module io.helidon.security.providers.google.login {
     requires io.helidon.security;
     requires java.logging;
     requires google.api.client;
-    requires google.http.client;
-    requires google.http.client.jackson2;
+    requires com.google.api.client;
+    requires com.google.api.client.json.jackson2;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
 
