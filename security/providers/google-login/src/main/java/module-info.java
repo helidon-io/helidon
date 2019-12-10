@@ -23,8 +23,8 @@ module io.helidon.security.providers.google.login {
     requires io.helidon.security;
     requires java.logging;
     requires google.api.client;
-    requires google.http.client;
-    requires google.http.client.jackson2;
+    requires com.google.api.client;
+    requires com.google.api.client.json.jackson2;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
 
