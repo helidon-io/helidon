@@ -90,7 +90,7 @@ class GrpcClientBuilder
         checkForNonPublicMethodIssues();
 
         Class<?> annotatedServiceClass = annotatedServiceClass();
-        AnnotatedMethodList methodList = new AnnotatedMethodList(annotatedServiceClass);
+        AnnotatedMethodList methodList = AnnotatedMethodList.create(annotatedServiceClass);
         String name = determineServiceName(annotatedServiceClass);
 
         ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(serviceClass())

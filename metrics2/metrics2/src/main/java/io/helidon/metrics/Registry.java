@@ -487,6 +487,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
                 .withDisplayName(metadata.getDisplayName())
                 .withType(metadata.getTypeRaw())
                 .reusable(metadata.isReusable());
+
         metadata.getDescription().ifPresent(builder::withDescription);
         metadata.getUnit().ifPresent(builder::withUnit);
         return builder.build();

@@ -87,10 +87,9 @@ public class AnnotatedMethod implements AnnotatedElement {
      * Create annotated method instance from a {@link Method Java method}.
      *
      * @param method the Java method
-     * @throws java.lang.NullPointerException if the method parameter is null
      */
-    public AnnotatedMethod(Method method) {
-        this.declaredMethod = Objects.requireNonNull(method);
+    private AnnotatedMethod(Method method) {
+        this.declaredMethod = method;
         this.actualMethod = findAnnotatedMethod(method);
 
         if (method.equals(actualMethod)) {
@@ -101,6 +100,17 @@ public class AnnotatedMethod implements AnnotatedElement {
             parameterAnnotations = mergeParameterAnnotations(method, actualMethod);
         }
     }
+
+    /**
+     * Create an {@link AnnotatedMethod} instance from a {@link Method Java method}.
+     *
+     * @param method the Java method
+     * @throws java.lang.NullPointerException if the method parameter is null
+     * @return an {@link AnnotatedMethod} instance representing the Java method
+     */
+     public static AnnotatedMethod create(Method method) {
+         return new AnnotatedMethod(Objects.requireNonNull(method));
+     }
 
     /**
      * Get the underlying Java method.

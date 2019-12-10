@@ -23,7 +23,7 @@ module io.helidon.tracing.jersey {
 
     requires java.ws.rs;
     requires jersey.server;
-    requires opentracing.api;
+    requires io.opentracing.api;
     requires io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.jersey.common;

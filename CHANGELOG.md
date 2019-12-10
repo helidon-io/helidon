@@ -5,11 +5,64 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 
+## [1.4.0] 
 
 ### Notes
 
+This is a feature release of Helidon and adds support for MicroProfile 3.2.
+It also includes a number of additional bug fixes and enhancements.
+
+### Improvements
+
+- MicroProfile 3.2 full and core bundles. Deprecate old bundles. [1143](https://github.com/oracle/helidon/pull/1143)
+- MicroProfile Metrics 2.2 [1117](https://github.com/oracle/helidon/pull/1117)
+- MicroProfile Health 2.1 [1092](https://github.com/oracle/helidon/pull/1092)
+- WebServer: add support for form parameters [1093](https://github.com/oracle/helidon/pull/1093)
+- Tracing: allow customization of top level span name using message format [1090](https://github.com/oracle/helidon/pull/1090)
+- Metrics: support for mutable vendor registry [1098](https://github.com/oracle/helidon/pull/1098)
+- MicroProfile: support reactive services and custom routing/port config [1073](https://github.com/oracle/helidon/pull/1073)
+
 ### Fixes
+
+- JAX-RS: UriInfo#getBaseUri() returns URL with 1 character short [1110](https://github.com/oracle/helidon/pull/1110)
+- JAX-RS: Inform Jersey of broken pipe by throwing exception [1076](https://github.com/oracle/helidon/pull/1076)
+- Tracing: Service name not needed when tracing is disabled. [1086](https://github.com/oracle/helidon/pull/1086)
+- Tracing: Fix Tracing nesting and outbound security [1082](https://github.com/oracle/helidon/pull/1082)
+- Tracing: Jaeger integration support for native-image [1084](https://github.com/oracle/helidon/pull/1084)
+- Metrics: Restore helidon-metrics2 as default metrics library [1077](https://github.com/oracle/helidon/pull/1077)
+- Metrics: Rationalize some metrics 1.1 and 2.0 support code; add sync to both impls [1071](https://github.com/oracle/helidon/pull/1071)
+- Metrics: Brings our 1.1 and 2.0 impls in line with clarification of metric reuse [1080](https://github.com/oracle/helidon/pull/1080)
+- Media: Throw JsonException when parser returns unexpected type [1085](https://github.com/oracle/helidon/pull/1085)
+- Media: Detect media type [1091](https://github.com/oracle/helidon/pull/1091)
+- Config: Fix Injecting @ConfigProperty fails [1074](https://github.com/oracle/helidon/pull/1074)
+- Fault Tolerance: Fault Tolerance doesn't work for Rest Client [1124](https://github.com/oracle/helidon/pull/1124)
+- MP Server: Refine start-up time calculation [1100](https://github.com/oracle/helidon/pull/1100)
+- WebServer: Fixes NPE in RequestRouting#canonicalize() [1072](https://github.com/oracle/helidon/pull/1072)
+- Upgrade to Jackson 2.10.0 [1088](https://github.com/oracle/helidon/pull/1088)
+- Upgrade to Netty 4.1.42 [1096](https://github.com/oracle/helidon/pull/1096)
+- Remove com.google.code.findbugs:jsr305 [1119](https://github.com/oracle/helidon/pull/1119)
+- Helidon build fixed on Windows [1097](https://github.com/oracle/helidon/pull/1097)
+- Changes default logging to write to System.out [1145](https://github.com/oracle/helidon/pull/1145)
+- Documentation [1075](https://github.com/oracle/helidon/pull/1075) [1123](https://github.com/oracle/helidon/pull/1123) [1118](https://github.com/oracle/helidon/pull/1118) [1105](https://github.com/oracle/helidon/pull/1105) [1079](https://github.com/oracle/helidon/pull/1079) [1129](https://github.com/oracle/helidon/pull/1129) [1131](https://github.com/oracle/helidon/pull/1131)
+
+### Deprecations
+
+- The following MicroProfile bundles are deprecated: `helidon-microprofile-3.0`,
+  `helidon-microprofile-2.2`, `helidon-microprofile-1.2`, `helidon-microprofile-1.1`,
+  `helidon-microprofile-1.0`. Use `helidon-microprofile` or
+  `helidon-microprofile-core` instead.
+
+
+## Experimental
+
+The following enhancements are experimental. They should be considered unstable and subject
+to change.
+
+- Support for gRPC in MicroProfile server [910](https://github.com/oracle/helidon/pull/910) [1125](https://github.com/oracle/helidon/pull/1125) [1128](https://github.com/oracle/helidon/pull/1128) [1137](https://github.com/oracle/helidon/pull/1137)
+
+## Thanks!
+
+Thanks to community members [Sobuno](https://github.com/Sobuno) and [pa314159](https://github.com/pa314159) for their contributions.
 
 ## [1.3.1] 
 
@@ -511,7 +564,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.3.1...HEAD
+[1.4.0]: https://github.com/oracle/helidon/compare/1.3.1...1.4.0
 [1.3.1]: https://github.com/oracle/helidon/compare/1.3.0...1.3.1
 [1.3.0]: https://github.com/oracle/helidon/compare/1.2.1...1.3.0
 [1.2.1]: https://github.com/oracle/helidon/compare/1.2.0...1.2.1

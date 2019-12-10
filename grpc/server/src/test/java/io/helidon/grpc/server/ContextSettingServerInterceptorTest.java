@@ -43,7 +43,7 @@ public class ContextSettingServerInterceptorTest {
                 .unary("test", this::dummyUnary)
                 .build();
 
-        ContextSettingServerInterceptor interceptor = new ContextSettingServerInterceptor();
+        ContextSettingServerInterceptor interceptor = ContextSettingServerInterceptor.create();
 
         Metadata headers = new Metadata();
         ServerCall<String, String> call = mock(ServerCall.class);
@@ -72,7 +72,7 @@ public class ContextSettingServerInterceptorTest {
                 .unary("test", this::dummyUnary)
                 .build();
 
-        ContextSettingServerInterceptor interceptor = new ContextSettingServerInterceptor();
+        ContextSettingServerInterceptor interceptor = ContextSettingServerInterceptor.create();
 
         Metadata headers = new Metadata();
         ServerCall<String, String> call = mock(ServerCall.class);
@@ -105,7 +105,7 @@ public class ContextSettingServerInterceptorTest {
                 .unary("test", this::dummyUnary, cfg -> cfg.addContextValue(key2, "test-method-value"))
                 .build();
 
-        ContextSettingServerInterceptor interceptor = new ContextSettingServerInterceptor();
+        ContextSettingServerInterceptor interceptor = ContextSettingServerInterceptor.create();
 
         Metadata headers = new Metadata();
         ServerCall<String, String> call = mock(ServerCall.class);
@@ -138,7 +138,7 @@ public class ContextSettingServerInterceptorTest {
                 .unary("test", this::dummyUnary, cfg -> cfg.addContextValue(key, "test-method-value"))
                 .build();
 
-        ContextSettingServerInterceptor interceptor = new ContextSettingServerInterceptor();
+        ContextSettingServerInterceptor interceptor = ContextSettingServerInterceptor.create();
 
         Metadata headers = new Metadata();
         ServerCall<String, String> call = mock(ServerCall.class);

@@ -27,6 +27,10 @@ import javax.enterprise.context.spi.Context;
  *
  * <p>See the exclusion stanzas in {@code META-INF/beans.xml} for more
  * details.</p>
+ *
+ * @see TransactionSupport
+ *
+ * @see JtaTransactionSupport
  */
 @ApplicationScoped
 final class NoTransactionSupport implements TransactionSupport {
@@ -60,7 +64,7 @@ final class NoTransactionSupport implements TransactionSupport {
      * @return {@code false} when invoked
      */
     @Override
-    public boolean isActive() {
+    public boolean isEnabled() {
         return false;
     }
 
@@ -75,13 +79,15 @@ final class NoTransactionSupport implements TransactionSupport {
     }
 
     /**
-     * Returns {@code false} when invoked.
+     * Returns {@link TransactionSupport#STATUS_NO_TRANSACTION} when
+     * invoked.
      *
-     * @return {@code false} when invoked
+     * @return {@link TransactionSupport#STATUS_NO_TRANSACTION} when
+     * invoked
      */
     @Override
-    public boolean inTransaction() {
-        return false;
+    public int getStatus() {
+        return STATUS_NO_TRANSACTION;
     }
 
 }

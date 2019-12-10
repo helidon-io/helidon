@@ -418,7 +418,7 @@ public class ClientStreamingMethodHandlerSupplierTest {
 
     private AnnotatedMethod getMethod(String name, Class<?>... args) {
         try {
-            return new AnnotatedMethod(Service.class.getMethod(name, args));
+            return AnnotatedMethod.create(Service.class.getMethod(name, args));
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

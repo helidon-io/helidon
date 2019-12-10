@@ -27,8 +27,10 @@ import io.grpc.Channel;
 
 /**
  * A builder for gRPC clients dynamic proxies.
+ *
+ * @param <T> the type of the interface to be proxied
  */
-class GrpcClientProxyBuilder<T>
+public class GrpcClientProxyBuilder<T>
         implements Builder<T> {
 
     private static final Map<Class<?>, ClientServiceDescriptor> DESCRIPTORS = new ConcurrentHashMap<>();

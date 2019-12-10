@@ -26,6 +26,8 @@ import io.helidon.grpc.server.ServiceDescriptor;
 
 import io.grpc.stub.StreamObserver;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+
 /**
  * A simple class that implements gRPC service. Used for testing.
  */

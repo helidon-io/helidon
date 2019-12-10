@@ -55,7 +55,7 @@ public class MetricsConfigurer
     @Override
     public void accept(Class<?> serviceClass, Class<?> annotatedClass, ServiceDescriptor.Builder builder) {
 
-        AnnotatedMethodList methodList = new AnnotatedMethodList(serviceClass);
+        AnnotatedMethodList methodList = AnnotatedMethodList.create(serviceClass);
 
         methodList.withAnnotation(Timed.class)
                 .stream()

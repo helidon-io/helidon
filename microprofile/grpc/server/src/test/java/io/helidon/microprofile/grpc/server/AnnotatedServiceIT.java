@@ -361,12 +361,11 @@ public class AnnotatedServiceIT {
      * The server streaming service.
      */
     @RpcService
-    public static class ServerStreamingService
-            implements ResponseHelper {
+    public static class ServerStreamingService {
 
         @ServerStreaming
         public void streaming(Services.TestRequest request, StreamObserver<TestResponse> observer) {
-            stream(observer, split(request.getMessage()));
+            ResponseHelper.stream(observer, split(request.getMessage()));
         }
 
         @ServerStreaming
@@ -376,7 +375,7 @@ public class AnnotatedServiceIT {
 
         @ServerStreaming
         public void streamingNoRequest(StreamObserver<TestResponse> observer) {
-            stream(observer, split("A B C D"));
+            ResponseHelper.stream(observer, split("A B C D"));
         }
 
         @ServerStreaming

@@ -21,7 +21,7 @@ module io.helidon.webserver.jersey {
     requires transitive java.annotation;
     requires transitive io.helidon.webserver;
     requires transitive java.ws.rs;
-    requires transitive opentracing.api;
+    requires transitive io.opentracing.api;
     requires transitive io.helidon.jersey.server;
 
     requires io.helidon.common.context;

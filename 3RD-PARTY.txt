@@ -916,7 +916,7 @@ Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
 Copyright (c) OSGi Alliance (2013). All Rights Reserved.
 
 =======================
-MicroProfile Health API 2.0.1
+MicroProfile Health API 2.1
 =======================
 MicroProfile Health API (org.eclipse.microprofile.health:microprofile-health-api)
 Copyright (c) 2017,2019 Contributors to the Eclipse Foundation
@@ -941,7 +941,7 @@ Apache License, Version 2.0
 
 =======================
 MicroProfile Metrics API 1.1
-MicroProfile Metrics API 2.0.1
+MicroProfile Metrics API 2.2
 =======================
 MicroProfile Metrics API (org.eclipse.microprofile.metrics:microprofile-metrics-api)
  Copyright (c) 2017 Contributors to the Eclipse Foundation
@@ -1013,7 +1013,7 @@ Apache License, Version 2.0
 --------------------------------------------
 
 =======================
-MicroProfile Rest Client API 1.2.1
+MicroProfile Rest Client API 1.3.3
 =======================
 Copyright (c) 2016-2019 Contributors to the Eclipse Foundation
 Apache License, Version 2.0
@@ -1228,7 +1228,7 @@ atomicops_internals_generic_gcc.h
 
 
 =======================
-grpc-java 1.22.1
+grpc-java 1.25.0
 =======================
 Copyright 2014 The gRPC Authors
 Apache License, Version 2.0

@@ -37,62 +37,71 @@ public class AnnotatedMethodList implements Iterable<AnnotatedMethod> {
     private final AnnotatedMethod[] methods;
 
     /**
-     * Create new method list for a class.
-     *
-     * The method list contains {@link Class#getMethods() all methods} available
-     * on the class.
-     *
-     * The {@link java.lang.reflect.Method#isBridge() bridge methods} and methods declared directly
-     * on the {@link Object} class are filtered out.
-     *
-     * @param cls class from which the method list is created.
-     */
-    public AnnotatedMethodList(Class<?> cls) {
-        this(cls, false);
-    }
-
-    /**
-     * Create new method list for a class.
-     *
-     * The method list contains {@link Class#getMethods() all methods} available
-     * on the class or {@link Class#getDeclaredMethods() declared methods} only,
-     * depending on the value of the {@code declaredMethods} parameter.
-     *
-     * The {@link java.lang.reflect.Method#isBridge() bridge methods} and methods declared directly
-     * on the {@link Object} class are filtered out.
-     *
-     * @param cls             class from which the method list is created.
-     * @param declaredMethods if {@code true} only the {@link Class#getDeclaredMethods()
-     *                        declared methods} will be included in the method list; otherwise
-     *                        {@link Class#getMethods() all methods} will be listed.
-     */
-    public AnnotatedMethodList(Class<?> cls, boolean declaredMethods) {
-        this(declaredMethods ? allDeclaredMethods(cls) : methodList(cls));
-    }
-
-    /**
-     * Create new method list from the given collection of methods.
-     *
-     * The {@link Method#isBridge() bridge methods} and methods declared directly
-     * on the {@link Object} class are filtered out.
-     *
-     * @param methods methods to be included in the method list.
-     */
-    public AnnotatedMethodList(Collection<Method> methods) {
-        this.methods = methods.stream()
-                .filter(m -> !m.isBridge() && m.getDeclaringClass() != Object.class)
-                .map(AnnotatedMethod::new)
-                .toArray(AnnotatedMethod[]::new);
-    }
-
-    /**
      * Create new method list from the given array of {@link AnnotatedMethod
      * annotated methods}.
      *
      * @param methods methods to be included in the method list.
      */
-    public AnnotatedMethodList(AnnotatedMethod... methods) {
+    private AnnotatedMethodList(AnnotatedMethod... methods) {
         this.methods = methods;
+    }
+
+    /**
+     * Create an annotated method list for a class.
+     * <p>
+     * The method list contains {@link Class#getMethods() all methods} available
+     * on the class.
+     * <p>
+     * The {@link java.lang.reflect.Method#isBridge() bridge methods} and methods declared directly
+     * on the {@link Object} class are filtered out.
+     *
+     * @param cls class from which the method list is created
+     * @return an {@link AnnotatedMethodList} containing {@link AnnotatedMethod} instances for
+     *         all of the methods of the specified class
+     */
+    public static AnnotatedMethodList create(Class<?> cls) {
+        return create(cls, false);
+    }
+
+    /**
+     * Create an annotated method list for a class.
+     * <p>
+     * The method list contains {@link Class#getMethods() all methods} available
+     * on the class or {@link Class#getDeclaredMethods() declared methods} only,
+     * depending on the value of the {@code declaredMethods} parameter.
+     * <p>
+     * The {@link java.lang.reflect.Method#isBridge() bridge methods} and methods declared directly
+     * on the {@link Object} class are filtered out.
+     *
+     * @param cls             class from which the method list is created
+     * @param declaredMethods if {@code true} only the {@link Class#getDeclaredMethods()
+     *                        declared methods} will be included in the method list; otherwise
+     *                        {@link Class#getMethods() all methods} will be listed
+     * @return an {@link AnnotatedMethodList} containing {@link AnnotatedMethod} instances for
+     *         the methods of the specified class
+     */
+    public static AnnotatedMethodList create(Class<?> cls, boolean declaredMethods) {
+        return create(declaredMethods ? allDeclaredMethods(cls) : methodList(cls));
+    }
+
+    /**
+     * Create an annotated method list from the given collection of methods.
+     * <p>
+     * The {@link Method#isBridge() bridge methods} and methods declared directly
+     * on the {@link Object} class are filtered out.
+     *
+     * @param methods methods to be included in the method list.
+     * @return an {@link AnnotatedMethodList} containing {@link AnnotatedMethod} instances for
+     *         the methods of the specified class
+     */
+    public static AnnotatedMethodList create(Collection<Method> methods) {
+        AnnotatedMethod[] annotatedMethods
+                = methods.stream()
+                         .filter(m -> !m.isBridge() && m.getDeclaringClass() != Object.class)
+                         .map(AnnotatedMethod::create)
+                         .toArray(AnnotatedMethod[]::new);
+
+        return new AnnotatedMethodList(annotatedMethods);
     }
 
     /**

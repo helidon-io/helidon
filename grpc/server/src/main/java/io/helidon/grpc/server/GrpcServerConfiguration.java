@@ -342,7 +342,7 @@ public interface GrpcServerConfiguration {
                 workers = DEFAULT_WORKER_COUNT;
             }
 
-            return new GrpcServerBasicConfig(this);
+            return GrpcServerBasicConfig.create(this);
         }
     }
 }

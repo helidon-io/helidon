@@ -1,5 +1,10 @@
 [
     {
+        "name": "io.helidon.common.HelidonConsoleHandler",
+        "allDeclaredConstructors": true,
+        "allPublicMethods": true
+    },
+    {
         "name": "java.util.logging.ConsoleHandler",
         "allDeclaredConstructors": true,
         "allPublicMethods": true

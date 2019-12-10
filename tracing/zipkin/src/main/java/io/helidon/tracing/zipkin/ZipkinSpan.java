@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import io.opentracing.tag.Tag;
 
 /**
  * The ZipkinSpan delegates to another {@link Span} while finishing the
@@ -108,6 +109,12 @@ class ZipkinSpan implements Span {
     @Override
     public Span setOperationName(String operationName) {
         span.setOperationName(operationName);
+        return this;
+    }
+
+    @Override
+    public <T> Span setTag(Tag<T> tag, T value) {
+        span.setTag(tag, value);
         return this;
     }
 

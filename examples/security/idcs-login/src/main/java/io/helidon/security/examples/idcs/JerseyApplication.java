@@ -18,14 +18,12 @@ package io.helidon.security.examples.idcs;
 import java.util.Collections;
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 /**
  * TODO javadoc.
  */
-@ApplicationScoped
 @ApplicationPath("/jersey")
 public class JerseyApplication extends Application {
     @Override

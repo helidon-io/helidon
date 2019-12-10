@@ -286,8 +286,9 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @return updated builder instance
          */
         public B config(Config config) {
-            config.get("oidc-config").as(OidcConfig.class).ifPresent(this::oidcConfig);
-            config.get("subject-types").asList(SubjectType.class).ifPresent(list -> list.forEach(this::addSubjectType));
+            config.get("oidc-config").as(OidcConfig::create).ifPresent(this::oidcConfig);
+            config.get("subject-types").asList(cfg -> cfg.asString().map(SubjectType::valueOf).get())
+                    .ifPresent(list -> list.forEach(this::addSubjectType));
             config.get("default-idcs-subject-type").asString().ifPresent(this::defaultIdcsSubjectType);
             return me;
         }
