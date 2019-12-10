@@ -18,6 +18,7 @@ package io.helidon.tests.integration.dbclient.jdbc.init;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,25 +48,82 @@ public class CheckIT {
     private static final int TIMEOUT = 60;
 
     /**
+     * Wait until database starts up when its configuration node is available.
+     */
+    private static final class ConnectionCheck implements Consumer<Config> {
+
+        private boolean connected;
+
+        private ConnectionCheck() {
+            connected = false;
+        }
+
+        @Override
+        public void accept(Config config) {
+            String url = config.get("url").asString().get();
+            String username = config.get("username").asString().get();
+            String password = config.get("password").asString().get();
+            long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
+            while (true) {
+                try {
+                    DriverManager.getConnection(url, username, password);
+                    connected = true;
+                    return;
+                } catch (SQLException ex) {
+                    if (System.currentTimeMillis() > endTm) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        private boolean connected() {
+            return connected;
+        }
+
+    }
+
+    /**
+     * Store database connection configuration and build {@link Connection} instance.
+     */
+    private static final class ConnectionBuilder implements Consumer<Config> {
+
+        private boolean hasConfig;
+        private String url;
+        private String username;
+        private String password;
+
+        private ConnectionBuilder() {
+            hasConfig = false;
+        }
+
+        @Override
+        public void accept(Config config) {
+            url = config.get("url").asString().get();
+            username = config.get("username").asString().get();
+            password = config.get("password").asString().get();
+            hasConfig = true;
+        }
+
+        private Connection createConnection() throws SQLException {
+            if (!hasConfig) {
+                fail("No db.connection configuration node was found.");
+            }
+            return DriverManager.getConnection(url, username, password);
+        }
+
+    }
+
+    /**
      * Wait for database server to start.
      *
      * @param dbClient Helidon database client
      */
     private static void waitForStart() {
-        String url = CONFIG.get("db.url").asString().get();
-        String username = CONFIG.get("db.username").asString().get();
-        String password = CONFIG.get("db.password").asString().get();
-        long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
-        boolean retry = true;
-        while (retry) {
-            try {
-                DriverManager.getConnection(url, username, password);
-                retry = false;
-            } catch (SQLException ex) {
-                if (System.currentTimeMillis() > endTm) {
-                    fail("Database startup failed!", ex);
-                }
-            }
+        ConnectionCheck check = new ConnectionCheck();
+        CONFIG.get("db.connection").ifExists(check);
+        if (!check.connected()) {
+            fail("Database startup failed!");
         }
     }
 
@@ -87,11 +145,10 @@ public class CheckIT {
      */
     @Test
     public void testDmlStatementExecution() throws SQLException {
-        String url = CONFIG.get("db.url").asString().get();
-        String username = CONFIG.get("db.username").asString().get();
-        String password = CONFIG.get("db.password").asString().get();
+        ConnectionBuilder builder = new ConnectionBuilder();
         String ping = CONFIG.get("db.statements.ping").asString().get();
-        Connection conn = DriverManager.getConnection(url, username, password);
+        CONFIG.get("db.connection").ifExists(builder);
+        Connection conn = builder.createConnection();
         int result = conn.createStatement().executeUpdate(ping);
         assertThat(result, equalTo(0));
     }

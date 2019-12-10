@@ -132,7 +132,9 @@ public class MongoDbClient implements DbClient {
 
     @Override
     public CompletionStage<Void> ping() {
-        return CompletableFuture.completedFuture(null);
+        return execute(exec -> exec
+                .statement("{\"operation\":\"command\",\"query\":{ping:1}}"))
+                .thenRun(() -> {});
     }
 
     @Override

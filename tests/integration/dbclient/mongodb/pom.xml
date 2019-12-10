@@ -131,11 +131,12 @@
                                 <dependency>io.helidon.tests.integration.dbclient:heldion-tests-integration-dbclient-common</dependency>
                             </dependenciesToScan>
                             <includes>
+                                <include>io.helidon.tests.integration.dbclient.common.tests.health.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.simple.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.statement.*IT</include>
+                                <include>io.helidon.tests.integration.dbclient.common.tests.interceptor.*IT</include>
                                 <!-- Do not have MongoDB with sessions support yet. -->
                                 <!--include>io.helidon.tests.integration.dbclient.common.tests.transaction.*IT</include-->
-                                <include>io.helidon.tests.integration.dbclient.jdbc.tests.*IT</include>
                             </includes>
                         </configuration>
                     </execution>
@@ -160,7 +161,53 @@
     </build>
 
     <profiles>
+        <!--
+             mvn -pl common,mongodb -Pdebug,docker install \
+                 -Dit.jdbc.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8787 -Xnoagent -Djava.compiler=NONE" \
+                 -Dit.jdbc.test='**/ExceptionalStmtIT#testCreateNamedQueryNamedArgsSetOrderArg'
+        -->
         <profile>
+            <id>debug</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${version.plugin.surefire}</version>
+                        <executions>
+                            <execution>
+                                <id>test</id>
+                                <configuration>
+                                    <debugForkedProcess>${it.jdbc.debug}</debugForkedProcess>
+                                    <test>${it.jdbc.test}</test>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${version.plugin.surefire}</version>
+                        <executions>
+                            <execution>
+                                <id>test</id>
+                                <configuration>
+                                    <test>${it.jdbc.test}</test>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+         <profile>
             <id>docker</id>
             <build>
                 <plugins>

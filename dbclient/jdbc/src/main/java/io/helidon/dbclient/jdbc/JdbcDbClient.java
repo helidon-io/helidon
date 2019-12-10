@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbClient;
@@ -41,6 +42,10 @@ import io.helidon.dbclient.common.InterceptorSupport;
  * Helidon DB implementation for JDBC drivers.
  */
 class JdbcDbClient implements DbClient {
+
+    /** Local logger instance. */
+    private static final Logger LOG = Logger.getLogger(DbClient.class.getName());
+
     private final ExecutorService executorService;
     private final ConnectionPool connectionPool;
     private final DbStatements statements;
@@ -69,17 +74,20 @@ class JdbcDbClient implements DbClient {
 
         CompletionStage<T> stage = executor.apply(execute)
                 .thenApply(it -> {
-                    execute.context()
-                            .whenComplete()
+                    execute.context().whenComplete()
                             .thenAccept(nothing -> {
-                                System.out.println("Commit");
+                                LOG.info(() -> "Transaction commit");
                                 execute.doCommit();
+                            }).exceptionally(throwable -> {
+                                LOG.warning(() -> String.format("[1] Transaction rollback: %s", throwable.getMessage()));
+                                execute.doRollback();
+                                return null;
                             });
                     return it;
                 });
 
-                stage.exceptionally(throwable -> {
-                    System.out.println("Rollback");
+        stage.exceptionally(throwable -> {
+                    LOG.warning(() -> String.format("[2] Transaction rollback: %s", throwable.getMessage()));
                     execute.doRollback();
                     return null;
                 });
@@ -95,17 +103,27 @@ class JdbcDbClient implements DbClient {
                                               connectionPool,
                                               dbMapperManager,
                                               mapperManager);
+
         T resultFuture = executor.apply(execute);
-        resultFuture
-                .handle((t, throwable) -> {
-                    execute.context()
-                            .whenComplete()
-                            .thenAccept(nothing -> {
-                                System.out.println("Close connection");
-                                execute.close();
-                            });
-                    return t;
-                });
+
+        resultFuture.thenApply(it -> {
+            execute.context().whenComplete()
+                    .thenAccept(nothing -> {
+                        LOG.info(() -> "Close connection");
+                        execute.close();
+                    }).exceptionally(throwable -> {
+                LOG.warning(() -> String.format("[1] Execution failed: %s", throwable.getMessage()));
+                execute.close();
+                return null;
+            });
+            return it;
+        });
+
+        resultFuture.exceptionally(throwable -> {
+            LOG.warning(() -> String.format("[2] Execution failed: %s", throwable.getMessage()));
+            execute.close();
+            return null;
+        });
 
         return resultFuture;
     }

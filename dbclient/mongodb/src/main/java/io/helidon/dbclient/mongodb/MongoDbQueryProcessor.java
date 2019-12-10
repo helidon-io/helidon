@@ -93,6 +93,7 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
     @Override
     public void subscribe(Flow.Subscriber<? super DbRow> subscriber) {
         this.subscriber = subscriber;
+//        subscriber.onSubscribe(\);
         //TODO this MUST use flow control (e.g. only request what our subscriber requested)
         this.subscription.request(Long.MAX_VALUE);
     }

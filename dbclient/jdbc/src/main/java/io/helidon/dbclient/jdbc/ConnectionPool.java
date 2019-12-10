@@ -16,6 +16,8 @@
 package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
+import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -98,6 +100,7 @@ public interface ConnectionPool {
         private String url;
         private String username;
         private String password;
+        private Properties properties;
 
         private Builder() {
         }
@@ -108,13 +111,27 @@ public interface ConnectionPool {
             String dbType = matcher.matches()
                     ? matcher.group(1)
                     : JdbcDbClientProvider.JDBC_DB_TYPE;
-            return new HikariConnectionPool(url, username, password, dbType);
+            return new HikariConnectionPool(url, username, password, properties, dbType);
         }
 
         public Builder config(Config config) {
-            config.get("url").asString().ifPresent(this::url);
-            config.get("username").asString().ifPresent(this::username);
-            config.get("password").asString().ifPresent(this::password);
+            Map<String, String> poolConfig = config.detach().asMap().get();
+            properties = new Properties();
+            poolConfig.forEach((key, value) -> {
+                switch (key) {
+                    case "url":
+                        url(value);
+                        break;
+                    case "username":
+                        username(value);
+                        break;
+                    case "password":
+                        password(value);
+                        break;
+                    default:
+                        properties.put(key, value);
+                }
+            });
             return this;
         }
 
@@ -132,5 +149,12 @@ public interface ConnectionPool {
             this.password = password;
             return this;
         }
+
+        public Builder properties(Properties properties) {
+            this.properties = properties;
+            return this;
+        }
+
     }
+
 }

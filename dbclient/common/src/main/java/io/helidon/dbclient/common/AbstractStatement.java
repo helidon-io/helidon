@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -37,6 +38,10 @@ import io.helidon.dbclient.DbStatementType;
  * @param <R> the result type of the statement as returned by {@link #execute()}
  */
 public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implements DbStatement<S, R> {
+
+    /** Local logger instance. */
+    private static final Logger LOG = Logger.getLogger(AbstractStatement.class.getName());
+
     private ParamType paramType = ParamType.UNKNOWN;
     private StatementParameters parameters;
     private final DbStatementType dbStatementType;
@@ -80,13 +85,7 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
 
         update(dbContext);
         CompletionStage<DbInterceptorContext> dbContextFuture = invokeInterceptors(dbContext);
-
-        CompletionStage<R> rFuture = doExecute(dbContextFuture, statementFuture, queryFuture);
-        statementFuture.exceptionally(ex -> {
-            rFuture.toCompletableFuture().completeExceptionally(ex);
-            return null;
-        });
-        return rFuture;
+        return doExecute(dbContextFuture, statementFuture, queryFuture);
     }
 
     /**
