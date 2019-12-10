@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,10 @@ public class EtcdConfigSourceIT {
     public void testConfig(EtcdApi version) throws Exception {
         putConfiguration(version, "/application.conf");
         Config config = Config.builder()
-                .sources(EtcdConfigSourceBuilder
-                                 .create(DEFAULT_URI, "configuration", version)
+                .sources(EtcdConfigSource.builder()
+                                 .uri(DEFAULT_URI)
+                                 .key("configuration")
+                                 .api(version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                                  .build())
                 .addParser(new HoconConfigParser())
@@ -64,8 +66,10 @@ public class EtcdConfigSourceIT {
     public void testConfigChanges(EtcdApi version) throws Exception {
         putConfiguration(version, "/application.conf");
         Config config = Config.builder()
-                .sources(EtcdConfigSourceBuilder
-                                 .create(DEFAULT_URI, "configuration", version)
+                .sources(EtcdConfigSource.builder()
+                                 .uri(DEFAULT_URI)
+                                 .key("configuration")
+                                 .api(version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                                  .pollingStrategy(EtcdWatchPollingStrategy::create)
                                  .build())

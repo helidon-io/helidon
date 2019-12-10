@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,7 +62,22 @@ class ConfigMapperManager implements ConfigMapper {
 
     @Override
     public <T> T map(Config config, Class<T> type) throws MissingValueException, ConfigMappingException {
+        if (type.isArray()) {
+            return mapArray(config, type);
+        }
         return map(config, GenericType.create(supportedType(type)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T mapArray(Config config, Class<T> type) {
+        Class<?> componentType = type.getComponentType();
+        List<?> listValue = config.asList(componentType).get();
+        Object result = Array.newInstance(componentType, listValue.size());
+        for (int i = 0; i < listValue.size(); i++) {
+             Object component = listValue.get(i);
+            Array.set(result, i, component);
+        }
+        return (T) result;
     }
 
     @Override
@@ -149,38 +165,7 @@ class ConfigMapperManager implements ConfigMapper {
         }
 
         void add(ConfigMapperProvider provider) {
-            add(genericType -> {
-                // first try to get it from generic type mappers map
-                BiFunction<Config, ConfigMapper, ?> converter = provider.genericTypeMappers().get(genericType);
-
-                if (null != converter) {
-                    return Optional.of(converter);
-                }
-
-                // second try to get it from generic type method
-                Optional<? extends BiFunction<Config, ConfigMapper, ?>> mapper1 = provider.mapper(genericType);
-
-                if (mapper1.isPresent()) {
-                    return mapper1;
-                }
-
-                if (!genericType.isClass()) {
-                    return Optional.empty();
-                }
-
-                // third try the specific class map
-                Class<?> rawType = genericType.rawType();
-
-                Function<Config, ?> configConverter = provider.mappers().get(rawType);
-
-                if (null != configConverter) {
-                    return Optional.of((config, mapper) -> configConverter.apply(config));
-                }
-
-                // and last, the specific class method
-                return provider.mapper(rawType)
-                        .map(funct -> (config, mapper) -> funct.apply(config));
-            });
+            add(new ProviderWrapper(provider));
         }
 
         void addAll(MapperProviders other) {
@@ -247,7 +232,7 @@ class ConfigMapperManager implements ConfigMapper {
 
         @Override
         public ConfigValue<String> asString() {
-            return ConfigValues.create(this, () -> Optional.of(value), Config::asString);
+            return ConfigValues.create(this, () -> Optional.ofNullable(value), Config::asString);
         }
 
         @Override
@@ -351,4 +336,51 @@ class ConfigMapperManager implements ConfigMapper {
         }
     }
 
+    private static final class ProviderWrapper
+            implements Function<GenericType<?>, Optional<? extends BiFunction<Config, ConfigMapper, ?>>> {
+        private final ConfigMapperProvider provider;
+
+        private ProviderWrapper(ConfigMapperProvider wrapped) {
+            this.provider = wrapped;
+        }
+
+        @Override
+        public Optional<? extends BiFunction<Config, ConfigMapper, ?>> apply(GenericType<?> genericType) {
+            // first try to get it from generic type mappers map
+            BiFunction<Config, ConfigMapper, ?> converter = provider.genericTypeMappers().get(genericType);
+
+            if (null != converter) {
+                return Optional.of(converter);
+            }
+
+            // second try to get it from generic type method
+            Optional<? extends BiFunction<Config, ConfigMapper, ?>> mapper1 = provider.mapper(genericType);
+
+            if (mapper1.isPresent()) {
+                return mapper1;
+            }
+
+            if (!genericType.isClass()) {
+                return Optional.empty();
+            }
+
+            // third try the specific class map
+            Class<?> rawType = genericType.rawType();
+
+            Function<Config, ?> configConverter = provider.mappers().get(rawType);
+
+            if (null != configConverter) {
+                return Optional.of((config, mapper) -> configConverter.apply(config));
+            }
+
+            // and last, the specific class method
+            return provider.mapper(rawType)
+                    .map(funct -> (config, mapper) -> funct.apply(config));
+        }
+
+        @Override
+        public String toString() {
+            return provider.toString();
+        }
+    }
 }

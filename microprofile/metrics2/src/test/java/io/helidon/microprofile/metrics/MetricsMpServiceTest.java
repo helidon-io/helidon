@@ -19,10 +19,8 @@ package io.helidon.microprofile.metrics;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
-import io.helidon.config.Config;
 import io.helidon.metrics.HelidonMetadata;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -48,7 +46,6 @@ public class MetricsMpServiceTest {
     public static void initializeServer() throws Exception {
         server = Server.builder()
                 .addResourceClass(HelloWorldResource.class)
-                .config(MpConfig.builder().config(Config.create()).build())
                 .host("localhost")
                 // choose a random available port
                 .port(-1)

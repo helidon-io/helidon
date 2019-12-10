@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package io.helidon.microprofile.example.helloworld.explicit;
 
 import java.util.logging.Logger;
 
-import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.weld.environment.se.Weld;
 import org.jboss.weld.environment.se.WeldContainer;
 
@@ -50,7 +49,9 @@ public class Main {
                 .addApplication(HelloWorldApplication.class)
                 .cdiContainer(cdiContainer)
                 // using a customized helidon config instance (in this case the default...)
-                .config(MpConfig.builder().config(Config.create()).build())
+                .config(ConfigProviderResolver.instance()
+                                .getBuilder()
+                                .build())
                 .host("localhost")
                 // use a random free port
                 .port(0)

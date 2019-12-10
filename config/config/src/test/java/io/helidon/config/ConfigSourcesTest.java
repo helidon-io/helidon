@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -37,6 +38,7 @@ import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -103,14 +105,6 @@ public class ConfigSourcesTest {
     }
 
     @Test
-    public void testMapBuilderSupplierGetOnce() {
-        ConfigSources.MapBuilder builder = ConfigSources.create(mapOf());
-
-        ConfigSource configSource = builder.get();
-        assertThat(configSource, sameInstance(builder.get()));
-    }
-
-    @Test
     public void testCompositeBuilderSupplierGetOnce() {
         ConfigSources.CompositeBuilder builder = ConfigSources.create();
 
@@ -120,7 +114,7 @@ public class ConfigSourcesTest {
 
     @Test
     public void testLoadNoSource() {
-        ConfigSource source = ConfigSources.load().build();
+        ConfigSource source = ConfigSources.empty();
         source.init(mock(ConfigContext.class));
 
         assertThat(source.load(), is(Optional.empty()));
@@ -139,7 +133,10 @@ public class ConfigSourcesTest {
                                 .build())
                         .build());
 
-        ConfigSource source = ConfigSources.load(meta1).build();
+        List<ConfigSource> sources = MetaConfig.configSources(Config.create(meta1));
+        assertThat(sources, hasSize(1));
+
+        ConfigSource source = sources.get(0);
         source.init(mock(ConfigContext.class));
         ObjectNode objectNode = source.load().get();
         assertThat(objectNode.get(TEST_SYS_PROP_NAME), valueNode(TEST_SYS_PROP_VALUE));
@@ -173,7 +170,10 @@ public class ConfigSourcesTest {
                         .build());
 
         //meta1 has precedence over meta2
-        ConfigSource source = ConfigSources.load(meta1, meta2).build();
+        List<ConfigSource> sources = MetaConfig.configSources(Config.create(meta1));
+        assertThat(sources, hasSize(1));
+        ConfigSource source = sources.get(0);
+
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser("text/x-java-properties")).thenReturn(Optional.of(ConfigParsers.properties()));
 
@@ -188,14 +188,14 @@ public class ConfigSourcesTest {
     public void testSystemPropertiesSourceType() {
         ConfigSource source = ConfigSources.systemProperties();
         assertThat(source, is(instanceOf(ConfigSources.SystemPropertiesConfigSource.class)));
-        assertThat(source.description(), is("SystemPropertiesConfig"));
+        assertThat(source.description(), is("SystemPropertiesConfig[]*"));
     }
 
     @Test
     public void testEnvironmentVariablesSourceType() {
         ConfigSource source = ConfigSources.environmentVariables();
         assertThat(source, is(instanceOf(ConfigSources.EnvironmentVariablesConfigSource.class)));
-        assertThat(source.description(), is("EnvironmentVariablesConfig"));
+        assertThat(source.description(), is("EnvironmentVariablesConfig[]"));
     }
 
     @Test
@@ -242,8 +242,8 @@ public class ConfigSourcesTest {
         // NOTE: This code should be kept in sync with MpcSourceEnvironmentVariablesTest.testPrecedence(), as we want
         //       SE and MP to be as symmetrical as possible. There are two differences:
         //
-        //       1. Env var and sys prop precedence is reversed in SE compared to MP (issue #507). This can be fixed
-        //          easily, but is a breaking change so should probably be addressed in the next major release.
+        //       1. This is now resolved - SE and MP have the same behavior related
+        //          to System proprerties and Environment variables
         //
         //       2. An upper-to-lower case mapping is performed in SE but is not in MP (correctly, per spec). This is a
         //          consequence of the static mapping (see EnvironmentVariables.expand()) required in SE to preserve
@@ -319,7 +319,7 @@ public class ConfigSourcesTest {
                                     .build();
 
         assertValue("app.key", "app-value", appSysAndEnv);
-        assertValue("com.ACME.size", "mapped-env-value", appSysAndEnv); // DIFFERENCE 1: should be sys-prop-value
+        assertValue("com.ACME.size", "sys-prop-value", appSysAndEnv);
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", appSysAndEnv);
 
         assertValue("com.acme.size","mapped-env-value", appAndEnv);  // DIFFERENCE 2: should not exist

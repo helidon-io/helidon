@@ -78,11 +78,32 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     /**
      * Create an instance from meta configuration.
      *
-     * @param config meta configuration of this source
+     * @param metaConfig meta configuration of this source
      * @return config source configured from the meta configuration
      */
-    public static GitConfigSource create(Config config) {
-        return GitConfigSourceBuilder.create(config).build();
+    public static GitConfigSource create(Config metaConfig) {
+        return builder().config(metaConfig).build();
+    }
+
+    /**
+     * Create a fluent API builder for GIT config source.
+     *
+     * @return a new builder instance
+     */
+    public static GitConfigSourceBuilder builder() {
+        return new GitConfigSourceBuilder();
+    }
+
+    /**
+     * Create a fluent API builder for GIT config source for a file.
+     *
+     * @param path path of the configuration file
+     * @return a new builder instance
+     * @deprecated use {@link #builder(String)} instead
+     */
+    @Deprecated
+    public static GitConfigSourceBuilder builder(String path) {
+        return new GitConfigSourceBuilder().path(path);
     }
 
     /**

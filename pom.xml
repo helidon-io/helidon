@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>1.3.2-SNAPSHOT</version>
+        <version>2.0-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -58,7 +58,7 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
-        <version.lib.netty.tcnative>2.0.25.Final</version.lib.netty.tcnative>
+        <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.0.8</version.lib.rxjava>
@@ -182,8 +182,9 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <source>11</source>
+                        <target>11</target>
+                        <release>11</release>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -195,8 +196,11 @@
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
                         <source>8</source>
+                        <release>8</release>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
+                        <!--<verbose>true</verbose>-->
+                        <isOffline>true</isOffline>
                         <offlineLinks>
                             <offlineLink>
                                 <url>${javadoc.link.jackson-annotations}</url>
@@ -308,10 +312,11 @@
                             </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
-                            <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
+                            <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
+                            <!--<additionalJOption>- -frames</additionalJOption>-->
                         </additionalJOptions>
                         <additionalOptions>
-                            <option>--add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</option>
+                            <additionalOption>--add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>
                         </additionalOptions>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
@@ -904,67 +909,6 @@
                                     <JOption>-Xold</JOption>
                                 </additionalJOptions>
                             </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>jdk9+</id>
-            <activation>
-                <jdk>[9,)</jdk>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-compiler-plugin</artifactId>
-                            <executions>
-                                <!-- first pass, compile everything for java9 -->
-                                <execution>
-                                    <id>default-compile</id>
-                                    <configuration>
-                                        <source>9</source>
-                                        <target>9</target>
-                                        <release>9</release>
-                                        <compileSourceRoots>
-                                            <compileSourceRoot>${project.basedir}/src/main/java</compileSourceRoot>
-                                            <compileSourceRoot>${project.basedir}/src/main/java9</compileSourceRoot>
-                                            <compileSourceRoot>${project.basedir}/target/generated-sources</compileSourceRoot>
-                                        </compileSourceRoots>
-                                    </configuration>
-                                </execution>
-                                <!-- 2nd pass, re-compile for java8 -->
-                                <execution>
-                                    <id>base-compile</id>
-                                    <goals>
-                                        <goal>compile</goal>
-                                    </goals>
-                                    <configuration>
-                                        <release>8</release>
-                                    </configuration>
-                                </execution>
-                                <execution>
-                                    <id>default-testCompile</id>
-                                    <goals>
-                                        <goal>testCompile</goal>
-                                    </goals>
-                                    <configuration>
-                                        <release>8</release>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                          <groupId>org.apache.maven.plugins</groupId>
-                          <artifactId>maven-javadoc-plugin</artifactId>
-                          <configuration>
-                              <additionalJOptions combine.children="append">
-                                  <additionalJOption>--frames</additionalJOption>
-                              </additionalJOptions>
-                          </configuration>
                         </plugin>
                     </plugins>
                 </pluginManagement>

@@ -113,7 +113,7 @@ public class ConfigSourceTest {
     public void testFromSystemPropertiesDescription() {
         ConfigSource configSource = ConfigSources.systemProperties();
 
-        assertThat(configSource.description(), is("SystemPropertiesConfig"));
+        assertThat(configSource.description(), is("SystemPropertiesConfig[]*"));
     }
 
     @Test
@@ -131,7 +131,7 @@ public class ConfigSourceTest {
     public void testFromEnvironmentVariablesDescription() {
         ConfigSource configSource = ConfigSources.environmentVariables();
 
-        assertThat(configSource.description(), is("EnvironmentVariablesConfig"));
+        assertThat(configSource.description(), is("EnvironmentVariablesConfig[]"));
     }
 
     @Test

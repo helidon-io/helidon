@@ -15,6 +15,7 @@
  */
 package io.helidon.config.objectmapping;
 
+import java.lang.invoke.MethodHandle;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -112,11 +113,21 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
 
     private static <T> Optional<Function<Config, T>> findStaticStringMethodMapper(Class<T> type,
                                                                                   String methodName) {
-        return findStaticMethod(type, methodName, String.class)
-                .map(handle -> new StringMethodHandleConfigMapper<>(
-                        type,
-                        methodName + "(String) method",
-                        handle));
+
+        Optional<MethodHandle> method = findStaticMethod(type,
+                                                         methodName,
+                                                         String.class);
+
+        if (!method.isPresent()) {
+            method = findStaticMethod(type,
+                                      methodName,
+                                      CharSequence.class);
+        }
+
+        return method.map(handle -> new StringMethodHandleConfigMapper<>(
+                type,
+                methodName + "(String) method",
+                handle));
     }
 
     private static <T> Optional<Function<Config, T>> findParseCharSequenceMethodMapper(Class<T> type) {
@@ -160,7 +171,7 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static <T> Optional<Function<Config, T>> findGenericMapper(Class<T> type) {
         try {
             return findConstructor(type)
-                .map(methodHandle -> new GenericConfigMapper<>(type, methodHandle));
+                    .map(methodHandle -> new GenericConfigMapper<>(type, methodHandle));
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }

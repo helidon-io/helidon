@@ -17,11 +17,17 @@
 package io.helidon.config;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,11 +35,13 @@ import java.util.logging.Logger;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
 /**
  * Abstract common implementation of {@link Config} extended by appropriate Config node types:
  * {@link ConfigListImpl}, {@link ConfigMissingImpl}, {@link ConfigObjectImpl}, {@link ConfigLeafImpl}.
  */
-abstract class AbstractConfigImpl implements Config {
+abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.config.Config {
 
     public static final Logger LOGGER = Logger.getLogger(AbstractConfigImpl.class.getName());
 
@@ -47,6 +55,9 @@ abstract class AbstractConfigImpl implements Config {
     private final ConfigMapperManager mapperManager;
     private volatile Flow.Subscriber<ConfigDiff> subscriber;
     private final ReentrantReadWriteLock subscriberLock = new ReentrantReadWriteLock();
+    private final AtomicReference<Config> latestConfig = new AtomicReference<>();
+    private boolean useSystemProperties;
+    private boolean useEnvironmentVariables;
 
     /**
      * Initializes Config implementation.
@@ -121,7 +132,7 @@ abstract class AbstractConfigImpl implements Config {
 
     @Override
     public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
-        return mapperManager.map(value, type, "");
+        return mapperManager.map(value, type, key().toString());
     }
 
     @Override
@@ -172,6 +183,118 @@ abstract class AbstractConfigImpl implements Config {
         }
     }
 
+    /*
+     * MicroProfile Config methods
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getValue(String propertyName, Class<T> propertyType) {
+        Config config = latestConfig.get();
+        try {
+            return mpFindValue(config, propertyName, propertyType);
+        } catch (MissingValueException e) {
+            throw new NoSuchElementException(e.getMessage());
+        } catch (ConfigMappingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    @Override
+    public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
+        try {
+            return Optional.of(getValue(propertyName, propertyType));
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
+        } catch (ConfigMappingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    @Override
+    public Iterable<String> getPropertyNames() {
+        Set<String> keys = new HashSet<>(latestConfig.get()
+                                                 .asMap()
+                                                 .orElseGet(Collections::emptyMap)
+                                                 .keySet());
+
+        if (useSystemProperties) {
+            keys.addAll(System.getProperties().stringPropertyNames());
+        }
+
+        return keys;
+    }
+
+    @Override
+    public Iterable<ConfigSource> getConfigSources() {
+        Config config = latestConfig.get();
+        if (null == config) {
+            // maybe we are in progress of initializing this config (e.g. filter processing)
+            config = this;
+        }
+
+        if (config instanceof AbstractConfigImpl) {
+            return ((AbstractConfigImpl) config).mpConfigSources();
+        }
+        return Collections.emptyList();
+    }
+
+    private Iterable<ConfigSource> mpConfigSources() {
+        return new LinkedList<>(factory.mpConfigSources());
+    }
+
+    private <T> T mpFindValue(Config config, String propertyName, Class<T> propertyType) {
+        // TODO this is a hardcoded fix for TCK tests that expect system properties to be mutable
+        //  Helidon config does the same, yet with a slight delay (polling reasons)
+        //  we need to check if system properties are enabled and first - if so, do this
+
+        String property = null;
+        if (useSystemProperties) {
+            property = System.getProperty(propertyName);
+        }
+
+        if (null == property) {
+            ConfigValue<T> value = config
+                    .get(propertyName)
+                    .as(propertyType);
+
+            if (value.isPresent()) {
+                return value.get();
+            }
+
+            // try to find in env vars
+            if (useEnvironmentVariables) {
+                T envVar = mpFindEnvVar(config, propertyName, propertyType);
+                if (null != envVar) {
+                    return envVar;
+                }
+            }
+
+            return value.get();
+        } else {
+            return config.get(propertyName).convert(propertyType, property);
+        }
+    }
+
+    private <T> T mpFindEnvVar(Config config, String propertyName, Class<T> propertyType) {
+        String result = System.getenv(propertyName);
+
+        // now let's resolve all variants required by the specification
+        if (null == result) {
+            for (String alias : EnvironmentVariableAliases.aliasesOf(propertyName)) {
+                result = System.getenv(alias);
+                if (null != result) {
+                    break;
+                }
+            }
+        }
+
+        if (null != result) {
+            return config.convert(propertyType, result);
+        }
+
+        return null;
+    }
+
     /**
      * We should wait for a subscription, otherwise, we might miss some changes.
      */
@@ -218,10 +341,54 @@ abstract class AbstractConfigImpl implements Config {
         return factory;
     }
 
-
     @Override
     public Flow.Publisher<Config> changes() {
         return changesPublisher;
+    }
+
+    void initMp() {
+        this.latestConfig.set(this);
+
+        List<io.helidon.config.spi.ConfigSource> configSources = factory.configSources();
+        if (configSources.isEmpty()) {
+            // if no config sources, then no changes
+            return;
+        }
+        if (configSources.size() == 1) {
+            if (configSources.get(0) == ConfigSources.EmptyConfigSourceHolder.EMPTY) {
+                // if the only config source is the empty one, then no changes
+                return;
+            }
+        }
+
+        io.helidon.config.spi.ConfigSource first = configSources.get(0);
+        if (first instanceof BuilderImpl.HelidonSourceWrapper) {
+            first = ((BuilderImpl.HelidonSourceWrapper) first).unwrap();
+        }
+
+        if (first instanceof ConfigSources.SystemPropertiesConfigSource) {
+            this.useSystemProperties = true;
+        }
+
+        for (io.helidon.config.spi.ConfigSource configSource : configSources) {
+            io.helidon.config.spi.ConfigSource it = configSource;
+            if (it instanceof BuilderImpl.HelidonSourceWrapper) {
+                it = ((BuilderImpl.HelidonSourceWrapper) it).unwrap();
+            }
+
+            if (it instanceof ConfigSources.EnvironmentVariablesConfigSource) {
+                // there is an env var config source
+                this.useEnvironmentVariables = true;
+                break;
+            }
+        }
+
+        // TODO this must be changed, as otherwise we would not get changes in MP
+        //       and why did it work when the MpConfig was a separate implementation?
+        //        onChange(newConfig -> {
+        //            // TODO this does not work - seems that when there is more than one subscriber, the events are not delivered
+        //            latestConfig.set(newConfig);
+        //        });
     }
 
     /**

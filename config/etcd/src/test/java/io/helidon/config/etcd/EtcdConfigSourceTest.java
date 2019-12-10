@@ -62,8 +62,9 @@ public class EtcdConfigSourceTest {
 
     @Test
     public void testConfigSourceBuilder() {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .create(DEFAULT_URI, "key", EtcdApi.v2)
+        EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                .key("key")
+                .api(EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 
@@ -73,8 +74,10 @@ public class EtcdConfigSourceTest {
     @Test
     public void testBadUri() {
         assertThrows(ConfigException.class, () -> {
-            EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                    .create(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
+            EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                    .uri(URI.create("http://localhost:1111"))
+                    .key("configuration")
+                    .api(EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
@@ -85,8 +88,10 @@ public class EtcdConfigSourceTest {
     @Test
     public void testBadKey() {
         assertThrows(ConfigException.class, () -> {
-            EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                    .create(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
+            EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                    .uri(DEFAULT_URI)
+                    .key("non-existing-key-23323423424234")
+                    .api(EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
@@ -98,8 +103,10 @@ public class EtcdConfigSourceTest {
     public void testConfig() {
         final AtomicLong revision = new AtomicLong(0);
 
-        EtcdConfigSource configSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .create(DEFAULT_URI, "configuration", EtcdApi.v2)
+        EtcdConfigSource configSource = EtcdConfigSource.builder()
+                .uri(DEFAULT_URI)
+                .key("configuration")
+                .api(EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,9 @@ import io.helidon.config.ConfigException;
 /**
  * Utilities for file-related source classes.
  *
- * @see FileConfigSource
+ * @see io.helidon.config.FileConfigSource
  * @see FileOverrideSource
- * @see DirectoryConfigSource
+ * @see io.helidon.config.DirectoryConfigSource
  */
 public class FileSourceHelper {
 

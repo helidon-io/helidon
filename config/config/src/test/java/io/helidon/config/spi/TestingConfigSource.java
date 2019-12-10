@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public class TestingConfigSource extends AbstractConfigSource<Instant> {
     /**
      * Testing implementation of {@link AbstractSource.Builder}.
      */
-    public static class TestingBuilder extends Builder<TestingBuilder, Void> {
+    public static class TestingBuilder extends Builder<TestingBuilder, Void, TestingConfigSource> {
         private ObjectNode objectNode;
 
         private TestingBuilder() {
@@ -118,8 +118,8 @@ public class TestingConfigSource extends AbstractConfigSource<Instant> {
         }
 
         @Override
-        protected TestingBuilder init(Config metaConfig) {
-            return super.init(metaConfig);
+        public TestingBuilder config(Config metaConfig) {
+            return super.config(metaConfig);
         }
 
         public TestingBuilder objectNode(ObjectNode objectNode) {

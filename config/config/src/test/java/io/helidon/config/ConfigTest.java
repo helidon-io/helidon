@@ -31,6 +31,7 @@ import io.helidon.config.spi.ConfigSourceTest;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -115,6 +116,8 @@ public class ConfigTest {
     }
 
     @Test
+    @Disabled
+    // this test is no long valid, as system properties have precedence over env vars
     public void testCreateKeyFromEnvVars() {
         System.setProperty(ConfigSourceTest.TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
 
@@ -122,6 +125,8 @@ public class ConfigTest {
     }
 
     @Test
+    @Disabled
+    // this test is no long valid, as system properties have precedence over env vars
     public void testBuilderDefaultConfigSourceKeyFromEnvVars() {
         System.setProperty(ConfigSourceTest.TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
 
@@ -632,7 +637,7 @@ public class ConfigTest {
         assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
         assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
 
-        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_ENV_VAR_VALUE));
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
     }
 
     @Test

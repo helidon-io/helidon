@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,21 +187,8 @@ public class AbstractConfigSourceTest {
     }
 
     @Test
-    public void testCompositeBuilderSupplierGetOnce() {
-        AbstractConfigSource.Builder builder = new AbstractConfigSource.Builder(Void.class) {
-            @Override
-            public ConfigSource build() {
-                return Optional::empty;
-            }
-        };
-
-        ConfigSource configSource = builder.get();
-        assertThat(configSource, sameInstance(builder.get()));
-    }
-
-    @Test
     public void testInitAll() {
-        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().init(Config.create(ConfigSources.create(
+        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().config(Config.create(ConfigSources.create(
                 CollectionsHelper.mapOf("media-type-mapping.yaml", "application/x-yaml",
                        "media-type-mapping.password", "application/base64"))));
 
@@ -213,7 +200,7 @@ public class AbstractConfigSourceTest {
 
     @Test
     public void testInitNothing() {
-        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().init((Config.empty()));
+        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().config((Config.empty()));
 
         //media-type-mapping
         assertThat(builder.mediaTypeMapping(), is(nullValue()));
