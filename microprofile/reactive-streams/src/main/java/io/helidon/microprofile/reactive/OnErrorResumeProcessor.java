@@ -19,6 +19,7 @@ package io.helidon.microprofile.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import io.helidon.common.reactive.Flow;
@@ -33,6 +34,7 @@ import org.reactivestreams.Subscription;
 public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
 
+    private AtomicBoolean completed = new AtomicBoolean(false);
     private Function<Throwable, T> supplier;
     private Function<Throwable, Publisher<T>> publisherSupplier;
     //TODO: sync access - onError can do async write
@@ -56,6 +58,10 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
     @Override
     protected void tryRequest(Flow.Subscription subscription) {
+        if (completed.get()) {
+            tryComplete();
+        }
+
         if (onErrorPublisherSubscription.isPresent()) {
             super.tryRequest(HybridSubscription.from(onErrorPublisherSubscription.get()));
         } else {
@@ -64,11 +70,17 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
     }
 
     @Override
+    protected void hookOnNext(T item) {
+        super.submit(item);
+    }
+
+    @Override
     public void onError(Throwable ex) {
         Objects.requireNonNull(ex);
         try {
             if (Objects.nonNull(supplier)) {
 
+                completed.set(true);
                 submit(supplier.apply(ex));
                 tryComplete();
 
@@ -105,6 +117,8 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
                 });
             }
         } catch (Throwable t) {
+            onErrorPublisherSubscription.ifPresent(Subscription::cancel);
+            getSubscription().ifPresent(Flow.Subscription::cancel);
             superError(t);
         }
     }

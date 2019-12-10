@@ -126,7 +126,6 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
     @Override
     public void fail(Throwable ex) {
-        ex.printStackTrace();//TODO: remove
         if (rsCompatible) {
             //Upstream cancel on error with fail method proxy to avoid spec rule 2.3
             getSubscription().ifPresent(Flow.Subscription::cancel);

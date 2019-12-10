@@ -49,6 +49,8 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
     public void onError(Throwable ex) {
         if (0 < this.counter.get()) {
             super.onError(ex);
+        }else {
+            tryComplete();
         }
     }
 
@@ -58,7 +60,7 @@ public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Mu
         if (0 < actCounter) {
             submit(item);
         } else {
-            getSubscription().get().cancel();
+            getSubscription().ifPresent(Flow.Subscription::cancel);
             tryComplete();
         }
     }

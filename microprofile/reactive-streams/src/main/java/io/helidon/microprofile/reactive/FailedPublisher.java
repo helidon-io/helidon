@@ -32,7 +32,7 @@ public class FailedPublisher implements Flow.Publisher {
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-
+                subscriber.onError(throwable);
             }
 
             @Override

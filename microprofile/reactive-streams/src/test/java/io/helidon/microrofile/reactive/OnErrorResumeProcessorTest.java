@@ -19,11 +19,12 @@ package io.helidon.microrofile.reactive;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.IntStream;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.LongStream;
 
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
@@ -31,10 +32,12 @@ import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 
-public class OnErrorResumeProcessorTest {
+public class OnErrorResumeProcessorTest extends AbstractProcessorTest {
 
     @Test
     void onErrorResume() throws InterruptedException, ExecutionException, TimeoutException {
@@ -87,6 +90,22 @@ public class OnErrorResumeProcessorTest {
                 .toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);
     }
 
+    @Override
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder()
+                .onErrorResumeWith(throwable -> ReactiveStreams.of(1L, 2L))
+                .buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder()
+                .onErrorResumeWith(throwable -> {
+                    throw new TestRuntimeException();
+                })
+                .buildRs();
+    }
+
     @Test
     void requestCount() {
         Publisher<Long> pub = ReactiveStreams.<Long>failed(new TestThrowable())
@@ -120,5 +139,34 @@ public class OnErrorResumeProcessorTest {
         sub.cancelAfter(100_000L);
         sub.request(Long.MAX_VALUE - 1);
         sub.request(Long.MAX_VALUE - 1);
+    }
+
+    @Test
+    void name() throws InterruptedException, ExecutionException, TimeoutException {
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+        List<String> result = ReactiveStreams.<String>failed(new TestRuntimeException())
+                .onErrorResume(err -> {
+                    exception.set(err);
+                    return "foo";
+                })
+                .toList()
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+        assertEquals(Collections.singletonList("foo"), result);
+        assertEquals(TestRuntimeException.TEST_MSG, exception.get().getMessage());
+    }
+
+    @Test
+    void requestFinite() {
+        Publisher<Long> pub = ReactiveStreams.<Long>failed(new TestThrowable())
+                .onErrorResumeWith(
+                        t -> ReactiveStreams.fromIterable(() -> LongStream.rangeClosed(1, 4).boxed().iterator())
+                )
+                .buildRs();
+        CountingSubscriber sub = new CountingSubscriber();
+        ReactiveStreams.fromPublisher(pub).buildRs().subscribe(HybridSubscriber.from(sub));
+
+        sub.request(1);
+        sub.expectRequestCount(1);
+        sub.expectSum(1);
     }
 }

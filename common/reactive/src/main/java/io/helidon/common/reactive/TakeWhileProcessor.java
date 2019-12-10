@@ -31,6 +31,7 @@ public class TakeWhileProcessor<T> extends RSCompatibleProcessor<T, T> implement
         if (predicate.test(item)) {
             submit(item);
         } else {
+            getSubscription().ifPresent(Flow.Subscription::cancel);
             tryComplete();
         }
     }

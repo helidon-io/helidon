@@ -35,6 +35,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import io.helidon.common.reactive.DropWhileProcessor;
 import io.helidon.common.reactive.FilterProcessor;
@@ -868,5 +869,21 @@ public class EngineTest {
                 .to(subscriber)
                 .run();
         testBody.accept(subscriber);
+    }
+
+    @Test
+    void name() {
+        Publisher<Long> pub = ReactiveStreams.<Long>failed(new Exception("BOOM"))
+                .onErrorResumeWith(
+                        t -> ReactiveStreams.fromIterable(() -> LongStream.rangeClosed(1, 5).boxed().iterator())
+                )
+                .buildRs();
+
+        CountingSubscriber sub = new CountingSubscriber();
+
+        pub.subscribe(sub);
+
+        sub.request(1);
+        sub.expectRequestCount(1);
     }
 }

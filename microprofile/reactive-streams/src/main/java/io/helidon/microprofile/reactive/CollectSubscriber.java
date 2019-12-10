@@ -140,7 +140,7 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
                     onError(t);
                 }
                 if (Objects.nonNull(subscription)) {
-                    subscription.cancel();
+                    //subscription.cancel();
                 }
             }
         };

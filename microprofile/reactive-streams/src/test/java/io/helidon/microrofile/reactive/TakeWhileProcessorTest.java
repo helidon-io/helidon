@@ -17,7 +17,13 @@
 
 package io.helidon.microrofile.reactive;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 
 public class TakeWhileProcessorTest extends AbstractProcessorTest {
@@ -31,5 +37,14 @@ public class TakeWhileProcessorTest extends AbstractProcessorTest {
         return ReactiveStreams.<Long>builder().takeWhile(i -> {
             throw t;
         }).buildRs();
+    }
+
+    @Test
+    void cancelWhenDone() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> cancelled = new CompletableFuture<>();
+        ReactiveStreams.generate(() -> 4).onTerminate(() -> {
+            cancelled.complete(null);
+        }).takeWhile((t) -> false).toList().run();
+        cancelled.get(1, TimeUnit.SECONDS);
     }
 }

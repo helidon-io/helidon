@@ -17,6 +17,15 @@
 
 package io.helidon.microrofile.reactive;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
@@ -44,5 +53,19 @@ public class LimitProcessorTest extends AbstractProcessorTest {
             s.expectSum(6);
             p.sendOnError(new TestThrowable());
         });
+    }
+
+    @Test
+    void ignoreErrorsAfterDone2() throws InterruptedException, ExecutionException, TimeoutException {
+        AtomicLong seq = new AtomicLong(0);
+        List<Long> result = ReactiveStreams.generate(seq::incrementAndGet).flatMap((i) -> {
+            return i == 4 ? ReactiveStreams.failed(new RuntimeException("failed")) : ReactiveStreams.of(i);
+        })
+                .limit(3L)
+                .toList()
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList(1L, 2L, 3L), result);
     }
 }
