@@ -24,11 +24,8 @@
       -->
     <test name="microprofile-fault-tolerance 2.0 TCK">
         <packages>
-            <package name="org.eclipse.microprofile.fault.tolerance.tck.*">
-            </package>
+            <!-- package name="org.eclipse.microprofile.fault.tolerance.tck.*">
+            </package -->
         </packages>
-<!--        <classes>-->
-<!--            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryConditionTest"/>-->
-<!--        </classes>-->
     </test>
 </suite>
