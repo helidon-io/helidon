@@ -122,10 +122,9 @@
 
     <profiles>
         <profile>
-            <id>jdk9+</id>
+            <id>unsupported-module-tests</id>
             <activation>
-                <jdk>[9,)</jdk>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <build>
                 <plugins>
@@ -136,9 +135,9 @@
                             <execution>
                                 <id>default-testCompile</id>
                                 <configuration>
-                                    <release>9</release>
-                                    <source>1.8</source>
-                                    <target>1.8</target>
+                                    <release>11</release>
+                                    <source>11</source>
+                                    <target>11</target>
                                     <compilerArgs>
                                         <arg>--add-modules</arg>
                                         <arg>jdk.unsupported</arg>
