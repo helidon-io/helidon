@@ -25,11 +25,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+import io.helidon.common.reactive.Flow;
+import io.helidon.microprofile.reactive.TappedProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
@@ -37,16 +43,34 @@ import org.reactivestreams.Subscription;
 
 public abstract class AbstractProcessorTest {
 
-    protected abstract Processor<Long, Long> getProcessor();
+    @SuppressWarnings("unchecked")
+    protected Processor<Long, Long> getProcessor() {
+        Flow.Processor<Long, Long> processor = (Flow.Processor) TappedProcessor.create();
+        return HybridProcessor.from(processor);
+    }
 
     protected abstract Processor<Long, Long> getFailedProcessor(RuntimeException t);
+
+    protected Publisher<Long> getPublisher(long items) {
+        if (items < 1) {
+            return new MockPublisher();
+        } else {
+            return ReactiveStreams.fromIterable(LongStream.range(0, items).boxed().collect(Collectors.toList())).buildRs();
+        }
+    }
+
+    private MockPublisher getMockPublisher() {
+        Publisher<Long> pub = getPublisher(-5);
+        assumeTrue(pub instanceof MockPublisher);
+        return (MockPublisher) pub;
+    }
 
     /**
      * https://github.com/reactive-streams/reactive-streams-jvm#1.1
      */
     @Test
     void requestCount() {
-        MockPublisher p = new MockPublisher();
+        MockPublisher p = getMockPublisher();
         testProcessor(ReactiveStreams.fromPublisher(p).via(getProcessor()).buildRs(), s -> {
             s.expectRequestCount(0);
             s.request(1);
@@ -67,13 +91,13 @@ public abstract class AbstractProcessorTest {
      */
     @Test
     void nextAfterCancel() {
-        MockPublisher p = new MockPublisher();
+        MockPublisher p = getMockPublisher();
         testProcessor(ReactiveStreams.fromPublisher(p).via(getProcessor()).buildRs(), s -> {
-            s.request(2);
-            s.cancel();
+            s.request(4);
             p.sendNext(2);
+            s.cancel();
             p.sendNext(4);
-            s.expectSum(6);
+            s.expectSum(2);
         });
     }
 
@@ -83,7 +107,7 @@ public abstract class AbstractProcessorTest {
     @Test
     void cancel2ndSubscription() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> cancelled = new CompletableFuture<>();
-        MockPublisher p = new MockPublisher();
+        Publisher<Long> p = getPublisher(4);
         Processor<Long, Long> processor = getProcessor();
         testProcessor(ReactiveStreams.fromPublisher(p).via(processor).buildRs(), s -> {
             s.request(2);
@@ -107,7 +131,7 @@ public abstract class AbstractProcessorTest {
 
     @Test
     void onCompletePropagation() {
-        testProcessor(ReactiveStreams.of(1L, 2L, 3L).via(getProcessor()).buildRs(), s -> {
+        testProcessor(ReactiveStreams.fromPublisher(getPublisher(3)).via(getProcessor()).buildRs(), s -> {
             s.request(1);
             s.expectRequestCount(1);
             s.request(2);
@@ -118,18 +142,17 @@ public abstract class AbstractProcessorTest {
 
     @Test
     void requestCountProcessorTest() {
-        testProcessor(ReactiveStreams.generate(() -> 4L).via(getProcessor()).buildRs(), s -> {
+        testProcessor(ReactiveStreams.fromPublisher(getPublisher(1_000_400L)).via(getProcessor()).buildRs(), s -> {
             s.request(15);
             s.expectRequestCount(15);
             s.request(2);
             s.expectRequestCount(17);
-            s.expectSum(17 * 4);
         });
     }
 
     @Test
     void longOverFlow() {
-        testProcessor(ReactiveStreams.generate(() -> 4L).via(getProcessor()).buildRs(), s -> {
+        testProcessor(ReactiveStreams.fromPublisher(getPublisher(1_000_400L)).via(getProcessor()).buildRs(), s -> {
             s.cancelAfter(1_000_000L);
             s.request(Long.MAX_VALUE - 1);
             s.request(Long.MAX_VALUE - 1);
@@ -139,9 +162,9 @@ public abstract class AbstractProcessorTest {
     @Test
     void cancelOnError() throws InterruptedException, ExecutionException, TimeoutException {
         Processor<Long, Long> failedProcessor = getFailedProcessor(new TestRuntimeException());
-        Assumptions.assumeTrue(Objects.nonNull(failedProcessor));
+        assumeTrue(Objects.nonNull(failedProcessor));
         CompletableFuture<Void> cancelled = new CompletableFuture<>();
-        CompletionStage<List<Long>> result = ReactiveStreams.generate(() -> 4L)
+        CompletionStage<List<Long>> result = ReactiveStreams.fromPublisher(getPublisher(1_000_000L))
                 .onTerminate(() -> cancelled.complete(null))
                 .via(failedProcessor)
                 .toList()
@@ -158,7 +181,7 @@ public abstract class AbstractProcessorTest {
     private <T, U> void finiteOnCompleteTest(Processor<Long, Long> processor)
             throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> completed = new CompletableFuture<>();
-        ReactiveStreams.of(1L, 2L, 3L)
+        ReactiveStreams.fromPublisher(getPublisher(3))
                 .via(processor)
                 .onComplete(() -> completed.complete(null))
                 .toList().run().toCompletableFuture().get(1, TimeUnit.SECONDS);

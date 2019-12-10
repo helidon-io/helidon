@@ -17,7 +17,6 @@
 
 package io.helidon.common.reactive;
 
-import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -144,12 +143,10 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
     public static class ReferencedSubscriber<T> implements Flow.Subscriber<T> {
 
-        private Flow.Subscriber<T> subscriber;
-        private WeakReference<Flow.Subscriber<T>> subscriberWeakReference;
+        private Optional<Flow.Subscriber<T>> subscriber = Optional.empty();
 
         private ReferencedSubscriber(Flow.Subscriber<T> subscriber) {
-            //Objects.requireNonNull(subscriber);
-            this.subscriber = subscriber;
+            this.subscriber = Optional.of(subscriber);
         }
 
         public static <T> ReferencedSubscriber<T> create(Flow.Subscriber<T> subscriber) {
@@ -157,37 +154,27 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
         }
 
         public void releaseReference() {
-            this.subscriberWeakReference = new WeakReference<>(this.subscriber);
-            this.subscriber = null;
-        }
-
-        private Flow.Subscriber<T> getSubscriberReference() {
-            if (Objects.nonNull(subscriber)) {
-                return subscriber;
-            } else if (Objects.nonNull(subscriberWeakReference)) {
-                return subscriberWeakReference.get();
-            }
-            return null;
+            this.subscriber = Optional.empty();
         }
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            subscriber.onSubscribe(subscription);
+            subscriber.ifPresent(s -> s.onSubscribe(subscription));
         }
 
         @Override
         public void onNext(T item) {
-            getSubscriberReference().onNext(item);
+            subscriber.ifPresent(s -> s.onNext(item));
         }
 
         @Override
         public void onError(Throwable throwable) {
-            getSubscriberReference().onError(throwable);
+            subscriber.ifPresent(s -> s.onError(throwable));
         }
 
         @Override
         public void onComplete() {
-            getSubscriberReference().onComplete();
+            subscriber.ifPresent(Flow.Subscriber::onComplete);
         }
     }
 }

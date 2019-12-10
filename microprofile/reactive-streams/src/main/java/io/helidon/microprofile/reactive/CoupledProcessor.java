@@ -53,11 +53,13 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
             @Override
             @SuppressWarnings("unchecked")
             public void onNext(T t) {
+                Objects.requireNonNull(t);
                 downStreamSubscriber.onNext((R) t);
             }
 
             @Override
             public void onError(Throwable t) {
+                Objects.requireNonNull(t);
                 upStreamSubscription.cancel();
                 subscriber.onError(t);
                 downStreamSubscriber.onError(t);
@@ -120,7 +122,6 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
     @Override
     public void onComplete() {
         subscriber.onComplete();
-        upStreamSubscription.cancel();
         downStreamSubscriber.onComplete();
         downStreamsSubscription.cancel();
     }

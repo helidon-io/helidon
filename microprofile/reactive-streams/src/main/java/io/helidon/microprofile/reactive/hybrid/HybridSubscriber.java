@@ -17,11 +17,10 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
-import java.lang.ref.WeakReference;
-import java.security.InvalidParameterException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Flow;
 
@@ -37,20 +36,20 @@ import org.reactivestreams.Subscription;
  */
 public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
-    private Flow.Subscriber<T> flowSubscriber;
-    private Subscriber<T> reactiveSubscriber;
-    private WeakReference<Subscriber<T>> reactiveSubscriberWeakRefecence;
-    private WeakReference<Flow.Subscriber<T>> flowSubscriberWeakRefecence;
+    private static final Logger LOGGER = Logger.getLogger(HybridSubscriber.class.getName());
+
+    private Optional<Flow.Subscriber<T>> flowSubscriber = Optional.empty();
+    private Optional<Subscriber<T>> reactiveSubscriber = Optional.empty();
     private Type type;
 
     private HybridSubscriber(Flow.Subscriber<T> subscriber) {
         this.type = Type.FLOW;
-        this.flowSubscriber = subscriber;
+        this.flowSubscriber = Optional.of(subscriber);
     }
 
     private HybridSubscriber(Subscriber<T> subscriber) {
         this.type = Type.RS;
-        this.reactiveSubscriber = subscriber;
+        this.reactiveSubscriber = Optional.of(subscriber);
     }
 
     /**
@@ -85,77 +84,38 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        if (flowSubscriber != null) {
-            flowSubscriber.onSubscribe(HybridSubscription.from(subscription).onCancel(this::releaseReferences));
-        } else if (reactiveSubscriber != null) {
-            reactiveSubscriber.onSubscribe(HybridSubscription.from(subscription).onCancel(this::releaseReferences));
-        } else {
-            throw new InvalidParameterException("Hybrid subscriber has no subscriber");
-        }
+        flowSubscriber.ifPresent(s -> s.onSubscribe(HybridSubscription.from(subscription).onCancel(this::releaseReferences)));
+        reactiveSubscriber.ifPresent(s -> s.onSubscribe(HybridSubscription.from(subscription).onCancel(this::releaseReferences)));
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
         Objects.requireNonNull(subscription);
-        if (flowSubscriber != null) {
-            flowSubscriber.onSubscribe(HybridSubscription.from(subscription));
-        } else if (reactiveSubscriber != null) {
-            reactiveSubscriber.onSubscribe(HybridSubscription.from(subscription));
-        } else {
-            throw new InvalidParameterException("Hybrid subscriber has no subscriber");
-        }
+        flowSubscriber.ifPresent(s -> s.onSubscribe(HybridSubscription.from(subscription)));
+        reactiveSubscriber.ifPresent(s -> s.onSubscribe(subscription));
     }
 
     @Override
     public void onNext(T item) {
-        doWithAvailableSubscriber(
-                rsSubscriber -> rsSubscriber.onNext(item),
-                flowSubscriber -> flowSubscriber.onNext(item));
+        flowSubscriber.ifPresent(s -> s.onNext(item));
+        reactiveSubscriber.ifPresent(s -> s.onNext(item));
     }
 
     @Override
-    public void onError(Throwable throwable) {
-        if (flowSubscriber != null) {
-            flowSubscriber.onError(throwable);
-        } else if (reactiveSubscriber != null) {
-            reactiveSubscriber.onError(throwable);
-        } else {
-            throw new InvalidParameterException("Hybrid subscriber has no subscriber");
-        }
+    public void onError(Throwable t) {
+        flowSubscriber.ifPresent(s -> s.onError(t));
+        reactiveSubscriber.ifPresent(s -> s.onError(t));
     }
 
     @Override
     public void onComplete() {
-        if (flowSubscriber != null) {
-            flowSubscriber.onComplete();
-        } else if (reactiveSubscriber != null) {
-            reactiveSubscriber.onComplete();
-        }
-    }
-
-    private void doWithAvailableSubscriber(Consumer<Subscriber<T>> rsConsumer, Consumer<Flow.Subscriber<T>> flowConsumer) {
-        if (type == Type.FLOW) {
-            if (Objects.nonNull(flowSubscriber)) {
-                flowConsumer.accept(flowSubscriber);
-            } else {
-                Optional.ofNullable(flowSubscriberWeakRefecence.get())
-                        .ifPresent(flowConsumer::accept);
-            }
-        } else if (type == Type.RS) {
-            if (Objects.nonNull(reactiveSubscriber)) {
-                rsConsumer.accept(reactiveSubscriber);
-            } else {
-                Optional.ofNullable(reactiveSubscriberWeakRefecence.get())
-                        .ifPresent(rsConsumer::accept);
-            }
-        }
+        flowSubscriber.ifPresent(Flow.Subscriber::onComplete);
+        reactiveSubscriber.ifPresent(Subscriber::onComplete);
     }
 
     public void releaseReferences() {
-        flowSubscriberWeakRefecence = new WeakReference<>(flowSubscriber);
-        reactiveSubscriberWeakRefecence = new WeakReference<>(reactiveSubscriber);
-        flowSubscriber = null;
-        reactiveSubscriber = null;
+        flowSubscriber = Optional.empty();
+        reactiveSubscriber = Optional.empty();
     }
 
     private enum Type {

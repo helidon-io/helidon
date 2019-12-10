@@ -86,12 +86,10 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
 
             } else {
                 publisherSupplier.apply(ex).subscribe(new Subscriber<T>() {
-                    private Subscription subscription;
 
                     @Override
                     public void onSubscribe(Subscription subscription) {
                         Objects.requireNonNull(subscription);
-                        this.subscription = subscription;
                         onErrorPublisherSubscription = Optional.of(subscription);
                         if (getRequestedCounter().get() > 0) {
                             subscription.request(getRequestedCounter().get());
@@ -118,7 +116,6 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
             }
         } catch (Throwable t) {
             onErrorPublisherSubscription.ifPresent(Subscription::cancel);
-            getSubscription().ifPresent(Flow.Subscription::cancel);
             superError(t);
         }
     }

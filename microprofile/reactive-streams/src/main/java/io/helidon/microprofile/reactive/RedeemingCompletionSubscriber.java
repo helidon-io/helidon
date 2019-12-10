@@ -78,8 +78,6 @@ class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.re
             public void cancel() {
                 s.cancel();
                 completion.toCompletableFuture().completeExceptionally(new CancellationException());
-                //Base processor breaks cancel->onComplete loop, so listen even for downstream call
-                //completion.toCompletableFuture().complete(null);
             }
         });
     }
