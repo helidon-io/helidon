@@ -22,6 +22,6 @@ module io.helidon.grpc.client {
 
     requires transitive io.helidon.grpc.core;
 
-    requires opentracing.api;
+    requires io.opentracing.api;
     requires opentracing.grpc;
 }

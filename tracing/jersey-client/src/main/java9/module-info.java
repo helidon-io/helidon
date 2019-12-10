@@ -28,8 +28,8 @@ module io.helidon.tracing.jersey.client {
     requires jersey.client;
     requires jersey.common;
 
-    requires opentracing.api;
-    requires opentracing.util;
+    requires io.opentracing.api;
+    requires io.opentracing.util;
 
     requires io.helidon.tracing;
     requires io.helidon.tracing.config;

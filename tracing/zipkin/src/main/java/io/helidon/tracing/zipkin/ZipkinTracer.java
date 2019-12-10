@@ -21,6 +21,7 @@ import java.util.List;
 import io.helidon.tracing.Tag;
 
 import brave.opentracing.BraveTracer;
+import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -76,5 +77,15 @@ public class ZipkinTracer implements Tracer {
     @Override
     public Span activeSpan() {
         return tracer.activeSpan();
+    }
+
+    @Override
+    public void close() {
+        tracer.close();
+    }
+
+    @Override
+    public Scope activateSpan(Span span) {
+        return tracer.activateSpan(span);
     }
 }

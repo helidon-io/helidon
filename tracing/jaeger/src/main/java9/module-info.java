@@ -23,7 +23,7 @@ module io.helidon.tracing.jaeger {
     requires io.helidon.tracing;
 
     requires java.logging;
-    requires opentracing.util;
+    requires io.opentracing.util;
     requires jaeger.client;
     requires jaeger.core;
 
