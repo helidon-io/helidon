@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -31,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Logger;
+
+import javax.interceptor.InvocationContext;
 
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
@@ -232,11 +233,6 @@ public class CommandRetrier {
 
                 // If not, it must be a subtype of Future
                 if (introspector.isReturnType(Future.class)) {
-                    /*
-                    Future<?> chainedFuture = failsafe.getAsync(this::retryExecute);
-                    awaitBulkheadAsyncTaskQueued();
-                    return new FailsafeChainedFuture<>(chainedFuture);
-                     */
                     Future<?> future = CommandCompletableFuture.create(
                             failsafe.getAsync(() -> (Future<?>) retryExecute()),
                             this::getCommand);
