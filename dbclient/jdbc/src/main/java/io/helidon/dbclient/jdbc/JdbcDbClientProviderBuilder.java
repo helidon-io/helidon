@@ -24,6 +24,7 @@ import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbInterceptor;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbMapperManager;
@@ -75,12 +76,16 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
 
     @Override
     public JdbcDbClientProviderBuilder config(Config config) {
-        config.get("url").asString().ifPresent(this::url);
-        config.get("username").asString().ifPresent(this::username);
-        config.get("password").asString().ifPresent(this::password);
+        config.get("connection").asNode().ifPresentOrElse(conn -> {
+            conn.get("url").asString().ifPresent(this::url);
+            conn.get("username").asString().ifPresent(this::url);
+            conn.get("password").asString().ifPresent(this::password);
+            connectionPool(conn.as(ConnectionPool::create).get());
+        }, () -> {
+            throw new DbClientException("No database connection configuration was found");
+        });
         config.get("statements").as(DbStatements::create).ifPresent(this::statements);
         config.get("executor-service").as(ThreadPoolSupplier::create).ifPresent(this::executorService);
-        connectionPool(config.as(ConnectionPool::create).get());
         return this;
     }
 

@@ -17,6 +17,7 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import io.helidon.dbclient.DbClientException;
 
@@ -31,15 +32,42 @@ public class HikariConnectionPool implements ConnectionPool {
     /** Default connection pool name. */
     private static final String DEFAULT_NAME = "Helidon JDBC Connection Pool";
 
+    /** Properties prefix. */
+    private static final String PROPERTIES_PREFIX = "dataSource.";
+
     /** Hikari Connection Pool instance. */
     private final HikariDataSource dataSource;
 
     /** The type of this database. */
     private final String dbType;
 
-    HikariConnectionPool(final String url, final String username, final String password, String dbType) {
+    /**
+     * Creates an instance of Hikari Connection Pool from common connection pool builder.
+     *
+     * @param url database connection URL
+     * @param username database connection user name
+     * @param password database connection password
+     * @param properties additional connection pool properties (names without {@code dataSource.} prefix)
+     * @param dbType database type
+     */
+    HikariConnectionPool(
+            final String url,
+            final String username,
+            final String password,
+            final Properties properties,
+            final String dbType
+    ) {
         this.dbType = dbType;
-        final HikariConfig config = new HikariConfig();
+        final Properties hikariProperties = new Properties();
+        if (properties != null) {
+            properties.forEach((key, value) -> {
+                StringBuilder sb = new StringBuilder(PROPERTIES_PREFIX.length() + key.toString().length());
+                sb.append(PROPERTIES_PREFIX);
+                sb.append(key);
+                hikariProperties.put(sb.toString(), value);
+            });
+        }
+        final HikariConfig config = new HikariConfig(hikariProperties);
         config.setJdbcUrl(url);
         config.setUsername(username);
         config.setPassword(password);

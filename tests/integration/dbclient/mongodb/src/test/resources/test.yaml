@@ -16,9 +16,10 @@
 
 dbadmin:
   source: mongoDb
-  url: mongodb://${mongo.host}:${mongo.port}/admin
-  username: ${mongo.roootuser}
-  password: ${mongo.roootpw}
+  connection:
+    url: mongodb://${mongo.host}:${mongo.port}/admin
+    username: ${mongo.roootuser}
+    password: ${mongo.roootpw}
 
   statements:
     # required ping statement
@@ -44,9 +45,10 @@ dbadmin:
 
 db:
   source: mongoDb
-  url: mongodb://${mongo.host}:${mongo.port}/admin
-  username: ${mongo.roootuser}
-  password: ${mongo.roootpw}
+  connection:
+    url: mongodb://${mongo.host}:${mongo.port}/admin
+    username: ${mongo.roootuser}
+    password: ${mongo.roootpw}
 #  url: mongodb://${mongo.host}:${mongo.port}/${mongo.database}
 #  username: ${mongo.user}
 #  password: ${mongo.password}

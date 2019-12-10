@@ -50,11 +50,13 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryNonExistentStmt() throws ExecutionException, InterruptedException {
+        LOG.info(() -> "Starting test");
         try {
             DbRows<DbRow> rows = DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemons-not-exists")
                     .execute()
             ).toCompletableFuture().get();
+            LOG.warning(() -> "Test failed");
             fail("Execution of non existing statement shall cause an exception to be thrown.");
         } catch (DbClientException ex) {
             LOG.log(Level.INFO, "Expected exception: {0}", ex.getMessage());
@@ -69,11 +71,13 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryNamedAndOrderArgsWithoutArgs() throws ExecutionException, InterruptedException {
+        LOG.info(() -> "Starting test");
         try {
             DbRows<DbRow> rows = DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemons-error-arg")
                     .execute()
             ).toCompletableFuture().get();
+            LOG.warning(() -> "Test failed");
             fail("Execution of query with both named and ordered parameters without passing any shall fail.");
         } catch (DbClientException | ExecutionException ex) {
             LOG.log(Level.INFO, "Expected exception: {0}", ex.getMessage());
@@ -88,6 +92,7 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryNamedAndOrderArgsWithArgs() throws ExecutionException, InterruptedException {
+        LOG.info(() -> "Starting test");
         try {
             DbRows<DbRow> rows = DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemons-error-arg")
@@ -95,6 +100,7 @@ public class TransactionExceptionalStmtIT {
                     .addParam(POKEMONS.get(5).getName())
                     .execute()
             ).toCompletableFuture().get();
+            LOG.warning(() -> "Test failed");
             fail("Execution of query with both named and ordered parameters without passing them shall fail.");
         } catch (DbClientException | ExecutionException ex) {
             LOG.log(Level.INFO, "Expected exception: {0}", ex.getMessage());
@@ -109,12 +115,14 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryNamedArgsSetOrderArg() throws ExecutionException, InterruptedException {
+        LOG.info(() -> "Starting test");
         try {
             DbRows<DbRow> rows = DB_CLIENT.inTransaction(tx -> tx
                     .createNamedQuery("select-pokemon-named-arg")
                     .addParam(POKEMONS.get(5).getName())
                     .execute()
             ).toCompletableFuture().get();
+            LOG.warning(() -> "Test failed");
             fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
         } catch (DbClientException | ExecutionException ex) {
             LOG.log(Level.INFO, "Expected exception: {0}", ex.getMessage());
@@ -129,12 +137,14 @@ public class TransactionExceptionalStmtIT {
      */
     @Test
     public void testCreateNamedQueryOrderArgsSetNamedArg() throws ExecutionException, InterruptedException {
+        LOG.info(() -> "Starting test");
         try {
             DbRows<DbRow> rows = DB_CLIENT.inTransaction(tx -> tx
                 .createNamedQuery("select-pokemon-order-arg")
                 .addParam("name", POKEMONS.get(6).getName())
                 .execute()
             ).toCompletableFuture().get();
+            LOG.warning(() -> "Test failed");
             fail("Execution of query with ordered parameter with passing named parameter value shall fail.");
         } catch (DbClientException | ExecutionException ex) {
             LOG.log(Level.INFO, "Expected exception: {0}", ex.getMessage());

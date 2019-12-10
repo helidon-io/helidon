@@ -69,7 +69,7 @@ public final class DbClientHealthCheck implements HealthCheck {
                         return null;
                     })
                     .get();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             builder.down();
             throwable.set(e);
         }

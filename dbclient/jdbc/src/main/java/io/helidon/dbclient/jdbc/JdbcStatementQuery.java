@@ -52,7 +52,8 @@ import io.helidon.dbclient.DbStatementQuery;
  * Implementation of query.
  */
 class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> implements DbStatementQuery {
-    private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
+
+    private static final Logger LOG = Logger.getLogger(JdbcStatementQuery.class.getName());
 
     JdbcStatementQuery(JdbcExecuteContext executeContext,
                        JdbcStatementContext statementContext) {
@@ -66,7 +67,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
 
         executeContext().addFuture(queryFuture);
 
-        return dbContextFuture.thenCompose(interceptorContext -> {
+        CompletionStage<DbRows<DbRow>> result = dbContextFuture.thenCompose(interceptorContext -> {
             return connection().thenApply(conn -> {
                 PreparedStatement statement = super.build(conn, interceptorContext);
                 try {
@@ -79,13 +80,19 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                                             queryFuture,
                                             rs);
                 } catch (SQLException e) {
+                    LOG.warning(() -> String.format("Query execution failed: %s", e.getMessage()));
+                    LOG.warning(() -> String.format(" - query: %s", statement.toString()));
                     throw new DbClientException("Failed to execute query", e);
                 }
             });
-        }).exceptionally(throwable -> {
+        });
+
+        result.exceptionally(throwable -> {
             statementFuture.completeExceptionally(throwable);
             return null;
         });
+
+        return result;
     }
 
     static DbRows<DbRow> processResultSet(
@@ -378,12 +385,12 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                         try {
                             nextElement = requestQueue.poll(10, TimeUnit.MINUTES);
                         } catch (InterruptedException e) {
-                            LOGGER.severe("Interrupted while polling for requests, terminating DB read");
+                            LOG.severe("Interrupted while polling for requests, terminating DB read");
                             subscriber.onError(e);
                             break;
                         }
                         if (nextElement == null) {
-                            LOGGER.severe("No data requested for 10 minutes, terminating DB read");
+                            LOG.severe("No data requested for 10 minutes, terminating DB read");
                             subscriber.onError(new TimeoutException("No data requested in 10 minutes"));
                             break;
                         }

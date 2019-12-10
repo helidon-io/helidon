@@ -72,7 +72,8 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -144,10 +145,11 @@
                                 <dependency>io.helidon.tests.integration.dbclient:heldion-tests-integration-dbclient-common</dependency>
                             </dependenciesToScan>
                             <includes>
+                                <include>io.helidon.tests.integration.dbclient.common.tests.health.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.simple.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.statement.*IT</include>
                                 <include>io.helidon.tests.integration.dbclient.common.tests.transaction.*IT</include>
-                                <include>io.helidon.tests.integration.dbclient.jdbc.tests.*IT</include>
+                                <include>io.helidon.tests.integration.dbclient.common.tests.interceptor.*IT</include>
                             </includes>
                         </configuration>
                     </execution>
@@ -190,6 +192,26 @@
                                 <id>test</id>
                                 <configuration>
                                     <debugForkedProcess>${it.jdbc.debug}</debugForkedProcess>
+                                    <test>${it.jdbc.test}</test>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${version.plugin.surefire}</version>
+                        <executions>
+                            <execution>
+                                <id>test</id>
+                                <configuration>
                                     <test>${it.jdbc.test}</test>
                                 </configuration>
                             </execution>
