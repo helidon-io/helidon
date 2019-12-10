@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,11 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
     @Override
     public Span startManual() {
-        return null;
+        return spanBuilder.startManual();
+    }
+
+    @Override
+    public <T> Tracer.SpanBuilder withTag(io.opentracing.tag.Tag<T> tag, T value) {
+        return spanBuilder.withTag(tag, value);
     }
 }

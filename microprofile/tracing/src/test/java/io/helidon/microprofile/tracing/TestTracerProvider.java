@@ -31,11 +31,11 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.util.GlobalTracer;
 
 /**
- * TODO javadoc.
+ * Testing tracer provider.
  */
 public class TestTracerProvider implements TracerProvider {
     @Override
@@ -134,12 +134,32 @@ public class TestTracerProvider implements TracerProvider {
                 public Scope active() {
                     return active;
                 }
+
+                @Override
+                public Scope activate(Span span) {
+                    return activate(span, false);
+                }
+
+                @Override
+                public Span activeSpan() {
+                    return active().span();
+                }
             };
         }
 
         @Override
         public Span activeSpan() {
             return null;
+        }
+
+        @Override
+        public Scope activateSpan(Span span) {
+            return null;
+        }
+
+        @Override
+        public void close() {
+
         }
 
         @Override
@@ -153,7 +173,7 @@ public class TestTracerProvider implements TracerProvider {
         public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
             TestSpan span = ((TestSpanContext)spanContext).testSpan;
 
-            TextMapInjectAdapter adapter = (TextMapInjectAdapter) carrier;
+            TextMapAdapter adapter = (TextMapAdapter) carrier;
             adapter.put(OPERATION_NAME_HEADER, span.operationName);
         }
 
@@ -239,6 +259,11 @@ public class TestTracerProvider implements TracerProvider {
             return result;
 
         }
+
+        @Override
+        public <T> Tracer.SpanBuilder withTag(io.opentracing.tag.Tag<T> tag, T value) {
+            return this;
+        }
     }
 
     static final class TestSpan implements Span {
@@ -260,6 +285,11 @@ public class TestTracerProvider implements TracerProvider {
         @Override
         public SpanContext context() {
             return new TestSpanContext(this);
+        }
+
+        @Override
+        public <T> Span setTag(io.opentracing.tag.Tag<T> tag, T value) {
+            return this;
         }
 
         @Override
@@ -335,6 +365,16 @@ public class TestTracerProvider implements TracerProvider {
             Map<String, String> map = CollectionsHelper.mapOf();
 
             return map.entrySet();
+        }
+
+        @Override
+        public String toTraceId() {
+            return testSpan.parent.toTraceId();
+        }
+
+        @Override
+        public String toSpanId() {
+            return testSpan.toString();
         }
     }
 

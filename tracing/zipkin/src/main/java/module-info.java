@@ -23,7 +23,7 @@ module io.helidon.tracing.zipkin {
     requires io.helidon.tracing;
 
     requires java.logging;
-    requires opentracing.util;
+    requires io.opentracing.util;
     requires brave.opentracing;
     requires zipkin2.reporter;
     requires zipkin2.reporter.urlconnection;
