@@ -28,7 +28,7 @@ import org.reactivestreams.Subscription;
 /**
  * Mongo specific query asynchronous processor.
  */
-final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Document>, Flow.Publisher<DbRow> {
+final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Document>, Flow.Publisher<DbRow>, Flow.Subscription {
 
     private static final Logger LOGGER = Logger.getLogger(MongoDbQueryProcessor.class.getName());
 
@@ -58,8 +58,8 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
     public void onNext(Document doc) {
         MongoDbRow dbRow = new MongoDbRow(dbStatement.dbMapperManager(), dbStatement.mapperManager(), doc.size());
         doc.forEach((name, value) -> {
-            LOGGER.fine(() -> String
-                    .format("Column name = %s, value = %s", name, (value != null ? value.toString() : "N/A")));
+            LOGGER.fine(() -> String.format(
+                    "Column name = %s, value = %s", name, (value != null ? value.toString() : "N/A")));
             dbRow.add(name, new MongoDbColumn(dbStatement.dbMapperManager(), dbStatement.mapperManager(), name, value));
         });
         count.incrementAndGet();
@@ -93,9 +93,20 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
     @Override
     public void subscribe(Flow.Subscriber<? super DbRow> subscriber) {
         this.subscriber = subscriber;
-//        subscriber.onSubscribe(\);
-        //TODO this MUST use flow control (e.g. only request what our subscriber requested)
-        this.subscription.request(Long.MAX_VALUE);
+        LOGGER.fine(() -> "Calling onSubscribe on subscriber");
+        subscriber.onSubscribe(this);
+    }
+
+    @Override
+    public void request(long n) {
+        LOGGER.fine(() -> String.format("Requesting %d records from MongoDB", n));
+        this.subscription.request(n);
+    }
+
+    @Override
+    public void cancel() {
+        LOGGER.fine(() -> "Cancelling MongoDB result processing");
+        this.subscription.cancel();
     }
 
 }
