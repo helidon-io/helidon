@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.*;
 public class HealthCheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(HealthCheckIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(HealthCheckIT.class.getName());
 
     /**
      * Verify health BASIC check implementation.
