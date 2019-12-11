@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -88,5 +90,34 @@ public class RetryBean {
         printStatus("RetryBean::retryWithDelayAndJitter()",
                     "success " + System.currentTimeMillis());
         return "success";
+    }
+
+    @Asynchronous
+    @Retry(maxRetries = 2)
+    public CompletionStage<String> retryWithException() {
+        invocations.incrementAndGet();
+        // always fail
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new IOException("Simulated error"));
+        return future;
+    }
+
+    /**
+     * Service will retry a method returning CompletionStages but throwing an exception.
+     * fail twice.
+     *
+     * @return a {@link CompletionStage}
+     */
+    @Asynchronous
+    @Retry(maxRetries = 2)
+    public CompletionStage<String> retryWithUltimateSuccess() {
+        if (invocations.incrementAndGet() < 3) {
+        // fails twice
+            throw new RuntimeException("Simulated error");
+        }
+
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.complete("Success");
+        return future;
     }
 }
