@@ -19,10 +19,10 @@ package io.helidon.media.common;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.util.concurrent.Flow.Publisher;
 import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.Single;
 

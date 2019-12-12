@@ -18,6 +18,7 @@ package io.helidon.common.reactive;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Flow;
 
 /**
  * A dummy subscriber for testing purpose.

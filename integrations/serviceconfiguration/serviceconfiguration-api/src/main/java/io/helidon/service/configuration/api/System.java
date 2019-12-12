@@ -15,7 +15,7 @@
  */
 package io.helidon.service.configuration.api;
 
-import java.util.Collection; // for javadoc only
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;

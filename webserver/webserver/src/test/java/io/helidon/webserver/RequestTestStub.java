@@ -18,7 +18,6 @@ package io.helidon.webserver;
 
 import java.net.URI;
 
-
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;

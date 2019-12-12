@@ -20,24 +20,20 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
 import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import com.arjuna.ats.jta.common.JTAEnvironmentBean;
-
 import io.helidon.integrations.jta.cdi.NarayanaExtension;
 
+import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @ApplicationScoped
 public class TestAutomaticUserTransactionInjection {

@@ -18,10 +18,10 @@ package io.helidon.common.reactive;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
  * Fixed items publisher implementation.

@@ -15,10 +15,12 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.concurrent.Flow;
+
 /**
  * Implementation of {@link Single} that represents the absence of a value by
- * invoking {@link Subscriber#onComplete() } during
- * {@link Publisher#subscribe(Subscriber)}.
+ * invoking {@link java.util.concurrent.Flow.Subscriber#onComplete() } during
+ * {@link java.util.concurrent.Flow.Publisher#subscribe(java.util.concurrent.Flow.Subscriber)}.
  */
 final class SingleEmpty implements Single<Object> {
 

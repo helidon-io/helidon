@@ -15,14 +15,12 @@
  */
 package io.helidon.service.configuration.hikaricp;
 
-import java.util.Properties;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 @Deprecated
 public class TestPropertiesScenarios {

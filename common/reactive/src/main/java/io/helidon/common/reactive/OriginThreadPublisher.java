@@ -18,15 +18,15 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
-
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 
 /**
  * The OriginThreadPublisher's nature is to always run {@link Subscriber#onNext(Object)} on the very same thread as

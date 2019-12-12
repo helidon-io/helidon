@@ -15,7 +15,7 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscriber;
 
 /**
  * Implementation of {@link Multi} that never invokes {@link Subscriber#onComplete()} or

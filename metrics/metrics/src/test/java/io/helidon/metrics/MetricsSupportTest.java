@@ -16,16 +16,18 @@
 
 package io.helidon.metrics;
 
+import javax.json.JsonObject;
+
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import javax.json.JsonObject;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Unit test for {@link MetricsSupport}.

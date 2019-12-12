@@ -22,14 +22,16 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.Map;
+
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.microprofile.server.Server;
-import java.util.Map;
+
+import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * Useful utility methods during testing.

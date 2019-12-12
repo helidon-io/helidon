@@ -17,10 +17,10 @@
 package io.helidon.media.common;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow.Publisher;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 

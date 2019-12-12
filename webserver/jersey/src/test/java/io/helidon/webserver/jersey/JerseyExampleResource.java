@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -44,7 +43,7 @@ import io.helidon.webserver.ServerResponse;
 
 import io.opentracing.SpanContext;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The JerseyExampleResource.

@@ -20,10 +20,10 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Flow;
 
 /**
  * Bare (minimal) representation of HTTP Response. Used by {@link WebServer WebServer} implementations to invoke

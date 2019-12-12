@@ -35,7 +35,7 @@ import javax.transaction.TransactionManager;
 
 import org.eclipse.persistence.exceptions.ValidationException;
 import org.eclipse.persistence.platform.server.JMXServerPlatformBase;
-import org.eclipse.persistence.platform.server.ServerPlatformBase; // for javadoc only
+import org.eclipse.persistence.platform.server.ServerPlatformBase;
 import org.eclipse.persistence.sessions.Connector;
 import org.eclipse.persistence.sessions.DatabaseLogin;
 import org.eclipse.persistence.sessions.DatabaseSession;

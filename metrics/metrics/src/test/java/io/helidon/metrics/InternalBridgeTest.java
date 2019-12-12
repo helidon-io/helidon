@@ -16,21 +16,23 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.MetricID;
 import java.util.Map;
 import java.util.Optional;
+
+import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.MetricID;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
-
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  *

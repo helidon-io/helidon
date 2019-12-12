@@ -33,7 +33,9 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getGauge;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;

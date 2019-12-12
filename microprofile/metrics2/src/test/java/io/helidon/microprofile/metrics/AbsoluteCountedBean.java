@@ -16,8 +16,9 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.Dependent;
 import java.time.Duration;
+
+import javax.enterprise.context.Dependent;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 

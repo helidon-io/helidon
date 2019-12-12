@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -36,7 +37,6 @@ import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.tracing.config.SpanTracingConfig;

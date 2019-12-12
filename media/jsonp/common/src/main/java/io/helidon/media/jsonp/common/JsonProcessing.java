@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 
 import javax.json.Json;
@@ -32,7 +33,6 @@ import javax.json.JsonWriterFactory;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
-import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.ContentWriters;

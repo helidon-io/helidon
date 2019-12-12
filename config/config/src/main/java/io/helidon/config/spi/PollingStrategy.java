@@ -19,9 +19,9 @@ package io.helidon.config.spi;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
 

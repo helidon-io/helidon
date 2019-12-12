@@ -21,9 +21,9 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.internal.client.EtcdClient;

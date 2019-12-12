@@ -19,8 +19,8 @@ package io.helidon.config;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.ClasspathOverrideSource.ClasspathBuilder;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;

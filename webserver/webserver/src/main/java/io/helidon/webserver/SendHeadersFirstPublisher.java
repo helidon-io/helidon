@@ -17,8 +17,7 @@
 package io.helidon.webserver;
 
 import java.util.Objects;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 import io.opentracing.Span;
 

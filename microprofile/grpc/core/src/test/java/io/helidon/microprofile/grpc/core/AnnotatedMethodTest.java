@@ -22,9 +22,6 @@ import java.lang.reflect.Method;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.RpcService;
-
 import io.grpc.MethodDescriptor;
 import org.junit.jupiter.api.Test;
 

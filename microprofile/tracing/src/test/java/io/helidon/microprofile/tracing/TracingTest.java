@@ -32,7 +32,6 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.server.Server;
-import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
