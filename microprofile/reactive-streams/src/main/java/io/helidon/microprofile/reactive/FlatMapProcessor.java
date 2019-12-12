@@ -19,7 +19,8 @@ package io.helidon.microprofile.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -39,16 +40,18 @@ import org.reactivestreams.Subscription;
 public class FlatMapProcessor implements Processor<Object, Object> {
 
     private Function<Object, Publisher> mapper;
-
-    private final AtomicBoolean innerPublisherCompleted = new AtomicBoolean(true);
     private HybridSubscriber<? super Object> subscriber;
     private Subscription subscription;
     private final AtomicLong requestCounter = new AtomicLong();
     private Subscription innerSubscription;
+    private AtomicBoolean onCompleteReceivedAlready = new AtomicBoolean(false);
+
+    private PublisherBuffer buffer;
 
     private Optional<Throwable> error = Optional.empty();
 
     private FlatMapProcessor() {
+        buffer = new PublisherBuffer();
     }
 
     @SuppressWarnings("unchecked")
@@ -67,45 +70,17 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         return flatMapProcessor;
     }
 
-    @SuppressWarnings("unchecked")
-    static FlatMapProcessor fromCompletionStage(Function<?, CompletionStage<?>> mapper) {
-        Function<Object, CompletionStage<?>> csMapper = (Function<Object, CompletionStage<?>>) mapper;
-        FlatMapProcessor flatMapProcessor = new FlatMapProcessor();
-        flatMapProcessor.mapper = o -> (Publisher<Object>) s -> {
-            AtomicBoolean requested = new AtomicBoolean(false);
-            s.onSubscribe(new Subscription() {
-                @Override
-                public void request(long n) {
-                    //Only one request supported
-                    if (!requested.getAndSet(true)) {
-                        csMapper.apply(o).whenComplete((payload, throwable) -> {
-                            if (Objects.nonNull(throwable)) {
-                                s.onError(throwable);
-                            } else {
-                                if (Objects.isNull(payload)) {
-                                    s.onError(new NullPointerException());
-                                } else {
-                                    s.onNext(payload);
-                                    s.onComplete();
-                                }
-                            }
-                        });
-                    }
-                }
-
-                @Override
-                public void cancel() {
-                }
-            });
-        };
-        return flatMapProcessor;
-    }
-
     private class FlatMapSubscription implements Subscription {
         @Override
         public void request(long n) {
-            requestCounter.addAndGet(n);
-            if (innerPublisherCompleted.getAndSet(false) || Objects.isNull(innerSubscription)) {
+            //TODO: Create some kind of reusable request counter
+            try {
+                requestCounter.set(Math.addExact(requestCounter.get(), n));
+            } catch (ArithmeticException e) {
+                requestCounter.set(Long.MAX_VALUE);
+            }
+
+            if (buffer.isComplete() || Objects.isNull(innerSubscription)) {
                 subscription.request(requestCounter.get());
             } else {
                 innerSubscription.request(requestCounter.get());
@@ -134,6 +109,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     public void onSubscribe(Subscription subscription) {
         if (Objects.nonNull(this.subscription)) {
             subscription.cancel();
+            return;
         }
         this.subscription = subscription;
         if (Objects.nonNull(subscriber)) {
@@ -145,13 +121,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     @SuppressWarnings("unchecked")
     public void onNext(Object o) {
         Objects.requireNonNull(o);
-        try {
-            Publisher<Object> publisher = mapper.apply(o);
-            publisher.subscribe(new InnerSubscriber());
-        } catch (Throwable e) {
-            this.subscription.cancel();
-            this.onError(e);
-        }
+        buffer.offer(o);
     }
 
     @Override
@@ -164,15 +134,69 @@ public class FlatMapProcessor implements Processor<Object, Object> {
 
     @Override
     public void onComplete() {
-        subscriber.onComplete();
+        onCompleteReceivedAlready.set(true);
+        if (buffer.isComplete()) {
+            //Have to wait for all Publishers to be finished
+            subscriber.onComplete();
+        }
+    }
+
+    private class PublisherBuffer {
+        private BlockingQueue<Object> buffer = new ArrayBlockingQueue<>(64);
+        private InnerSubscriber lastSubscriber = null;
+
+        public boolean isComplete() {
+            return Objects.isNull(lastSubscriber) || (lastSubscriber.isDone() && buffer.isEmpty());
+        }
+
+        public void tryNext() {
+            Object nextItem = buffer.poll();
+            if (Objects.nonNull(nextItem)) {
+                lastSubscriber = executeMapper(nextItem);
+                lastSubscriber.whenComplete(this::tryNext);
+            } else if (onCompleteReceivedAlready.get()) {
+                // Received onComplete and all Publishers are done
+                subscriber.onComplete();
+            }
+        }
+
+        public void offer(Object o) {
+            if (buffer.isEmpty() && (Objects.isNull(lastSubscriber) || lastSubscriber.isDone())) {
+                lastSubscriber = executeMapper(o);
+                lastSubscriber.whenComplete(this::tryNext);
+            } else {
+                buffer.offer(o);
+            }
+        }
+
+        public InnerSubscriber executeMapper(Object item) {
+            InnerSubscriber innerSubscriber = null;
+            try {
+                innerSubscriber = new InnerSubscriber();
+                mapper.apply(item).subscribe(innerSubscriber);
+            } catch (Throwable t) {
+                subscription.cancel();
+                subscriber.onError(t);
+            }
+            return innerSubscriber;
+        }
     }
 
     private class InnerSubscriber implements Subscriber<Object> {
 
+        private AtomicBoolean subscriptionAcked = new AtomicBoolean(false);
+        private AtomicBoolean done = new AtomicBoolean(false);
+
+        private Optional<Runnable> whenCompleteObserver = Optional.empty();
+
         @Override
         public void onSubscribe(Subscription innerSubscription) {
             Objects.requireNonNull(innerSubscription);
-            innerPublisherCompleted.set(false);
+            if (subscriptionAcked.get()) {
+                innerSubscription.cancel();
+                return;
+            }
+            subscriptionAcked.set(true);
             FlatMapProcessor.this.innerSubscription = innerSubscription;
             long requestCount = requestCounter.get();
             if (requestCount > 0) {
@@ -199,11 +223,20 @@ public class FlatMapProcessor implements Processor<Object, Object> {
 
         @Override
         public void onComplete() {
-            innerPublisherCompleted.set(true);
+            done.set(true);
+            whenCompleteObserver.ifPresent(Runnable::run);
             long requestCount = requestCounter.get();
             if (requestCount > 0) {
                 subscription.request(requestCount);
             }
+        }
+
+        private void whenComplete(Runnable whenCompleteObserver) {
+            this.whenCompleteObserver = Optional.of(whenCompleteObserver);
+        }
+
+        private boolean isDone() {
+            return done.get();
         }
     }
 }

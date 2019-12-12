@@ -83,7 +83,7 @@ public class CountingSubscriber implements Subscriber<Long> {
     }
 
     public void expectRequestCount(int n) {
-        assertEquals(n, requestCount.get(), String.format("Expected %d requests but only %d received.", n, requestCount.get()));
+        assertEquals(n, requestCount.get(), String.format("Expected %d requests but only %d received.", n, (long)requestCount.get()));
     }
 
     public void expectSum(long n) {

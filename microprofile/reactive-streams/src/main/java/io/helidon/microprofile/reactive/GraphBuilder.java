@@ -113,7 +113,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             addProcessor(FlatMapProcessor.fromIterableMapper(stage.getMapper()));
         });
         registerStage(Stage.FlatMapCompletionStage.class, stage -> {
-            addProcessor(FlatMapProcessor.fromCompletionStage(stage.getMapper()));
+            addProcessor(new FlatMapCompletionStageProcessor(stage.getMapper()));
         });
         registerStage(Stage.Coupled.class, stage -> {
             Subscriber<Object> subscriber = GraphBuilder.create()

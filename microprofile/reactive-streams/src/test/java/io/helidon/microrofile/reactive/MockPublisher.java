@@ -17,16 +17,21 @@
 
 package io.helidon.microrofile.reactive;
 
+import java.util.Optional;
+import java.util.function.Consumer;
+
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 public class MockPublisher implements Publisher<Long> {
     private Subscriber<? super Long> subscriber;
+    private Optional<Consumer<Subscriber<? super Long>>> subscriberObserver = Optional.empty();
 
     @Override
     public void subscribe(Subscriber<? super Long> subscriber) {
         this.subscriber = subscriber;
+        subscriberObserver.ifPresent(o -> o.accept(subscriber));
         subscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
@@ -38,6 +43,10 @@ public class MockPublisher implements Publisher<Long> {
 
             }
         });
+    }
+
+    public void observeSubscribe(Consumer<Subscriber<? super Long>> subscriberObserver) {
+        this.subscriberObserver = Optional.of(subscriberObserver);
     }
 
     public void sendNext(long value) {

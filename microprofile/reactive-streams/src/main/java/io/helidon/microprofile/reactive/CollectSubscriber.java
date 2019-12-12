@@ -100,24 +100,25 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
                 // https://github.com/reactive-streams/reactive-streams-jvm#2.5
                 if (Objects.nonNull(this.subscription)) {
                     s.cancel();
+                    return;
                 }
+                this.subscription = s;
                 try {
                     cumulatedVal = collectStage.getCollector().supplier().get();
                 } catch (Throwable t) {
                     onError(t);
                     s.cancel();
                 }
-                this.subscription = s;
-                subscription.request(1);
+                subscription.request(Long.MAX_VALUE);
             }
 
             @Override
             @SuppressWarnings("unchecked")
             public void onNext(Object item) {
+                Objects.requireNonNull(item);
                 if (!closed.get()) {
                     try {
                         accumulator.accept(cumulatedVal, item);
-                        subscription.request(1);
                     } catch (Throwable t) {
                         onError(t);
                         subscription.cancel();
@@ -127,6 +128,7 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
 
             @Override
             public void onError(Throwable t) {
+                Objects.requireNonNull(t);
                 completableFuture.completeExceptionally(t);
             }
 
@@ -179,11 +181,13 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
 
             @Override
             public void onNext(Object o) {
+                Objects.requireNonNull(o);
                 subscriber.onNext(o);
             }
 
             @Override
             public void onError(Throwable t) {
+                Objects.requireNonNull(t);
                 subscriber.onError(t);
             }
 
