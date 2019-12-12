@@ -16,9 +16,9 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.mapper.Mapper;
-import io.helidon.common.reactive.Flow.Publisher;
 
 /**
  * Processor of {@link Publisher} to {@link Single} that publishes and maps each received item.

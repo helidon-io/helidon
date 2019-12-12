@@ -17,15 +17,16 @@
 package io.helidon.microprofile.openapi;
 
 import java.net.HttpURLConnection;
+import java.util.Map;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.microprofile.server.Server;
-import java.util.Map;
 
 import org.junit.jupiter.api.AfterAll;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test that MP OpenAPI support works when retrieving the OpenAPI document

@@ -65,8 +65,6 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
-import static io.helidon.microprofile.metrics.MetricUtil.registerMetric;
-import static io.helidon.microprofile.metrics.MetricUtil.toTags;
 
 /**
  * MetricsCdiExtension class.

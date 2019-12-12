@@ -17,8 +17,7 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 /**
  * A changeable component is a component that may identify a change

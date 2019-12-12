@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 /**
  * An utility class for {@link Valve} interface.
@@ -105,7 +104,7 @@ public class Valves {
     }
 
     /**
-     * Creates a {@link Valve} instance from provided {@link io.helidon.common.reactive.Flow.Publisher}.
+     * Creates a {@link Valve} instance from provided {@link java.util.concurrent.Flow.Publisher}.
      * <p>
      * If {@code publisher} parameter is {@code null} then returns an empty {@link Valve}.
      *

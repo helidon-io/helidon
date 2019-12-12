@@ -15,8 +15,8 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 
 /**
  * Implementation of {@link Multi} that represents the absence of a value by invoking {@link Subscriber#onComplete() } during

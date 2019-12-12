@@ -16,8 +16,8 @@
 package io.helidon.common.reactive;
 
 
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 
 import org.junit.jupiter.api.Test;
 

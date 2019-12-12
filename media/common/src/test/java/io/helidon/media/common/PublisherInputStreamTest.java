@@ -16,13 +16,14 @@
 
 package io.helidon.media.common;
 
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.Flow.Publisher;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
+
+import io.helidon.common.http.DataChunk;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

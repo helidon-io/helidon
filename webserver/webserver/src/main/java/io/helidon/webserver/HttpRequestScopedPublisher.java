@@ -51,7 +51,7 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBu
 
     /**
      * This method is called whenever
-     * {@link io.helidon.common.reactive.Flow.Subscription#request(long)} is
+     * {@link java.util.concurrent.Flow.Subscription#request(long)} is
      * called on the very one associated subscription with this publisher in
      * order to trigger next channel read on the associated
      * {@link ChannelHandlerContext}.

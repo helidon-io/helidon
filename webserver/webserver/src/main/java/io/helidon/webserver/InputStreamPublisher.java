@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.RequestedCounter;
 import io.helidon.common.reactive.SingleSubscriberHolder;
 
@@ -46,8 +46,8 @@ class InputStreamPublisher implements Flow.Publisher<ByteBuffer> {
      * Create new input stream publisher that reads data from a supplied input stream and publishes them a single subscriber.
      * <p>
      * Note that this implementation does not rely on any asynchronous processing and its business logic is always invoked
-     * on the subscriber thread (as part of {@link #subscribe(io.helidon.common.reactive.Flow.Subscriber)} and
-     * {@link io.helidon.common.reactive.Flow.Subscription#request(long)}
+     * on the subscriber thread (as part of {@link #subscribe(java.util.concurrent.Flow.Subscriber)} and
+     * {@link java.util.concurrent.Flow.Subscription#request(long)}
      * method calls).
      *
      * @param inputStream underlying input stream to be used to read the data tu be published as events.

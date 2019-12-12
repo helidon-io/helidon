@@ -17,13 +17,14 @@
 package io.helidon.webserver;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -35,7 +36,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import io.helidon.common.reactive.Single;
 
 /**
  * Tests {@link SendHeadersFirstPublisher}.

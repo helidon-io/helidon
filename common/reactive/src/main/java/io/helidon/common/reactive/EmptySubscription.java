@@ -15,7 +15,7 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Subscription;
+import java.util.concurrent.Flow.Subscription;
 
 /**
  * Empty subscription singleton.

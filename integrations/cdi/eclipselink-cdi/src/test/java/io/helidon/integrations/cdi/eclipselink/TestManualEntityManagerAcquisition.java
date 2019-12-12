@@ -15,24 +15,19 @@
  */
 package io.helidon.integrations.cdi.eclipselink;
 
-import java.util.Map;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.PersistenceException;
 
 import io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension;
-import org.eclipse.persistence.exceptions.ValidationException;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ApplicationScoped
 class TestManualEntityManagerAcquisition {

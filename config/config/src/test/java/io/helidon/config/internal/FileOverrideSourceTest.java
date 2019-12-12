@@ -16,14 +16,13 @@
 
 package io.helidon.config.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigException;
 import io.helidon.config.OverrideSources;
 import io.helidon.config.internal.FileOverrideSource.FileBuilder;

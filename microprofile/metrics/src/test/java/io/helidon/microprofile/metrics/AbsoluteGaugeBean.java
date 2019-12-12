@@ -16,8 +16,9 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.time.Duration;
+
+import javax.enterprise.context.ApplicationScoped;
 
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 

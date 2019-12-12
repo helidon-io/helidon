@@ -21,11 +21,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import io.helidon.common.OptionalHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.internal.ListNodeBuilderImpl;

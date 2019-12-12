@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.0
+### Backward incompatible changes
+#### Common
+- Flow API is now used from `java.util.concurrent.Flow`, Helidon specific `Flow` class is now removed
+
 ## [1.4.0] 
 
 ### Notes

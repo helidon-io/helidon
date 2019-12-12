@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
 /**
- * Testing implementation of {@link io.helidon.common.reactive.Flow.Subscriber} on {@link ConfigSource#changes()} events.
+ * Testing implementation of {@link java.util.concurrent.Flow.Subscriber} on {@link ConfigSource#changes()} events.
  */
 public class TestingConfigSourceChangeSubscriber extends TestingSubscriber<Optional<ObjectNode>> {
 }

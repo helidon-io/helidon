@@ -23,12 +23,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.microprofile.grpc.core.Bidirectional;
-import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RequestType;
-import io.helidon.microprofile.grpc.core.ResponseType;
-import io.helidon.microprofile.grpc.core.ServerStreaming;
-import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
@@ -43,7 +37,6 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
