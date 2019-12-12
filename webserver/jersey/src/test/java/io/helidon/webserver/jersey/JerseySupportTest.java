@@ -184,21 +184,21 @@ public class JerseySupportTest {
     public void errorThrownError() throws Exception {
         Response response = get("jersey/first/error/thrown/error");
 
-        doAssert(response, "", 500);
+        doAssert(response, null, 500);
     }
 
     @Test
     public void errorThrownUnhandled() throws Exception {
         Response response = get("jersey/first/error/thrown/unhandled");
 
-        doAssert(response, "", 500);
+        doAssert(response, null, 500);
     }
 
     @Test
     public void simplePostNotFound() throws Exception {
         Response response = post("jersey/first/non-existent-resource");
 
-        doAssert(response, "", Response.Status.NOT_FOUND);
+        doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
     @Test
@@ -245,7 +245,7 @@ public class JerseySupportTest {
     public void simpleGetNotFound() throws Exception {
         Response response = get("jersey/first/non-existent-resource");
 
-        doAssert(response, "", Response.Status.NOT_FOUND);
+        doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
     @Test
@@ -410,7 +410,9 @@ public class JerseySupportTest {
         try {
             assertEquals(expectedStatusCode, response.getStatus(),
                     "Unexpected error: " + response.getStatus());
-            assertEquals(expectedContent, response.readEntity(String.class));
+            if (expectedContent != null) {
+                assertEquals(expectedContent, response.readEntity(String.class));
+            }
         } finally {
             response.close();
         }
