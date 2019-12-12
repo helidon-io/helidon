@@ -14,6 +14,10 @@
 # limitations under the License.
 #
 
+server:
+  port: 0
+  host: 0.0.0.0
+
 db:
   source: jdbc
   connection:
