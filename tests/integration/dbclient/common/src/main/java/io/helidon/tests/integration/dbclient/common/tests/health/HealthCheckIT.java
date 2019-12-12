@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+
 /**
  * Verify that health check works.
  */

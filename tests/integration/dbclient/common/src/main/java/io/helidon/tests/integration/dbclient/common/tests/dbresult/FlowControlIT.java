@@ -25,12 +25,10 @@ import io.helidon.common.reactive.Flow.Subscription;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Type;
-import io.helidon.tests.integration.dbclient.common.tests.health.HealthCheckIT;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class FlowControlIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(HealthCheckIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(FlowControlIT.class.getName());
 
     /**
      * Test subscriber.
