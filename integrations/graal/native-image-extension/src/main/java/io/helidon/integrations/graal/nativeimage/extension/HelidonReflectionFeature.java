@@ -39,6 +39,8 @@ import com.oracle.svm.hosted.FeatureImpl;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
 
+import static io.helidon.common.CollectionsHelper.mapOf;
+
 /**
  * Feature to add reflection configuration to the image for Helidon, CDI and Jersey.
  */
