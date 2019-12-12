@@ -380,6 +380,10 @@ class RequestRouting implements Routing {
 
                     response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                 }
+                String message = t.getMessage();
+                if (message != null) {
+                    response.send(message);
+                }
             } catch (AlreadyCompletedException e) {
                 LOGGER.log(Level.WARNING,
                            "Cannot perform error handling of the throwable (see cause of this exception) because headers "
