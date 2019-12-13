@@ -26,6 +26,7 @@ import io.helidon.common.reactive.Flow;
 public class OfPublisher implements Flow.Publisher<Object> {
     private Iterable<?> iterable;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private AtomicBoolean completed = new AtomicBoolean(false);
 
     public OfPublisher(Iterable<?> iterable) {
         this.iterable = iterable;
@@ -33,7 +34,13 @@ public class OfPublisher implements Flow.Publisher<Object> {
 
     @Override
     public void subscribe(Flow.Subscriber<? super Object> subscriber) {
-        final Iterator<?> iterator = iterable.iterator();
+        final Iterator<?> iterator;
+        try {
+            iterator = iterable.iterator();
+        } catch (Throwable t) {
+            subscriber.onError(t);
+            return;
+        }
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
@@ -47,7 +54,9 @@ public class OfPublisher implements Flow.Publisher<Object> {
                         Objects.requireNonNull(next);
                         subscriber.onNext(next);
                     } else {
-                        subscriber.onComplete();
+                        if (!completed.getAndSet(true)) {
+                            subscriber.onComplete();
+                        }
                         break;
                     }
                 }
