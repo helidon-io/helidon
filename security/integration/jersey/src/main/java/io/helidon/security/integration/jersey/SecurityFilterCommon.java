@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -377,7 +378,13 @@ abstract class SecurityFilterCommon {
             response.description().ifPresent(responseBuilder::entity);
         }
 
-        context.getJerseyRequest().abortWith(responseBuilder.build());
+        if (featureConfig.useAbortWith()) {
+            context.getJerseyRequest().abortWith(responseBuilder.build());
+        } else {
+            String description = response.description()
+                    .orElse("Security did not allow this request to proceed.");
+            throw new WebApplicationException(description, responseBuilder.build());
+        }
     }
 
     protected void updateHeaders(Map<String, List<String>> responseHeaders, Response.ResponseBuilder responseBuilder) {

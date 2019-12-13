@@ -16,6 +16,7 @@
 
 package io.helidon.security.examples.jersey;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
@@ -52,6 +53,9 @@ public final class JerseyProgrammaticMain {
                 .register(new ExceptionMapper<Exception>() {
                     @Override
                     public Response toResponse(Exception exception) {
+                        if (exception instanceof WebApplicationException) {
+                            return ((WebApplicationException) exception).getResponse();
+                        }
                         exception.printStackTrace();
                         return Response.serverError().build();
                     }
