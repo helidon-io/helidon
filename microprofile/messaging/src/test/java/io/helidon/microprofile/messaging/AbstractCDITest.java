@@ -37,14 +37,13 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.config.MpConfigProviderResolver;
 import io.helidon.microprofile.server.Server;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -110,10 +109,8 @@ public abstract class AbstractCDITest {
         final Server.Builder builder = Server.builder();
         assertNotNull(builder);
         builder.config(config);
-        MpConfigProviderResolver.instance()
-                .registerConfig(MpConfig.builder()
-                                .config(config).build(),
-                        Thread.currentThread().getContextClassLoader());
+        ConfigProviderResolver.instance()
+                .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         assertNotNull(initializer);
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));

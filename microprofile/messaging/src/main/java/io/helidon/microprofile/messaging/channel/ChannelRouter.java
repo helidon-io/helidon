@@ -30,7 +30,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.messaging.connector.IncomingConnector;
 import io.helidon.microprofile.messaging.connector.OutgoingConnector;
 
@@ -45,7 +44,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
  * Orchestrator for all found channels, methods and connectors.
  */
 public class ChannelRouter {
-    private Config config = ((MpConfig) ConfigProvider.getConfig()).helidonConfig();
+    private Config config = (Config) ConfigProvider.getConfig();
 
     private List<AbstractMethod> connectableBeanMethods = new ArrayList<>();
 

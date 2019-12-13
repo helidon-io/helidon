@@ -22,7 +22,6 @@ import java.util.Properties;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.config.MpConfig;
 
 /**
  *
@@ -54,9 +53,6 @@ class AdHocConfigBuilder {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-
-        return MpConfig.builder()
-                .config(newConfig)
-                .build();
+        return (org.eclipse.microprofile.config.Config) newConfig;
     }
 }

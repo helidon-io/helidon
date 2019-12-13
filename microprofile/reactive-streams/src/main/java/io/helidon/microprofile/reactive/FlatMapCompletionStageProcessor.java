@@ -153,9 +153,7 @@ public class FlatMapCompletionStageProcessor implements Processor<Object, Object
             } catch (Throwable t) {
                 upstreamSubscription.cancel();
                 downStreamSubscriber.get().onError(t);
-                //TODO: CompletableFuture.failedFuture since Java 9
-                cs = new CompletableFuture<>();
-                cs.completeExceptionally(t);
+                cs = CompletableFuture.failedFuture(t);
             }
             return cs;
         }
