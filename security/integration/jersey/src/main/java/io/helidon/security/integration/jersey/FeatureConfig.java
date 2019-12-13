@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ class FeatureConfig {
     static final boolean DEFAULT_ATN_ANNOTATED_ONLY = true;
     static final boolean DEFAULT_PREMATCHING_ATN = false;
     static final boolean DEFAULT_PREMATCHING_ATZ = false;
+    static final boolean DEFAULT_USE_ABORT_WITH = true;
 
     private final boolean debug;
     private final boolean authorizeAnnotatedOnly;
@@ -36,6 +37,7 @@ class FeatureConfig {
     private final boolean usePrematchingAtz;
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
     private final boolean authenticateAnnotatedOnly;
+    private final boolean useAbortWith;
 
     FeatureConfig() {
         this.debug = DEFAULT_DEBUG;
@@ -43,6 +45,7 @@ class FeatureConfig {
         this.usePrematchingAtn = DEFAULT_PREMATCHING_ATN;
         this.usePrematchingAtz = DEFAULT_PREMATCHING_ATZ;
         this.authenticateAnnotatedOnly = DEFAULT_ATN_ANNOTATED_ONLY;
+        this.useAbortWith = DEFAULT_USE_ABORT_WITH;
     }
 
     FeatureConfig(SecurityFeature.Builder builder) {
@@ -57,6 +60,7 @@ class FeatureConfig {
         }
 
         this.queryParamHandlers.addAll(builder.queryParamHandlers());
+        this.useAbortWith = builder.useAbortWith();
     }
 
     boolean shouldAuthorizeAnnotatedOnly() {
@@ -81,6 +85,10 @@ class FeatureConfig {
 
     public boolean shouldUsePrematchingAuthorization() {
         return usePrematchingAtz;
+    }
+
+    public boolean useAbortWith() {
+        return useAbortWith;
     }
 
     @Override
