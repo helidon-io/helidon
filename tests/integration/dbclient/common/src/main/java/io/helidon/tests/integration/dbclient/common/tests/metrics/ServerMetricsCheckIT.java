@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.common.tests.health;
+package io.helidon.tests.integration.dbclient.common.tests.metrics;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -27,16 +27,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import javax.json.Json;
-import javax.json.JsonArray;
+import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
+import io.helidon.config.Config;
+import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
-import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.health.HealthSupport;
+import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.metrics.DbCounter;
+import io.helidon.dbclient.metrics.DbTimer;
+import io.helidon.metrics.MetricsSupport;
+import io.helidon.tests.integration.dbclient.common.AbstractIT;
+import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
@@ -46,40 +52,58 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Verify health check in web server environment.
+ * Verify metrics check in web server environment.
  */
-public class ServerHealthCheckIT {
+public class ServerMetricsCheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(ServerHealthCheckIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ServerMetricsCheckIT.class.getName());
 
+    /** Maximum Pokemon ID. */
+    private static final int BASE_ID = LAST_POKEMON_ID + 300;
+
+    private static DbClient DB_CLIENT;
     private static WebServer SERVER;
     private static String URL;
 
     private static Routing createRouting() {
-        final HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck.create(DB_CLIENT))
-                .build();
         return Routing.builder()
-                .register(health) // Health at "/health"
+                .register(MetricsSupport.create()) // Metrics at "/metrics"
                 .build();
     }
 
     /**
-     * Start Helidon Web Server with DB Client health check support.
+     * Initialize DB Client from test configuration.
+     *
+     * @return DB Client instance
+     */
+    private static DbClient initDbClient() {
+        Config dbConfig = AbstractIT.CONFIG.get("db");
+        return DbClient.builder(dbConfig)
+                // add an interceptor to named statement(s)
+                .addInterceptor(DbCounter.create(), "select-pokemons", "insert-pokemon")
+                // add an interceptor to statement type(s)
+                .addInterceptor(DbTimer.create(), DbStatementType.INSERT)
+                .build();
+    }
+
+    /**
+     * Start Helidon Web Server with DB Client metrics support.
      *
      * @throws ExecutionException when database query failed
      * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException {
+        DB_CLIENT = initDbClient();
         final ServerConfiguration serverConfig = ServerConfiguration.builder(CONFIG.get("server"))
                 .build();
         final WebServer server = WebServer.create(serverConfig, createRouting());
@@ -92,7 +116,7 @@ public class ServerHealthCheckIT {
     }
 
     /**
-     * Stop Helidon Web Server with DB Client health check support.
+     * Stop Helidon Web Server with DB Client metrics support.
      *
      * @throws ExecutionException when database query failed
      * @throws InterruptedException if the current thread was interrupted
@@ -103,7 +127,7 @@ public class ServerHealthCheckIT {
     }
 
     /**
-     * Retrieve server health status from Helidon Web Server.
+     * Retrieve server metrics status from Helidon Web Server.
      *
      * @param url server health status URL
      * @return server health status response (JSON)
@@ -121,20 +145,26 @@ public class ServerHealthCheckIT {
     }
 
     /**
-     * Read and check DB Client health status from Helidon Web Server.
+     * Read and check DB Client metrics from Helidon Web Server.
      *
      * @throws InterruptedException if the current thread was interrupted
      * @throws IOException if an I/O error occurs when sending or receiving HTTP request
+     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testHttpHealth() throws IOException, InterruptedException, ExecutionException {
-        // Call select-pokemons to warm up server
+    public void testHttpMetrics() throws IOException, InterruptedException, ExecutionException {
+        // Call select-pokemons to trigger it
         DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-pokemons")
         ).toCompletableFuture().get();
         List<DbRow> pokemonList = rows.collect().toCompletableFuture().get();
-        // Read and process health check response
-        String response = get(URL + "/health");
+        // Call insert-pokemon to trigger it
+        Pokemon pokemon = new Pokemon(BASE_ID+1, "Lickitung", TYPES.get(1));
+        Long result = DB_CLIENT.execute(exec -> exec
+                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
+        ).toCompletableFuture().get();
+        // Read and process metrics response
+        String response = get(URL + "/metrics");
         LOGGER.info("RESPONSE: " + response);
         JsonStructure jsonResponse = null;
         try (JsonReader jr = Json.createReader(new StringReader(response))) {
@@ -142,16 +172,24 @@ public class ServerHealthCheckIT {
         } catch (JsonParsingException | IllegalStateException ex) {
             fail(String.format("Error parsing response: %s", ex.getMessage()));
         }
-        JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
-        assertThat(checks.size(), greaterThan(0));
-        for (JsonValue check : checks) {
-            String name = check.asJsonObject().getString("name");
-            String state = check.asJsonObject().getString("state");
-            String status = check.asJsonObject().getString("status");
-            assertThat(state, equalTo("UP"));
-            assertThat(status, equalTo("UP"));
-        }
+        assertThat(jsonResponse, notNullValue());
+        assertThat(jsonResponse.getValueType(), equalTo(JsonValue.ValueType.OBJECT));
+        assertThat(jsonResponse.asJsonObject().containsKey("application"), equalTo(true));
+        JsonObject application = jsonResponse.asJsonObject().getJsonObject("application");
+        assertThat(application.size(), greaterThan(0));
+        assertThat(application.containsKey("db.counter.select-pokemons"), equalTo(true));
+        assertThat(application.containsKey("db.counter.insert-pokemon"), equalTo(true));
+        int selectPokemons = application.getInt("db.counter.select-pokemons");
+        int insertPokemons = application.getInt("db.counter.insert-pokemon");
+        assertThat(selectPokemons, equalTo(1));
+        assertThat(insertPokemons, equalTo(1));
+        assertThat(application.containsKey("db.timer.insert-pokemon"), equalTo(true));
+        JsonObject insertTimer = application.getJsonObject("db.timer.insert-pokemon");
+        assertThat(insertTimer.containsKey("count"), equalTo(true));
+        assertThat(insertTimer.containsKey("min"), equalTo(true));
+        assertThat(insertTimer.containsKey("max"), equalTo(true));
+        int timerCount = insertTimer.getInt("count");
+        assertThat(timerCount, equalTo(1));
     }
-
 
 }
