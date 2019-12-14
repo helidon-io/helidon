@@ -43,12 +43,19 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
     @Override
     public void request(long n) {
-        if (rsCompatible && n <= 0) {
-            // https://github.com/reactive-streams/reactive-streams-jvm#3.9
-            fail(new IllegalArgumentException("non-positive subscription request"));
+        if (rsCompatible) {
+            if (n <= 0) {
+                // https://github.com/reactive-streams/reactive-streams-jvm#3.9
+                fail(new IllegalArgumentException("non-positive subscription request"));
+            }
+            if (RecursionUtils.recursionDepthExceeded(5)) {
+                // https://github.com/reactive-streams/reactive-streams-jvm#3.3
+                fail(new IllegalCallerException("Recursion depth exceeded 3.3"));
+            }
         }
         super.request(n);
     }
+
 
     @Override
     protected void tryRequest(Flow.Subscription subscription) {

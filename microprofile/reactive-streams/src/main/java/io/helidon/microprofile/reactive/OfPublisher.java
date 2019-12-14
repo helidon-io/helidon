@@ -20,13 +20,18 @@ package io.helidon.microprofile.reactive;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.RequestedCounter;
 
 public class OfPublisher implements Flow.Publisher<Object> {
     private Iterable<?> iterable;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private AtomicBoolean completed = new AtomicBoolean(false);
+    private AtomicBoolean trampolineLock = new AtomicBoolean(false);
+    private final RequestedCounter requestCounter = new RequestedCounter();
+    private final ReentrantLock iterateConcurrentLock = new ReentrantLock();
 
     public OfPublisher(Iterable<?> iterable) {
         this.iterable = iterable;
@@ -46,18 +51,36 @@ public class OfPublisher implements Flow.Publisher<Object> {
             public void request(long n) {
                 if (n <= 0) {
                     // https://github.com/reactive-streams/reactive-streams-jvm#3.9
-                    subscriber.onError(new IllegalArgumentException("non-positive subscription request"));
+                    subscriber.onError(new IllegalArgumentException("non-positive subscription request 3.9"));
+                    return;
                 }
-                for (long i = 0; i < n; i++) {
-                    if (iterator.hasNext() && !cancelled.get()) {
-                        Object next = iterator.next();
-                        Objects.requireNonNull(next);
-                        subscriber.onNext(next);
-                    } else {
-                        if (!completed.getAndSet(true)) {
-                            subscriber.onComplete();
+                requestCounter.increment(n, subscriber::onError);
+                trySubmit();
+            }
+
+            private void trySubmit() {
+                if (!trampolineLock.getAndSet(true)) {
+                    try {
+                        while (requestCounter.tryDecrement()) {
+                            iterateConcurrentLock.lock();
+                            if (iterator.hasNext() && !cancelled.get()) {
+                                Object next = iterator.next();
+                                iterateConcurrentLock.unlock();
+                                Objects.requireNonNull(next);
+                                subscriber.onNext(next);
+                            } else {
+                                if (!completed.getAndSet(true)) {
+                                    subscriber.onComplete();
+                                }
+                                iterateConcurrentLock.unlock();
+                                break;
+                            }
                         }
-                        break;
+                    } finally {
+                        if (iterateConcurrentLock.isHeldByCurrentThread()) {
+                            iterateConcurrentLock.unlock();
+                        }
+                        trampolineLock.set(false);
                     }
                 }
             }
