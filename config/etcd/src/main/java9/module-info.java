@@ -25,7 +25,7 @@ module io.helidon.config.etcd {
     requires io.grpc;
     requires grpc.protobuf;
     requires grpc.stub;
-    requires protobuf.java;
+    requires com.google.protobuf;
     requires com.google.common;
     requires io.helidon.common;
 
