@@ -104,7 +104,7 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
                     @Override
                     public void onError(Throwable t) {
                         Objects.requireNonNull(t);
-                        superError(t);
+                        superOnError(t);
                     }
 
                     @Override
@@ -116,12 +116,8 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
             }
         } catch (Throwable t) {
             onErrorPublisherSubscription.ifPresent(Subscription::cancel);
-            superError(t);
+            superOnError(t);
         }
-    }
-
-    private void superError(Throwable t) {
-        super.onError(t);
     }
 
     @Override

@@ -55,6 +55,7 @@ public class ConcatPublisher<T> implements Publisher<T> {
                 if (n <= 0) {
                     // https://github.com/reactive-streams/reactive-streams-jvm#3.9
                     subscriber.onError(new IllegalArgumentException("non-positive subscription request"));
+                    return;
                 }
                 requested.set(n);
                 if (!firstProcessor.complete) {

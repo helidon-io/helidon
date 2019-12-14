@@ -35,8 +35,8 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     private final RequestedCounter requested;
     private final AtomicBoolean ready;
     private final AtomicBoolean subscribed;
-    private volatile boolean done;
-    private Throwable error;
+    protected volatile boolean done;
+    protected Throwable error;
 
     /**
      * Generic processor used for the implementation of {@link Multi} and {@link Single}.
@@ -94,16 +94,16 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      * @param ex Exception to be reported downstream
      */
     protected void fail(Throwable ex) {
-        onError(ex);
-    }
-
-    @Override
-    public void onError(Throwable ex) {
         done = true;
         if (error == null) {
             error = ex;
         }
         tryComplete();
+    }
+
+    @Override
+    public void onError(Throwable ex) {
+        fail(ex);
     }
 
     @Override

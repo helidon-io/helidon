@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
@@ -31,6 +32,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     private ReferencedSubscriber<? super U> referencedSubscriber;
     private BlockingQueue<U> buffer = new ArrayBlockingQueue<U>(BACK_PRESSURE_BUFFER_SIZE);
     private ReentrantLock publisherSequentialLock = new ReentrantLock();
+    protected CompletableFuture<ReferencedSubscriber<? super U>> subscribedSubscriber = new CompletableFuture<>();
 
 
     public void setRSCompatible(boolean rsCompatible) {
@@ -110,6 +112,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
             // https://github.com/reactive-streams/reactive-streams-jvm#2.5
             getSubscription().ifPresent(firstSubscription -> s.cancel());
             super.onSubscribe(s);
+            subscribedSubscriber.complete(referencedSubscriber);
             publisherSequentialLock.unlock();
         } else {
             super.onSubscribe(s);
@@ -150,11 +153,19 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
     @Override
     public void onError(Throwable ex) {
+        superOnError(ex);
+    }
+
+    protected void superOnError(Throwable ex) {
         if (rsCompatible) {
             // https://github.com/reactive-streams/reactive-streams-jvm#2.13
             Objects.requireNonNull(ex);
         }
-        super.onError(ex);
+        done = true;
+        if (error == null) {
+            error = ex;
+        }
+        tryComplete();
     }
 
     public static class ReferencedSubscriber<T> implements Flow.Subscriber<T> {
