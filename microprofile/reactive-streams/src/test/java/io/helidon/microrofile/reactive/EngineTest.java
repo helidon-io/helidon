@@ -669,10 +669,8 @@ public class EngineTest {
                 .fromCompletionStage(new CompletableFuture<>())
                 .via(
                         ReactiveStreams
-                                .coupled(ReactiveStreams.builder()
-                                                .cancel(),
-                                        ReactiveStreams
-                                                .fromCompletionStage(new CompletableFuture<>())
+                                .coupled(ReactiveStreams.builder().cancel(),
+                                        ReactiveStreams.fromCompletionStage(new CompletableFuture<>())
                                                 .onTerminate(() -> {
                                                     publisherCancelled.complete(null);
                                                 }))

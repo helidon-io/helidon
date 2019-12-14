@@ -37,7 +37,7 @@ public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
     private AtomicBoolean completed = new AtomicBoolean(false);
     private Function<Throwable, T> supplier;
     private Function<Throwable, Publisher<T>> publisherSupplier;
-    //TODO: sync access - onError can do async write
+    //TODO: sync access - onError can do async write?
     private Optional<Subscription> onErrorPublisherSubscription = Optional.empty();
 
     private OnErrorResumeProcessor() {

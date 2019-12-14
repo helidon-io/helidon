@@ -19,6 +19,7 @@ package io.helidon.microprofile.reactive;
 
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -27,7 +28,9 @@ import org.reactivestreams.Subscription;
 public class FromCompletionStagePublisher<T> implements Publisher<T> {
 
     private CompletionStage<?> completionStage;
-    private boolean nullable;
+    private volatile boolean nullable;
+    private volatile boolean cancelled = false;
+    private AtomicBoolean registered = new AtomicBoolean(false);
     private Subscriber<? super T> subscriber;
 
     public FromCompletionStagePublisher(CompletionStage<?> completionStage, boolean nullable) {
@@ -43,31 +46,40 @@ public class FromCompletionStagePublisher<T> implements Publisher<T> {
         subscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
+                registerEmitWhenCompleteOnceAction();
             }
 
             @Override
             public void cancel() {
-
-            }
-        });
-        completionStage.whenComplete((item, throwable) -> {
-            if (Objects.isNull(throwable)) {
-                emit((T) item);
-            } else {
-                subscriber.onError(throwable);
+                cancelled = true;
+                //registerEmitWhenCompleteOnceAction();
             }
         });
     }
 
+    private void registerEmitWhenCompleteOnceAction() {
+        if (!registered.getAndSet(true)) {
+            completionStage.whenComplete((item, throwable) -> {
+                if (Objects.isNull(throwable)) {
+                    emit((T) item);
+                } else {
+                    subscriber.onError(throwable);
+                }
+            });
+        }
+    }
+
     private void emit(T item) {
-        if (Objects.nonNull(item)) {
-            subscriber.onNext(item);
-            subscriber.onComplete();
-        } else {
-            if (nullable) {
+        if (!cancelled) {
+            if (Objects.nonNull(item)) {
+                subscriber.onNext(item);
                 subscriber.onComplete();
             } else {
-                subscriber.onError(new NullPointerException("Null in non nullable completion stage."));
+                if (nullable) {
+                    subscriber.onComplete();
+                } else {
+                    subscriber.onError(new NullPointerException("Null in non nullable completion stage."));
+                }
             }
         }
     }

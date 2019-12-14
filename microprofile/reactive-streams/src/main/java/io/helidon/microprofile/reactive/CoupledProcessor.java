@@ -17,93 +17,115 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.util.Objects;
-
 public class CoupledProcessor<T, R> implements Processor<T, R> {
 
-    private Subscriber<T> subscriber;
-    private Publisher<T> publisher;
-    private Subscriber<? super R> downStreamSubscriber;
-    private Subscription upStreamSubscription;
-    private Subscription downStreamsSubscription;
+    private Subscriber<T> passedInSubscriber;
+    private Publisher<T> passedInPublisher;
+    private Subscriber<? super R> outletSubscriber;
+    private Subscriber<? super T> inletSubscriber;
+    private Subscription inletSubscription;
+    private Subscription passedInPublisherSubscription;
+
+    private AtomicBoolean cancelled = new AtomicBoolean(false);
 
 
-    public CoupledProcessor(Subscriber<T> subscriber, Publisher<T> publisher) {
-        this.subscriber = subscriber;
-        this.publisher = publisher;
+    public CoupledProcessor(Subscriber<T> passedInSubscriber, Publisher<T> passedInPublisher) {
+        this.passedInSubscriber = passedInSubscriber;
+        this.passedInPublisher = passedInPublisher;
+        this.inletSubscriber = this;
     }
 
     @Override
-    public void subscribe(Subscriber<? super R> downStreamSubscriber) {
+    public void subscribe(Subscriber<? super R> outletSubscriber) {
 
-        this.downStreamSubscriber = downStreamSubscriber;
-        publisher.subscribe(new Subscriber<T>() {
+        this.outletSubscriber = outletSubscriber;
+        passedInPublisher.subscribe(new Subscriber<T>() {
 
             @Override
-            public void onSubscribe(Subscription downStreamsSubscription) {
-                Objects.requireNonNull(downStreamsSubscription);
-                CoupledProcessor.this.downStreamsSubscription = downStreamsSubscription;
+            public void onSubscribe(Subscription passedInPublisherSubscription) {
+                Objects.requireNonNull(passedInPublisherSubscription);
+                // https://github.com/reactive-streams/reactive-streams-jvm#2.5
+                if (Objects.nonNull(CoupledProcessor.this.passedInPublisherSubscription) || cancelled.get()) {
+                    passedInPublisherSubscription.cancel();
+                    return;
+                }
+                CoupledProcessor.this.passedInPublisherSubscription = passedInPublisherSubscription;
             }
 
             @Override
             @SuppressWarnings("unchecked")
             public void onNext(T t) {
                 Objects.requireNonNull(t);
-                downStreamSubscriber.onNext((R) t);
+                outletSubscriber.onNext((R) t);
             }
 
             @Override
             public void onError(Throwable t) {
+                cancelled.set(true);
                 Objects.requireNonNull(t);
-                upStreamSubscription.cancel();
-                subscriber.onError(t);
-                downStreamSubscriber.onError(t);
+                outletSubscriber.onError(t);
+                passedInSubscriber.onError(t);
+                inletSubscription.cancel();
             }
 
             @Override
             public void onComplete() {
-                downStreamSubscriber.onComplete();
+                //Passed in publisher completed
+                cancelled.set(true);
+                outletSubscriber.onComplete();
+                passedInSubscriber.onComplete();
             }
         });
 
-        downStreamSubscriber.onSubscribe(new Subscription() {
+        outletSubscriber.onSubscribe(new Subscription() {
+
             @Override
             public void request(long n) {
-                downStreamsSubscription.request(n);
+                passedInPublisherSubscription.request(n);
             }
 
             @Override
             public void cancel() {
-                subscriber.onComplete();
-                downStreamsSubscription.cancel();
+                // Cancel from outlet subscriber
+                passedInSubscriber.onComplete();
+                inletSubscription.cancel();
             }
         });
     }
 
     @Override
-    public void onSubscribe(Subscription upStreamSubscription) {
-        Objects.requireNonNull(upStreamSubscription);
+    public void onSubscribe(Subscription inletSubscription) {
+        Objects.requireNonNull(inletSubscription);
         // https://github.com/reactive-streams/reactive-streams-jvm#2.5
-        if (Objects.nonNull(this.upStreamSubscription)) {
-            upStreamSubscription.cancel();
+        if (Objects.nonNull(this.inletSubscription) || cancelled.get()) {
+            inletSubscription.cancel();
+            return;
         }
-        this.upStreamSubscription = upStreamSubscription;
-        subscriber.onSubscribe(new Subscription() {
+        this.inletSubscription = inletSubscription;
+        passedInSubscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
-                upStreamSubscription.request(n);
+                inletSubscription.request(n);
             }
 
             @Override
             public void cancel() {
-                upStreamSubscription.cancel();
-                //downStreamsSubscription.cancel();//LIVELOCK!!!
-                downStreamSubscriber.onComplete();
+                // Cancel from passed in subscriber
+                cancelled.set(true);
+                inletSubscription.cancel();
+                //passedInPublisherSubscription.cancel();//LIVELOCK!!!
+                outletSubscriber.onComplete();
+                CoupledProcessor.this.outletSubscriber = null;
             }
         });
     }
@@ -111,18 +133,28 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
     @Override
     @SuppressWarnings("unchecked")
     public void onNext(T t) {
-        subscriber.onNext(t);
+        passedInSubscriber.onNext(Objects.requireNonNull(t));
     }
 
     @Override
     public void onError(Throwable t) {
-        subscriber.onError(t);
+        cancelled.set(true);
+        // Inlet/upstream publisher sent error
+        passedInSubscriber.onError(Objects.requireNonNull(t));
+//        outletSubscriber.onError(t);
+        //passedInPublisherSubscription.cancel();
     }
 
     @Override
     public void onComplete() {
-        subscriber.onComplete();
-        downStreamSubscriber.onComplete();
-        downStreamsSubscription.cancel();
+        // Inlet/upstream publisher completed
+        cancelled.set(true);
+//        passedInPublisherSubscription.cancel();
+//        passedInSubscriber.onSubscribe(TappedSubscription.create());
+        passedInSubscriber.onComplete();
+//        outletSubscriber.onSubscribe(TappedSubscription.create());
+        outletSubscriber.onComplete();
+        passedInPublisherSubscription.cancel();
     }
+
 }

@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
 
@@ -29,6 +30,8 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     private boolean rsCompatible = false;
     private ReferencedSubscriber<? super U> referencedSubscriber;
     private BlockingQueue<U> buffer = new ArrayBlockingQueue<U>(BACK_PRESSURE_BUFFER_SIZE);
+    private ReentrantLock publisherSequentialLock = new ReentrantLock();
+
 
     public void setRSCompatible(boolean rsCompatible) {
         this.rsCompatible = rsCompatible;
@@ -77,6 +80,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     @Override
     public void onNext(T item) {
         if (rsCompatible) {
+            publisherSequentialLock.lock();
             // https://github.com/reactive-streams/reactive-streams-jvm#2.13
             Objects.requireNonNull(item);
             try {
@@ -84,6 +88,7 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
             } catch (Throwable ex) {
                 fail(ex);
             }
+            publisherSequentialLock.unlock();
         } else {
             super.onNext(item);
         }
@@ -92,12 +97,16 @@ public class RSCompatibleProcessor<T, U> extends BaseProcessor<T, U> {
     @Override
     public void onSubscribe(Flow.Subscription s) {
         if (rsCompatible) {
+            publisherSequentialLock.lock();
             // https://github.com/reactive-streams/reactive-streams-jvm#2.13
             Objects.requireNonNull(s);
             // https://github.com/reactive-streams/reactive-streams-jvm#2.5
             getSubscription().ifPresent(firstSubscription -> s.cancel());
+            super.onSubscribe(s);
+            publisherSequentialLock.unlock();
+        } else {
+            super.onSubscribe(s);
         }
-        super.onSubscribe(s);
     }
 
     @Override
