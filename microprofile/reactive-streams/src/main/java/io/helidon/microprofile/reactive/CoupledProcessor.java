@@ -20,7 +20,9 @@ package io.helidon.microprofile.reactive;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+
+import io.helidon.common.reactive.RecursionUtils;
+import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
@@ -29,9 +31,9 @@ import org.reactivestreams.Subscription;
 
 public class CoupledProcessor<T, R> implements Processor<T, R> {
 
-    private Subscriber<T> passedInSubscriber;
+    private HybridSubscriber<T> passedInSubscriber;
     private Publisher<T> passedInPublisher;
-    private Subscriber<? super R> outletSubscriber;
+    private HybridSubscriber<? super R> outletSubscriber;
     private Subscriber<? super T> inletSubscriber;
     private Subscription inletSubscription;
     private Subscription passedInPublisherSubscription;
@@ -40,15 +42,14 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
 
     public CoupledProcessor(Subscriber<T> passedInSubscriber, Publisher<T> passedInPublisher) {
-        this.passedInSubscriber = passedInSubscriber;
+        this.passedInSubscriber = HybridSubscriber.from(passedInSubscriber);
         this.passedInPublisher = passedInPublisher;
         this.inletSubscriber = this;
     }
 
     @Override
     public void subscribe(Subscriber<? super R> outletSubscriber) {
-
-        this.outletSubscriber = outletSubscriber;
+        this.outletSubscriber = HybridSubscriber.from(outletSubscriber);
         passedInPublisher.subscribe(new Subscriber<T>() {
 
             @Override
@@ -71,11 +72,13 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void onError(Throwable t) {
+                //Passed in publisher sent onError
                 cancelled.set(true);
                 Objects.requireNonNull(t);
                 outletSubscriber.onError(t);
                 passedInSubscriber.onError(t);
-                inletSubscription.cancel();
+                inletSubscriber.onError(t);
+                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);//TODO: 203
             }
 
             @Override
@@ -84,6 +87,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
                 cancelled.set(true);
                 outletSubscriber.onComplete();
                 passedInSubscriber.onComplete();
+                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);//TODO: 203
             }
         });
 
@@ -91,6 +95,10 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void request(long n) {
+                if (RecursionUtils.recursionDepthExceeded(2)) {
+                    // https://github.com/reactive-streams/reactive-streams-jvm#3.3
+                    outletSubscriber.onError(new IllegalCallerException("Recursion depth exceeded 3.3"));
+                }
                 passedInPublisherSubscription.request(n);
             }
 
@@ -98,7 +106,9 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
             public void cancel() {
                 // Cancel from outlet subscriber
                 passedInSubscriber.onComplete();
-                inletSubscription.cancel();
+                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);
+                CoupledProcessor.this.passedInSubscriber.releaseReferences();
+                CoupledProcessor.this.outletSubscriber.releaseReferences();
             }
         });
     }
@@ -115,17 +125,24 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
         passedInSubscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
+                if (RecursionUtils.recursionDepthExceeded(5)) {
+                    // https://github.com/reactive-streams/reactive-streams-jvm#3.3
+                    passedInSubscriber.onError(new IllegalCallerException("Recursion depth exceeded 3.3"));
+                }
                 inletSubscription.request(n);
             }
 
             @Override
             public void cancel() {
                 // Cancel from passed in subscriber
-                cancelled.set(true);
+                if (cancelled.getAndSet(true)) {
+                    return;
+                }
                 inletSubscription.cancel();
-                //passedInPublisherSubscription.cancel();//LIVELOCK!!!
                 outletSubscriber.onComplete();
-                CoupledProcessor.this.outletSubscriber = null;
+                passedInPublisherSubscription.cancel();
+                passedInSubscriber.releaseReferences();
+                outletSubscriber.releaseReferences();
             }
         });
     }
@@ -141,18 +158,15 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
         cancelled.set(true);
         // Inlet/upstream publisher sent error
         passedInSubscriber.onError(Objects.requireNonNull(t));
-//        outletSubscriber.onError(t);
-        //passedInPublisherSubscription.cancel();
+        outletSubscriber.onError(t);
+        passedInPublisherSubscription.cancel();
     }
 
     @Override
     public void onComplete() {
         // Inlet/upstream publisher completed
         cancelled.set(true);
-//        passedInPublisherSubscription.cancel();
-//        passedInSubscriber.onSubscribe(TappedSubscription.create());
         passedInSubscriber.onComplete();
-//        outletSubscriber.onSubscribe(TappedSubscription.create());
         outletSubscriber.onComplete();
         passedInPublisherSubscription.cancel();
     }

@@ -28,7 +28,6 @@ public class ConcatProcessorTest extends AbstractProcessorTest {
 
     @Override
     protected Publisher<Long> getPublisher(long items) {
-        ;
         return ReactiveStreams.concat(
                 ReactiveStreams.fromIterable(LongStream.range(0, items / 2).boxed().collect(Collectors.toList())),
                 ReactiveStreams.fromIterable(LongStream.range(items / 2, items).boxed().collect(Collectors.toList()))

@@ -20,6 +20,7 @@ package io.helidon.microprofile.reactive;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.reactive.Flow;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
@@ -34,6 +35,7 @@ import org.reactivestreams.Subscription;
 public class CumulativeProcessor implements Processor<Object, Object> {
     private LinkedList<Processor<Object, Object>> processorList = new LinkedList<>();
     private Subscription subscription;
+    private AtomicBoolean chainConnected = new AtomicBoolean(false);
 
     /**
      * Create {@link org.reactivestreams.Processor} wrapping ordered list of {@link io.helidon.common.reactive.Flow.Processor}s.
@@ -50,8 +52,8 @@ public class CumulativeProcessor implements Processor<Object, Object> {
     @Override
     public void subscribe(Subscriber<? super Object> s) {
         processorList.getLast().subscribe(s);
+        tryChainSubscribe();
     }
-
 
     @Override
     public void onSubscribe(Subscription subscription) {
@@ -61,15 +63,21 @@ public class CumulativeProcessor implements Processor<Object, Object> {
             return;
         }
         this.subscription = subscription;
-        // This is the time for connecting all processors
-        Processor<Object, Object> lastProcessor = null;
-        for (Processor<Object, Object> processor : processorList) {
-            if (lastProcessor != null) {
-                lastProcessor.subscribe(processor);
-            }
-            lastProcessor = processor;
-        }
+        tryChainSubscribe();
         processorList.getFirst().onSubscribe(subscription);
+    }
+
+    private void tryChainSubscribe() {
+        if (!chainConnected.getAndSet(true)) {
+            // This is the time for connecting all processors
+            Processor<Object, Object> lastProcessor = null;
+            for (Processor<Object, Object> processor : processorList) {
+                if (lastProcessor != null) {
+                    lastProcessor.subscribe(processor);
+                }
+                lastProcessor = processor;
+            }
+        }
     }
 
     @Override
