@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package io.helidon.config;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.TestingConfigSource;
 
@@ -93,10 +93,10 @@ public class ConfigContextTest {
     private static ObjectNode createSource(String valuePrefix) {
         ObjectNode.Builder builder = ObjectNode.builder();
         int i = 0;
-        for (String detachKey : CollectionsHelper.listOf("", "prefix")) {
+        for (String detachKey : List.of("", "prefix")) {
             i++;
             int j = 0;
-            for (String key : CollectionsHelper.listOf("", "sub")) {
+            for (String key : List.of("", "sub")) {
                 j++;
                 String realKey = concatKeys(concatKeys(detachKey, key), PROP1);
                 builder.addValue(realKey, valuePrefix + "Val_" + i + "_" + j);

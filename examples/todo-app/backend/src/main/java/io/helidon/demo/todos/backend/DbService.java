@@ -19,13 +19,13 @@ package io.helidon.demo.todos.backend;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityException;
 
@@ -157,8 +157,8 @@ public class DbService {
             return supplier.get();
         } catch (Exception e) {
             Tags.ERROR.set(span, true);
-            span.log(CollectionsHelper.mapOf("event", "error",
-                                             "error.object", e));
+            span.log(Map.of("event", "error",
+                            "error.object", e));
             throw e;
         } finally {
             span.finish();

@@ -25,7 +25,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
@@ -140,7 +139,7 @@ class OptionalSecurityTest {
         return new Application() {
             @Override
             public Set<Class<?>> getClasses() {
-                return CollectionsHelper.setOf(TheResource.class);
+                return Set.of(TheResource.class);
             }
         };
     }

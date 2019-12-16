@@ -16,9 +16,9 @@
 
 package io.helidon.config;
 
+import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.spi.ConfigContext;
 
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ public class UseFirstAvailableConfigSourceTest {
         );
 
         assertThat(configSource.description(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "ClasspathConfig[application.yaml]?->ClasspathConfig[",
                            "io/helidon/config/application.properties]?->ClasspathConfig[",
                            "io/helidon/config/application.conf]->ClasspathConfig[",
@@ -57,7 +57,7 @@ public class UseFirstAvailableConfigSourceTest {
         configSource.init(context);
         configSource.load();
         assertThat(configSource.description(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "(ClasspathConfig[application.yaml]?)->*ClasspathConfig[",
                            "io/helidon/config/application.properties]?*->/ClasspathConfig[",
                            "io/helidon/config/application.conf]/->/ClasspathConfig[",

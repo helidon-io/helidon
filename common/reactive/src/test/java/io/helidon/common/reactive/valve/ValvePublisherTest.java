@@ -28,7 +28,6 @@ import io.helidon.common.reactive.Multi;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -169,7 +168,7 @@ class ValvePublisherTest {
     void multipleSubscribers() throws Exception {
         Tank<String> stringTank = new Tank<>(10);
 
-        stringTank.addAll(listOf("1", "2", "3"));
+        stringTank.addAll(List.of("1", "2", "3"));
         stringTank.close();
 
         Multi<String> multi = Multi.from(stringTank.toPublisher());
@@ -189,7 +188,7 @@ class ValvePublisherTest {
     void multiplePublishers() throws Exception {
         Tank<String> stringTank = new Tank<>(10);
 
-        stringTank.addAll(listOf("1", "2", "3"));
+        stringTank.addAll(List.of("1", "2", "3"));
         stringTank.close();
 
         assertThat(Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).get(10, TimeUnit.SECONDS), is("123"));

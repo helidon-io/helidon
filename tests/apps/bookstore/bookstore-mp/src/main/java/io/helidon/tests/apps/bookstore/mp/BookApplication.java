@@ -16,12 +16,11 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
+import java.util.Set;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
-import java.util.Set;
-
-import io.helidon.common.CollectionsHelper;
 
 @ApplicationScoped
 @ApplicationPath("/")
@@ -29,6 +28,6 @@ public class BookApplication extends Application {
 
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(BookResource.class);
+        return Set.of(BookResource.class);
     }
 }

@@ -16,12 +16,12 @@
 
 package io.helidon.config.spi;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
@@ -161,7 +161,7 @@ public class AbstractConfigSourceTest {
                 .thenReturn(Optional.of(new ConfigParser() { //NOT used parser
                     @Override
                     public Set<String> supportedMediaTypes() {
-                        return CollectionsHelper.setOf(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                        return Set.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
                     }
 
                     @Override
@@ -188,7 +188,7 @@ public class AbstractConfigSourceTest {
     @Test
     public void testInitAll() {
         TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().config(Config.create(ConfigSources.create(
-                CollectionsHelper.mapOf("media-type-mapping.yaml", "application/x-yaml",
+                Map.of("media-type-mapping.yaml", "application/x-yaml",
                        "media-type-mapping.password", "application/base64"))));
 
         //media-type-mapping

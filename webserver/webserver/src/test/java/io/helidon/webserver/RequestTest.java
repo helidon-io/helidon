@@ -17,8 +17,7 @@
 package io.helidon.webserver;
 
 import java.net.URI;
-
-import io.helidon.common.CollectionsHelper;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +40,7 @@ public class RequestTest {
     public void createPathTest() throws Exception {
         Request.Path path = Request.Path.create(null,
                                                 "/foo/bar/baz",
-                                                CollectionsHelper.mapOf("a", "va", "b", "vb", "var", "1"));
+                                                Map.of("a", "va", "b", "vb", "var", "1"));
         assertThat(path.toString(), is("/foo/bar/baz"));
         assertThat(path.absolute().toString(), is("/foo/bar/baz"));
         assertThat("va", is(path.param("a")));
@@ -51,7 +50,7 @@ public class RequestTest {
         // Sub path
         path = Request.Path.create(path,
                                    "/bar/baz",
-                                   CollectionsHelper.mapOf("c", "vc", "var", "2"));
+                                   Map.of("c", "vc", "var", "2"));
         assertThat(path.toString(), is("/bar/baz"));
         assertThat(path.absolute().toString(), is("/foo/bar/baz"));
         assertThat("vc", is(path.param("c")));
@@ -63,7 +62,7 @@ public class RequestTest {
         // Sub Sub Path
         path = Request.Path.create(path,
                                    "/baz",
-                                   CollectionsHelper.mapOf("d", "vd", "a", "a2"));
+                                   Map.of("d", "vd", "a", "a2"));
         assertThat(path.toString(), is("/baz"));
         assertThat(path.absolute().toString(), is("/foo/bar/baz"));
         assertThat("vd", is(path.param("d")));

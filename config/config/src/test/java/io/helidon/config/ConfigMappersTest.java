@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -53,8 +54,6 @@ import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.regex.Pattern;
-
-import io.helidon.common.CollectionsHelper;
 
 import org.junit.jupiter.api.Test;
 
@@ -106,7 +105,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "text-text", "string value",
                         "int-p", "2147483647",
                         "long-p", "9223372036854775807",
@@ -125,7 +124,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf("key", stringValue)))
+                .sources(ConfigSources.create(Map.of("key", stringValue)))
                 .build();
 
         assertThat(manager.map(config.get("key"), type), is(expectedValue));
@@ -213,7 +212,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
+                .sources(ConfigSources.create(Map.of("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
                 .build();
 
         assertThat(manager.map(config.get("key"), Pattern.class).toString(),
@@ -250,7 +249,7 @@ public class ConfigMappersTest {
 
     private Config createConfig() {
         return Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "key1", "value1",
                         "key2.key21", "value21",
                         "key2.key22", "value22",

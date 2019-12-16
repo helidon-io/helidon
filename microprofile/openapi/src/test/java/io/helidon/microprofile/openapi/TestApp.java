@@ -27,8 +27,6 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -43,7 +41,7 @@ public class TestApp extends Application {
     static final String GO_SUMMARY = "Returns a fixed string";
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(TestResources.class);
+        return Set.of(TestResources.class);
     }
 
     @Path("/testapp")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.config;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import io.helidon.common.CollectionsHelper;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -100,7 +98,7 @@ public class ConfigListImplTest extends ConfigComplexImplTest {
         assertThat(allSubKeys, hasSize(subNodesNoObjects()));
     }
 
-       @MethodSource("initParams")
+    @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalListFromStringSupplier(TestContext context) {
         init(context);
@@ -253,14 +251,14 @@ public class ConfigListImplTest extends ConfigComplexImplTest {
 
     @Override
     protected ObjectConfigBean[] expectedObjectConfigBeans() {
-        return CollectionsHelper.listOf(new ObjectConfigBean("fromConfig", "key:0@VALUE"),
-                                        new ObjectConfigBean("fromConfig", "key:1@OBJECT"),
-                                        new ObjectConfigBean("fromConfig", "key:2@LIST"),
-                                        new ObjectConfigBean("fromConfig", "key:3@VALUE"),
-                                        new ObjectConfigBean("fromConfig", "key:4@VALUE"),
-                                        new ObjectConfigBean("fromConfig", "key:5@VALUE"),
-                                        new ObjectConfigBean("fromConfig", "key:6@VALUE"),
-                                        new ObjectConfigBean("fromConfig", "key:7@LIST"))
+        return List.of(new ObjectConfigBean("fromConfig", "key:0@VALUE"),
+                       new ObjectConfigBean("fromConfig", "key:1@OBJECT"),
+                       new ObjectConfigBean("fromConfig", "key:2@LIST"),
+                       new ObjectConfigBean("fromConfig", "key:3@VALUE"),
+                       new ObjectConfigBean("fromConfig", "key:4@VALUE"),
+                       new ObjectConfigBean("fromConfig", "key:5@VALUE"),
+                       new ObjectConfigBean("fromConfig", "key:6@VALUE"),
+                       new ObjectConfigBean("fromConfig", "key:7@LIST"))
                 .toArray(new ObjectConfigBean[0]);
     }
 

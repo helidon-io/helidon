@@ -33,7 +33,6 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
@@ -186,7 +185,7 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         List<X509Certificate> certs;
 
         if (trustConfig == null) {
-            certs = CollectionsHelper.listOf();
+            certs = List.of();
         } else {
             certs = trustConfig.certs();
         }

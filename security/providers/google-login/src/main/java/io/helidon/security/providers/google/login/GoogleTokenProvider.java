@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -32,7 +33,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -108,7 +108,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
 
                 // thread safe according to documentation
                 this.verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
-                        .setAudience(CollectionsHelper.setOf(clientId))
+                        .setAudience(Set.of(clientId))
                         .build();
             } catch (Exception e) {
                 throw new GoogleTokenException("Failed to initialize transport", e);

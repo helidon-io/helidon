@@ -40,7 +40,6 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
@@ -77,7 +76,7 @@ public class Security {
      */
     public static final String HEADER_ORIG_URI = "X_ORIG_URI_HEADER";
 
-    private static final Set<String> RESERVED_PROVIDER_KEYS = CollectionsHelper.setOf(
+    private static final Set<String> RESERVED_PROVIDER_KEYS = Set.of(
             "name",
             "class",
             "is-authentication-provider",
@@ -85,7 +84,7 @@ public class Security {
             "is-client-security-provider",
             "is-audit-provider");
 
-    private static final Set<String> CONFIG_INTERNAL_PREFIXES = CollectionsHelper.setOf(
+    private static final Set<String> CONFIG_INTERNAL_PREFIXES = Set.of(
             "provider-policy",
             "providers",
             "environment"
@@ -344,8 +343,8 @@ public class Security {
 
     List<? extends OutboundSecurityProvider> resolveOutboundProvider(String providerName) {
         if (null != providerName) {
-            return resolveProvider(OutboundSecurityProvider.class, providerName).map(CollectionsHelper::listOf)
-                    .orElse(CollectionsHelper.listOf());
+            return resolveProvider(OutboundSecurityProvider.class, providerName).map(List::of)
+                    .orElse(List.of());
         }
         return providerSelectionPolicy.selectOutboundProviders();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package io.helidon.config;
 
 import java.util.AbstractMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.internal.OverrideConfigFilter;
 import io.helidon.config.spi.OverrideSource;
 
@@ -39,13 +40,13 @@ public class InMemoryOverrideSourceTest {
     public void testWildcards() {
         Config config = Config.builder()
                 .sources(ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .overrides(OverrideSources.create(CollectionsHelper.mapOf("*.*.url", "URL1")))
+                .overrides(OverrideSources.create(Map.of("*.*.url", "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -62,13 +63,13 @@ public class InMemoryOverrideSourceTest {
     public void testWildcards2() {
         Config config = Config.builder()
                 .sources(ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .overrides(OverrideSources.create(CollectionsHelper.mapOf("*.url", "URL1")))
+                .overrides(OverrideSources.create(Map.of("*.url", "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -85,14 +86,14 @@ public class InMemoryOverrideSourceTest {
     public void testAsConfigFilter() {
         Config config = Config.builder()
                 .sources(ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
                 .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
-                        CollectionsHelper.mapOf("*.*.url", "URL1")
+                        Map.of("*.*.url", "URL1")
                                 .entrySet()
                                 .stream()
                                 .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue()))
@@ -112,7 +113,7 @@ public class InMemoryOverrideSourceTest {
     @Test
     void testBuilderDefault() {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-                new InMemoryOverrideSource.Builder(CollectionsHelper.listOf()).build();
+                new InMemoryOverrideSource.Builder(List.of()).build();
         });
         assertThat(ex.getMessage(), startsWith("Override values cannot be empty."));
     }

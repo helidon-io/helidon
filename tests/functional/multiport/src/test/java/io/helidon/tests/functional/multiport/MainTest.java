@@ -16,6 +16,7 @@
 
 package io.helidon.tests.functional.multiport;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import javax.ws.rs.client.Client;
@@ -23,8 +24,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import io.helidon.common.CollectionsHelper;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,7 +57,7 @@ class MainTest {
     }
 
     static Stream<Params> initParams() {
-        return CollectionsHelper.listOf(
+        return List.of(
                 new Params(7001, true, false, false),
                 new Params(8001, false, false, true),
                 new Params(8002, false, true, false),

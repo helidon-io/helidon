@@ -283,7 +283,7 @@ The default behavior is to decrement when exiting the method.  Here is an exampl
 ----
 @Override
 public Set<Class<?>> getClasses() {
-    return CollectionsHelper.setOf(GreetResource.class, GreetingCards.class); // <1>
+    return Set.of(GreetResource.class, GreetingCards.class); // <1>
 }
 ----
 <1> Add the `GreetingCards` class to the set of classes managed by Helidon for this application.

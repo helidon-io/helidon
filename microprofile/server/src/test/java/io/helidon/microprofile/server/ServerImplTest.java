@@ -26,7 +26,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 
 import org.junit.jupiter.api.AfterAll;
@@ -110,14 +109,14 @@ class ServerImplTest {
     private final class TestApplication1 extends Application {
         @Override
         public Set<Object> getSingletons() {
-            return CollectionsHelper.setOf(new TestResource1());
+            return Set.of(new TestResource1());
         }
     }
 
     private final class TestApplication2 extends Application {
         @Override
         public Set<Object> getSingletons() {
-            return CollectionsHelper.setOf(new TestResource2());
+            return Set.of(new TestResource2());
         }
     }
 

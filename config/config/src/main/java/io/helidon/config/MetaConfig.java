@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -151,8 +150,8 @@ public final class MetaConfig {
         return metaConfigOpt
                 .map(MetaConfig::configSources)
                 .orElseGet(() -> MetaConfigFinder.findConfigSource(supportedMediaType)
-                        .map(CollectionsHelper::listOf)
-                        .orElseGet(CollectionsHelper::listOf));
+                        .map(List::of)
+                        .orElseGet(List::of));
 
     }
 

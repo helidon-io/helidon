@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package io.helidon.config.internal;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -67,7 +68,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "LIST")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "LIST")));
     }
 
     @Test
@@ -79,7 +80,7 @@ public class ObjectNodeBuilderImplTest {
                     .addValue("top1.prop1", "1")
                     .build();
         });
-        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "OBJECT")));
+        assertThat(ex.getMessage(), stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "OBJECT")));
     }
 
     @Test
@@ -92,7 +93,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "merge", "prop1", "OBJECT", "VALUE")));
+                   stringContainsInOrder(List.of("top1", "merge", "prop1", "OBJECT", "VALUE")));
     }
 
     @Test
@@ -104,8 +105,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper
-                                                 .listOf("top1", "prop1", "merge", "OBJECT", "'sub1'", "LIST", "not a number")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "OBJECT", "'sub1'", "LIST", "not a number")));
     }
 
     @Test
@@ -131,7 +131,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1",
+                   stringContainsInOrder(List.of("top1",
                                                                   "prop1",
                                                                   "merge",
                                                                   "OBJECT",
@@ -149,7 +149,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1",
+                   stringContainsInOrder(List.of("top1",
                                                                   "prop1",
                                                                   "merge",
                                                                   "OBJECT",
@@ -183,7 +183,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "VALUE")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "VALUE")));
     }
 
     @Test
@@ -210,7 +210,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "OBJECT")));
     }
 
     @Test
@@ -222,7 +222,7 @@ public class ObjectNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "OBJECT")));
     }
 
     @Test

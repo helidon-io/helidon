@@ -18,6 +18,7 @@ package io.helidon.common.configurable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +34,6 @@ import io.helidon.config.ConfigSources;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -120,7 +120,7 @@ class ThreadPoolSupplierTest {
 
         try {
             log.addHandler(handler);
-            Config config = Config.create(ConfigSources.create(mapOf(thresholdKey, threshold, rateKey, rate)));
+            Config config = Config.create(ConfigSources.create(Map.of(thresholdKey, threshold, rateKey, rate)));
             ExecutorService executor = ThreadPoolSupplier.create(config).get();
             Optional<ThreadPool> asThreadPool = ThreadPool.asThreadPool(executor);
             ThreadPool pool = asThreadPool.orElseThrow(() -> new RuntimeException("not a thread pool"));

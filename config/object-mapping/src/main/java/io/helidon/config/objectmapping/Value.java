@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *                 implements Supplier{@literal <List<Integer>>} {
  *         {@literal @}Override
  *         public List{@literal <Integer>} get() {
- *             return CollectionsHelper.listOf(0, 10);
+ *             return List.of(0, 10);
  *         }
  *     }
  * }

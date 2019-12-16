@@ -18,6 +18,7 @@ package io.helidon.microprofile.tracing;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -37,8 +38,6 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import org.eclipse.microprofile.opentracing.Traced;
-
-import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * Interceptor for {@link org.eclipse.microprofile.opentracing.Traced} annotation.
@@ -91,8 +90,8 @@ public class MpTracingInterceptor {
                 return context.proceed();
             } catch (Exception e) {
                 span.setTag("error", true);
-                span.log(mapOf("error.object", e.getClass().getName(),
-                               "event", "error"));
+                span.log(Map.of("error.object", e.getClass().getName(),
+                                "event", "error"));
                 throw e;
             } finally {
                 span.finish();

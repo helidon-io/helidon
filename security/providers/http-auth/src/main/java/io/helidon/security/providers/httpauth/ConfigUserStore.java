@@ -19,11 +19,11 @@ package io.helidon.security.providers.httpauth;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 
 /**
@@ -80,7 +80,7 @@ public class ConfigUserStore implements SecureUserStore {
 
             cu.login = config.get("login").asString().get();
             cu.password = config.get("password").asString().orElse("").toCharArray();
-            cu.roles.addAll(config.get("roles").asList(String.class).orElse(CollectionsHelper.listOf()));
+            cu.roles.addAll(config.get("roles").asList(String.class).orElse(List.of()));
 
             return cu;
         }

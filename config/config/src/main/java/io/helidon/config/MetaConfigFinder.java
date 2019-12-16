@@ -28,8 +28,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigSource;
 
-import static io.helidon.common.CollectionsHelper.listOf;
-
 /**
  * Utility class that locates the meta configuration source.
  */
@@ -40,7 +38,7 @@ final class MetaConfigFinder {
     public static final String META_CONFIG_SYSTEM_PROPERTY = "io.helidon.config.meta-config";
 
     private static final Logger LOGGER = Logger.getLogger(MetaConfigFinder.class.getName());
-    private static final List<String> CONFIG_SUFFIXES = listOf("yaml", "conf", "json", "properties");
+    private static final List<String> CONFIG_SUFFIXES = List.of("yaml", "conf", "json", "properties");
     private static final String META_CONFIG_PREFIX = "meta-config.";
     private static final String CONFIG_PREFIX = "application.";
 

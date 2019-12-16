@@ -25,7 +25,6 @@ import java.util.Random;
 import java.util.Set;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.Security;
@@ -84,7 +83,7 @@ public class HttpAuthProviderBuilderLegacyUserStoreTest {
 
                     @Override
                     public Set<String> roles() {
-                        return CollectionsHelper.setOf("user", "admin");
+                        return Set.of("user", "admin");
                     }
                 });
             }
@@ -102,7 +101,7 @@ public class HttpAuthProviderBuilderLegacyUserStoreTest {
 
                     @Override
                     public Set<String> roles() {
-                        return CollectionsHelper.setOf("user");
+                        return Set.of("user");
                     }
                 });
             }

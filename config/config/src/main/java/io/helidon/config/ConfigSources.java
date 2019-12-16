@@ -38,7 +38,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.internal.PrefixedConfigSource;
@@ -337,7 +336,7 @@ public final class ConfigSources {
      */
     @SafeVarargs
     public static CompositeBuilder create(Supplier<? extends ConfigSource>... configSources) {
-        return create(CollectionsHelper.listOf(configSources));
+        return create(List.of(configSources));
     }
 
     /**

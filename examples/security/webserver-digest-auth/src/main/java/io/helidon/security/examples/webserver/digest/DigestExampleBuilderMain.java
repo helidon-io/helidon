@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.LogManager;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -43,9 +42,9 @@ public final class DigestExampleBuilderMain {
     private static Map<String, MyUser> users = new HashMap<>();
 
     static {
-        users.put("jack", new MyUser("jack", "password".toCharArray(), CollectionsHelper.setOf("user", "admin")));
-        users.put("jill", new MyUser("jill", "password".toCharArray(), CollectionsHelper.setOf("user")));
-        users.put("john", new MyUser("john", "password".toCharArray(), CollectionsHelper.setOf()));
+        users.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user", "admin")));
+        users.put("jill", new MyUser("jill", "password".toCharArray(), Set.of("user")));
+        users.put("john", new MyUser("john", "password".toCharArray(), Set.of()));
     }
 
     private DigestExampleBuilderMain() {

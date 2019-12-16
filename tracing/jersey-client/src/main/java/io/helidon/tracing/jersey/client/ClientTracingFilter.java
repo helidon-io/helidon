@@ -33,7 +33,6 @@ import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
@@ -47,8 +46,6 @@ import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
-
-import static io.helidon.common.CollectionsHelper.listOf;
 
 /**
  * This filter adds tracing information the the associated JAX-RS client call based on the provided properties.
@@ -140,7 +137,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
 
     static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
 
-    private static final List<String> PROPAGATED_HEADERS = listOf(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
+    private static final List<String> PROPAGATED_HEADERS = List.of(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
     private static final int HTTP_STATUS_SERVER_ERROR_THRESHOLD = 500;
 
@@ -230,7 +227,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
 
     private Map<String, List<String>> findInboundHeaders(Optional<TracingContext> tracingContext) {
         return tracingContext.map(TracingContext::inboundHeaders)
-                .orElse(CollectionsHelper.mapOf());
+                .orElse(Map.of());
     }
 
     private Map<String, List<String>> updateOutboundHeaders(Map<String, List<String>> outboundHeaders,
@@ -255,7 +252,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
             Tags.HTTP_STATUS.set(span, status);
             if (status >= HTTP_STATUS_ERROR_THRESHOLD) {
                 Tags.ERROR.set(span, true);
-                span.log(CollectionsHelper.mapOf("event",
+                span.log(Map.of("event",
                                                  "error",
                                                  "message",
                                                  "Response HTTP status: " + status,
@@ -323,8 +320,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         return new HashMap<>(tracerHeaders.entrySet()
                                      .stream()
                                      .collect(Collectors.toMap(Map.Entry::getKey,
-                                                               entry -> CollectionsHelper
-                                                                       .listOf(entry.getValue()))));
+                                                               entry -> List.of(entry.getValue()))));
     }
 
     private Span createSpan(ClientRequestContext requestContext,

@@ -20,9 +20,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.security.jwt.JwtException;
 
@@ -257,8 +257,8 @@ public class JwkKeysTest {
             assertThat(key.keyType(), is(Jwk.KEY_TYPE_OCT));
             assertThat(key.usage(), is(Optional.empty()));
             assertThat(key.keyId(), is(keyId));
-            assertThat(key.operations(), is(Optional.of(CollectionsHelper.listOf(Jwk.OPERATION_SIGN,
-                                                                                 Jwk.OPERATION_VERIFY))));
+            assertThat(key.operations(), is(Optional.of(List.of(Jwk.OPERATION_SIGN,
+                                                                Jwk.OPERATION_VERIFY))));
 
             assertThat(key, instanceOf(JwkOctet.class));
             assertThat(key, not(instanceOf(JwkPki.class)));

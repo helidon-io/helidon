@@ -20,8 +20,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -157,7 +155,7 @@ public abstract class AbstractConfigImplTestBase {
     //
 
     public static List<String> objectNames(int level) {
-        return CollectionsHelper.listOf("text-" + level + "@VALUE",
+        return List.of("text-" + level + "@VALUE",
                        "object-" + level + "@OBJECT",
                        "list-" + level + "@LIST",
                        "bool-" + level + "@VALUE",

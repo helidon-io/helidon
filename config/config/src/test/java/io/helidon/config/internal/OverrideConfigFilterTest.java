@@ -18,9 +18,9 @@ package io.helidon.config.internal;
 
 import java.util.AbstractMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.spi.OverrideSource;
 
@@ -49,7 +49,7 @@ public class OverrideConfigFilterTest {
 
     @Test
     public void testCreateFilterWithEmptyParam() {
-        OverrideConfigFilter filter = new OverrideConfigFilter(CollectionsHelper::listOf);
+        OverrideConfigFilter filter = new OverrideConfigFilter(List::of);
 
         assertThat(filter, notNullValue());
         assertThat(filter.apply(Config.Key.create("name"), "ondrej"), is("ondrej"));

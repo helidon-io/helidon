@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.tracing.TracerBuilder;
 
@@ -326,7 +325,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         config.get("tags").detach()
                 .asMap()
-                .orElseGet(CollectionsHelper::mapOf)
+                .orElseGet(Map::of)
                 .forEach(this::addTracerTag);
 
         config.get("boolean-tags")

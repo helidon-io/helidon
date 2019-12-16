@@ -35,7 +35,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -123,7 +122,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(TimesOfDay.class, TimeOfDay.class, DaysOfWeek.class);
+        return Set.of(TimesOfDay.class, TimeOfDay.class, DaysOfWeek.class);
     }
 
     /**

@@ -25,7 +25,6 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.grpc.client.GrpcChannel;
 import io.helidon.microprofile.grpc.client.GrpcServiceProxy;
 
@@ -98,7 +97,7 @@ public class Client {
         FutureObserver responses = new FutureObserver();
         StreamObserver<String> requests = stringService.join(responses);
 
-        List<String> joinValues = CollectionsHelper.listOf("A", "B", "C", "D");
+        List<String> joinValues = List.of("A", "B", "C", "D");
 
         // stream the values to the server
         joinValues.forEach(requests::onNext);
@@ -115,7 +114,7 @@ public class Client {
      * @throws Exception if the call fails
      */
     public void bidirectional() throws Exception {
-        List<String> valuesToStream = CollectionsHelper.listOf("A", "B", "C", "D");
+        List<String> valuesToStream = List.of("A", "B", "C", "D");
         FutureStreamingObserver responses = new FutureStreamingObserver();
 
         StreamObserver<String> requests = stringService.echo(responses);

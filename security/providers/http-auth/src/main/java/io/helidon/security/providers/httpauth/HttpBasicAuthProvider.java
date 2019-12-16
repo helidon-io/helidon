@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -104,7 +103,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                 .encodeToString((username + ":" + new String(password)).getBytes(StandardCharsets.UTF_8));
         String basicAuthB64 = "basic " + b64;
         return OutboundSecurityResponse
-                .withHeaders(CollectionsHelper.mapOf("Authorization", CollectionsHelper.listOf(basicAuthB64)));
+                .withHeaders(Map.of("Authorization", List.of(basicAuthB64)));
     }
 
     @Override

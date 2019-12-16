@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
@@ -319,7 +318,7 @@ public abstract class WebTracingConfig {
                             Tags.HTTP_STATUS.set(span, statusCode);
                             if (statusCode >= 400) {
                                 Tags.ERROR.set(span, true);
-                                span.log(CollectionsHelper.mapOf("event", "error",
+                                span.log(Map.of("event", "error",
                                                                  "message", "Response HTTP status: " + statusCode,
                                                                  "error.kind", statusCode < 500 ? "ClientError" : "ServerError"));
                             }
@@ -328,7 +327,7 @@ public abstract class WebTracingConfig {
                     })
                     .exceptionally(t -> {
                         Tags.ERROR.set(span, true);
-                        span.log(CollectionsHelper.mapOf("event", "error",
+                        span.log(Map.of("event", "error",
                                                          "error.object", t));
                         span.finish();
                         return null;

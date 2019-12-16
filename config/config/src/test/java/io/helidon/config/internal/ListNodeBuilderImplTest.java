@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package io.helidon.config.internal;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -102,7 +103,7 @@ public class ListNodeBuilderImplTest {
                     .build();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "'0'", "OBJECT", "VALUE")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "'0'", "OBJECT", "VALUE")));
     }
 
 }

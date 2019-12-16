@@ -16,7 +16,8 @@
 
 package io.helidon.tracing.zipkin;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -50,7 +51,7 @@ class ZipkinTracerBuilderTest {
 
         ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
 
-        assertThat(zBuilder.tags(), is(CollectionsHelper.listOf()));
+        assertThat(zBuilder.tags(), is(List.of()));
         assertThat(zBuilder.serviceName(), is("helidon-service"));
         assertThat(zBuilder.protocol(), is(ZipkinTracerBuilder.DEFAULT_PROTOCOL));
         assertThat(zBuilder.host(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_HOST));
@@ -68,7 +69,7 @@ class ZipkinTracerBuilderTest {
 
         ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
 
-        assertThat(zBuilder.tags(), is(CollectionsHelper.listOf()));
+        assertThat(zBuilder.tags(), is(List.of()));
         assertThat(zBuilder.serviceName(), is("helidon-service"));
         assertThat(zBuilder.protocol(), is(ZipkinTracerBuilder.DEFAULT_PROTOCOL));
         assertThat(zBuilder.host(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_HOST));
@@ -89,7 +90,7 @@ class ZipkinTracerBuilderTest {
 
         ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
 
-        assertThat(zBuilder.tags(), is(CollectionsHelper.listOf()));
+        assertThat(zBuilder.tags(), is(List.of()));
         assertThat(zBuilder.serviceName(), nullValue());
         assertThat(zBuilder.protocol(), is(ZipkinTracerBuilder.DEFAULT_PROTOCOL));
         assertThat(zBuilder.host(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_HOST));

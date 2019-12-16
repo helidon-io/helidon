@@ -62,7 +62,6 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.MissingValueException;
@@ -522,7 +521,7 @@ public class ConfigCdiExtension implements Extension {
                         throw e;
                     } else {
                         if (defaultValue.isEmpty()) {
-                            return CollectionsHelper.listOf();
+                            return List.of();
                         }
 
                         List<X> result = new LinkedList<>();
@@ -585,7 +584,7 @@ public class ConfigCdiExtension implements Extension {
 
         @Override
         public Set<InjectionPoint> getInjectionPoints() {
-            return CollectionsHelper.setOf();
+            return Set.of();
         }
 
         @Override
@@ -600,12 +599,12 @@ public class ConfigCdiExtension implements Extension {
 
         @Override
         public Set<Type> getTypes() {
-            return CollectionsHelper.setOf(type);
+            return Set.of(type);
         }
 
         @Override
         public Set<Annotation> getQualifiers() {
-            return CollectionsHelper.setOf(qualifier, QUALIFIER);
+            return Set.of(qualifier, QUALIFIER);
         }
 
         @Override
@@ -620,7 +619,7 @@ public class ConfigCdiExtension implements Extension {
 
         @Override
         public Set<Class<? extends Annotation>> getStereotypes() {
-            return CollectionsHelper.setOf();
+            return Set.of();
         }
 
         @Override

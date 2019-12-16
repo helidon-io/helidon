@@ -41,7 +41,6 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.Jwk;
 
@@ -249,7 +248,7 @@ public class Jwt {
         if (groups instanceof JsonArray) {
             this.userGroups = JwtUtil.getStrings(payloadJson, "groups");
         } else {
-            this.userGroups = JwtUtil.getString(payloadJson, "groups").map(CollectionsHelper::listOf);
+            this.userGroups = JwtUtil.getString(payloadJson, "groups").map(List::of);
         }
 
         JsonValue aud = payloadJson.get("aud");
@@ -257,7 +256,7 @@ public class Jwt {
         if (aud instanceof JsonArray) {
             this.audience = JwtUtil.getStrings(payloadJson, "aud");
         } else {
-            this.audience = JwtUtil.getString(payloadJson, "aud").map(CollectionsHelper::listOf);
+            this.audience = JwtUtil.getString(payloadJson, "aud").map(List::of);
         }
 
         this.jwtId = JwtUtil.getString(payloadJson, "jti");

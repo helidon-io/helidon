@@ -21,13 +21,13 @@ import java.net.MalformedURLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -69,7 +69,7 @@ public class CompositeConfigSourceTest {
         ConfigSource configSource = ConfigSources.create()
                 .add(ConfigSources.classpath("application.conf"))
                 .add(ConfigSources.create(ObjectNode.builder().addValue("prop1", "1").build()))
-                .add(ConfigSources.create(CollectionsHelper.mapOf()))
+                .add(ConfigSources.create(Map.of()))
                 .add(ConfigSources.create(ObjectNode.builder().addValue("prop1", "2").build()))
                 .build();
 

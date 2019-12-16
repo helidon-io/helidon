@@ -18,8 +18,8 @@ package io.helidon.config.internal;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.OverrideSources;
 import io.helidon.config.spi.OverrideSource;
@@ -45,7 +45,7 @@ public class OverrideSourcesTest {
 
     @Test
     public void testFromWildcards() {
-        OverrideSource overrideSource = OverrideSources.create(CollectionsHelper.mapOf(WILDCARDS, "localhost"));
+        OverrideSource overrideSource = OverrideSources.create(Map.of(WILDCARDS, "localhost"));
         assertThat(overrideSource.load()
                            .get()
                            .data()

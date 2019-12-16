@@ -16,10 +16,10 @@
 
 package io.helidon.config;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ public class BuilderImplTest {
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
                                           eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
                                           eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(BuilderImpl.DEFAULT_CHANGES_EXECUTOR), //changesExecutor
                                           eq(Flow.defaultBufferSize()), //changesMaxBuffer
@@ -85,7 +85,7 @@ public class BuilderImplTest {
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
                                           eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
                                           eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(1), //changesMaxBuffer
@@ -112,7 +112,7 @@ public class BuilderImplTest {
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
                                           eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
                                           eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(1), //changesMaxBuffer

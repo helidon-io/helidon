@@ -22,7 +22,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.TestingConfigSource;
@@ -287,7 +286,7 @@ public class ConfigChangesTest {
         assertThat(configSource.isCancelPollingStrategyInvoked(), is(false));
 
         List<TestingConfigChangeSubscriber> subscribers = new LinkedList<>();
-        CollectionsHelper.listOf("", "key1", "sub.key1", "", "key1").forEach(key -> {
+        List.of("", "key1", "sub.key1", "", "key1").forEach(key -> {
             TestingConfigChangeSubscriber subscriber = new TestingConfigChangeSubscriber();
             config.get(key).changes().subscribe(subscriber);
             subscribers.add(subscriber);

@@ -20,10 +20,10 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -149,7 +149,7 @@ public class JwtProviderTest {
         assertThat(jwt.givenName(), is(Optional.of(givenName)));
         assertThat(jwt.fullName(), is(Optional.of(fullName)));
         assertThat(jwt.locale(), is(Optional.of(locale)));
-        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
+        assertThat(jwt.audience(), is(Optional.of(List.of("audience.application.id"))));
         assertThat(jwt.issuer(), is(Optional.of("jwt.example.com")));
         assertThat(jwt.algorithm(), is(Optional.of(JwkEC.ALG_ES256)));
         Instant instant = jwt.issueTime().get();
@@ -362,7 +362,7 @@ public class JwtProviderTest {
         // stored as "name" attribute on principal, full name is stored as "name" in JWT
         assertThat(jwt.fullName(), is(Optional.empty()));
         assertThat(jwt.locale(), is(Optional.empty()));
-        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
+        assertThat(jwt.audience(), is(Optional.of(List.of("audience.application.id"))));
         assertThat(jwt.issuer(), is(Optional.of("jwt.example.com")));
         assertThat(jwt.algorithm(), is(Optional.of(JwkOctet.ALG_HS256)));
         Instant instant = jwt.issueTime().get();
@@ -453,7 +453,7 @@ public class JwtProviderTest {
         assertThat(jwt.givenName(), is(Optional.of(givenName)));
         assertThat(jwt.fullName(), is(Optional.of(fullName)));
         assertThat(jwt.locale(), is(Optional.of(locale)));
-        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
+        assertThat(jwt.audience(), is(Optional.of(List.of("audience.application.id"))));
         assertThat(jwt.issuer(), is(Optional.of("jwt.example.com")));
         assertThat(jwt.algorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
 

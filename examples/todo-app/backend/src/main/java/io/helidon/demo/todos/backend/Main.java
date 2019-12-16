@@ -17,12 +17,12 @@
 package io.helidon.demo.todos.backend;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
 import static io.helidon.config.ConfigSources.file;
@@ -67,7 +67,7 @@ public final class Main {
      */
     static Config buildConfig() {
         return Config.builder()
-                .sources(listOf(
+                .sources(List.of(
                         environmentVariables(),
                         // expected on development machine
                         // to override props for dev

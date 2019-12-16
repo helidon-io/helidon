@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
@@ -43,7 +42,7 @@ class MyProvider extends SynchronousProvider implements AuthenticationProvider, 
     @Override
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
         //get username and password
-        List<String> headers = providerRequest.env().headers().getOrDefault("authorization", CollectionsHelper.listOf());
+        List<String> headers = providerRequest.env().headers().getOrDefault("authorization", List.of());
         if (headers.isEmpty()) {
             return AuthenticationResponse.failed("No authorization header");
         }

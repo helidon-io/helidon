@@ -32,7 +32,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -92,7 +91,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(Scope.class, Scopes.class);
+        return Set.of(Scope.class, Scopes.class);
     }
 
     @Override
@@ -264,7 +263,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @return configuration based on this list of scopes
          */
         public static ScopesConfig create(String... scopes) {
-            return new ScopesConfig(CollectionsHelper.listOf(scopes));
+            return new ScopesConfig(List.of(scopes));
         }
 
         /**
@@ -289,7 +288,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @return configuration based on the config
          */
         public static ScopesConfig create(Config config) {
-            return new ScopesConfig(config.asList(String.class).orElse(CollectionsHelper.listOf()));
+            return new ScopesConfig(config.asList(String.class).orElse(List.of()));
         }
 
         /**

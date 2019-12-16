@@ -18,7 +18,6 @@ package io.helidon.grpc.metrics;
 
 import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
@@ -181,7 +180,7 @@ public class GrpcMetricsInterceptorIT {
                 .build();
 
         MethodDescriptor methodDescriptor = descriptor.method("barTags");
-        Map<String, String> tags = CollectionsHelper.mapOf("one", "t1", "two", "t2");
+        Map<String, String> tags = Map.of("one", "t1", "two", "t2");
         GrpcMetrics metrics = GrpcMetrics.counted().tags(tags);
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);

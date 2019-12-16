@@ -17,10 +17,11 @@
 package io.helidon.security.examples.spi;
 
 import java.lang.annotation.Annotation;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.AuthenticationResponse;
@@ -94,7 +95,7 @@ public class AtnProviderSyncTest {
         SecurityEnvironment se = SecurityEnvironment.create();
         EndpointConfig ep = EndpointConfig.builder()
                 .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             CollectionsHelper.mapOf(AtnProviderSync.AtnAnnot.class, CollectionsHelper.listOf(annot)))
+                             Map.of(AtnProviderSync.AtnAnnot.class, List.of(annot)))
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
@@ -131,7 +132,7 @@ public class AtnProviderSyncTest {
     @Test
     public void testConfigSuccess() {
         Config config = Config.create(
-                ConfigSources.create(CollectionsHelper.mapOf("value", VALUE,
+                ConfigSources.create(Map.of("value", VALUE,
                                                              "size", String.valueOf(SIZE)))
         );
 
@@ -156,7 +157,7 @@ public class AtnProviderSyncTest {
     @Test
     public void testFailure() {
         Config config = Config.create(
-                ConfigSources.create(CollectionsHelper.mapOf("atn-object.size", String.valueOf(SIZE)))
+                ConfigSources.create(Map.of("atn-object.size", String.valueOf(SIZE)))
         );
 
         SecurityContext context = mock(SecurityContext.class);

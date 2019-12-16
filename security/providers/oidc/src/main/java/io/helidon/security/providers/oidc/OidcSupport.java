@@ -31,7 +31,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -159,10 +158,10 @@ public final class OidcSupport implements Service {
         String query = req.query();
         if ((null == query) || query.isEmpty()) {
             newHeaders.put(Security.HEADER_ORIG_URI,
-                           CollectionsHelper.listOf(req.uri().getPath()));
+                           List.of(req.uri().getPath()));
         } else {
             newHeaders.put(Security.HEADER_ORIG_URI,
-                           CollectionsHelper.listOf(req.uri().getPath() + "?" + query));
+                           List.of(req.uri().getPath() + "?" + query));
         }
 
         req.next();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigMappingException;
@@ -56,9 +56,8 @@ public class FactoryMethodConfigMapperTest {
         });
 
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper
-                                                 .listOf(AmbiguousConstructorsBean.class.getName(),
-                                                         "No mapper configured")));
+                   stringContainsInOrder(List.of(AmbiguousConstructorsBean.class.getName(),
+                                                 "No mapper configured")));
     }
 
     @Test
@@ -130,7 +129,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testMissingParamsConstructor() {
-        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(Map.of(
                 "app.number", "1"
         )));
 
@@ -140,13 +139,13 @@ public class FactoryMethodConfigMapperTest {
                     .get();
         });
 
-        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+        assertThat(ex.getMessage(), stringContainsInOrder(List.of(
                 "'app'", "ConstructorBean", "Missing value for parameter 'uri'.")));
     }
 
     @Test
     public void testDefaultsConstructor() {
-        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(Map.of(
                 "app.number", "1"
         )));
 
@@ -175,9 +174,8 @@ public class FactoryMethodConfigMapperTest {
         });
 
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper
-                                                 .listOf(AmbiguousFromMethodsBean.class.getName(),
-                                                         "No mapper configured")));
+                   stringContainsInOrder(List.of(AmbiguousFromMethodsBean.class.getName(),
+                                                 "No mapper configured")));
     }
 
     @Test
@@ -249,7 +247,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testMissingParamsFromMethod() {
-        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(Map.of(
                 "app.number", "1"
         )));
 
@@ -259,13 +257,13 @@ public class FactoryMethodConfigMapperTest {
                     .get();
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
-                "'app'", "FromMethodBean", "Missing value for parameter 'uri'.")));
+                   stringContainsInOrder(List.of(
+                           "'app'", "FromMethodBean", "Missing value for parameter 'uri'.")));
     }
 
     @Test
     public void testDefaultsFromMethod() {
-        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(Map.of(
                 "app.number", "1"
         )));
 
@@ -525,21 +523,21 @@ public class FactoryMethodConfigMapperTest {
     public static class DefaultCustomTypesSupplier implements Supplier<List<CustomType>> {
         @Override
         public List<CustomType> get() {
-            return CollectionsHelper.listOf(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default"));
+            return List.of(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default"));
         }
     }
 
     public static class DefaultUrisSupplier implements Supplier<List<URI>> {
         @Override
         public List<URI> get() {
-            return CollectionsHelper.listOf(URI.create("default:uri"), URI.create("default:another:uri"));
+            return List.of(URI.create("default:uri"), URI.create("default:another:uri"));
         }
     }
 
     public static class DefaultNumbersSupplier implements Supplier<List<Integer>> {
         @Override
         public List<Integer> get() {
-            return CollectionsHelper.listOf(23, 42);
+            return List.of(23, 42);
         }
     }
 

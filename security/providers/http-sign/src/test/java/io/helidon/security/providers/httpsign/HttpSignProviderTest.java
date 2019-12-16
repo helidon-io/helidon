@@ -25,7 +25,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -56,7 +55,7 @@ public abstract class HttpSignProviderTest {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         headers.put("Signature",
-                    CollectionsHelper.listOf("keyId=\"rsa-key-12345\",algorithm=\"rsa-sha256\",headers=\"date "
+                    List.of("keyId=\"rsa-key-12345\",algorithm=\"rsa-sha256\",headers=\"date "
                                                      + "host (request-target) authorization\","
                                                      + "signature=\"Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
                                                      + "boUV6ST2EYLYniFGt5/3BO/2+vqQdqezdTVPr/JCwqBx+9T9ZynG7YqRj"
@@ -65,9 +64,9 @@ public abstract class HttpSignProviderTest {
                                                      + "ebieVD3Swb1VG5+/7ECQ9VAlX30U5/jQ5hPO3yuvRlg5kkMjJiN7tf/68"
                                                      + "If/5O2Z4H+7VmW0b1U69/JoOQJA0av1gCX7HVfa/YTCxIK4UFiI6h963q"
                                                      + "2x7LSkqhdWGA==\""));
-        headers.put("host", CollectionsHelper.listOf("example.org"));
-        headers.put("date", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
-        headers.put("authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         HttpSignProvider provider = getProvider();
 
@@ -104,13 +103,12 @@ public abstract class HttpSignProviderTest {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         headers.put("Signature",
-                    CollectionsHelper
-                            .listOf("keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) "
+                    List.of("keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) "
                                             + "authorization\","
                                             + "signature=\"0BcQq9TckrtGvlpHiMxNqMq0vW6dPVTGVDUVDrGwZyI=\""));
-        headers.put("host", CollectionsHelper.listOf("example.org"));
-        headers.put("date", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
-        headers.put("authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         HttpSignProvider provider = getProvider();
 
@@ -146,9 +144,9 @@ public abstract class HttpSignProviderTest {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // the generated host contains port as well, so we must explicitly define it here
-        headers.put("host", CollectionsHelper.listOf("example.org"));
-        headers.put("date", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
-        headers.put("authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         SecurityContext context = mock(SecurityContext.class);
         when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
@@ -179,7 +177,7 @@ public abstract class HttpSignProviderTest {
                 updatedHeaders.get("Signature").iterator().next(),
                 "rsa-key-12345",
                 "rsa-sha256",
-                CollectionsHelper.listOf("date", "host", REQUEST_TARGET, "authorization"),
+                List.of("date", "host", REQUEST_TARGET, "authorization"),
                 "Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
                         + "boUV6ST2EYLYniFGt5/3BO/2+vqQdqezdTVPr/JCwqBx+9T9ZynG7YqRj"
                         + "KvXzcmvQOu5vQmCK5x/HR0fXU41Pjq+jywsD0k6KdxF6TWr6tvWRbwFet"
@@ -194,8 +192,8 @@ public abstract class HttpSignProviderTest {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // the generated host contains port as well, so we must explicitly define it here
-        headers.put("host", CollectionsHelper.listOf("localhost"));
-        headers.put("date", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("host", List.of("localhost"));
+        headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
 
         SecurityContext context = mock(SecurityContext.class);
         when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
@@ -226,7 +224,7 @@ public abstract class HttpSignProviderTest {
                                 updatedHeaders.get("Signature").iterator().next(),
                                 "myServiceKeyId",
                                 "hmac-sha256",
-                                CollectionsHelper.listOf("date", REQUEST_TARGET, "host"),
+                                List.of("date", REQUEST_TARGET, "host"),
                                 "SkeKVi6BoUd2/aUfXyIVIFAKEkKp7sg2KsS1UieB/+E=");
     }
 

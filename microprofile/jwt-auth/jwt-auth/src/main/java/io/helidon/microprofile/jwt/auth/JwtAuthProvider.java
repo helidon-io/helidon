@@ -36,6 +36,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,7 +46,6 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.common.InputStreamHelper;
 import io.helidon.common.configurable.Resource;
@@ -163,7 +163,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(LoginConfig.class);
+        return Set.of(LoginConfig.class);
     }
 
     @Override

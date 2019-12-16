@@ -23,7 +23,6 @@ import io.helidon.common.mapper.Mapper;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -50,7 +49,7 @@ public class MultiTest {
     @Test
     public void testJustCollection() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.<String>just(listOf("foo", "bar")).subscribe(subscriber);
+        Multi.<String>just(List.of("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo", "bar"));

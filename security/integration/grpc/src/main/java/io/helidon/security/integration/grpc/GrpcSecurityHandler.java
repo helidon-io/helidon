@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -555,7 +554,7 @@ public class GrpcSecurityHandler
             return future;
         }
 
-        Set<String> rolesSet = rolesAllowed.orElse(CollectionsHelper.setOf());
+        Set<String> rolesSet = rolesAllowed.orElse(Set.of());
 
         if (!rolesSet.isEmpty()) {
             // first validate roles - RBAC is supported out of the box by security, no need to invoke provider

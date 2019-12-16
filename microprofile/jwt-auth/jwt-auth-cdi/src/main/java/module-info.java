@@ -25,6 +25,7 @@ module io.helidon.microprofile.jwt.auth.cdi {
     requires java.ws.rs;
 
     requires transitive io.helidon.microprofile.jwt.auth;
+    requires microprofile.jwt.auth.api;
 
     exports io.helidon.microprofile.jwt.auth.cdi;
 

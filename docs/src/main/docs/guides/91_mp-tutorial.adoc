@@ -170,8 +170,6 @@ Create a new Java class inside that directory called `GreetApplication.java`
 ----
 package io.helidon.examples;
 
-import io.helidon.common.CollectionsHelper;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
@@ -183,7 +181,7 @@ public class GreetApplication extends Application { <3>
 
     @Override 
     public Set<Class<?>> getClasses() { <4>
-        return CollectionsHelper.setOf(GreetResource.class);
+        return Set.of(GreetResource.class);
     }
 
 }

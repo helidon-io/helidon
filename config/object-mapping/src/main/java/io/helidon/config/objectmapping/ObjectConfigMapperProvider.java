@@ -22,7 +22,6 @@ import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
 import io.helidon.config.objectmapping.ObjectConfigMappers.ConfigMethodHandleConfigMapper;
@@ -53,7 +52,7 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
-        return CollectionsHelper.mapOf();
+        return Map.of();
     }
 
     @Override

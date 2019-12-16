@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package io.helidon.webserver;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 
 import org.junit.jupiter.api.Test;
@@ -57,10 +57,10 @@ public class RouteListTest {
         Collection<Route> routes = new ArrayList<>();
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.PUT));
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.DELETE));
-        routes.add(new RouteList(CollectionsHelper.listOf(new HandlerRoute(null,
-                                                                           VOID_HANDLER,
-                                                                           Http.Method.GET,
-                                                                           Http.RequestMethod.create("FOO")))));
+        routes.add(new RouteList(List.of(new HandlerRoute(null,
+                                                          VOID_HANDLER,
+                                                          Http.Method.GET,
+                                                          Http.RequestMethod.create("FOO")))));
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("BAR")));
         RouteList r = new RouteList(routes);
         // assertion
@@ -79,7 +79,7 @@ public class RouteListTest {
         Collection<Route> routes = new ArrayList<>();
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.PUT));
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.DELETE));
-        routes.add(new RouteList(CollectionsHelper.listOf(new HandlerRoute(null,
+        routes.add(new RouteList(List.of(new HandlerRoute(null,
                                                                            VOID_HANDLER,
                                                                            Http.Method.GET,
                                                                            Http.RequestMethod.create("FOO")),

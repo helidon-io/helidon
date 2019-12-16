@@ -18,6 +18,7 @@ package io.helidon.metrics;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -31,7 +32,6 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -316,7 +316,7 @@ public final class MetricsSupport implements Service {
         // register the metric registry and factory to be available to all
         rules.any(new MetricsContextHandler(app, rf));
 
-        rules.anyOf(CollectionsHelper.listOf(Http.Method.GET, Http.Method.OPTIONS),
+        rules.anyOf(List.of(Http.Method.GET, Http.Method.OPTIONS),
                     JsonSupport.create());
 
         // routing to root of metrics

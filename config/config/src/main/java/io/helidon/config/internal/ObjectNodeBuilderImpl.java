@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
@@ -108,7 +107,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
 
     @Override
     protected MergeableNode member(String name) {
-        return members.computeIfAbsent(name, (k) -> new ObjectNodeImpl(CollectionsHelper.mapOf(), tokenResolver()));
+        return members.computeIfAbsent(name, (k) -> new ObjectNodeImpl(Map.of(), tokenResolver()));
     }
 
     @Override

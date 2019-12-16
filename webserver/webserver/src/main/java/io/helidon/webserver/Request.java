@@ -38,7 +38,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -319,7 +318,7 @@ abstract class Request implements ServerRequest {
                 return;
             }
             Tags.ERROR.set(readSpan, Boolean.TRUE);
-            readSpan.log(CollectionsHelper.mapOf("event", "error",
+            readSpan.log(Map.of("event", "error",
                                                  "error.kind", "Exception",
                                                  "error.object", t,
                                                  "message", t.toString()));
