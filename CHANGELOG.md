@@ -9,6 +9,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Backward incompatible changes
 #### Common
 - Flow API is now used from `java.util.concurrent.Flow`, Helidon specific `Flow` class is now removed
+#### Tracing
+- We have upgraded to OpenTracing version 0.33.0 that is not backward compatible, the following breaking changes exist
+    (these are OpenTracing changes, not Helidon changes):
+    1. `TextMapExtractAdapter` and `TextMapInjectAdapter` are now `TextMapAdapter`
+    2. module name changed from `opentracing.api` to `io.opentracing.api` (same for `noop` and `util`)
+    3. `SpanBuilder` no longer has `startActive` method, you need to use `Tracer.activateSpan(Span)`
+    4. `ScopeManager.activate(Span, boolean)` is replaced by `ScopeManager.activate(Span)` - second parameter is now always 
+            `false`
+    5. `Scope ScopeManager.active()` is removed - replaced by `Span Tracer.activeSpan()`
+- If you use the `TracerBuilder` abstraction in Helidon and have no custom Spans, there is no change required    
 
 ## [1.4.0] 
 
