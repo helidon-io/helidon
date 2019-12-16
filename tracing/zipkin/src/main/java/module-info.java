@@ -29,6 +29,7 @@ module io.helidon.tracing.zipkin {
     requires zipkin2.reporter.urlconnection;
     requires zipkin2;
     requires brave;
+    requires io.opentracing.noop;
 
     exports io.helidon.tracing.zipkin;
 

@@ -32,21 +32,6 @@ class ZipkinScopeManager implements ScopeManager {
     }
 
     @Override
-    public Scope activate(Span span, boolean finishSpanOnClose) {
-        Span toActivate = span;
-
-        if (span instanceof ZipkinSpan) {
-            toActivate = ((ZipkinSpan) span).unwrap();
-        }
-        return scopeManager.activate(toActivate, finishSpanOnClose);
-    }
-
-    @Override
-    public Scope active() {
-        return scopeManager.active();
-    }
-
-    @Override
     public Scope activate(Span span) {
         return scopeManager.activate(unwrap(span));
     }

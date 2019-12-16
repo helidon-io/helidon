@@ -112,37 +112,24 @@ public class TestTracerProvider implements TracerProvider {
         public ScopeManager scopeManager() {
             return new ScopeManager() {
                 private Scope active;
-                @Override
-                public Scope activate(Span span, boolean finishSpanOnClose) {
-                    active = new Scope() {
-                        @Override
-                        public void close() {
-                            if (finishSpanOnClose) {
-                                span.finish();
-                            }
-                        }
-
-                        @Override
-                        public Span span() {
-                            return span;
-                        }
-                    };
-                    return active;
-                }
-
-                @Override
-                public Scope active() {
-                    return active;
-                }
+                private Span activeSpan;
 
                 @Override
                 public Scope activate(Span span) {
-                    return activate(span, false);
+                    active = new Scope() {
+                        @Override
+                        public void close() {
+                            activeSpan = null;
+                        }
+
+                    };
+                    activeSpan = span;
+                    return active;
                 }
 
                 @Override
                 public Span activeSpan() {
-                    return active().span();
+                    return activeSpan;
                 }
             };
         }
@@ -171,7 +158,7 @@ public class TestTracerProvider implements TracerProvider {
 
         @Override
         public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
-            TestSpan span = ((TestSpanContext)spanContext).testSpan;
+            TestSpan span = ((TestSpanContext) spanContext).testSpan;
 
             TextMapAdapter adapter = (TextMapAdapter) carrier;
             adapter.put(OPERATION_NAME_HEADER, span.operationName);
@@ -188,7 +175,6 @@ public class TestTracerProvider implements TracerProvider {
         private final List<Tag<?>> tags = new LinkedList<>();
 
         private SpanContext parent;
-
 
         public TestSpanBuilder(String operationName) {
             this.operationName = operationName;
@@ -240,21 +226,12 @@ public class TestTracerProvider implements TracerProvider {
         }
 
         @Override
-        public Scope startActive(boolean finishSpanOnClose) {
-             return new TestScope((TestSpan) start());
-        }
-
-        @Override
-        public Span startManual() {
-            return start();
-        }
-
-        @Override
         public Span start() {
-            TestSpan result = new TestSpan(this);;
+            TestSpan result = new TestSpan(this);
+            ;
 
             if (null != parent) {
-                ((TestSpanContext)parent).testSpan.addChild(result);
+                ((TestSpanContext) parent).testSpan.addChild(result);
             }
             return result;
 
@@ -375,23 +352,6 @@ public class TestTracerProvider implements TracerProvider {
         @Override
         public String toSpanId() {
             return testSpan.toString();
-        }
-    }
-
-    static class TestScope implements Scope {
-        private final TestSpan testSpan;
-
-        TestScope(TestSpan testSpan) {
-            this.testSpan = testSpan;
-        }
-
-        @Override
-        public void close() {
-        }
-
-        @Override
-        public Span span() {
-            return testSpan;
         }
     }
 }

@@ -20,7 +20,6 @@ import java.util.List;
 
 import io.helidon.tracing.Tag;
 
-import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -96,16 +95,6 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     @Override
     public Tracer.SpanBuilder ignoreActiveSpan() {
         return spanBuilder.ignoreActiveSpan();
-    }
-
-    @Override
-    public Scope startActive(boolean finishSpanOnClose) {
-        return spanBuilder.startActive(finishSpanOnClose);
-    }
-
-    @Override
-    public Span startManual() {
-        return spanBuilder.startManual();
     }
 
     @Override

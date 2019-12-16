@@ -55,7 +55,7 @@
         <version.lib.hikaricp>2.7.8</version.lib.hikaricp>
         <version.lib.inject>1</version.lib.inject>
         <version.lib.jackson>2.10.0</version.lib.jackson>
-        <version.lib.jaegertracing>0.34.0</version.lib.jaegertracing>
+        <version.lib.jaegertracing>1.1.0</version.lib.jaegertracing>
         <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
@@ -84,7 +84,7 @@
         <version.lib.netty>4.1.42.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.5.2</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
-        <version.lib.opentracing>0.32.0</version.lib.opentracing>
+        <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.persistence-api>2.2</version.lib.persistence-api>
         <version.lib.prometheus>0.6.0</version.lib.prometheus>
@@ -99,7 +99,7 @@
         <version.lib.ucp>19.3.0.0</version.lib.ucp>
         <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
         <version.lib.weld>3.1.1.Final</version.lib.weld>
-        <version.lib.zipkin>2.11.1</version.lib.zipkin>
+        <version.lib.zipkin>2.10.1</version.lib.zipkin>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.yasson>1.0.3</version.lib.yasson>

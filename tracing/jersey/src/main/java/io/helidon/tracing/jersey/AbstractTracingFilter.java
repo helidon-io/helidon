@@ -83,7 +83,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             configureSpan(spanBuilder);
 
             Span span = spanBuilder.start();
-            Scope spanScope = tracer.scopeManager().activate(span, false);
+            Scope spanScope = tracer.scopeManager().activate(span);
 
             requestContext.setProperty(SPAN_PROPERTY, span);
             requestContext.setProperty(SPAN_SCOPE_PROPERTY, spanScope);
