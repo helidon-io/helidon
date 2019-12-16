@@ -365,6 +365,7 @@ class RequestRouting implements Routing {
                                                         "handler.class", "DEFAULT-ERROR-HANDLER",
                                                         "handled.error.message", t.toString()));
             }
+            String message = null;
             try {
                 if (t instanceof HttpException) {
                     response.status(((HttpException) t).status());
@@ -380,17 +381,14 @@ class RequestRouting implements Routing {
 
                     response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                 }
-                String message = t.getMessage();
-                if (message != null) {
-                    response.send(message);
-                }
+                message = t.getMessage();
             } catch (AlreadyCompletedException e) {
                 LOGGER.log(Level.WARNING,
                            "Cannot perform error handling of the throwable (see cause of this exception) because headers "
                                    + "were already sent",
                            new IllegalStateException("Headers already sent. Cannot handle the cause of this exception.", t));
             }
-            response.send().exceptionally(throwable -> {
+            response.send(message).exceptionally(throwable -> {
                 LOGGER.log(Level.WARNING, "Default error handler: Response wasn't successfully sent.", throwable);
                 return null;
             });

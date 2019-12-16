@@ -225,7 +225,7 @@ public class JerseySupportTest {
             return;
         }
         assertNotNull(response);
-        doAssert(response, "", Response.Status.NOT_FOUND);
+        doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
     /**
