@@ -34,7 +34,7 @@ module io.helidon.grpc.core {
     requires transitive io.grpc;
     requires io.netty.handler;
     requires io.netty.transport;
-    requires transitive protobuf.java;
+    requires transitive com.google.protobuf;
 
     requires java.annotation;
     requires java.logging;
