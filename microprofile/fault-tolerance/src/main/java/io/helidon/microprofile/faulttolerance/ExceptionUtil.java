@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.microprofile.faulttolerance;
+
+import com.netflix.hystrix.exception.HystrixRuntimeException;
 
 /**
  * Class ExceptionUtil.
@@ -50,6 +52,16 @@ public class ExceptionUtil {
     public static WrappedException toWrappedException(Throwable throwable) {
         return throwable instanceof WrappedException ? (WrappedException) throwable
                 : new WrappedException(throwable);
+    }
+
+    /**
+     * Unwrap an throwable wrapped by {@code HystrixRuntimeException}.
+     *
+     * @param throwable Throwable to unwrap.
+     * @return Unwrapped throwable.
+     */
+    public static Throwable unwrapHystrix(Throwable throwable) {
+        return throwable instanceof HystrixRuntimeException ? throwable.getCause() : throwable;
     }
 
     private ExceptionUtil() {

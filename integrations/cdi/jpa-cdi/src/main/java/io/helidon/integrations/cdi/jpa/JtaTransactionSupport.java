@@ -22,7 +22,8 @@ import javax.enterprise.context.ContextNotActiveException;
 import javax.enterprise.context.spi.Context;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
-import javax.inject.Provider;
+import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
 
 /**
@@ -31,9 +32,18 @@ import javax.transaction.TransactionScoped;
  *
  * <p>See the exclusion stanzas in {@code META-INF/beans.xml} for more
  * details.</p>
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * <p>Instances of this class are not safe for concurrent use by
+ * multiple threads.</p>
+ *
+ * @see TransactionSupport
+ *
+ * @see NoTransactionSupport
  */
 @ApplicationScoped
-class JtaTransactionSupport implements TransactionSupport {
+final class JtaTransactionSupport implements TransactionSupport {
 
 
     /*
@@ -41,17 +51,11 @@ class JtaTransactionSupport implements TransactionSupport {
      */
 
 
-    /**
-     * A {@link Provider} of {@link BeanManager} instances.
-     *
-     * <p>This field will normally not be {@code null} but if the
-     * {@link #JtaSupport()} constructor is used, then it will be
-     * {@code null} (and the {@link JtaTransactionSupport} instance so
-     * constructed will be non-functional.</p>
-     *
-     * @see #JtaSupport()
-     */
-    private final Provider<BeanManager> beanManagerProvider;
+    private final BeanManager beanManager;
+
+    private Context transactionScopedContext;
+
+    private final TransactionManager transactionManager;
 
 
     /*
@@ -60,41 +64,23 @@ class JtaTransactionSupport implements TransactionSupport {
 
 
     /**
-     * Creates a new, <strong>nonfunctional</strong> {@link
-     * JtaTransactionSupport}.
-     *
-     * <p>This constructor exists only to conform with section 3.15 of
-     * the CDI specification.</p>
-     *
-     * @deprecated This constructor exists only to conform with
-     * section 3.15 of the CDI specification; please use the {@link
-     * #JtaTransactionSupport(Provider)} constructor instead.
-     *
-     * @see
-     * #JtaTransactionSupport(Provider)
-     *
-     * @see <a
-     * href="http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#unproxyable">Section
-     * 3.15 of the CDI 2.0 specification</a>
-     */
-    @Deprecated
-    JtaTransactionSupport() {
-        super();
-        this.beanManagerProvider = null;
-    }
-
-    /**
      * Creates a new {@link JtaTransactionSupport}.
      *
-     * @param beanManagerProvider a {@link Provider} of {@link
-     * BeanManager} instances; must not be {@code null}
+     * @param beanManager a {@link BeanManager}; must not be {@code
+     * null}
      *
-     * @exception NullPointerException
+     * @param transactionManager a {@link TransactionManager}; must
+     * not be {@code null}
+     *
+     * @exception NullPointerException if either {@code beanManager}
+     * or {@code transactionManager} is {@code null}
      */
     @Inject
-    JtaTransactionSupport(final Provider<BeanManager> beanManagerProvider) {
+    private JtaTransactionSupport(final BeanManager beanManager,
+                                  final TransactionManager transactionManager) {
         super();
-        this.beanManagerProvider = Objects.requireNonNull(beanManagerProvider);
+        this.beanManager = Objects.requireNonNull(beanManager);
+        this.transactionManager = Objects.requireNonNull(transactionManager);
     }
 
 
@@ -109,13 +95,13 @@ class JtaTransactionSupport implements TransactionSupport {
      * @return {@code true} when invoked
      */
     @Override
-    public boolean isActive() {
+    public boolean isEnabled() {
         return true;
     }
 
     /**
      * Returns the {@link Context} that supports JTA transactions, if
-     * there is one and it is active.
+     * there is one and it is active at the moment of invocation.
      *
      * <p>This method may return {@code null}.</p>
      *
@@ -126,32 +112,39 @@ class JtaTransactionSupport implements TransactionSupport {
     @Override
     public Context getContext() {
         final Context returnValue;
-        final BeanManager beanManager = this.beanManagerProvider.get();
-        if (beanManager == null) {
-            returnValue = null;
-        } else {
-            Context temp = null;
+        if (this.transactionScopedContext == null) {
             try {
-                temp = beanManager.getContext(TransactionScoped.class);
+                this.transactionScopedContext = this.beanManager.getContext(TransactionScoped.class);
             } catch (final ContextNotActiveException contextNotActiveException) {
-                temp = null;
+                this.transactionScopedContext = null;
             } finally {
-                returnValue = temp;
+                returnValue = this.transactionScopedContext;
             }
+        } else if (this.transactionScopedContext.isActive()) {
+            returnValue = this.transactionScopedContext;
+        } else {
+            returnValue = null;
         }
         return returnValue;
     }
 
     /**
-     * Returns {@code true} if the return value of {@link
-     * #getContext()} is non-{@code null}.
+     * Returns the {@linkplain TransactionManager#getStatus() current
+     * status} of the current transaction, if available.
      *
-     * @return {@code true} if the return value of {@link
-     * #getContext()} is non-{@code null}; {@code false} otherwise
+     * @return the {@linkplain TransactionManager#getStatus() current
+     * status} of the current transaction, if available
+     *
+     * @exception IllegalStateException if there was a problem
+     * acquiring status
      */
     @Override
-    public boolean inTransaction() {
-        return this.getContext() != null;
+    public int getStatus() {
+        try {
+            return this.transactionManager.getStatus();
+        } catch (final SystemException systemException) {
+            throw new IllegalStateException(systemException.getMessage(), systemException);
+        }
     }
 
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.security.examples.jersey;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
@@ -36,7 +37,13 @@ public class JerseyConfigMain {
     }
 
     private static SecurityFeature buildSecurity() {
-        return new SecurityFeature(Security.create(Config.create().get("security")));
+        Config config = Config.create().get("security");
+
+        Security security = Security.create(config);
+
+        return SecurityFeature.builder(security)
+                .config(config.get("jersey"))
+                .build();
     }
 
     private static JerseySupport buildJersey() {
@@ -50,6 +57,9 @@ public class JerseyConfigMain {
                 .register(new ExceptionMapper<Exception>() {
                     @Override
                     public Response toResponse(Exception exception) {
+                        if (exception instanceof WebApplicationException) {
+                            return ((WebApplicationException) exception).getResponse();
+                        }
                         exception.printStackTrace();
                         return Response.serverError().build();
                     }

@@ -24,13 +24,14 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>1.4.0</version>
+        <version>1.4.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-jpa</artifactId>
     <name>Helidon CDI Integrations JPA</name>
 
     <properties>
       <doclint>-syntax</doclint>
+      <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
