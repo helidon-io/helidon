@@ -47,7 +47,6 @@ import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 
 import io.helidon.common.Errors;
-import io.helidon.common.InputStreamHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
@@ -613,7 +612,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys getPublicKeyFromContent(InputStream bufferedInputStream) throws IOException {
-            return loadJwkKeys(new String(InputStreamHelper.readAllBytes(bufferedInputStream), UTF_8));
+            return loadJwkKeys(new String(bufferedInputStream.readAllBytes(), UTF_8));
         }
 
         private JwkKeys loadJwkKeys(String stringContent) {

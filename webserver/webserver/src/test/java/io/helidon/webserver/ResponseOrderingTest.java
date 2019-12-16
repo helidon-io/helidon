@@ -31,7 +31,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
@@ -157,7 +156,7 @@ public class ResponseOrderingTest {
         Response response = target.request().post(Entity.entity(inputStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
         InputStream resultStream = response.readEntity(InputStream.class);
 
-        String s = new String(InputStreamHelper.readAllBytes(resultStream));
+        String s = new String(resultStream.readAllBytes());
         assertThat(s, is(sb.toString()));
     }
 
