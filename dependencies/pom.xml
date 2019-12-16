@@ -99,7 +99,7 @@
         <version.lib.ucp>19.3.0.0</version.lib.ucp>
         <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
         <version.lib.weld>3.1.1.Final</version.lib.weld>
-        <version.lib.zipkin>2.10.1</version.lib.zipkin>
+        <version.lib.zipkin>2.12.0</version.lib.zipkin>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.yasson>1.0.3</version.lib.yasson>
