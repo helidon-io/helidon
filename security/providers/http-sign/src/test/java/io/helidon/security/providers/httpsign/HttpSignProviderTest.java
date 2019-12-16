@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -58,14 +57,14 @@ public abstract class HttpSignProviderTest {
 
         headers.put("Signature",
                     CollectionsHelper.listOf("keyId=\"rsa-key-12345\",algorithm=\"rsa-sha256\",headers=\"date "
-                                    + "host (request-target) authorization\","
-                                    + "signature=\"Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
-                                    + "boUV6ST2EYLYniFGt5/3BO/2+vqQdqezdTVPr/JCwqBx+9T9ZynG7YqRj"
-                                    + "KvXzcmvQOu5vQmCK5x/HR0fXU41Pjq+jywsD0k6KdxF6TWr6tvWRbwFet"
-                                    + "+YSb0088o/65Xeqghw7s0vShf7jPZsaaIHnvM9SjWgix9VvpdEn4NDvqh"
-                                    + "ebieVD3Swb1VG5+/7ECQ9VAlX30U5/jQ5hPO3yuvRlg5kkMjJiN7tf/68"
-                                    + "If/5O2Z4H+7VmW0b1U69/JoOQJA0av1gCX7HVfa/YTCxIK4UFiI6h963q"
-                                    + "2x7LSkqhdWGA==\""));
+                                                     + "host (request-target) authorization\","
+                                                     + "signature=\"Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
+                                                     + "boUV6ST2EYLYniFGt5/3BO/2+vqQdqezdTVPr/JCwqBx+9T9ZynG7YqRj"
+                                                     + "KvXzcmvQOu5vQmCK5x/HR0fXU41Pjq+jywsD0k6KdxF6TWr6tvWRbwFet"
+                                                     + "+YSb0088o/65Xeqghw7s0vShf7jPZsaaIHnvM9SjWgix9VvpdEn4NDvqh"
+                                                     + "ebieVD3Swb1VG5+/7ECQ9VAlX30U5/jQ5hPO3yuvRlg5kkMjJiN7tf/68"
+                                                     + "If/5O2Z4H+7VmW0b1U69/JoOQJA0av1gCX7HVfa/YTCxIK4UFiI6h963q"
+                                                     + "2x7LSkqhdWGA==\""));
         headers.put("host", CollectionsHelper.listOf("example.org"));
         headers.put("date", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
         headers.put("authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
@@ -91,8 +90,8 @@ public abstract class HttpSignProviderTest {
                    atnResponse.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        OptionalHelper.from(atnResponse.user()
-                                    .map(Subject::principal))
+        atnResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(principal -> {
                     assertThat(principal.getName(), is("aUser"));
                     assertThat(principal.abacAttribute(HttpSignProvider.ATTRIB_NAME_KEY_ID), is(Optional.of("rsa-key-12345")));
@@ -107,8 +106,8 @@ public abstract class HttpSignProviderTest {
         headers.put("Signature",
                     CollectionsHelper
                             .listOf("keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) "
-                                    + "authorization\","
-                                    + "signature=\"0BcQq9TckrtGvlpHiMxNqMq0vW6dPVTGVDUVDrGwZyI=\""));
+                                            + "authorization\","
+                                            + "signature=\"0BcQq9TckrtGvlpHiMxNqMq0vW6dPVTGVDUVDrGwZyI=\""));
         headers.put("host", CollectionsHelper.listOf("example.org"));
         headers.put("date", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
         headers.put("authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
@@ -134,8 +133,8 @@ public abstract class HttpSignProviderTest {
                    atnResponse.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        OptionalHelper.from(atnResponse.service()
-                                    .map(Subject::principal))
+        atnResponse.service()
+                .map(Subject::principal)
                 .ifPresentOrElse(principal -> {
                     assertThat(principal.getName(), is("aSetOfTrustedServices"));
                     assertThat(principal.abacAttribute(HttpSignProvider.ATTRIB_NAME_KEY_ID), is(Optional.of("myServiceKeyId")));

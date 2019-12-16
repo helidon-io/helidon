@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.metrics.RegistryFactory;
@@ -203,7 +202,7 @@ public final class TodosHandler implements Service {
                               final Optional<? extends JsonObject> jsonResponse,
                               final Http.Status failureStatus) {
 
-        OptionalHelper.from(jsonResponse)
+        jsonResponse
                 .ifPresentOrElse(res::send, () -> res.status(failureStatus));
     }
 
@@ -239,8 +238,8 @@ public final class TodosHandler implements Service {
                         final ServerResponse res,
                         final Consumer<SecurityContext> ctx) {
 
-        OptionalHelper.from(req.context()
-                                    .get(SecurityContext.class))
+        req.context()
+                .get(SecurityContext.class)
                 .ifPresentOrElse(ctx, () -> noSecurityContext(res));
     }
 

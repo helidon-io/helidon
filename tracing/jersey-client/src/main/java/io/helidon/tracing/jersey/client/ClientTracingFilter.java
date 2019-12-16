@@ -34,7 +34,6 @@ import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
@@ -284,39 +283,33 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
 
         // then spans registered in context
-        return OptionalHelper
-                // from injected span context
-                .from(tracingContext.map(TracingContext::parentSpan))
+        return  // from injected span context
+                tracingContext.map(TracingContext::parentSpan)
                 // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
                 // then look for overall span context
-                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)))
-                .asOptional();
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)));
     }
 
     private String findSpanName(ClientRequestContext requestContext, SpanTracingConfig spanConfig) {
-        return OptionalHelper.from(property(requestContext, String.class, SPAN_NAME_PROPERTY_NAME))
+        return property(requestContext, String.class, SPAN_NAME_PROPERTY_NAME)
                 .or(spanConfig::newName)
-                .asOptional()
                 .orElseGet(() -> requestContext.getMethod().toUpperCase());
     }
 
     private Tracer findTracer(ClientRequestContext requestContext,
                               Optional<TracingContext> tracingContext) {
-        return OptionalHelper.from(property(requestContext, Tracer.class, TRACER_PROPERTY_NAME))
+        return property(requestContext, Tracer.class, TRACER_PROPERTY_NAME)
                 .or(() -> tracingContext.map(TracingContext::tracer))
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)))
-                .asOptional()
                 .orElseGet(GlobalTracer::get);
     }
 
     private static <T> Optional<T> property(ClientRequestContext requestContext, Class<T> clazz, String propertyName) {
-        return OptionalHelper.from(Optional.empty())
-                .or(() -> Optional.ofNullable(requestContext.getProperty(propertyName))
-                        .filter(clazz::isInstance))
+        return Optional.ofNullable(requestContext.getProperty(propertyName))
+                        .filter(clazz::isInstance)
                 .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
                         .filter(clazz::isInstance))
-                .asOptional()
                 .map(clazz::cast);
     }
 

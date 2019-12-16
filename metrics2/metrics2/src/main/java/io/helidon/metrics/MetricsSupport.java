@@ -42,7 +42,6 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -404,7 +403,7 @@ public final class MetricsSupport implements Service {
     private void getOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getOptionalMetricEntry(metricName))
+        registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
                     if (mediaType == MediaType.APPLICATION_JSON) {
@@ -449,7 +448,7 @@ public final class MetricsSupport implements Service {
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getOptionalMetricWithIDsEntry(metricName))
+        registry.getOptionalMetricWithIDsEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();

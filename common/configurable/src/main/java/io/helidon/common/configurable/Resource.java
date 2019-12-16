@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 
 /**
@@ -151,12 +150,11 @@ public interface Resource {
      * @return a resource ready to load from one of the locations or empty if neither is defined
      */
     static Optional<Resource> create(Config config, String keyPrefix) {
-        return OptionalHelper.from(ResourceUtil.fromConfigPath(config, keyPrefix))
+        return ResourceUtil.fromConfigPath(config, keyPrefix)
                 .or(() -> ResourceUtil.fromConfigResourcePath(config, keyPrefix))
                 .or(() -> ResourceUtil.fromConfigUrl(config, keyPrefix))
                 .or(() -> ResourceUtil.fromConfigContent(config, keyPrefix))
-                .or(() -> ResourceUtil.fromConfigB64Content(config, keyPrefix))
-                .asOptional();
+                .or(() -> ResourceUtil.fromConfigB64Content(config, keyPrefix));
     }
 
     /**

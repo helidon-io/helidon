@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.helidon.security;
 
 import java.util.Optional;
-
-import io.helidon.common.OptionalHelper;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +38,7 @@ public class AuthenticationResponseTest {
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.user(), is(Optional.empty()));
         assertThat(response.service(), is(Optional.empty()));
-        OptionalHelper.from(response.description())
+        response.description()
                 .ifPresentOrElse(it -> assertThat(it, is(message)), () -> fail("Description should have been filled"));
         response.throwable().ifPresent(it -> fail("Throwable should not be filled"));
     }
@@ -55,9 +53,9 @@ public class AuthenticationResponseTest {
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.user(), is(Optional.empty()));
         assertThat(response.service(), is(Optional.empty()));
-        OptionalHelper.from(response.description())
+        response.description()
                 .ifPresentOrElse(it -> assertThat(it, is(message)), () -> fail("Description should have been filled"));
-        OptionalHelper.from(response.throwable())
+        response.throwable()
                 .ifPresentOrElse(it -> assertThat(it, sameInstance(throwable)), () -> fail("Throwable should not be filled"));
     }
 

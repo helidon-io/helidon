@@ -33,7 +33,6 @@ import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -342,7 +341,7 @@ abstract class Response implements ServerResponse {
 
             // Test content type compatibility
             return requestedContentType == null
-                    || OptionalHelper.from(headers().contentType())
+                    || headers().contentType()
                                 .or(() -> { // if no contentType is yet registered, try to write requested
                                     try {
                                         headers.contentType(requestedContentType);
@@ -350,7 +349,7 @@ abstract class Response implements ServerResponse {
                                     } catch (Exception e) {
                                         return Optional.empty();
                                     }
-                                }).asOptional()
+                                })
                                 .filter(requestedContentType) // MediaType is a predicate of compatible media type
                                 .isPresent();
         }

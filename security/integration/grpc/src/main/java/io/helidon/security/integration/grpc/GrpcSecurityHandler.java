@@ -34,7 +34,6 @@ import java.util.logging.Logger;
 import javax.annotation.Priority;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -926,7 +925,7 @@ public class GrpcSecurityHandler
         }
 
         private Builder customObjects(ClassToInstanceStore<Object> store) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(myStore -> myStore.putAll(store), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putAll(store);
@@ -1004,7 +1003,7 @@ public class GrpcSecurityHandler
          * @return updated builder instance
          */
         Builder customObject(Object object) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(store -> store.putInstance(object), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putInstance(object);
@@ -1058,7 +1057,7 @@ public class GrpcSecurityHandler
         }
 
         Builder rolesAllowed(Collection<String> roles) {
-            OptionalHelper.from(rolesAllowed).ifPresentOrElse(strings -> strings.addAll(roles),
+            rolesAllowed.ifPresentOrElse(strings -> strings.addAll(roles),
                                                               () -> {
                                                                   Set<String> newRoles = new HashSet<>(roles);
                                                                   rolesAllowed = Optional.of(newRoles);

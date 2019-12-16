@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Optional;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -170,8 +169,8 @@ public class JwtProviderTest {
         when(atnRequest.env()).thenReturn(se);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.user()
-                                    .map(Subject::principal))
+        authenticationResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(username));
@@ -244,8 +243,8 @@ public class JwtProviderTest {
         when(atnRequest.env()).thenReturn(se);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.user()
-                                    .map(Subject::principal))
+        authenticationResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(username));
@@ -382,8 +381,8 @@ public class JwtProviderTest {
         when(atnRequest.env()).thenReturn(se);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.user()
-                                    .map(Subject::principal))
+        authenticationResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(userId));
@@ -477,8 +476,8 @@ public class JwtProviderTest {
         when(atnRequest.env()).thenReturn(se);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.user()
-                                    .map(Subject::principal))
+        authenticationResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(username));

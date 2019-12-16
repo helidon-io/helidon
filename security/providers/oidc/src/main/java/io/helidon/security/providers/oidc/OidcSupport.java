@@ -32,7 +32,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -173,7 +172,7 @@ public final class OidcSupport implements Service {
         // redirected from IDCS
         Optional<String> codeParam = req.queryParams().first(CODE_PARAM_NAME);
         // if code is not in the request, this is a problem
-        OptionalHelper.from(codeParam)
+        codeParam
                 .ifPresentOrElse(code -> processCode(code, req, res), () -> processError(req, res));
     }
 

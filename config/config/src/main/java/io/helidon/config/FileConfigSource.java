@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.internal.FileSourceHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
@@ -92,9 +91,8 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     @Override
     protected String mediaType() {
-        return OptionalHelper.from(Optional.ofNullable(super.mediaType()))
+        return Optional.ofNullable(super.mediaType())
                 .or(this::probeContentType)
-                .asOptional()
                 .orElse(null);
     }
 

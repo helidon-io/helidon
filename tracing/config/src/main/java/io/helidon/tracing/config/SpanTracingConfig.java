@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 
 /**
@@ -60,16 +59,14 @@ public abstract class SpanTracingConfig extends Traceable {
         return new SpanTracingConfig(newer.name()) {
             @Override
             public Optional<String> newName() {
-                return OptionalHelper.from(newer.newName())
-                        .or(older::newName)
-                        .asOptional();
+                return newer.newName()
+                        .or(older::newName);
             }
 
             @Override
             public Optional<Boolean> isEnabled() {
-                return OptionalHelper.from(newer.isEnabled())
-                        .or(older::isEnabled)
-                        .asOptional();
+                return newer.isEnabled()
+                        .or(older::isEnabled);
             }
 
             @Override

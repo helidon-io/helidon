@@ -45,7 +45,6 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -205,29 +204,28 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
         try {
             if (oidcConfig.useHeader()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()))
-                        .asOptional();
-                if (!token.isPresent()) {
+                token = token
+                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()));
+
+                if (token.isEmpty()) {
                     missingLocations.add("header");
                 }
             }
 
             if (oidcConfig.useParam()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
-                        .asOptional();
+                token = token
+                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()));
 
-                if (!token.isPresent()) {
+                if (token.isEmpty()) {
                     missingLocations.add("query-param");
                 }
             }
 
             if (oidcConfig.useCookie()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> findCookie(providerRequest.env().headers()))
-                        .asOptional();
-                if (!token.isPresent()) {
+                token = token
+                        .or(() -> findCookie(providerRequest.env().headers()));
+
+                if (token.isEmpty()) {
                     missingLocations.add("cookie");
                 }
             }

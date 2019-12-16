@@ -26,7 +26,6 @@ import java.util.Locale;
 import java.util.Optional;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -98,7 +97,7 @@ public class JwtAuthProviderTest {
 
         when(ec.securityLevels()).thenReturn(securityLevels);
         when(appSecurityLevel.filterAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.CLASS))
-                .thenReturn(listOf(new LoginConfig(){
+                .thenReturn(listOf(new LoginConfig() {
                     @Override
                     public Class<? extends Annotation> annotationType() {
                         return LoginConfig.class;
@@ -211,8 +210,8 @@ public class JwtAuthProviderTest {
         ProviderRequest atnRequest = mockRequest(signedToken);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.user()
-                                    .map(Subject::principal))
+        authenticationResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal, instanceOf(JsonWebTokenImpl.class));
                     JsonWebTokenImpl jsonWebToken = (JsonWebTokenImpl) atnPrincipal;
@@ -286,10 +285,9 @@ public class JwtAuthProviderTest {
         //now we need to use the same token to invoke authentication
         ProviderRequest atnRequest = mockRequest(signedToken);
 
-
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.user()
-                                    .map(Subject::principal))
+        authenticationResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(userId));
@@ -379,8 +377,8 @@ public class JwtAuthProviderTest {
         ProviderRequest atnRequest = mockRequest(signedToken);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.user()
-                                    .map(Subject::principal))
+        authenticationResponse.user()
+                .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(username));

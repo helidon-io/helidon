@@ -46,7 +46,6 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.Prioritized;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
@@ -130,9 +129,8 @@ public class ServerImpl implements Server {
                 .port(builder.port())
                 .bindAddress(listenHost);
 
-        OptionalHelper.from(Optional.ofNullable(builder.basePath()))
+        Optional.ofNullable(builder.basePath())
                 .or(() -> config.get("server.base-path").asString().asOptional())
-                .asOptional()
                 .ifPresent(basePath -> {
                     routingBuilder.any("/", (req, res) -> {
                         res.status(Http.Status.MOVED_PERMANENTLY_301);

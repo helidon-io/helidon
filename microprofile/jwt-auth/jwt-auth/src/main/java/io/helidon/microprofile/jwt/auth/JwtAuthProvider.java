@@ -48,7 +48,6 @@ import javax.json.JsonReaderFactory;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.common.InputStreamHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
@@ -353,7 +352,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             principal.abacAttribute(name).ifPresent(val -> builder.addPayloadClaim(name, val));
         });
 
-        OptionalHelper.from(principal.abacAttribute("full_name"))
+        principal.abacAttribute("full_name")
                 .ifPresentOrElse(name -> builder.addPayloadClaim("name", name),
                                  () -> builder.removePayloadClaim("name"));
 
@@ -555,16 +554,14 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys createJwkKeys() {
-            return OptionalHelper
-                    .from(Optional.ofNullable(publicKeyPath)
-                            .map(this::loadJwkKeysFromLocation))
+            return Optional.ofNullable(publicKeyPath)
+                            .map(this::loadJwkKeysFromLocation)
                     .or(() -> Optional.ofNullable(publicKey)
                             .map(this::loadJwkKeys))
                     .or(() -> Optional.ofNullable(defaultJwk)
                             .map(jwk -> JwkKeys.builder()
                                     .addKey(jwk)
                                     .build()))
-                    .asOptional()
                     .orElseThrow(() -> new SecurityException("No public key or default JWK set."));
         }
 

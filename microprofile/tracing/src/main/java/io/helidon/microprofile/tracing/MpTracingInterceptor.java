@@ -27,7 +27,6 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 import javax.ws.rs.Path;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
@@ -117,9 +116,8 @@ public class MpTracingInterceptor {
         }
         Optional<Context> context = Contexts.context();
 
-        return OptionalHelper.from(context.flatMap(ctx -> ctx.get(SpanContext.class)))
-                .or(() -> context.flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
-                .asOptional();
+        return context.flatMap(ctx -> ctx.get(SpanContext.class))
+                .or(() -> context.flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)));
     }
 
     private Tracer locateTracer() {

@@ -38,7 +38,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -1016,7 +1015,7 @@ public final class SecurityHandler implements Handler {
         }
 
         private Builder customObjects(ClassToInstanceStore<Object> store) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(myStore -> myStore.putAll(store), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putAll(store);
@@ -1105,7 +1104,7 @@ public final class SecurityHandler implements Handler {
          * @return updated builder instance
          */
         Builder customObject(Object object) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(store -> store.putInstance(object), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putInstance(object);
@@ -1159,7 +1158,7 @@ public final class SecurityHandler implements Handler {
         }
 
         Builder rolesAllowed(Collection<String> roles) {
-            OptionalHelper.from(rolesAllowed).ifPresentOrElse(strings -> strings.addAll(roles),
+            rolesAllowed.ifPresentOrElse(strings -> strings.addAll(roles),
                                                               () -> {
                                                                   Set<String> newRoles = new HashSet<>(roles);
                                                                   rolesAllowed = Optional.of(newRoles);

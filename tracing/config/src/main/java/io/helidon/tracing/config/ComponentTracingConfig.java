@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 
 /**
@@ -85,9 +84,8 @@ public abstract class ComponentTracingConfig extends Traceable {
 
             @Override
             public Optional<Boolean> isEnabled() {
-                return OptionalHelper.from(newer.isEnabled())
-                        .or(older::isEnabled)
-                        .asOptional();
+                return newer.isEnabled()
+                        .or(older::isEnabled);
             }
         };
     }
