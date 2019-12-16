@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -241,8 +242,6 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
 
-
-
         Subject.Builder subjectBuilder = Subject.builder()
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
@@ -273,8 +272,8 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
     @Override
     public OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+                                                 SecurityEnvironment outboundEnv,
+                                                 EndpointConfig outboundEndpointConfig) {
 
         Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         return maybeUsername
@@ -554,7 +553,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
         private JwkKeys createJwkKeys() {
             return Optional.ofNullable(publicKeyPath)
-                            .map(this::loadJwkKeysFromLocation)
+                    .map(this::loadJwkKeysFromLocation)
                     .or(() -> Optional.ofNullable(publicKey)
                             .map(this::loadJwkKeys))
                     .or(() -> Optional.ofNullable(defaultJwk)
@@ -565,26 +564,35 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys loadJwkKeysFromLocation(String uri) {
-            Path path;
-            try {
-                path = Paths.get(uri);
-            } catch (InvalidPathException e) {
-                path = null;
-            }
-            if (path != null && Files.exists(path)) {
-                try {
-                    return loadJwkKeys(new String(Files.readAllBytes(path), UTF_8));
-                } catch (IOException e) {
-                    throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
-                }
-            } else {
+            // spotbugs was warning in this method, refactored to find the issue
+            return locatePath(uri)
+                    .map(path -> {
+                        try {
+                            return loadJwkKeys(Files.readString(path, UTF_8));
+                        } catch (IOException e) {
+                            throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
+                        }
+                    })
+                    .orElseGet(() -> {
+                        try (InputStream is = locateStream(uri)) {
+                            return getPublicKeyFromContent(is);
+                        } catch (IOException e) {
+                            throw new SecurityException("Failed to load public key(s) from : " + uri, e);
+                        }
+                    });
+        }
 
-                try (InputStream is = locateStream(uri)) {
-                    return getPublicKeyFromContent(is);
-                } catch (IOException e) {
-                    throw new SecurityException("Failed to load public key(s) from : " + uri, e);
+        private Optional<Path> locatePath(String uri) {
+            try {
+                Path path = Paths.get(uri);
+                if (Files.exists(path)) {
+                    return Optional.of(path);
                 }
+            } catch (InvalidPathException e) {
+                LOGGER.log(Level.FINEST, "Could not locate path: " + uri, e);
             }
+
+            return Optional.empty();
         }
 
         private InputStream locateStream(String uri) throws IOException {
