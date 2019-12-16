@@ -85,8 +85,9 @@ public class MpTracingInterceptor {
 
             parentSpan.ifPresent(spanBuilder::asChildOf);
 
-            Scope scope = spanBuilder.startActive(false);
-            Span span = scope.span();
+            Span span = spanBuilder.start();
+            Scope scope = tracer.scopeManager().activate(span);
+
             try {
                 return context.proceed();
             } catch (Exception e) {

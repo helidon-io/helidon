@@ -39,7 +39,7 @@ import io.opentracing.Tracer;
 import io.opentracing.contrib.grpc.OpenTracingContextKey;
 import io.opentracing.contrib.grpc.OperationNameConstructor;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 
 /**
  * A {@link ServerInterceptor} that adds tracing to gRPC service calls.
@@ -147,7 +147,7 @@ public class GrpcTracing
 
         try {
             SpanContext parentSpanCtx = tracer.extract(Format.Builtin.HTTP_HEADERS,
-                                                       new TextMapExtractAdapter(headers));
+                                                       new TextMapAdapter(headers));
             if (parentSpanCtx == null) {
                 span = tracer.buildSpan(operationName)
                         .start();

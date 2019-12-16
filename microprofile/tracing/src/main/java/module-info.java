@@ -23,7 +23,7 @@ module io.helidon.microprofile.tracing {
 
     requires java.ws.rs;
     requires jersey.common;
-    requires opentracing.api;
+    requires io.opentracing.api;
 
     requires static cdi.api;
     requires static javax.inject;
