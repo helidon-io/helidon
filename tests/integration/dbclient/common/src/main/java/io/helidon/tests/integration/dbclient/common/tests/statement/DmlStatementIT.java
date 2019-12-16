@@ -20,11 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
-import io.helidon.tests.integration.dbclient.common.tests.simple.SimpleStatementIT;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,7 +39,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class DmlStatementIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(SimpleStatementIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DmlStatementIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 100;
@@ -60,8 +58,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Initialize DbStatementDml methods tests.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
@@ -74,7 +72,7 @@ public class DmlStatementIT extends AbstractIT {
             addPokemon(new Pokemon(BASE_ID + 5, "Phione", TYPES.get(11)));              // BASE_ID+5
             addPokemon(new Pokemon(BASE_ID + 6, "Chatot", TYPES.get(1), TYPES.get(3))); // BASE_ID+6
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }
@@ -82,8 +80,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlArrayParams() throws ExecutionException, InterruptedException {
@@ -99,8 +97,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Verify {@code params(List<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlListParams() throws ExecutionException, InterruptedException {
@@ -119,8 +117,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlMapParams() throws ExecutionException, InterruptedException {
@@ -139,8 +137,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlOrderParam() throws ExecutionException, InterruptedException {
@@ -157,8 +155,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlNamedParam() throws ExecutionException, InterruptedException {
@@ -175,8 +173,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlMappedNamedParam() throws ExecutionException, InterruptedException {
@@ -192,8 +190,8 @@ public class DmlStatementIT extends AbstractIT {
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlMappedOrderParam() throws ExecutionException, InterruptedException {

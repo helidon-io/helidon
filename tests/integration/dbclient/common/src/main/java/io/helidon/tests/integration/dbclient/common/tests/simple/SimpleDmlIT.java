@@ -18,7 +18,6 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
@@ -39,7 +38,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class SimpleDmlIT extends AbstractIT {
     
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(SimpleDmlIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SimpleDmlIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 40;
@@ -58,8 +57,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Initialize tests of basic JDBC updates.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
@@ -82,7 +81,7 @@ public class SimpleDmlIT extends AbstractIT {
             addPokemon(new Pokemon(BASE_ID + 25, "Cubchoo", TYPES.get(15)));                 // BASE_ID+25
             addPokemon(new Pokemon(BASE_ID + 26, "Beartic", TYPES.get(15)));                 // BASE_ID+26
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }
@@ -90,8 +89,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String, String)} API method with insert with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -106,8 +105,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String)} API method with insert with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithInsertStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -122,8 +121,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String)} API method with insert with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithInsertStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -138,8 +137,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createDmlStatement(String)} API method with insert with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDmlWithInsertNamedArgs() throws ExecutionException, InterruptedException {
@@ -154,8 +153,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createDmlStatement(String)} API method with insert with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDmlWithInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -171,8 +170,8 @@ public class SimpleDmlIT extends AbstractIT {
      * Verify {@code namedDml(String)} API method with insert with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedDmlWithInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -187,8 +186,8 @@ public class SimpleDmlIT extends AbstractIT {
      * Verify {@code dml(String)} API method with insert with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlWithInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -202,8 +201,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String, String)} API method with update with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithUpdateStrStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -219,8 +218,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String)} API method with update with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithUpdateStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -236,8 +235,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String)} API method with update with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithUpdateStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -253,8 +252,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createDmlStatement(String)} API method with update with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDmlWithUpdateNamedArgs() throws ExecutionException, InterruptedException {
@@ -270,8 +269,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createDmlStatement(String)} API method with update with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDmlWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
@@ -288,8 +287,8 @@ public class SimpleDmlIT extends AbstractIT {
      * Verify {@code namedDml(String)} API method with update with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedDmlWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
@@ -305,8 +304,8 @@ public class SimpleDmlIT extends AbstractIT {
      * Verify {@code dml(String)} API method with update with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
@@ -321,8 +320,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String, String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithDeleteStrStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -336,8 +335,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String)} API method with delete with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithDeleteStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -351,8 +350,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createNamedDmlStatement(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDmlWithDeleteStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -366,8 +365,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createDmlStatement(String)} API method with delete with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDmlWithDeleteNamedArgs() throws ExecutionException, InterruptedException {
@@ -381,8 +380,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code createDmlStatement(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDmlWithDeleteOrderArgs() throws ExecutionException, InterruptedException {
@@ -396,8 +395,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code namedDml(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedDmlWithDeleteOrderArgs() throws ExecutionException, InterruptedException {
@@ -410,8 +409,8 @@ public class SimpleDmlIT extends AbstractIT {
     /**
      * Verify {@code dml(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlWithDeleteOrderArgs() throws ExecutionException, InterruptedException {

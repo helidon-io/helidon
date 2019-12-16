@@ -34,8 +34,8 @@ public class SimpleInsertIT extends AbstractIT {
     /**
      * Verify {@code createNamedInsert(String, String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -50,8 +50,8 @@ public class SimpleInsertIT extends AbstractIT {
     /**
      * Verify {@code createNamedInsert(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedInsertStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -66,8 +66,8 @@ public class SimpleInsertIT extends AbstractIT {
     /**
      * Verify {@code createNamedInsert(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedInsertStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -82,8 +82,8 @@ public class SimpleInsertIT extends AbstractIT {
     /**
      * Verify {@code createInsert(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateInsertNamedArgs() throws ExecutionException, InterruptedException {
@@ -98,8 +98,8 @@ public class SimpleInsertIT extends AbstractIT {
     /**
      * Verify {@code createInsert(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -114,8 +114,8 @@ public class SimpleInsertIT extends AbstractIT {
     /**
      * Verify {@code namedInsert(String)} API method with ordered parameters passed directly to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -129,8 +129,8 @@ public class SimpleInsertIT extends AbstractIT {
     /**
      * Verify {@code insert(String)} API method with ordered parameters passed directly to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testInsertOrderArgs() throws ExecutionException, InterruptedException {

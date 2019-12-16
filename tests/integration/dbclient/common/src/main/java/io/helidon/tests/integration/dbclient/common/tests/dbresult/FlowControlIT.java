@@ -141,8 +141,8 @@ public class FlowControlIT {
     /**
      * Source data verification.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testSourceData() throws ExecutionException, InterruptedException {
@@ -165,8 +165,8 @@ public class FlowControlIT {
     /**
      * Flow control test.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testFlowControl() throws ExecutionException, InterruptedException {

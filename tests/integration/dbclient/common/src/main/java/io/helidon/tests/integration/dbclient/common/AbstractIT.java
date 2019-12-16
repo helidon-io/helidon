@@ -33,7 +33,8 @@ import io.helidon.dbclient.DbRow;
  */
 public abstract class AbstractIT {
 
-    private static final Logger LOG = Logger.getLogger(AbstractIT.class.getName());
+    /** Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(AbstractIT.class.getName());
 
     public static final Config CONFIG = Config.create(ConfigSources.classpath("test.yaml"));
 
@@ -80,7 +81,7 @@ public abstract class AbstractIT {
 
         @Override
         public Pokemon read(DbRow row) {
-            throw new UnsupportedOperationException("Read operation is not implemented.");
+            return new Pokemon(row.column("id").as(Integer.class), row.column("name").as(String.class));
         }
 
         @Override

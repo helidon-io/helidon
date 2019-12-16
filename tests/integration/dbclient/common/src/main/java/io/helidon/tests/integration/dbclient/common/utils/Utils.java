@@ -39,7 +39,7 @@ import static org.hamcrest.Matchers.*;
 public class Utils {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(Utils.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
 
     private Utils() {
         throw new IllegalStateException("No instances of this class are allowed!");
@@ -50,8 +50,8 @@ public class Utils {
      * @param rows database query result to verify
      * @param idMin beginning of ID range
      * @param idMax end of ID range
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     public static void verifyPokemonsIdRange(
             DbRows<DbRow> rows, int idMin, int idMax
@@ -72,7 +72,7 @@ public class Utils {
         for (DbRow row : rowsList) {
             Integer id = row.column(1).as(Integer.class);
             String name = row.column(2).as(String.class);
-            LOG.info(() -> String.format("Pokemon id=%d, name=%s", id, name));
+            LOGGER.info(() -> String.format("Pokemon id=%d, name=%s", id, name));
             assertThat(valid.containsKey(id), equalTo(true));
             assertThat(name, equalTo( valid.get(id).getName()));
         }
@@ -83,8 +83,8 @@ public class Utils {
      * @param maybeRow database query result to verify
      * @param idMin beginning of ID range
      * @param idMax end of ID range
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     public static void verifyPokemonsIdRange(
             Optional<DbRow> maybeRow, int idMin, int idMax
@@ -111,8 +111,8 @@ public class Utils {
      *
      * @param rows database query result to verify
      * @param pokemon pokemon to compare with
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     public static void verifyPokemon(DbRows<DbRow> rows, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(rows, notNullValue());
@@ -130,8 +130,8 @@ public class Utils {
      *
      * @param maybeRow database query result to verify
      * @param pokemon pokemon to compare with
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     public static void verifyPokemon(Optional<DbRow> maybeRow, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(maybeRow.isPresent(), equalTo(true));
@@ -143,12 +143,25 @@ public class Utils {
     }
 
     /**
+     * Verify that {@code Pokemon result} argument contains single record with provided pokemon.
+     *
+     * @param result database query result mapped to Pokemon PoJo to verify
+     * @param pokemon pokemon to compare with
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
+     */
+    public static void verifyPokemon(AbstractIT.Pokemon result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
+        assertThat(result.getId(), equalTo(pokemon.getId()));
+        assertThat(result.getName(), equalTo(pokemon.getName()));
+    }
+
+    /**
      * Verify that provided pokemon was successfully inserted into the database.
      *
      * @param result DML statement result
      * @param pokemon pokemon to compare with
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     public static void verifyInsertPokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
@@ -157,8 +170,8 @@ public class Utils {
         ).toCompletableFuture().get();
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
-        Integer id = row.column(1).as(Integer.class);
-        String name = row.column(2).as(String.class);
+        Integer id = row.column("id").as(Integer.class);
+        String name = row.column("name").as(String.class);
         assertThat(id, equalTo(pokemon.getId()));
         assertThat(name, pokemon.getName().equals(name));
     }
@@ -168,8 +181,8 @@ public class Utils {
      *
      * @param result DML statement result
      * @param pokemon pokemon to compare with
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     public static void verifyUpdatePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));
@@ -189,8 +202,8 @@ public class Utils {
      *
      * @param result DML statement result
      * @param pokemon pokemon to compare with
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     public static void verifyDeletePokemon(Long result, AbstractIT.Pokemon pokemon) throws ExecutionException, InterruptedException {
         assertThat(result, equalTo(1L));

@@ -17,7 +17,6 @@ package io.helidon.tests.integration.dbclient.jdbc.destroy;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbClient;
@@ -36,14 +35,15 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class DestroyIT {
 
-    static final Logger LOG = Logger.getLogger(DestroyIT.class.getName());
+    /** Local logger instance. */
+    static final Logger LOGGER = Logger.getLogger(DestroyIT.class.getName());
 
     /**
      * Delete database content.
      *
      * @param dbClient Helidon database client
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     private static void dropSchema(DbClient dbClient) throws ExecutionException, InterruptedException {
         dbClient.execute(exec -> exec
@@ -69,7 +69,7 @@ public class DestroyIT {
     /**
      * Verify that table Types does not exist.
      *
-     * @throws InterruptedException when database query failed
+     * @throws ExecutionException when database query failed
      */
     @Test
     public void testTypesDeleted() throws InterruptedException {
@@ -79,18 +79,18 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.log(Level.WARNING, "Rows count: {0}", rowsList.size());
+                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
                 fail("No Types rows shall be returned after database cleanup!");
             }
         } catch (ExecutionException ex) {
-            LOG.log(Level.INFO, "Caught expected exception: {0}", ex.getMessage());
+            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 
     /**
      * Verify that table Pokemons does not exist.
      *
-     * @throws InterruptedException when database query failed
+     * @throws ExecutionException when database query failed
      */
     @Test
     public void testPokemonsDeleted() throws InterruptedException {
@@ -100,18 +100,18 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.log(Level.WARNING, "Rows count: {0}", rowsList.size());
+                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
                 fail("No Pokemons rows shall be returned after database cleanup!");
             }
         } catch (ExecutionException ex) {
-            LOG.log(Level.INFO, "Caught expected exception: {0}", ex.getMessage());
+            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 
     /**
      * Verify that table PokemonTypes does not exist.
      *
-     * @throws InterruptedException when database query failed
+     * @throws ExecutionException when database query failed
      */
     @Test
     public void testPokemonTypesDeleted() throws InterruptedException {
@@ -121,11 +121,11 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.log(Level.WARNING, "Rows count: {0}", rowsList.size());
+                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
                 fail("No PokemonTypes rows shall be returned after database cleanup!");
             }
         } catch (ExecutionException ex) {
-            LOG.log(Level.INFO, "Caught expected exception: {0}", ex.getMessage());
+            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 

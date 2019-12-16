@@ -54,6 +54,8 @@ db:
     # test DML insert
     insert-pokemon-named-arg: "INSERT INTO Pokemons(id, name) VALUES(:id, :name)"
     insert-pokemon-order-arg: "INSERT INTO Pokemons(id, name) VALUES(?, ?)"
+    # Pokemon mapper uses reverse order of indexed arguments
+    insert-pokemon-order-arg-rev: "INSERT INTO Pokemons(name, id) VALUES(?, ?)"
     # test DML update
     select-pokemon-by-id: "SELECT id, name FROM Pokemons WHERE id=?"
     update-pokemon-named-arg: "UPDATE Pokemons SET name=:name WHERE id=:id"
@@ -61,6 +63,9 @@ db:
     # test DML delete
     delete-pokemon-named-arg: "DELETE FROM Pokemons WHERE id=:id"
     delete-pokemon-order-arg: "DELETE FROM Pokemons WHERE id=?"
+    # Pokemon mapper uses full list of attributes 
+    delete-pokemon-full-named-arg: "DELETE FROM Pokemons WHERE name=:name AND id=:id"
+    delete-pokemon-full-order-arg: "DELETE FROM Pokemons WHERE name=? AND id=?"
     # test DbStatementQuery methods
     select-pokemons-idrng-named-arg: "SELECT id, name FROM Pokemons WHERE id > :idmin AND id < :idmax"
     select-pokemons-idrng-order-arg: "SELECT id, name FROM Pokemons WHERE id > ? AND id < ?"

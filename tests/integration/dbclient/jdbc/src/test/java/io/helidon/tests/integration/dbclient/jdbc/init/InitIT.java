@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbClient;
@@ -44,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class InitIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(InitIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(InitIT.class.getName());
 
     /**
      * Initializes database schema (tables).
@@ -65,8 +64,8 @@ public class InitIT extends AbstractIT {
      * Initialize database content (rows in tables).
      *
      * @param dbClient Helidon database client
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
         // Init pokemon types
@@ -100,9 +99,9 @@ public class InitIT extends AbstractIT {
             CompletionStage<Long> stage = null;
             for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
                 Pokemon pokemon = entry.getValue();
-                LOG.log(Level.INFO, "Pokemon: {0}", pokemon.toString());
+                LOGGER.info(() -> String.format("Pokemon: %s", pokemon.toString()));
                 for (Type type : pokemon.getTypes()) {
-                    LOG.log(Level.INFO, "  Type: {0}", type.toString());
+                    LOGGER.info(() -> String.format("  Type: %s", type.toString()));
                     if (stage == null) {
                         stage = tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
                     } else {
@@ -120,7 +119,7 @@ public class InitIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() {
-        LOG.log(Level.INFO, "Initializing Integration Tests");
+        LOGGER.info(() ->  "Initializing Integration Tests");
         try {
             initSchema(DB_CLIENT);
             initData(DB_CLIENT);
@@ -132,8 +131,8 @@ public class InitIT extends AbstractIT {
     /**
      * Verify that database contains properly initialized pokemon types.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testListTypes() throws ExecutionException, InterruptedException {
@@ -150,15 +149,15 @@ public class InitIT extends AbstractIT {
             assertThat(ids, hasItem(id));
             ids.remove(id);
             assertThat(name, TYPES.get(id).getName().equals(name));
-            LOG.log(Level.INFO, "Type id={0} name={1}", new String[] {String.valueOf(id), name});
+            LOGGER.info(() -> String.format("Type id=%d name=%s", id, name));
         }
     }
 
     /**
      * Verify that database contains properly initialized pokemons.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testListPokemons() throws ExecutionException, InterruptedException {
@@ -175,15 +174,15 @@ public class InitIT extends AbstractIT {
             assertThat(ids, hasItem(id));
             ids.remove(id);
             assertThat(name, POKEMONS.get(id).getName().equals(name));
-            LOG.log(Level.INFO, "Pokemon id={0} name={1}", new String[] {String.valueOf(id), name});
+            LOGGER.info(() -> String.format("Type id=%d name=%s", id, name));
         }
     }
 
     /**
      * Verify that database contains properly initialized pokemon types relation.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testListPokemonTypes() throws ExecutionException, InterruptedException {
@@ -198,8 +197,8 @@ public class InitIT extends AbstractIT {
             String pokemonName = row.column(2).as(String.class);
             Pokemon pokemon = POKEMONS.get(pokemonId);
             assertThat(pokemonName, POKEMONS.get(pokemonId).getName().equals(pokemonName));
-            LOG.log(Level.INFO, "DB Pokemon id={0} name={1}", new String[] {String.valueOf(pokemonId), pokemonName});
-            LOG.log(Level.INFO, "  MAP {0}", pokemon.toString());
+            LOGGER.info(() -> String.format("DB Pokemon id=%d name=%s", pokemonId, pokemonName));
+            LOGGER.info(() -> String.format("  MAP %s", pokemon.toString()));
             DbRows<DbRow> typeRows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-poketypes", pokemonId)
             ).toCompletableFuture().get();
@@ -207,7 +206,7 @@ public class InitIT extends AbstractIT {
             assertThat(typeRowsList.size(), equalTo(pokemon.getTypes().size()));
             for (DbRow typeRow : typeRowsList) {
                 Integer typeId = typeRow.column(2).as(Integer.class);
-                LOG.log(Level.INFO, "  DB Type ID: {0}", String.valueOf(typeId));
+                LOGGER.info(() -> String.format("  DB Type ID: %d", typeId));
                 assertThat(pokemon.getTypes(), hasItem(TYPES.get(typeId)));
             }
         }

@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbRow;
@@ -44,7 +43,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class GenericStatementIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(GenericStatementIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(GenericStatementIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 110;
@@ -63,8 +62,8 @@ public class GenericStatementIT {
     /**
      * Initialize DbStatementDml methods tests.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
@@ -77,7 +76,7 @@ public class GenericStatementIT {
             addPokemon(new AbstractIT.Pokemon(BASE_ID + 5, "Ducklett", TYPES.get(3), TYPES.get(11))); // BASE_ID+5
             addPokemon(new AbstractIT.Pokemon(BASE_ID + 6, "Swanna", TYPES.get(3), TYPES.get(11)));   // BASE_ID+6
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }
@@ -85,8 +84,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryArrayParams() throws ExecutionException, InterruptedException {
@@ -101,8 +100,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code params(List<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryListParams() throws ExecutionException, InterruptedException {
@@ -120,8 +119,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryMapParams() throws ExecutionException, InterruptedException {
@@ -139,8 +138,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryOrderParam() throws ExecutionException, InterruptedException {
@@ -156,8 +155,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryNamedParam() throws ExecutionException, InterruptedException {
@@ -173,8 +172,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryMappedNamedParam() throws ExecutionException, InterruptedException {
@@ -190,8 +189,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryMappedOrderParam() throws ExecutionException, InterruptedException {
@@ -207,8 +206,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlArrayParams() throws ExecutionException, InterruptedException {
@@ -224,8 +223,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code params(List<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlListParams() throws ExecutionException, InterruptedException {
@@ -244,8 +243,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlMapParams() throws ExecutionException, InterruptedException {
@@ -264,8 +263,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlOrderParam() throws ExecutionException, InterruptedException {
@@ -282,8 +281,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlNamedParam() throws ExecutionException, InterruptedException {
@@ -300,8 +299,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlMappedNamedParam() throws ExecutionException, InterruptedException {
@@ -317,8 +316,8 @@ public class GenericStatementIT {
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDmlMappedOrderParam() throws ExecutionException, InterruptedException {

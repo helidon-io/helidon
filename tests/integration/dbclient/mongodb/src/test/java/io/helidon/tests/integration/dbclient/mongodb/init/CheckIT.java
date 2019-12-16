@@ -20,22 +20,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
-
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Check minimal functionality needed before running database schema initialization.
@@ -44,7 +43,7 @@ import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 public class CheckIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(CheckIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
 
     /** Timeout in seconds to wait for database to come up. */
     private static final int TIMEOUT = 60;
@@ -74,8 +73,8 @@ public class CheckIT extends AbstractIT {
                 if (System.currentTimeMillis() > endTm) {
                     fail("Database startup failed!", ex);
                 } else {
-                    LOG.info(() -> String.format("Exception: %s", ex.getMessage()));
-                    LOG.log(Level.INFO, "Exception details: ", ex);
+                    LOGGER.info(() -> String.format("Exception: %s", ex.getMessage()));
+                    LOGGER.log(Level.INFO, "Exception details: ", ex);
                 }
             }
         }
@@ -93,7 +92,7 @@ public class CheckIT extends AbstractIT {
                     .thenCompose(result -> exec.namedStatement("create-user"))
             ).toCompletableFuture().get().rsFuture().toCompletableFuture().get();
         } catch (ExecutionException | InterruptedException ex) {
-                LOG.warning(() -> String.format("Exception: %s", ex.getMessage()));
+                LOGGER.warning(() -> String.format("Exception: %s", ex.getMessage()));
                 fail("Database user setup failed!", ex);
         }
     }
@@ -107,7 +106,7 @@ public class CheckIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
-        LOG.info(() -> String.format("Initializing Integration Tests"));
+        LOGGER.info(() -> String.format("Initializing Integration Tests"));
         waitForStart(DB_ADMIN);
         //initUser(DB_ADMIN);
     }
@@ -127,7 +126,7 @@ public class CheckIT extends AbstractIT {
         DbRow row = rowsList.get(0);
         Double ok = row.column("ok").as(Double.class);
         assertThat(ok, equalTo(1.0));
-        LOG.info(() -> String.format("Command ping row: %s", row.toString()));
+        LOGGER.info(() -> String.format("Command ping row: %s", row.toString()));
     }
 
 }
