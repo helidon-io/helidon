@@ -18,7 +18,6 @@ package io.helidon.tests.integration.dbclient.common.tests.transaction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
@@ -39,7 +38,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyIns
 public class TransactionDeleteIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(TransactionDeleteIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TransactionDeleteIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 230;
@@ -58,8 +57,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Initialize tests of basic JDBC deletes.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
@@ -73,7 +72,7 @@ public class TransactionDeleteIT extends AbstractIT {
             addPokemon(new Pokemon(++curId, "Bayleef", TYPES.get(12)));                // BASE_ID+6
             addPokemon(new Pokemon(++curId, "Meganium", TYPES.get(12)));               // BASE_ID+7
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }
@@ -81,8 +80,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Verify {@code createNamedDelete(String, String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDeleteStrStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -96,8 +95,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Verify {@code createNamedDelete(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDeleteStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -111,8 +110,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Verify {@code createNamedDelete(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedDeleteStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -126,8 +125,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Verify {@code createDelete(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDeleteNamedArgs() throws ExecutionException, InterruptedException {
@@ -141,8 +140,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Verify {@code createDelete(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateDeleteOrderArgs() throws ExecutionException, InterruptedException {
@@ -156,8 +155,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Verify {@code namedDelete(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedDeleteOrderArgs() throws ExecutionException, InterruptedException {
@@ -170,8 +169,8 @@ public class TransactionDeleteIT extends AbstractIT {
     /**
      * Verify {@code delete(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testDeleteOrderArgs() throws ExecutionException, InterruptedException {

@@ -32,13 +32,14 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPok
  */
 public class SimpleQueriesIT extends AbstractIT {
 
-    static final Logger LOG = Logger.getLogger(SimpleQueriesIT.class.getName());
+    /** Local logger instance. */
+    static final Logger LOGGER = Logger.getLogger(SimpleQueriesIT.class.getName());
 
     /**
      * Verify {@code createNamedQuery(String, String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedQueryStrStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -52,8 +53,8 @@ public class SimpleQueriesIT extends AbstractIT {
     /**
      * Verify {@code createNamedQuery(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedQueryStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -67,8 +68,8 @@ public class SimpleQueriesIT extends AbstractIT {
     /**
      * Verify {@code createNamedQuery(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedQueryStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -82,8 +83,8 @@ public class SimpleQueriesIT extends AbstractIT {
     /**
      * Verify {@code createQuery(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateQueryNamedArgs() throws ExecutionException, InterruptedException {
@@ -97,8 +98,8 @@ public class SimpleQueriesIT extends AbstractIT {
     /**
      * Verify {@code createQuery(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateQueryOrderArgs() throws ExecutionException, InterruptedException {
@@ -112,8 +113,8 @@ public class SimpleQueriesIT extends AbstractIT {
     /**
      * Verify {@code namedQuery(String)} API method with ordered parameters passed directly to the {@code namedQuery} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedQueryOrderArgs() throws ExecutionException, InterruptedException {
@@ -126,8 +127,8 @@ public class SimpleQueriesIT extends AbstractIT {
     /**
      * Verify {@code query(String)} API method with ordered parameters passed directly to the {@code query} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryOrderArgs() throws ExecutionException, InterruptedException {

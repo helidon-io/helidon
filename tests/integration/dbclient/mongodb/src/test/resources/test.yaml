@@ -149,6 +149,15 @@ db:
                 "name": ?
             }
         }'
+    # Pokemon mapper uses reverse order of indexed arguments
+    insert-pokemon-order-arg-rev: '{
+            "collection": "pokemons",
+            "operation": "insert",
+            "value": {
+                "name": ?,
+                "id": ?
+            }
+        }'
     # test DML update
     select-pokemon-by-id: '{
             "collection": "pokemons",
@@ -178,6 +187,17 @@ db:
             "collection": "pokemons",
             "operation": "delete",
             "query": { id: ? }
+        }'
+    # Pokemon mapper uses full list of attributes
+    delete-pokemon-full-named-arg: '{
+            "collection": "pokemons",
+            "operation": "delete",
+            "query": { $and: [ {name: $name }, { id: $id } ] }
+        }'
+    delete-pokemon-full-order-arg: '{
+            "collection": "pokemons",
+            "operation": "delete",
+            "query": { $and: [ {name: ? }, { id: ? } ] }
         }'
     # test DbStatementQuery methods
     select-pokemons-idrng-named-arg: '{

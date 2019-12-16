@@ -39,8 +39,8 @@ public class QueryStatementIT extends AbstractIT {
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryArrayParams() throws ExecutionException, InterruptedException {
@@ -55,8 +55,8 @@ public class QueryStatementIT extends AbstractIT {
     /**
      * Verify {@code params(List<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryListParams() throws ExecutionException, InterruptedException {
@@ -74,8 +74,8 @@ public class QueryStatementIT extends AbstractIT {
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryMapParams() throws ExecutionException, InterruptedException {
@@ -93,8 +93,8 @@ public class QueryStatementIT extends AbstractIT {
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryOrderParam() throws ExecutionException, InterruptedException {
@@ -110,8 +110,8 @@ public class QueryStatementIT extends AbstractIT {
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryNamedParam() throws ExecutionException, InterruptedException {
@@ -127,8 +127,8 @@ public class QueryStatementIT extends AbstractIT {
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryMappedNamedParam() throws ExecutionException, InterruptedException {
@@ -144,8 +144,8 @@ public class QueryStatementIT extends AbstractIT {
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testQueryMappedOrderParam() throws ExecutionException, InterruptedException {

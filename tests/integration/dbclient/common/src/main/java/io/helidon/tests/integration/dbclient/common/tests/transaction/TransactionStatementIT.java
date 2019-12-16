@@ -18,7 +18,6 @@ package io.helidon.tests.integration.dbclient.common.tests.transaction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbRow;
@@ -50,7 +49,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class TransactionStatementIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(TransactionStatementIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TransactionStatementIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 270;
@@ -69,8 +68,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Initialize tests of basic JDBC updates.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
@@ -93,7 +92,7 @@ public class TransactionStatementIT extends AbstractIT {
             addPokemon(new AbstractIT.Pokemon(BASE_ID + 25, "Shelgon", TYPES.get(16)));                 // BASE_ID+25
             addPokemon(new AbstractIT.Pokemon(BASE_ID + 26, "Salamence", TYPES.get(3), TYPES.get(16))); // BASE_ID+26
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }
@@ -101,8 +100,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String, String)} API method with query with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithQueryStrStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -117,8 +116,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with query with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithQueryStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -132,8 +131,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with query with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithQueryStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -147,8 +146,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with query with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatementWithQueryNamedArgs() throws ExecutionException, InterruptedException {
@@ -162,8 +161,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with query with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatementWithQueryOrderArgs() throws ExecutionException, InterruptedException {
@@ -177,8 +176,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code namedStatement(String)} API method with query with ordered parameters passed directly to the {@code namedQuery} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedStatementWithQueryOrderArgs() throws ExecutionException, InterruptedException {
@@ -191,8 +190,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code statement(String)} API method with query with ordered parameters passed directly to the {@code query} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testStatementWithQueryOrderArgs() throws ExecutionException, InterruptedException {
@@ -205,8 +204,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String, String)} API method with insert with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -221,8 +220,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with insert with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithInsertStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -237,8 +236,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with insert with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithInsertStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -253,8 +252,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with insert with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatementWithInsertNamedArgs() throws ExecutionException, InterruptedException {
@@ -269,8 +268,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with insert with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatementWithInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -286,8 +285,8 @@ public class TransactionStatementIT extends AbstractIT {
      * Verify {@code namedStatement(String)} API method with insert with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedStatementWithInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -302,8 +301,8 @@ public class TransactionStatementIT extends AbstractIT {
      * Verify {@code statement(String)} API method with insert with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testStatementWithInsertOrderArgs() throws ExecutionException, InterruptedException {
@@ -317,8 +316,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String, String)} API method with update with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithUpdateStrStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -334,8 +333,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with update with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithUpdateStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -351,8 +350,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with update with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatementWithUpdateStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -368,8 +367,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with update with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatemenWithUpdateNamedArgs() throws ExecutionException, InterruptedException {
@@ -385,8 +384,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with update with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatemenWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
@@ -403,8 +402,8 @@ public class TransactionStatementIT extends AbstractIT {
      * Verify {@code namedStatement(String)} API method with update with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedStatemenWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
@@ -420,8 +419,8 @@ public class TransactionStatementIT extends AbstractIT {
      * Verify {@code statement(String)} API method with update with ordered parameters passed directly
      * to the {@code insert} method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testStatemenWithUpdateOrderArgs() throws ExecutionException, InterruptedException {
@@ -436,8 +435,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String, String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatemenWithDeleteStrStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -451,8 +450,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with delete with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatemenWithDeleteStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -466,8 +465,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createNamedStatement(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedStatemenWithDeleteStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -481,8 +480,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with delete with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatemenWithDeleteNamedArgs() throws ExecutionException, InterruptedException {
@@ -496,8 +495,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code createStatement(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateStatemenWithDeleteOrderArgs() throws ExecutionException, InterruptedException {
@@ -511,8 +510,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code namedStatement(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedStatemenWithDeleteOrderArgs() throws ExecutionException, InterruptedException {
@@ -525,8 +524,8 @@ public class TransactionStatementIT extends AbstractIT {
     /**
      * Verify {@code statement(String)} API method with delete with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testStatemenWithDeleteOrderArgs() throws ExecutionException, InterruptedException {

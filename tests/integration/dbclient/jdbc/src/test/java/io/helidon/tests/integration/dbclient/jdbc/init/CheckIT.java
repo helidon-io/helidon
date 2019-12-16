@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -39,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class CheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(CheckIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
 
     /** Test configuration. */
     public static final Config CONFIG = Config.create(ConfigSources.classpath("test.yaml"));
@@ -133,7 +132,7 @@ public class CheckIT {
      */
     @BeforeAll
     public static void setup() {
-        LOG.log(Level.INFO, "Initializing Integration Tests");
+        LOGGER.info(() -> String.format("Initializing Integration Tests"));
         waitForStart();
     }
 
@@ -151,6 +150,7 @@ public class CheckIT {
         Connection conn = builder.createConnection();
         int result = conn.createStatement().executeUpdate(ping);
         assertThat(result, equalTo(0));
+        LOGGER.info(() -> String.format("Command ping result: %d", result));
     }
 
 }

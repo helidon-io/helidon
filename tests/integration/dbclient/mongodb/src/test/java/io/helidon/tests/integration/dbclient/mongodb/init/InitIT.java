@@ -21,20 +21,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 
 /**
  * Initialize database
@@ -42,14 +43,14 @@ import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 public class InitIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(InitIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(InitIT.class.getName());
 
     /**
      * Initialize database content (rows in tables).
      *
      * @param dbClient Helidon database client
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
         // Init pokemon types
@@ -101,7 +102,7 @@ public class InitIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() {
-        LOG.info(() -> String.format("Initializing Integration Tests"));
+        LOGGER.info(() ->  "Initializing Integration Tests");
         try {
             initData(DB_CLIENT);
         } catch (ExecutionException | InterruptedException ex) {
@@ -112,8 +113,8 @@ public class InitIT extends AbstractIT {
     /**
      * Verify that database contains properly initialized pokemon types.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testListTypes() throws ExecutionException, InterruptedException {
@@ -130,15 +131,15 @@ public class InitIT extends AbstractIT {
             assertThat(ids, hasItem(id));
             ids.remove(id);
             assertThat(name, TYPES.get(id).getName().equals(name));
-            LOG.info(() -> String.format("Type id=%d name=%s", id, name));
+            LOGGER.info(() -> String.format("Type id=%d name=%s", id, name));
         }
     }
 
     /**
      * Verify that database contains properly initialized pokemons.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testListPokemons() throws ExecutionException, InterruptedException {
@@ -155,15 +156,15 @@ public class InitIT extends AbstractIT {
             assertThat(ids, hasItem(id));
             ids.remove(id);
             assertThat(name, POKEMONS.get(id).getName().equals(name));
-            LOG.info(() -> String.format("Pokemon id=%d name=%s", id, name));
+            LOGGER.info(() -> String.format("Pokemon id=%d name=%s", id, name));
         }
     }
 
     /**
      * Verify that database contains properly initialized pokemon types relation.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testListPokemonTypes() throws ExecutionException, InterruptedException {
@@ -178,7 +179,7 @@ public class InitIT extends AbstractIT {
             String pokemonName = row.column(2).as(String.class);
             Pokemon pokemon = POKEMONS.get(pokemonId);
             assertThat(pokemonName, POKEMONS.get(pokemonId).getName().equals(pokemonName));
-            LOG.info(() -> String.format("Pokemon id=%d name=%s", pokemonId, pokemonName));
+            LOGGER.info(() -> String.format("Pokemon id=%d name=%s", pokemonId, pokemonName));
             DbRows<DbRow> typeRows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-poketypes", pokemonId)
             ).toCompletableFuture().get();
@@ -186,7 +187,7 @@ public class InitIT extends AbstractIT {
             assertThat(typeRowsList.size(), equalTo(pokemon.getTypes().size()));
             for (DbRow typeRow : typeRowsList) {
                 Integer typeId = typeRow.column(2).as(Integer.class);
-                LOG.info(() -> String.format(" - Type id=%d name=%s", typeId, TYPES.get(typeId).getName()));
+                LOGGER.info(() -> String.format(" - Type id=%d name=%s", typeId, TYPES.get(typeId).getName()));
                 assertThat(pokemon.getTypes(), hasItem(TYPES.get(typeId)));
             }
         }

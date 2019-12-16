@@ -18,7 +18,6 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
@@ -35,7 +34,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class SimpleUpdateIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(SimpleUpdateIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SimpleUpdateIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 20;
@@ -54,8 +53,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Initialize tests of basic JDBC updates.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
     public static void setup() throws ExecutionException, InterruptedException {
@@ -69,7 +68,7 @@ public class SimpleUpdateIT extends AbstractIT {
             addPokemon(new Pokemon(++curId, "Sandslash", TYPES.get(5)));             // BASE_ID+6
             addPokemon(new Pokemon(++curId, "Diglett", TYPES.get(5)));               // BASE_ID+7
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Exception in setup: ", ex);
+            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }
@@ -77,8 +76,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Verify {@code createNamedUpdate(String, String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedUpdateStrStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -94,8 +93,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Verify {@code createNamedUpdate(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedUpdateStrNamedArgs() throws ExecutionException, InterruptedException {
@@ -111,8 +110,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Verify {@code createNamedUpdate(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateNamedUpdateStrOrderArgs() throws ExecutionException, InterruptedException {
@@ -128,8 +127,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Verify {@code createUpdate(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateUpdateNamedArgs() throws ExecutionException, InterruptedException {
@@ -145,8 +144,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Verify {@code createUpdate(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testCreateUpdateOrderArgs() throws ExecutionException, InterruptedException {
@@ -162,8 +161,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Verify {@code namedUpdate(String)} API method with named parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testNamedUpdateNamedArgs() throws ExecutionException, InterruptedException {
@@ -178,8 +177,8 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Verify {@code update(String)} API method with ordered parameters.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testUpdateOrderArgs() throws ExecutionException, InterruptedException {

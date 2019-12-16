@@ -40,10 +40,8 @@ import static org.hamcrest.Matchers.*;
  */
 public class InterceptorIT {
 
-    /**
-     * Local logger instance.
-     */
-    private static final Logger LOG = Logger.getLogger(InterceptorIT.class.getName());
+    /** Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(InterceptorIT.class.getName());
 
     private static final class TestInterceptor implements DbInterceptor {
 
@@ -80,8 +78,8 @@ public class InterceptorIT {
     /**
      * Check that statement interceptor was called before statement execution.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testStatementInterceptor() throws ExecutionException, InterruptedException {

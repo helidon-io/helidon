@@ -17,33 +17,35 @@ package io.helidon.tests.integration.dbclient.mongodb.destroy;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Destroy database
  */
 public class DestroyIT {
 
-    static final Logger LOG = Logger.getLogger(DestroyIT.class.getName());
+    /** Local logger instance. */
+    static final Logger LOGGER = Logger.getLogger(DestroyIT.class.getName());
 
     /**
      * Delete database content.
      *
      * @param dbClient Helidon database client
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     private static void deleteSchema(DbClient dbClient) throws ExecutionException, InterruptedException {
         dbClient.execute(exec -> exec
@@ -69,7 +71,7 @@ public class DestroyIT {
     /**
      * Verify that table Types does not exist.
      *
-     * @throws InterruptedException when database query failed
+     * @throws ExecutionException when database query failed
      */
     @Test
     public void testTypesDeleted() throws InterruptedException {
@@ -79,18 +81,18 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.warning(() -> String.format("Rows count: %d", rowsList.size()));
+                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
                 assertThat(rowsList, empty());
             }
         } catch (ExecutionException ex) {
-            LOG.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
+            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 
     /**
      * Verify that table Pokemons does not exist.
      *
-     * @throws InterruptedException when database query failed
+     * @throws ExecutionException when database query failed
      */
     @Test
     public void testPokemonsDeleted() throws InterruptedException {
@@ -100,18 +102,18 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.warning(() -> String.format("Rows count: %d", rowsList.size()));
+                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
                 assertThat(rowsList, empty());
             }
         } catch (ExecutionException ex) {
-            LOG.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
+            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 
     /**
      * Verify that table PokemonTypes does not exist.
      *
-     * @throws InterruptedException when database query failed
+     * @throws ExecutionException when database query failed
      */
     @Test
     public void testPokemonTypesDeleted() throws InterruptedException {
@@ -121,11 +123,11 @@ public class DestroyIT {
             ).toCompletableFuture().get();
             if (rows != null) {
                 List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOG.warning(() -> String.format("Rows count: %d", rowsList.size()));
+                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
                 assertThat(rowsList, empty());
             }
         } catch (ExecutionException ex) {
-            LOG.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
+            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
         }
     }
 

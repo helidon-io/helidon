@@ -38,8 +38,8 @@ public class GetStatementIT {
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testGetArrayParams() throws ExecutionException, InterruptedException {
@@ -54,8 +54,8 @@ public class GetStatementIT {
     /**
      * Verify {@code params(List<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testGetListParams() throws ExecutionException, InterruptedException {
@@ -73,8 +73,8 @@ public class GetStatementIT {
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testGetMapParams() throws ExecutionException, InterruptedException {
@@ -92,8 +92,8 @@ public class GetStatementIT {
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testGetOrderParam() throws ExecutionException, InterruptedException {
@@ -109,8 +109,8 @@ public class GetStatementIT {
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testGetNamedParam() throws ExecutionException, InterruptedException {
@@ -126,8 +126,8 @@ public class GetStatementIT {
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testGetMappedNamedParam() throws ExecutionException, InterruptedException {
@@ -143,8 +143,8 @@ public class GetStatementIT {
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
      *
-     * @throws InterruptedException when database query failed
-     * @throws ExecutionException if the current thread was interrupted
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
     public void testGetMappedOrderParam() throws ExecutionException, InterruptedException {
