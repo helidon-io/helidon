@@ -27,7 +27,7 @@ module io.helidon.microprofile.grpc.server {
 
     requires transitive io.grpc;
     requires grpc.protobuf.lite;
-    requires protobuf.java;
+    requires com.google.protobuf;
 
     requires java.logging;
 
