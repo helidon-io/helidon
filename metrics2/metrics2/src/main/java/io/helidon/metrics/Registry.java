@@ -485,6 +485,7 @@ public class Registry extends MetricRegistry implements io.helidon.common.metric
         final MetadataBuilder builder = new MetadataBuilder();
         builder.withName(metadata.getName())
                 .withDisplayName(metadata.getDisplayName())
+                .withType(metadata.getTypeRaw())
                 .reusable(metadata.isReusable());
 
         metadata.getDescription().ifPresent(builder::withDescription);

@@ -15,12 +15,12 @@
  */
 package io.helidon.integrations.jta.cdi;
 
-import java.util.Map; // for javadoc only
+import java.util.Map;
 
-import javax.transaction.Status; // for javadoc only
+import javax.transaction.Status;
 import javax.transaction.Synchronization;
-import javax.transaction.Transaction; // for javadoc only
-import javax.transaction.TransactionManager; // for javadoc only
+import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
 import javax.transaction.TransactionSynchronizationRegistry;
 
 /**

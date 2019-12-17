@@ -19,12 +19,12 @@ package io.helidon.config;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;

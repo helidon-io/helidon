@@ -33,12 +33,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.internal.PrefixedConfigSource;

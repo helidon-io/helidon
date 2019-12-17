@@ -27,7 +27,7 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.TransactionManager; // for javadoc only
+import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
 
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;

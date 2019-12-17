@@ -15,11 +15,11 @@
  */
 package io.helidon.webserver.accesslog;
 
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.LongAdder;
 
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 

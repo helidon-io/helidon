@@ -19,8 +19,8 @@ package io.helidon.config;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.UrlConfigSource.UrlBuilder;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigSource;

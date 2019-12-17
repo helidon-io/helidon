@@ -16,9 +16,8 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 
 /**
  * Implementation of {@link Single} that represents an error, raised during

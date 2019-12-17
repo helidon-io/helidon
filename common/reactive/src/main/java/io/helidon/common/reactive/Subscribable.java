@@ -15,9 +15,9 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
 import java.util.function.Consumer;
-
-import io.helidon.common.reactive.Flow.Publisher;
 
 /**
  * Decorated publisher that allows subscribing to individual events with java functions.

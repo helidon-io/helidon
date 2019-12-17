@@ -16,7 +16,6 @@
 
 package io.helidon.metrics;
 
-import io.helidon.common.CollectionsHelper;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +23,8 @@ import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+
+import io.helidon.common.CollectionsHelper;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;

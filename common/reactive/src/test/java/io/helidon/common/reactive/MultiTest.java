@@ -15,10 +15,11 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Flow.Subscription;
+
 import io.helidon.common.mapper.Mapper;
-import io.helidon.common.reactive.Flow.Subscription;
 
 import org.junit.jupiter.api.Test;
 

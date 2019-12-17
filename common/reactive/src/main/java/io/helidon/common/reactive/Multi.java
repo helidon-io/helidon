@@ -17,10 +17,10 @@ package io.helidon.common.reactive;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 
 import io.helidon.common.mapper.Mapper;
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
 
 import static io.helidon.common.CollectionsHelper.listOf;
 

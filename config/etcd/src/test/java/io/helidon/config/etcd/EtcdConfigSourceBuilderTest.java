@@ -18,10 +18,10 @@ package io.helidon.config.etcd;
 
 import java.net.URI;
 import java.util.Set;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;

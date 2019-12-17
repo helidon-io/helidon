@@ -23,10 +23,9 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
-import javax.transaction.Transactional;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionScoped;
+import javax.transaction.Transactional;
 import javax.transaction.UserTransaction;
 
 import org.junit.jupiter.api.AfterEach;

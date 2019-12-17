@@ -17,10 +17,10 @@
 package io.helidon.examples.quickstart.se;
 
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import java.net.URL;
-import java.net.HttpURLConnection;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -29,9 +29,9 @@ import javax.json.JsonReaderFactory;
 
 import io.helidon.webserver.WebServer;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class MainTest {

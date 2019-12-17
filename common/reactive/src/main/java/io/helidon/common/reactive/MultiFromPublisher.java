@@ -16,9 +16,9 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 
 /**
  * Implementation of {@link Multi} that is backed by a {@link Publisher}.

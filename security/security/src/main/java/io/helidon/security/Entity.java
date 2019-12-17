@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package io.helidon.security;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
-
-import io.helidon.common.reactive.Flow;
 
 /**
  * Access to message content (entity).

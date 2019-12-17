@@ -20,16 +20,17 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -377,7 +378,13 @@ abstract class SecurityFilterCommon {
             response.description().ifPresent(responseBuilder::entity);
         }
 
-        context.getJerseyRequest().abortWith(responseBuilder.build());
+        if (featureConfig.useAbortWith()) {
+            context.getJerseyRequest().abortWith(responseBuilder.build());
+        } else {
+            String description = response.description()
+                    .orElse("Security did not allow this request to proceed.");
+            throw new WebApplicationException(description, responseBuilder.build());
+        }
     }
 
     protected void updateHeaders(Map<String, List<String>> responseHeaders, Response.ResponseBuilder responseBuilder) {

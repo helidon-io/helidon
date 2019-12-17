@@ -18,6 +18,7 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -38,7 +39,7 @@ public class SingleSubscriberHolder<T> {
      * <p>
      * In case the subscriber registration fails (e.g. the holder already holds a previously registered subscriber
      * or the holder has been {@link #close(Consumer) closed}), the newly registered subscriber is notified about the
-     * error by invoking it's {@link io.helidon.common.reactive.Flow.Subscriber#onError(Throwable) subscriber.onError} method.
+     * error by invoking it's {@link java.util.concurrent.Flow.Subscriber#onError(Throwable) subscriber.onError} method.
      *
      * @param subscriber subscriber to be registered in the holder.
      * @return {@code true} if the subscriber was successfully registered, {@code false} otherwise.
@@ -67,7 +68,7 @@ public class SingleSubscriberHolder<T> {
     /**
      * Mark the subscriber holder as closed.
      * <p>
-     * Invoking this method will ensure that any new attempts to {@link #register(io.helidon.common.reactive.Flow.Subscriber)
+     * Invoking this method will ensure that any new attempts to {@link #register(java.util.concurrent.Flow.Subscriber)
      * register} a new subscriber
      * would fail.
      * <p>

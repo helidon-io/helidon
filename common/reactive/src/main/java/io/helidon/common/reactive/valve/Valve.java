@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Flow;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
-
-import io.helidon.common.reactive.Flow;
 
 /**
  * Represents a reactive source of data which can be {@link #pause() paused} and {@link #resume() resumed}.
@@ -199,9 +198,9 @@ public interface Valve<T> extends Pausable {
     }
 
     /**
-     * Transforms this {@code Valve} into {@link io.helidon.common.reactive.Flow.Publisher} representation. Resulting {@code
+     * Transforms this {@code Valve} into {@link java.util.concurrent.Flow.Publisher} representation. Resulting {@code
      * Publisher}
-     * accepts only single {@link io.helidon.common.reactive.Flow.Subscriber}.
+     * accepts only single {@link java.util.concurrent.Flow.Subscriber}.
      *
      * @return a {@code Publisher} representation
      */

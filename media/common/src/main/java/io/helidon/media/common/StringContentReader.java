@@ -21,10 +21,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
-import io.helidon.common.reactive.Flow;
 
 /**
  * The StringContentReader provides means to convert a {@link ByteBuffer} publisher to

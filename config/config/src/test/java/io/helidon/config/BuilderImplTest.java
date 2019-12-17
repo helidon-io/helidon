@@ -17,9 +17,9 @@
 package io.helidon.config;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.junit.jupiter.api.Test;

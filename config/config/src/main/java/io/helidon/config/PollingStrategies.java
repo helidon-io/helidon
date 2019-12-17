@@ -20,10 +20,10 @@ import java.nio.file.Path;
 import java.nio.file.WatchEvent.Modifier;
 import java.nio.file.WatchService;
 import java.time.Duration;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.Builder;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.FilesystemWatchPollingStrategy;
 import io.helidon.config.internal.ScheduledPollingStrategy;
 import io.helidon.config.internal.ScheduledPollingStrategy.RegularRecurringPolicy;

@@ -31,13 +31,13 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 
 import org.hamcrest.number.IsCloseTo;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
-import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests {@link HashRequestHeaders}.

@@ -36,7 +36,7 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopSpanBuilder;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
@@ -255,7 +255,7 @@ public abstract class WebTracingConfig {
                 }
             }
 
-            SpanContext inboundSpanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
+            SpanContext inboundSpanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(headersMap));
 
             if (inboundSpanContext instanceof NoopSpanBuilder) {
                 // this is all a noop stuff, does not matter what I do here - this is to prevent null pointers

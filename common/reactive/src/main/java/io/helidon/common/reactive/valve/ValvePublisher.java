@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.common.reactive.valve;
 
+import java.util.concurrent.Flow;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import io.helidon.common.reactive.Flow;
-
 /**
- * The ValvePublisher provides {@link io.helidon.common.reactive.Flow.Publisher} based API for the {@link Valve}.
+ * The ValvePublisher provides {@link java.util.concurrent.Flow.Publisher} based API for the {@link Valve}.
  * This publisher accepts only a single subscriber.
  *
  * @param <T> the type of items to be published
@@ -35,10 +34,10 @@ class ValvePublisher<T> implements Flow.Publisher<T> {
     private volatile PausableFeeder pausableFeeder;
 
     /**
-     * Creates a {@link io.helidon.common.reactive.Flow.Publisher} wrapping a provided {@link Valve}.
-     * Depending on the Valve implementation, only the first {@link io.helidon.common.reactive.Flow.Subscriber}
+     * Creates a {@link java.util.concurrent.Flow.Publisher} wrapping a provided {@link Valve}.
+     * Depending on the Valve implementation, only the first {@link java.util.concurrent.Flow.Subscriber}
      * (subscribed to any number of such created publishers for a single {@link Valve} instance) that calls
-     * {@link io.helidon.common.reactive.Flow.Subscription#request(long)} will be able to consume the produced items.
+     * {@link java.util.concurrent.Flow.Subscription#request(long)} will be able to consume the produced items.
      *
      * @param valve the valve to wrap
      */

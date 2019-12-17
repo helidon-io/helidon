@@ -20,8 +20,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
-import io.helidon.security.abac.role.RoleValidator;
-
 /**
  * A sub-resource does not have a Path annotation.
  */

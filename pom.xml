@@ -187,6 +187,10 @@
                         <release>11</release>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
+                            <!--
+                            https://issues.apache.org/jira/browse/MCOMPILER-368
+                             -->
+                            <arg>-Xpkginfo:always</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -195,8 +199,9 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
-                        <source>8</source>
-                        <release>8</release>
+                        <source>11</source>
+                        <release>11</release>
+                        <failOnError>false</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <!--<verbose>true</verbose>-->
@@ -319,7 +324,6 @@
                             <additionalOption>--add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>
                         </additionalOptions>
                         <sourceFileExcludes>
-                            <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>
                         </sourceFileExcludes>
                     </configuration>

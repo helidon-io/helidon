@@ -20,10 +20,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
 
 /**
