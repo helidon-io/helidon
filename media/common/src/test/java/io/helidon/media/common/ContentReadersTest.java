@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 
@@ -72,7 +71,7 @@ class ContentReadersTest {
                 .toCompletableFuture();
 
         InputStream inputStream = future.get(10, TimeUnit.SECONDS);
-        byte[] actualBytes = InputStreamHelper.readAllBytes(inputStream);
+        byte[] actualBytes = inputStream.readAllBytes();
         assertThat(actualBytes, is(bytes));
     }
 

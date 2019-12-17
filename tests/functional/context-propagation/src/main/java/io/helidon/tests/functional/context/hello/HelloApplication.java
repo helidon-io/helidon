@@ -21,8 +21,6 @@ import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * HelloApplication class.
  */
@@ -30,6 +28,6 @@ import io.helidon.common.CollectionsHelper;
 public class HelloApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(HelloResource.class);
+        return Set.of(HelloResource.class);
     }
 }

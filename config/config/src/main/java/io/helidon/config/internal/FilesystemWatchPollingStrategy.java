@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
@@ -225,7 +224,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
             Path dir = parentDir(target);
             WatchKey oldWatchKey = watchKey;
             watchKey = dir.register(watchService,
-                                    CollectionsHelper.listOf(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+                                    List.of(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
                                             .toArray(new WatchEvent.Kind[0]),
                                     watchServiceModifiers.toArray(new WatchEvent.Modifier[0]));
             if (oldWatchKey != null) {

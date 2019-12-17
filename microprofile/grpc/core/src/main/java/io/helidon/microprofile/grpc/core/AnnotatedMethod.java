@@ -29,8 +29,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * A model of an annotated gRPC method.
  */
@@ -40,13 +38,13 @@ public class AnnotatedMethod implements AnnotatedElement {
      * The set of meta-annotations that are used to identify an annotated gRPC method.
      */
     private static final Set<Class<? extends Annotation>> METHOD_META_ANNOTATIONS
-            = CollectionsHelper.setOf(RpcMethod.class);
+            = Set.of(RpcMethod.class);
 
     /**
      * The set of annotations that are used to identify an annotated gRPC method.
      */
     private static final Set<Class<? extends Annotation>> METHOD_ANNOTATIONS
-            = CollectionsHelper.setOf(RpcMethod.class,
+            = Set.of(RpcMethod.class,
                                       Bidirectional.class,
                                       ClientStreaming.class,
                                       ServerStreaming.class,
@@ -55,7 +53,7 @@ public class AnnotatedMethod implements AnnotatedElement {
     /**
      * The set of method parameter annotations that are used to identify an annotated gRPC method.
      */
-    private static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATIONS = CollectionsHelper.setOf();
+    private static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATIONS = Set.of();
 
     /**
      * The declared method this {@link AnnotatedMethod} represents.

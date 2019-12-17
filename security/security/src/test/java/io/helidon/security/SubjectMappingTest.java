@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package io.helidon.security;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
 
@@ -72,8 +72,8 @@ public class SubjectMappingTest {
 
         Subject subject = authenticate.user().get();
         assertThat(subject.principal().getName(), is("jarda"));
-        assertThat(Security.getRoles(subject), is(CollectionsHelper.setOf()));
-        assertThat(subject.grantsByType(CUSTOM_GRANT_TYPE), is(CollectionsHelper.listOf()));
+        assertThat(Security.getRoles(subject), is(Set.of()));
+        assertThat(subject.grantsByType(CUSTOM_GRANT_TYPE), is(List.of()));
     }
 
     @Test
@@ -89,14 +89,14 @@ public class SubjectMappingTest {
         Subject subject = authenticate.user().get();
         assertThat(subject.principal().getName(), is("jarda"));
 
-        assertThat(Security.getRoles(subject), is(CollectionsHelper.setOf("jarda_role")));
+        assertThat(Security.getRoles(subject), is(Set.of("jarda_role")));
         List<Role> roleGrants = subject.grants(Role.class);
         assertThat("There should be exactly one role granted", roleGrants.size(), is(1));
         Role role = roleGrants.get(0);
         assertThat(role.getName(), is("jarda_role"));
         assertThat(role.origin(), is(MAPPER_ORIGIN));
 
-        assertThat(subject.grantsByType("custom-grant-type"), not(CollectionsHelper.listOf()));
+        assertThat(subject.grantsByType("custom-grant-type"), not(List.of()));
         List<Grant> customGrants = subject.grantsByType(CUSTOM_GRANT_TYPE);
         assertThat("There should be exactly one role granted", customGrants.size(), is(1));
         Grant grant = customGrants.get(0);

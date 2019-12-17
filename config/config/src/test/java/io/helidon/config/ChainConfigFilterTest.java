@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package io.helidon.config;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.ProviderImpl.ChainConfigFilter;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
@@ -114,7 +114,7 @@ public class ChainConfigFilterTest {
         final String defaultValue = "default value";
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(Map.of(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,
@@ -180,7 +180,7 @@ public class ChainConfigFilterTest {
     private final void runQuadTest(boolean useCaching, String expectedValue,
             AssertingFilter.Provider... filterProviders) {
         Config.Builder builder = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         Quad.key, Quad.originalValue, Quad.referenceKey, Quad.referenceValue)));
         if (! useCaching) {
             builder.disableCaching();
@@ -217,7 +217,7 @@ public class ChainConfigFilterTest {
         AtomicInteger counter = new AtomicInteger();
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(Map.of(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,
@@ -240,7 +240,7 @@ public class ChainConfigFilterTest {
         AtomicInteger counter = new AtomicInteger();
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(Map.of(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,

@@ -43,9 +43,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -190,7 +188,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(ScopeValidator.Scope.class, ScopeValidator.Scopes.class);
+        return Set.of(ScopeValidator.Scope.class, ScopeValidator.Scopes.class);
     }
 
     @Override
@@ -205,29 +203,28 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
         try {
             if (oidcConfig.useHeader()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()))
-                        .asOptional();
-                if (!token.isPresent()) {
+                token = token
+                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()));
+
+                if (token.isEmpty()) {
                     missingLocations.add("header");
                 }
             }
 
             if (oidcConfig.useParam()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
-                        .asOptional();
+                token = token
+                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()));
 
-                if (!token.isPresent()) {
+                if (token.isEmpty()) {
                     missingLocations.add("query-param");
                 }
             }
 
             if (oidcConfig.useCookie()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> findCookie(providerRequest.env().headers()))
-                        .asOptional();
-                if (!token.isPresent()) {
+                token = token
+                        .or(() -> findCookie(providerRequest.env().headers()));
+
+                if (token.isEmpty()) {
                     missingLocations.add("cookie");
                 }
             }
@@ -379,10 +376,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
     private String origUri(ProviderRequest providerRequest) {
         List<String> origUri = providerRequest.env().headers()
-                .getOrDefault(Security.HEADER_ORIG_URI, CollectionsHelper.listOf());
+                .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
         if (origUri.isEmpty()) {
-            origUri = CollectionsHelper.listOf(providerRequest.env().targetUri().getPath());
+            origUri = List.of(providerRequest.env().targetUri().getPath());
         }
 
         return origUri.get(0);

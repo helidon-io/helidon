@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.config.internal;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigFilters;
@@ -47,7 +47,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolving() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "message", "${greeting} ${name}!",
                                 "greeting", "Hallo",
                                 "name", "Joachim"
@@ -65,7 +65,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingDottedReference() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "message", "${greeting.german} ${name}!",
                                 "greeting.german", "Hallo",
                                 "name", "Joachim"
@@ -83,7 +83,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingTransitive() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "message", "${template}",
                                 "template", "${greeting} ${name}!",
                                 "name", "Joachim",
@@ -102,7 +102,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingBackslashed() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "message", "${template}",
                                 "template", "${greeting} \\${name}!",
                                 "name", "Joachim",
@@ -121,7 +121,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingBackslashIgnored() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "message", "${greeting} \\ ${name}!",
                                 "name", "Joachim",
                                 "greeting", "Hallo"
@@ -139,7 +139,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingBackslashIgnored2() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "message", "${template}",
                                 "template", "${greeting} \\ ${name}!",
                                 "name", "Joachim",
@@ -169,7 +169,7 @@ public class ValueResolvingFilterTest {
                 LoopTestResult result = new LoopTestResult();
                 Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "message", "There ${template}",
                                 "template", "and back again ${message}"
                         )))
@@ -204,7 +204,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingMissingReferenceIgnored() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "wrong", "${missing}"
                         )))
                 .addFilter(ConfigFilters.valueResolving())
@@ -220,7 +220,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingMissingReferenceNoFilter() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "wrong", "${missing}"
                         )))
                 .disableEnvironmentVariablesSource()
@@ -235,7 +235,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingMissingReferenceFails() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "wrong", "${missing}"
                         )))
                 .addFilter(ConfigFilters.valueResolving()
@@ -257,7 +257,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingMissingReferenceOKViaNoArgsCtor() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "wrong", "${missing}"
                         )))
                 .addFilter(new ValueResolvingFilter())
@@ -273,7 +273,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingMissingReferenceFailsViaNoArgsCtor() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "wrong", "${missing}"
                         )))
                 .addFilter(ConfigFilters.valueResolving().failOnMissingReference(true).build())
@@ -293,7 +293,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingMissingReferenceFailsViaServiceLoader() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "wrong", "${missing}",
                                 ConfigFilters.ValueResolvingBuilder.FAIL_ON_MISSING_REFERENCE_KEY_NAME, "true"
                         )))
@@ -312,7 +312,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingMissingReferenceOKViaServiceLoader() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "wrong", "${missing}"
                         )))
                 .disableEnvironmentVariablesSource()
@@ -326,7 +326,7 @@ public class ValueResolvingFilterTest {
     public void testValueResolvingSatisfiedReferenceViaServiceLoader() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "correct", "${refc}",
                                 "refc", "answer"
                         )))

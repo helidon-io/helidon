@@ -31,7 +31,6 @@ import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -121,7 +120,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             switch (status) {
             case FAILURE:
             case FAILURE_FINISH:
-                OptionalHelper.from(providerResponse.throwable())
+                providerResponse.throwable()
                         .ifPresentOrElse(tracing::error,
                                          () -> tracing.error(providerResponse.description().orElse("Failed")));
 
@@ -155,21 +154,17 @@ public class ClientSecurityFilter implements ClientRequestFilter {
     }
 
     private Optional<SecurityContext> findContext(ClientRequestContext requestContext) {
-        return OptionalHelper
-                // from client property
-                .from(property(requestContext, SecurityContext.class, ClientSecurity.PROPERTY_CONTEXT))
-                // then look for security context in context
-                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)))
-                .asOptional();
+        return  // client property
+                property(requestContext, SecurityContext.class, ClientSecurity.PROPERTY_CONTEXT)
+                        // then look for security context in context
+                        .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)));
     }
 
     private static <T> Optional<T> property(ClientRequestContext requestContext, Class<T> clazz, String propertyName) {
-        return OptionalHelper.from(Optional.empty())
-                .or(() -> Optional.ofNullable(requestContext.getProperty(propertyName))
-                        .filter(clazz::isInstance))
+        return Optional.ofNullable(requestContext.getProperty(propertyName))
+                .filter(clazz::isInstance)
                 .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
                         .filter(clazz::isInstance))
-                .asOptional()
                 .map(clazz::cast);
     }
 }

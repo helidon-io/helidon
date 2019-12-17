@@ -16,7 +16,8 @@
 
 package io.helidon.metrics;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -54,7 +55,7 @@ public class RegistryFactoryTest {
     static void createInstance() {
         unconfigured = RegistryFactory.create();
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "base." + METRIC_USED_HEAP + ".enabled",
                         "false")))
                 .build();

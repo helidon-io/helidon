@@ -37,7 +37,6 @@ import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -329,7 +328,7 @@ public interface Server {
                                                               .get("cdi")
                                                               .detach()
                                                               .asMap()
-                                                              .orElse(CollectionsHelper.mapOf()));
+                                                              .orElse(Map.of()));
             initializer.setProperties(props);
 
             // add resource classes explicitly configured without CDI annotations

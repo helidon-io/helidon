@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package io.helidon.config.tests.mappers2;
 
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.OptionalInt;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -40,7 +40,7 @@ public abstract class AbstractDifferentIntMapperServicesTest {
 
     protected Config.Builder configBuilder() {
         return Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(KEY, CONFIGURED_VALUE)));
+                .sources(ConfigSources.create(Map.of(KEY, CONFIGURED_VALUE)));
     }
 
     abstract protected int expected();

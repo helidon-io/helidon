@@ -41,9 +41,7 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.jwt.jwk.Jwk;
 
 /**
@@ -250,7 +248,7 @@ public class Jwt {
         if (groups instanceof JsonArray) {
             this.userGroups = JwtUtil.getStrings(payloadJson, "groups");
         } else {
-            this.userGroups = JwtUtil.getString(payloadJson, "groups").map(CollectionsHelper::listOf);
+            this.userGroups = JwtUtil.getString(payloadJson, "groups").map(List::of);
         }
 
         JsonValue aud = payloadJson.get("aud");
@@ -258,7 +256,7 @@ public class Jwt {
         if (aud instanceof JsonArray) {
             this.audience = JwtUtil.getStrings(payloadJson, "aud");
         } else {
-            this.audience = JwtUtil.getString(payloadJson, "aud").map(CollectionsHelper::listOf);
+            this.audience = JwtUtil.getString(payloadJson, "aud").map(List::of);
         }
 
         this.jwtId = JwtUtil.getString(payloadJson, "jti");
@@ -285,10 +283,9 @@ public class Jwt {
         this.cHash = JwtUtil.getByteArray(payloadJson, "c_hash", "c_hash value");
         this.nonce = JwtUtil.getString(payloadJson, "nonce");
         this.scopes = JwtUtil.toScopes(payloadJson);
-        this.userPrincipal = OptionalHelper.from(JwtUtil.getString(payloadJson, "upn"))
+        this.userPrincipal = JwtUtil.getString(payloadJson, "upn")
                 .or(() -> preferredUsername)
-                .or(() -> subject)
-                .asOptional();
+                .or(() -> subject);
     }
 
     private Jwt(Builder builder) {
@@ -299,48 +296,39 @@ public class Jwt {
         this.payloadClaims.putAll(JwtUtil.transformToJson(builder.payloadClaims));
 
         // known headers
-        this.algorithm = OptionalHelper.from(builder.algorithm).or(() -> toOptionalString(builder.payloadClaims, "alg"))
-                .asOptional();
-        this.keyId = OptionalHelper.from(builder.keyId).or(() -> toOptionalString(builder.payloadClaims, "kid")).asOptional();
-        this.type = OptionalHelper.from(builder.type).or(() -> toOptionalString(builder.payloadClaims, "typ")).asOptional();
-        this.contentType = OptionalHelper.from(builder.contentType).or(() -> toOptionalString(builder.payloadClaims, "cty"))
-                .asOptional();
+        this.algorithm = builder.algorithm.or(() -> toOptionalString(builder.payloadClaims, "alg"));
+        this.keyId = builder.keyId.or(() -> toOptionalString(builder.payloadClaims, "kid"));
+        this.type = builder.type.or(() -> toOptionalString(builder.payloadClaims, "typ"));
+        this.contentType = builder.contentType.or(() -> toOptionalString(builder.payloadClaims, "cty"));
 
         // known payload
         this.issuer = builder.issuer;
         this.expirationTime = builder.expirationTime;
         this.issueTime = builder.issueTime;
         this.notBefore = builder.notBefore;
-        this.subject = OptionalHelper.from(builder.subject).or(() -> toOptionalString(builder.payloadClaims, "sub")).asOptional();
+        this.subject = builder.subject.or(() -> toOptionalString(builder.payloadClaims, "sub"));
         this.audience = builder.audience;
         this.jwtId = builder.jwtId;
-        this.email = OptionalHelper.from(builder.email).or(() -> toOptionalString(builder.payloadClaims, "email")).asOptional();
-        this.emailVerified = OptionalHelper.from(builder.emailVerified)
-                .or(() -> getClaim(builder.payloadClaims, "email_verified")).asOptional();
-        this.fullName = OptionalHelper.from(builder.fullName).or(() -> toOptionalString(builder.payloadClaims, "name"))
-                .asOptional();
-        this.givenName = OptionalHelper.from(builder.givenName).or(() -> toOptionalString(builder.payloadClaims, "given_name"))
-                .asOptional();
-        this.middleName = OptionalHelper.from(builder.middleName).or(() -> toOptionalString(builder.payloadClaims, "middle_name"))
-                .asOptional();
-        this.familyName = OptionalHelper.from(builder.familyName).or(() -> toOptionalString(builder.payloadClaims, "family_name"))
-                .asOptional();
-        this.locale = OptionalHelper.from(builder.locale).or(() -> getClaim(builder.payloadClaims, "locale")).asOptional();
-        this.nickname = OptionalHelper.from(builder.nickname).or(() -> toOptionalString(builder.payloadClaims, "nickname"))
-                .asOptional();
-        this.preferredUsername = OptionalHelper.from(builder.preferredUsername)
-                .or(() -> toOptionalString(builder.payloadClaims, "preferred_username")).asOptional();
-        this.profile = OptionalHelper.from(builder.profile).or(() -> getClaim(builder.payloadClaims, "profile")).asOptional();
-        this.picture = OptionalHelper.from(builder.picture).or(() -> getClaim(builder.payloadClaims, "picture")).asOptional();
-        this.website = OptionalHelper.from(builder.website).or(() -> getClaim(builder.payloadClaims, "website")).asOptional();
-        this.gender = OptionalHelper.from(builder.gender).or(() -> toOptionalString(builder.payloadClaims, "gender"))
-                .asOptional();
-        this.birthday = OptionalHelper.from(builder.birthday).or(() -> getClaim(builder.payloadClaims, "birthday")).asOptional();
-        this.timeZone = OptionalHelper.from(builder.timeZone).or(() -> getClaim(builder.payloadClaims, "zoneinfo")).asOptional();
-        this.phoneNumber = OptionalHelper.from(builder.phoneNumber)
-                .or(() -> toOptionalString(builder.payloadClaims, "phone_number")).asOptional();
-        this.phoneNumberVerified = OptionalHelper.from(builder.phoneNumberVerified)
-                .or(() -> getClaim(builder.payloadClaims, "phone_number_verified")).asOptional();
+        this.email = builder.email.or(() -> toOptionalString(builder.payloadClaims, "email"));
+        this.emailVerified = builder.emailVerified.or(() -> getClaim(builder.payloadClaims, "email_verified"));
+        this.fullName = builder.fullName.or(() -> toOptionalString(builder.payloadClaims, "name"));
+        this.givenName = builder.givenName.or(() -> toOptionalString(builder.payloadClaims, "given_name"));
+        this.middleName = builder.middleName.or(() -> toOptionalString(builder.payloadClaims, "middle_name"));
+        this.familyName = builder.familyName.or(() -> toOptionalString(builder.payloadClaims, "family_name"));
+        this.locale = builder.locale.or(() -> getClaim(builder.payloadClaims, "locale"));
+        this.nickname = builder.nickname.or(() -> toOptionalString(builder.payloadClaims, "nickname"));
+        this.preferredUsername = builder.preferredUsername
+                .or(() -> toOptionalString(builder.payloadClaims, "preferred_username"));
+        this.profile = builder.profile.or(() -> getClaim(builder.payloadClaims, "profile"));
+        this.picture = builder.picture.or(() -> getClaim(builder.payloadClaims, "picture"));
+        this.website = builder.website.or(() -> getClaim(builder.payloadClaims, "website"));
+        this.gender = builder.gender.or(() -> toOptionalString(builder.payloadClaims, "gender"));
+        this.birthday = builder.birthday.or(() -> getClaim(builder.payloadClaims, "birthday"));
+        this.timeZone = builder.timeZone.or(() -> getClaim(builder.payloadClaims, "zoneinfo"));
+        this.phoneNumber = builder.phoneNumber
+                .or(() -> toOptionalString(builder.payloadClaims, "phone_number"));
+        this.phoneNumberVerified = builder.phoneNumberVerified
+                .or(() -> getClaim(builder.payloadClaims, "phone_number_verified"));
 
         this.updatedAt = builder.updatedAt;
         this.address = builder.address;
@@ -349,11 +337,10 @@ public class Jwt {
         this.nonce = builder.nonce;
         this.scopes = builder.scopes;
 
-        this.userPrincipal = OptionalHelper.from(builder.userPrincipal)
+        this.userPrincipal = builder.userPrincipal
                 .or(() -> toOptionalString(builder.payloadClaims, "upn"))
                 .or(() -> preferredUsername)
-                .or(() -> subject)
-                .asOptional();
+                .or(() -> subject);
 
         this.userGroups = builder.userGroups;
     }
@@ -1350,7 +1337,7 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder addScope(String scope) {
-            this.scopes = OptionalHelper.from(this.scopes).or(() -> Optional.of(new LinkedList<>())).asOptional();
+            this.scopes = this.scopes.or(() -> Optional.of(new LinkedList<>()));
             this.scopes.ifPresent(it -> it.add(scope));
             return this;
         }
@@ -1363,7 +1350,7 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder addUserGroup(String group) {
-            this.userGroups = OptionalHelper.from(this.userGroups).or(() -> Optional.of(new LinkedList<>())).asOptional();
+            this.userGroups = this.userGroups.or(() -> Optional.of(new LinkedList<>()));
             this.userGroups.ifPresent(it -> it.add(group));
             return this;
         }

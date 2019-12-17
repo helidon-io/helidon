@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-
-import static io.helidon.common.CollectionsHelper.listOf;
 
 /**
  * Integration of security into Web Server.
@@ -367,7 +365,7 @@ public final class WebSecurity implements Service {
 
         wsConfig.get("paths").asNodeList().ifPresent(configs -> {
             for (Config pathConfig : configs) {
-                List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().orElse(listOf())
+                List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().orElse(List.of())
                         .stream()
                         .map(Config::asString)
                         .map(ConfigValue::get)

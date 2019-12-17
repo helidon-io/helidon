@@ -29,7 +29,6 @@ import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -78,7 +77,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         // from there
 
         // first try to find the context on request configuration
-        OptionalHelper.from(findContext(requestContext))
+        findContext(requestContext)
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)))
                 .ifPresentOrElse(securityContext -> outboundSecurity(requestContext, securityContext),
                                  () -> LOGGER.finest("Security not propagated, as security context is not available "
@@ -121,7 +120,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             switch (status) {
             case FAILURE:
             case FAILURE_FINISH:
-                OptionalHelper.from(providerResponse.throwable())
+                providerResponse.throwable()
                         .ifPresentOrElse(tracing::error,
                                          () -> tracing.error(providerResponse.description().orElse("Failed")));
 

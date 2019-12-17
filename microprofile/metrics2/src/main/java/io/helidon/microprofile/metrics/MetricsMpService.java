@@ -17,9 +17,9 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
@@ -66,7 +66,7 @@ public class MetricsMpService implements MpService {
         // now we may have additional sockets we want to add vendor metrics to
         metricsConfig.get("vendor-metrics-routings")
                 .asList(String.class)
-                .orElseGet(CollectionsHelper::listOf)
+                .orElseGet(List::of)
                 .forEach(routeName -> {
                     if (!vendorMetricsAdded.contains(routeName)) {
                         metricsSupport.configureVendorMetrics(routeName, serviceContext.serverNamedRoutingBuilder(routeName));

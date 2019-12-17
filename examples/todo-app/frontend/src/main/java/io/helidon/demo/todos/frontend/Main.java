@@ -17,6 +17,7 @@
 package io.helidon.demo.todos.frontend;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -39,7 +40,6 @@ import io.helidon.webserver.accesslog.AccessLogSupport;
 import io.opentracing.Tracer;
 import org.glassfish.jersey.logging.LoggingFeature;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
 import static io.helidon.config.ConfigSources.file;
@@ -173,7 +173,7 @@ public final class Main {
      */
     private static Config buildConfig() {
         return Config.builder()
-                .sources(listOf(
+                .sources(List.of(
                         environmentVariables(),
                         // expected on development machine
                         // to override props for dev

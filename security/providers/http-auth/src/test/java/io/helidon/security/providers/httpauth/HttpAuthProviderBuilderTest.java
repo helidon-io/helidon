@@ -22,10 +22,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.Security;
@@ -73,12 +73,12 @@ public class HttpAuthProviderBuilderTest {
             if ("jack".equals(login)) {
                 return Optional.of(new TestUser("jack",
                                                 "jackIsGreat".toCharArray(),
-                                                CollectionsHelper.setOf("user", "admin")));
+                                                Set.of("user", "admin")));
             }
             if ("jill".equals(login)) {
                 return Optional.of(new TestUser("jill",
                                                 "password".toCharArray(),
-                                                CollectionsHelper.setOf("user")));
+                                                Set.of("user")));
             }
 
             return Optional.empty();

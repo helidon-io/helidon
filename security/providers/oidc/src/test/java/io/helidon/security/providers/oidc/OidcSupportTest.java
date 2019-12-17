@@ -18,9 +18,9 @@ package io.helidon.security.providers.oidc;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.EndpointConfig;
@@ -78,7 +78,7 @@ class OidcSupportTest {
             .outboundConfig(OutboundConfig.builder()
                                     .addTarget(OutboundTarget.builder("disabled")
                                                        .addHost("www.example.com")
-                                                       .config(Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+                                                       .config(Config.create(ConfigSources.create(Map.of(
                                                                "propagate",
                                                                "false"))))
                                                        .build())

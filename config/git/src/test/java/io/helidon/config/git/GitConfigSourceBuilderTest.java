@@ -22,6 +22,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -29,7 +30,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
@@ -292,7 +292,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testFromConfigMandatory() {
-        Config metaConfig = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("path", "application.properties")))
+        Config metaConfig = Config.builder(ConfigSources.create(Map.of("path", "application.properties")))
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
@@ -308,7 +308,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
     public void testFromConfigAll() throws IOException {
         Path directory = folder.newFolder().toPath();
 
-        Config metaConfig = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("path", "application.properties",
+        Config metaConfig = Config.builder(ConfigSources.create(Map.of("path", "application.properties",
                                                                                         "uri", fileUri(),
                                                                                         "branch", "test",
                                                                                         "directory", directory.toString())))
@@ -327,7 +327,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
     public void testFromConfigWithCustomPollingStrategy() throws IOException {
         Path directory = folder.newFolder().toPath();
 
-        Config metaConfig = Config.builder(ConfigSources.create(CollectionsHelper.mapOf(
+        Config metaConfig = Config.builder(ConfigSources.create(Map.of(
                 "path", "application.properties",
                 "uri", fileUri(),
                 "branch", "test",
@@ -431,7 +431,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
         @Override
         public Set<String> supported() {
-            return CollectionsHelper.setOf(TYPE);
+            return Set.of(TYPE);
         }
     }
 

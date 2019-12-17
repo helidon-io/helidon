@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.tracing.tests.it1;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +29,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.zipkin.ZipkinTracer;
 import io.helidon.webserver.Routing;
@@ -75,7 +75,7 @@ public class OpentraceableClientE2ETest {
                                       .build();
 
         // use this to create an OpenTracing Tracer
-        return new ZipkinTracer(BraveTracer.create(braveTracing), CollectionsHelper.listOf());
+        return new ZipkinTracer(BraveTracer.create(braveTracing), List.of());
     }
 
     private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {

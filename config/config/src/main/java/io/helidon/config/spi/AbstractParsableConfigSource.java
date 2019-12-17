@@ -18,7 +18,6 @@ package io.helidon.config.spi;
 
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -95,10 +94,9 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      * @throws ConfigParserException in case of problem to parse configuration from the source
      */
     private ObjectNode parse(ConfigContext context, ConfigParser.Content<S> content) throws ConfigParserException {
-        return OptionalHelper.from(Optional.ofNullable(parser()))
+        return Optional.ofNullable(parser())
                 .or(() -> context.findParser(Optional.ofNullable(content.mediaType())
                                                      .orElseThrow(() -> new ConfigException("Unknown media type."))))
-                .asOptional()
                 .map(parser -> parser.parse(content))
                 .orElseThrow(() -> new ConfigException("Cannot find suitable parser for '"
                                                                + content.mediaType() + "' media type."));

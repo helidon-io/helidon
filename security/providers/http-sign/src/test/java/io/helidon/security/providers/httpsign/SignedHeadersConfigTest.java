@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 
 import org.hamcrest.CoreMatchers;
@@ -51,11 +50,11 @@ public class SignedHeadersConfigTest {
     @Test
     public void testFromBuilder() {
         SignedHeadersConfig shc = SignedHeadersConfig.builder()
-                .defaultConfig(SignedHeadersConfig.HeadersConfig.create(CollectionsHelper.listOf("date")))
+                .defaultConfig(SignedHeadersConfig.HeadersConfig.create(List.of("date")))
                 .config("get",
                         SignedHeadersConfig.HeadersConfig
-                                .create(CollectionsHelper.listOf("date", REQUEST_TARGET, "host"),
-                                        CollectionsHelper.listOf("authorization")))
+                                .create(List.of("date", REQUEST_TARGET, "host"),
+                                        List.of("authorization")))
                 .build();
 
         testThem(shc);
@@ -74,7 +73,7 @@ public class SignedHeadersConfigTest {
         assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization", REQUEST_TARGET, "host")));
 
         //now let's add authorization to the request headers
-        headers.put("Authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
         requiredHeaders = shc.headers("get", headers);
         // first check we get the mandatory ones even if they are not present in request
         assertThat(requiredHeaders, CoreMatchers.hasItems("date", REQUEST_TARGET, "host", "authorization"));

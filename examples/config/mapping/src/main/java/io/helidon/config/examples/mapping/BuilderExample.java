@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.config.examples.mapping;
 import java.util.List;
 import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.objectmapping.Value;
@@ -178,7 +177,7 @@ public static class AppConfig {
         public static class DefaultBasicRangeSupplier implements Supplier<List<Integer>> {
             @Override
             public List<Integer> get() {
-                return CollectionsHelper.listOf(-10, 10);
+                return List.of(-10, 10);
             }
         }
     }

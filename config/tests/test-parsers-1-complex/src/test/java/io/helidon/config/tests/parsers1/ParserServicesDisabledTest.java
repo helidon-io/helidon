@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package io.helidon.config.tests.parsers1;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
@@ -44,7 +45,7 @@ public class ParserServicesDisabledTest extends AbstractParserServicesTest {
             configBuilder().build();
         });
 
-        assertThat(ce.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+        assertThat(ce.getMessage(), stringContainsInOrder(List.of(
                 "Cannot load data from mandatory source",
                 "InMemoryConfig[String]",
                 "Cannot find suitable parser for 'text/x-java-properties' media type.")));

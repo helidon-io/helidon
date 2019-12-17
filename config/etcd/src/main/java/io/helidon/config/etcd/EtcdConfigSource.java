@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
@@ -58,9 +57,8 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
 
     @Override
     protected String mediaType() {
-        return OptionalHelper.from(Optional.ofNullable(super.mediaType()))
+        return Optional.ofNullable(super.mediaType())
                 .or(this::probeContentType)
-                .asOptional()
                 .orElse(null);
     }
 

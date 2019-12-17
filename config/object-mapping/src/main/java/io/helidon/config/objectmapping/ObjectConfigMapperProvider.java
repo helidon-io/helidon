@@ -22,8 +22,6 @@ import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
 import io.helidon.config.objectmapping.ObjectConfigMappers.ConfigMethodHandleConfigMapper;
@@ -54,14 +52,13 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
-        return CollectionsHelper.mapOf();
+        return Map.of();
     }
 
     @Override
     public <T> Optional<Function<Config, T>> mapper(Class<T> type) {
-        return OptionalHelper
-                // T create(Config)
-                .from(findStaticConfigMethodMapper(type, METHOD_CREATE))
+        return  // T create(Config)
+                findStaticConfigMethodMapper(type, METHOD_CREATE)
                 // T from(Config)
                 .or(() -> findStaticConfigMethodMapper(type, METHOD_FROM))
                 // Config constructor
@@ -97,9 +94,8 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
                 // constructor(param, params...)
                 .or(() -> findConstructorWithParamsMapper(type))
                 // generic mapping support
-                .or(() -> findGenericMapper(type))
+                .or(() -> findGenericMapper(type));
                 // we could not find anything, let config decide what to do
-                .asOptional();
     }
 
     private static <T> Optional<Function<Config, T>> findStaticConfigMethodMapper(Class<T> type,

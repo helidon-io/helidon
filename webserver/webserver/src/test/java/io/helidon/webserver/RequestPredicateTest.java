@@ -26,8 +26,6 @@ import io.helidon.webserver.RoutingTest.RoutingChecker;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static io.helidon.common.CollectionsHelper.listOf;
-import static io.helidon.common.CollectionsHelper.mapOf;
 import static io.helidon.webserver.RoutingTest.mockResponse;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -122,12 +120,12 @@ public class RequestPredicateTest {
                     .containsHeader(null);
         });
 
-        routing.route(mockRequest("/exists", mapOf("my-header", listOf("abc"))),
+        routing.route(mockRequest("/exists", Map.of("my-header", List.of("abc"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerFound"));
 
         checker.reset();
-        routing.route(mockRequest("/exists", mapOf()), mockResponse());
+        routing.route(mockRequest("/exists", Map.of()), mockResponse());
         assertThat(checker.handlersInvoked(), is("headerNotFound"));
     }
 
@@ -154,12 +152,12 @@ public class RequestPredicateTest {
                     .containsHeader(null, "abc"::equals);
         });
 
-        routing.route(mockRequest("/valid", mapOf("my-header", listOf("abc"))),
+        routing.route(mockRequest("/valid", Map.of("my-header", List.of("abc"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsValid"));
 
         checker.reset();
-        routing.route(mockRequest("/valid", mapOf("my-header", listOf("def"))),
+        routing.route(mockRequest("/valid", Map.of("my-header", List.of("def"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsNotValid"));
     }
@@ -187,12 +185,12 @@ public class RequestPredicateTest {
                     .containsHeader(null, "abc");
         });
 
-        routing.route(mockRequest("/equals", mapOf("my-header", listOf("abc"))),
+        routing.route(mockRequest("/equals", Map.of("my-header", List.of("abc"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsEqual"));
 
         checker.reset();
-        routing.route(mockRequest("/equals", mapOf("my-header", listOf("def"))),
+        routing.route(mockRequest("/equals", Map.of("my-header", List.of("def"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsNotEqual"));
     }
@@ -317,13 +315,13 @@ public class RequestPredicateTest {
                     .containsCookie(null);
         });
 
-        routing.route(mockRequest("/exists", mapOf("cookie",
-                listOf("my-cookie=abc"))), mockResponse());
+        routing.route(mockRequest("/exists", Map.of("cookie",
+                List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieFound"));
 
         checker.reset();
-        routing.route(mockRequest("/exists", mapOf("cookie",
-                listOf("other-cookie=abc"))), mockResponse());
+        routing.route(mockRequest("/exists", Map.of("cookie",
+                List.of("other-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieNotFound"));
     }
 
@@ -350,18 +348,18 @@ public class RequestPredicateTest {
                     .containsCookie(null, "abc");
         });
 
-        routing.route(mockRequest("/valid", mapOf("cookie",
-                listOf("my-cookie=abc"))), mockResponse());
+        routing.route(mockRequest("/valid", Map.of("cookie",
+                List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsValid"));
 
         checker.reset();
-        routing.route(mockRequest("/valid", mapOf("cookie",
-                listOf("my-cookie=def"))), mockResponse());
+        routing.route(mockRequest("/valid", Map.of("cookie",
+                List.of("my-cookie=def"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsNotValid"));
 
         checker.reset();
-        routing.route(mockRequest("/valid", mapOf("cookie",
-                listOf("my-cookie="))), mockResponse());
+        routing.route(mockRequest("/valid", Map.of("cookie",
+                List.of("my-cookie="))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsNotValid"));
     }
 
@@ -388,13 +386,13 @@ public class RequestPredicateTest {
                     .containsCookie(null, "abc");
         });
 
-        routing.route(mockRequest("/equals", mapOf("cookie",
-                listOf("my-cookie=abc"))), mockResponse());
+        routing.route(mockRequest("/equals", Map.of("cookie",
+                List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsEqual"));
 
         checker.reset();
-        routing.route(mockRequest("/equals", mapOf("cookie",
-                listOf("my-cookie=def"))), mockResponse());
+        routing.route(mockRequest("/equals", Map.of("cookie",
+                List.of("my-cookie=def"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsNotEqual"));
     }
 
@@ -416,32 +414,32 @@ public class RequestPredicateTest {
                     .accepts((String[]) null);
         });
 
-        routing.route(mockRequest("/accepts1", mapOf("Accept",
-                listOf("application/json"))), mockResponse());
+        routing.route(mockRequest("/accepts1", Map.of("Accept",
+                List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", mapOf("Accept",
-                listOf("text/plain"))), mockResponse());
+        routing.route(mockRequest("/accepts1", Map.of("Accept",
+                List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", mapOf("Accept",
-                listOf("text/plain", "application/xml"))), mockResponse());
+        routing.route(mockRequest("/accepts1", Map.of("Accept",
+                List.of("text/plain", "application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", mapOf("Accept", listOf())),
+        routing.route(mockRequest("/accepts1", Map.of("Accept", List.of())),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", mapOf()), mockResponse());
+        routing.route(mockRequest("/accepts1", Map.of()), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", mapOf("Accept",
-                listOf("application/xml"))), mockResponse());
+        routing.route(mockRequest("/accepts1", Map.of("Accept",
+                List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotAcceptMediaType"));
     }
 
@@ -464,32 +462,32 @@ public class RequestPredicateTest {
                     .accepts((MediaType[]) null);
         });
 
-        routing.route(mockRequest("/accepts2", mapOf("Accept",
-                listOf("application/json"))), mockResponse());
+        routing.route(mockRequest("/accepts2", Map.of("Accept",
+                List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", mapOf("Accept",
-                listOf("text/plain"))), mockResponse());
+        routing.route(mockRequest("/accepts2", Map.of("Accept",
+                List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", mapOf("Accept",
-                listOf("text/plain", "application/xml"))), mockResponse());
+        routing.route(mockRequest("/accepts2", Map.of("Accept",
+                List.of("text/plain", "application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", mapOf("Accept", listOf())),
+        routing.route(mockRequest("/accepts2", Map.of("Accept", List.of())),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", mapOf()), mockResponse());
+        routing.route(mockRequest("/accepts2", Map.of()), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", mapOf("Accept",
-                listOf("application/xml"))), mockResponse());
+        routing.route(mockRequest("/accepts2", Map.of("Accept",
+                List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotAcceptMediaType"));
     }
 
@@ -511,32 +509,32 @@ public class RequestPredicateTest {
                     .hasContentType((String[]) null);
         });
 
-        routing.route(mockRequest("/contentType1", mapOf("Content-Type",
-                listOf("text/plain"))), mockResponse());
+        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+                List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", mapOf("Content-Type",
-                listOf("text/plain"))), mockResponse());
+        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+                List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", mapOf("Content-Type",
-                listOf("application/json"))), mockResponse());
+        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+                List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", mapOf("Content-Type",
-                listOf("application/xml"))), mockResponse());
+        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+                List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", mapOf("Content-Type",
-                listOf())), mockResponse());
+        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+                List.of())), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", mapOf()), mockResponse());
+        routing.route(mockRequest("/contentType1", Map.of()), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
     }
 
@@ -559,32 +557,32 @@ public class RequestPredicateTest {
                     .hasContentType((MediaType[]) null);
         });
 
-        routing.route(mockRequest("/contentType2", mapOf("Content-Type",
-                listOf("text/plain"))), mockResponse());
+        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+                List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", mapOf("Content-Type",
-                listOf("text/plain"))), mockResponse());
+        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+                List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", mapOf("Content-Type",
-                listOf("application/json"))), mockResponse());
+        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+                List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", mapOf("Content-Type",
-                listOf("application/xml"))), mockResponse());
+        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+                List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", mapOf("Content-Type",
-                listOf())), mockResponse());
+        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+                List.of())), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", mapOf()), mockResponse());
+        routing.route(mockRequest("/contentType2", Map.of()), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
     }
 
@@ -606,15 +604,15 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/multiple?my-param=abc",
-                mapOf("Content-Type", listOf("text/plain"),
-                      "Accept", listOf("text/plain"),
-                      "Cookie", listOf("my-cookie=abc"))), mockResponse());
+                Map.of("Content-Type", List.of("text/plain"),
+                      "Accept", List.of("text/plain"),
+                      "Cookie", List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAllConditions"));
 
         checker.reset();
         routing.route(mockRequest("/multiple?my-param=abc",
-                mapOf("Accept", listOf("text/plain"),
-                      "Cookie", listOf("my-cookie=abc"))), mockResponse());
+                Map.of("Accept", List.of("text/plain"),
+                      "Cookie", List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
     }
 
@@ -633,13 +631,13 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/and",
-                mapOf("Accept", listOf("text/plain"),
-                      "my-header", listOf("abc"))), mockResponse());
+                Map.of("Accept", List.of("text/plain"),
+                      "my-header", List.of("abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAllConditions"));
 
         checker.reset();
         routing.route(mockRequest("/and",
-                mapOf("Accept", listOf("text/plain"))), mockResponse());
+                Map.of("Accept", List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
     }
 
@@ -658,16 +656,16 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/or",
-                mapOf("Content-Type", listOf("text/plain"))), mockResponse());
+                Map.of("Content-Type", List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAnyCondition"));
 
         checker.reset();
         routing.route(mockRequest("/or",
-                mapOf("my-header", listOf("abc"))), mockResponse());
+                Map.of("my-header", List.of("abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAnyCondition"));
 
         checker.reset();
-        routing.route(mockRequest("/or", mapOf()), mockResponse());
+        routing.route(mockRequest("/or", Map.of()), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveAnyCondition"));
     }
 
@@ -687,13 +685,13 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/negate",
-                mapOf("Content-Type", listOf("application/json"))), mockResponse());
+                Map.of("Content-Type", List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAllConditions"));
 
         checker.reset();
         routing.route(mockRequest("/negate",
-                mapOf("Content-Type", listOf("text/plain"),
-                        "Cookie", listOf("my-cookie=abc"))), mockResponse());
+                Map.of("Content-Type", List.of("text/plain"),
+                        "Cookie", List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
     }
 

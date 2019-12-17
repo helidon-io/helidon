@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.util.Collections;
+import java.util.Map;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -24,7 +25,6 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -141,7 +141,7 @@ class MetricsSupportTest {
     @Test
     void testBaseMetricsDisabled() {
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "base.enabled", "false")))
                 .build();
         RegistryFactory myRF = RegistryFactory.create(config);

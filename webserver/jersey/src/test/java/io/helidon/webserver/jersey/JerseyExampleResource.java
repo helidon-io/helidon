@@ -37,7 +37,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
-import io.helidon.common.InputStreamHelper;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
@@ -147,7 +146,7 @@ public class JerseyExampleResource {
     @Path("stream")
     public Response checkSequenceStream(InputStream inputStream, @QueryParam("length") int length) throws IOException {
 
-        String content = new String(InputStreamHelper.readAllBytes(inputStream));
+        String content = new String(inputStream.readAllBytes());
 
         try {
             assertEquals(JerseySupportTest.longData(length).toString(), content);

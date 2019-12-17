@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
@@ -33,7 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link Jwt}
+ * Unit test for {@link Jwt}.
  */
 public class JwtTest {
     private static final Logger LOGGER = Logger.getLogger(JwtTest.class.getName());
@@ -51,7 +50,7 @@ public class JwtTest {
 
         assertThat(jwt.jwtId(), is(Optional.of(id)));
         assertThat(jwt.algorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
-        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf(audience))));
+        assertThat(jwt.audience(), is(Optional.of(List.of(audience))));
     }
 
     @Test
@@ -80,7 +79,7 @@ public class JwtTest {
                 .notBefore(notBefore)
                 .build();
 
-        assertThat(jwt.scopes(), is(Optional.of(CollectionsHelper.listOf("link", "lank", "lunk"))));
+        assertThat(jwt.scopes(), is(Optional.of(List.of("link", "lank", "lunk"))));
         assertThat(jwt.subject(), is(Optional.of(subject)));
         assertThat(jwt.preferredUsername(), is(Optional.of(username)));
         assertThat(jwt.issueTime(), is(Optional.of(now)));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.common.reactive.valve;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -30,7 +28,7 @@ class ValvesTest {
 
     @Test
     void fromIterable() throws Exception {
-        List<String> list = CollectionsHelper.listOf("a", "b", "c", "d", "e", "f", "g");
+        List<String> list = List.of("a", "b", "c", "d", "e", "f", "g");
         String s = Valves.from(list).collect(Collectors.joining()).toCompletableFuture().get();
         assertThat(s, is("abcdefg"));
     }

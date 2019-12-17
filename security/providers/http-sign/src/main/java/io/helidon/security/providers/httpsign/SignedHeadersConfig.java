@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 
 /**
@@ -105,7 +104,7 @@ public final class SignedHeadersConfig {
      * Call {@link #build()} to create a new instance.
      */
     public static final class Builder implements io.helidon.common.Builder<SignedHeadersConfig> {
-        private static final HeadersConfig DEFAULT_HEADERS = HeadersConfig.create(CollectionsHelper.listOf("date"));
+        private static final HeadersConfig DEFAULT_HEADERS = HeadersConfig.create(List.of("date"));
 
         private final Map<String, HeadersConfig> methodConfigs = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private HeadersConfig defaultConfig = DEFAULT_HEADERS;
@@ -166,7 +165,7 @@ public final class SignedHeadersConfig {
          * @return instance with no required headers
          */
         public static HeadersConfig create() {
-            return create(CollectionsHelper.listOf());
+            return create(List.of());
         }
 
         /**
@@ -176,7 +175,7 @@ public final class SignedHeadersConfig {
          * @return instance with required headers
          */
         public static HeadersConfig create(List<String> requiredHeaders) {
-            return create(requiredHeaders, CollectionsHelper.listOf());
+            return create(requiredHeaders, List.of());
         }
 
         /**
@@ -198,8 +197,8 @@ public final class SignedHeadersConfig {
          * @return instance configured from config
          */
         public static HeadersConfig create(Config config) {
-            return create(config.get("always").asList(String.class).orElse(CollectionsHelper.listOf()),
-                          config.get("if-present").asList(String.class).orElse(CollectionsHelper.listOf()));
+            return create(config.get("always").asList(String.class).orElse(List.of()),
+                          config.get("if-present").asList(String.class).orElse(List.of()));
         }
 
         List<String> getHeaders(Map<String, List<String>> transportHeaders) {

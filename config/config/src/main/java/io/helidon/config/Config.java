@@ -29,7 +29,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.GenericType;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
@@ -390,7 +389,7 @@ public interface Config {
      */
     @SafeVarargs
     static Builder builder(Supplier<? extends ConfigSource>... configSources) {
-        return builder().sources(CollectionsHelper.listOf(configSources));
+        return builder().sources(List.of(configSources));
     }
 
     /**
@@ -1288,7 +1287,7 @@ public interface Config {
          * @see #disableSystemPropertiesSource()
          */
         default Builder sources(Supplier<? extends ConfigSource> configSource) {
-            sources(CollectionsHelper.listOf(configSource));
+            sources(List.of(configSource));
             return this;
         }
 
@@ -1315,7 +1314,7 @@ public interface Config {
          */
         default Builder sources(Supplier<? extends ConfigSource> configSource,
                                 Supplier<? extends ConfigSource> configSource2) {
-            sources(CollectionsHelper.listOf(configSource, configSource2));
+            sources(List.of(configSource, configSource2));
             return this;
         }
 
@@ -1344,7 +1343,7 @@ public interface Config {
         default Builder sources(Supplier<? extends ConfigSource> configSource,
                                 Supplier<? extends ConfigSource> configSource2,
                                 Supplier<? extends ConfigSource> configSource3) {
-            sources(CollectionsHelper.listOf(configSource, configSource2, configSource3));
+            sources(List.of(configSource, configSource2, configSource3));
             return this;
         }
 

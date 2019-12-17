@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.security.providers.ProviderForTesting;
 
@@ -79,7 +78,7 @@ public class EntityHandlingTest {
 
         Optional<Entity> requestMessage = request.requestEntity();
 
-        OptionalHelper.from(requestMessage).ifPresentOrElse(message -> message.filter(byteBufferPublisher -> {
+        requestMessage.ifPresentOrElse(message -> message.filter(byteBufferPublisher -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             SubmissionPublisher<ByteBuffer> bPublisher = new SubmissionPublisher<>();
 

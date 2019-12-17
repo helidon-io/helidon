@@ -33,7 +33,6 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
@@ -145,7 +144,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
             if (customObject.isPresent()) {
                 attributes.add(new RuntimeAttribute(validator, customObject.get()));
             } else {
-                OptionalHelper.from(epConfig.config(configKey))
+                epConfig.config(configKey)
                         .ifPresentOrElse(attribConfig -> attributes
                                 .add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig))), () -> {
                             List<Annotation> annotationConfig = new ArrayList<>();

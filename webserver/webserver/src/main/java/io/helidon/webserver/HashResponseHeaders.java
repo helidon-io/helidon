@@ -37,7 +37,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -111,7 +110,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     @Override
     public OptionalLong contentLength() {
-        return OptionalHelper.from(first(Http.Header.CONTENT_LENGTH)).stream()
+        return first(Http.Header.CONTENT_LENGTH).stream()
                 .mapToLong(Long::parseLong).findFirst();
     }
 

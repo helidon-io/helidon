@@ -25,7 +25,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.MissingValueException;
@@ -80,10 +79,9 @@ public final class EncryptionFilter implements ConfigFilter {
     private EncryptionFilter(Builder builder, Config config) {
         if (builder.fromConfig) {
 
-            this.requireEncryption = OptionalHelper.from(EncryptionUtil.getEnv(ConfigProperties.REQUIRE_ENCRYPTION_ENV_VARIABLE)
-                                                                 .map(Boolean::parseBoolean))
+            this.requireEncryption = EncryptionUtil.getEnv(ConfigProperties.REQUIRE_ENCRYPTION_ENV_VARIABLE)
+                                                                 .map(Boolean::parseBoolean)
                     .or(() -> config.get(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY).asBoolean().asOptional())
-                    .asOptional()
                     .orElse(true);
 
             this.masterPassword = EncryptionUtil.resolveMasterPassword(requireEncryption, config).orElse(null);

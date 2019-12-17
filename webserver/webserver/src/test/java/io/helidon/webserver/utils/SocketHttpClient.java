@@ -26,9 +26,9 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.webserver.WebServer;
 
@@ -233,7 +233,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @throws IOException in case of an IO error
      */
     public void request(Http.Method method, String path, String payload) throws IOException {
-        request(method, path, payload, CollectionsHelper.listOf("Content-Type: application/x-www-form-urlencoded"));
+        request(method, path, payload, List.of("Content-Type: application/x-www-form-urlencoded"));
     }
 
     /**

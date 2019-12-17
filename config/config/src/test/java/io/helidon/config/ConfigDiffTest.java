@@ -19,8 +19,6 @@ package io.helidon.config;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,32 +31,32 @@ import static org.hamcrest.core.Is.is;
  */
 public class ConfigDiffTest {
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "new value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b.a", "value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_LEAF = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_LEAF = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "value",
             "a.c", "value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_OBJECT = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_OBJECT = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "value",

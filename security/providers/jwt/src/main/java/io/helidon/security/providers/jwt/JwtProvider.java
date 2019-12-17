@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -338,7 +337,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             principal.abacAttribute(name).ifPresent(val -> builder.addPayloadClaim(name, val));
         });
 
-        OptionalHelper.from(principal.abacAttribute("full_name"))
+        principal.abacAttribute("full_name")
                 .ifPresentOrElse(name -> builder.addPayloadClaim("name", name),
                                  () -> builder.removePayloadClaim("name"));
 

@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -170,7 +169,7 @@ public final class AccessLogSupport implements Service {
      * A fluent API Builder for {@link io.helidon.webserver.accesslog.AccessLogSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<AccessLogSupport> {
-        private static final List<AccessLogEntry> COMMON_FORMAT = CollectionsHelper.listOf(
+        private static final List<AccessLogEntry> COMMON_FORMAT = List.of(
                 HostLogEntry.create(),
                 UserIdLogEntry.create(),
                 UserLogEntry.create(),
@@ -180,7 +179,7 @@ public final class AccessLogSupport implements Service {
                 SizeLogEntry.create()
         );
 
-        private static final List<AccessLogEntry> HELIDON_FORMAT = CollectionsHelper.listOf(
+        private static final List<AccessLogEntry> HELIDON_FORMAT = List.of(
                 HostLogEntry.create(),
                 UserLogEntry.create(),
                 TimestampLogEntry.create(),

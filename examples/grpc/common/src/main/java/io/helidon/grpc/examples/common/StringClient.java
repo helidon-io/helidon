@@ -23,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.client.GrpcServiceClient;
 import io.helidon.grpc.examples.common.Strings.StringMessage;
@@ -124,7 +123,7 @@ public class StringClient {
         FutureObserver responses = new FutureObserver();
         StreamObserver<StringMessage> requests = client.clientStreaming("Join", responses);
 
-        List<String> joinValues = CollectionsHelper.listOf("A", "B", "C", "D");
+        List<String> joinValues = List.of("A", "B", "C", "D");
 
         // stream the values to the server
         joinValues.forEach(word -> requests.onNext(StringMessage.newBuilder().setText(word).build()));
@@ -143,7 +142,7 @@ public class StringClient {
      * @throws java.lang.Exception if the call fails
      */
     public static void clientStreamingOfIterable(GrpcServiceClient client) throws Exception {
-        List<StringMessage> joinValues = CollectionsHelper.listOf("A", "B", "C", "D")
+        List<StringMessage> joinValues = List.of("A", "B", "C", "D")
                 .stream()
                 .map(val -> StringMessage.newBuilder().setText(val).build())
                 .collect(Collectors.toList());
@@ -207,7 +206,7 @@ public class StringClient {
      * @throws java.lang.Exception if the call fails
      */
     public static void bidirectional(GrpcServiceClient client) throws Exception {
-        List<String> valuesToStream = CollectionsHelper.listOf("A", "B", "C", "D");
+        List<String> valuesToStream = List.of("A", "B", "C", "D");
         FutureStreamingObserver responses = new FutureStreamingObserver();
 
         StreamObserver<StringMessage> requests = client.bidiStreaming("Echo", responses);

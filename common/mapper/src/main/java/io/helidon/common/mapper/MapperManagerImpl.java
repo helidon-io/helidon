@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.mapper.spi.MapperProvider;
 
 /**
@@ -112,14 +111,14 @@ final class MapperManagerImpl implements MapperManager {
     private <SOURCE, TARGET> Optional<Mapper<?, ?>> fromProviders(Class<SOURCE> sourceType,
                                                                             Class<TARGET> targetType) {
         return providers.stream()
-                .flatMap(provider -> OptionalHelper.from(provider.mapper(sourceType, targetType)).stream())
+                .flatMap(provider -> provider.mapper(sourceType, targetType).stream())
                 .findFirst();
     }
 
     private <SOURCE, TARGET> Optional<Mapper<?, ?>> fromProviders(GenericType<SOURCE> sourceType,
                                                                             GenericType<TARGET> targetType) {
         return providers.stream()
-                .flatMap(provider -> OptionalHelper.from(provider.mapper(sourceType, targetType)).stream())
+                .flatMap(provider -> provider.mapper(sourceType, targetType).stream())
                 .findFirst();
     }
 

@@ -29,10 +29,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -106,7 +106,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(PolicyStatement.class);
+        return Set.of(PolicyStatement.class);
     }
 
     @Override

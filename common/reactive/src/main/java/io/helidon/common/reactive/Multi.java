@@ -22,8 +22,6 @@ import java.util.concurrent.Flow.Subscriber;
 
 import io.helidon.common.mapper.Mapper;
 
-import static io.helidon.common.CollectionsHelper.listOf;
-
 /**
  * Multiple items publisher facility.
  * @param <T> item type
@@ -115,7 +113,7 @@ public interface Multi<T> extends Subscribable<T> {
      */
     @SafeVarargs
     static <T> Multi<T> just(T... items) {
-        return new MultiFromPublisher<>(new FixedItemsPublisher<>(listOf(items)));
+        return new MultiFromPublisher<>(new FixedItemsPublisher<>(List.of(items)));
     }
 
     /**

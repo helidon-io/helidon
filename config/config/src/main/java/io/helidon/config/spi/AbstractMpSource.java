@@ -24,8 +24,6 @@ import java.util.TreeMap;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
@@ -104,7 +102,7 @@ public abstract class AbstractMpSource<S> extends AbstractSource<ConfigNode.Obje
             processNode(values, "", node);
             return values;
         } else {
-            return CollectionsHelper.mapOf();
+            return Map.of();
         }
     }
 

@@ -30,7 +30,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.GenericType;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -285,17 +284,17 @@ class ConfigMapperManager implements ConfigMapper {
 
         @Override
         public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
-            return ConfigValues.create(this, () -> Optional.of(CollectionsHelper.listOf(this)), Config::asNodeList);
+            return ConfigValues.create(this, () -> Optional.of(List.of(this)), Config::asNodeList);
         }
 
         @Override
         public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
-            return ConfigValues.create(this, () -> as(type).map(CollectionsHelper::listOf), config -> config.asList(type));
+            return ConfigValues.create(this, () -> as(type).map(List::of), config -> config.asList(type));
         }
 
         @Override
         public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
-            return ConfigValues.create(this, () -> as(mapper).map(CollectionsHelper::listOf), config -> config.asList(mapper));
+            return ConfigValues.create(this, () -> as(mapper).map(List::of), config -> config.asList(mapper));
         }
 
         @Override

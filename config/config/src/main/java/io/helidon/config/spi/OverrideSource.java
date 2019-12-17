@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
@@ -156,7 +155,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
          * @return an empty object
          */
         public static OverrideData empty() {
-            return new OverrideData(CollectionsHelper.listOf());
+            return new OverrideData(List.of());
         }
 
         /**

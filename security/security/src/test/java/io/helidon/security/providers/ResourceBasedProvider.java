@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.security.providers;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -31,9 +33,6 @@ import io.helidon.security.SecurityTest;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
-
-import static io.helidon.common.CollectionsHelper.listOf;
-import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * Provider authenticating and propagating security based on resource type.
@@ -128,14 +127,17 @@ public class ResourceBasedProvider implements AuthenticationProvider, Authorizat
                                                          .map(resource -> {
                                                              switch (resource) {
                                                              case "jack":
-                                                                 return OutboundSecurityResponse.withHeaders(mapOf("resource",
-                                                                                                                   listOf("resource-jack")));
+                                                                 return OutboundSecurityResponse
+                                                                         .withHeaders(Map.of("resource",
+                                                                                             List.of("resource-jack")));
                                                              case "jill":
-                                                                 return OutboundSecurityResponse.withHeaders(mapOf("resource",
-                                                                                                                   listOf("resource-jill")));
+                                                                 return OutboundSecurityResponse
+                                                                         .withHeaders(Map.of("resource",
+                                                                                             List.of("resource-jill")));
                                                              case "service":
-                                                                 return OutboundSecurityResponse.withHeaders(mapOf("resource",
-                                                                                                                   listOf("resource-aService")));
+                                                                 return OutboundSecurityResponse
+                                                                         .withHeaders(Map.of("resource",
+                                                                                             List.of("resource-aService")));
                                                              case "fail":
                                                                  return OutboundSecurityResponse.builder()
                                                                          .status(SecurityResponse.SecurityStatus.FAILURE)

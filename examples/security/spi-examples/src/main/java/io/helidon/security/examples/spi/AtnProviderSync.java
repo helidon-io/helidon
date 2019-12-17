@@ -26,8 +26,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -96,7 +96,7 @@ public class AtnProviderSync extends SynchronousProvider implements Authenticati
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(AtnAnnot.class);
+        return Set.of(AtnAnnot.class);
     }
 
     /**

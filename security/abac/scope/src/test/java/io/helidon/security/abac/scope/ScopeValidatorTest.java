@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -62,7 +61,7 @@ public class ScopeValidatorTest {
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
         when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
-                .thenReturn(CollectionsHelper.listOf(scopes));
+                .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 
@@ -108,7 +107,7 @@ public class ScopeValidatorTest {
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
         when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
-                .thenReturn(CollectionsHelper.listOf(scopes));
+                .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 
@@ -155,7 +154,7 @@ public class ScopeValidatorTest {
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
         when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
-                .thenReturn(CollectionsHelper.listOf(scopes));
+                .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 
@@ -200,7 +199,7 @@ public class ScopeValidatorTest {
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
         when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
-                .thenReturn(CollectionsHelper.listOf(scopes));
+                .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 

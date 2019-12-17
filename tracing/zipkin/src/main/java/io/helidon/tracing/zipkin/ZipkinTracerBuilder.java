@@ -21,9 +21,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -250,7 +250,7 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
 
         config.get("tags").detach()
                 .asMap()
-                .orElseGet(CollectionsHelper::mapOf)
+                .orElseGet(Map::of)
                 .forEach(this::addTracerTag);
 
         config.get("boolean-tags")

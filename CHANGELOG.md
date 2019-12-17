@@ -8,7 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## 2.0.0
 ### Backward incompatible changes
 #### Common
-- Flow API is now used from `java.util.concurrent.Flow`, Helidon specific `Flow` class is now removed
+- Removed `io.helidon.reactive.Flow`, please use `java.util.concurrent.Flow`
+- Removed `io.helidon.common.CollectionsHelper`, please use factory methods of `Set`, `Map` and `List`
+- Removed `io.helidon.common.OptionalHelper`, please use methods of `java.util.Optional`
+- Removed `io.helidon.common.StackWalker`, please use `java.lang.StackWalker`
+- Removed `io.helidon.common.InputStreamHelper`, please use `java.io.InputStream` methods
+
 #### Tracing
 - We have upgraded to OpenTracing version 0.33.0 that is not backward compatible, the following breaking changes exist
     (these are OpenTracing changes, not Helidon changes):

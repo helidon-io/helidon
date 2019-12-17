@@ -19,7 +19,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -339,7 +338,7 @@ public class TestTracerProvider implements TracerProvider {
 
         @Override
         public Iterable<Map.Entry<String, String>> baggageItems() {
-            Map<String, String> map = CollectionsHelper.mapOf();
+            Map<String, String> map = Map.of();
 
             return map.entrySet();
         }

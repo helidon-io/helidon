@@ -30,7 +30,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -94,7 +93,7 @@ abstract class SecurityFilterCommon {
             origRequest = requestUri.getPath() + "?" + query;
         }
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
-        allHeaders.put(Security.HEADER_ORIG_URI, CollectionsHelper.listOf(origRequest));
+        allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));
 
         SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
                 .path(filterContext.getResourcePath())
@@ -219,7 +218,7 @@ abstract class SecurityFilterCommon {
                 context.setShouldFinish(true);
 
                 int status = response.statusCode().orElse(Response.Status.UNAUTHORIZED.getStatusCode());
-                abortRequest(context, response, status, CollectionsHelper.mapOf());
+                abortRequest(context, response, status, Map.of());
             }
 
             return;
@@ -227,7 +226,7 @@ abstract class SecurityFilterCommon {
             context.setShouldFinish(true);
 
             int status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
-            abortRequest(context, response, status, CollectionsHelper.mapOf());
+            abortRequest(context, response, status, Map.of());
 
             return;
         case ABSTAIN:
@@ -240,7 +239,7 @@ abstract class SecurityFilterCommon {
                 abortRequest(context,
                              response,
                              Response.Status.UNAUTHORIZED.getStatusCode(),
-                             CollectionsHelper.mapOf());
+                             Map.of());
             }
             return;
         case FAILURE:
@@ -253,7 +252,7 @@ abstract class SecurityFilterCommon {
                 abortRequest(context,
                              response,
                              Response.Status.UNAUTHORIZED.getStatusCode(),
-                             CollectionsHelper.mapOf());
+                             Map.of());
                 context.setShouldFinish(true);
             }
             return;
@@ -321,12 +320,12 @@ abstract class SecurityFilterCommon {
             context.setTraceThrowable(response.throwable().orElse(null));
             context.setShouldFinish(true);
             int status = response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode());
-            abortRequest(context, response, status, CollectionsHelper.mapOf());
+            abortRequest(context, response, status, Map.of());
             return;
         case SUCCESS_FINISH:
             context.setShouldFinish(true);
             status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
-            abortRequest(context, response, status, CollectionsHelper.mapOf());
+            abortRequest(context, response, status, Map.of());
             return;
         case FAILURE:
             context.setTraceSuccess(false);
@@ -336,7 +335,7 @@ abstract class SecurityFilterCommon {
             abortRequest(context,
                          response,
                          response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
-                         CollectionsHelper.mapOf());
+                         Map.of());
             return;
         case ABSTAIN:
             context.setTraceSuccess(false);
@@ -345,7 +344,7 @@ abstract class SecurityFilterCommon {
             abortRequest(context,
                          response,
                          response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
-                         CollectionsHelper.mapOf());
+                         Map.of());
             return;
         default:
             context.setTraceSuccess(false);

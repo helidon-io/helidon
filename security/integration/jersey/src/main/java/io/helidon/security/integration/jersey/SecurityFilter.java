@@ -43,7 +43,6 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.reactive.OutputStreamPublisher;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -237,9 +236,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                         .addParam(AuditEvent.AuditParam.plain("path", fc.getResourcePath()))
                         .addParam(AuditEvent.AuditParam.plain("status", String.valueOf(responseContext.getStatus())))
                         .addParam(AuditEvent.AuditParam.plain("subject",
-                                                              OptionalHelper.from(securityContext.user())
+                                                              securityContext.user()
                                                                       .or(securityContext::service)
-                                                                      .asOptional()
                                                                       .orElse(SecurityContext.ANONYMOUS)))
                         .addParam(AuditEvent.AuditParam.plain("transport", "http"))
                         .addParam(AuditEvent.AuditParam.plain("resourceType", fc.getResourceName()))

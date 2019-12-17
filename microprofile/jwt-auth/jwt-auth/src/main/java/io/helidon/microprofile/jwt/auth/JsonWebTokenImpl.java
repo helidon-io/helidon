@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.Jwt;
@@ -69,8 +68,8 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
         String subject = jwt.subject()
                 .orElseThrow(() -> new JwtException("JWT does not contain subject claim, cannot create principal."));
 
-        this.name = OptionalHelper.from(jwt.userPrincipal())
-                .or(jwt::preferredUsername).asOptional()
+        this.name = jwt.userPrincipal()
+                .or(jwt::preferredUsername)
                 .orElse(subject);
 
         this.id = subject;
@@ -165,10 +164,8 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
             // special case, raw token is not really a claim
             return Optional.of(Json.createValue(signed.tokenContent()));
         }
-        return OptionalHelper
-                .from(jwt.payloadClaim(claimName))
-                .or(() -> jwt.headerClaim(claimName))
-                .asOptional();
+        return jwt.payloadClaim(claimName)
+                .or(() -> jwt.headerClaim(claimName));
     }
 
     private Object convert(Claims claims, JsonValue value) {

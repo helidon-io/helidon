@@ -16,6 +16,7 @@
 package io.helidon.tracing.jersey;
 
 import java.net.URI;
+import java.util.Map;
 
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
@@ -25,7 +26,6 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.PreMatching;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.config.SpanTracingConfig;
@@ -140,7 +140,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         case CLIENT_ERROR:
         case SERVER_ERROR:
             Tags.ERROR.set(span, true);
-            span.log(CollectionsHelper.mapOf("event", "error"));
+            span.log(Map.of("event", "error"));
             break;
         default:
             break;

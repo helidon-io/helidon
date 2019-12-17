@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -97,7 +96,7 @@ public final class GrpcClientSecurity
             switch (status) {
             case FAILURE:
             case FAILURE_FINISH:
-                OptionalHelper.from(providerResponse.throwable())
+                providerResponse.throwable()
                         .ifPresentOrElse(tracing::error,
                                          () -> tracing.error(providerResponse.description().orElse("Failed")));
                 break;

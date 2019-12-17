@@ -33,7 +33,6 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -149,7 +148,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                                                       () -> computeGrants(idcsMtContext.tenantId(),
                                                                           idcsMtContext.appId(),
                                                                           subject))
-                .orElseGet(CollectionsHelper::listOf);
+                .orElseGet(List::of);
 
         List<Grant> grants = new LinkedList<>(serverGrants);
 

@@ -26,7 +26,6 @@ import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.internal.FileOverrideSource;
 import io.helidon.config.internal.PrefixedConfigSource;
@@ -141,7 +140,7 @@ final class MetaProviders {
         private static final String WATCH_TYPE = "watch";
 
         private static final Map<String, Function<Config, Function<Object, PollingStrategy>>> BUILT_IN =
-                CollectionsHelper.mapOf(
+                Map.of(
                         REGULAR_TYPE, config -> target -> PollingStrategies.ScheduledBuilder.create(config).build(),
                         WATCH_TYPE, config -> BuiltInPollingStrategyProvider::watchStrategy
                 );
@@ -194,7 +193,7 @@ final class MetaProviders {
 
         @Override
         public Set<String> supported() {
-            return CollectionsHelper.setOf(REPEAT_TYPE);
+            return Set.of(REPEAT_TYPE);
         }
     }
 

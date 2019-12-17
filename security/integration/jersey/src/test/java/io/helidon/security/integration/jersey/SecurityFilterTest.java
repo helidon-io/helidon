@@ -22,7 +22,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
@@ -192,7 +191,7 @@ class SecurityFilterTest {
         return new Application() {
             @Override
             public Set<Class<?>> getClasses() {
-                return CollectionsHelper.setOf(OptionalSecurityTest.TheResource.class);
+                return Set.of(OptionalSecurityTest.TheResource.class);
             }
         };
     }

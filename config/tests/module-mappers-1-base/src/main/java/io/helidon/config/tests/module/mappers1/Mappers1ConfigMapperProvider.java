@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
 
@@ -35,7 +34,7 @@ public class Mappers1ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
-        return CollectionsHelper.mapOf(Logger.class, new LoggerConfigMapper(),
+        return Map.of(Logger.class, new LoggerConfigMapper(),
                       Locale.class, new LocaleConfigMapper());
     }
 }

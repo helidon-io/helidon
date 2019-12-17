@@ -24,8 +24,6 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -60,7 +58,7 @@ class MetricImplTest {
             + "]"
             + "}}";
 
-    private static final List<MetricID> METRIC_IDS = CollectionsHelper.listOf(
+    private static final List<MetricID> METRIC_IDS = List.of(
         new MetricID("name1", new Tag("a", "b"), new Tag("c", "d")),
         new MetricID("name2", new Tag("e", "f"), new Tag("g", "h")));
 

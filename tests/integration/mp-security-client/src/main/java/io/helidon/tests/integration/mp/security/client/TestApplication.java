@@ -20,8 +20,6 @@ import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * Jax-rs application.
  */
@@ -29,6 +27,6 @@ import io.helidon.common.CollectionsHelper;
 public class TestApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(ClientResource.class, ServerResource.class);
+        return Set.of(ClientResource.class, ServerResource.class);
     }
 }
