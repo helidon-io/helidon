@@ -564,7 +564,6 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys loadJwkKeysFromLocation(String uri) {
-            // spotbugs was warning in this method, refactored to find the issue
             return locatePath(uri)
                     .map(path -> {
                         try {
