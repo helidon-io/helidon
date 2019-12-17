@@ -23,6 +23,7 @@ import io.helidon.dbclient.spi.DbClientProvider;
  * @see MongoDbClientProviderBuilder
  */
 public class MongoDbClientProvider implements DbClientProvider {
+
     static final String DB_TYPE = "mongoDb";
 
     @Override

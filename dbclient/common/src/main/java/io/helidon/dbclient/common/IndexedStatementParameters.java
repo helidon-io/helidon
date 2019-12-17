@@ -26,6 +26,7 @@ import io.helidon.dbclient.DbMapperManager;
  * Statement with indexed parameters.
  */
 class IndexedStatementParameters implements StatementParameters {
+
     private final List<Object> parameters = new LinkedList<>();
     private final DbMapperManager dbMapperManager;
 
@@ -60,23 +61,27 @@ class IndexedStatementParameters implements StatementParameters {
         return this;
     }
 
+    private static final String CANT_USE_INDEXED_PARAMS
+            = "This is a statement with indexed parameters, cannot use named parameters.";
+
     @Override
     public StatementParameters params(Map<String, ?> parameters) {
-        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException(CANT_USE_INDEXED_PARAMS);
     }
 
     @Override
     public <T> StatementParameters namedParam(T parameters) {
-        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException(CANT_USE_INDEXED_PARAMS);
     }
 
     @Override
     public StatementParameters addParam(String name, Object parameter) {
-        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException(CANT_USE_INDEXED_PARAMS);
     }
 
     @Override
     public Map<String, Object> namedParams() {
-        throw new DbClientException("This is a statement with indexed parameters, cannot use named parameters.");
+        throw new DbClientException(CANT_USE_INDEXED_PARAMS);
     }
+
 }

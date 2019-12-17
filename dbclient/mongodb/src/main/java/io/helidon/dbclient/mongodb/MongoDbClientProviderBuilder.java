@@ -35,6 +35,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  * Builder for mongoDB database.
  */
 public final class MongoDbClientProviderBuilder implements DbClientProviderBuilder<MongoDbClientProviderBuilder> {
+
     private final InterceptorSupport.Builder interceptors = InterceptorSupport.builder();
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
 
@@ -202,4 +203,5 @@ public final class MongoDbClientProviderBuilder implements DbClientProviderBuild
     MongoDbClientConfig dbConfig() {
         return dbConfig;
     }
+
 }

@@ -40,7 +40,7 @@ import io.helidon.dbclient.DbStatementType;
 public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implements DbStatement<S, R> {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(AbstractStatement.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AbstractStatement.class.getName());
 
     private ParamType paramType = ParamType.UNKNOWN;
     private StatementParameters parameters;

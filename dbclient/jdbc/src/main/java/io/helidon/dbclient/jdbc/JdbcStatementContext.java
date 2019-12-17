@@ -21,6 +21,7 @@ import io.helidon.dbclient.DbStatementType;
  * Stuff needed by each and every statement.
  */
 class JdbcStatementContext {
+
     private final DbStatementType statementType;
     private final String statementName;
     private final String statement;
@@ -46,4 +47,5 @@ class JdbcStatementContext {
     String statement() {
         return statement;
     }
+
 }

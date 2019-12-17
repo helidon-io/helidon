@@ -73,7 +73,7 @@ public final class MongoDbColumn implements DbColumn {
 
     @Override
     public String dbType() {
-        throw new UnsupportedOperationException("sqlType() is not supported yet.");
+        throw new UnsupportedOperationException("dbType() is not supported yet.");
     }
 
     @Override

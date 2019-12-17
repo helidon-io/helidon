@@ -28,6 +28,7 @@ import io.helidon.config.Config;
  */
 @FunctionalInterface
 public interface ConnectionPool {
+
     /**
      * Create a JDBC connection pool from provided configuration.
      * <table>

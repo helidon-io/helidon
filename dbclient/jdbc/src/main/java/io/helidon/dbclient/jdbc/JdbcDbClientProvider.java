@@ -21,7 +21,9 @@ import io.helidon.dbclient.spi.DbClientProvider;
  * Provider for JDBC database implementation.
  */
 public class JdbcDbClientProvider implements DbClientProvider {
+
     static final String JDBC_DB_TYPE = "jdbc";
+
     @Override
     public String name() {
         return JDBC_DB_TYPE;
@@ -31,4 +33,5 @@ public class JdbcDbClientProvider implements DbClientProvider {
     public JdbcDbClientProviderBuilder builder() {
         return new JdbcDbClientProviderBuilder();
     }
+
 }

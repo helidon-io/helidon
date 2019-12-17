@@ -37,6 +37,7 @@ import org.reactivestreams.Subscription;
  */
 final class MongoDbDMLExecutor {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(MongoDbDMLExecutor.class.getName());
 
     private MongoDbDMLExecutor() {
@@ -70,7 +71,7 @@ final class MongoDbDMLExecutor {
             default:
                 CompletableFuture<Long> result = new CompletableFuture<>();
                 Throwable failure = new UnsupportedOperationException(
-                        "Statement operation not yet supported: " + dbStatementType.name());
+                        String.format("Statement operation not yet supported: %s", dbStatementType.name()));
                 result.completeExceptionally(failure);
                 statementFuture.completeExceptionally(failure);
                 queryFuture.completeExceptionally(failure);

@@ -39,6 +39,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  * the {@link io.helidon.dbclient.spi.DbClientProviderBuilder} from Helidon DB API.
  */
 public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilder<JdbcDbClientProviderBuilder> {
+
     private final InterceptorSupport.Builder interceptors = InterceptorSupport.builder();
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
     private String url;
@@ -224,4 +225,5 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
     ConnectionPool connectionPool() {
         return connectionPool;
     }
+
 }

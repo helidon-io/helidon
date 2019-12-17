@@ -30,6 +30,7 @@ import io.helidon.dbclient.DbStatementGet;
  * to read the first value.
  */
 class JdbcStatementGet implements DbStatementGet {
+
     private final JdbcStatementQuery query;
 
     JdbcStatementGet(JdbcExecuteContext executeContext,
@@ -81,4 +82,5 @@ class JdbcStatementGet implements DbStatementGet {
                 .thenApply(dbRows -> Single.from(dbRows.publisher()))
                 .thenCompose(Single::toOptionalStage);
     }
+
 }

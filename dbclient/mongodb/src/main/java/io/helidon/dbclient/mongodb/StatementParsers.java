@@ -30,6 +30,7 @@ import javax.json.Json;
  */
 final class StatementParsers {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(StatementParsers.class.getName());
 
     static String toJson(Object value) {
@@ -427,7 +428,7 @@ final class StatementParsers {
                     break;
                 default:
             }
-            LOGGER.info(() -> String.format("Named Statement %s", sb.toString()));
+            LOGGER.fine(() -> String.format("Named Statement %s", sb.toString()));
             return sb.toString();
         }
 
@@ -544,7 +545,7 @@ final class StatementParsers {
                 ACTION[state.ordinal()][cl.ordinal()].process(this);
                 state = TRANSITION[state.ordinal()][cl.ordinal()];
             }
-            LOGGER.info(() -> String.format("Indexed Statement %s", sb().toString()));
+            LOGGER.fine(() -> String.format("Indexed Statement %s", sb().toString()));
             return sb().toString();
         }
 

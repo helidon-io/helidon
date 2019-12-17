@@ -36,6 +36,7 @@ import static io.helidon.dbclient.mongodb.MongoDbStatement.READER_FACTORY;
  */
 final class MongoDbQueryExecutor {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
 
     private MongoDbQueryExecutor() {

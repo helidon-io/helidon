@@ -42,6 +42,7 @@ import static io.helidon.dbclient.mongodb.MongoDbStatement.READER_FACTORY;
  */
 final class MongoDbCommandExecutor {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(MongoDbCommandExecutor.class.getName());
 
     static final class CommandRows implements DbRows<DbRow> {

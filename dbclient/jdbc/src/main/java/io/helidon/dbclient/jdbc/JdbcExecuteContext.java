@@ -29,6 +29,7 @@ import io.helidon.dbclient.common.InterceptorSupport;
  * Stuff needed by each and every statement.
  */
 final class JdbcExecuteContext {
+
     private final ExecutorService executorService;
     private final InterceptorSupport interceptors;
     private final DbMapperManager dbMapperManager;
@@ -103,4 +104,5 @@ final class JdbcExecuteContext {
         return overallStage.thenAccept(it -> {
         });
     }
+
 }

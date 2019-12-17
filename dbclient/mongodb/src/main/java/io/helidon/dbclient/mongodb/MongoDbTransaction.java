@@ -82,7 +82,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.info(() -> String.format("Transaction marked as failed"));
+            LOGGER.finest(() -> String.format("Transaction marked as failed"));
         }
 
         /**
@@ -101,7 +101,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.info(() -> String.format("Statement %s marked as finished in transaction", stmt.statementName()));
+            LOGGER.finest(() -> String.format("Statement %s marked as finished in transaction", stmt.statementName()));
         }
 
         /**
@@ -122,7 +122,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.info(() -> String.format("Statement %s marked as failed in transaction", stmt.statementName()));
+            LOGGER.finest(() -> String.format("Statement %s marked as failed in transaction", stmt.statementName()));
         }
 
         /**
@@ -139,7 +139,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.info(() -> String.format("All statements are registered in current transaction"));
+            LOGGER.finest(() -> String.format("All statements are registered in current transaction"));
         }
 
         /**
