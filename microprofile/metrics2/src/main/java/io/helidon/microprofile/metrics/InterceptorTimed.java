@@ -38,6 +38,7 @@ final class InterceptorTimed extends InterceptorBase<Timer, Timed> {
         super(registry,
               Timed.class,
               Timed::name,
+              Timed::tags,
               Timed::absolute,
               MetricRegistry::getTimers,
               "timer");

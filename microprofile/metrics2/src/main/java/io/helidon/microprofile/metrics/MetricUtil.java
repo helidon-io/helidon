@@ -21,9 +21,13 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Class MetricUtil.
@@ -48,6 +52,12 @@ final class MetricUtil {
             annotation = (A) clazz.getAnnotation(annotClass);
         }
         return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
+    }
+
+    static <E extends Member & AnnotatedElement>
+    MetricID getMetricID(E element, Class<?> clazz, MatchingType matchingType, String explicitName, String[] tags,
+            boolean absolute) {
+        return new MetricID(getMetricName(element, clazz, matchingType, explicitName, absolute), tags(tags));
     }
 
     static <E extends Member & AnnotatedElement>
@@ -91,6 +101,19 @@ final class MetricUtil {
     static <E extends Member & AnnotatedElement>
     String getElementName(E element, Class<?> clazz) {
         return element instanceof Constructor ? clazz.getSimpleName() : element.getName();
+    }
+
+    static Tag[] tags(String[] tagStrings) {
+        final List<Tag> result = new ArrayList<>();
+        for (int i = 0; i < tagStrings.length; i++) {
+            final int eq = tagStrings[i].indexOf("=");
+            if (eq > 0) {
+                final String tagName = tagStrings[i].substring(0, eq);
+                final String tagValue = tagStrings[i].substring(eq + 1);
+                result.add(new Tag(tagName, tagValue));
+            }
+        }
+        return result.toArray(new Tag[result.size()]);
     }
 
     enum MatchingType {
