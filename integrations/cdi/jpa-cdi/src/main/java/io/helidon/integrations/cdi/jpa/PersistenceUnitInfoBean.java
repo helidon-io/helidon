@@ -498,6 +498,17 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         return this.mappingFileNames;
     }
 
+    @Override
+    public String toString() {
+        return this.getPersistenceUnitName() + " (" + this.getPersistenceUnitRootUrl() + ")";
+    }
+
+
+    /*
+     * Static methods.
+     */
+
+
     /**
      * Given a {@link Persistence} (a Java object representation of a
      * {@code META-INF/persistence.xml} resource), a {@link URL}
@@ -826,6 +837,11 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         final URL returnValue = new URL(persistenceUnitRootUrl, jarFileUrlString);
         return returnValue;
     }
+
+
+    /*
+     * Inner and nested classes.
+     */
 
 
     /**
