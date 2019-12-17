@@ -73,7 +73,9 @@ public final class MongoDbClientProviderBuilder implements DbClientProviderBuild
             conn.get("username").asString().ifPresent(this::username);
             conn.get("password").asString().ifPresent(this::password);
         }, () -> {
-            throw new DbClientException("No database connection configuration was found");
+            throw new DbClientException(String.format(
+                    "No database connection configuration (%s) was found",
+                    config.get("connection").key()));
         });
         config.get("credDb").asString().ifPresent(this::credDb);
         statements = DbStatements.create(config.get("statements"));
