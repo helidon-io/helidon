@@ -153,7 +153,7 @@ final class EntityManagerFactories {
         final PersistenceUnitInfo pu = getPersistenceUnitInfo(instance, suppliedQualifiers);
         assert pu != null;
         if (LOGGER.isLoggable(Level.WARNING) && PersistenceUnitTransactionType.RESOURCE_LOCAL.equals(pu.getTransactionType())) {
-          LOGGER.logp(Level.WARNING, cn, mn, "resourceLocalPersistenceUnitDiscouraged", pu);
+          LOGGER.logp(Level.WARNING, cn, mn, "resourceLocalPersistenceUnitWarning", pu);
         }
 
         PersistenceProvider persistenceProvider = null;
