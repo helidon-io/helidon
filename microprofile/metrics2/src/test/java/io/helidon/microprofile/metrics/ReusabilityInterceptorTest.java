@@ -16,31 +16,14 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.microprofile.server.Server;
-
 import org.junit.jupiter.api.Test;
 
-/**
- *
- */
-public class ReusabilityMpServiceTest {
-
-    static Server initServer(Class<?> resourceClass) {
-        return Server.builder()
-                .addResourceClass(resourceClass)
-                .host("localhost")
-                // choose a random available port
-                .port(-1)
-                .build();
-    }
+public class ReusabilityInterceptorTest extends MetricsBaseTest {
 
     @Test
-    public void tryToStartServerWithLegalAnnotationReuse() throws Exception {
-        Server server = initServer(ResourceWithLegallyReusedMetrics.class);
-        try {
-            server.start();
-        } finally {
-            server.stop();
-        }
+    public void testReusedMetricWithInterceptor() {
+        ResourceWithReusedMetricForInvocation resource = newBean(ResourceWithReusedMetricForInvocation.class);
+        resource.method1();
+
     }
 }

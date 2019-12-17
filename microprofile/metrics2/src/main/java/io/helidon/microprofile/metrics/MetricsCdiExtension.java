@@ -22,7 +22,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -71,6 +70,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
+import static io.helidon.microprofile.metrics.MetricUtil.tags;
 
 /**
  * MetricsCdiExtension class.
@@ -141,19 +141,6 @@ public class MetricsCdiExtension implements Extension {
             registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         }
-    }
-
-    private static Tag[] tags(String[] tagStrings) {
-        final List<Tag> result = new ArrayList<>();
-        for (int i = 0; i < tagStrings.length; i++) {
-            final int eq = tagStrings[i].indexOf("=");
-            if (eq > 0) {
-                final String tagName = tagStrings[i].substring(0, eq);
-                final String tagValue = tagStrings[i].substring(eq + 1);
-                result.add(new Tag(tagName, tagValue));
-            }
-        }
-        return result.toArray(new Tag[result.size()]);
     }
 
     /**
