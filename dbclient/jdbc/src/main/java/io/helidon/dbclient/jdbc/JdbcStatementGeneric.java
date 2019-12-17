@@ -34,7 +34,59 @@ import io.helidon.dbclient.DbStatementGeneric;
  * Generic statement.
  */
 class JdbcStatementGeneric extends JdbcStatement<DbStatementGeneric, DbResult> implements DbStatementGeneric {
+
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(JdbcStatementGeneric.class.getName());
+
+    private static final class GenericDbResult implements DbResult {
+
+        private final CompletableFuture<DbRows<DbRow>> queryResultFuture;
+        private final CompletableFuture<Long> dmlResultFuture;
+        private final CompletableFuture<Throwable> exceptionFuture;
+
+        GenericDbResult(
+                final CompletableFuture<DbRows<DbRow>> queryResultFuture,
+                final CompletableFuture<Long> dmlResultFuture,
+                final CompletableFuture<Throwable> exceptionFuture
+        ) {
+            this.queryResultFuture = queryResultFuture;
+            this.dmlResultFuture = dmlResultFuture;
+            this.exceptionFuture = exceptionFuture;
+        }
+
+        @Override
+        public DbResult whenDml(Consumer<Long> consumer) {
+            dmlResultFuture.thenAccept(consumer);
+            return this;
+        }
+
+        @Override
+        public DbResult whenRs(Consumer<DbRows<DbRow>> consumer) {
+            queryResultFuture.thenAccept(consumer);
+            return this;
+        }
+
+        @Override
+        public DbResult exceptionally(Consumer<Throwable> exceptionHandler) {
+            exceptionFuture.thenAccept(exceptionHandler);
+            return this;
+        }
+
+        @Override
+        public CompletionStage<Long> dmlFuture() {
+            return dmlResultFuture;
+        }
+
+        @Override
+        public CompletionStage<DbRows<DbRow>> rsFuture() {
+            return queryResultFuture;
+        }
+
+        @Override
+        public CompletionStage<Throwable> exceptionFuture() {
+            return exceptionFuture;
+        }
+    }
 
     JdbcStatementGeneric(JdbcExecuteContext executeContext,
                          JdbcStatementContext statementContext) {
@@ -98,7 +150,9 @@ class JdbcStatementGeneric extends JdbcStatement<DbStatementGeneric, DbResult> i
                                 // we would not close the connection in the resultSetFuture, so we have to close it here
                                 conn.close();
                             } catch (SQLException ex) {
-                                LOGGER.log(Level.WARNING, "Failed to close connection", ex);
+                                LOGGER.log(Level.WARNING,
+                                        String.format("Failed to close connection: %s", ex.getMessage()),
+                                        ex);
                             }
                         }
                         resultSetFuture.completeExceptionally(e);
@@ -154,40 +208,8 @@ class JdbcStatementGeneric extends JdbcStatement<DbStatementGeneric, DbResult> i
         });
 
         return interceptorStatementFuture.thenApply(nothing -> {
-            return new DbResult() {
-                @Override
-                public DbResult whenDml(Consumer<Long> consumer) {
-                    dmlResultFuture.thenAccept(consumer);
-                    return this;
-                }
-
-                @Override
-                public DbResult whenRs(Consumer<DbRows<DbRow>> consumer) {
-                    queryResultFuture.thenAccept(consumer);
-                    return this;
-                }
-
-                @Override
-                public DbResult exceptionally(Consumer<Throwable> exceptionHandler) {
-                    exceptionFuture.thenAccept(exceptionHandler);
-                    return this;
-                }
-
-                @Override
-                public CompletionStage<Long> dmlFuture() {
-                    return dmlResultFuture;
-                }
-
-                @Override
-                public CompletionStage<DbRows<DbRow>> rsFuture() {
-                    return queryResultFuture;
-                }
-
-                @Override
-                public CompletionStage<Throwable> exceptionFuture() {
-                    return exceptionFuture;
-                }
-            };
+            return new GenericDbResult(queryResultFuture, dmlResultFuture, exceptionFuture);
         });
     }
+
 }

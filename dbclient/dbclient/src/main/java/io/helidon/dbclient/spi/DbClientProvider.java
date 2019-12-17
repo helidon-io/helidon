@@ -19,6 +19,7 @@ package io.helidon.dbclient.spi;
  * Java Service loader interface that provides drivers for a database (or a set of databases).
  */
 public interface DbClientProvider {
+
     /**
      * Name of this provider. This is used to find correct provider when using configuration only approach.
      *
@@ -32,4 +33,5 @@ public interface DbClientProvider {
      * @return a new builder instance
      */
     DbClientProviderBuilder<?> builder();
+
 }

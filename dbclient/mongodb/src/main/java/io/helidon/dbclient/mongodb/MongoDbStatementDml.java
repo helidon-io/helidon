@@ -72,7 +72,8 @@ public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Long> 
             dbStatementType = DbStatementType.DELETE;
             break;
         default:
-            throw new IllegalStateException("Unexpected value for DML statement: " + statement.getOperation());
+            throw new IllegalStateException(
+                    String.format("Unexpected value for DML statement: %s", statement.getOperation()));
         }
         return super.execute();
     }

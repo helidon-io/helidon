@@ -28,6 +28,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbClientException;
@@ -43,6 +44,7 @@ import io.helidon.dbclient.common.AbstractStatement;
  */
 abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(JdbcStatement.class.getName());
 
     private final ExecutorService executorService;
@@ -125,7 +127,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         try {
             return conn.prepareStatement(statement);
         } catch (SQLException e) {
-            throw new DbClientException("Failed to prepare statement: " + statementName, e);
+            throw new DbClientException(String.format("Failed to prepare statement: %s", statementName), e);
         }
     }
 
@@ -134,12 +136,13 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                                                     String statement,
                                                     Map<String, Object> parameters) {
 
+        PreparedStatement preparedStatement = null;
         try {
             // Parameters names must be replaced with ? and names occurence order must be stored.
             Parser parser = new Parser(statement);
             String jdbcStatement = parser.convert();
             LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
-            PreparedStatement preparedStatement = connection.prepareStatement(jdbcStatement);
+            preparedStatement = connection.prepareStatement(jdbcStatement);
             List<String> namesOrder = parser.namesOrder();
             // SQL statement and provided parameters integrity check
             if (namesOrder.size() != parameters.size()) {
@@ -149,12 +152,13 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             int i = 1;
             for (String name : namesOrder) {
                 Object value = parameters.get(name);
-                LOGGER.info(String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                LOGGER.finest(String.format("Mapped parameter %d: %s -> %s", i, name, value));
                 preparedStatement.setObject(i, value);
                 i++;
             }
             return preparedStatement;
         } catch (SQLException e) {
+            closePreparedStatement(preparedStatement);
             throw new DbClientException("Failed to prepare statement with named parameters: " + statementName, e);
         }
     }
@@ -164,18 +168,30 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
                                                       String statement,
                                                       List<Object> parameters) {
 
+        PreparedStatement preparedStatement = null;
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement(statement);
+            preparedStatement = connection.prepareStatement(statement);
             int i = 1; // JDBC set position parameter starts from 1.
             for (Object value : parameters) {
-                LOGGER.info(String.format("Indexed parameter %d: %s", i, value));
+                LOGGER.finest(String.format("Indexed parameter %d: %s", i, value));
                 preparedStatement.setObject(i, value);
                 // increase value for next iteration
                 i++;
             }
             return preparedStatement;
         } catch (SQLException e) {
-            throw new DbClientException("Failed to prepare statement with indexed params: " + statementName, e);
+            closePreparedStatement(preparedStatement);
+            throw new DbClientException(String.format("Failed to prepare statement with indexed params: %s", statementName), e);
+        }
+    }
+
+    private void closePreparedStatement(final PreparedStatement preparedStatement) {
+        if (preparedStatement != null) {
+            try {
+                preparedStatement.close();
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, String.format("Could not close PreparedStatement: %s", e.getMessage()), e);
+            }
         }
     }
 

@@ -33,6 +33,7 @@ import io.helidon.dbclient.DbStatementType;
  * Support for interceptors.
  */
 public interface InterceptorSupport {
+
     /**
      * Get a list of interceptors to be executed for the specified statement.
      *
@@ -143,4 +144,5 @@ public interface InterceptorSupport {
             }
         }
     }
+
 }

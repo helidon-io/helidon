@@ -79,7 +79,7 @@ public final class DbResultSupport implements Service, Handler {
         rules.any(this);
     }
 
-    private class DbResultWriter implements Flow.Publisher<DataChunk> {
+    private static final class DbResultWriter implements Flow.Publisher<DataChunk> {
         private final CompletableFuture<Long> dml = new CompletableFuture<>();
         private final CompletableFuture<DbRows<DbRow>> query = new CompletableFuture<>();
 
@@ -104,88 +104,117 @@ public final class DbResultSupport implements Service, Handler {
             });
             dml.thenAccept(count -> {
                 if (null != count) {
-                    writer(JSON.createObjectBuilder().add("count", count).build());
+                    objectWriter(JSON.createObjectBuilder().add("count", count).build());
                 }
             });
         }
+
+        private static Flow.Publisher<DataChunk> objectWriter(JsonObject json) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (JsonWriter writer = WRITER_FACTORY.createWriter(baos)) {
+                writer.write(json);
+            }
+            return ContentWriters.byteArrayWriter(false)
+                    .apply(baos.toByteArray());
+        }
+
+    }
+
+    private static final class DbRowSubscription implements Flow.Subscription {
+
+        private final Flow.Subscription subscription;
+
+        private DbRowSubscription(final Flow.Subscription subscription) {
+            this.subscription = subscription;
+        }
+
+        @Override
+        public void request(long l) {
+            subscription.request(l);
+        }
+
+        @Override
+        public void cancel() {
+            subscription.cancel();
+        }
+
+    }
+
+    private static final class DbRowSubscriber implements Flow.Subscriber<DbRow> {
+
+        private volatile boolean first = true;
+        private final Flow.Subscriber<? super DataChunk> subscriber;
+
+        private DbRowSubscriber(final Flow.Subscriber<? super DataChunk> subscriber) {
+            this.subscriber = subscriber;
+        }
+
+        @Override
+        public void onSubscribe(Flow.Subscription subscription) {
+            Flow.Subscription mySubscription = new DbRowSubscription(subscription);
+            subscriber.onSubscribe(mySubscription);
+        }
+
+        @Override
+        public void onNext(DbRow dbRow) {
+            LOG.info(String.format("onNext: %s", dbRow.toString()));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            if (first) {
+                try {
+                    baos.write(ARRAY_JSON_BEGIN_BYTES);
+                } catch (IOException ignored) {
+                }
+                first = false;
+            } else {
+                try {
+                    baos.write(COMMA_BYTES);
+                } catch (IOException ignored) {
+                }
+            }
+            JsonWriter writer = WRITER_FACTORY.createWriter(baos);
+            writer.write(dbRow.as(JsonObject.class));
+            writer.close();
+            subscriber.onNext(DataChunk.create(baos.toByteArray()));
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            subscriber.onError(throwable);
+        }
+
+        @Override
+        public void onComplete() {
+            LOG.info("onComplete");
+
+            if (first) {
+                subscriber.onNext(DataChunk.create(EMPTY_JSON_BYTES));
+            } else {
+                subscriber.onNext(DataChunk.create(ARRAY_JSON_END_BYTES));
+            }
+            subscriber.onComplete();
+        }
+
+    }
+
+    private static final class DataChunkPublisher implements Flow.Publisher<DataChunk> {
+
+        private final DbRows<DbRow> dbRows;
+
+        private DataChunkPublisher(final DbRows<DbRow> dbRows) {
+            this.dbRows = dbRows;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
+            dbRows.publisher().subscribe(new DbRowSubscriber(subscriber));
+        }
+
     }
 
     // server send streaming
     // json streaming & data type
     private static Flow.Publisher<DataChunk> writer(DbRows<DbRow> dbRows) {
-        return new Flow.Publisher<DataChunk>() {
-            @Override
-            public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
-                dbRows.publisher().subscribe(new Flow.Subscriber<DbRow>() {
-                    private Flow.Subscription subscription;
-                    private volatile boolean first = true;
-
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        Flow.Subscription mySubscription = new Flow.Subscription() {
-                            @Override
-                            public void request(long l) {
-                                subscription.request(l);
-                            }
-
-                            @Override
-                            public void cancel() {
-                                subscription.cancel();
-                            }
-                        };
-
-                        subscriber.onSubscribe(mySubscription);
-                    }
-
-                    @Override
-                    public void onNext(DbRow dbRow) {
-                        LOG.info(String.format("onNext: %s", dbRow.toString()));
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        if (first) {
-                            try {
-                                baos.write(ARRAY_JSON_BEGIN_BYTES);
-                            } catch (IOException ignored) {
-                            }
-                            first = false;
-                        } else {
-                            try {
-                                baos.write(COMMA_BYTES);
-                            } catch (IOException ignored) {
-                            }
-                        }
-                        JsonWriter writer = WRITER_FACTORY.createWriter(baos);
-                        writer.write(dbRow.as(JsonObject.class));
-                        writer.close();
-                        subscriber.onNext(DataChunk.create(baos.toByteArray()));
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        subscriber.onError(throwable);
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        LOG.info("onComplete");
-
-                        if (first) {
-                            subscriber.onNext(DataChunk.create(EMPTY_JSON_BYTES));
-                        } else {
-                            subscriber.onNext(DataChunk.create(ARRAY_JSON_END_BYTES));
-                        }
-                        subscriber.onComplete();
-                    }
-                });
-            }
-        };
+        return new DataChunkPublisher(dbRows);
     }
 
-    private static Flow.Publisher<DataChunk> writer(JsonObject json) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonWriter writer = WRITER_FACTORY.createWriter(baos);
-        writer.write(json);
-        writer.close();
-        return ContentWriters.byteArrayWriter(false)
-                .apply(baos.toByteArray());
-    }
 }

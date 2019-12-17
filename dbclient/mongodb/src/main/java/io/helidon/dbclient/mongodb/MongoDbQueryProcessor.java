@@ -30,6 +30,7 @@ import org.reactivestreams.Subscription;
  */
 final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Document>, Flow.Publisher<DbRow>, Flow.Subscription {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(MongoDbQueryProcessor.class.getName());
 
     private final AtomicLong count = new AtomicLong();
@@ -58,7 +59,7 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
     public void onNext(Document doc) {
         MongoDbRow dbRow = new MongoDbRow(dbStatement.dbMapperManager(), dbStatement.mapperManager(), doc.size());
         doc.forEach((name, value) -> {
-            LOGGER.fine(() -> String.format(
+            LOGGER.finest(() -> String.format(
                     "Column name = %s, value = %s", name, (value != null ? value.toString() : "N/A")));
             dbRow.add(name, new MongoDbColumn(dbStatement.dbMapperManager(), dbStatement.mapperManager(), name, value));
         });
@@ -68,44 +69,44 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
 
     @Override
     public void onError(Throwable t) {
-        LOGGER.warning(() -> String.format("Query error: %s", t.getMessage()));
+        LOGGER.finest(() -> String.format("Query error: %s", t.getMessage()));
         statementFuture.completeExceptionally(t);
         queryFuture.completeExceptionally(t);
         if (dbStatement.txManager() != null) {
             dbStatement.txManager().stmtFailed(dbStatement);
         }
         subscriber.onError(t);
-        LOGGER.fine(() -> String.format("Query %s execution failed", dbStatement.statementName()));
+        LOGGER.finest(() -> String.format("Query %s execution failed", dbStatement.statementName()));
     }
 
     @Override
     public void onComplete() {
-        LOGGER.fine(() -> "Query finished");
+        LOGGER.finest(() -> "Query finished");
         statementFuture.complete(null);
         queryFuture.complete(count.get());
         if (dbStatement.txManager() != null) {
             dbStatement.txManager().stmtFinished(dbStatement);
         }
         subscriber.onComplete();
-        LOGGER.fine(() -> String.format("Query %s execution succeeded", dbStatement.statementName()));
+        LOGGER.finest(() -> String.format("Query %s execution succeeded", dbStatement.statementName()));
     }
 
     @Override
     public void subscribe(Flow.Subscriber<? super DbRow> subscriber) {
         this.subscriber = subscriber;
-        LOGGER.fine(() -> "Calling onSubscribe on subscriber");
+        LOGGER.finest(() -> "Calling onSubscribe on subscriber");
         subscriber.onSubscribe(this);
     }
 
     @Override
     public void request(long n) {
-        LOGGER.fine(() -> String.format("Requesting %d records from MongoDB", n));
+        LOGGER.finest(() -> String.format("Requesting %d records from MongoDB", n));
         this.subscription.request(n);
     }
 
     @Override
     public void cancel() {
-        LOGGER.fine(() -> "Cancelling MongoDB result processing");
+        LOGGER.finest(() -> "Cancelling MongoDB result processing");
         this.subscription.cancel();
     }
 

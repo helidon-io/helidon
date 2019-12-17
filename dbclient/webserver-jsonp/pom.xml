@@ -28,6 +28,10 @@
     <artifactId>helidon-dbclient-webserver-jsonp</artifactId>
     <name>Helidon DB Client WebServer JSON-P support</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

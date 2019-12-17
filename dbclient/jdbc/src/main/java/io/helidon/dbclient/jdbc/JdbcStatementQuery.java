@@ -33,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
@@ -53,7 +54,8 @@ import io.helidon.dbclient.DbStatementQuery;
  */
 class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> implements DbStatementQuery {
 
-    private static final Logger LOG = Logger.getLogger(JdbcStatementQuery.class.getName());
+    /** Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
 
     JdbcStatementQuery(JdbcExecuteContext executeContext,
                        JdbcStatementContext statementContext) {
@@ -80,8 +82,9 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                                             queryFuture,
                                             rs);
                 } catch (SQLException e) {
-                    LOG.warning(() -> String.format("Query execution failed: %s", e.getMessage()));
-                    LOG.warning(() -> String.format(" - query: %s", statement.toString()));
+                    LOGGER.log(Level.FINEST,
+                            String.format("Failed to execute query %s: %s", statement.toString(), e.getMessage()),
+                            e);
                     throw new DbClientException("Failed to execute query", e);
                 }
             });
@@ -385,12 +388,12 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                         try {
                             nextElement = requestQueue.poll(10, TimeUnit.MINUTES);
                         } catch (InterruptedException e) {
-                            LOG.severe("Interrupted while polling for requests, terminating DB read");
+                            LOGGER.severe("Interrupted while polling for requests, terminating DB read");
                             subscriber.onError(e);
                             break;
                         }
                         if (nextElement == null) {
-                            LOG.severe("No data requested for 10 minutes, terminating DB read");
+                            LOGGER.severe("No data requested for 10 minutes, terminating DB read");
                             subscriber.onError(new TimeoutException("No data requested in 10 minutes"));
                             break;
                         }
@@ -400,7 +403,6 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                                 subscriber.onNext(dbRow);
                                 count++;
                             } else {
-                                System.out.println("Query completed");
                                 queryFuture.complete(count);
                                 subscriber.onComplete();
                                 return;

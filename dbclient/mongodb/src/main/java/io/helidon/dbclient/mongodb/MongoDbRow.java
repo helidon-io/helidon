@@ -107,4 +107,5 @@ final class MongoDbRow implements DbRow {
         sb.append('}');
         return sb.toString();
     }
+
 }

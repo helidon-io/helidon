@@ -24,6 +24,7 @@ import java.util.function.Function;
  * Db statement that does not support execution, only parameters.
  */
 interface StatementParameters {
+
     /**
      * Configure parameters from a {@link java.util.List} by order.
      * The statement must use indexed parameters and configure them by order in the provided array.
@@ -116,7 +117,18 @@ interface StatementParameters {
      */
     StatementParameters addParam(String name, Object parameter);
 
+    /**
+     * Return {@code Map} containing all named parameters.
+     *
+     * @return {@code Map} containing all named parameters
+     */
     Map<String, Object> namedParams();
 
+    /**
+     * Return {@code List} containing all ordered parameters.
+     *
+     * @return {@code List} containing all ordered parameters
+     */
     List<Object> indexedParams();
+
 }

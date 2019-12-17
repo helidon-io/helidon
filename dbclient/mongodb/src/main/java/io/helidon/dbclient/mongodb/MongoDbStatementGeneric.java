@@ -175,7 +175,8 @@ public class MongoDbStatementGeneric extends MongoDbStatement<DbStatementGeneric
             dbStatementType = DbStatementType.COMMAND;
             break;
         default:
-            throw new IllegalStateException("Unexpected value for generic statement: " + statement.getOperation());
+            throw new IllegalStateException(
+                    String.format("Unexpected value for generic statement: %s", statement.getOperation()));
         }
         return super.execute();
     }
@@ -216,7 +217,8 @@ public class MongoDbStatementGeneric extends MongoDbStatement<DbStatementGeneric
                                 queryFuture)
                 ));
             default:
-                throw new UnsupportedOperationException("Operation " + dbStatementType.name() + " is not supported.");
+                throw new UnsupportedOperationException(
+                        String.format("Operation %s is not supported.", dbStatementType.name()));
         }
     }
 

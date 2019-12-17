@@ -27,6 +27,7 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
  * Database health check.
  */
 public final class DbClientHealthCheck implements HealthCheck {
+
     private final DbClient dbClient;
     private final String name;
 
@@ -116,4 +117,5 @@ public final class DbClientHealthCheck implements HealthCheck {
             return this;
         }
     }
+
 }

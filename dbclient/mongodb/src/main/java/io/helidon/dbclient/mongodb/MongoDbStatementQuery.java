@@ -35,6 +35,7 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
  */
 class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, DbRows<DbRow>> implements DbStatementQuery {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
 
     MongoDbStatementQuery(

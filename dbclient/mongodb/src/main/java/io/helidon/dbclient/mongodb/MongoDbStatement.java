@@ -42,7 +42,8 @@ import org.bson.Document;
  */
 abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
 
-    private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
+    /** Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(MongoDbStatement.class.getName());
 
     /**
      * Empty JSON object.

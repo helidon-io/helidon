@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
@@ -44,7 +45,7 @@ import io.helidon.dbclient.common.InterceptorSupport;
 class JdbcDbClient implements DbClient {
 
     /** Local logger instance. */
-    private static final Logger LOG = Logger.getLogger(DbClient.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DbClient.class.getName());
 
     private final ExecutorService executorService;
     private final ConnectionPool connectionPool;
@@ -63,36 +64,64 @@ class JdbcDbClient implements DbClient {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor) {
 
-        JdbcTxExecute execute = new JdbcTxExecute(statements,
-                                                  executorService,
-                                                  interceptors,
-                                                  connectionPool,
-                                                  dbMapperManager,
-                                                  mapperManager);
-
+        JdbcTxExecute execute = new JdbcTxExecute(
+                statements,
+                executorService,
+                interceptors,
+                connectionPool,
+                dbMapperManager,
+                mapperManager);
         CompletionStage<T> stage = executor.apply(execute)
                 .thenApply(it -> {
                     execute.context().whenComplete()
                             .thenAccept(nothing -> {
-                                LOG.info(() -> "Transaction commit");
-                                execute.doCommit();
-                            }).exceptionally(throwable -> {
-                                LOG.warning(() -> String.format("[1] Transaction rollback: %s", throwable.getMessage()));
-                                execute.doRollback();
-                                return null;
-                            });
+                                LOGGER.finest(() -> "Transaction commit");
+                                execute.doCommit().exceptionally(RollbackHandler.create(execute, Level.WARNING));
+                            }).exceptionally(RollbackHandler.create(execute, Level.WARNING));
                     return it;
                 });
 
-        stage.exceptionally(throwable -> {
-                    LOG.warning(() -> String.format("[2] Transaction rollback: %s", throwable.getMessage()));
-                    execute.doRollback();
-                    return null;
-                });
+        stage.exceptionally(RollbackHandler.create(execute, Level.FINEST));
 
-                return stage;
+        return stage;
+    }
+
+    /**
+     * Functional interface called to rollback failed transaction.
+     *
+     * @param <T> statement execution result type
+     */
+    private static final class RollbackHandler<T> implements Function<Throwable, T> {
+
+        private final JdbcTxExecute execute;
+        private final Level level;
+
+        private static RollbackHandler create(final JdbcTxExecute execute, final Level level) {
+            return new RollbackHandler(execute, level);
+        }
+
+        private RollbackHandler(final JdbcTxExecute execute, final Level level) {
+            this.execute = execute;
+            this.level = level;
+        }
+
+        @Override
+        public T apply(Throwable t) {
+            LOGGER.log(level,
+                    String.format("Transaction rollback: %s", t.getMessage()),
+                    t);
+            execute.doRollback().exceptionally(t2 -> {
+                LOGGER.log(level,
+                        String.format("Transaction rollback failed: %s", t2.getMessage()),
+                        t2);
+                return null;
+            });
+            return null;
+        }
+
     }
 
     @Override
@@ -109,10 +138,12 @@ class JdbcDbClient implements DbClient {
         resultFuture.thenApply(it -> {
             execute.context().whenComplete()
                     .thenAccept(nothing -> {
-                        LOG.info(() -> "Close connection");
+                        LOGGER.finest(() -> "Execution finished, closing connection");
                         execute.close();
                     }).exceptionally(throwable -> {
-                LOG.warning(() -> String.format("[1] Execution failed: %s", throwable.getMessage()));
+                LOGGER.log(Level.WARNING,
+                        String.format("Execution failed: %s", throwable.getMessage()),
+                        throwable);
                 execute.close();
                 return null;
             });
@@ -120,7 +151,9 @@ class JdbcDbClient implements DbClient {
         });
 
         resultFuture.exceptionally(throwable -> {
-            LOG.warning(() -> String.format("[2] Execution failed: %s", throwable.getMessage()));
+            LOGGER.log(Level.FINEST,
+                        String.format("Execution failed: %s", throwable.getMessage()),
+                        throwable);
             execute.close();
             return null;
         });
@@ -142,6 +175,7 @@ class JdbcDbClient implements DbClient {
     }
 
     private static final class JdbcTxExecute extends JdbcExecute implements DbTransaction {
+
         private volatile boolean setRollbackOnly = false;
 
         private JdbcTxExecute(DbStatements statements,
@@ -181,8 +215,8 @@ class JdbcDbClient implements DbClient {
             setRollbackOnly = true;
         }
 
-        private void doRollback() {
-            context().connection()
+        private CompletionStage<Connection> doRollback() {
+            return context().connection()
                     .thenApply(conn -> {
                         try {
                             conn.rollback();
@@ -195,12 +229,11 @@ class JdbcDbClient implements DbClient {
                     });
         }
 
-        private void doCommit() {
+        private CompletionStage<Connection> doCommit() {
             if (setRollbackOnly) {
-                doRollback();
-                return;
+                return doRollback();
             }
-            context().connection()
+            return context().connection()
                     .thenApply(conn -> {
                         try {
                             conn.commit();
@@ -214,6 +247,7 @@ class JdbcDbClient implements DbClient {
     }
 
     private static class JdbcExecute extends AbstractDbExecute {
+
         private final JdbcExecuteContext context;
 
         private JdbcExecute(DbStatements statements, JdbcExecuteContext context) {
@@ -307,10 +341,10 @@ class JdbcDbClient implements DbClient {
                         try {
                             conn.close();
                         } catch (SQLException e) {
-                            //TODO
-                            e.printStackTrace();
+                            LOGGER.log(Level.WARNING, String.format("Could not close connection: %s", e.getMessage()), e);
                         }
                     });
         }
     }
+
 }

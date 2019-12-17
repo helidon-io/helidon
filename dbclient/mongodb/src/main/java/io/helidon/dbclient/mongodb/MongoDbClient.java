@@ -42,6 +42,7 @@ import org.reactivestreams.Subscription;
  */
 public class MongoDbClient implements DbClient {
 
+    /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(MongoDbClient.class.getName());
 
     private final MongoDbClientConfig config;
@@ -94,7 +95,6 @@ public class MongoDbClient implements DbClient {
 
         @Override
         public void onError(Throwable t) {
-            LOGGER.warning(() -> String.format("Transaction error: %s", t.getMessage()));
             txFuture.completeExceptionally(t);
         }
 

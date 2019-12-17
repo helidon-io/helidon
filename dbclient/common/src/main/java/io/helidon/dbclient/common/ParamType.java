@@ -19,12 +19,14 @@ package io.helidon.dbclient.common;
  * Type of statement parameters.
  */
 public enum ParamType {
+
     /**
      * Indexed values to be passed to the statement in order.
      * In JDBC, this is used for statements that use {@code ?} as a placeholder
      *  for parameters.
      */
     INDEXED,
+
     /**
      * Named values to be passed to the statement by name.
      * Unless the underlying database directly supports named parameters,
@@ -32,8 +34,10 @@ public enum ParamType {
      *  a named parameter.
      */
     NAMED,
+
     /**
      * Statement type is not known.
      */
     UNKNOWN
+
 }

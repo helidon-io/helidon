@@ -28,6 +28,7 @@ import io.helidon.dbclient.spi.DbClientProvider;
  * Loads database client providers from Java Service loader.
  */
 final class DbClientProviderLoader {
+
     private static final Map<String, DbClientProvider> DB_SOURCES = new HashMap<>();
     private static final String[] NAMES;
     private static final DbClientProvider FIRST;

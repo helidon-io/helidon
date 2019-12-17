@@ -22,6 +22,7 @@ import io.helidon.dbclient.DbInterceptor;
  * Java service loader service to configure interceptors.
  */
 public interface DbInterceptorProvider {
+
     /**
      * The configuration key expected in config.
      * If the key exists, the builder looks into
@@ -45,4 +46,5 @@ public interface DbInterceptorProvider {
      * @return an interceptor to handle DB statements
      */
     DbInterceptor create(Config config);
+
 }
