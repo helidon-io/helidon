@@ -40,6 +40,7 @@ final class InterceptorConcurrentGauge
         super(registry,
                 ConcurrentGauge.class,
                 ConcurrentGauge::name,
+                ConcurrentGauge::tags,
                 ConcurrentGauge::absolute,
                 MetricRegistry::getConcurrentGauges,
                 CONCURRENT_GAUGE.toString());

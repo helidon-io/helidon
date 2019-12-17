@@ -38,6 +38,7 @@ final class InterceptorCounted extends InterceptorBase<Counter, Counted> {
         super(registry,
               Counted.class,
               Counted::name,
+              Counted::tags,
               Counted::absolute,
               MetricRegistry::getCounters,
               "counter");
