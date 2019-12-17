@@ -957,10 +957,6 @@
         </profile>
         <profile>
             <id>spotbugs</id>
-            <properties>
-                <!-- default exclude -->
-                <spotbugs.exclude>${top.parent.basedir}/etc/spotbugs/exclude.xml</spotbugs.exclude>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
