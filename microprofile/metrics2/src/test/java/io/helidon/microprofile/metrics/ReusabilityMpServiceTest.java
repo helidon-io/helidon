@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ReusabilityMpServiceTest {
 
-    private Server initServer(Class<?> resourceClass) {
+    static Server initServer(Class<?> resourceClass) {
         return Server.builder()
                 .addResourceClass(resourceClass)
                 .config(MpConfig.builder().config(Config.create()).build())

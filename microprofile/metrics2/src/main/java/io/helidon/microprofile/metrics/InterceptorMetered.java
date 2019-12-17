@@ -38,6 +38,7 @@ final class InterceptorMetered extends InterceptorBase<Meter, Metered> {
         super(registry,
               Metered.class,
               Metered::name,
+              Metered::tags,
               Metered::absolute,
               MetricRegistry::getMeters,
               "meter");
