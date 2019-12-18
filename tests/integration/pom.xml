@@ -33,7 +33,6 @@
     <name>Helidon Integration Tests</name>
 
     <modules>
-        <module>dbclient</module>
         <module>zipkin-mp-2.2</module>
         <module>mp-security-client</module>
         <module>health</module>
@@ -45,6 +44,12 @@
             <id>native-image</id>
             <modules>
                 <module>native-image</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>dbclient-it</id>
+            <modules>
+                <module>dbclient</module>
             </modules>
         </profile>
     </profiles>
