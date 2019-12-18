@@ -58,20 +58,10 @@ public class HikariConnectionPool implements ConnectionPool {
             final String dbType
     ) {
         this.dbType = dbType;
-        final Properties hikariProperties = new Properties();
-        if (properties != null) {
-            properties.forEach((key, value) -> {
-                StringBuilder sb = new StringBuilder(PROPERTIES_PREFIX.length() + key.toString().length());
-                sb.append(PROPERTIES_PREFIX);
-                sb.append(key);
-                hikariProperties.put(sb.toString(), value);
-            });
-        }
-        final HikariConfig config = new HikariConfig(hikariProperties);
+        final HikariConfig config = new HikariConfig(properties);
         config.setJdbcUrl(url);
         config.setUsername(username);
         config.setPassword(password);
-        config.setPoolName(DEFAULT_NAME);
         this.dataSource = new HikariDataSource(config);
     }
 

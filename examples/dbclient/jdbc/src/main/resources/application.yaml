@@ -24,9 +24,12 @@ tracing:
 # docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
 db:
   source: jdbc
-  url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
-  username: user
-  password: password
+  connection:
+    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
+    username: user
+    password: password
+    initializationFailTimeout: -1
+    connectionTimeout: 2000
   interceptors:
     tracing:
       global:

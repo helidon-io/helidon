@@ -83,7 +83,9 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
             conn.get("password").asString().ifPresent(this::password);
             connectionPool(conn.as(ConnectionPool::create).get());
         }, () -> {
-            throw new DbClientException("No database connection configuration was found");
+            throw new DbClientException(String.format(
+                    "No database connection configuration (%s) was found",
+                    config.get("connection").key()));
         });
         config.get("statements").as(DbStatements::create).ifPresent(this::statements);
         config.get("executor-service").as(ThreadPoolSupplier::create).ifPresent(this::executorService);
