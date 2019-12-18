@@ -379,7 +379,7 @@ public class PlainTest {
         String s = SocketHttpClient.sendAndReceive("/",
                 Http.Method.GET,
                 null,
-                CollectionsHelper.listOf("Content-Type: %", "Connection: close"),
+                List.of("Content-Type: %", "Connection: close"),
                 webServer);
         assertThat(s, containsString("400 Bad Request"));
         Map<String, String> headers = cutHeaders(s);
