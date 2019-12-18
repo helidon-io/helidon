@@ -138,7 +138,13 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 send100Continue(ctx);
             }
 
-            routing.route(bareRequest, bareResponse);
+            // If a problem during routing, return 400 response
+            try {
+                routing.route(bareRequest, bareResponse);
+            } catch (IllegalArgumentException e) {
+                send400BadRequest(ctx, e.getMessage());
+                return;
+            }
         }
 
         if (msg instanceof HttpContent) {

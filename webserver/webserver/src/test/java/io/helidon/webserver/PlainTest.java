@@ -374,6 +374,18 @@ public class PlainTest {
         assertThat(headers, IsMapContaining.hasKey("content-length"));
     }
 
+    @Test
+    public void testBadContentType() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/",
+                Http.Method.GET,
+                null,
+                List.of("Content-Type: %", "Connection: close"),
+                webServer);
+        assertThat(s, containsString("400 Bad Request"));
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, IsMapContaining.hasKey("content-type"));
+        assertThat(headers, IsMapContaining.hasKey("content-length"));
+    }
 
     private Map<String, String> cutHeaders(String response) {
         assertThat(response, notNullValue());

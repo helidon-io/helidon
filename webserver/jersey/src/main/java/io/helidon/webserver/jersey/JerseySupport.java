@@ -41,9 +41,11 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.HttpException;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -165,7 +167,7 @@ public class JerseySupport implements Service {
             }
             return new URI(sb.toString());
         } catch (URISyntaxException | MalformedURLException e) {
-            throw new IllegalStateException("Unable to create a request URI from the request info.", e);
+            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
         }
     }
 
@@ -174,7 +176,7 @@ public class JerseySupport implements Service {
             return new URI(req.isSecure() ? "https" : "http", null, req.localAddress(),
                            req.localPort(), basePath(req.path()), null, null);
         } catch (URISyntaxException e) {
-            throw new IllegalStateException("Unable to create a base URI from the request info.", e);
+            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
         }
     }
 
