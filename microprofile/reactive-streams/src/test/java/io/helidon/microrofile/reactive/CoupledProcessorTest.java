@@ -18,16 +18,29 @@
 package io.helidon.microrofile.reactive;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
+
+import io.helidon.microprofile.reactive.TappedProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 public class CoupledProcessorTest extends AbstractProcessorTest {
 
@@ -75,5 +88,139 @@ public class CoupledProcessorTest extends AbstractProcessorTest {
                 .get(1, TimeUnit.SECONDS);
 
         System.out.println(result);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void spec317() throws InterruptedException, ExecutionException, TimeoutException {
+
+        MockPublisher mp = new MockPublisher();
+        Processor<Long, Long> sub = new Processor<Long, Long>() {
+
+            private Optional<Subscription> subscription = Optional.empty();
+            AtomicInteger counter = new AtomicInteger(10);
+
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                this.subscription = Optional.of(subscription);
+            }
+
+            @Override
+            public void subscribe(Subscriber s) {
+                //mock request
+                System.out.println("Requesting " + 1 + " counter: " + counter.get());
+                subscription.get().request(1);
+            }
+
+            @Override
+            public void onNext(Long o) {
+                subscription.ifPresent(s -> {
+                    if (counter.getAndDecrement() > 0) {
+                        System.out.println("Requesting " + (Long.MAX_VALUE - 1) + " counter: " + counter.get());
+                        s.request(Long.MAX_VALUE - 1);
+                    } else {
+                        s.cancel();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                fail(t);
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
+        HybridProcessor tappedProcessor = HybridProcessor.from(TappedProcessor.create());
+
+        Processor<Long, Long> processor = ReactiveStreams
+                .coupled(
+                        tappedProcessor,
+                        tappedProcessor
+                )
+                .buildRs();
+
+        CompletionStage<Void> completionStage = ReactiveStreams
+                .fromPublisher(new IntSequencePublisher())
+                .map(Long::valueOf)
+                .via(processor)
+                .to(sub)
+                .run();
+
+        //signal request 1 to kickoff overflow simulation
+        sub.subscribe(null);
+
+        //is cancelled afe
+        assertThrows(CancellationException.class, () -> completionStage.toCompletableFuture().get(3, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void spec203() throws InterruptedException, ExecutionException, TimeoutException {
+
+        Processor<Object, Long> processor = ReactiveStreams
+                .coupled(
+                        ReactiveStreams.builder().ignore(),
+                        ReactiveStreams.fromPublisher(new Publisher<Long>() {
+                            @Override
+                            public void subscribe(Subscriber<? super Long> s) {
+                                s.onSubscribe(new Subscription() {
+                                    @Override
+                                    public void request(long n) {
+                                        System.out.println("Request called");
+                                        s.onNext(4L);
+                                    }
+
+                                    @Override
+                                    public void cancel() {
+                                        System.out.println("Cancel called");
+                                        Throwable thr = new Throwable();
+                                        for (StackTraceElement stackElem : thr.getStackTrace()) {
+                                            if (stackElem.getMethodName().equals("onError")) {
+                                                System.out.println(String.format("Subscription::cancel MUST NOT be called from Subscriber::onError (Rule 2.3)! (Caller: %s::%s line %d)",
+                                                        stackElem.getClassName(), stackElem.getMethodName(), stackElem.getLineNumber()));
+                                            }
+                                        }
+                                    }
+                                });
+                                s.onComplete();
+                            }
+                        })
+                )
+                .buildRs();
+
+        List<Long> result = ReactiveStreams
+                .of(1L, 2L)
+                .peek(l -> {
+                    throw new TestRuntimeException();
+                })
+                .via(processor)
+                .toList()
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+
+        System.out.println(result);
+    }
+
+    String ctx = "Wheee ctx";
+
+    @Test
+    void name() {
+        CompletableFuture<String> test = new CompletableFuture<>();
+
+        testMethod1(test);
+        testMethod2(test);
+
+    }
+
+    private void testMethod1(CompletableFuture<String> test) {
+        test.complete(Thread.currentThread().getStackTrace()[2].getMethodName());
+    }
+
+    private void testMethod2(CompletableFuture<String> test) {
+        test.thenAccept(x -> System.out.println(x + ctx));
     }
 }

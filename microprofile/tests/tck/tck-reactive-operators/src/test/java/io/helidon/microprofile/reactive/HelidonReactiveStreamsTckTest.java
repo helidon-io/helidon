@@ -20,9 +20,9 @@ package io.helidon.microprofile.reactive;
 import org.eclipse.microprofile.reactive.streams.operators.tck.ReactiveStreamsTck;
 import org.reactivestreams.tck.TestEnvironment;
 
-public class HelidonStreamEngineTckTest extends ReactiveStreamsTck<HelidonReactiveStreamEngine> {
+public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamEngine> {
 
-    public HelidonStreamEngineTckTest() {
+    public HelidonReactiveStreamsTckTest() {
         super(new TestEnvironment(200,200,false));
     }
 

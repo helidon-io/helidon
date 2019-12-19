@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  *
  * @param <T> both input/output type
  */
-public class PeekProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
+public class PeekProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
     private Consumer<T> consumer;
 

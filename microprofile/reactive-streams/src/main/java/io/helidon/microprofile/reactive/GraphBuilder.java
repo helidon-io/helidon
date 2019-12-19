@@ -32,7 +32,7 @@ import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.LimitProcessor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.PeekProcessor;
-import io.helidon.common.reactive.RSCompatibleProcessor;
+import io.helidon.common.reactive.BufferedProcessor;
 import io.helidon.common.reactive.SkipProcessor;
 import io.helidon.common.reactive.TakeWhileProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
@@ -176,9 +176,8 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
     }
 
     @SuppressWarnings("unchecked")
-    private <T, U> void addProcessor(RSCompatibleProcessor<T, U> processor) {
-        processor.setRSCompatible(true);
-        processorList.add(HybridProcessor.from((RSCompatibleProcessor<Object, Object>) processor));
+    private <T, U> void addProcessor(BufferedProcessor<T, U> processor) {
+        processorList.add(HybridProcessor.from((BufferedProcessor<Object, Object>) processor));
     }
 
     @SuppressWarnings("unchecked")

@@ -17,7 +17,7 @@
 
 package io.helidon.microrofile.reactive;
 
-import java.util.Collections;
+import java.util.List;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
@@ -25,7 +25,7 @@ import org.reactivestreams.Processor;
 public class FlatMapIterableProcessorTest extends AbstractProcessorTest {
     @Override
     protected Processor<Long, Long> getProcessor() {
-        return ReactiveStreams.<Long>builder().flatMapIterable(Collections::singleton).buildRs();
+        return ReactiveStreams.<Long>builder().flatMapIterable(aLong -> List.of(aLong)).buildRs();
     }
 
     @Override

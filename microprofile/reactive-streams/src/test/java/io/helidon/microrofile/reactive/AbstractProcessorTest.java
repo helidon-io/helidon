@@ -145,15 +145,15 @@ public abstract class AbstractProcessorTest {
         testProcessor(ReactiveStreams.fromPublisher(getPublisher(1_000_400L)).via(getProcessor()).buildRs(), s -> {
             s.request(15);
             s.expectRequestCount(15);
-            s.request(2);
-            s.expectRequestCount(17);
+            s.request(3);
+            s.expectRequestCount(18);
         });
     }
 
     @Test
     void longOverFlow() {
         testProcessor(ReactiveStreams.fromPublisher(getPublisher(1_000_400L)).via(getProcessor()).buildRs(), s -> {
-            s.cancelAfter(1_000_000L);
+            s.cancelAfter(1_000_0L);
             s.request(Long.MAX_VALUE - 1);
             s.request(Long.MAX_VALUE - 1);
         });

@@ -19,7 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.function.Predicate;
 
-public class DropWhileProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
+public class DropWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 
     private boolean foundNotMatching = false;

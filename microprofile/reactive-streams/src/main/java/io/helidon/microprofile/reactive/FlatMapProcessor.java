@@ -22,9 +22,9 @@ import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import io.helidon.common.reactive.RequestedCounter;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -42,7 +42,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     private Function<Object, Publisher> mapper;
     private HybridSubscriber<? super Object> subscriber;
     private Subscription subscription;
-    private final AtomicLong requestCounter = new AtomicLong();
+    private RequestedCounter requestCounter = new RequestedCounter();
     private Subscription innerSubscription;
     private AtomicBoolean onCompleteReceivedAlready = new AtomicBoolean(false);
 
@@ -73,12 +73,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     private class FlatMapSubscription implements Subscription {
         @Override
         public void request(long n) {
-            //TODO: Create some kind of reusable request counter
-            try {
-                requestCounter.set(Math.addExact(requestCounter.get(), n));
-            } catch (ArithmeticException e) {
-                requestCounter.set(Long.MAX_VALUE);
-            }
+            requestCounter.increment(n, FlatMapProcessor.this::onError);
 
             if (buffer.isComplete() || Objects.isNull(innerSubscription)) {
                 subscription.request(requestCounter.get());
@@ -153,7 +148,6 @@ public class FlatMapProcessor implements Processor<Object, Object> {
             Object nextItem = buffer.poll();
             if (Objects.nonNull(nextItem)) {
                 lastSubscriber = executeMapper(nextItem);
-                lastSubscriber.whenComplete(this::tryNext);
             } else if (onCompleteReceivedAlready.get()) {
                 // Received onComplete and all Publishers are done
                 subscriber.onComplete();
@@ -163,7 +157,6 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         public void offer(Object o) {
             if (buffer.isEmpty() && (Objects.isNull(lastSubscriber) || lastSubscriber.isDone())) {
                 lastSubscriber = executeMapper(o);
-                lastSubscriber.whenComplete(this::tryNext);
             } else {
                 buffer.offer(o);
             }
@@ -173,6 +166,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
             InnerSubscriber innerSubscriber = null;
             try {
                 innerSubscriber = new InnerSubscriber();
+                innerSubscriber.whenComplete(this::tryNext);
                 mapper.apply(item).subscribe(innerSubscriber);
             } catch (Throwable t) {
                 subscription.cancel();
@@ -208,7 +202,8 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         public void onNext(Object o) {
             Objects.requireNonNull(o);
             FlatMapProcessor.this.subscriber.onNext(o);
-            long requestCount = requestCounter.decrementAndGet();
+            requestCounter.tryDecrement();
+            long requestCount = requestCounter.get();
             if (requestCount > 0) {
                 innerSubscription.request(requestCount);
             }

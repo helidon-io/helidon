@@ -37,8 +37,7 @@ public class RequestedCounter {
      * process errors
      */
     public void increment(long increment, Consumer<? super IllegalArgumentException> errorHandler) {
-        if (increment <= 0) {
-            errorHandler.accept(new IllegalArgumentException("Unsupported requested event increment: " + increment));
+        if (!StreamValidationUtils.checkRequestParam309(increment, errorHandler)) {
             return;
         }
 

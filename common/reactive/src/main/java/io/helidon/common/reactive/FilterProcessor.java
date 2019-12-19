@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  *
  * @param <T> both input/output type
  */
-public class FilterProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
+public class FilterProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
     private Predicate<T> predicate;
 

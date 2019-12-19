@@ -32,7 +32,6 @@ import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
@@ -100,11 +99,15 @@ public class OnErrorResumeProcessorTest extends AbstractProcessorTest {
     @Override
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
         return ReactiveStreams.<Long>builder()
+                .peek(aLong -> {
+                    throw new RuntimeException();
+                })
                 .onErrorResumeWith(throwable -> {
                     throw new TestRuntimeException();
                 })
                 .buildRs();
     }
+
 
     @Test
     void requestCount() {

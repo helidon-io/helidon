@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 public class RecursionDepthTest {
     @Test
     void depthTest() {
-        assertFalse(RecursionUtils.recursionDepthExceeded(1));
+        assertFalse(StreamValidationUtils.getRecursionDepth() > 1);
         recursionMethod(4, new AtomicInteger(5), Assertions::assertTrue);
         recursionMethod(1, new AtomicInteger(1), Assertions::assertFalse);
         recursionMethod(10, new AtomicInteger(9), Assertions::assertFalse);
@@ -37,7 +37,7 @@ public class RecursionDepthTest {
 
     void recursionMethod(int maxDepth, AtomicInteger counter, Consumer<Boolean> runInDepth) {
         if (counter.decrementAndGet() == 0) {
-            runInDepth.accept(RecursionUtils.recursionDepthExceeded(maxDepth));
+            runInDepth.accept(StreamValidationUtils.getRecursionDepth() > maxDepth);
             return;
         }
         recursionMethod(maxDepth, counter, runInDepth);

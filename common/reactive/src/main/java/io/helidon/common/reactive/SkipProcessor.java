@@ -19,7 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SkipProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
+public class SkipProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
     private final AtomicLong counter;
 

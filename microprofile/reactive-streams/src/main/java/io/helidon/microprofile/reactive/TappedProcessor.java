@@ -22,9 +22,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.RSCompatibleProcessor;
+import io.helidon.common.reactive.BufferedProcessor;
 
-public class TappedProcessor extends RSCompatibleProcessor<Object, Object> {
+public class TappedProcessor extends BufferedProcessor<Object, Object> {
 
     private Optional<Function<Object, Object>> onNextFunction = Optional.empty();
     private Optional<Consumer<Throwable>> onErrorConsumer = Optional.empty();
@@ -36,7 +36,6 @@ public class TappedProcessor extends RSCompatibleProcessor<Object, Object> {
 
     public static TappedProcessor create() {
         TappedProcessor processor = new TappedProcessor();
-        processor.setRSCompatible(true);
         return processor;
     }
 

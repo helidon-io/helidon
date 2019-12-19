@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.reactive.RecursionUtils;
+import io.helidon.common.reactive.StreamValidationUtils;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
 import org.reactivestreams.Processor;
@@ -29,6 +29,26 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+/**
+ * Coupled processor sends all upstream.
+ * <pre>
+ *     +
+ *     |  Inlet/upstream publisher
+ * +-------+
+ * |   |   |   passed in subscriber
+ * |   +-------------------------->
+ * |       |   passed in publisher
+ * |   +--------------------------+
+ * |   |   |
+ * +-------+
+ *     |  Outlet/downstream subscriber
+ *     v
+ * </pre>
+ *
+ * @param <T>
+ * @param <R>
+ * @see org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams#coupled(org.reactivestreams.Subscriber, org.reactivestreams.Publisher)
+ */
 public class CoupledProcessor<T, R> implements Processor<T, R> {
 
     private HybridSubscriber<T> passedInSubscriber;
@@ -54,6 +74,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void onSubscribe(Subscription passedInPublisherSubscription) {
+                //Passed in publisher called onSubscribed
                 Objects.requireNonNull(passedInPublisherSubscription);
                 // https://github.com/reactive-streams/reactive-streams-jvm#2.5
                 if (Objects.nonNull(CoupledProcessor.this.passedInPublisherSubscription) || cancelled.get()) {
@@ -66,6 +87,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
             @Override
             @SuppressWarnings("unchecked")
             public void onNext(T t) {
+                //Passed in publisher sent onNext
                 Objects.requireNonNull(t);
                 outletSubscriber.onNext((R) t);
             }
@@ -78,7 +100,8 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
                 outletSubscriber.onError(t);
                 passedInSubscriber.onError(t);
                 inletSubscriber.onError(t);
-                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);//TODO: 203
+                //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
+                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);
             }
 
             @Override
@@ -87,7 +110,8 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
                 cancelled.set(true);
                 outletSubscriber.onComplete();
                 passedInSubscriber.onComplete();
-                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);//TODO: 203
+                //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
+                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);
             }
         });
 
@@ -95,10 +119,8 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
 
             @Override
             public void request(long n) {
-                if (RecursionUtils.recursionDepthExceeded(2)) {
-                    // https://github.com/reactive-streams/reactive-streams-jvm#3.3
-                    outletSubscriber.onError(new IllegalCallerException("Recursion depth exceeded 3.3"));
-                }
+                // Request from outlet subscriber
+                StreamValidationUtils.checkRecursionDepth303(2, (actDepth, t) -> outletSubscriber.onError(t));
                 passedInPublisherSubscription.request(n);
             }
 
@@ -107,6 +129,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
                 // Cancel from outlet subscriber
                 passedInSubscriber.onComplete();
                 Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);
+                passedInPublisherSubscription.cancel();
                 CoupledProcessor.this.passedInSubscriber.releaseReferences();
                 CoupledProcessor.this.outletSubscriber.releaseReferences();
             }
@@ -125,10 +148,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
         passedInSubscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
-                if (RecursionUtils.recursionDepthExceeded(5)) {
-                    // https://github.com/reactive-streams/reactive-streams-jvm#3.3
-                    passedInSubscriber.onError(new IllegalCallerException("Recursion depth exceeded 3.3"));
-                }
+                StreamValidationUtils.checkRecursionDepth303(5, (actDepth, t) -> passedInSubscriber.onError(t));
                 inletSubscription.request(n);
             }
 
@@ -148,15 +168,15 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onNext(T t) {
+        // Inlet/upstream publisher sent onNext
         passedInSubscriber.onNext(Objects.requireNonNull(t));
     }
 
     @Override
     public void onError(Throwable t) {
-        cancelled.set(true);
         // Inlet/upstream publisher sent error
+        cancelled.set(true);
         passedInSubscriber.onError(Objects.requireNonNull(t));
         outletSubscriber.onError(t);
         passedInPublisherSubscription.cancel();

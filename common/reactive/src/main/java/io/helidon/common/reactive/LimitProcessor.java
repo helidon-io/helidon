@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @param <T> both input/output type
  */
-public class LimitProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
+public class LimitProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
     private final AtomicLong counter;
 

@@ -19,7 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.function.Predicate;
 
-public class TakeWhileProcessor<T> extends RSCompatibleProcessor<T, T> implements Multi<T> {
+public class TakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 
     public TakeWhileProcessor(Predicate<T> predicate) {

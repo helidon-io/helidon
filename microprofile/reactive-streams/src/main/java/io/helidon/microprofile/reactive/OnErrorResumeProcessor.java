@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.RSCompatibleProcessor;
+import io.helidon.common.reactive.BufferedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscription;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
@@ -31,7 +31,7 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-public class OnErrorResumeProcessor<T> extends RSCompatibleProcessor<T, T> {
+public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> {
 
 
     private AtomicBoolean completed = new AtomicBoolean(false);

@@ -26,7 +26,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> subscribed type
  * @param <U> published type
  */
-public final class MultiMappingProcessor<T, U> extends RSCompatibleProcessor<T, U> implements Multi<U> {
+public final class MultiMappingProcessor<T, U> extends BufferedProcessor<T, U> implements Multi<U> {
 
     private final Mapper<T, U> mapper;
 
