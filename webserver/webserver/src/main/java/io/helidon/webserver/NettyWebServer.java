@@ -61,7 +61,7 @@ class NettyWebServer implements WebServer {
 
     private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
-    private static final boolean EXIT_ON_STARTED = "✅".equals(System.getProperty(EXIT_ON_STARTED_KEY));
+    private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
 
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;

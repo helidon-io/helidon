@@ -69,7 +69,7 @@ public class ServerImpl implements Server {
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
-    private static final boolean EXIT_ON_STARTED = "✅".equals(System.getProperty(EXIT_ON_STARTED_KEY));
+    private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
     private static final StartedServers STARTED_SERVERS = new StartedServers();
 
     private static long initStartupTime = System.nanoTime();
