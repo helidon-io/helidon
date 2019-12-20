@@ -82,7 +82,6 @@ public class ServerImpl implements Server {
     private final Context context;
     private final boolean supportParallelRun;
     private int port = -1;
-    private boolean isInitTimingLogged = false;
 
     static void recordInitStart(long time) {
         if (time < initStartupTime) {
