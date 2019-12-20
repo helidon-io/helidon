@@ -15,31 +15,28 @@
  *
  */
 
-package io.helidon.microprofile.reactive;
+package io.helidon.common.reactive;
 
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.RequestedCounter;
-
-public class OfPublisher implements Flow.Publisher<Object> {
-    private Iterable<?> iterable;
+public class OfPublisher<T> implements Flow.Publisher<T> {
+    private Iterable<T> iterable;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private AtomicBoolean completed = new AtomicBoolean(false);
     private AtomicBoolean trampolineLock = new AtomicBoolean(false);
     private final RequestedCounter requestCounter = new RequestedCounter();
     private final ReentrantLock iterateConcurrentLock = new ReentrantLock();
 
-    public OfPublisher(Iterable<?> iterable) {
+    public OfPublisher(Iterable<T> iterable) {
         this.iterable = iterable;
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super Object> subscriber) {
-        final Iterator<?> iterator;
+    public void subscribe(Flow.Subscriber<? super T> subscriber) {
+        final Iterator<T> iterator;
         try {
             iterator = iterable.iterator();
         } catch (Throwable t) {
@@ -59,7 +56,7 @@ public class OfPublisher implements Flow.Publisher<Object> {
                         while (requestCounter.tryDecrement()) {
                             iterateConcurrentLock.lock();
                             if (iterator.hasNext() && !cancelled.get()) {
-                                Object next = iterator.next();
+                                T next = iterator.next();
                                 iterateConcurrentLock.unlock();
                                 Objects.requireNonNull(next);
                                 subscriber.onNext(next);

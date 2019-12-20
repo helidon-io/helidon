@@ -28,9 +28,9 @@ import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
 import org.reactivestreams.Subscriber;
 
-public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, SubscriberWithCompletionStage<Object, Object> {
+public class FindFirstSubscriber<T> implements Flow.Subscriber<T>, SubscriberWithCompletionStage<T, Optional<T>> {
     private Flow.Subscription subscription;
-    private CompletableFuture<Object> completionStage = new CompletableFuture<>();
+    private CompletableFuture<Optional<T>> completionStage = new CompletableFuture<>();
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
@@ -46,11 +46,9 @@ public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, Sub
 
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void onNext(Object item) {
+    public void onNext(T item) {
         subscription.cancel();
-        Object optItem = (Object) Optional.of(item);
-        completionStage.complete(optItem);
+        completionStage.complete(Optional.of(item));
     }
 
     @Override
@@ -59,21 +57,19 @@ public class FindFirstSubscriber<Object> implements Flow.Subscriber<Object>, Sub
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onComplete() {
         if (!completionStage.isDone()) {
-            Object optItem = (Object) Optional.empty();
-            completionStage.complete(optItem);
+            completionStage.complete(Optional.empty());
         }
     }
 
     @Override
-    public CompletionStage<Object> getCompletion() {
+    public CompletionStage<Optional<T>> getCompletion() {
         return completionStage;
     }
 
     @Override
-    public Subscriber<Object> getSubscriber() {
+    public Subscriber<T> getSubscriber() {
         return HybridSubscriber.from(this);
     }
 }

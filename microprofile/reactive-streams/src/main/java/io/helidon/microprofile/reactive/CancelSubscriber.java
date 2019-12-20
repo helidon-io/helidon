@@ -29,9 +29,9 @@ import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
 import org.reactivestreams.Subscriber;
 
-public class CancelSubscriber implements Flow.Subscriber<Object>, SubscriberWithCompletionStage<Object, Object> {
+public class CancelSubscriber<T> implements Flow.Subscriber<T>, SubscriberWithCompletionStage<T, Optional<T>> {
 
-    private CompletableFuture<Object> completionStage = new CompletableFuture<>();
+    private CompletableFuture<Optional<T>> completionStage = new CompletableFuture<>();
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
@@ -40,7 +40,7 @@ public class CancelSubscriber implements Flow.Subscriber<Object>, SubscriberWith
     }
 
     @Override
-    public void onNext(Object item) {
+    public void onNext(T item) {
         Objects.requireNonNull(item);
         throw new CancellationException();
     }
@@ -53,18 +53,17 @@ public class CancelSubscriber implements Flow.Subscriber<Object>, SubscriberWith
     @Override
     public void onComplete() {
         if (!completionStage.isDone()) {
-            Object optItem = (Object) Optional.empty();
-            completionStage.complete(optItem);
+            completionStage.complete(Optional.empty());
         }
     }
 
     @Override
-    public CompletionStage<Object> getCompletion() {
+    public CompletionStage<Optional<T>> getCompletion() {
         return completionStage;
     }
 
     @Override
-    public Subscriber<Object> getSubscriber() {
+    public Subscriber<T> getSubscriber() {
         return HybridSubscriber.from(this);
     }
 }

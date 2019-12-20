@@ -141,9 +141,6 @@ public class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Ob
                 } catch (Throwable t) {
                     onError(t);
                 }
-                if (Objects.nonNull(subscription)) {
-                    //subscription.cancel();
-                }
             }
         };
     }

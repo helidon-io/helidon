@@ -27,7 +27,7 @@ public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
 
     private static final int BACK_PRESSURE_BUFFER_SIZE = 1024;
 
-    private ReferencedSubscriber<? super U> referencedSubscriber;
+    private SubscriberReference<? super U> referencedSubscriber;
     private BlockingQueue<U> buffer = new ArrayBlockingQueue<U>(BACK_PRESSURE_BUFFER_SIZE);
     private ReentrantLock publisherSequentialLock = new ReentrantLock();
 
@@ -39,10 +39,9 @@ public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
         super.request(n);
     }
 
-
     @Override
     protected void tryRequest(Flow.Subscription subscription) {
-        if (true && !getSubscriber().isClosed() && !buffer.isEmpty()) {
+        if (!getSubscriber().isClosed() && !buffer.isEmpty()) {
             try {
                 submit(buffer.take());
             } catch (InterruptedException e) {
@@ -57,7 +56,7 @@ public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
     public void subscribe(Flow.Subscriber<? super U> s) {
         // https://github.com/reactive-streams/reactive-streams-jvm#3.13
         //TODO: Move to BaseProcessor
-        referencedSubscriber = ReferencedSubscriber.create(s);
+        referencedSubscriber = SubscriberReference.create(s);
         super.subscribe(referencedSubscriber);
     }
 
@@ -133,42 +132,5 @@ public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
             error = ex;
         }
         tryComplete();
-    }
-
-    private static class ReferencedSubscriber<T> implements Flow.Subscriber<T> {
-
-        private Optional<Flow.Subscriber<T>> subscriber;
-
-        private ReferencedSubscriber(Flow.Subscriber<T> subscriber) {
-            this.subscriber = Optional.of(subscriber);
-        }
-
-        public static <T> ReferencedSubscriber<T> create(Flow.Subscriber<T> subscriber) {
-            return new ReferencedSubscriber<>(subscriber);
-        }
-
-        public void releaseReference() {
-            this.subscriber = Optional.empty();
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            subscriber.ifPresent(s -> s.onSubscribe(subscription));
-        }
-
-        @Override
-        public void onNext(T item) {
-            subscriber.ifPresent(s -> s.onNext(item));
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            subscriber.ifPresent(s -> s.onError(throwable));
-        }
-
-        @Override
-        public void onComplete() {
-            subscriber.ifPresent(Flow.Subscriber::onComplete);
-        }
     }
 }

@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.reactive;
+package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -24,56 +24,46 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.RequestedCounter;
-import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
-
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
-import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
 /**
  * Flatten the elements emitted by publishers produced by the mapper function to this stream.
  */
-public class FlatMapProcessor implements Processor<Object, Object> {
+public class MultiFlatMapProcessor implements Flow.Processor<Object, Object>, Multi<Object> {
 
-    private Function<Object, Publisher> mapper;
-    private HybridSubscriber<? super Object> subscriber;
-    private Subscription subscription;
+    private Function<Object, Flow.Publisher<Object>> mapper;
+    private SubscriberReference<? super Object> subscriber;
+    private Flow.Subscription subscription;
     private RequestedCounter requestCounter = new RequestedCounter();
-    private Subscription innerSubscription;
+    private Flow.Subscription innerSubscription;
     private AtomicBoolean onCompleteReceivedAlready = new AtomicBoolean(false);
 
     private PublisherBuffer buffer;
 
     private Optional<Throwable> error = Optional.empty();
 
-    private FlatMapProcessor() {
+    private MultiFlatMapProcessor() {
         buffer = new PublisherBuffer();
     }
 
     @SuppressWarnings("unchecked")
-    static FlatMapProcessor fromIterableMapper(Function<?, Iterable<?>> mapper) {
+    public static MultiFlatMapProcessor fromIterableMapper(Function<?, Iterable<?>> mapper) {
         Function<Object, Iterable<?>> iterableMapper = (Function<Object, Iterable<?>>) mapper;
-        FlatMapProcessor flatMapProcessor = new FlatMapProcessor();
-        flatMapProcessor.mapper = o -> ReactiveStreams.fromIterable(iterableMapper.apply(o)).buildRs();
+        MultiFlatMapProcessor flatMapProcessor = new MultiFlatMapProcessor();
+        flatMapProcessor.mapper = o -> (Multi<Object>) Multi.from(iterableMapper.apply(o));
         return flatMapProcessor;
     }
 
     @SuppressWarnings("unchecked")
-    static FlatMapProcessor fromPublisherMapper(Function<?, Graph> mapper) {
-        Function<Object, Graph> publisherMapper = (Function<Object, Graph>) mapper;
-        FlatMapProcessor flatMapProcessor = new FlatMapProcessor();
-        flatMapProcessor.mapper = o -> new HelidonReactiveStreamEngine().buildPublisher(publisherMapper.apply(o));
+    public static MultiFlatMapProcessor fromPublisherMapper(Function<?, Flow.Publisher<Object>> mapper) {
+        Function<Object, Flow.Publisher<Object>> publisherMapper = (Function<Object, Flow.Publisher<Object>>) mapper;
+        MultiFlatMapProcessor flatMapProcessor = new MultiFlatMapProcessor();
+        flatMapProcessor.mapper = publisherMapper;
         return flatMapProcessor;
     }
 
-    private class FlatMapSubscription implements Subscription {
+    private class FlatMapSubscription implements Flow.Subscription {
         @Override
         public void request(long n) {
-            requestCounter.increment(n, FlatMapProcessor.this::onError);
+            requestCounter.increment(n, MultiFlatMapProcessor.this::onError);
 
             if (buffer.isComplete() || Objects.isNull(innerSubscription)) {
                 subscription.request(requestCounter.get());
@@ -85,15 +75,15 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         @Override
         public void cancel() {
             subscription.cancel();
-            Optional.ofNullable(innerSubscription).ifPresent(Subscription::cancel);
+            Optional.ofNullable(innerSubscription).ifPresent(Flow.Subscription::cancel);
             // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-            subscriber.releaseReferences();
+            subscriber.releaseReference();
         }
     }
 
     @Override
-    public void subscribe(Subscriber<? super Object> subscriber) {
-        this.subscriber = HybridSubscriber.from(subscriber);
+    public void subscribe(Flow.Subscriber<? super Object> subscriber) {
+        this.subscriber = SubscriberReference.create(subscriber);
         if (Objects.nonNull(this.subscription)) {
             subscriber.onSubscribe(new FlatMapSubscription());
         }
@@ -101,7 +91,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     }
 
     @Override
-    public void onSubscribe(Subscription subscription) {
+    public void onSubscribe(Flow.Subscription subscription) {
         if (Objects.nonNull(this.subscription)) {
             subscription.cancel();
             return;
@@ -113,7 +103,6 @@ public class FlatMapProcessor implements Processor<Object, Object> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onNext(Object o) {
         Objects.requireNonNull(o);
         buffer.offer(o);
@@ -176,7 +165,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         }
     }
 
-    private class InnerSubscriber implements Subscriber<Object> {
+    private class InnerSubscriber implements Flow.Subscriber<Object> {
 
         private AtomicBoolean subscriptionAcked = new AtomicBoolean(false);
         private AtomicBoolean done = new AtomicBoolean(false);
@@ -184,14 +173,14 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         private Optional<Runnable> whenCompleteObserver = Optional.empty();
 
         @Override
-        public void onSubscribe(Subscription innerSubscription) {
+        public void onSubscribe(Flow.Subscription innerSubscription) {
             Objects.requireNonNull(innerSubscription);
             if (subscriptionAcked.get()) {
                 innerSubscription.cancel();
                 return;
             }
             subscriptionAcked.set(true);
-            FlatMapProcessor.this.innerSubscription = innerSubscription;
+            MultiFlatMapProcessor.this.innerSubscription = innerSubscription;
             long requestCount = requestCounter.get();
             if (requestCount > 0) {
                 innerSubscription.request(requestCount);
@@ -201,7 +190,7 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         @Override
         public void onNext(Object o) {
             Objects.requireNonNull(o);
-            FlatMapProcessor.this.subscriber.onNext(o);
+            MultiFlatMapProcessor.this.subscriber.onNext(o);
             requestCounter.tryDecrement();
             long requestCount = requestCounter.get();
             if (requestCount > 0) {
@@ -212,8 +201,8 @@ public class FlatMapProcessor implements Processor<Object, Object> {
         @Override
         public void onError(Throwable t) {
             Objects.requireNonNull(t);
-            FlatMapProcessor.this.subscription.cancel();
-            FlatMapProcessor.this.onError(t);
+            MultiFlatMapProcessor.this.subscription.cancel();
+            MultiFlatMapProcessor.this.onError(t);
         }
 
         @Override

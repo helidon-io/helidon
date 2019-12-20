@@ -15,46 +15,40 @@
  *
  */
 
-package io.helidon.microprofile.reactive;
+package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
-public class ConcatPublisher<T> implements Publisher<T> {
+public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     private FirstProcessor firstProcessor;
     private SecondProcessor secondProcessor;
-    private Subscriber<T> subscriber;
-    private Publisher<T> firstPublisher;
-    private Publisher<T> secondPublisher;
+    private Flow.Subscriber<T> subscriber;
+    private Flow.Publisher<T> firstPublisher;
+    private Flow.Publisher<T> secondPublisher;
     private AtomicLong requested = new AtomicLong();
 
 
-    public ConcatPublisher(Publisher<T> firstPublisher, Publisher<T> secondPublisher) {
+    public ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
         this.firstPublisher = firstPublisher;
         this.secondPublisher = secondPublisher;
     }
 
     @Override
-    public void subscribe(Subscriber<? super T> subscriber) {
-        this.subscriber = (Subscriber<T>) subscriber;
+    @SuppressWarnings("unchecked")
+    public void subscribe(Flow.Subscriber<? super T> subscriber) {
+        this.subscriber = (Flow.Subscriber<T>) subscriber;
 
         this.firstProcessor = new FirstProcessor();
         this.secondProcessor = new SecondProcessor();
 
         firstPublisher.subscribe(firstProcessor);
 
-        subscriber.onSubscribe(new Subscription() {
+        subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-                if (n <= 0) {
-                    // https://github.com/reactive-streams/reactive-streams-jvm#3.9
-                    subscriber.onError(new IllegalArgumentException("non-positive subscription request"));
+                if (!StreamValidationUtils.checkRequestParam309(n, subscriber::onError)) {
                     return;
                 }
                 requested.set(n);
@@ -73,17 +67,17 @@ public class ConcatPublisher<T> implements Publisher<T> {
         });
     }
 
-    private class FirstProcessor implements Processor<Object, Object> {
+    private class FirstProcessor implements Flow.Processor<Object, Object> {
 
-        private Subscription subscription;
+        private Flow.Subscription subscription;
         private boolean complete = false;
 
         @Override
-        public void subscribe(Subscriber<? super Object> s) {
+        public void subscribe(Flow.Subscriber<? super Object> s) {
         }
 
         @Override
-        public void onSubscribe(Subscription subscription) {
+        public void onSubscribe(Flow.Subscription subscription) {
             Objects.requireNonNull(subscription);
             this.subscription = subscription;
             secondPublisher.subscribe(secondProcessor);
@@ -99,7 +93,7 @@ public class ConcatPublisher<T> implements Publisher<T> {
         @Override
         public void onError(Throwable t) {
             complete = true;
-            Optional.ofNullable(secondProcessor.subscription).ifPresent(Subscription::cancel);
+            Optional.ofNullable(secondProcessor.subscription).ifPresent(Flow.Subscription::cancel);
             subscription.cancel();
             ConcatPublisher.this.subscriber.onError(t);
         }
@@ -112,16 +106,16 @@ public class ConcatPublisher<T> implements Publisher<T> {
     }
 
 
-    private class SecondProcessor implements Processor<Object, Object> {
+    private class SecondProcessor implements Flow.Processor<Object, Object> {
 
-        private Subscription subscription;
+        private Flow.Subscription subscription;
 
         @Override
-        public void subscribe(Subscriber<? super Object> s) {
+        public void subscribe(Flow.Subscriber<? super Object> s) {
         }
 
         @Override
-        public void onSubscribe(Subscription subscription) {
+        public void onSubscribe(Flow.Subscription subscription) {
             Objects.requireNonNull(subscription);
             this.subscription = subscription;
         }

@@ -23,6 +23,7 @@ import java.util.concurrent.Flow.Subscriber;
 import io.helidon.common.mapper.Mapper;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -41,7 +42,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> map(Mapper<T, U> mapper) {
-        MultiMappingProcessor<T, U> processor = new MultiMappingProcessor<>(mapper);
+        MultiMapProcessor<T, U> processor = new MultiMapProcessor<>(mapper);
         this.subscribe(processor);
         return processor;
     }
@@ -130,6 +131,45 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Coupled processor sends items received to the passed in subscriber, and emits items received from the passed in publisher.
+     * <pre>
+     *     +
+     *     |  Inlet/upstream publisher
+     * +-------+
+     * |   |   |   passed in subscriber
+     * |   +-------------------------->
+     * |       |   passed in publisher
+     * |   +--------------------------+
+     * |   |   |
+     * +-------+
+     *     |  Outlet/downstream subscriber
+     *     v
+     * </pre>
+     *
+     * @param <T>                Inlet and passed in subscriber item type
+     * @param <R>                Outlet and passed in publisher item type
+     * @param passedInSubscriber gets all items from upstream/inlet
+     * @param passedInPublisher  emits to downstream/outlet
+     */
+    default <R> Multi<R> coupled(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
+        MultiCoupledProcessor<T, R> processor = new MultiCoupledProcessor<>(passedInSubscriber, passedInPublisher);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    default Multi<T> onErrorResume(Function<Throwable, T> onError) {
+        OnErrorResumeProcessor<T> processor = OnErrorResumeProcessor.resume(onError);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    default Multi<T> onErrorResumeWith(Function<Throwable, Publisher<T>> onError) {
+        OnErrorResumeProcessor<T> processor = OnErrorResumeProcessor.resumeWith(onError);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
      * Terminal stage, invokes provided consumer for every item in the stream.
      *
      * @param consumer consumer to be invoked for each item
@@ -190,6 +230,19 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Create a {@link Multi} instance that publishes the given iterable.
+     *
+     * @param <T>      item type
+     * @param iterable iterable to publish
+     * @return Multi
+     * @throws NullPointerException if iterable is {@code null}
+     */
+    static <T> Multi<T> from(Iterable<T> iterable) {
+        return Multi.from(new OfPublisher<T>(iterable));
+    }
+
+
+    /**
      * Create a {@link Multi} instance that publishes the given items to a single subscriber.
      *
      * @param <T>   item type
@@ -224,7 +277,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if error is {@code null}
      */
     static <T> Multi<T> error(Throwable error) {
-        return new MultiError<>(error);
+        return new FailedPublisher<T>(error);
     }
 
     /**
@@ -245,5 +298,9 @@ public interface Multi<T> extends Subscribable<T> {
      */
     static <T> Multi<T> never() {
         return MultiNever.<T>instance();
+    }
+
+    static <T> Multi<T> concat(Multi<T> firstMulti, Multi<T> secondMulti) {
+        return new ConcatPublisher<>(firstMulti, secondMulti);
     }
 }

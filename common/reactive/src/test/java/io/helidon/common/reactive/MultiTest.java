@@ -20,8 +20,13 @@ import java.util.List;
 import java.util.Collections;
 import java.util.concurrent.Flow.Subscription;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -238,14 +243,10 @@ public class MultiTest {
     @Test
     public void testMapBadMapperNullValue() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.<String>just("foo", "bar").map(new Mapper<String, String>() {
-            @Override
-            public String map(String item) {
-                return null;
-            }
-        }).subscribe(subscriber);
+        Multi.just("foo", "bar").map((Mapper<String, String>) item -> null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        //TODO: ask Romain if IllegalStateException is really needed, RS operators TCKs expect NullPointerException
+        assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
@@ -346,6 +347,58 @@ public class MultiTest {
         List<Integer> result = Multi.just(TEST_DATA)
                 .dropWhile(i -> i < 4)
                 .collectList().get();
+
+        assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+
+    @Test
+    void testOnErrorResumeWith() throws ExecutionException, InterruptedException, TimeoutException {
+        List<Integer> result = Multi.<Integer>error(new RuntimeException())
+                .onErrorResumeWith(throwable -> Multi.just(1, 2, 3))
+                .collectList()
+                .get(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 2, 3))));
+    }
+
+    @Test
+    void testCoupled() throws ExecutionException, InterruptedException, TimeoutException {
+        final List<Integer> TEST_DATA = List.of(1, 2, 3, 4, 3, 2, 1, 0);
+
+        CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
+        PeekProcessor<Integer> peekProcessor = new PeekProcessor<>(i -> countDownLatch.countDown());
+
+        List<Integer> result = Multi.just(TEST_DATA)
+                .coupled(peekProcessor, peekProcessor)
+                .collectList()
+                .get(1, TimeUnit.SECONDS);
+
+        countDownLatch.await(1, TimeUnit.SECONDS);
+        assertThat(result, is(equalTo(TEST_DATA)));
+    }
+
+    @Test
+    void testOnErrorResume() throws ExecutionException, InterruptedException, TimeoutException {
+        Integer result = Multi.<Integer>error(new RuntimeException())
+                .onErrorResume(throwable -> 1)
+                .first()
+                .get(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
+    void testConcat() throws ExecutionException, InterruptedException {
+        final List<Integer> TEST_DATA_1 = Arrays.asList(1, 2, 3, 4, 3, 2, 1, 0);
+        final List<Integer> TEST_DATA_2 = Arrays.asList(11, 12, 13, 14, 13, 12, 11, 10);
+        final List<Integer> EXPECTED = Stream.concat(TEST_DATA_1.stream(), TEST_DATA_2.stream())
+                .collect(Collectors.toList());
+
+        List<Integer> result = Multi
+                .concat(Multi.from(TEST_DATA_1), Multi.just(TEST_DATA_2))
+                .collectList()
+                .get();
 
         assertThat(result, is(equalTo(EXPECTED)));
     }

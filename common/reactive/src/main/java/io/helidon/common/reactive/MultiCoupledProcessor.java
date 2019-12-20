@@ -15,22 +15,14 @@
  *
  */
 
-package io.helidon.microprofile.reactive;
+package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.reactive.StreamValidationUtils;
-import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
-
-import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
 /**
- * Coupled processor sends all upstream.
+ * Coupled processor sends items received to the passed in subscriber, and emits items received from the passed in publisher.
  * <pre>
  *     +
  *     |  Inlet/upstream publisher
@@ -45,51 +37,50 @@ import org.reactivestreams.Subscription;
  *     v
  * </pre>
  *
- * @param <T>
- * @param <R>
- * @see org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams#coupled(org.reactivestreams.Subscriber, org.reactivestreams.Publisher)
+ * @param <T> Inlet and passed in subscriber item type
+ * @param <R> Outlet and passed in publisher item type
  */
-public class CoupledProcessor<T, R> implements Processor<T, R> {
+public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<R> {
 
-    private HybridSubscriber<T> passedInSubscriber;
-    private Publisher<T> passedInPublisher;
-    private HybridSubscriber<? super R> outletSubscriber;
-    private Subscriber<? super T> inletSubscriber;
-    private Subscription inletSubscription;
-    private Subscription passedInPublisherSubscription;
+    private SubscriberReference<T> passedInSubscriber;
+    private SubscriberReference<? super R> outletSubscriber;
+    private Flow.Publisher<R> passedInPublisher;
+    private Flow.Subscriber<? super T> inletSubscriber;
+    private Flow.Subscription inletSubscription;
+    private Flow.Subscription passedInPublisherSubscription;
 
     private AtomicBoolean cancelled = new AtomicBoolean(false);
 
 
-    public CoupledProcessor(Subscriber<T> passedInSubscriber, Publisher<T> passedInPublisher) {
-        this.passedInSubscriber = HybridSubscriber.from(passedInSubscriber);
+    public MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
+        this.passedInSubscriber = SubscriberReference.create(passedInSubscriber);
         this.passedInPublisher = passedInPublisher;
         this.inletSubscriber = this;
     }
 
     @Override
-    public void subscribe(Subscriber<? super R> outletSubscriber) {
-        this.outletSubscriber = HybridSubscriber.from(outletSubscriber);
-        passedInPublisher.subscribe(new Subscriber<T>() {
+    public void subscribe(Flow.Subscriber<? super R> outletSubscriber) {
+        this.outletSubscriber = SubscriberReference.create(outletSubscriber);
+        passedInPublisher.subscribe(new Flow.Subscriber<R>() {
 
             @Override
-            public void onSubscribe(Subscription passedInPublisherSubscription) {
+            public void onSubscribe(Flow.Subscription passedInPublisherSubscription) {
                 //Passed in publisher called onSubscribed
                 Objects.requireNonNull(passedInPublisherSubscription);
                 // https://github.com/reactive-streams/reactive-streams-jvm#2.5
-                if (Objects.nonNull(CoupledProcessor.this.passedInPublisherSubscription) || cancelled.get()) {
+                if (Objects.nonNull(MultiCoupledProcessor.this.passedInPublisherSubscription) || cancelled.get()) {
                     passedInPublisherSubscription.cancel();
                     return;
                 }
-                CoupledProcessor.this.passedInPublisherSubscription = passedInPublisherSubscription;
+                MultiCoupledProcessor.this.passedInPublisherSubscription = passedInPublisherSubscription;
             }
 
             @Override
             @SuppressWarnings("unchecked")
-            public void onNext(T t) {
+            public void onNext(R t) {
                 //Passed in publisher sent onNext
                 Objects.requireNonNull(t);
-                outletSubscriber.onNext((R) t);
+                outletSubscriber.onNext(t);
             }
 
             @Override
@@ -101,7 +92,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
                 passedInSubscriber.onError(t);
                 inletSubscriber.onError(t);
                 //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);
+                Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
             }
 
             @Override
@@ -111,11 +102,11 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
                 outletSubscriber.onComplete();
                 passedInSubscriber.onComplete();
                 //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);
+                Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
             }
         });
 
-        outletSubscriber.onSubscribe(new Subscription() {
+        outletSubscriber.onSubscribe(new Flow.Subscription() {
 
             @Override
             public void request(long n) {
@@ -128,16 +119,16 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
             public void cancel() {
                 // Cancel from outlet subscriber
                 passedInSubscriber.onComplete();
-                Optional.ofNullable(inletSubscription).ifPresent(Subscription::cancel);
+                Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
                 passedInPublisherSubscription.cancel();
-                CoupledProcessor.this.passedInSubscriber.releaseReferences();
-                CoupledProcessor.this.outletSubscriber.releaseReferences();
+                MultiCoupledProcessor.this.passedInSubscriber.releaseReference();
+                MultiCoupledProcessor.this.outletSubscriber.releaseReference();
             }
         });
     }
 
     @Override
-    public void onSubscribe(Subscription inletSubscription) {
+    public void onSubscribe(Flow.Subscription inletSubscription) {
         Objects.requireNonNull(inletSubscription);
         // https://github.com/reactive-streams/reactive-streams-jvm#2.5
         if (Objects.nonNull(this.inletSubscription) || cancelled.get()) {
@@ -145,7 +136,7 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
             return;
         }
         this.inletSubscription = inletSubscription;
-        passedInSubscriber.onSubscribe(new Subscription() {
+        passedInSubscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
                 StreamValidationUtils.checkRecursionDepth303(5, (actDepth, t) -> passedInSubscriber.onError(t));
@@ -161,8 +152,8 @@ public class CoupledProcessor<T, R> implements Processor<T, R> {
                 inletSubscription.cancel();
                 outletSubscriber.onComplete();
                 passedInPublisherSubscription.cancel();
-                passedInSubscriber.releaseReferences();
-                outletSubscriber.releaseReferences();
+                passedInSubscriber.releaseReference();
+                outletSubscriber.releaseReference();
             }
         });
     }

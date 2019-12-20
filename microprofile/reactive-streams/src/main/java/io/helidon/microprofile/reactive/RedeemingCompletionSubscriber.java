@@ -96,7 +96,5 @@ class RedeemingCompletionSubscriber<T, R> implements org.eclipse.microprofile.re
     @Override
     public void onComplete() {
         subscriber.onComplete();
-        //Base processor breaks cancel->onComplete loop, so listen even for upstream call
-        //completion.toCompletableFuture().complete(null);
     }
 }

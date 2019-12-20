@@ -25,17 +25,25 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.reactive.BufferedProcessor;
+import io.helidon.common.reactive.ConcatPublisher;
+import io.helidon.common.reactive.MultiCoupledProcessor;
 import io.helidon.common.reactive.DistinctProcessor;
 import io.helidon.common.reactive.DropWhileProcessor;
+import io.helidon.common.reactive.FailedPublisher;
 import io.helidon.common.reactive.FilterProcessor;
+import io.helidon.common.reactive.MultiFlatMapProcessor;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.LimitProcessor;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.MultiMapProcessor;
+import io.helidon.common.reactive.OfPublisher;
+import io.helidon.common.reactive.OnErrorResumeProcessor;
 import io.helidon.common.reactive.PeekProcessor;
-import io.helidon.common.reactive.BufferedProcessor;
 import io.helidon.common.reactive.SkipProcessor;
 import io.helidon.common.reactive.TakeWhileProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
 import org.eclipse.microprofile.reactive.streams.operators.CompletionSubscriber;
@@ -61,15 +69,15 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         });
         registerStage(Stage.Concat.class, stage -> {
             HelidonReactiveStreamEngine streamEngine = new HelidonReactiveStreamEngine();
-            Publisher<Object> firstPublisher = streamEngine.buildPublisher(stage.getFirst());
-            Publisher<Object> secondPublisher = streamEngine.buildPublisher(stage.getSecond());
-            multi = MultiRS.toMulti(new ConcatPublisher<>(firstPublisher, secondPublisher));
+            HybridPublisher<Object> firstPublisher = HybridPublisher.from(streamEngine.buildPublisher(stage.getFirst()));
+            HybridPublisher<Object> secondPublisher = HybridPublisher.from(streamEngine.buildPublisher(stage.getSecond()));
+            multi = new ConcatPublisher<>(firstPublisher, secondPublisher);
         });
         registerStage(Stage.Of.class, stage -> {
             multi = Multi.from(new OfPublisher(stage.getElements()));
         });
         registerStage(Stage.Failed.class, stage -> {
-            multi = Multi.from(new FailedPublisher(stage.getError()));
+            multi = Multi.from(new FailedPublisher<>(stage.getError()));
         });
         registerStage(Stage.FromCompletionStage.class, stage -> {
             multi = MultiRS.toMulti(new FromCompletionStagePublisher<>(stage.getCompletionStage(), false));
@@ -79,7 +87,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
         });
         registerStage(Stage.Map.class, stage -> {
             Function<Object, Object> mapper = (Function<Object, Object>) stage.getMapper();
-            addProcessor(new MapProcessor<>(mapper::apply));
+            addProcessor(new MultiMapProcessor<>(mapper::apply));
         });
         registerStage(Stage.Filter.class, stage -> {
             addProcessor(new FilterProcessor<>(stage.getPredicate()));
@@ -107,10 +115,14 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             addProcessor(new DistinctProcessor<>());
         });
         registerStage(Stage.FlatMap.class, stage -> {
-            addProcessor(FlatMapProcessor.fromPublisherMapper(stage.getMapper()));
+            Function<?, Flow.Publisher<Object>> pubMapper = o -> {
+                Function<Object, Graph> oMapper = (Function<Object, Graph>) stage.getMapper();
+                return HybridPublisher.from(new HelidonReactiveStreamEngine().buildPublisher(oMapper.apply(o)));
+            };
+            addProcessor(MultiFlatMapProcessor.fromPublisherMapper(pubMapper));
         });
         registerStage(Stage.FlatMapIterable.class, stage -> {
-            addProcessor(FlatMapProcessor.fromIterableMapper(stage.getMapper()));
+            addProcessor(MultiFlatMapProcessor.fromIterableMapper(stage.getMapper()));
         });
         registerStage(Stage.FlatMapCompletionStage.class, stage -> {
             addProcessor(new FlatMapCompletionStageProcessor(stage.getMapper()));
@@ -119,7 +131,7 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             Subscriber<Object> subscriber = GraphBuilder.create()
                     .from(stage.getSubscriber()).getSubscriberWithCompletionStage().getSubscriber();
             Publisher<Object> publisher = GraphBuilder.create().from(stage.getPublisher()).getPublisher();
-            addProcessor(new CoupledProcessor<>(subscriber, publisher));
+            addProcessor(new MultiCoupledProcessor<>(HybridSubscriber.from(subscriber), HybridPublisher.from(publisher)));
         });
         registerStage(Stage.OnTerminate.class, stage -> {
             addProcessor(TappedProcessor.create()
@@ -137,15 +149,17 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             addProcessor(OnErrorResumeProcessor.resume(stage.getFunction()));
         });
         registerStage(Stage.OnErrorResumeWith.class, stage -> {
-            addProcessor(OnErrorResumeProcessor.resumeWith(stage.getFunction()));
+            Function<Throwable, Flow.Publisher<Object>> publisherSupplier = throwable ->
+                    HybridPublisher.from(GraphBuilder.create().from(stage.getFunction().apply(throwable)).getPublisher());
+            addProcessor(OnErrorResumeProcessor.resumeWith(publisherSupplier));
         });
         registerStage(Stage.Cancel.class, stage -> {
-            CancelSubscriber cancelSubscriber = new CancelSubscriber();
+            CancelSubscriber cancelSubscriber = new CancelSubscriber<>();
             subscribe(cancelSubscriber);
             this.subscriberWithCompletionStage = cancelSubscriber;
         });
         registerStage(Stage.FindFirst.class, stage -> {
-            FindFirstSubscriber<Object> firstSubscriber = new FindFirstSubscriber<>();
+            FindFirstSubscriber firstSubscriber = new FindFirstSubscriber<>();
             subscribe(firstSubscriber);
             this.subscriberWithCompletionStage = firstSubscriber;
         });

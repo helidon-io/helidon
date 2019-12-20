@@ -15,11 +15,9 @@
  *
  */
 
-package io.helidon.microprofile.reactive;
+package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow;
-
-public class FailedPublisher implements Flow.Publisher {
+public class FailedPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
     private Throwable throwable;
 
@@ -28,7 +26,7 @@ public class FailedPublisher implements Flow.Publisher {
     }
 
     @Override
-    public void subscribe(Flow.Subscriber subscriber) {
+    public void subscribe(Flow.Subscriber<? super T> subscriber) {
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
