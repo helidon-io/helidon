@@ -44,7 +44,7 @@ DESCRIPTION: Helidon Smoke Test Script
 
 USAGE:
 
-$(basename ${0}) [ --staged ] --version=V -workspace=path CMD
+$(basename ${0}) [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V  CMD
 
   --staged
         Use the OSS Sonatype Staging repository at
@@ -53,6 +53,11 @@ $(basename ${0}) [ --staged ] --version=V -workspace=path CMD
 
   --version=x.y.z
         Test the specified version of Helidon
+
+  --giturl=URL
+        URL to git repository with release tag. If you don't provide
+        this it will attempt to use origin of the repo this script
+        is being run from
 
   --clean
         Remove the specified version of Helidon from the local
@@ -96,6 +101,9 @@ for ((i=0;i<${#ARGS[@]};i++))
   "--version="*)
     VERSION=${ARG#*=}
     ;;
+  "--giturl="*)
+    GIT_URL=${ARG#*=}
+    ;;
   "--help")
     usage
     exit 0
@@ -128,14 +136,26 @@ else
   readonly SCRIPT_PATH="${0}"
 fi
 
+readonly SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
+
+if [ -z "${GIT_URL}" ] ; then
+  cd ${SCRIPT_DIR}
+  GIT_URL=$(git remote get-url origin)
+fi
+
+if [ -z "${GIT_URL}" ] ; then
+  echo "ERROR: can't determine URL of git repository. Pleas use --giturl option"
+  exit 1
+fi
+
 full(){
   echo "===== Full Test ====="
   cd ${SCRATCH}
   quick
   cd ${SCRATCH}
 
-  echo "===== Cloning Workspace ====="
-  git clone https://github.com/oracle/helidon.git
+  echo "===== Cloning Workspace ${GIT_URL} ====="
+  git clone ${GIT_URL}
   cd ${SCRATCH}/helidon
 
   echo "===== Checking out tags/${VERSION} ====="
