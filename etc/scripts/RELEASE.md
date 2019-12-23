@@ -75,7 +75,12 @@ export VERSION="0.7.0"
         mvn package -Possrh-staging
         ```
         
-    6. Release repository: Select repository then click Release (up at the top)
+    6. Do full smoke test using test script (this requires staging profile to
+       be configured):
+       ```
+       smoketest.sh --version=${VERSION} --clean --staged full
+       ```
+    7. Release repository: Select repository then click Release (up at the top)
        1. In description you can put something like "Helidon 0.7.0 Release"
        2. It might take a while (possibly hours) before the release appears in Maven Central
        3. To check on progress look at https://repo1.maven.org/maven2/io/helidon/helidon-bom/
