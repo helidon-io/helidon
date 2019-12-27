@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;

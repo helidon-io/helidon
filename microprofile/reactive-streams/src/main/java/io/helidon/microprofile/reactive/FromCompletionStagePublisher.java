@@ -52,11 +52,11 @@ public class FromCompletionStagePublisher<T> implements Publisher<T> {
             @Override
             public void cancel() {
                 cancelled = true;
-                //registerEmitWhenCompleteOnceAction();
             }
         });
     }
 
+    @SuppressWarnings("unchecked")
     private void registerEmitWhenCompleteOnceAction() {
         if (!registered.getAndSet(true)) {
             completionStage.whenComplete((item, throwable) -> {

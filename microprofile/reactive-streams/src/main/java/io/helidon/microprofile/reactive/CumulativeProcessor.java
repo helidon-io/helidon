@@ -20,9 +20,9 @@ package io.helidon.microprofile.reactive;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.MultiTappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
@@ -39,9 +39,9 @@ public class CumulativeProcessor implements Processor<Object, Object> {
     private AtomicBoolean chainConnected = new AtomicBoolean(false);
 
     /**
-     * Create {@link org.reactivestreams.Processor} wrapping ordered list of {@link io.helidon.common.reactive.Flow.Processor}s.
+     * Create {@link org.reactivestreams.Processor} wrapping ordered list of {@link java.util.concurrent.Flow.Processor}s.
      *
-     * @param precedingProcessorList ordered list of {@link io.helidon.common.reactive.Flow.Processor}s
+     * @param precedingProcessorList ordered list of {@link java.util.concurrent.Flow.Processor}s
      */
     CumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
         //preceding processors

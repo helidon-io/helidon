@@ -16,17 +16,17 @@
 
 package io.helidon.microprofile.messaging.connector;
 
-import io.helidon.microprofile.messaging.AbstractCDITest;
-import org.junit.jupiter.api.Test;
-
-import javax.enterprise.inject.spi.DeploymentException;
-
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.helidon.common.CollectionsHelper.mapOf;
+import javax.enterprise.inject.spi.DeploymentException;
+
+import io.helidon.microprofile.messaging.AbstractCDITest;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 public class ConnectorTest extends AbstractCDITest {
 
@@ -38,7 +38,7 @@ public class ConnectorTest extends AbstractCDITest {
     @Test
     void connectorTest() throws InterruptedException {
         cdiContainer = startCdiContainer(
-                mapOf("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
+                Map.of("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
                 IterableConnector.class,
                 ConnectedBean.class);
         assertTrue(ConnectedBean.LATCH.await(2, TimeUnit.SECONDS));
@@ -47,7 +47,7 @@ public class ConnectorTest extends AbstractCDITest {
     @Test
     void connectorWithProcessorTest() throws InterruptedException {
         cdiContainer = startCdiContainer(
-                mapOf("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
+                Map.of("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
                 IterableConnector.class,
                 ConnectedProcessorBean.class);
         assertTrue(ConnectedProcessorBean.LATCH.await(2, TimeUnit.SECONDS));
@@ -55,7 +55,7 @@ public class ConnectorTest extends AbstractCDITest {
 
     @Test
     void connectorWithProcessorOnlyTest() throws InterruptedException {
-        Map<String, String> p = mapOf(
+        Map<String, String> p = Map.of(
                 "mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector",
                 "mp.messaging.outgoing.iterable-channel-out.connector", "iterable-connector");
         cdiContainer = startCdiContainer(p, IterableConnector.class, ConnectedOnlyProcessorBean.class);
@@ -66,7 +66,7 @@ public class ConnectorTest extends AbstractCDITest {
     void missingConnectorTest() {
         assertThrows(DeploymentException.class, () ->
                 cdiContainer = startCdiContainer(
-                        mapOf("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
+                        Map.of("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
                         ConnectedBean.class));
     }
 }

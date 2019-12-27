@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Flow;
 
 /**
  * Processor with back-pressure buffer.

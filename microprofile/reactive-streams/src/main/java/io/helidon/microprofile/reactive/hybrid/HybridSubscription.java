@@ -19,14 +19,13 @@ package io.helidon.microprofile.reactive.hybrid;
 
 import java.security.InvalidParameterException;
 import java.util.Optional;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 import org.reactivestreams.Subscription;
 
 /**
  * Wrapper for {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscription}
- * or {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Subscription},
+ * or {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Subscription},
  * to be used interchangeably.
  */
 public class HybridSubscription implements Flow.Subscription, Subscription {
@@ -45,9 +44,9 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
 
     /**
      * Create new {@link HybridSubscription}
-     * from {@link io.helidon.common.reactive.Flow.Processor}.
+     * from {@link java.util.concurrent.Flow.Processor}.
      *
-     * @param subscription {@link io.helidon.common.reactive.Flow.Subscription} to wrap
+     * @param subscription {@link java.util.concurrent.Flow.Subscription} to wrap
      * @return {@link HybridSubscription}
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
@@ -58,9 +57,9 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
 
     /**
      * Create new {@link HybridSubscription}
-     * from {@link io.helidon.common.reactive.Flow.Subscription}.
+     * from {@link java.util.concurrent.Flow.Subscription}.
      *
-     * @param subscription {@link io.helidon.common.reactive.Flow.Subscription} to wrap
+     * @param subscription {@link java.util.concurrent.Flow.Subscription} to wrap
      * @return {@link HybridSubscription}
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
@@ -69,7 +68,7 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
         return new HybridSubscription(subscription);
     }
 
-    public HybridSubscription onCancel(Runnable runnable){
+    public HybridSubscription onCancel(Runnable runnable) {
         this.onCancel = Optional.of(runnable);
         return this;
     }

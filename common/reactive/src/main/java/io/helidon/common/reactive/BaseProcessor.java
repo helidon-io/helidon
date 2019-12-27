@@ -15,12 +15,13 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 

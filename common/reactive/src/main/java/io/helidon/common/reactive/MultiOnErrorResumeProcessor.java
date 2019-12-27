@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -51,10 +52,10 @@ public class MultiOnErrorResumeProcessor<T> extends BufferedProcessor<T, T> impl
     }
 
     /**
-     * Create new {@link MultiOnErrorResumeProcessor} with supplier for {@link io.helidon.common.reactive.Flow.Publisher}
+     * Create new {@link MultiOnErrorResumeProcessor} with supplier for {@link java.util.concurrent.Flow.Publisher}
      * to resume stream after error is intercepted.
      *
-     * @param supplier or {@link io.helidon.common.reactive.Flow.Publisher}
+     * @param supplier or {@link java.util.concurrent.Flow.Publisher}
      *                 to resume stream after error is intercepted
      * @param <T>      item type
      * @return new {@link MultiOnErrorResumeProcessor}

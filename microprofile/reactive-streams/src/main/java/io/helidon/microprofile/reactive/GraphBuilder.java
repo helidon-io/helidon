@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -33,7 +34,6 @@ import io.helidon.common.reactive.MultiDropWhileProcessor;
 import io.helidon.common.reactive.FailedPublisher;
 import io.helidon.common.reactive.MultiFilterProcessor;
 import io.helidon.common.reactive.MultiFlatMapProcessor;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.MultiLimitProcessor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.MultiMapProcessor;

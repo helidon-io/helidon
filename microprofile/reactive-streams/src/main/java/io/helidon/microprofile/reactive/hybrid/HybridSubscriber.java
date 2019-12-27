@@ -19,24 +19,19 @@ package io.helidon.microprofile.reactive.hybrid;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.logging.Logger;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 /**
  * Wrapper for {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscriber}
- * or {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Subscriber},
+ * or {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Subscriber},
  * to be used interchangeably.
  *
  * @param <T> type of items
  */
 public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
-
-    private static final Logger LOGGER = Logger.getLogger(HybridSubscriber.class.getName());
 
     private Optional<Flow.Subscriber<T>> flowSubscriber = Optional.empty();
     private Optional<Subscriber<T>> reactiveSubscriber = Optional.empty();
@@ -54,9 +49,9 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
 
     /**
      * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
-     * from {@link io.helidon.common.reactive.Flow.Subscriber}.
+     * from {@link java.util.concurrent.Flow.Subscriber}.
      *
-     * @param subscriber {@link io.helidon.common.reactive.Flow.Subscriber} to wrap
+     * @param subscriber {@link java.util.concurrent.Flow.Subscriber} to wrap
      * @param <T>        type of items
      * @return {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
      * compatible with {@link org.reactivestreams Reactive Streams}

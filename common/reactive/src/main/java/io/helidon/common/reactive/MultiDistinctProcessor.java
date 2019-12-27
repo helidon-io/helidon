@@ -18,6 +18,7 @@
 package io.helidon.common.reactive;
 
 import java.util.HashSet;
+import java.util.concurrent.Flow;
 
 /**
  * Filter out all duplicate items.

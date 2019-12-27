@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -60,7 +61,7 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
     }
 
     /**
-     * Create new {@link MultiFlatMapProcessor} with item to {@link io.helidon.common.reactive.Flow.Publisher} mapper.
+     * Create new {@link MultiFlatMapProcessor} with item to {@link java.util.concurrent.Flow.Publisher} mapper.
      *
      * @param mapper to provide iterable for every item from upstream
      * @param <T>    item type

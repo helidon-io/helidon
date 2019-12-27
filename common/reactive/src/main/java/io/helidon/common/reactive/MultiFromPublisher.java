@@ -15,8 +15,6 @@
  */
 package io.helidon.common.reactive;
 
-import org.reactivestreams.Subscription;
-
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;

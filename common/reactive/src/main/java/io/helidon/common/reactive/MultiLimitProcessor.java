@@ -17,6 +17,7 @@
 
 package io.helidon.common.reactive;
 
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**

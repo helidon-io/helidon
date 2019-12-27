@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 

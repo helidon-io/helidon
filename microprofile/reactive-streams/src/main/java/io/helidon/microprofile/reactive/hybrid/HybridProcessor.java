@@ -18,8 +18,8 @@
 package io.helidon.microprofile.reactive.hybrid;
 
 import java.security.InvalidParameterException;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
 
 import org.reactivestreams.Processor;
@@ -28,7 +28,7 @@ import org.reactivestreams.Subscription;
 
 /**
  * Wrapper for {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Processor}
- * or {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Processor},
+ * or {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Processor},
  * to be used interchangeably.
  *
  * @param <T> type of items processor consumes
@@ -48,9 +48,9 @@ public class HybridProcessor<T, R> implements Flow.Processor<T, R>, Processor<T,
 
     /**
      * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridProcessor}
-     * from {@link io.helidon.common.reactive.Flow.Processor}.
+     * from {@link java.util.concurrent.Flow.Processor}.
      *
-     * @param processor {@link io.helidon.common.reactive.Flow.Processor} to wrap
+     * @param processor {@link java.util.concurrent.Flow.Processor} to wrap
      * @param <T>       type of items processor consumes
      * @param <R>       type of items processor emits
      * @return {@link io.helidon.microprofile.reactive.hybrid.HybridProcessor}

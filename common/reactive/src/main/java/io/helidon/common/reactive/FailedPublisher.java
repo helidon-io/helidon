@@ -17,6 +17,8 @@
 
 package io.helidon.common.reactive;
 
+import java.util.concurrent.Flow;
+
 /**
  * Stream from {@link FailedPublisher} sends onError signal after onSubscribe is called.
  *

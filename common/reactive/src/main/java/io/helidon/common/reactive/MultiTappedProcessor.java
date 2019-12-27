@@ -18,6 +18,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Optional;
+import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -84,7 +85,7 @@ public class MultiTappedProcessor<R> extends BufferedProcessor<R, R> implements 
      * Set consumer to be executed when onCancel signal is intercepted.
      *
      * @param consumer Consumer to be executed when onCancel signal is intercepted,
-     *                 argument is intercepted {@link io.helidon.common.reactive.Flow.Subscription}.
+     *                 argument is intercepted {@link java.util.concurrent.Flow.Subscription}.
      * @return This {@link MultiTappedProcessor}
      */
     public MultiTappedProcessor<R> onCancel(Consumer<Flow.Subscription> consumer) {

@@ -17,11 +17,12 @@
 
 package io.helidon.microrofile.reactive;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.MultiTappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import org.reactivestreams.Processor;
+
+import java.util.concurrent.Flow;
 
 public class MultiTappedProcessorTest extends AbstractProcessorTest {
     @Override

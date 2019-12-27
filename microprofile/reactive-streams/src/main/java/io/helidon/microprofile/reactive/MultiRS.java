@@ -17,10 +17,10 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
 import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
@@ -35,12 +35,12 @@ import org.reactivestreams.Subscriber;
 public interface MultiRS {
 
     /**
-     * Create {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Subscriber}
+     * Create {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Subscriber}
      * from {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscriber}.
      *
      * @param subscriber {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscriber}
      * @param <T>        type of streamed item
-     * @return {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Subscriber}
+     * @return {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Subscriber}
      */
     static <T> Flow.Subscriber<T> from(Subscriber<T> subscriber) {
         return HybridSubscriber.from(subscriber);
@@ -50,7 +50,7 @@ public interface MultiRS {
      * Create {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscriber}
      * from {@link io.helidon.common.reactive Helidon reactive streams} subscriber.
      *
-     * @param subscriber Helidon {@link io.helidon.common.reactive.Multi} stream {@link io.helidon.common.reactive.Flow.Subscriber}
+     * @param subscriber Helidon {@link io.helidon.common.reactive.Multi} stream {@link java.util.concurrent.Flow.Subscriber}
      * @param <T>        type of streamed item
      * @return {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Subscriber}
      */
@@ -59,12 +59,12 @@ public interface MultiRS {
     }
 
     /**
-     * Create {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Publisher}
+     * Create {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Publisher}
      * from {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Publisher}.
      *
      * @param publisher {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Publisher}
      * @param <T>       type of streamed item
-     * @return Multi stream {@link io.helidon.common.reactive.Flow.Publisher}
+     * @return Multi stream {@link java.util.concurrent.Flow.Publisher}
      */
     static <T> Flow.Publisher<T> from(Publisher<T> publisher) {
         return HybridPublisher.from(publisher);
@@ -72,9 +72,9 @@ public interface MultiRS {
 
     /**
      * Create {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Publisher}
-     * from {@link io.helidon.common.reactive.Multi} stream {@link io.helidon.common.reactive.Flow.Publisher}.
+     * from {@link io.helidon.common.reactive.Multi} stream {@link java.util.concurrent.Flow.Publisher}.
      *
-     * @param publisher {@link io.helidon.common.reactive.Multi} stream {@link io.helidon.common.reactive.Flow.Publisher}
+     * @param publisher {@link io.helidon.common.reactive.Multi} stream {@link java.util.concurrent.Flow.Publisher}
      * @param <T>       type of streamed item
      * @return {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Publisher}
      */

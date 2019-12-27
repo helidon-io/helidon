@@ -17,14 +17,14 @@ package io.helidon.common.reactive;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
-
-import io.helidon.common.mapper.Mapper;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import io.helidon.common.mapper.Mapper;
 
 /**
  * Multiple items publisher facility.

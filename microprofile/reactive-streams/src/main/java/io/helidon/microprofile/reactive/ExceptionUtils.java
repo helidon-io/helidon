@@ -23,6 +23,7 @@ public class ExceptionUtils {
         ExceptionUtils.<RuntimeException>throwWithTypeErasure(t);
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends Throwable> void throwWithTypeErasure(Throwable t) throws T {
         throw (T) t;
     }

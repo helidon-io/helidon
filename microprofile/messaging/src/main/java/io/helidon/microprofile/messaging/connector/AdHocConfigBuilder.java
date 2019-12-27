@@ -17,9 +17,9 @@
 
 package io.helidon.microprofile.messaging.connector;
 
+import java.util.Map;
 import java.util.Properties;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -44,7 +44,7 @@ class AdHocConfigBuilder {
     }
 
     AdHocConfigBuilder putAll(Config configToPut) {
-        properties.putAll(configToPut.detach().asMap().orElse(CollectionsHelper.mapOf()));
+        properties.putAll(configToPut.detach().asMap().orElse(Map.of()));
         return this;
     }
 

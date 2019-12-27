@@ -21,8 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;

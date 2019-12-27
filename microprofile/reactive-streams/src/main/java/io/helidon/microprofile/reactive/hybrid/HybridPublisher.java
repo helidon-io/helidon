@@ -17,14 +17,14 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 /**
  * Wrapper for {@link org.reactivestreams Reactive Streams} {@link org.reactivestreams.Publisher}
- * or {@link io.helidon.common.reactive Helidon reactive streams} {@link io.helidon.common.reactive.Flow.Publisher},
+ * or {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Publisher},
  * to be used interchangeably.
  *
  * @param <T> type of items
@@ -44,9 +44,9 @@ public class HybridPublisher<T> implements Flow.Publisher<T>, Publisher<T> {
 
     /**
      * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridPublisher}
-     * from {@link io.helidon.common.reactive.Flow.Publisher}.
+     * from {@link java.util.concurrent.Flow.Publisher}.
      *
-     * @param publisher {@link io.helidon.common.reactive.Flow.Publisher} to wrap
+     * @param publisher {@link java.util.concurrent.Flow.Publisher} to wrap
      * @param <T>       type of items
      * @return {@link io.helidon.microprofile.reactive.hybrid.HybridPublisher}
      * compatible with {@link org.reactivestreams Reactive Streams}

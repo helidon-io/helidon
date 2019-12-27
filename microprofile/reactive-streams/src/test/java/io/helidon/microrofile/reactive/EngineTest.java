@@ -26,6 +26,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,7 +40,6 @@ import java.util.stream.LongStream;
 
 import io.helidon.common.reactive.MultiDropWhileProcessor;
 import io.helidon.common.reactive.MultiFilterProcessor;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.MultiPeekProcessor;
 import io.helidon.common.reactive.MultiSkipProcessor;
 import io.helidon.common.reactive.MultiTakeWhileProcessor;
@@ -390,7 +390,8 @@ public class EngineTest {
     }
 
     @Test
-    @Disabled //TODO: Is this valid scenario?
+    @Disabled
+        //TODO: Is this valid scenario?
     void publisherToSubscriber() throws InterruptedException, ExecutionException, TimeoutException {
         CompletionSubscriber<Object, Optional<Object>> subscriber = ReactiveStreams.builder()
                 .limit(5L)
