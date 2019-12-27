@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import io.helidon.common.reactive.Flow;
-import io.helidon.microprofile.reactive.TappedProcessor;
+import io.helidon.common.reactive.TappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;

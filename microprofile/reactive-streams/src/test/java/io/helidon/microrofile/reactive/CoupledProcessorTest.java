@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 
-import io.helidon.microprofile.reactive.TappedProcessor;
+import io.helidon.common.reactive.TappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;

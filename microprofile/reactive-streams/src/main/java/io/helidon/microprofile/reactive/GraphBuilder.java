@@ -42,6 +42,7 @@ import io.helidon.common.reactive.OnErrorResumeProcessor;
 import io.helidon.common.reactive.PeekProcessor;
 import io.helidon.common.reactive.SkipProcessor;
 import io.helidon.common.reactive.TakeWhileProcessor;
+import io.helidon.common.reactive.TappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;

@@ -150,6 +150,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <R>                Outlet and passed in publisher item type
      * @param passedInSubscriber gets all items from upstream/inlet
      * @param passedInPublisher  emits to downstream/outlet
+     * @return Multi
      */
     default <R> Multi<R> coupled(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
         MultiCoupledProcessor<T, R> processor = new MultiCoupledProcessor<>(passedInSubscriber, passedInPublisher);
@@ -157,6 +158,53 @@ public interface Multi<T> extends Subscribable<T> {
         return processor;
     }
 
+    /**
+     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onTerminate(Runnable onTerminate) {
+        TappedProcessor<T> processor = TappedProcessor.<T>create()
+                .onComplete(onTerminate)
+                .onCancel((s) -> onTerminate.run())
+                .onError((t) -> onTerminate.run());
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onComplete(Runnable onTerminate) {
+        TappedProcessor<T> processor = TappedProcessor.<T>create()
+                .onComplete(onTerminate);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onError signal is received.
+     *
+     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
+        TappedProcessor<T> processor = TappedProcessor.<T>create()
+                .onError(onErrorConsumer);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
+     *
+     * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
+     * @return Multi
+     */
     default Multi<T> onErrorResume(Function<Throwable, T> onError) {
         OnErrorResumeProcessor<T> processor = OnErrorResumeProcessor.resume(onError);
         this.subscribe(processor);

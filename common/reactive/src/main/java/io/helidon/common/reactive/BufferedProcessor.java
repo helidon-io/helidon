@@ -57,7 +57,9 @@ public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
         // https://github.com/reactive-streams/reactive-streams-jvm#3.13
         //TODO: Move to BaseProcessor
         referencedSubscriber = SubscriberReference.create(s);
+        publisherSequentialLock.lock();
         super.subscribe(referencedSubscriber);
+        publisherSequentialLock.unlock();
     }
 
     @Override

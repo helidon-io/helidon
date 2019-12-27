@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.concurrent.Flow.Subscription;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -386,6 +387,45 @@ public class MultiTest {
                 .get(100, TimeUnit.MILLISECONDS);
 
         assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
+    void testOnError() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<Throwable> beenError = new CompletableFuture<>();
+        Multi.<Integer>error(new RuntimeException())
+                .onError(beenError::complete)
+                .collectList();
+
+        beenError.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void testOnComplete() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<Void> completed = new CompletableFuture<>();
+        Multi.just(1, 2, 3)
+                .onComplete(() -> completed.complete(null))
+                .collectList()
+                .get(100, TimeUnit.MILLISECONDS);
+
+        completed.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void testOnTerminate() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<Void> completed = new CompletableFuture<>();
+        CompletableFuture<Throwable> beenError = new CompletableFuture<>();
+
+        Multi.just(1, 2, 3)
+                .onTerminate(() -> completed.complete(null))
+                .first()
+                .get(100, TimeUnit.MILLISECONDS);
+
+        Multi.<Integer>error(new RuntimeException())
+                .onTerminate(() -> beenError.complete(null))
+                .first();
+
+        beenError.get(1, TimeUnit.SECONDS);
+        completed.get(1, TimeUnit.SECONDS);
     }
 
     @Test

@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.TappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import org.reactivestreams.Processor;
