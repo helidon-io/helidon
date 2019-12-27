@@ -19,6 +19,11 @@ package io.helidon.common.reactive;
 
 import java.util.function.Predicate;
 
+/**
+ * Drop the longest prefix of elements from this stream that satisfy the given predicate.
+ *
+ * @param <T> Item type
+ */
 public class DropWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 

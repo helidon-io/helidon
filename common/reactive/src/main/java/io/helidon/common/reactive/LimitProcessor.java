@@ -49,7 +49,7 @@ public class LimitProcessor<T> extends BufferedProcessor<T, T> implements Multi<
     public void onError(Throwable ex) {
         if (0 < this.counter.get()) {
             super.onError(ex);
-        }else {
+        } else {
             tryComplete();
         }
     }

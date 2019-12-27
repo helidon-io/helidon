@@ -19,18 +19,30 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+/**
+ * Resume stream from supplied publisher if onError signal is intercepted.
+ *
+ * @param <T> item type
+ */
 public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
     private Function<Throwable, T> supplier;
     private Function<Throwable, Flow.Publisher<T>> publisherSupplier;
-    //TODO: sync access - onError can do async write?
-    private Optional<Flow.Subscription> onErrorPublisherSubscription = Optional.empty();
+    private AtomicReference<Optional<Flow.Subscription>> onErrorPublisherSubscription = new AtomicReference<>(Optional.empty());
 
     private OnErrorResumeProcessor() {
     }
 
+    /**
+     * Create new {@link OnErrorResumeProcessor} with supplier for item to submit after error is intercepted.
+     *
+     * @param supplier for item to submit after error is intercepted
+     * @param <T>      item type
+     * @return new {@link OnErrorResumeProcessor}
+     */
     @SuppressWarnings("unchecked")
     public static <T> OnErrorResumeProcessor<T> resume(Function<Throwable, ?> supplier) {
         OnErrorResumeProcessor<T> processor = new OnErrorResumeProcessor<>();
@@ -38,6 +50,15 @@ public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implement
         return processor;
     }
 
+    /**
+     * Create new {@link OnErrorResumeProcessor} with supplier for {@link io.helidon.common.reactive.Flow.Publisher}
+     * to resume stream after error is intercepted.
+     *
+     * @param supplier or {@link io.helidon.common.reactive.Flow.Publisher}
+     *                 to resume stream after error is intercepted
+     * @param <T>      item type
+     * @return new {@link OnErrorResumeProcessor}
+     */
     public static <T> OnErrorResumeProcessor<T> resumeWith(Function<Throwable, Flow.Publisher<T>> supplier) {
         OnErrorResumeProcessor<T> processor = new OnErrorResumeProcessor<>();
         processor.publisherSupplier = supplier;
@@ -46,11 +67,8 @@ public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implement
 
     @Override
     protected void tryRequest(Flow.Subscription subscription) {
-        if (onErrorPublisherSubscription.isPresent()) {
-            super.tryRequest(onErrorPublisherSubscription.get());
-        } else {
-            super.tryRequest(subscription);
-        }
+        super.tryRequest(onErrorPublisherSubscription.get()
+                .orElse(subscription));
     }
 
     @Override
@@ -73,7 +91,7 @@ public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implement
                     @Override
                     public void onSubscribe(Flow.Subscription subscription) {
                         Objects.requireNonNull(subscription);
-                        onErrorPublisherSubscription = Optional.of(subscription);
+                        onErrorPublisherSubscription.set(Optional.of(subscription));
                         if (getRequestedCounter().get() > 0) {
                             subscription.request(getRequestedCounter().get());
                         }
@@ -87,25 +105,25 @@ public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implement
                     @Override
                     public void onError(Throwable t) {
                         Objects.requireNonNull(t);
-                        superOnError(t);
+                        fail(t);
                     }
 
                     @Override
                     public void onComplete() {
                         OnErrorResumeProcessor.this.onComplete();
-                        onErrorPublisherSubscription = Optional.empty();
+                        onErrorPublisherSubscription.set(Optional.empty());
                     }
                 });
             }
         } catch (Throwable t) {
-            onErrorPublisherSubscription.ifPresent(Flow.Subscription::cancel);
-            superOnError(t);
+            onErrorPublisherSubscription.get().ifPresent(Flow.Subscription::cancel);
+            fail(t);
         }
     }
 
     @Override
     protected void hookOnCancel(Flow.Subscription subscription) {
         subscription.cancel();
-        onErrorPublisherSubscription.ifPresent(Flow.Subscription::cancel);
+        onErrorPublisherSubscription.get().ifPresent(Flow.Subscription::cancel);
     }
 }

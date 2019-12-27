@@ -19,9 +19,19 @@ package io.helidon.common.reactive;
 
 import java.util.function.Predicate;
 
+/**
+ * Take the longest prefix of elements from this stream that satisfy the given predicate.
+ *
+ * @param <T> <T> Item type
+ */
 public class TakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 
+    /**
+     * Create new {@link TakeWhileProcessor}.
+     *
+     * @param predicate provided predicate to filter stream with
+     */
     public TakeWhileProcessor(Predicate<T> predicate) {
         this.predicate = predicate;
     }

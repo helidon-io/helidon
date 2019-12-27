@@ -17,27 +17,20 @@
 
 package io.helidon.common.reactive;
 
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.locks.ReentrantLock;
 
-public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
+/**
+ * Processor with back-pressure buffer.
+ *
+ * @param <T> subscribed type (input)
+ * @param <U> published type (output)
+ */
+public abstract class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
 
     private static final int BACK_PRESSURE_BUFFER_SIZE = 1024;
 
-    private SubscriberReference<? super U> referencedSubscriber;
     private BlockingQueue<U> buffer = new ArrayBlockingQueue<U>(BACK_PRESSURE_BUFFER_SIZE);
-    private ReentrantLock publisherSequentialLock = new ReentrantLock();
-
-    @Override
-    public void request(long n) {
-        //TODO: Move to BaseProcessor
-        StreamValidationUtils.checkRequestParam309(n, this::fail);
-        StreamValidationUtils.checkRecursionDepth303(5, (actDepth, t) -> fail(t));
-        super.request(n);
-    }
 
     @Override
     protected void tryRequest(Flow.Subscription subscription) {
@@ -45,56 +38,11 @@ public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
             try {
                 submit(buffer.take());
             } catch (InterruptedException e) {
-                fail(e);
+                failAndCancel(e);
             }
         } else {
             super.tryRequest(subscription);
         }
-    }
-
-    @Override
-    public void subscribe(Flow.Subscriber<? super U> s) {
-        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-        //TODO: Move to BaseProcessor
-        referencedSubscriber = SubscriberReference.create(s);
-        publisherSequentialLock.lock();
-        super.subscribe(referencedSubscriber);
-        publisherSequentialLock.unlock();
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        //TODO: Move to BaseProcessor
-        Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
-        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-        referencedSubscriber.releaseReference();
-    }
-
-    @Override
-    public void onNext(T item) {
-        //TODO: Move to BaseProcessor
-        publisherSequentialLock.lock();
-        // https://github.com/reactive-streams/reactive-streams-jvm#2.13
-        Objects.requireNonNull(item);
-        try {
-            hookOnNext(item);
-        } catch (Throwable ex) {
-            fail(ex);
-        }
-        publisherSequentialLock.unlock();
-    }
-
-    @Override
-    //TODO: Move to BaseProcessor
-    public void onSubscribe(Flow.Subscription s) {
-        // https://github.com/reactive-streams/reactive-streams-jvm#1.3
-        publisherSequentialLock.lock();
-        // https://github.com/reactive-streams/reactive-streams-jvm#2.13
-        Objects.requireNonNull(s);
-        // https://github.com/reactive-streams/reactive-streams-jvm#2.5
-        getSubscription().ifPresent(firstSubscription -> s.cancel());
-        super.onSubscribe(s);
-        publisherSequentialLock.unlock();
     }
 
     @Override
@@ -109,30 +57,5 @@ public class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
         if (buffer.isEmpty()) {
             super.onComplete();
         }
-    }
-
-    @Override
-    //TODO: Move to BaseProcessor
-    public void fail(Throwable ex) {
-        //Upstream cancel on error with fail method proxy to avoid spec rule 2.3
-        getSubscription().ifPresent(Flow.Subscription::cancel);
-        super.fail(ex);
-    }
-
-    @Override
-    //TODO: Move to BaseProcessor
-    public void onError(Throwable ex) {
-        superOnError(ex);
-    }
-
-    //TODO: Move to BaseProcessor
-    protected void superOnError(Throwable ex) {
-        // https://github.com/reactive-streams/reactive-streams-jvm#2.13
-        Objects.requireNonNull(ex);
-        done = true;
-        if (error == null) {
-            error = ex;
-        }
-        tryComplete();
     }
 }

@@ -20,7 +20,6 @@ package io.helidon.microrofile.reactive;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -155,72 +154,5 @@ public class CoupledProcessorTest extends AbstractProcessorTest {
 
         //is cancelled afe
         assertThrows(CancellationException.class, () -> completionStage.toCompletableFuture().get(3, TimeUnit.SECONDS));
-    }
-
-    @Test
-    void spec203() throws InterruptedException, ExecutionException, TimeoutException {
-
-        Processor<Object, Long> processor = ReactiveStreams
-                .coupled(
-                        ReactiveStreams.builder().ignore(),
-                        ReactiveStreams.fromPublisher(new Publisher<Long>() {
-                            @Override
-                            public void subscribe(Subscriber<? super Long> s) {
-                                s.onSubscribe(new Subscription() {
-                                    @Override
-                                    public void request(long n) {
-                                        System.out.println("Request called");
-                                        s.onNext(4L);
-                                    }
-
-                                    @Override
-                                    public void cancel() {
-                                        System.out.println("Cancel called");
-                                        Throwable thr = new Throwable();
-                                        for (StackTraceElement stackElem : thr.getStackTrace()) {
-                                            if (stackElem.getMethodName().equals("onError")) {
-                                                System.out.println(String.format("Subscription::cancel MUST NOT be called from Subscriber::onError (Rule 2.3)! (Caller: %s::%s line %d)",
-                                                        stackElem.getClassName(), stackElem.getMethodName(), stackElem.getLineNumber()));
-                                            }
-                                        }
-                                    }
-                                });
-                                s.onComplete();
-                            }
-                        })
-                )
-                .buildRs();
-
-        List<Long> result = ReactiveStreams
-                .of(1L, 2L)
-                .peek(l -> {
-                    throw new TestRuntimeException();
-                })
-                .via(processor)
-                .toList()
-                .run()
-                .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
-
-        System.out.println(result);
-    }
-
-    String ctx = "Wheee ctx";
-
-    @Test
-    void name() {
-        CompletableFuture<String> test = new CompletableFuture<>();
-
-        testMethod1(test);
-        testMethod2(test);
-
-    }
-
-    private void testMethod1(CompletableFuture<String> test) {
-        test.complete(Thread.currentThread().getStackTrace()[2].getMethodName());
-    }
-
-    private void testMethod2(CompletableFuture<String> test) {
-        test.thenAccept(x -> System.out.println(x + ctx));
     }
 }

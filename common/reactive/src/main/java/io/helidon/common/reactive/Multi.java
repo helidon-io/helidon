@@ -132,6 +132,7 @@ public interface Multi<T> extends Subscribable<T> {
 
     /**
      * Coupled processor sends items received to the passed in subscriber, and emits items received from the passed in publisher.
+     * Cancel, onComplete and onError signals are shared.
      * <pre>
      *     +
      *     |  Inlet/upstream publisher
@@ -146,7 +147,6 @@ public interface Multi<T> extends Subscribable<T> {
      *     v
      * </pre>
      *
-     * @param <T>                Inlet and passed in subscriber item type
      * @param <R>                Outlet and passed in publisher item type
      * @param passedInSubscriber gets all items from upstream/inlet
      * @param passedInPublisher  emits to downstream/outlet
@@ -211,6 +211,12 @@ public interface Multi<T> extends Subscribable<T> {
         return processor;
     }
 
+    /**
+     * Resume stream from supplied publisher if onError signal is intercepted.
+     *
+     * @param onError supplier of new stream publisher
+     * @return Multi
+     */
     default Multi<T> onErrorResumeWith(Function<Throwable, Publisher<T>> onError) {
         OnErrorResumeProcessor<T> processor = OnErrorResumeProcessor.resumeWith(onError);
         this.subscribe(processor);
@@ -348,6 +354,14 @@ public interface Multi<T> extends Subscribable<T> {
         return MultiNever.<T>instance();
     }
 
+    /**
+     * Concat streams to one.
+     *
+     * @param firstMulti  first stream
+     * @param secondMulti second stream
+     * @param <T>         item type
+     * @return Multi
+     */
     static <T> Multi<T> concat(Multi<T> firstMulti, Multi<T> secondMulti) {
         return new ConcatPublisher<>(firstMulti, secondMulti);
     }
