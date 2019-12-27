@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -237,6 +238,7 @@ public class BaseProcessorTest {
     }
 
     @Test
+    @Disabled("Against https://github.com/reactive-streams/reactive-streams-jvm#2.5")
     public void testSubscriptionNotCanceled() {
         TestProcessor<String> processor = new TestProcessor<>();
         TestSubscription subscription = new TestSubscription();

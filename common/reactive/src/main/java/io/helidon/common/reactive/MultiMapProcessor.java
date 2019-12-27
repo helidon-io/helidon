@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.mapper.Mapper;
@@ -26,19 +27,31 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class MultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
+public final class MultiMapProcessor<T, U> extends BufferedProcessor<T, U> implements Multi<U> {
 
     private final Mapper<T, U> mapper;
 
-    MultiMappingProcessor(Mapper<T, U> mapper) {
+    /**
+     * Processor of {@link Publisher} to {@link Single} that publishes and maps each received item.
+     *
+     * @param mapper supplied for all items to be mapped with
+     */
+    public MultiMapProcessor(Mapper<T, U> mapper) {
         this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
+    }
+
+
+    @Override
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        subscription.cancel();
     }
 
     @Override
     protected void hookOnNext(T item) {
         U value = mapper.map(item);
         if (value == null) {
-            onError(new IllegalStateException("Mapper returned a null value"));
+            getSubscription().ifPresent(Flow.Subscription::cancel);
+            onError(new NullPointerException("Mapper returned a null value"));
         } else {
             submit(value);
         }
