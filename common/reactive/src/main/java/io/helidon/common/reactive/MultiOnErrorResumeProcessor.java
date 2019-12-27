@@ -27,40 +27,40 @@ import java.util.function.Function;
  *
  * @param <T> item type
  */
-public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiOnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
     private Function<Throwable, T> supplier;
     private Function<Throwable, Flow.Publisher<T>> publisherSupplier;
     private AtomicReference<Optional<Flow.Subscription>> onErrorPublisherSubscription = new AtomicReference<>(Optional.empty());
 
-    private OnErrorResumeProcessor() {
+    private MultiOnErrorResumeProcessor() {
     }
 
     /**
-     * Create new {@link OnErrorResumeProcessor} with supplier for item to submit after error is intercepted.
+     * Create new {@link MultiOnErrorResumeProcessor} with supplier for item to submit after error is intercepted.
      *
      * @param supplier for item to submit after error is intercepted
      * @param <T>      item type
-     * @return new {@link OnErrorResumeProcessor}
+     * @return new {@link MultiOnErrorResumeProcessor}
      */
     @SuppressWarnings("unchecked")
-    public static <T> OnErrorResumeProcessor<T> resume(Function<Throwable, ?> supplier) {
-        OnErrorResumeProcessor<T> processor = new OnErrorResumeProcessor<>();
+    public static <T> MultiOnErrorResumeProcessor<T> resume(Function<Throwable, ?> supplier) {
+        MultiOnErrorResumeProcessor<T> processor = new MultiOnErrorResumeProcessor<>();
         processor.supplier = (Function<Throwable, T>) supplier;
         return processor;
     }
 
     /**
-     * Create new {@link OnErrorResumeProcessor} with supplier for {@link io.helidon.common.reactive.Flow.Publisher}
+     * Create new {@link MultiOnErrorResumeProcessor} with supplier for {@link io.helidon.common.reactive.Flow.Publisher}
      * to resume stream after error is intercepted.
      *
      * @param supplier or {@link io.helidon.common.reactive.Flow.Publisher}
      *                 to resume stream after error is intercepted
      * @param <T>      item type
-     * @return new {@link OnErrorResumeProcessor}
+     * @return new {@link MultiOnErrorResumeProcessor}
      */
-    public static <T> OnErrorResumeProcessor<T> resumeWith(Function<Throwable, Flow.Publisher<T>> supplier) {
-        OnErrorResumeProcessor<T> processor = new OnErrorResumeProcessor<>();
+    public static <T> MultiOnErrorResumeProcessor<T> resumeWith(Function<Throwable, Flow.Publisher<T>> supplier) {
+        MultiOnErrorResumeProcessor<T> processor = new MultiOnErrorResumeProcessor<>();
         processor.publisherSupplier = supplier;
         return processor;
     }
@@ -110,7 +110,7 @@ public class OnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implement
 
                     @Override
                     public void onComplete() {
-                        OnErrorResumeProcessor.this.onComplete();
+                        MultiOnErrorResumeProcessor.this.onComplete();
                         onErrorPublisherSubscription.set(Optional.empty());
                     }
                 });

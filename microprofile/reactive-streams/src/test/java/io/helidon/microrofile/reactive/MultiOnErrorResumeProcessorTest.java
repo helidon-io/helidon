@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 
-public class OnErrorResumeProcessorTest extends AbstractProcessorTest {
+public class MultiOnErrorResumeProcessorTest extends AbstractProcessorTest {
 
     @Test
     void onErrorResume() throws InterruptedException, ExecutionException, TimeoutException {

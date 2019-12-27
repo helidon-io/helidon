@@ -19,7 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.Optional;
 
-public class SubscriberReference<T> implements Flow.Subscriber<T> {
+class SubscriberReference<T> implements Flow.Subscriber<T> {
     private Optional<Flow.Subscriber<T>> subscriber;
 
     private SubscriberReference(Flow.Subscriber<T> subscriber) {

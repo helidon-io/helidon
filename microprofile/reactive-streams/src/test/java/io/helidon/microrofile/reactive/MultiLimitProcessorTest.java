@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,10 +30,10 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 
-public class SkipProcessorTest extends AbstractProcessorTest {
+public class MultiLimitProcessorTest extends AbstractProcessorTest {
     @Override
     protected Processor<Long, Long> getProcessor() {
-        return ReactiveStreams.<Long>builder().skip(0).buildRs();
+        return ReactiveStreams.<Long>builder().limit(Long.MAX_VALUE).buildRs();
     }
 
     @Override
@@ -41,12 +42,30 @@ public class SkipProcessorTest extends AbstractProcessorTest {
     }
 
     @Test
-    void skipItems() throws InterruptedException, ExecutionException, TimeoutException {
-        List<Long> result = ReactiveStreams.of(1L, 2L, 3L, 4L)
-                .peek(System.out::println)
-                .skip(2)
+    void ignoreErrorsAfterDone() {
+        MockPublisher p = new MockPublisher();
+        testProcessor(ReactiveStreams.<Long>fromPublisher(p).limit(2).buildRs(), s -> {
+            s.request(4);
+            p.sendNext(2);
+            p.sendNext(4);
+            s.expectSum(6);
+            p.sendNext(8);
+            s.expectSum(6);
+            p.sendOnError(new TestThrowable());
+        });
+    }
+
+    @Test
+    void ignoreErrorsAfterDone2() throws InterruptedException, ExecutionException, TimeoutException {
+        AtomicLong seq = new AtomicLong(0);
+        List<Long> result = ReactiveStreams.generate(seq::incrementAndGet).flatMap((i) -> {
+            return i == 4 ? ReactiveStreams.failed(new RuntimeException("failed")) : ReactiveStreams.of(i);
+        })
+                .limit(3L)
                 .toList()
-                .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
-        assertEquals(Arrays.asList(3L, 4L), result);
+                .run()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList(1L, 2L, 3L), result);
     }
 }

@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @param <T> both input/output type
  */
-public class LimitProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiLimitProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
     private final AtomicLong counter;
 
@@ -33,7 +33,7 @@ public class LimitProcessor<T> extends BufferedProcessor<T, T> implements Multi<
      *
      * @param limit number of items to pass
      */
-    public LimitProcessor(Long limit) {
+    public MultiLimitProcessor(Long limit) {
         counter = new AtomicLong(limit);
     }
 

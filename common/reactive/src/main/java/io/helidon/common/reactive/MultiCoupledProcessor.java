@@ -48,10 +48,15 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private Flow.Subscriber<? super T> inletSubscriber;
     private Flow.Subscription inletSubscription;
     private Flow.Subscription passedInPublisherSubscription;
-
     private AtomicBoolean cancelled = new AtomicBoolean(false);
 
 
+    /**
+     * Create new {@link MultiCoupledProcessor}.
+     *
+     * @param passedInSubscriber to send items from inlet to
+     * @param passedInPublisher  to get items for outlet from
+     */
     public MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
         this.passedInSubscriber = SubscriberReference.create(passedInSubscriber);
         this.passedInPublisher = passedInPublisher;

@@ -17,10 +17,20 @@
 
 package io.helidon.common.reactive;
 
+/**
+ * Stream from {@link FailedPublisher} sends onError signal after onSubscribe is called.
+ *
+ * @param <T> item type
+ */
 public class FailedPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
     private Throwable throwable;
 
+    /**
+     * Create new {@link FailedPublisher}.
+     *
+     * @param throwable to fail stream with
+     */
     public FailedPublisher(Throwable throwable) {
         this.throwable = throwable;
     }

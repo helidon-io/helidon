@@ -17,26 +17,19 @@
 
 package io.helidon.microrofile.reactive;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.TappedProcessor;
-import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
-
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
 
-public class TappedProcessorTest extends AbstractProcessorTest {
+public class MultiFilterProcessorTest extends AbstractProcessorTest {
     @Override
-    @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getProcessor() {
-        Flow.Processor processor = TappedProcessor.create();
-        return HybridProcessor.from(processor);
+        return ReactiveStreams.<Long>builder().filter(i -> true).buildRs();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
-        Flow.Processor processor = TappedProcessor.create().onNext(o -> {
+        return ReactiveStreams.<Long>builder().filter(i -> {
             throw t;
-        });
-        return HybridProcessor.from(processor);
+        }).buildRs();
     }
 }

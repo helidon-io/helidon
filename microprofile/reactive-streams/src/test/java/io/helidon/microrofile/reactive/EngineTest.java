@@ -37,12 +37,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import io.helidon.common.reactive.DropWhileProcessor;
-import io.helidon.common.reactive.FilterProcessor;
+import io.helidon.common.reactive.MultiDropWhileProcessor;
+import io.helidon.common.reactive.MultiFilterProcessor;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.PeekProcessor;
-import io.helidon.common.reactive.SkipProcessor;
-import io.helidon.common.reactive.TakeWhileProcessor;
+import io.helidon.common.reactive.MultiPeekProcessor;
+import io.helidon.common.reactive.MultiSkipProcessor;
+import io.helidon.common.reactive.MultiTakeWhileProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
 
@@ -819,11 +819,11 @@ public class EngineTest {
 
     @Test
     void finiteStream() throws InterruptedException, ExecutionException, TimeoutException {
-        finiteOnCompleteTest(new PeekProcessor<>(integer -> Function.identity()));
-        finiteOnCompleteTest(new FilterProcessor<>(integer -> true));
-        finiteOnCompleteTest(new TakeWhileProcessor<>(integer -> true));
-        finiteOnCompleteTest(new DropWhileProcessor<>(integer -> false));
-        finiteOnCompleteTest(new SkipProcessor<>(0L));
+        finiteOnCompleteTest(new MultiPeekProcessor<>(integer -> Function.identity()));
+        finiteOnCompleteTest(new MultiFilterProcessor<>(integer -> true));
+        finiteOnCompleteTest(new MultiTakeWhileProcessor<>(integer -> true));
+        finiteOnCompleteTest(new MultiDropWhileProcessor<>(integer -> false));
+        finiteOnCompleteTest(new MultiSkipProcessor<>(0L));
     }
 
     @Test

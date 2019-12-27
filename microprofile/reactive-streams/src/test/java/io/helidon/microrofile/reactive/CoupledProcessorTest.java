@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 
-import io.helidon.common.reactive.TappedProcessor;
+import io.helidon.common.reactive.MultiTappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -133,7 +133,7 @@ public class CoupledProcessorTest extends AbstractProcessorTest {
 
             }
         };
-        HybridProcessor tappedProcessor = HybridProcessor.from(TappedProcessor.create());
+        HybridProcessor tappedProcessor = HybridProcessor.from(MultiTappedProcessor.create());
 
         Processor<Long, Long> processor = ReactiveStreams
                 .coupled(

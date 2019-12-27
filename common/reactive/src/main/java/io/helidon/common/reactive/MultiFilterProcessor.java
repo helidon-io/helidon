@@ -17,34 +17,32 @@
 
 package io.helidon.common.reactive;
 
-import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
- * Invoke supplied consumer for every item in the stream.
+ * Processor filtering stream with supplied predicate.
  *
  * @param <T> both input/output type
  */
-public class PeekProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiFilterProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
-    private Consumer<T> consumer;
+    private Predicate<T> predicate;
 
     /**
-     * Invoke supplied consumer for every item in the stream.
+     * Processor filtering stream with supplied predicate.
      *
-     * @param consumer supplied consumer to be invoke for every item
+     * @param predicate provided predicate to filter stream with
      */
-    public PeekProcessor(Consumer<T> consumer) {
-        this.consumer = consumer;
+    public MultiFilterProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
     }
 
     @Override
     protected void hookOnNext(T item) {
-        consumer.accept(item);
-        submit(item);
-    }
-
-    @Override
-    public String toString() {
-        return "PeekProcessor{" + "consumer=" + consumer + '}';
+        if (predicate.test(item)) {
+            submit(item);
+        } else {
+            tryRequest(getSubscription().get());
+        }
     }
 }

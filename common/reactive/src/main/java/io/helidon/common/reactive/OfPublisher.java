@@ -22,6 +22,11 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Publisher from iterable, implemented as trampoline stack-less recursion.
+ *
+ * @param <T> item type
+ */
 public class OfPublisher<T> implements Flow.Publisher<T> {
     private Iterable<T> iterable;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
@@ -30,6 +35,11 @@ public class OfPublisher<T> implements Flow.Publisher<T> {
     private final RequestedCounter requestCounter = new RequestedCounter();
     private final ReentrantLock iterateConcurrentLock = new ReentrantLock();
 
+    /**
+     * Create new {@link OfPublisher}.
+     *
+     * @param iterable to create publisher from
+     */
     public OfPublisher(Iterable<T> iterable) {
         this.iterable = iterable;
     }

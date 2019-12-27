@@ -28,21 +28,21 @@ import java.util.function.Function;
 import io.helidon.common.reactive.BufferedProcessor;
 import io.helidon.common.reactive.ConcatPublisher;
 import io.helidon.common.reactive.MultiCoupledProcessor;
-import io.helidon.common.reactive.DistinctProcessor;
-import io.helidon.common.reactive.DropWhileProcessor;
+import io.helidon.common.reactive.MultiDistinctProcessor;
+import io.helidon.common.reactive.MultiDropWhileProcessor;
 import io.helidon.common.reactive.FailedPublisher;
-import io.helidon.common.reactive.FilterProcessor;
+import io.helidon.common.reactive.MultiFilterProcessor;
 import io.helidon.common.reactive.MultiFlatMapProcessor;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.LimitProcessor;
+import io.helidon.common.reactive.MultiLimitProcessor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.MultiMapProcessor;
 import io.helidon.common.reactive.OfPublisher;
-import io.helidon.common.reactive.OnErrorResumeProcessor;
-import io.helidon.common.reactive.PeekProcessor;
-import io.helidon.common.reactive.SkipProcessor;
-import io.helidon.common.reactive.TakeWhileProcessor;
-import io.helidon.common.reactive.TappedProcessor;
+import io.helidon.common.reactive.MultiOnErrorResumeProcessor;
+import io.helidon.common.reactive.MultiPeekProcessor;
+import io.helidon.common.reactive.MultiSkipProcessor;
+import io.helidon.common.reactive.MultiTakeWhileProcessor;
+import io.helidon.common.reactive.MultiTappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
@@ -91,29 +91,29 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             addProcessor(new MultiMapProcessor<>(mapper::apply));
         });
         registerStage(Stage.Filter.class, stage -> {
-            addProcessor(new FilterProcessor<>(stage.getPredicate()));
+            addProcessor(new MultiFilterProcessor<>(stage.getPredicate()));
         });
         registerStage(Stage.TakeWhile.class, stage -> {
-            addProcessor(new TakeWhileProcessor<>(stage.getPredicate()));
+            addProcessor(new MultiTakeWhileProcessor<>(stage.getPredicate()));
         });
         registerStage(Stage.DropWhile.class, stage -> {
-            addProcessor(new DropWhileProcessor<>(stage.getPredicate()));
+            addProcessor(new MultiDropWhileProcessor<>(stage.getPredicate()));
         });
         registerStage(Stage.Peek.class, stage -> {
             Consumer<Object> peekConsumer = (Consumer<Object>) stage.getConsumer();
-            addProcessor(new PeekProcessor<>(peekConsumer));
+            addProcessor(new MultiPeekProcessor<>(peekConsumer));
         });
         registerStage(Stage.ProcessorStage.class, stage -> {
             addProcessor(stage.getRsProcessor());
         });
         registerStage(Stage.Limit.class, stage -> {
-            addProcessor(new LimitProcessor<>(stage.getLimit()));
+            addProcessor(new MultiLimitProcessor<>(stage.getLimit()));
         });
         registerStage(Stage.Skip.class, stage -> {
-            addProcessor(new SkipProcessor<>(stage.getSkip()));
+            addProcessor(new MultiSkipProcessor<>(stage.getSkip()));
         });
         registerStage(Stage.Distinct.class, stage -> {
-            addProcessor(new DistinctProcessor<>());
+            addProcessor(new MultiDistinctProcessor<>());
         });
         registerStage(Stage.FlatMap.class, stage -> {
             Function<?, Flow.Publisher<Object>> pubMapper = o -> {
@@ -135,24 +135,24 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             addProcessor(new MultiCoupledProcessor<>(HybridSubscriber.from(subscriber), HybridPublisher.from(publisher)));
         });
         registerStage(Stage.OnTerminate.class, stage -> {
-            addProcessor(TappedProcessor.create()
+            addProcessor(MultiTappedProcessor.create()
                     .onComplete(stage.getAction())
                     .onCancel((s) -> stage.getAction().run())
                     .onError((t) -> stage.getAction().run()));
         });
         registerStage(Stage.OnComplete.class, stage -> {
-            addProcessor(TappedProcessor.create().onComplete(stage.getAction()));
+            addProcessor(MultiTappedProcessor.create().onComplete(stage.getAction()));
         });
         registerStage(Stage.OnError.class, stage -> {
-            addProcessor(TappedProcessor.create().onError(stage.getConsumer()));
+            addProcessor(MultiTappedProcessor.create().onError(stage.getConsumer()));
         });
         registerStage(Stage.OnErrorResume.class, stage -> {
-            addProcessor(OnErrorResumeProcessor.resume(stage.getFunction()));
+            addProcessor(MultiOnErrorResumeProcessor.resume(stage.getFunction()));
         });
         registerStage(Stage.OnErrorResumeWith.class, stage -> {
             Function<Throwable, Flow.Publisher<Object>> publisherSupplier = throwable ->
                     HybridPublisher.from(GraphBuilder.create().from(stage.getFunction().apply(throwable)).getPublisher());
-            addProcessor(OnErrorResumeProcessor.resumeWith(publisherSupplier));
+            addProcessor(MultiOnErrorResumeProcessor.resumeWith(publisherSupplier));
         });
         registerStage(Stage.Cancel.class, stage -> {
             CancelSubscriber cancelSubscriber = new CancelSubscriber<>();

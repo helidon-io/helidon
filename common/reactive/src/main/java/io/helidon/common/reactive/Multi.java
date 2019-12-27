@@ -54,7 +54,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> peek(Consumer<T> consumer) {
-        PeekProcessor<T> processor = new PeekProcessor<T>(consumer);
+        MultiPeekProcessor<T> processor = new MultiPeekProcessor<T>(consumer);
         this.subscribe(processor);
         return processor;
     }
@@ -65,7 +65,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> distinct() {
-        DistinctProcessor<T> processor = new DistinctProcessor<>();
+        MultiDistinctProcessor<T> processor = new MultiDistinctProcessor<>();
         this.subscribe(processor);
         return processor;
     }
@@ -77,7 +77,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> filter(Predicate<T> predicate) {
-        FilterProcessor<T> processor = new FilterProcessor<>(predicate);
+        MultiFilterProcessor<T> processor = new MultiFilterProcessor<>(predicate);
         this.subscribe(processor);
         return processor;
     }
@@ -89,7 +89,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> takeWhile(Predicate<T> predicate) {
-        TakeWhileProcessor<T> processor = new TakeWhileProcessor<>(predicate);
+        MultiTakeWhileProcessor<T> processor = new MultiTakeWhileProcessor<>(predicate);
         this.subscribe(processor);
         return processor;
     }
@@ -101,7 +101,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> dropWhile(Predicate<T> predicate) {
-        DropWhileProcessor<T> processor = new DropWhileProcessor<>(predicate);
+        MultiDropWhileProcessor<T> processor = new MultiDropWhileProcessor<>(predicate);
         this.subscribe(processor);
         return processor;
     }
@@ -113,7 +113,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> limit(long limit) {
-        LimitProcessor<T> processor = new LimitProcessor<>(limit);
+        MultiLimitProcessor<T> processor = new MultiLimitProcessor<>(limit);
         this.subscribe(processor);
         return processor;
     }
@@ -125,7 +125,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> skip(long skip) {
-        SkipProcessor<T> processor = new SkipProcessor<>(skip);
+        MultiSkipProcessor<T> processor = new MultiSkipProcessor<>(skip);
         this.subscribe(processor);
         return processor;
     }
@@ -165,7 +165,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onTerminate(Runnable onTerminate) {
-        TappedProcessor<T> processor = TappedProcessor.<T>create()
+        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
                 .onComplete(onTerminate)
                 .onCancel((s) -> onTerminate.run())
                 .onError((t) -> onTerminate.run());
@@ -180,7 +180,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onComplete(Runnable onTerminate) {
-        TappedProcessor<T> processor = TappedProcessor.<T>create()
+        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
                 .onComplete(onTerminate);
         this.subscribe(processor);
         return processor;
@@ -193,7 +193,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
-        TappedProcessor<T> processor = TappedProcessor.<T>create()
+        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
                 .onError(onErrorConsumer);
         this.subscribe(processor);
         return processor;
@@ -206,7 +206,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onErrorResume(Function<Throwable, T> onError) {
-        OnErrorResumeProcessor<T> processor = OnErrorResumeProcessor.resume(onError);
+        MultiOnErrorResumeProcessor<T> processor = MultiOnErrorResumeProcessor.resume(onError);
         this.subscribe(processor);
         return processor;
     }
@@ -218,7 +218,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> onErrorResumeWith(Function<Throwable, Publisher<T>> onError) {
-        OnErrorResumeProcessor<T> processor = OnErrorResumeProcessor.resumeWith(onError);
+        MultiOnErrorResumeProcessor<T> processor = MultiOnErrorResumeProcessor.resumeWith(onError);
         this.subscribe(processor);
         return processor;
     }

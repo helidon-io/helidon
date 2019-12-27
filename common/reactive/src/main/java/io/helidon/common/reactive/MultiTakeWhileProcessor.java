@@ -17,27 +17,32 @@
 
 package io.helidon.common.reactive;
 
-import java.util.HashSet;
+import java.util.function.Predicate;
 
-public class DistinctProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
-    private final HashSet<T> distinctSet;
+/**
+ * Take the longest prefix of elements from this stream that satisfy the given predicate.
+ *
+ * @param <T> <T> Item type
+ */
+public class MultiTakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+    private Predicate<T> predicate;
 
-    public DistinctProcessor() {
-        this.distinctSet = new HashSet<T>();
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
+    /**
+     * Create new {@link MultiTakeWhileProcessor}.
+     *
+     * @param predicate provided predicate to filter stream with
+     */
+    public MultiTakeWhileProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
     }
 
     @Override
     protected void hookOnNext(T item) {
-        if (!distinctSet.contains(item)) {
-            distinctSet.add(item);
+        if (predicate.test(item)) {
             submit(item);
         } else {
-            tryRequest(getSubscription().get());
+            getSubscription().ifPresent(Flow.Subscription::cancel);
+            tryComplete();
         }
     }
 }

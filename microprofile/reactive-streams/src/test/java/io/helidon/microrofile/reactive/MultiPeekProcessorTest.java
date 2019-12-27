@@ -22,7 +22,7 @@ import java.util.function.Function;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
 
-public class PeekProcessorTest extends AbstractProcessorTest {
+public class MultiPeekProcessorTest extends AbstractProcessorTest {
     @Override
     protected Processor<Long, Long> getProcessor() {
         return ReactiveStreams.<Long>builder().peek(i -> Function.identity()).buildRs();

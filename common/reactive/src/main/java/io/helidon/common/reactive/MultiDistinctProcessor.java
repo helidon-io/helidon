@@ -17,29 +17,32 @@
 
 package io.helidon.common.reactive;
 
-import java.util.function.Predicate;
+import java.util.HashSet;
 
 /**
- * Processor filtering stream with supplied predicate.
+ * Filter out all duplicate items.
  *
- * @param <T> both input/output type
+ * @param <T> item type
  */
-public class FilterProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
-
-    private Predicate<T> predicate;
+public class MultiDistinctProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+    private final HashSet<T> distinctSet;
 
     /**
-     * Processor filtering stream with supplied predicate.
-     *
-     * @param predicate provided predicate to filter stream with
+     * Create new {@link MultiDistinctProcessor}.
      */
-    public FilterProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public MultiDistinctProcessor() {
+        this.distinctSet = new HashSet<T>();
+    }
+
+    @Override
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        subscription.cancel();
     }
 
     @Override
     protected void hookOnNext(T item) {
-        if (predicate.test(item)) {
+        if (!distinctSet.contains(item)) {
+            distinctSet.add(item);
             submit(item);
         } else {
             tryRequest(getSubscription().get());

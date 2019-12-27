@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.TappedProcessor;
+import io.helidon.common.reactive.MultiTappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,7 +45,7 @@ public abstract class AbstractProcessorTest {
 
     @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getProcessor() {
-        Flow.Processor<Long, Long> processor = (Flow.Processor) TappedProcessor.create();
+        Flow.Processor<Long, Long> processor = (Flow.Processor) MultiTappedProcessor.create();
         return HybridProcessor.from(processor);
     }
 

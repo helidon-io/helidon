@@ -368,10 +368,10 @@ public class MultiTest {
         final List<Integer> TEST_DATA = List.of(1, 2, 3, 4, 3, 2, 1, 0);
 
         CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
-        PeekProcessor<Integer> peekProcessor = new PeekProcessor<>(i -> countDownLatch.countDown());
+        MultiPeekProcessor<Integer> multiPeekProcessor = new MultiPeekProcessor<>(i -> countDownLatch.countDown());
 
         List<Integer> result = Multi.just(TEST_DATA)
-                .coupled(peekProcessor, peekProcessor)
+                .coupled(multiPeekProcessor, multiPeekProcessor)
                 .collectList()
                 .get(1, TimeUnit.SECONDS);
 

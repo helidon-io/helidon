@@ -17,32 +17,34 @@
 
 package io.helidon.common.reactive;
 
-import java.util.function.Predicate;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Take the longest prefix of elements from this stream that satisfy the given predicate.
+ * Skip first n items, all the others are emitted.
  *
- * @param <T> <T> Item type
+ * @param <T> item type
  */
-public class TakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
-    private Predicate<T> predicate;
+public class MultiSkipProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+
+    private final AtomicLong counter;
 
     /**
-     * Create new {@link TakeWhileProcessor}.
+     * Create new {@link MultiSkipProcessor}.
      *
-     * @param predicate provided predicate to filter stream with
+     * @param skip number of items to be skipped
      */
-    public TakeWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public MultiSkipProcessor(Long skip) {
+        counter = new AtomicLong(skip);
     }
 
     @Override
     protected void hookOnNext(T item) {
-        if (predicate.test(item)) {
+        long actCounter = this.counter.getAndDecrement();
+        if (0 >= actCounter) {
             submit(item);
         } else {
-            getSubscription().ifPresent(Flow.Subscription::cancel);
-            tryComplete();
+            getRequestedCounter().tryDecrement();
+            request(1);
         }
     }
 }

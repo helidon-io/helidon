@@ -17,34 +17,26 @@
 
 package io.helidon.microrofile.reactive;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.MultiTappedProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 
-public class TakeWhileProcessorTest extends AbstractProcessorTest {
+public class MultiTappedProcessorTest extends AbstractProcessorTest {
     @Override
+    @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getProcessor() {
-        return ReactiveStreams.<Long>builder().takeWhile(i -> true).buildRs();
+        Flow.Processor processor = MultiTappedProcessor.create();
+        return HybridProcessor.from(processor);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
-        return ReactiveStreams.<Long>builder().takeWhile(i -> {
+        Flow.Processor processor = MultiTappedProcessor.create().onNext(o -> {
             throw t;
-        }).buildRs();
-    }
-
-    @Test
-    void cancelWhenDone() throws InterruptedException, ExecutionException, TimeoutException {
-        CompletableFuture<Void> cancelled = new CompletableFuture<>();
-        ReactiveStreams.generate(() -> 4).onTerminate(() -> {
-            cancelled.complete(null);
-        }).takeWhile((t) -> false).toList().run();
-        cancelled.get(1, TimeUnit.SECONDS);
+        });
+        return HybridProcessor.from(processor);
     }
 }

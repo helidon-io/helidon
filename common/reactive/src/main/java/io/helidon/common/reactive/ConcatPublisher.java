@@ -21,6 +21,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Concat streams to one.
+ *
+ * @param <T> item type
+ */
 public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     private FirstProcessor firstProcessor;
     private SecondProcessor secondProcessor;
@@ -29,7 +34,12 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     private Flow.Publisher<T> secondPublisher;
     private AtomicLong requested = new AtomicLong();
 
-
+    /**
+     * Create new {@link ConcatPublisher}.
+     *
+     * @param firstPublisher  first stream
+     * @param secondPublisher second stream
+     */
     public ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
         this.firstPublisher = firstPublisher;
         this.secondPublisher = secondPublisher;

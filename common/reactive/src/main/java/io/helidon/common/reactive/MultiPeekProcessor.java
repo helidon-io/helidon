@@ -17,29 +17,34 @@
 
 package io.helidon.common.reactive;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
-public class SkipProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+/**
+ * Invoke supplied consumer for every item in the stream.
+ *
+ * @param <T> both input/output type
+ */
+public class MultiPeekProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
 
-    private final AtomicLong counter;
+    private Consumer<T> consumer;
 
     /**
-     * Processor skips first n items, all the others are emitted.
+     * Invoke supplied consumer for every item in the stream.
      *
-     * @param skip number of items to be skipped
+     * @param consumer supplied consumer to be invoke for every item
      */
-    public SkipProcessor(Long skip) {
-        counter = new AtomicLong(skip);
+    public MultiPeekProcessor(Consumer<T> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
     protected void hookOnNext(T item) {
-        long actCounter = this.counter.getAndDecrement();
-        if (0 >= actCounter) {
-            submit(item);
-        } else {
-            getRequestedCounter().tryDecrement();
-            request(1);
-        }
+        consumer.accept(item);
+        submit(item);
+    }
+
+    @Override
+    public String toString() {
+        return "PeekProcessor{" + "consumer=" + consumer + '}';
     }
 }
