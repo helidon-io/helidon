@@ -540,7 +540,7 @@ public class JpaExtension implements Extension {
                                 new PersistenceUnitInfoBean(persistenceUnitName,
                                                             persistenceUnitRoot,
                                                             null,
-                                                            new BeanManagerBackedDataSourceProvider(beanManager),
+                                                            () -> beanManager.createInstance().select(DataSourceProvider.class).get(),
                                                             properties);
                             this.implicitPersistenceUnits.put(persistenceUnitName, persistenceUnit);
                         }
@@ -1457,7 +1457,8 @@ public class JpaExtension implements Extension {
 
             final Unmarshaller unmarshaller =
                 JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
-            final DataSourceProvider dataSourceProvider = new BeanManagerBackedDataSourceProvider(beanManager);
+            final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier =
+              () -> beanManager.createInstance().select(DataSourceProvider.class).get();
             PersistenceUnitInfo solePersistenceUnitInfo = null;
             while (urls.hasMoreElements()) {
                 final URL url = urls.nextElement();
@@ -1471,7 +1472,7 @@ public class JpaExtension implements Extension {
                                                                 tempClassLoaderSupplier,
                                                                 new URL(url, ".."), // i.e. META-INF/..
                                                                 this.unlistedManagedClassesByPersistenceUnitNames,
-                                                                dataSourceProvider);
+                                                                dataSourceProviderSupplier);
                 }
                 if (persistenceUnitInfos != null && !persistenceUnitInfos.isEmpty()) {
                     for (final PersistenceUnitInfo persistenceUnitInfo : persistenceUnitInfos) {

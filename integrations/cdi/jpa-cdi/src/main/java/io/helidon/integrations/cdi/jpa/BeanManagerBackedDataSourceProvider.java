@@ -16,6 +16,7 @@
 package io.helidon.integrations.cdi.jpa;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -29,6 +30,7 @@ import javax.sql.DataSource;
  *
  * @see PersistenceUnitInfoBean.DataSourceProvider
  */
+@Vetoed // TODO for now
 @ApplicationScoped
 class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
 

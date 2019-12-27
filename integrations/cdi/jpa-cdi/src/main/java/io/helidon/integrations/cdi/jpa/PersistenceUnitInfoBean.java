@@ -77,7 +77,9 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
 
     private final String nonJtaDataSourceName;
 
-    private final DataSourceProvider dataSourceProvider;
+    private final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier;
+
+    private DataSourceProvider dataSourceProvider;
 
     private final String persistenceProviderClassName;
 
@@ -161,6 +163,31 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
              persistenceUnitName,
              null,
              dataSourceProvider,
+             properties,
+             SharedCacheMode.UNSPECIFIED,
+             PersistenceUnitTransactionType.JTA,
+             ValidationMode.AUTO);
+    }
+
+    public PersistenceUnitInfoBean(final String persistenceUnitName,
+                                   final URL persistenceUnitRootUrl,
+                                   final Collection<? extends String> managedClassNames,
+                                   final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier,
+                                   final Properties properties) {
+        this(persistenceUnitName,
+             persistenceUnitRootUrl,
+             null,
+             null,
+             Thread.currentThread().getContextClassLoader(),
+             null,
+             null,
+             managedClassNames != null && !managedClassNames.isEmpty(),
+             null,
+             managedClassNames,
+             null,
+             persistenceUnitName,
+             null,
+             dataSourceProviderSupplier,
              properties,
              SharedCacheMode.UNSPECIFIED,
              PersistenceUnitTransactionType.JTA,
@@ -304,10 +331,48 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                    final SharedCacheMode sharedCacheMode,
                                    final PersistenceUnitTransactionType transactionType,
                                    final ValidationMode validationMode) {
+        this(persistenceUnitName,
+             persistenceUnitRootUrl,
+             persistenceXMLSchemaVersion,
+             persistenceProviderClassName,
+             classLoader,
+             tempClassLoaderSupplier,
+             classTransformerConsumer,
+             excludeUnlistedClasses,
+             jarFileUrls,
+             managedClassNames,
+             mappingFileNames,
+             jtaDataSourceName,
+             nonJtaDataSourceName,
+             () -> dataSourceProvider,
+             properties,
+             sharedCacheMode,
+             transactionType,
+             validationMode);
+    }
+
+    public PersistenceUnitInfoBean(final String persistenceUnitName,
+                                   final URL persistenceUnitRootUrl,
+                                   final String persistenceXMLSchemaVersion,
+                                   final String persistenceProviderClassName,
+                                   final ClassLoader classLoader,
+                                   final Supplier<? extends ClassLoader> tempClassLoaderSupplier,
+                                   final Consumer<? super ClassTransformer> classTransformerConsumer,
+                                   final boolean excludeUnlistedClasses,
+                                   final Collection<? extends URL> jarFileUrls,
+                                   final Collection<? extends String> managedClassNames,
+                                   final Collection<? extends String> mappingFileNames,
+                                   final String jtaDataSourceName,
+                                   final String nonJtaDataSourceName,
+                                   final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier,
+                                   final Properties properties,
+                                   final SharedCacheMode sharedCacheMode,
+                                   final PersistenceUnitTransactionType transactionType,
+                                   final ValidationMode validationMode) {
         super();
         Objects.requireNonNull(persistenceUnitName);
         Objects.requireNonNull(persistenceUnitRootUrl);
-        Objects.requireNonNull(dataSourceProvider);
+        Objects.requireNonNull(dataSourceProviderSupplier);
         Objects.requireNonNull(transactionType);
 
         this.persistenceUnitName = persistenceUnitName;
@@ -373,7 +438,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
             this.jtaDataSourceName = jtaDataSourceName;
         }
         this.nonJtaDataSourceName = nonJtaDataSourceName;
-        this.dataSourceProvider = dataSourceProvider;
+        this.dataSourceProviderSupplier = dataSourceProviderSupplier;
 
         if (sharedCacheMode == null) {
             this.sharedCacheMode = SharedCacheMode.UNSPECIFIED;
@@ -485,12 +550,22 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
 
     @Override
     public final DataSource getJtaDataSource() {
-        return this.dataSourceProvider.getDataSource(true, this.nonJtaDataSourceName == null, this.jtaDataSourceName);
+        DataSourceProvider dataSourceProvider = this.dataSourceProvider;
+        if (dataSourceProvider == null) {
+            dataSourceProvider = this.dataSourceProviderSupplier.get();
+            this.dataSourceProvider = dataSourceProvider;
+        }
+        return dataSourceProvider.getDataSource(true, this.nonJtaDataSourceName == null, this.jtaDataSourceName);
     }
 
     @Override
     public final DataSource getNonJtaDataSource() {
-        return this.dataSourceProvider.getDataSource(false, false, this.nonJtaDataSourceName);
+        DataSourceProvider dataSourceProvider = this.dataSourceProvider;
+        if (dataSourceProvider == null) {
+            dataSourceProvider = this.dataSourceProviderSupplier.get();
+            this.dataSourceProvider = dataSourceProvider;
+        }
+        return dataSourceProvider.getDataSource(false, false, this.nonJtaDataSourceName);
     }
 
     @Override
@@ -569,6 +644,23 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                         Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
                         final DataSourceProvider dataSourceProvider)
         throws MalformedURLException {
+        return fromPersistence(persistence,
+                               classLoader,
+                               tempClassLoaderSupplier,
+                               rootUrl,
+                               unlistedClasses,
+                               () -> dataSourceProvider);
+    }
+
+    public static final Collection<? extends PersistenceUnitInfoBean>
+        fromPersistence(final Persistence persistence,
+                        final ClassLoader classLoader,
+                        final Supplier<? extends ClassLoader> tempClassLoaderSupplier,
+                        final URL rootUrl,
+                        Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
+                        final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
+        throws MalformedURLException {
+
         Objects.requireNonNull(rootUrl);
         if (unlistedClasses == null) {
             unlistedClasses = Collections.emptyMap();
@@ -589,7 +681,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                                         tempClassLoaderSupplier,
                                                         rootUrl,
                                                         unlistedClasses,
-                                                        dataSourceProvider));
+                                                        dataSourceProviderSupplier));
                 }
             }
         }
@@ -656,7 +748,22 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                    () -> classLoader,
                                    rootUrl,
                                    unlistedClasses,
-                                   dataSourceProvider);
+                                   () -> dataSourceProvider);
+    }
+
+    public static final PersistenceUnitInfoBean
+        fromPersistenceUnit(final PersistenceUnit persistenceUnit,
+                            final URL rootUrl,
+                            final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
+                            final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
+        throws MalformedURLException {
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return fromPersistenceUnit(persistenceUnit,
+                                   classLoader,
+                                   () -> classLoader,
+                                   rootUrl,
+                                   unlistedClasses,
+                                   dataSourceProviderSupplier);
     }
 
     /**
@@ -717,9 +824,25 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                             final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
                             final DataSourceProvider dataSourceProvider)
         throws MalformedURLException {
+        return fromPersistenceUnit(persistenceUnit,
+                                   classLoader,
+                                   tempClassLoaderSupplier,
+                                   rootUrl,
+                                   unlistedClasses,
+                                   () -> dataSourceProvider);
+    }
+
+    public static final PersistenceUnitInfoBean
+        fromPersistenceUnit(final PersistenceUnit persistenceUnit,
+                            final ClassLoader classLoader,
+                            Supplier<? extends ClassLoader> tempClassLoaderSupplier,
+                            final URL rootUrl,
+                            final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
+                            final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
+        throws MalformedURLException {
         Objects.requireNonNull(persistenceUnit);
         Objects.requireNonNull(rootUrl);
-        Objects.requireNonNull(dataSourceProvider);
+        Objects.requireNonNull(dataSourceProviderSupplier);
 
         final Collection<? extends String> jarFiles = persistenceUnit.getJarFile();
         final List<URL> jarFileUrls = new ArrayList<>();
@@ -821,7 +944,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                         mappingFiles,
                                         persistenceUnit.getJtaDataSource(),
                                         persistenceUnit.getNonJtaDataSource(),
-                                        dataSourceProvider,
+                                        dataSourceProviderSupplier,
                                         properties,
                                         sharedCacheMode,
                                         transactionType,
