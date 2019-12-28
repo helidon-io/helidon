@@ -18,11 +18,11 @@ package io.helidon.media.jackson.common;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
-import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.ContentWriters;

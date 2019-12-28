@@ -40,8 +40,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 
 
 public class MetricsConfigurerIT {

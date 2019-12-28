@@ -17,13 +17,13 @@
 package io.helidon.config.spi;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
@@ -132,7 +132,7 @@ public class AbstractSourceTest {
     public void testInitAll() {
         TestingSource.TestingBuilder builder = TestingSource.builder().config(
                 Config.builder(ConfigSources.create(
-                        CollectionsHelper.mapOf("optional", "true")))
+                        Map.of("optional", "true")))
                         .addMapper(TestingRetryPolicy.class, config -> new TestingRetryPolicy())
                         .addMapper(TestingPollingStrategy.class, config -> new TestingPollingStrategy())
                         .build()

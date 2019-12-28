@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Set;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.ConfigHelper;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
@@ -54,7 +53,7 @@ public class PropertiesConfigParser implements ConfigParser {
      */
     public static final int PRIORITY = ConfigParser.PRIORITY + 100;
 
-    private static final Set<String> SUPPORTED_MEDIA_TYPES = CollectionsHelper.setOf(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+    private static final Set<String> SUPPORTED_MEDIA_TYPES = Set.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
     @Override
     public Set<String> supportedMediaTypes() {

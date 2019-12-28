@@ -18,8 +18,6 @@ package io.helidon.microprofile.metrics;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
-import javax.enterprise.context.ApplicationScoped;
-
 public class BadGaugedBean {
 
     @Gauge(unit = MetricUnits.NONE)

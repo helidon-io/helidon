@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
-
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
@@ -1068,7 +1066,7 @@ public final class Http {
 
             // manually code maps to ensure correct data always used
             // (locale data can be changed by application code)
-            Map<Long, String> dayOfWeekFull = CollectionsHelper.mapOf(1L, "Monday",
+            Map<Long, String> dayOfWeekFull = Map.of(1L, "Monday",
                                                                       2L, "Tuesday",
                                                                       3L, "Wednesday",
                                                                       4L, "Thursday",
@@ -1101,7 +1099,7 @@ public final class Http {
 
             // manually code maps to ensure correct data always used
             // (locale data can be changed by application code)
-            Map<Long, String> dayOfWeek3d = CollectionsHelper.mapOf(1L, "Mon",
+            Map<Long, String> dayOfWeek3d = Map.of(1L, "Mon",
                                                                     2L, "Tue",
                                                                     3L, "Wed",
                                                                     4L, "Thu",

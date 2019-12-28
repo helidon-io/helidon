@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config.internal;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +28,6 @@ import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.ConfigHelper;
 import io.helidon.config.spi.PollingStrategy;

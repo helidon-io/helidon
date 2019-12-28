@@ -19,7 +19,6 @@ package io.helidon.config.internal;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.MetaConfig;
@@ -79,10 +78,9 @@ public class PrefixedConfigSource implements ConfigSource {
 
     @Override
     public Optional<ConfigNode.ObjectNode> load() throws ConfigException {
-        return OptionalHelper.from(source.load()
-                                           .map(originRoot -> new ObjectNodeBuilderImpl().addObject(key, originRoot).build()))
-                .or(Optional::empty)
-                .asOptional();
+        return source.load()
+                .map(originRoot -> new ObjectNodeBuilderImpl().addObject(key, originRoot).build())
+                .or(Optional::empty);
     }
 
     @Override

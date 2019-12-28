@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Provider;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
 
 import org.eclipse.microprofile.jwt.Claim;
@@ -133,7 +132,7 @@ class ClaimProducer implements Bean<Object> {
 
     @Override
     public Set<InjectionPoint> getInjectionPoints() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     @Override
@@ -148,12 +147,12 @@ class ClaimProducer implements Bean<Object> {
 
     @Override
     public Set<Type> getTypes() {
-        return CollectionsHelper.setOf(type);
+        return Set.of(type);
     }
 
     @Override
     public Set<Annotation> getQualifiers() {
-        return CollectionsHelper.setOf(qualifier, QUALIFIER);
+        return Set.of(qualifier, QUALIFIER);
     }
 
     @Override
@@ -168,7 +167,7 @@ class ClaimProducer implements Bean<Object> {
 
     @Override
     public Set<Class<? extends Annotation>> getStereotypes() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     @Override

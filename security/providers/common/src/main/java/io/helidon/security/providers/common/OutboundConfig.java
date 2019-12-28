@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -71,7 +70,7 @@ public final class OutboundConfig {
     static OutboundConfig createFromConfig(Config providerConfig, OutboundTarget[] defaults) {
         Config config = providerConfig.get(CONFIG_OUTBOUND);
 
-        List<OutboundTarget> configuredTargets = config.asList(OutboundTarget::create).orElse(CollectionsHelper.listOf());
+        List<OutboundTarget> configuredTargets = config.asList(OutboundTarget::create).orElse(List.of());
 
         boolean useDefaults = configuredTargets.stream().noneMatch(targetConfig -> "default".equals(targetConfig.name()))
                 && (null != defaults);

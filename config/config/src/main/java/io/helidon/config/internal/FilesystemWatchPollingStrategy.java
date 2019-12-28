@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
@@ -225,7 +224,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
             Path dir = parentDir(target);
             WatchKey oldWatchKey = watchKey;
             watchKey = dir.register(watchService,
-                                    CollectionsHelper.listOf(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+                                    List.of(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
                                             .toArray(new WatchEvent.Kind[0]),
                                     watchServiceModifiers.toArray(new WatchEvent.Modifier[0]));
             if (oldWatchKey != null) {

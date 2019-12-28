@@ -16,13 +16,14 @@
 
 package io.helidon.config.encryption;
 
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -39,7 +40,7 @@ public class SecureLegacyConfigFromConfigTest extends AbstractSecureConfigTest {
         configRequiresEncryption = Config.builder()
                 .sources(ConfigSources.create(
                         //override require encryption
-                        ConfigSources.create(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
+                        ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
                         ConfigSources.classpath("application.yaml")))
                 .build()
                 .get("aes-legacy");

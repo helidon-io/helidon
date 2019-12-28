@@ -21,11 +21,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import io.helidon.common.OptionalHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.internal.ListNodeBuilderImpl;
@@ -128,10 +127,9 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implem
     }
 
     private Optional<ConfigParser> findParserForKey(Config.Key key) {
-        return OptionalHelper.from(Optional.ofNullable(parserMapping).map(mapping -> mapping.apply(key)))
+        return Optional.ofNullable(parserMapping).map(mapping -> mapping.apply(key))
                 .or(() -> Optional.ofNullable(mediaTypeMapping).map(mapping -> mapping.apply(key))
-                        .flatMap(mediaType -> configContext().findParser(mediaType)))
-                .asOptional();
+                        .flatMap(mediaType -> configContext().findParser(mediaType)));
     }
 
     /**

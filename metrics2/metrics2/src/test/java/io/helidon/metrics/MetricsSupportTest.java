@@ -16,23 +16,28 @@
 
 package io.helidon.metrics;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import java.util.Collections;
+import java.util.Map;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for {@link MetricsSupport}.
@@ -136,7 +141,7 @@ class MetricsSupportTest {
     @Test
     void testBaseMetricsDisabled() {
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "base.enabled", "false")))
                 .build();
         RegistryFactory myRF = RegistryFactory.create(config);

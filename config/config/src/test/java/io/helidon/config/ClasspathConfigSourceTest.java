@@ -22,8 +22,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.ClasspathConfigSource.ClasspathBuilder;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;

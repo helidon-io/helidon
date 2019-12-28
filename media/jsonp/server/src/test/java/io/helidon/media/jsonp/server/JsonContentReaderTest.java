@@ -18,6 +18,7 @@ package io.helidon.media.jsonp.server;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.TimeUnit;
 
 import javax.json.JsonArray;
@@ -25,7 +26,6 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Multi;
 
 import org.hamcrest.core.Is;

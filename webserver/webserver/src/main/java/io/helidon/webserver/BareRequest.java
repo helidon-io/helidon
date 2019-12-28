@@ -19,10 +19,10 @@ package io.helidon.webserver;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Flow;
 
 /**
  * Bare (minimal) representation of HTTP Request. Used by {@link WebServer WebServer} implementations to invoke

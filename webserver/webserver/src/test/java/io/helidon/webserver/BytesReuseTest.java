@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -30,11 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscription;
 import io.helidon.common.reactive.Multi;
 import io.helidon.webserver.utils.SocketHttpClient;
 
@@ -131,7 +130,7 @@ public class BytesReuseTest {
                                 try {
                                     LOGGER.info("Consuming data from input stream!");
                                     assertAgainstPrefixQueryParam(req,
-                                            new String(InputStreamHelper.readAllBytes(stream)));
+                                            new String(stream.readAllBytes()));
                                     res.send("Finished");
                                 } catch (IOException e) {
                                     req.next(new IllegalStateException("Got an IO error.", e));

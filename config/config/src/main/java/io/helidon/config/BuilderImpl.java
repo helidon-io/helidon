@@ -30,6 +30,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -37,10 +38,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.GenericType;
 import io.helidon.common.Prioritized;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
@@ -191,7 +190,7 @@ class BuilderImpl implements Config.Builder {
         Objects.requireNonNull(type);
         Objects.requireNonNull(mapper);
 
-        addMapper(() -> CollectionsHelper.mapOf(type, mapper));
+        addMapper(() -> Map.of(type, mapper));
 
         return this;
     }
@@ -204,12 +203,12 @@ class BuilderImpl implements Config.Builder {
         addMapper(new ConfigMapperProvider() {
             @Override
             public Map<Class<?>, Function<Config, ?>> mappers() {
-                return CollectionsHelper.mapOf();
+                return Map.of();
             }
 
             @Override
             public Map<GenericType<?>, BiFunction<Config, ConfigMapper, ?>> genericTypeMappers() {
-                return CollectionsHelper.mapOf(type, (config, aMapper) -> mappingFunction.apply(config));
+                return Map.of(type, (config, aMapper) -> mappingFunction.apply(config));
             }
         });
 
@@ -963,7 +962,7 @@ class BuilderImpl implements Config.Builder {
 
     static final class ConfigSourceConfiguration {
         private static final ConfigSourceConfiguration EMPTY =
-                new ConfigSourceConfiguration(ConfigSources.empty(), CollectionsHelper.listOf(ConfigSources.empty()));
+                new ConfigSourceConfiguration(ConfigSources.empty(), List.of(ConfigSources.empty()));
         private final ConfigSource compositeSource;
         private final List<ConfigSource> allSources;
 

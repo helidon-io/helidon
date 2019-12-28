@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.security.spi.AuditProvider;
 
@@ -99,7 +98,7 @@ final class DefaultAuditProvider implements AuditProvider {
 
         String finalMsg = msg;
 
-        OptionalHelper.from(event.throwable())
+        event.throwable()
                 .ifPresentOrElse(throwable -> auditLogger.log(level,
                                                               finalMsg,
                                                               throwable), () -> auditLogger.log(level, finalMsg));

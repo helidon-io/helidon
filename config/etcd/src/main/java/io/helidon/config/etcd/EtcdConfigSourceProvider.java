@@ -17,7 +17,6 @@ package io.helidon.config.etcd;
 
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ConfigSourceProvider;
@@ -40,6 +39,6 @@ public class EtcdConfigSourceProvider implements ConfigSourceProvider {
 
     @Override
     public Set<String> supported() {
-        return CollectionsHelper.setOf(TYPE);
+        return Set.of(TYPE);
     }
 }

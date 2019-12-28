@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.logging.Logger;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
 
@@ -245,13 +244,12 @@ abstract class JwkPki extends Jwk {
         T fromJson(JsonObject json) {
             super.fromJson(json);
             // get cert chain from URL or from fields if present
-            OptionalHelper.from(JwtUtil.getString(json, PARAM_X509_CHAIN_URL)
+            JwtUtil.getString(json, PARAM_X509_CHAIN_URL)
                                         .map(URI::create)
-                                        .map(Builder::processCertChain))
+                                        .map(Builder::processCertChain)
                     .or(() -> JwtUtil.getStrings(json, PARAM_X509_CHAIN)
                             // certificate chain as base64 encoded array
                             .map(Builder::processCertChain))
-                    .asOptional()
                     .ifPresent(this::certificateChain);
 
             // thumbprints

@@ -21,7 +21,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -85,9 +84,8 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
 
     @Override
     protected String mediaType() {
-        return OptionalHelper.from(Optional.ofNullable(super.mediaType()))
+        return Optional.ofNullable(super.mediaType())
                 .or(this::probeContentType)
-                .asOptional()
                 .orElse(null);
     }
 

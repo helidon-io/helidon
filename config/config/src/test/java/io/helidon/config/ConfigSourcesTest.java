@@ -30,7 +30,6 @@ import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.common.CollectionsHelper.mapOf;
 import static io.helidon.config.ConfigSources.DEFAULT_MAP_NAME;
 import static io.helidon.config.ConfigSources.DEFAULT_PROPERTIES_NAME;
 import static io.helidon.config.ConfigSources.prefixed;
@@ -72,7 +71,7 @@ public class ConfigSourcesTest {
 
     @Test
     public void testFromConfig() {
-        Map<String, String> source = mapOf("object.leaf", "value");
+        Map<String, String> source = Map.of("object.leaf", "value");
 
         ConfigSource originConfigSource = ConfigSources.create(source).build();
         Config originConfig = Config.builder(originConfigSource)
@@ -91,7 +90,7 @@ public class ConfigSourcesTest {
 
     @Test
     public void testPrefix() {
-        assertThat(Config.create(prefixed("security", ConfigSources.create(mapOf("credentials.username", "libor"))))
+        assertThat(Config.create(prefixed("security", ConfigSources.create(Map.of("credentials.username", "libor"))))
                            .get("security.credentials.username")
                            .asString(),
                    is(ConfigValues.simpleValue("libor")));
@@ -100,7 +99,7 @@ public class ConfigSourcesTest {
 
     @Test
     public void testPrefixDescription() {
-        ConfigSource source = ConfigSources.create(mapOf("credentials.username", "libor")).build();
+        ConfigSource source = ConfigSources.create(Map.of("credentials.username", "libor")).build();
         assertThat(prefixed("security", source).description(), is("prefixed[security]:" + source.description()));
     }
 
@@ -253,7 +252,7 @@ public class ConfigSourcesTest {
         //       The assertions below that differ are marked with a "DIFFERENCE" N comment.
 
         System.setProperty("com.ACME.size", "sys-prop-value");
-        Map<String, String> appValues = mapOf("app.key", "app-value",
+        Map<String, String> appValues = Map.of("app.key", "app-value",
                                               "com.ACME.size", "app-value",
                                               "server.executor-service.max-pool-size", "app-value");
 

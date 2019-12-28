@@ -17,7 +17,6 @@ package io.helidon.tracing.config;
 
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 
 /**
@@ -52,9 +51,8 @@ public abstract class SpanLogTracingConfig extends Traceable {
         return new SpanLogTracingConfig(newer.name()) {
             @Override
             public Optional<Boolean> isEnabled() {
-                return OptionalHelper.from(newer.isEnabled())
-                        .or(older::isEnabled)
-                        .asOptional();
+                return newer.isEnabled()
+                        .or(older::isEnabled);
             }
         };
     }

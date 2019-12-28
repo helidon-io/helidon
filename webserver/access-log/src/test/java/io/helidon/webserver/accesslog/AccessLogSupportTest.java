@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.accesslog;
 
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;

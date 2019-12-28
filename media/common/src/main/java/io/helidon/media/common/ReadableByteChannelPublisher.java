@@ -19,6 +19,7 @@ package io.helidon.media.common;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -28,7 +29,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.RequestedCounter;
 import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.SingleSubscriberHolder;

@@ -22,8 +22,6 @@ import java.util.Set;
 import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.se.SeContainer;
@@ -33,11 +31,12 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
 import javax.persistence.PersistenceUnit;
+import javax.persistence.SynchronizationType;
+import javax.persistence.TransactionRequiredException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
-import javax.persistence.TransactionRequiredException;
-import javax.transaction.Transactional;
 import javax.transaction.TransactionManager;
+import javax.transaction.Transactional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 )
 class TestAnnotationRewriting {
 
-    @PersistenceUnit(unitName = "test")
+    @PersistenceUnit(unitName = "test-resource-local")
     private EntityManagerFactory emf;
     
     @PersistenceContext(name = "bogus", unitName = "test")
@@ -123,6 +122,27 @@ class TestAnnotationRewriting {
 
         assertNotNull(this.emf);
         assertTrue(this.emf.isOpen());
+        EntityManager em = null;
+        try {
+          em = this.emf.createEntityManager();
+          assertNotNull(em);
+          assertTrue(em.isOpen());
+          assertFalse(em.isJoinedToTransaction());
+        } finally {
+          if (em != null && !em.isOpen()) {
+            em.close();
+          }
+        }
+        try {
+          em = this.emf.createEntityManager(SynchronizationType.UNSYNCHRONIZED, null);
+          fail("Was able to pass a non-null SynchronizationType");
+        } catch (final IllegalStateException expected) {
+          
+        } finally {
+          if (em != null && !em.isOpen()) {
+            em.close();
+          }
+        }
     }
 
     @Test

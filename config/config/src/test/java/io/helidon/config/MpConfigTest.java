@@ -17,9 +17,9 @@ package io.helidon.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.internal.MapConfigSource;
 
 import org.eclipse.microprofile.config.Config;
@@ -43,13 +43,13 @@ public class MpConfigTest {
     static void initClass() {
         Object helidonConfig = io.helidon.config.Config.builder()
                 .addSource(ConfigSources.classpath("io/helidon/config/application.properties"))
-                .addSource(ConfigSources.create(CollectionsHelper.mapOf("mp-1", "mp-value-1",
-                                                                        "mp-2", "mp-value-2",
-                                                                        "app.storageEnabled", "false",
-                                                                        "mp-array", "a,b,c",
-                                                                        "mp-list.0", "1",
-                                                                        "mp-list.1", "2",
-                                                "mp-list.2", "3")))
+                .addSource(ConfigSources.create(Map.of("mp-1", "mp-value-1",
+                                                       "mp-2", "mp-value-2",
+                                                       "app.storageEnabled", "false",
+                                                       "mp-array", "a,b,c",
+                                                       "mp-list.0", "1",
+                                                       "mp-list.1", "2",
+                                                       "mp-list.2", "3")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();

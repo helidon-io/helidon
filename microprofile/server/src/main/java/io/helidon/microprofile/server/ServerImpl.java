@@ -46,7 +46,6 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.Prioritized;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
@@ -70,7 +69,7 @@ public class ServerImpl implements Server {
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
-    private static final boolean EXIT_ON_STARTED = "✅".equals(System.getProperty(EXIT_ON_STARTED_KEY));
+    private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
     private static final StartedServers STARTED_SERVERS = new StartedServers();
 
     private static long initStartupTime = System.nanoTime();
@@ -83,7 +82,6 @@ public class ServerImpl implements Server {
     private final Context context;
     private final boolean supportParallelRun;
     private int port = -1;
-    private boolean isInitTimingLogged = false;
 
     static void recordInitStart(long time) {
         if (time < initStartupTime) {
@@ -130,9 +128,8 @@ public class ServerImpl implements Server {
                 .port(builder.port())
                 .bindAddress(listenHost);
 
-        OptionalHelper.from(Optional.ofNullable(builder.basePath()))
+        Optional.ofNullable(builder.basePath())
                 .or(() -> config.get("server.base-path").asString().asOptional())
-                .asOptional()
                 .ifPresent(basePath -> {
                     routingBuilder.any("/", (req, res) -> {
                         res.status(Http.Status.MOVED_PERMANENTLY_301);

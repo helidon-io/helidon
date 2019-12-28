@@ -19,13 +19,15 @@ package io.helidon.config.spi;
 import java.io.IOException;
 import java.io.StringReader;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
@@ -144,7 +146,7 @@ public class AbstractParsableConfigSourceTest {
             source.init(context);
             source.load();
         });
-        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+        assertThat(ex.getMessage(), stringContainsInOrder(List.of(
                 "Cannot load data from mandatory source",
                 "TestingParsableConfig[parsable-test]")));
         assertThat(ex.getCause(),
@@ -180,7 +182,7 @@ public class AbstractParsableConfigSourceTest {
             source.init(context);
             source.load();
         });
-        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+        assertThat(ex.getMessage(), stringContainsInOrder(List.of(
                 "Cannot load data from mandatory source",
                 "TestingParsableConfig[parsable-test]")));
         assertThat(ex.getCause(),
@@ -528,7 +530,7 @@ public class AbstractParsableConfigSourceTest {
     @Test
     public void testInitAll() {
         TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder()
-                .config(Config.create(ConfigSources.create(CollectionsHelper.mapOf("media-type", "application/x-yaml"))));
+                .config(Config.create(ConfigSources.create(Map.of("media-type", "application/x-yaml"))));
 
         //media-type
         assertThat(builder.mediaType(), is("application/x-yaml"));
@@ -553,7 +555,7 @@ public class AbstractParsableConfigSourceTest {
 
     private ConfigParser mockParser(String value) {
         ConfigParser parser = mock(ConfigParser.class);
-        when(parser.supportedMediaTypes()).thenReturn(CollectionsHelper.setOf(TEST_MEDIA_TYPE));
+        when(parser.supportedMediaTypes()).thenReturn(Set.of(TEST_MEDIA_TYPE));
         when(parser.parse(any())).thenReturn(ObjectNode.builder().addValue(TEST_KEY, ValueNode.create(value)).build());
 
         return parser;

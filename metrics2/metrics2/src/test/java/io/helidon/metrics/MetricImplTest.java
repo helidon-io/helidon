@@ -16,7 +16,6 @@
 
 package io.helidon.metrics;
 
-import io.helidon.common.CollectionsHelper;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
@@ -59,7 +58,7 @@ class MetricImplTest {
             + "]"
             + "}}";
 
-    private static final List<MetricID> METRIC_IDS = CollectionsHelper.listOf(
+    private static final List<MetricID> METRIC_IDS = List.of(
         new MetricID("name1", new Tag("a", "b"), new Tag("c", "d")),
         new MetricID("name2", new Tag("e", "f"), new Tag("g", "h")));
 

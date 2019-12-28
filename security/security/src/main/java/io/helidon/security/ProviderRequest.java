@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.util.AbacSupport;
 
 /**
@@ -125,12 +124,11 @@ public class ProviderRequest implements AbacSupport {
 
         //now check accessor methods
         String capName = capitalize(key);
-        return OptionalHelper.from(getMethod(aClass, "get" + capName))
+        return getMethod(aClass, "get" + capName)
                 .or(() -> getMethod(aClass, key))
                 .or(() -> getMethod(aClass, "is" + capName))
                 .or(() -> getMethod(aClass, "has" + capName))
                 .or(() -> getMethod(aClass, "should" + capName))
-                .asOptional()
                 .map(method -> {
                     try {
                         return method.invoke(object);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Map;
 import javax.el.ELContext;
 import javax.el.PropertyNotWritableException;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.util.AbacSupport;
 
 import org.junit.jupiter.api.Test;
@@ -46,7 +45,7 @@ class AttributeResolverTest {
 
         ELContext context = Mockito.mock(ELContext.class);
 
-        Class<?> type = ar.getType(context, new MyResource(CollectionsHelper.mapOf("name", new HashMap<>())), "name");
+        Class<?> type = ar.getType(context, new MyResource(Map.of("name", new HashMap<>())), "name");
 
         assertThat(type, notNullValue());
         assertThat(type, sameInstance(HashMap.class));
@@ -57,7 +56,7 @@ class AttributeResolverTest {
         AttributeResolver ar = new AttributeResolver();
         ELContext context = Mockito.mock(ELContext.class);
         try {
-            ar.setValue(context, new MyResource(CollectionsHelper.mapOf("name", "jarda")), "name", "surname");
+            ar.setValue(context, new MyResource(Map.of("name", "jarda")), "name", "surname");
             fail("The resolver should be read-only");
         } catch (PropertyNotWritableException e) {
             // this is expected
@@ -70,7 +69,7 @@ class AttributeResolverTest {
 
         ELContext context = Mockito.mock(ELContext.class);
 
-        Object name = ar.getValue(context, new MyResource(CollectionsHelper.mapOf("name", "jarda")), "name");
+        Object name = ar.getValue(context, new MyResource(Map.of("name", "jarda")), "name");
 
         assertThat(name, notNullValue());
         assertThat(name, is("jarda"));
@@ -93,7 +92,7 @@ class AttributeResolverTest {
 
         ELContext context = Mockito.mock(ELContext.class);
 
-        Object name = ar.getValue(context, new MyResource(CollectionsHelper.mapOf("nickname", "jarda")), "name");
+        Object name = ar.getValue(context, new MyResource(Map.of("nickname", "jarda")), "name");
 
         assertThat(name, nullValue());
     }

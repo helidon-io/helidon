@@ -25,9 +25,12 @@ import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Starts a server with the default OpenAPI endpoint to test a static OpenAPI

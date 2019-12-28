@@ -35,7 +35,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
@@ -282,7 +281,7 @@ public final class EncryptionUtil {
     }
 
     static Optional<char[]> resolveMasterPassword(boolean requireEncryption, Config config) {
-        Optional<char[]> result = OptionalHelper.from(getEnv(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE))
+        Optional<char[]> result = getEnv(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE)
                 .or(() -> {
                     ConfigValue<String> value = config.get(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY).asString();
                     if (value.isPresent()) {
@@ -295,7 +294,6 @@ public final class EncryptionUtil {
                     }
                     return value.asOptional();
                 })
-                .asOptional()
                 .map(String::toCharArray);
 
         if (!result.isPresent()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * Generates Asciidoc documentation for some API areas.
  * The output of this generator is manually copy-pasted into Prime SDK DevGuide.
@@ -54,12 +52,12 @@ public class ConfigAsciidocGenerator {
     private static final String CONFIG_ACCESSORS_FILE = "advanced-config_accessors.adoc";
 
     public static void main(String... args) throws IOException {
-        processArgs(CollectionsHelper.setOf(args));
+        processArgs(Set.of(args));
     }
 
     public static void processArgs(Set<String> args) throws IOException {
         if (args.isEmpty()) {
-            args = CollectionsHelper.setOf("-am", "-bm");
+            args = Set.of("-am", "-bm");
         }
         Path dir = Files.createTempDirectory(TEMP_DIR);
 
@@ -180,7 +178,7 @@ public class ConfigAsciidocGenerator {
         {
             //get a single value
             SortedMap<KindDesc, Map<AccessType, MethodDesc>> methods = new TreeMap<>();
-            final List<KindDesc> kinds = CollectionsHelper.listOf(new KindDesc("Generic (`T`)", Class.class),
+            final List<KindDesc> kinds = List.of(new KindDesc("Generic (`T`)", Class.class),
                                                  new KindDesc("`String`", "String" + methodSuffix),
                                                  new KindDesc("`Int`", "Int" + methodSuffix),
                                                  new KindDesc("`Long`", "Long" + methodSuffix),
@@ -199,7 +197,7 @@ public class ConfigAsciidocGenerator {
         {
             //get a list of values
             SortedMap<KindDesc, Map<AccessType, MethodDesc>> methods = new TreeMap<>();
-            final List<KindDesc> kinds = CollectionsHelper.listOf(new KindDesc("Generic (`List<T>`)", Class.class),
+            final List<KindDesc> kinds = List.of(new KindDesc("Generic (`List<T>`)", Class.class),
                                                  new KindDesc("`List<String>`", "StringList" + methodSuffix),
                                                  new KindDesc("`List<Config>`", "NodeList" + methodSuffix));
 
@@ -214,7 +212,7 @@ public class ConfigAsciidocGenerator {
         {
             //map a single value
             SortedMap<KindDesc, Map<AccessType, MethodDesc>> methods = new TreeMap<>();
-            final List<KindDesc> kinds = CollectionsHelper.listOf(new KindDesc("Simple `Function` (`T`)", Function.class),
+            final List<KindDesc> kinds = List.of(new KindDesc("Simple `Function` (`T`)", Function.class),
                                                  new KindDesc("Complex `ConfigMapper` (`T`)", Function.class));
 
             allAccessorMethods.stream()
@@ -228,7 +226,7 @@ public class ConfigAsciidocGenerator {
         {
             //map a list of values
             SortedMap<KindDesc, Map<AccessType, MethodDesc>> methods = new TreeMap<>();
-            final List<KindDesc> kinds = CollectionsHelper.listOf(new KindDesc("Simple `Function` (`List<T>`)", Function.class),
+            final List<KindDesc> kinds = List.of(new KindDesc("Simple `Function` (`List<T>`)", Function.class),
                                                  new KindDesc("Complex `ConfigMapper` (`List<T>`)", Function.class));
 
             allAccessorMethods.stream()

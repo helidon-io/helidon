@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
@@ -41,14 +40,14 @@ public class MapConfigSourceTest {
 
     @Test
     public void testDescription() throws MalformedURLException {
-        ConfigSource configSource = ConfigSources.create(CollectionsHelper.mapOf()).build();
+        ConfigSource configSource = ConfigSources.create(Map.of()).build();
 
         assertThat(configSource.description(), is("MapConfig[map]"));
     }
 
     @Test
     public void testString() {
-        Map<String, String> map = CollectionsHelper.mapOf("app.name", "app-name");
+        Map<String, String> map = Map.of("app.name", "app-name");
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(map))
@@ -59,7 +58,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testInt() {
-        Map<String, String> map = CollectionsHelper.mapOf("app.port", "8080");
+        Map<String, String> map = Map.of("app.port", "8080");
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(map))
@@ -71,7 +70,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testMissingValue() {
-        Map<String, String> map = CollectionsHelper.mapOf();
+        Map<String, String> map = Map.of();
 
         assertThrows(MissingValueException.class, () -> {
             Config config = Config.builder()
@@ -84,7 +83,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testTraverse() {
-        Map<String, String> map = CollectionsHelper.mapOf(
+        Map<String, String> map = Map.of(
                 "app.name", "app-name",
                 "app.port", "8080",
                 "security", "on");
@@ -102,7 +101,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testChildren() {
-        Map<String, String> map = CollectionsHelper.mapOf(
+        Map<String, String> map = Map.of(
                 "app.name", "app-name",
                 "app.port", "8080");
 
@@ -127,7 +126,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testMapToCustomClass() {
-        Map<String, String> map = CollectionsHelper.mapOf("app.name", "app-name");
+        Map<String, String> map = Map.of("app.name", "app-name");
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(map))

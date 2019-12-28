@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.json.Json;
@@ -38,8 +39,6 @@ import com.oracle.svm.core.annotate.AutomaticFeature;
 import com.oracle.svm.hosted.FeatureImpl;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
-
-import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * Feature to add reflection configuration to the image for Helidon, CDI and Jersey.
@@ -298,7 +297,7 @@ public class HelidonReflectionFeature implements Feature {
         try {
             Enumeration<URL> resources = cl.getResources("META-INF/native-image/helidon/reflection-config.json");
             HelidonReflectionConfiguration config = new HelidonReflectionConfiguration();
-            JsonReaderFactory readerFactory = Json.createReaderFactory(mapOf());
+            JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 JsonObject configurationJson = readerFactory.createReader(url.openStream()).readObject();

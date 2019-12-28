@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package io.helidon.config.internal;
 
 import java.util.AbstractMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.spi.OverrideSource;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link OverrideConfigFilter}.
@@ -48,7 +49,7 @@ public class OverrideConfigFilterTest {
 
     @Test
     public void testCreateFilterWithEmptyParam() {
-        OverrideConfigFilter filter = new OverrideConfigFilter(CollectionsHelper::listOf);
+        OverrideConfigFilter filter = new OverrideConfigFilter(List::of);
 
         assertThat(filter, notNullValue());
         assertThat(filter.apply(Config.Key.create("name"), "ondrej"), is("ondrej"));

@@ -23,7 +23,6 @@ import io.helidon.config.Config;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,7 +35,7 @@ class DefaultAuditProviderTest {
     void testMessageFormatting() {
         DefaultAuditProvider provider = DefaultAuditProvider.create(Config.empty());
         AuditEvent event = createEvent("Unit tests: first: \"%s\"; second: \"%s\"",
-                                       listOf(AuditEvent.AuditParam.plain("first", "data"),
+                                       List.of(AuditEvent.AuditParam.plain("first", "data"),
                                               AuditEvent.AuditParam.sensitive("second", "secret")));
 
         String message = provider.formatMessage(event);
@@ -48,7 +47,7 @@ class DefaultAuditProviderTest {
     void testMessageFormattingTooManyParams() {
         DefaultAuditProvider provider = DefaultAuditProvider.create(Config.empty());
         AuditEvent event = createEvent("Unit tests: first: \"%s\"; second: \"%s\"",
-                                       listOf(AuditEvent.AuditParam.plain("first", "data"),
+                                       List.of(AuditEvent.AuditParam.plain("first", "data"),
                                               AuditEvent.AuditParam.sensitive("second", "secret"),
                                               AuditEvent.AuditParam.plain("third", "thirdData")));
 
@@ -61,7 +60,7 @@ class DefaultAuditProviderTest {
     void testMessageFormattingNotEnoughParams() {
         DefaultAuditProvider provider = DefaultAuditProvider.create(Config.empty());
         AuditEvent event = createEvent("Unit tests: first: \"%s\"; second: \"%s\"",
-                                       listOf(AuditEvent.AuditParam.plain("first", "data")));
+                                       List.of(AuditEvent.AuditParam.plain("first", "data")));
 
         String message = provider.formatMessage(event);
 

@@ -17,7 +17,6 @@ package io.helidon.config.tests.module.meta1;
 
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ConfigSourceProvider;
@@ -40,6 +39,6 @@ public class MyConfigSource1Provider implements ConfigSourceProvider {
 
     @Override
     public Set<String> supported() {
-        return CollectionsHelper.setOf(TYPE);
+        return Set.of(TYPE);
     }
 }

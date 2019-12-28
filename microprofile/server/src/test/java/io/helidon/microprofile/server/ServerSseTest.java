@@ -33,8 +33,6 @@ import javax.ws.rs.sse.Sse;
 import javax.ws.rs.sse.SseEventSink;
 import javax.ws.rs.sse.SseEventSource;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -91,7 +89,7 @@ class ServerSseTest {
     private final class TestApplication1 extends Application {
         @Override
         public Set<Object> getSingletons() {
-            return CollectionsHelper.setOf(new TestResource1());
+            return Set.of(new TestResource1());
         }
     }
 

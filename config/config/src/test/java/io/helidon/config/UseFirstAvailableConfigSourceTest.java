@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package io.helidon.config;
 
+import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.spi.ConfigContext;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
-import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -44,7 +45,7 @@ public class UseFirstAvailableConfigSourceTest {
         );
 
         assertThat(configSource.description(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "ClasspathConfig[application.yaml]?->ClasspathConfig[",
                            "io/helidon/config/application.properties]?->ClasspathConfig[",
                            "io/helidon/config/application.conf]->ClasspathConfig[",
@@ -56,7 +57,7 @@ public class UseFirstAvailableConfigSourceTest {
         configSource.init(context);
         configSource.load();
         assertThat(configSource.description(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "(ClasspathConfig[application.yaml]?)->*ClasspathConfig[",
                            "io/helidon/config/application.properties]?*->/ClasspathConfig[",
                            "io/helidon/config/application.conf]/->/ClasspathConfig[",

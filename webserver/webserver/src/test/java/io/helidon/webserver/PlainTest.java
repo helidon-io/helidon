@@ -18,13 +18,12 @@ package io.helidon.webserver;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.webserver.utils.SocketHttpClient;
 
@@ -329,7 +328,7 @@ public class PlainTest {
     public void testConnectionCloseWhenKeepAliveOff() throws Exception {
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
-            s.request(Http.Method.GET, "/", null, CollectionsHelper.listOf("Connection: close"));
+            s.request(Http.Method.GET, "/", null, List.of("Connection: close"));
 
             // assert
             assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIt works!\n0\n\n"));
@@ -342,7 +341,7 @@ public class PlainTest {
         String s = SocketHttpClient.sendAndReceive("/force-chunked",
                                                    Http.Method.GET,
                                                    null,
-                                                   CollectionsHelper.listOf("Connection: close"),
+                                                   List.of("Connection: close"),
                                                    webServer);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("4\nabcd\n0\n\n"));
         Map<String, String> headers = cutHeaders(s);
@@ -355,7 +354,7 @@ public class PlainTest {
         String s = SocketHttpClient.sendAndReceive("/",
                                                    Http.Method.GET,
                                                    null,
-                                                   CollectionsHelper.listOf("Connection: close"),
+                                                   List.of("Connection: close"),
                                                    webServer);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("9\nIt works!\n0\n\n"));
         Map<String, String> headers = cutHeaders(s);
@@ -367,7 +366,7 @@ public class PlainTest {
         String s = SocketHttpClient.sendAndReceive("/?p=|",
                 Http.Method.GET,
                 null,
-                CollectionsHelper.listOf("Connection: close"),
+                List.of("Connection: close"),
                 webServer);
         assertThat(s, containsString("400 Bad Request"));
         Map<String, String> headers = cutHeaders(s);
@@ -375,6 +374,18 @@ public class PlainTest {
         assertThat(headers, IsMapContaining.hasKey("content-length"));
     }
 
+    @Test
+    public void testBadContentType() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/",
+                Http.Method.GET,
+                null,
+                List.of("Content-Type: %", "Connection: close"),
+                webServer);
+        assertThat(s, containsString("400 Bad Request"));
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, IsMapContaining.hasKey("content-type"));
+        assertThat(headers, IsMapContaining.hasKey("content-length"));
+    }
 
     private Map<String, String> cutHeaders(String response) {
         assertThat(response, notNullValue());

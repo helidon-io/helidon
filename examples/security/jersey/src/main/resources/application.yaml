@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
 #
 
 security:
+  jersey:
+    # Will use exceptions instead of aborting the request - this should make no difference
+    # to user unless you use a custom error handler
+    use-abort-with: false
   config:
     # Configuration of secured config (encryption of passwords in property files)
     # Set to true for production - if set to true, clear text passwords will cause failure

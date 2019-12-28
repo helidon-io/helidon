@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.security.jwt.JwtException;
 
@@ -104,7 +103,7 @@ public class JwkKeysTest {
     @Test
     public void testAuth0JwkDocument() {
         String keyId = "QzBCMDM1QTI2MjRFMTFDNDBDRTYwRkU4RDdEMzU5RTcwNDRBNjhCNQ";
-        OptionalHelper.from(auth0Keys.forKeyId(keyId)).ifPresentOrElse(key -> {
+        auth0Keys.forKeyId(keyId).ifPresentOrElse(key -> {
             assertThat(key.algorithm(), is(JwkRSA.ALG_RS256));
             assertThat(key.keyType(), is(Jwk.KEY_TYPE_RSA));
             assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
@@ -146,7 +145,7 @@ public class JwkKeysTest {
     }
 
     private void testRsa(String keyId, String algorithm) {
-        OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
+        customKeys.forKeyId(keyId).ifPresentOrElse(key -> {
             assertThat(key.algorithm(), is(algorithm));
             assertThat(key.keyType(), is(Jwk.KEY_TYPE_RSA));
             assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
@@ -189,7 +188,7 @@ public class JwkKeysTest {
     }
 
     private void testEc(String keyId, String algorithm) {
-        OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
+        customKeys.forKeyId(keyId).ifPresentOrElse(key -> {
             assertThat(key.algorithm(), is(algorithm));
             assertThat(key.keyType(), is(Jwk.KEY_TYPE_EC));
             assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
@@ -224,7 +223,7 @@ public class JwkKeysTest {
     }
 
     private void testOct(String keyId, String algorithm) {
-        OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
+        customKeys.forKeyId(keyId).ifPresentOrElse(key -> {
             assertThat(key.algorithm(), is(algorithm));
             assertThat(key.keyType(), is(Jwk.KEY_TYPE_OCT));
             assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
@@ -253,13 +252,13 @@ public class JwkKeysTest {
     @Test
     public void testCustomOct() {
         String keyId = "hmac-secret-001";
-        OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
+        customKeys.forKeyId(keyId).ifPresentOrElse(key -> {
             assertThat(key.algorithm(), is(JwkOctet.ALG_HS256));
             assertThat(key.keyType(), is(Jwk.KEY_TYPE_OCT));
             assertThat(key.usage(), is(Optional.empty()));
             assertThat(key.keyId(), is(keyId));
-            assertThat(key.operations(), is(Optional.of(CollectionsHelper.listOf(Jwk.OPERATION_SIGN,
-                                                                                 Jwk.OPERATION_VERIFY))));
+            assertThat(key.operations(), is(Optional.of(List.of(Jwk.OPERATION_SIGN,
+                                                                Jwk.OPERATION_VERIFY))));
 
             assertThat(key, instanceOf(JwkOctet.class));
             assertThat(key, not(instanceOf(JwkPki.class)));
@@ -284,7 +283,7 @@ public class JwkKeysTest {
     public void testECUsingBuilder() {
         //hack this a bit, so I do not have to create a key pair in java
         String fileKeyid = "ec-secret-001";
-        OptionalHelper.from(customKeys.forKeyId(fileKeyid)).ifPresentOrElse(keyFromFile -> {
+        customKeys.forKeyId(fileKeyid).ifPresentOrElse(keyFromFile -> {
             String keyId = "some_key_id";
             //the key must be an EC key
             JwkEC ec = (JwkEC) keyFromFile;
@@ -301,7 +300,7 @@ public class JwkKeysTest {
                     .addKey(ecKey)
                     .build();
 
-            OptionalHelper.from(keys.forKeyId(keyId)).ifPresentOrElse(key -> {
+            keys.forKeyId(keyId).ifPresentOrElse(key -> {
                 assertThat(key.algorithm(), is(JwkEC.ALG_ES256));
                 assertThat(key.keyType(), is(Jwk.KEY_TYPE_EC));
                 assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -69,7 +68,7 @@ public class TimeValidatorTest {
 
         when(ep.securityLevels()).thenReturn(securityLevels);
         when(classSecurityLevel.filterAnnotations(TimeValidator.TimeOfDay.class, EndpointConfig.AnnotationScope.CLASS))
-                .thenReturn(CollectionsHelper.listOf(tod, tod2));
+                .thenReturn(List.of(tod, tod2));
 
         TimeValidator.DaysOfWeek dow = mock(TimeValidator.DaysOfWeek.class);
         when(dow.value()).thenReturn(new DayOfWeek[] {
@@ -81,7 +80,7 @@ public class TimeValidatorTest {
         });
         annotations.add(dow);
         when(classSecurityLevel.filterAnnotations(TimeValidator.DaysOfWeek.class, EndpointConfig.AnnotationScope.CLASS))
-                .thenReturn(CollectionsHelper.listOf(dow));
+                .thenReturn(List.of(dow));
 
 
         timeConfig = validator.fromAnnotations(ep);

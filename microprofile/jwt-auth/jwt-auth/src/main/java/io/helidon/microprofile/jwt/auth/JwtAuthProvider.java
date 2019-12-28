@@ -36,6 +36,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,10 +47,7 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
-import io.helidon.common.InputStreamHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
@@ -164,7 +163,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(LoginConfig.class);
+        return Set.of(LoginConfig.class);
     }
 
     @Override
@@ -243,8 +242,6 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
 
-
-
         Subject.Builder subjectBuilder = Subject.builder()
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
@@ -275,8 +272,8 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
     @Override
     public OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+                                                 SecurityEnvironment outboundEnv,
+                                                 EndpointConfig outboundEndpointConfig) {
 
         Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         return maybeUsername
@@ -353,7 +350,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             principal.abacAttribute(name).ifPresent(val -> builder.addPayloadClaim(name, val));
         });
 
-        OptionalHelper.from(principal.abacAttribute("full_name"))
+        principal.abacAttribute("full_name")
                 .ifPresentOrElse(name -> builder.addPayloadClaim("name", name),
                                  () -> builder.removePayloadClaim("name"));
 
@@ -555,40 +552,46 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys createJwkKeys() {
-            return OptionalHelper
-                    .from(Optional.ofNullable(publicKeyPath)
-                            .map(this::loadJwkKeysFromLocation))
+            return Optional.ofNullable(publicKeyPath)
+                    .map(this::loadJwkKeysFromLocation)
                     .or(() -> Optional.ofNullable(publicKey)
                             .map(this::loadJwkKeys))
                     .or(() -> Optional.ofNullable(defaultJwk)
                             .map(jwk -> JwkKeys.builder()
                                     .addKey(jwk)
                                     .build()))
-                    .asOptional()
                     .orElseThrow(() -> new SecurityException("No public key or default JWK set."));
         }
 
         private JwkKeys loadJwkKeysFromLocation(String uri) {
-            Path path;
-            try {
-                path = Paths.get(uri);
-            } catch (InvalidPathException e) {
-                path = null;
-            }
-            if (path != null && Files.exists(path)) {
-                try {
-                    return loadJwkKeys(new String(Files.readAllBytes(path), UTF_8));
-                } catch (IOException e) {
-                    throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
-                }
-            } else {
+            return locatePath(uri)
+                    .map(path -> {
+                        try {
+                            return loadJwkKeys(Files.readString(path, UTF_8));
+                        } catch (IOException e) {
+                            throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
+                        }
+                    })
+                    .orElseGet(() -> {
+                        try (InputStream is = locateStream(uri)) {
+                            return getPublicKeyFromContent(is);
+                        } catch (IOException e) {
+                            throw new SecurityException("Failed to load public key(s) from : " + uri, e);
+                        }
+                    });
+        }
 
-                try (InputStream is = locateStream(uri)) {
-                    return getPublicKeyFromContent(is);
-                } catch (IOException e) {
-                    throw new SecurityException("Failed to load public key(s) from : " + uri, e);
+        private Optional<Path> locatePath(String uri) {
+            try {
+                Path path = Paths.get(uri);
+                if (Files.exists(path)) {
+                    return Optional.of(path);
                 }
+            } catch (InvalidPathException e) {
+                LOGGER.log(Level.FINEST, "Could not locate path: " + uri, e);
             }
+
+            return Optional.empty();
         }
 
         private InputStream locateStream(String uri) throws IOException {
@@ -616,7 +619,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys getPublicKeyFromContent(InputStream bufferedInputStream) throws IOException {
-            return loadJwkKeys(new String(InputStreamHelper.readAllBytes(bufferedInputStream), UTF_8));
+            return loadJwkKeys(new String(bufferedInputStream.readAllBytes(), UTF_8));
         }
 
         private JwkKeys loadJwkKeys(String stringContent) {

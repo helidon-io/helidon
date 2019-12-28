@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.Routing;
@@ -82,7 +81,7 @@ final class SignatureExampleUtil {
 
         res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
 
-        OptionalHelper.from(securityContext).ifPresentOrElse(context -> {
+        securityContext.ifPresentOrElse(context -> {
             CLIENT.target("http://localhost:" + svc2port + path)
                     .request()
                     .rx()

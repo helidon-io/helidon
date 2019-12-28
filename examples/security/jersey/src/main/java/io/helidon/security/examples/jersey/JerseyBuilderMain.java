@@ -25,7 +25,6 @@ import java.util.Optional;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.Security;
 import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
@@ -43,9 +42,9 @@ public final class JerseyBuilderMain {
     private static volatile WebServer server;
 
     static {
-        addUser("jack", "password", CollectionsHelper.listOf("user", "admin"));
-        addUser("jill", "password", CollectionsHelper.listOf("user"));
-        addUser("john", "password", CollectionsHelper.listOf());
+        addUser("jack", "password", List.of("user", "admin"));
+        addUser("jill", "password", List.of("user"));
+        addUser("john", "password", List.of());
     }
 
     private JerseyBuilderMain() {

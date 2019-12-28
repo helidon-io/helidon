@@ -16,12 +16,11 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 
 import org.junit.jupiter.api.Test;
 

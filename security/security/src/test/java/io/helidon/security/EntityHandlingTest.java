@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.OptionalHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.security.providers.ProviderForTesting;
 
@@ -79,7 +78,7 @@ public class EntityHandlingTest {
 
         Optional<Entity> requestMessage = request.requestEntity();
 
-        OptionalHelper.from(requestMessage).ifPresentOrElse(message -> message.filter(byteBufferPublisher -> {
+        requestMessage.ifPresentOrElse(message -> message.filter(byteBufferPublisher -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             SubmissionPublisher<ByteBuffer> bPublisher = new SubmissionPublisher<>();
 

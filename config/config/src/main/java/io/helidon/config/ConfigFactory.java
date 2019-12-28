@@ -29,14 +29,13 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
@@ -298,7 +297,7 @@ final class ConfigFactory {
                 processNode(values, "", node);
                 return values;
             } else {
-                return CollectionsHelper.mapOf();
+                return Map.of();
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
@@ -241,13 +241,13 @@ public class FilesystemWatchPollingStrategyTest {
 
         assertThat(subscribeLatch.await(10, TimeUnit.MILLISECONDS), is(true));
 
-        Path targetDir = createFile(WATCHED_FILE, CollectionsHelper.listOf("a: a"));
+        Path targetDir = createFile(WATCHED_FILE, List.of("a: a"));
         Path symlinkToDir = Files.createSymbolicLink(Paths.get(dir.getRoot().toString(), "symlink-to-target-dir"), targetDir);
         Path symlink = Files.createSymbolicLink(Paths.get(dir.getRoot().toString(), WATCHED_FILE),
                                                 Paths.get(symlinkToDir.toString(), WATCHED_FILE));
         mockPollingStrategy.startWatchService();
 
-        Path newTarget = createFile(WATCHED_FILE, CollectionsHelper.listOf("a: b"));
+        Path newTarget = createFile(WATCHED_FILE, List.of("a: b"));
         Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
         Files.delete(targetDir);
         Files.delete(symlinkToDir);
@@ -258,7 +258,7 @@ public class FilesystemWatchPollingStrategyTest {
         assertThat(firstEventLatch.await(30, TimeUnit.SECONDS), is(true));
 
         targetDir = newTarget;
-        newTarget = createFile(WATCHED_FILE, CollectionsHelper.listOf("a: c"));
+        newTarget = createFile(WATCHED_FILE, List.of("a: c"));
         Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
         Files.delete(targetDir);
         Files.delete(symlinkToDir);
@@ -269,7 +269,7 @@ public class FilesystemWatchPollingStrategyTest {
         assertThat(secondEventLatch.await(40, TimeUnit.SECONDS), is(true));
 
         targetDir = newTarget;
-        newTarget = createFile(WATCHED_FILE, CollectionsHelper.listOf("a: d"));
+        newTarget = createFile(WATCHED_FILE, List.of("a: d"));
         Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
         Files.delete(targetDir);
         Files.delete(symlinkToDir);

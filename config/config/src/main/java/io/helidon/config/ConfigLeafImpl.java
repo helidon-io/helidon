@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ import java.util.stream.Stream;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode.ValueNode;
-
-import static io.helidon.common.CollectionsHelper.listOf;
 
 /**
  * Implementation of {@link Config} that represents a
@@ -82,7 +80,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
                                        aConfig -> aConfig.asList(type));
         } else {
             return ConfigValues.create(this,
-                                       () -> Optional.of(listOf(mapperManager.map(stringValue, type, name()))),
+                                       () -> Optional.of(List.of(mapperManager.map(stringValue, type, name()))),
                                        aConfig -> aConfig.asList(type));
 
         }
@@ -112,7 +110,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
                                        aConfig -> aConfig.asList(mapper));
         } else {
             return ConfigValues.create(this,
-                                       () -> Optional.of(listOf(mapper.apply(mapperManager.simpleConfig(name(), stringValue)))),
+                                       () -> Optional.of(List.of(mapper.apply(mapperManager.simpleConfig(name(), stringValue)))),
                                        aConfig -> aConfig.asList(mapper));
 
         }

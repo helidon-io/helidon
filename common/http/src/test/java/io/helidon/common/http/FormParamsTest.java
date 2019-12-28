@@ -15,18 +15,17 @@
  */
 package io.helidon.common.http;
 
-import io.helidon.common.CollectionsHelper;
-import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-
 import java.util.List;
 import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FormParamsTest {
 

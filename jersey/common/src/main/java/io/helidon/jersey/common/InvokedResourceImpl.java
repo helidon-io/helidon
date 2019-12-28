@@ -28,8 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 
-import io.helidon.common.OptionalHelper;
-
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.model.Invocable;
 import org.glassfish.jersey.server.model.ResourceMethod;
@@ -97,10 +95,8 @@ final class InvokedResourceImpl implements InvokedResource {
 
     @Override
     public <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationClass) {
-        return OptionalHelper.from(findMethodAnnotation(annotationClass))
-                .or(() -> findClassAnnotation(annotationClass))
-                .asOptional();
-
+        return findMethodAnnotation(annotationClass)
+                .or(() -> findClassAnnotation(annotationClass));
     }
 
     @Override

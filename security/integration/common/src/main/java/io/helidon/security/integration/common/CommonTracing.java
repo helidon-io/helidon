@@ -15,10 +15,9 @@
  */
 package io.helidon.security.integration.common;
 
+import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.SecurityResponse;
 import io.helidon.tracing.config.SpanTracingConfig;
 
@@ -69,9 +68,9 @@ abstract class CommonTracing {
 
         Tags.ERROR.set(theSpan, true);
 
-        theSpan.log(CollectionsHelper.mapOf("event", "error",
-                                            "message", message,
-                                            "error.kind", "SecurityException"));
+        theSpan.log(Map.of("event", "error",
+                           "message", message,
+                           "error.kind", "SecurityException"));
 
         theSpan.finish();
     }
@@ -90,7 +89,7 @@ abstract class CommonTracing {
 
         Tags.ERROR.set(theSpan, true);
 
-        theSpan.log(CollectionsHelper.mapOf("event", "error",
+        theSpan.log(Map.of("event", "error",
                                             "error.object", throwable));
         theSpan.finish();
     }
@@ -103,9 +102,8 @@ abstract class CommonTracing {
     public Optional<SpanContext> findParent() {
         Optional<Span> closest = closestSecuritySpan();
 
-        return OptionalHelper.from(closest.map(Span::context))
-                .or(() -> parentSpanContext)
-                .asOptional();
+        return closest.map(Span::context)
+                .or(() -> parentSpanContext);
     }
 
     /**
@@ -120,9 +118,7 @@ abstract class CommonTracing {
     public Optional<Span> findParentSpan() {
         Optional<Span> closest = closestSecuritySpan();
 
-        return OptionalHelper.from(closest)
-                .or(() -> parentSpan)
-                .asOptional();
+        return closest.or(() -> parentSpan);
     }
 
     /**

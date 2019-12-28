@@ -63,8 +63,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * Utility methods for converting configuration to Java types.
  * <p>
@@ -760,7 +758,7 @@ public final class ConfigMappers {
         }
 
         StringMap(String key, String value) {
-            this(CollectionsHelper.setOf(CollectionsHelper.mapEntry(key, value)));
+            this(Set.of(Map.entry(key, value)));
         }
 
         StringMap(Map<?, ?> unknownMap) {

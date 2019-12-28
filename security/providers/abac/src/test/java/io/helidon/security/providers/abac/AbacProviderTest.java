@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package io.helidon.security.providers.abac;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.security.RolesAllowed;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -48,7 +49,7 @@ public class AbacProviderTest {
 
         EndpointConfig ec = EndpointConfig.builder()
                 .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             CollectionsHelper.mapOf(Attrib1.class, CollectionsHelper.listOf(attrib)))
+                             Map.of(Attrib1.class, List.of(attrib)))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
@@ -73,7 +74,7 @@ public class AbacProviderTest {
 
         EndpointConfig ec = EndpointConfig.builder()
                 .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             CollectionsHelper.mapOf(RolesAllowed.class, CollectionsHelper.listOf(attrib)))
+                             Map.of(RolesAllowed.class, List.of(attrib)))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
@@ -99,7 +100,7 @@ public class AbacProviderTest {
 
         EndpointConfig ec = EndpointConfig.builder()
                 .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             CollectionsHelper.mapOf(Attrib1.class, CollectionsHelper.listOf(attrib)))
+                             Map.of(Attrib1.class, List.of(attrib)))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
@@ -124,8 +125,7 @@ public class AbacProviderTest {
         doReturn(Attrib1.class).when(attrib).annotationType();
 
         EndpointConfig ec = EndpointConfig.builder()
-                .annotations(EndpointConfig.AnnotationScope.CLASS, CollectionsHelper
-                        .mapOf(Attrib1.class, CollectionsHelper.listOf(attrib)))
+                .annotations(EndpointConfig.AnnotationScope.CLASS, Map.of(Attrib1.class, List.of(attrib)))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);

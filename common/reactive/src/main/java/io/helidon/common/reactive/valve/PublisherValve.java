@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@
 package io.helidon.common.reactive.valve;
 
 import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.reactive.Flow;
-
 /**
- * The {@link Valve} implementation on top of {@link io.helidon.common.reactive.Flow.Publisher}.
+ * The {@link Valve} implementation on top of {@link java.util.concurrent.Flow.Publisher}.
  *
  * @param <T> Type of {@code Valve} and {@code Publisher} items
  */

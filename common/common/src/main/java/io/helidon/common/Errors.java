@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("WeakerAccess")
 public final class Errors extends LinkedList<Errors.ErrorMessage> {
     private static final Set<StackWalker.Option> WALKER_OPTIONS =
-            CollectionsHelper.setOf(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
     private final boolean hasFatal;
     private final boolean hasWarning;

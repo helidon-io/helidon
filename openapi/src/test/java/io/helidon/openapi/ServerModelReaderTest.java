@@ -17,6 +17,7 @@
 package io.helidon.openapi;
 
 import java.net.HttpURLConnection;
+
 import javax.json.JsonException;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
@@ -29,9 +30,12 @@ import io.helidon.openapi.test.MyModelReader;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Makes sure that the app-supplied model reader participates in constructing

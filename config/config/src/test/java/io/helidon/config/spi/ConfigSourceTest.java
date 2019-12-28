@@ -19,9 +19,9 @@ package io.helidon.config.spi;
 import java.io.StringReader;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ValueNodeMatcher;

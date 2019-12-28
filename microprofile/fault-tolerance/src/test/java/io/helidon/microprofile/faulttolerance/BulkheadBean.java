@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.context.Dependent;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+
+import javax.enterprise.context.Dependent;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;

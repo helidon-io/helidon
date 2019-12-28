@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
@@ -27,7 +28,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
@@ -333,9 +333,9 @@ class RequestRouting implements Routing {
                     ErrorRoutedRequest nextErrorRequest = new ErrorRoutedRequest(errorHandlers, t);
                     Span span = span();
                     if (null != span) {
-                        span.log(CollectionsHelper.mapOf("event", "error-handler",
-                                                                "handler.class", record.errorHandler.getClass().getName(),
-                                                                "handled.error.message", t.toString()));
+                        span.log(Map.of("event", "error-handler",
+                                        "handler.class", record.errorHandler.getClass().getName(),
+                                        "handled.error.message", t.toString()));
                     }
                     try {
                         // there's no way to avoid this cast
@@ -361,10 +361,11 @@ class RequestRouting implements Routing {
         private void defaultHandler(Throwable t) {
             Span span = span();
             if (null != span) {
-                span.log(CollectionsHelper.mapOf("event", "error-handler",
+                span.log(Map.of("event", "error-handler",
                                                         "handler.class", "DEFAULT-ERROR-HANDLER",
                                                         "handled.error.message", t.toString()));
             }
+            String message = null;
             try {
                 if (t instanceof HttpException) {
                     response.status(((HttpException) t).status());
@@ -380,13 +381,14 @@ class RequestRouting implements Routing {
 
                     response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                 }
+                message = t.getMessage();
             } catch (AlreadyCompletedException e) {
                 LOGGER.log(Level.WARNING,
                            "Cannot perform error handling of the throwable (see cause of this exception) because headers "
                                    + "were already sent",
                            new IllegalStateException("Headers already sent. Cannot handle the cause of this exception.", t));
             }
-            response.send().exceptionally(throwable -> {
+            response.send(message).exceptionally(throwable -> {
                 LOGGER.log(Level.WARNING, "Default error handler: Response wasn't successfully sent.", throwable);
                 return null;
             });

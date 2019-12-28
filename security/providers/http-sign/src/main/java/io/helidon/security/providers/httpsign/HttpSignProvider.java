@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -51,22 +50,22 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     static final String ALGORITHM_RSA = "rsa-sha256";
     static final SignedHeadersConfig DEFAULT_REQUIRED_HEADERS = SignedHeadersConfig.builder()
             .defaultConfig(SignedHeadersConfig.HeadersConfig
-                                   .create(CollectionsHelper.listOf("date", SignedHeadersConfig.REQUEST_TARGET)))
+                                   .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET)))
             .config("get", SignedHeadersConfig.HeadersConfig
-                    .create(CollectionsHelper.listOf("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            CollectionsHelper.listOf("authorization")))
+                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
+                            List.of("authorization")))
             .config("head", SignedHeadersConfig.HeadersConfig
-                    .create(CollectionsHelper.listOf("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            CollectionsHelper.listOf("authorization")))
+                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
+                            List.of("authorization")))
             .config("delete", SignedHeadersConfig.HeadersConfig
-                    .create(CollectionsHelper.listOf("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            CollectionsHelper.listOf("authorization")))
+                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
+                            List.of("authorization")))
             .config("put", SignedHeadersConfig.HeadersConfig
-                    .create(CollectionsHelper.listOf("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            CollectionsHelper.listOf("authorization")))
+                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
+                            List.of("authorization")))
             .config("post", SignedHeadersConfig.HeadersConfig
-                    .create(CollectionsHelper.listOf("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            CollectionsHelper.listOf("authorization")))
+                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
+                            List.of("authorization")))
             .build();
     static final String ATTRIB_NAME_KEY_ID = HttpSignProvider.class.getName() + ".keyId";
 
@@ -147,7 +146,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         // attempt to validate each authorization, first one that succeeds will finish processing and return
         for (String authorizationValue : authorization) {
             if (authorizationValue.toLowerCase().startsWith("signature ")) {
-                response = signatureHeader(CollectionsHelper.listOf(authorizationValue.substring("singature ".length())), env);
+                response = signatureHeader(List.of(authorizationValue.substring("singature ".length())), env);
                 if (response.status().isSuccess()) {
                     // that was a good header, let's return the response
                     return response;

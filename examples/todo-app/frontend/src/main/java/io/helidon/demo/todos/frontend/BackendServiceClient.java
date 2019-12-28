@@ -16,6 +16,7 @@
 
 package io.helidon.demo.todos.frontend;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
@@ -29,7 +30,6 @@ import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
@@ -104,8 +104,8 @@ public final class BackendServiceClient {
         result.thenAccept(ignored -> span.finish())
                 .exceptionally(t -> {
                     Tags.ERROR.set(span, true);
-                    span.log(CollectionsHelper.mapOf("event", "error",
-                                                     "error.object", t));
+                    span.log(Map.of("event", "error",
+                                    "error.object", t));
                     LOGGER.log(Level.WARNING,
                                "Failed to invoke getAll() on "
                                        + serviceEndpoint + "/api/backend", t);

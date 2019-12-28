@@ -20,8 +20,6 @@ import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * TODO javadoc.
  */
@@ -29,6 +27,6 @@ import io.helidon.common.CollectionsHelper;
 public class MpApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(MpMainResource.class, MpSubResource.class);
+        return Set.of(MpMainResource.class, MpSubResource.class);
     }
 }

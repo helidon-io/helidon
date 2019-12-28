@@ -32,19 +32,18 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
-import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
@@ -319,7 +318,7 @@ abstract class Request implements ServerRequest {
                 return;
             }
             Tags.ERROR.set(readSpan, Boolean.TRUE);
-            readSpan.log(CollectionsHelper.mapOf("event", "error",
+            readSpan.log(Map.of("event", "error",
                                                  "error.kind", "Exception",
                                                  "error.object", t,
                                                  "message", t.toString()));

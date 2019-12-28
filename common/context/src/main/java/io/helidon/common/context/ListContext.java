@@ -27,6 +27,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
+
 /**
  * A {@link Context} implementation with deque registry.
  */
@@ -140,17 +142,15 @@ class ListContext implements Context {
             }
         }
 
-        @SuppressWarnings("unchecked")
         <T> void register(T instance) {
             Objects.requireNonNull(instance, "Parameter 'instance' is null!");
-            registerItem(new RegisteredInstance(instance));
+            registerItem(new RegisteredInstance<>(instance));
         }
 
-        @SuppressWarnings("unchecked")
         <T> void supply(Class<T> type, Supplier<T> supplier) {
             Objects.requireNonNull(type, "Parameter 'type' is null!");
             Objects.requireNonNull(supplier, "Parameter 'supplier' is null!");
-            registerItem(new RegisteredSupplier(type, supplier));
+            registerItem(new RegisteredSupplier<>(type, supplier));
         }
 
         <T> T get(Class<T> type) {
@@ -173,26 +173,16 @@ class ListContext implements Context {
 
     private static class RegisteredSupplier<T> implements RegisteredItem<T> {
         private final Class<T> type;
-        private final Supplier<T> supplier;
-        private volatile boolean missing = true;
-        private volatile T instance;
+        private final LazyValue<T> value;
 
         RegisteredSupplier(Class<T> type, Supplier<T> supplier) {
             this.type = type;
-            this.supplier = supplier;
+            this.value = LazyValue.create(supplier);
         }
 
         @Override
         public T get() {
-            if (missing) {
-                synchronized (this) {
-                    if (missing) {
-                        missing = false;
-                        instance = supplier.get();
-                    }
-                }
-            }
-            return instance;
+            return value.get();
         }
 
         @Override

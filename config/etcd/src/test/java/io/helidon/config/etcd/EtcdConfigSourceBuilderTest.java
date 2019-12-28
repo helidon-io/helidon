@@ -17,11 +17,11 @@
 package io.helidon.config.etcd;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
@@ -137,7 +137,7 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testFromConfigAll() {
         EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
-                .config(Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+                .config(Config.create(ConfigSources.create(Map.of(
                         "uri", "http://localhost:2379",
                         "key", "/registry",
                         "api", "v3"))));
@@ -150,7 +150,7 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testFromConfigWithCustomPollingStrategy() {
         EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
-                .config(Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+                .config(Config.create(ConfigSources.create(Map.of(
                         "uri", "http://localhost:2379",
                         "key", "/registry",
                         "api", "v3",
@@ -172,7 +172,7 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testFromConfigEtcdWatchPollingStrategy() {
         EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
-                .config(Config.create(ConfigSources.create(CollectionsHelper.mapOf(
+                .config(Config.create(ConfigSources.create(Map.of(
                         "uri", "http://localhost:2379",
                         "key", "/registry",
                         "api", "v3",
@@ -257,7 +257,7 @@ public class EtcdConfigSourceBuilderTest {
 
         @Override
         public Set<String> supported() {
-            return CollectionsHelper.setOf(TYPE);
+            return Set.of(TYPE);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * An example of two applications in a single MP Server.
  * This is the "other" application - serving the same resource on a different context.
@@ -33,7 +31,7 @@ import io.helidon.common.CollectionsHelper;
 public class OtherApp extends Application {
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(
+        return Set.of(
                 HelloWorldResource.class
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.helidon.security.providers.httpsign;
 
 import java.nio.file.Paths;
+import java.util.List;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.security.SubjectType;
@@ -108,13 +108,13 @@ public class HttpSignProviderBuilderTest extends HttpSignProviderTest {
     private static SignedHeadersConfig inboundRequiredHeaders(String requestTarget, String host) {
         return SignedHeadersConfig.builder()
                 .defaultConfig(SignedHeadersConfig.HeadersConfig
-                                       .create(CollectionsHelper.listOf("date")))
+                                       .create(List.of("date")))
                 .config("get",
                         SignedHeadersConfig.HeadersConfig
-                                .create(CollectionsHelper.listOf("date",
+                                .create(List.of("date",
                                                                  requestTarget,
                                                                  host),
-                                        CollectionsHelper.listOf("authorization")))
+                                        List.of("authorization")))
                 .build();
     }
 

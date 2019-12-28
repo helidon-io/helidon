@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
  */
 public class ReusabilityMpServiceTest {
 
-    private Server initServer(Class<?> resourceClass) {
+    static Server initServer(Class<?> resourceClass) {
         return Server.builder()
                 .addResourceClass(resourceClass)
                 .host("localhost")

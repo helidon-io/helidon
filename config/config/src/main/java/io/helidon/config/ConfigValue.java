@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,9 +163,8 @@ public interface ConfigValue<T> {
      * {@code Optional} produced by the supplying function.
      *
      * @param supplier the supplying function that produces an {@code Optional}
-     * @return returns this instance of {@code OptionalHelper} with the same
-     * the underlying {@code Optional} if a value is present, otherwise
-     * with the {@code Optional} produced by the supplying function.
+     * @return returns current value using {@link #asOptional()} if present,
+     *   otherwise value produced by the supplying function.
      * @throws NullPointerException if the supplying function is {@code null} or
      *                              produces a {@code null} result
      */

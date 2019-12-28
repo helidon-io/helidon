@@ -16,16 +16,19 @@
 
 package io.helidon.metrics;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.Map;
+
+import javax.json.JsonObject;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import javax.json.JsonObject;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Unit test for {@link MetricsSupport}.
@@ -89,7 +92,7 @@ class MetricsSupportTest {
     @Test
     void testBaseMetricsDisabled() {
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "base.enabled", "false")))
                 .build();
         RegistryFactory myRF = RegistryFactory.create(config);

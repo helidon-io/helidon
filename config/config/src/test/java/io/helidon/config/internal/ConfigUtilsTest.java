@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,14 @@ import java.util.stream.Collectors;
 import javax.annotation.Priority;
 
 import io.helidon.config.internal.ConfigUtils.ScheduledTask;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsInstanceOf;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ConfigUtils}.

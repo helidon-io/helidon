@@ -21,10 +21,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow;
 
 /**
  * Class ServerFileReader. Reads a file using NIO and produces data chunks for a

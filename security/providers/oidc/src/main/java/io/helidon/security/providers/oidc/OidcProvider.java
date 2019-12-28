@@ -21,6 +21,7 @@ import java.lang.annotation.Annotation;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,17 +43,17 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
+import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
@@ -62,6 +63,8 @@ import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.AuthenticationProvider;
@@ -87,11 +90,16 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
     private final OidcConfig oidcConfig;
     private final TokenHandler paramHeaderHandler;
+
     private final BiConsumer<SignedJwt, Errors.Collector> jwtValidator;
     private final Pattern attemptPattern;
+    private final boolean propagate;
+    private final OidcOutboundConfig outboundConfig;
 
-    private OidcProvider(OidcConfig oidcConfig) {
-        this.oidcConfig = oidcConfig;
+    private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
+        this.oidcConfig = builder.oidcConfig;
+        this.propagate = builder.propagate;
+        this.outboundConfig = oidcOutboundConfig;
 
         attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
 
@@ -156,7 +164,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
      * @return a new provider configured for OIDC
      */
     public static OidcProvider create(Config config) {
-        return new OidcProvider(OidcConfig.create(config));
+        return builder().config(config).build();
     }
 
     /**
@@ -166,12 +174,21 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
      * @return a new provider configured for OIDC
      */
     public static OidcProvider create(OidcConfig config) {
-        return new OidcProvider(config);
+        return builder().oidcConfig(config).build();
+    }
+
+    /**
+     * A fluent API builder to created instances of this provider.
+     *
+     * @return a new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(ScopeValidator.Scope.class, ScopeValidator.Scopes.class);
+        return Set.of(ScopeValidator.Scope.class, ScopeValidator.Scopes.class);
     }
 
     @Override
@@ -186,29 +203,28 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
         try {
             if (oidcConfig.useHeader()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()))
-                        .asOptional();
-                if (!token.isPresent()) {
+                token = token
+                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()));
+
+                if (token.isEmpty()) {
                     missingLocations.add("header");
                 }
             }
 
             if (oidcConfig.useParam()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
-                        .asOptional();
+                token = token
+                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()));
 
-                if (!token.isPresent()) {
+                if (token.isEmpty()) {
                     missingLocations.add("query-param");
                 }
             }
 
             if (oidcConfig.useCookie()) {
-                token = OptionalHelper.from(token)
-                        .or(() -> findCookie(providerRequest.env().headers()))
-                        .asOptional();
-                if (!token.isPresent()) {
+                token = token
+                        .or(() -> findCookie(providerRequest.env().headers()));
+
+                if (token.isEmpty()) {
                     missingLocations.add("cookie");
                 }
             }
@@ -360,10 +376,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
     private String origUri(ProviderRequest providerRequest) {
         List<String> origUri = providerRequest.env().headers()
-                .getOrDefault(Security.HEADER_ORIG_URI, CollectionsHelper.listOf());
+                .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
         if (origUri.isEmpty()) {
-            origUri = CollectionsHelper.listOf(providerRequest.env().targetUri().getPath());
+            origUri = List.of(providerRequest.env().targetUri().getPath());
         }
 
         return origUri.get(0);
@@ -430,6 +446,41 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         }
     }
 
+    @Override
+    public boolean isOutboundSupported(ProviderRequest providerRequest,
+                                       SecurityEnvironment outboundEnv,
+                                       EndpointConfig outboundConfig) {
+        return propagate;
+    }
+
+    @Override
+    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
+                                                    SecurityEnvironment outboundEnv,
+                                                    EndpointConfig outboundEndpointConfig) {
+        Optional<Subject> user = providerRequest.securityContext().user();
+
+        if (user.isPresent()) {
+            // we do have a user, let's see if we can propagate
+            Subject subject = user.get();
+            Optional<TokenCredential> tokenCredential = subject.publicCredential(TokenCredential.class);
+            if (tokenCredential.isPresent()) {
+                String tokenContent = tokenCredential.get()
+                        .token();
+
+                OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
+                boolean enabled = target.propagate;
+
+                if (enabled) {
+                    Map<String, List<String>> headers = new HashMap<>();
+                    target.tokenHandler.header(headers, tokenContent);
+                    return OutboundSecurityResponse.withHeaders(headers);
+                }
+            }
+        }
+
+        return OutboundSecurityResponse.empty();
+    }
+
     private Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
         Principal principal = buildPrincipal(jwt);
 
@@ -480,4 +531,155 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
         return builder.build();
     }
+
+    /**
+     * Builder for {@link io.helidon.security.providers.oidc.OidcProvider}.
+     */
+    public static final class Builder implements io.helidon.common.Builder<OidcProvider> {
+        private OidcConfig oidcConfig;
+        // identity propagation is disabled by default. In general we should not reuse the same token
+        // for outbound calls, unless it is the same audience
+        private boolean propagate;
+        private OutboundConfig outboundConfig;
+        private TokenHandler defaultOutboundHandler = TokenHandler.builder()
+                .tokenHeader("Authorization")
+                .tokenPrefix("bearer ")
+                .build();
+
+        @Override
+        public OidcProvider build() {
+            if (null == oidcConfig) {
+                throw new IllegalArgumentException("OidcConfig must be configured");
+            }
+            if (null == outboundConfig) {
+                outboundConfig = OutboundConfig.builder()
+                        .build();
+            }
+            return new OidcProvider(this, new OidcOutboundConfig(outboundConfig, defaultOutboundHandler));
+        }
+
+        /**
+         * Update this builder with configuration.
+         * Only updates information that was not explicitly set.
+         *
+         * The following configuration options are used:
+         *
+         * <table class="config">
+         * <caption>Optional configuration parameters</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>&nbsp;</td>
+         *     <td>&nbsp;</td>
+         *     <td>The current config node is used to construct {@link io.helidon.security.providers.oidc.common.OidcConfig}.</td>
+         * </tr>
+         * <tr>
+         *     <td>propagate</td>
+         *     <td>false</td>
+         *     <td>Whether to propagate token (overall configuration). If set to false, propagation will
+         *     not be done at all.</td>
+         * </tr>
+         * <tr>
+         *     <td>outbound</td>
+         *     <td>&nbsp;</td>
+         *     <td>Configuration of {@link io.helidon.security.providers.common.OutboundConfig}.
+         *     In addition you can use {@code propagate} to disable propagation for an outbound target,
+         *     and {@code token} to configure outbound {@link io.helidon.security.util.TokenHandler} for an
+         *     outbound target. Default token handler uses {@code Authorization} header with a {@code bearer } prefix</td>
+         * </tr>
+         * </table>
+         *
+         * @param config OIDC provider configuration
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            if (null == oidcConfig) {
+                if (config.get("identity-uri").exists()) {
+                    oidcConfig = OidcConfig.create(config);
+                }
+            }
+            config.get("propagate").as(Boolean.class).ifPresent(this::propagate);
+            if (null == outboundConfig) {
+                config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
+            }
+
+            return this;
+        }
+
+        /**
+         * Whether to propagate identity.
+         *
+         * @param propagate whether to propagate identity (true) or not (false)
+         * @return updated builder instance
+         */
+        public Builder propagate(boolean propagate) {
+            this.propagate = propagate;
+            return this;
+        }
+
+        /**
+         * Configuration of outbound rules.
+         *
+         * @param config outbound configuration
+         *
+         * @return updated builder instance
+         */
+        public Builder outboundConfig(OutboundConfig config) {
+            this.outboundConfig = config;
+            return this;
+        }
+
+        /**
+         * Configuration of OIDC (Open ID Connect).
+         *
+         * @param config OIDC configuration for this provider
+         *
+         * @return updated builder instance
+         */
+        public Builder oidcConfig(OidcConfig config) {
+            this.oidcConfig = config;
+            return this;
+        }
+    }
+
+    private static final class OidcOutboundConfig {
+        private final Map<OutboundTarget, OidcOutboundTarget> targetCache = new HashMap<>();
+        private final OutboundConfig outboundConfig;
+        private final TokenHandler defaultTokenHandler;
+        private final OidcOutboundTarget defaultTarget;
+
+        private OidcOutboundConfig(OutboundConfig outboundConfig, TokenHandler defaultTokenHandler) {
+            this.outboundConfig = outboundConfig;
+            this.defaultTokenHandler = defaultTokenHandler;
+
+            this.defaultTarget = new OidcOutboundTarget(true, defaultTokenHandler);
+        }
+
+        private OidcOutboundTarget findTarget(SecurityEnvironment env) {
+            return outboundConfig.findTarget(env)
+                    .map(value -> targetCache.computeIfAbsent(value, outboundTarget -> {
+                        boolean propagate = outboundTarget.getConfig()
+                                .flatMap(cfg -> cfg.get("propagate").asBoolean().asOptional())
+                                .orElse(true);
+                        TokenHandler handler = outboundTarget.getConfig()
+                                .flatMap(cfg -> cfg.get("token").as(TokenHandler::create).asOptional())
+                                .orElse(defaultTokenHandler);
+                        return new OidcOutboundTarget(propagate, handler);
+                    })).orElse(defaultTarget);
+        }
+    }
+
+    private static final class OidcOutboundTarget {
+        private final boolean propagate;
+        private final TokenHandler tokenHandler;
+
+        private OidcOutboundTarget(boolean propagate, TokenHandler handler) {
+            this.propagate = propagate;
+            tokenHandler = handler;
+        }
+    }
 }
+

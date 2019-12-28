@@ -33,7 +33,6 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.microprofile.jwt.auth.JwtAuthProvider;
 import io.helidon.microprofile.server.Server;
@@ -159,7 +158,7 @@ class JwtAuthTest {
     public static class MyApp extends Application {
         @Override
         public Set<Class<?>> getClasses() {
-            return CollectionsHelper.setOf(MyResource.class, ResourceWithPublicMethod.class);
+            return Set.of(MyResource.class, ResourceWithPublicMethod.class);
         }
     }
 

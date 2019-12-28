@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 import javax.persistence.SharedCacheMode;
 import javax.persistence.ValidationMode;
 import javax.persistence.spi.ClassTransformer;
-import javax.persistence.spi.PersistenceProvider; // for javadoc only
+import javax.persistence.spi.PersistenceProvider;
 import javax.persistence.spi.PersistenceUnitInfo;
 import javax.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
@@ -498,6 +498,17 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         return this.mappingFileNames;
     }
 
+    @Override
+    public String toString() {
+        return this.getPersistenceUnitName() + " (" + this.getPersistenceUnitRootUrl() + ")";
+    }
+
+
+    /*
+     * Static methods.
+     */
+
+
     /**
      * Given a {@link Persistence} (a Java object representation of a
      * {@code META-INF/persistence.xml} resource), a {@link URL}
@@ -826,6 +837,11 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         final URL returnValue = new URL(persistenceUnitRootUrl, jarFileUrlString);
         return returnValue;
     }
+
+
+    /*
+     * Inner and nested classes.
+     */
 
 
     /**

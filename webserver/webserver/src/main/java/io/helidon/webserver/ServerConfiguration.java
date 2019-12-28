@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.config.Config;
@@ -490,7 +489,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             // sockets
             Config socketsConfig = config.get("sockets");
             if (socketsConfig.exists()) {
-                for (Config socketConfig : socketsConfig.asNodeList().orElse(CollectionsHelper.listOf())) {
+                for (Config socketConfig : socketsConfig.asNodeList().orElse(List.of())) {
                     String socketName = socketConfig.name();
                     sockets.put(socketName, configureSocket(socketConfig, SocketConfiguration.builder()).build());
                 }

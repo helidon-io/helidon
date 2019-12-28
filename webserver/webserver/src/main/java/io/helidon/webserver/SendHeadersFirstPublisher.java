@@ -17,8 +17,7 @@
 package io.helidon.webserver;
 
 import java.util.Objects;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 import io.opentracing.Span;
 
@@ -104,7 +103,10 @@ class SendHeadersFirstPublisher<T> implements Flow.Publisher<T> {
         private void sendHeadersIfNeeded() {
             if (headers != null && !sent && !sentVolatile) {
                 synchronized (this) {
-                    if (!sent && !sentVolatile) {
+                    // no longer re-checking sent - reported by spotbugs as a "double check"
+                    // also it must be sufficient to check the volatile field, as it has the
+                    // same value
+                    if (!sentVolatile) {
                         sent = true;
                         sentVolatile = true;
                         headers.send();

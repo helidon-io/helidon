@@ -30,17 +30,15 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
@@ -371,7 +369,7 @@ public final class SecurityHandler implements Handler {
                 .exceptionally(throwable -> {
                     tracing.error(throwable);
                     LOGGER.log(Level.SEVERE, "Unexpected exception during security processing", throwable);
-                    abortRequest(res, null, Http.Status.INTERNAL_SERVER_ERROR_500.code(), CollectionsHelper.mapOf());
+                    abortRequest(res, null, Http.Status.INTERNAL_SERVER_ERROR_500.code(), Map.of());
                     return null;
                 });
 
@@ -515,8 +513,8 @@ public final class SecurityHandler implements Handler {
         abortRequest(res,
                      response,
                      Http.Status.UNAUTHORIZED_401.code(),
-                     CollectionsHelper.mapOf(Http.Header.WWW_AUTHENTICATE,
-                                             CollectionsHelper.listOf("Basic realm=\"Security Realm\"")));
+                     Map.of(Http.Header.WWW_AUTHENTICATE,
+                                             List.of("Basic realm=\"Security Realm\"")));
         future.complete(AtxResult.STOP);
         return true;
     }
@@ -531,7 +529,7 @@ public final class SecurityHandler implements Handler {
         } else {
             int defaultStatusCode = Http.Status.UNAUTHORIZED_401.code();
 
-            abortRequest(res, response, defaultStatusCode, CollectionsHelper.mapOf());
+            abortRequest(res, response, defaultStatusCode, Map.of());
             future.complete(AtxResult.STOP);
             return true;
         }
@@ -543,7 +541,7 @@ public final class SecurityHandler implements Handler {
 
         int defaultStatusCode = Http.Status.OK_200.code();
 
-        abortRequest(res, response, defaultStatusCode, CollectionsHelper.mapOf());
+        abortRequest(res, response, defaultStatusCode, Map.of());
         future.complete(AtxResult.STOP);
     }
 
@@ -633,20 +631,20 @@ public final class SecurityHandler implements Handler {
             return future;
         }
 
-        Set<String> rolesSet = rolesAllowed.orElse(CollectionsHelper.setOf());
+        Set<String> rolesSet = rolesAllowed.orElse(Set.of());
 
         if (!rolesSet.isEmpty()) {
             // first validate roles - RBAC is supported out of the box by security, no need to invoke provider
             if (explicitAuthorizer.isPresent()) {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), CollectionsHelper.mapOf());
+                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
                     future.complete(AtxResult.STOP);
                     atzTracing.finish();
                     return future;
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), CollectionsHelper.mapOf());
+                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
                     future.complete(AtxResult.STOP);
                     atzTracing.finish();
                     return future;
@@ -677,13 +675,13 @@ public final class SecurityHandler implements Handler {
                         : Http.Status.OK_200.code();
 
                 atzTracing.finish();
-                abortRequest(res, response, defaultStatus, CollectionsHelper.mapOf());
+                abortRequest(res, response, defaultStatus, Map.of());
                 future.complete(AtxResult.STOP);
                 return;
             case ABSTAIN:
             case FAILURE:
                 atzTracing.finish();
-                abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), CollectionsHelper.mapOf());
+                abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), Map.of());
                 future.complete(AtxResult.STOP);
                 return;
             default:
@@ -1016,7 +1014,7 @@ public final class SecurityHandler implements Handler {
         }
 
         private Builder customObjects(ClassToInstanceStore<Object> store) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(myStore -> myStore.putAll(store), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putAll(store);
@@ -1105,7 +1103,7 @@ public final class SecurityHandler implements Handler {
          * @return updated builder instance
          */
         Builder customObject(Object object) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(store -> store.putInstance(object), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putInstance(object);
@@ -1159,7 +1157,7 @@ public final class SecurityHandler implements Handler {
         }
 
         Builder rolesAllowed(Collection<String> roles) {
-            OptionalHelper.from(rolesAllowed).ifPresentOrElse(strings -> strings.addAll(roles),
+            rolesAllowed.ifPresentOrElse(strings -> strings.addAll(roles),
                                                               () -> {
                                                                   Set<String> newRoles = new HashSet<>(roles);
                                                                   rolesAllowed = Optional.of(newRoles);
