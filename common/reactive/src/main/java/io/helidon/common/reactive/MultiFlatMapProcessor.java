@@ -32,6 +32,8 @@ import java.util.function.Function;
  */
 public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> {
 
+    private static final int DEFAULT_BUFFER_SIZE = 64;
+
     private Function<T, Flow.Publisher<T>> mapper;
     private SubscriberReference<? super T> subscriber;
     private Flow.Subscription subscription;
@@ -120,7 +122,11 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
     @Override
     public void onNext(T o) {
         Objects.requireNonNull(o);
-        buffer.offer(o);
+        try {
+            buffer.offer(o);
+        } catch (Throwable t) {
+            onError(t);
+        }
     }
 
     @Override
@@ -141,7 +147,10 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
     }
 
     private class PublisherBuffer<U> {
-        private BlockingQueue<U> buffer = new ArrayBlockingQueue<>(64);
+
+        private int bufferSize = Integer.parseInt(
+                System.getProperty("helidon.common.reactive.flatMap.buffer.size", String.valueOf(DEFAULT_BUFFER_SIZE)));
+        private BlockingQueue<U> buffer = new ArrayBlockingQueue<>(bufferSize);
         private InnerSubscriber<? super T> lastSubscriber = null;
 
         public boolean isComplete() {
@@ -162,7 +171,7 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
             if (buffer.isEmpty() && (Objects.isNull(lastSubscriber) || lastSubscriber.isDone())) {
                 lastSubscriber = executeMapper(o);
             } else {
-                buffer.offer(o);
+                buffer.add(o);
             }
         }
 

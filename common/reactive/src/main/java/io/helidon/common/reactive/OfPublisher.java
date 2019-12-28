@@ -66,23 +66,22 @@ public class OfPublisher<T> implements Flow.Publisher<T> {
                     try {
                         while (requestCounter.tryDecrement()) {
                             iterateConcurrentLock.lock();
-                            if (iterator.hasNext() && !cancelled.get()) {
-                                T next = iterator.next();
-                                iterateConcurrentLock.unlock();
-                                Objects.requireNonNull(next);
-                                subscriber.onNext(next);
-                            } else {
-                                if (!completed.getAndSet(true)) {
-                                    subscriber.onComplete();
+                            try {
+                                if (iterator.hasNext() && !cancelled.get()) {
+                                    T next = iterator.next();
+                                    Objects.requireNonNull(next);
+                                    subscriber.onNext(next);
+                                } else {
+                                    if (!completed.getAndSet(true)) {
+                                        subscriber.onComplete();
+                                    }
+                                    break;
                                 }
+                            } finally {
                                 iterateConcurrentLock.unlock();
-                                break;
                             }
                         }
                     } finally {
-                        if (iterateConcurrentLock.isHeldByCurrentThread()) {
-                            iterateConcurrentLock.unlock();
-                        }
                         trampolineLock.set(false);
                     }
                 }

@@ -51,7 +51,6 @@ public final class MultiMapProcessor<T, U> extends BufferedProcessor<T, U> imple
         U value = mapper.map(item);
         if (value == null) {
             getSubscription().ifPresent(Flow.Subscription::cancel);
-            //TODO: ask Romain if IllegalStateException is really needed, RS operators TCKs expect NullPointerException
             onError(new NullPointerException("Mapper returned a null value"));
         } else {
             submit(value);
