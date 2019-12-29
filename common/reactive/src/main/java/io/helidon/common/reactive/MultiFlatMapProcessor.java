@@ -80,12 +80,11 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
     private class FlatMapSubscription implements Flow.Subscription {
         @Override
         public void request(long n) {
-            requestCounter.increment(n, MultiFlatMapProcessor.this::onError);
-
             if (buffer.isComplete() || Objects.isNull(innerSubscription)) {
-                subscription.request(requestCounter.get());
+                subscription.request(n);
             } else {
-                innerSubscription.request(requestCounter.get());
+                requestCounter.increment(n, MultiFlatMapProcessor.this::onError);
+                innerSubscription.request(n);
             }
         }
 
@@ -206,10 +205,7 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
             }
             subscriptionAcked.set(true);
             MultiFlatMapProcessor.this.innerSubscription = innerSubscription;
-            long requestCount = requestCounter.get();
-            if (requestCount > 0) {
-                innerSubscription.request(requestCount);
-            }
+            innerSubscription.request(Long.MAX_VALUE);
         }
 
         @Override
@@ -217,11 +213,8 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
         public void onNext(R o) {
             Objects.requireNonNull(o);
             MultiFlatMapProcessor.this.subscriber.onNext((T) o);
+            //just counting leftovers
             requestCounter.tryDecrement();
-            long requestCount = requestCounter.get();
-            if (requestCount > 0) {
-                innerSubscription.request(requestCount);
-            }
         }
 
         @Override
