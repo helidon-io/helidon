@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.integration.jersey;
 
-import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -43,7 +42,6 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.reactive.OutputStreamPublisher;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.jersey.common.InvokedResource;
@@ -244,17 +242,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                         .addParam(AuditEvent.AuditParam.plain("targetUri", fc.getTargetUri()));
 
                 securityContext.audit(auditEvent);
-            }
-
-            if (!fc.isShouldFinish() && (fc.getResponseMessage().filterFunction() != null)) {
-                OutputStream originalStream = responseContext.getEntityStream();
-
-                OutputStreamPublisher outputStreamPublisher = new OutputStreamPublisher();
-                responseContext.setEntityStream(outputStreamPublisher);
-
-                fc.getResponseMessage().filterFunction()
-                        .apply(outputStreamPublisher)
-                        .subscribe(new SubscriberOutputStream(originalStream, outputStreamPublisher::signalCloseComplete));
             }
         } finally {
             responseTracing.finish();

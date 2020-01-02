@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
 package io.helidon.security.integration.jersey;
 
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Flow;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.ws.rs.WebApplicationException;
@@ -34,7 +31,6 @@ import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
-import io.helidon.security.Entity;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
@@ -138,8 +134,6 @@ abstract class SecurityFilterCommon {
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
                         .atnClientBuilder()
                         .optional(methodSecurity.authenticationOptional())
-                        .requestMessage(toRequestMessage(context))
-                        .responseMessage(context.getResponseMessage())
                         .tracingSpan(atnTracing.findParent().orElse(null))
                         // backward compatibility - remove in 2.0
                         .tracingSpan(atnTracing.findParentSpan().orElse(null));
@@ -165,33 +159,6 @@ abstract class SecurityFilterCommon {
                 }
             }
         }
-    }
-
-    protected Entity toRequestMessage(SecurityFilter.FilterContext context) {
-        switch (context.getMethod().toLowerCase()) {
-        case "get":
-        case "options":
-        case "head":
-        case "delete":
-            return null;
-        default:
-            break;
-        }
-
-        return filterFunction -> {
-            // this is request message (inbound)
-
-            // this will publish bytes coming in from external source (to security provider)
-            Flow.Publisher<ByteBuffer> publisherFromJersey =
-                    new InputStreamPublisher(context.getJerseyRequest().getEntityStream(), 1024);
-
-            SubscriberInputStream subscriberInputStream = new SubscriberInputStream();
-            context.getJerseyRequest().setEntityStream(subscriberInputStream);
-
-            Flow.Publisher<ByteBuffer> publisherToJersey = filterFunction.apply(publisherFromJersey);
-            // this will receive request bytes coming in from security provider (filtered)
-            publisherToJersey.subscribe(subscriberInputStream);
-        };
     }
 
     protected void processAuthentication(FilterContext context,
@@ -427,7 +394,6 @@ abstract class SecurityFilterCommon {
     protected abstract SecurityFilter.FilterContext initRequestFiltering(ContainerRequestContext requestContext);
 
     static class FilterContext {
-        private final JerseyResponseEntity responseMessage = new JerseyResponseEntity();
         private String resourceName;
         private String resourcePath;
         private String method;
@@ -442,10 +408,6 @@ abstract class SecurityFilterCommon {
         private boolean traceSuccess = true;
         private String traceDescription;
         private Throwable traceThrowable;
-
-        JerseyResponseEntity getResponseMessage() {
-            return responseMessage;
-        }
 
         String getResourceName() {
             return resourceName;
@@ -547,19 +509,6 @@ abstract class SecurityFilterCommon {
             setTraceSuccess(true);
             setTraceDescription(null);
             setTraceThrowable(null);
-        }
-    }
-
-    protected static class JerseyResponseEntity implements Entity {
-        private volatile Function<Flow.Publisher<ByteBuffer>, Flow.Publisher<ByteBuffer>> filterFunction;
-
-        @Override
-        public void filter(Function<Flow.Publisher<ByteBuffer>, Flow.Publisher<ByteBuffer>> filterFunction) {
-            this.filterFunction = filterFunction;
-        }
-
-        protected Function<Flow.Publisher<ByteBuffer>, Flow.Publisher<ByteBuffer>> filterFunction() {
-            return filterFunction;
         }
     }
 

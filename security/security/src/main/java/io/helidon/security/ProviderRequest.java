@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,16 +53,9 @@ public class ProviderRequest implements AbacSupport {
     private final Optional<ObjectWrapper> resource;
     private final SecurityContext context;
     private final EndpointConfig epConfig;
-    private final Optional<Entity> requestEntity;
-    private final Optional<Entity> responseEntity;
 
     ProviderRequest(SecurityContext context,
-                    Map<String, Supplier<Object>> resources,
-                    Optional<Entity> requestEntity,
-                    Optional<Entity> responseEntity) {
-        this.requestEntity = requestEntity;
-        this.responseEntity = responseEntity;
-
+                    Map<String, Supplier<Object>> resources) {
         ObjectWrapper object = null;
 
         for (Map.Entry<String, Supplier<Object>> entry : resources.entrySet()) {
@@ -142,7 +135,7 @@ public class ProviderRequest implements AbacSupport {
     static String capitalize(String string) {
         char c = string.charAt(0);
         char upperCase = Character.toUpperCase(c);
-        return String.valueOf(upperCase) + string.substring(1);
+        return upperCase + string.substring(1);
     }
 
     static Optional<Method> getMethod(Class<?> aClass, String methodName) {
@@ -210,28 +203,6 @@ public class ProviderRequest implements AbacSupport {
      */
     public Optional<Object> getObject() {
         return resource.map(ObjectWrapper::getValue);
-    }
-
-    /**
-     * Access request message entity.
-     *
-     * @return Entity of the request, if current request has entity
-     * @deprecated entity access is going to be removed from security
-     */
-    @Deprecated
-    public Optional<Entity> requestEntity() {
-        return requestEntity;
-    }
-
-    /**
-     * Access response message entity.
-     *
-     * @return Entity of the response, if current response can have entity
-     * @deprecated entity access is going to be removed from security
-     */
-    @Deprecated
-    public Optional<Entity> responseEntity() {
-        return responseEntity;
     }
 
     @Override
