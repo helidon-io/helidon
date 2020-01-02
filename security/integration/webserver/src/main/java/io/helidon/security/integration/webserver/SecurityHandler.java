@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.integration.webserver;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,22 +28,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ClassToInstanceStore;
-import io.helidon.security.Entity;
 import io.helidon.security.QueryParamMapping;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
@@ -344,7 +338,7 @@ public final class SecurityHandler implements Handler {
                                                   .customObjects(customObjects.orElse(new ClassToInstanceStore<>()))
                                                   .build());
 
-        processAuthentication(req, res, securityContext, tracing.atnTracing())
+        processAuthentication(res, securityContext, tracing.atnTracing())
                 .thenCompose(atnResult -> {
                     if (atnResult.proceed) {
                         // authentication was OK or disabled, we should continue
@@ -384,7 +378,7 @@ public final class SecurityHandler implements Handler {
             return;
         }
 
-        if (!audited.isPresent()) {
+        if (audited.isEmpty()) {
             // use defaults
             if (req.method() instanceof Http.Method) {
                 switch ((Http.Method) req.method()) {
@@ -437,8 +431,7 @@ public final class SecurityHandler implements Handler {
         securityContext.audit(auditEvent);
     }
 
-    private CompletionStage<AtxResult> processAuthentication(ServerRequest req,
-                                                             ServerResponse res,
+    private CompletionStage<AtxResult> processAuthentication(ServerResponse res,
                                                              SecurityContext securityContext,
                                                              AtnTracing atnTracing) {
         if (!authenticate.orElse(false)) {
@@ -449,8 +442,6 @@ public final class SecurityHandler implements Handler {
 
         SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext.atnClientBuilder();
         configureSecurityRequest(clientBuilder,
-                                 req,
-                                 res,
                                  atnTracing.findParent().orElse(null),
                                  atnTracing.findParentSpan().orElse(null));
 
@@ -565,56 +556,12 @@ public final class SecurityHandler implements Handler {
     }
 
     private void configureSecurityRequest(SecurityRequestBuilder<? extends SecurityRequestBuilder<?>> request,
-                                          ServerRequest req,
-                                          ServerResponse res,
                                           SpanContext parentSpanContext,
                                           Span parentSpan) {
 
         request.optional(authenticationOptional.orElse(false))
                 .tracingSpan(parentSpanContext)
-                .tracingSpan(parentSpan)
-                .requestMessage(toRequestMessage(req))
-                .responseMessage(toResponseMessage(res));
-    }
-
-    private Entity toResponseMessage(ServerResponse res) {
-        return filterFunction -> res.registerFilter(responseChunkPublisher -> {
-            Flow.Publisher<ByteBuffer> bytesFromBizLogic =
-                    new ResponseProcessor<DataChunk, ByteBuffer>(responseChunkPublisher) {
-                        @Override
-                        public void onNext(DataChunk item) {
-                            // chunk not released, as security provider may use it later
-                            subscriber().onNext(item.data());
-                        }
-                    };
-            Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromBizLogic);
-            return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
-                @Override
-                public void onNext(ByteBuffer item) {
-                    subscriber().onNext(DataChunk.create(true, item));
-                }
-            };
-        });
-    }
-
-    private Entity toRequestMessage(ServerRequest req) {
-        return filterFunction -> req.content().registerFilter(requestChunkPublisher -> {
-            Flow.Publisher<ByteBuffer> bytesFromExternal =
-                    new ResponseProcessor<DataChunk, ByteBuffer>(requestChunkPublisher) {
-                        @Override
-                        public void onNext(DataChunk item) {
-                            // chunk not released, as security provider may use it later
-                            subscriber().onNext(item.data());
-                        }
-                    };
-            Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromExternal);
-            return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
-                @Override
-                public void onNext(ByteBuffer item) {
-                    subscriber().onNext(DataChunk.create(item));
-                }
-            };
-        });
+                .tracingSpan(parentSpan);
     }
 
     @SuppressWarnings("ThrowableNotThrown")
@@ -656,8 +603,6 @@ public final class SecurityHandler implements Handler {
 
         client = context.atzClientBuilder();
         configureSecurityRequest(client,
-                                 req,
-                                 res,
                                  atzTracing.findParent().orElse(null),
                                  atzTracing.findParentSpan().orElse(null));
 
@@ -893,74 +838,6 @@ public final class SecurityHandler implements Handler {
         @SuppressWarnings("unused")
         private AtxResult(SecurityRequest ignored) {
             this.proceed = true;
-        }
-    }
-
-    private abstract static class ResponseProcessor<T, R> implements Flow.Processor<T, R> {
-        private final CountDownLatch subscribedLatch = new CountDownLatch(1);
-        private final Flow.Publisher<T> externalPublisher;
-        private final AtomicBoolean isSubscribed = new AtomicBoolean();
-        private Flow.Subscriber<? super R> subscriber;
-        private volatile Flow.Subscription mySubscription;
-        private volatile Flow.Subscription subscribersSubscription;
-
-        ResponseProcessor(Flow.Publisher<T> externalPublisher) {
-            this.externalPublisher = externalPublisher;
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super R> subscriber) {
-            if (!isSubscribed.compareAndSet(false, true)) {
-                subscriber.onError(new IllegalStateException("This publisher only supports a single subscriber."));
-                return;
-            }
-            this.subscriber = subscriber;
-            //somebody subscribed to us!
-            this.subscribersSubscription = new Flow.Subscription() {
-                @Override
-                public void request(long n) {
-                    try {
-                        subscribedLatch.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        mySubscription.cancel();
-                        return;
-                    }
-                    mySubscription.request(n);
-                }
-
-                @Override
-                public void cancel() {
-                    try {
-                        subscribedLatch.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    mySubscription.cancel();
-                }
-            };
-            externalPublisher.subscribe(this);
-            subscriber.onSubscribe(subscribersSubscription);
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.mySubscription = subscription;
-            subscribedLatch.countDown();
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            subscriber.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            subscriber.onComplete();
-        }
-
-        Flow.Subscriber<? super R> subscriber() {
-            return subscriber;
         }
     }
 
