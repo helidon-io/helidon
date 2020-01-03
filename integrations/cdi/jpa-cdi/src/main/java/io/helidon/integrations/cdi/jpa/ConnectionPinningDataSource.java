@@ -55,7 +55,7 @@ class ConnectionPinningDataSource extends AbstractDataSource {
     }
 
     @Override
-    public Connection getConnection() throws SQLException {
+    public final Connection getConnection() throws SQLException {
         PinnableConnection returnValue = this.pinnedConnection;
         if (returnValue == null || returnValue.isClosed() || this.isConnectionCloseable()) {
             // If returnValue is not null and is not closed but

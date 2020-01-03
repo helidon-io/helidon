@@ -19,11 +19,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
 
-import javax.enterprise.event.Observes;
-
 class TransactionalConnectionPinningDataSource extends ConnectionPinningDataSource {
 
     private boolean oldAutoCommit;
+
+    private Connection connection;
     
     TransactionalConnectionPinningDataSource(final ConnectionSupplier connectionSource) throws SQLException {
         super(connectionSource);
@@ -36,13 +36,29 @@ class TransactionalConnectionPinningDataSource extends ConnectionPinningDataSour
         if (this.oldAutoCommit) {
             connection.setAutoCommit(false);
         }
+        this.connection = connection;
     }
 
     @Override
     protected void resetConnection(final Connection connection) throws SQLException {
+        this.connection = null;
         super.resetConnection(connection);
         if (this.oldAutoCommit) {
             connection.setAutoCommit(true);
+        }
+    }
+
+    final void rollback() throws SQLException {
+        final Connection connection = this.connection;
+        if (connection != null) {
+            connection.rollback();
+        }
+    }
+
+    final void commit() throws SQLException {
+        final Connection connection = this.connection;
+        if (connection != null) {
+            connection.commit();
         }
     }
     

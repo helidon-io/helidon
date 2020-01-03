@@ -28,6 +28,8 @@ import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
+import javax.enterprise.context.Destroyed;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.AmbiguousResolutionException;
 import javax.enterprise.inject.Instance;
@@ -39,8 +41,13 @@ import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
+import javax.transaction.Status;
+import javax.transaction.Synchronization;
+import javax.transaction.SystemException;
 import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
+import javax.transaction.TransactionSynchronizationRegistry;
 
 @ApplicationScoped
 class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
@@ -205,7 +212,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         return null;
     }
     
-    private ConnectionPinningDataSource convert(final DataSource dataSource) throws SQLException {
+    private TransactionalConnectionPinningDataSource convert(final DataSource dataSource) throws SQLException {
         return new TransactionalConnectionPinningDataSource(dataSource::getConnection);
     }
 
@@ -215,22 +222,54 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      */
 
 
-    /**
-     * Calls the {@link
-     * ConnectionPinningDataSource#setConnectionCloseable()} method on
-     * all {@link #notificationTargets registered
-     * <code>ConnectionPinningDataSource</code>} instances produced by
-     * the {@link #getConnection()} method.
-     *
-     * @param event the event representing the imminent completion of
-     * the transaction; will not be {@code null}; often is the {@link
-     * Transaction} itself; should be treated as an opaque object
-     */
-    private static void onImminentTransactionCompletion(@Observes @BeforeDestroyed(TransactionScoped.class) final Object event) {
-        for (final ConnectionPinningDataSource notificationTarget : notificationTargets) {
-            assert notificationTarget != null;
-            notificationTarget.setConnectionCloseable();
-        }
+    private static void frob(@Observes
+                             @Initialized(TransactionScoped.class)
+                             final Object event,
+                             final Transaction transaction,
+                             final TransactionSynchronizationRegistry tsr)
+        throws SystemException {
+        assert transaction != null;
+        assert transaction.getStatus() == Status.STATUS_ACTIVE;
+        assert tsr != null;
+        tsr.registerInterposedSynchronization(new Synchronization() {
+                @Override
+                public final void beforeCompletion() {
+
+                }
+
+                @Override
+                public final void afterCompletion(final int status) {
+                    RuntimeException problem = null;
+                    for (final ConnectionPinningDataSource notificationTarget : notificationTargets) {
+                        assert notificationTarget != null;
+                        notificationTarget.setConnectionCloseable();
+                        if (notificationTarget instanceof TransactionalConnectionPinningDataSource) {
+                            final TransactionalConnectionPinningDataSource tds = (TransactionalConnectionPinningDataSource) notificationTarget;
+                            try {
+                                switch (status) {
+                                case Status.STATUS_COMMITTED:
+                                    tds.commit();
+                                    break;
+                                case Status.STATUS_ROLLEDBACK:
+                                    tds.rollback();
+                                    break;
+                                default:
+                                    throw new IllegalStateException(String.valueOf(status));
+                                }
+                            } catch (final SQLException sqlException) {
+                                if (problem == null) {
+                                    problem = new IllegalStateException(sqlException.getMessage(), sqlException);
+                                } else {
+                                    problem.addSuppressed(sqlException);
+                                }
+                            }
+                        }
+                    }
+                    if (problem != null) {
+                        throw problem;
+                    }
+                }
+            });
     }
-    
+
 }
