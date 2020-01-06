@@ -123,7 +123,8 @@ public final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer
             addProcessor(MultiFlatMapProcessor.fromPublisherMapper(pubMapper));
         });
         registerStage(Stage.FlatMapIterable.class, stage -> {
-            addProcessor(MultiFlatMapProcessor.fromIterableMapper(stage.getMapper()));
+            Function<Object, Iterable<?>> mapper = (Function<Object, Iterable<?>>) stage.getMapper();
+            addProcessor(MultiFlatMapProcessor.fromIterableMapper(o -> (Iterable<Object>) mapper.apply(o)));
         });
         registerStage(Stage.FlatMapCompletionStage.class, stage -> {
             addProcessor(new FlatMapCompletionStageProcessor(stage.getMapper()));

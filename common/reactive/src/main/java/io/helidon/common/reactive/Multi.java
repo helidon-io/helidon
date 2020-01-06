@@ -84,6 +84,8 @@ public interface Multi<T> extends Subscribable<T> {
 
     /**
      * Take the longest prefix of elements from this stream that satisfy the given predicate.
+     * As long as predicate returns true, items from upstream are sent to downstream,
+     * when predicate returns false stream is completed.
      *
      * @param predicate predicate to filter stream with
      * @return Multi
@@ -96,6 +98,8 @@ public interface Multi<T> extends Subscribable<T> {
 
     /**
      * Drop the longest prefix of elements from this stream that satisfy the given predicate.
+     * As long as predicate returns true, items from upstream are NOT sent to downstream but being dropped,
+     * predicate is never called again after it returns false for the first time.
      *
      * @param predicate predicate to filter stream with
      * @return Multi
@@ -131,94 +135,25 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Coupled processor sends items received to the passed in subscriber, and emits items received from the passed in publisher.
-     * Cancel, onComplete and onError signals are shared.
-     * <pre>
-     *     +
-     *     |  Inlet/upstream publisher
-     * +-------+
-     * |   |   |   passed in subscriber
-     * |   +-------------------------->
-     * |       |   passed in publisher
-     * |   +--------------------------+
-     * |   |   |
-     * +-------+
-     *     |  Outlet/downstream subscriber
-     *     v
-     * </pre>
+     * Transform item with supplied function and flatten resulting {@link Flow.Publisher} to downstream.
      *
-     * @param <R>                Outlet and passed in publisher item type
-     * @param passedInSubscriber gets all items from upstream/inlet
-     * @param passedInPublisher  emits to downstream/outlet
+     * @param publisherMapper {@link Function} receiving item as parameter and returning {@link Flow.Publisher}
      * @return Multi
      */
-    default <R> Multi<R> coupled(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
-        MultiCoupledProcessor<T, R> processor = new MultiCoupledProcessor<>(passedInSubscriber, passedInPublisher);
+    default Multi<T> flatMap(Function<T, Flow.Publisher<T>> publisherMapper) {
+        MultiFlatMapProcessor<T> processor = MultiFlatMapProcessor.fromPublisherMapper(publisherMapper);
         this.subscribe(processor);
         return processor;
     }
 
     /**
-     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
+     * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
      *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
      * @return Multi
      */
-    default Multi<T> onTerminate(Runnable onTerminate) {
-        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
-                .onComplete(onTerminate)
-                .onCancel((s) -> onTerminate.run())
-                .onError((t) -> onTerminate.run());
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
-     *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onComplete(Runnable onTerminate) {
-        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
-                .onComplete(onTerminate);
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onError signal is received.
-     *
-     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
-        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
-                .onError(onErrorConsumer);
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
-     * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
-     *
-     * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
-     * @return Multi
-     */
-    default Multi<T> onErrorResume(Function<Throwable, T> onError) {
-        MultiOnErrorResumeProcessor<T> processor = MultiOnErrorResumeProcessor.resume(onError);
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
-     * Resume stream from supplied publisher if onError signal is intercepted.
-     *
-     * @param onError supplier of new stream publisher
-     * @return Multi
-     */
-    default Multi<T> onErrorResumeWith(Function<Throwable, Publisher<T>> onError) {
-        MultiOnErrorResumeProcessor<T> processor = MultiOnErrorResumeProcessor.resumeWith(onError);
+    default Multi<T> flatMapIterable(Function<T, Iterable<T>> iterableMapper) {
+        MultiFlatMapProcessor<T> processor = MultiFlatMapProcessor.fromIterableMapper(iterableMapper);
         this.subscribe(processor);
         return processor;
     }
