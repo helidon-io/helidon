@@ -22,6 +22,7 @@ module io.helidon.microprofile.restclient {
     requires transitive microprofile.rest.client.api;
     requires io.helidon.common.context;
     requires jersey.mp.rest.client;
+    requires java.ws.rs;
 
     provides org.eclipse.microprofile.rest.client.spi.RestClientListener
             with io.helidon.microprofile.restclient.MpRestClientListener;
