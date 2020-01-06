@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @param <T> item type
  */
-public class OfPublisher<T> implements Flow.Publisher<T> {
+class IterablePublisher<T> implements Flow.Publisher<T> {
     private Iterable<T> iterable;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private AtomicBoolean completed = new AtomicBoolean(false);
@@ -36,13 +36,20 @@ public class OfPublisher<T> implements Flow.Publisher<T> {
     private final RequestedCounter requestCounter = new RequestedCounter();
     private final ReentrantLock iterateConcurrentLock = new ReentrantLock();
 
+    private IterablePublisher() {
+    }
+
     /**
-     * Create new {@link OfPublisher}.
+     * Create new {@link IterablePublisher}.
      *
      * @param iterable to create publisher from
+     * @param <T>      Item type
+     * @return new instance of {@link IterablePublisher}
      */
-    public OfPublisher(Iterable<T> iterable) {
-        this.iterable = iterable;
+    static <T> IterablePublisher<T> create(Iterable<T> iterable) {
+        IterablePublisher<T> instance = new IterablePublisher<>();
+        instance.iterable = iterable;
+        return instance;
     }
 
     @Override

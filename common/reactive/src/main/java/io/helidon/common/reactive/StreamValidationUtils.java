@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class StreamValidationUtils {
      * @return true if valid
      * @see <a href="https://github.com/reactive-streams/reactive-streams-jvm#3.3">reactive-streams/reactive-streams-jvm#3.3</a>
      */
-    public static <T> boolean checkRecursionDepth303(int maxDepth, BiConsumer<Long, Throwable> onExceeded) {
+    public static <T> boolean checkRecursionDepth(int maxDepth, BiConsumer<Long, Throwable> onExceeded) {
         Long recursionDepth = getRecursionDepth();
         if (recursionDepth > maxDepth) {
             Optional.of(onExceeded)
@@ -68,7 +68,7 @@ public class StreamValidationUtils {
      * @return true if requested parameter is valid
      * @see <a href="https://github.com/reactive-streams/reactive-streams-jvm#3.9">reactive-streams/reactive-streams-jvm#3.9</a>
      */
-    public static boolean checkRequestParam309(long requestParam, Consumer<? super IllegalArgumentException> onExceeded) {
+    public static boolean checkRequestParam(long requestParam, Consumer<? super IllegalArgumentException> onExceeded) {
         if (requestParam <= 0) {
             Optional.of(onExceeded)
                     .ifPresent(onExc -> onExc

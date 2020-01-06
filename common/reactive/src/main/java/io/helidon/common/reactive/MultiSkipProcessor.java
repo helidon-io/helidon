@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,19 @@ public class MultiSkipProcessor<T> extends BufferedProcessor<T, T> implements Mu
 
     private final AtomicLong counter;
 
+    private MultiSkipProcessor(Long skip) {
+        counter = new AtomicLong(skip);
+    }
+
     /**
      * Create new {@link MultiSkipProcessor}.
      *
      * @param skip number of items to be skipped
+     * @param <T>  item type
+     * @return {@link MultiSkipProcessor}
      */
-    public MultiSkipProcessor(Long skip) {
-        counter = new AtomicLong(skip);
+    public static <T> MultiSkipProcessor<T> create(Long skip) {
+        return new MultiSkipProcessor<T>(skip);
     }
 
     @Override

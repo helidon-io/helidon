@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 package io.helidon.common.reactive;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Collections;
-import java.util.concurrent.Flow.Subscription;
-
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,8 +28,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.mapper.Mapper;
-
-import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -41,6 +37,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link MultiTest} test.
@@ -246,7 +244,6 @@ public class MultiTest {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
         Multi.just("foo", "bar").map((Mapper<String, String>) item -> null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        //TODO: ask Romain if IllegalStateException is really needed, RS operators TCKs expect NullPointerException
         assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
     }
@@ -364,19 +361,25 @@ public class MultiTest {
     }
 
     @Test
-    void testCoupled() throws ExecutionException, InterruptedException, TimeoutException {
-        final List<Integer> TEST_DATA = List.of(1, 2, 3, 4, 3, 2, 1, 0);
-
-        CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
-        MultiPeekProcessor<Integer> multiPeekProcessor = new MultiPeekProcessor<>(i -> countDownLatch.countDown());
-
-        List<Integer> result = Multi.just(TEST_DATA)
-                .coupled(multiPeekProcessor, multiPeekProcessor)
+    void testFlatMap() throws ExecutionException, InterruptedException {
+        final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
+        final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
+        List<String> result = Multi.just(TEST_DATA)
+                .flatMap(s -> Multi.just(s.chars().mapToObj(Character::toString).collect(Collectors.toList())))
                 .collectList()
-                .get(1, TimeUnit.SECONDS);
+                .get();
+        assertThat(result, is(equalTo(EXPECTED)));
+    }
 
-        countDownLatch.await(1, TimeUnit.SECONDS);
-        assertThat(result, is(equalTo(TEST_DATA)));
+    @Test
+    void testFlatMapIterable() throws ExecutionException, InterruptedException {
+        final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
+        final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
+        List<String> result = Multi.just(TEST_DATA)
+                .flatMapIterable(s -> s.chars().mapToObj(Character::toString).collect(Collectors.toList()))
+                .collectList()
+                .get();
+        assertThat(result, is(equalTo(EXPECTED)));
     }
 
     @Test

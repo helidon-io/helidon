@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,10 +55,9 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
      * @return {@link MultiFlatMapProcessor}
      */
     @SuppressWarnings("unchecked")
-    public static <T> MultiFlatMapProcessor<T> fromIterableMapper(Function<?, Iterable<?>> mapper) {
-        Function<Object, Iterable<?>> iterableMapper = (Function<Object, Iterable<?>>) mapper;
+    public static <T> MultiFlatMapProcessor<T> fromIterableMapper(Function<T, Iterable<T>> mapper) {
         MultiFlatMapProcessor<T> flatMapProcessor = new MultiFlatMapProcessor<>();
-        flatMapProcessor.mapper = o -> (Multi<T>) Multi.from(iterableMapper.apply(o));
+        flatMapProcessor.mapper = o -> (Multi<T>) Multi.from(mapper.apply(o));
         return flatMapProcessor;
     }
 
@@ -70,8 +69,8 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
      * @return {@link MultiFlatMapProcessor}
      */
     @SuppressWarnings("unchecked")
-    public static <T> MultiFlatMapProcessor<T> fromPublisherMapper(Function<?, Flow.Publisher<Object>> mapper) {
-        Function<T, Flow.Publisher<Object>> publisherMapper = (Function<T, Flow.Publisher<Object>>) mapper;
+    public static <T> MultiFlatMapProcessor<T> fromPublisherMapper(Function<?, Flow.Publisher<T>> mapper) {
+        Function<T, Flow.Publisher<T>> publisherMapper = (Function<T, Flow.Publisher<T>>) mapper;
         MultiFlatMapProcessor<T> flatMapProcessor = new MultiFlatMapProcessor<T>();
         flatMapProcessor.mapper = t -> (Flow.Publisher<T>) publisherMapper.apply(t);
         return flatMapProcessor;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,19 @@ import java.util.function.Predicate;
 public class MultiTakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 
+    private MultiTakeWhileProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
+    }
+
     /**
      * Create new {@link MultiTakeWhileProcessor}.
      *
      * @param predicate provided predicate to filter stream with
+     * @param <T>       <T> Item type
+     * @return {@link MultiTakeWhileProcessor}
      */
-    public MultiTakeWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public static <T> MultiTakeWhileProcessor<T> create(Predicate<T> predicate) {
+        return new MultiTakeWhileProcessor<>(predicate);
     }
 
     @Override

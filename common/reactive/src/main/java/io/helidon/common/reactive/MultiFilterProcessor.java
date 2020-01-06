@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,19 @@ public class MultiFilterProcessor<T> extends BufferedProcessor<T, T> implements 
 
     private Predicate<T> predicate;
 
+    private MultiFilterProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
+    }
+
     /**
      * Processor filtering stream with supplied predicate.
      *
      * @param predicate provided predicate to filter stream with
+     * @param <T>       both input/output type
+     * @return {@link MultiFilterProcessor}
      */
-    public MultiFilterProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public static <T> MultiFilterProcessor<T> create(Predicate<T> predicate) {
+        return new MultiFilterProcessor<>(predicate);
     }
 
     @Override

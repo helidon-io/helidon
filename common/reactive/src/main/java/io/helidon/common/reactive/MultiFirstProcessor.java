@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,30 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Processor of {@code Multi<T>} to {@code Single<T>}.
+ *
  * @param <T> item type
  */
 final class MultiFirstProcessor<T> extends BaseProcessor<T, T> implements Single<T> {
+
+    private AtomicBoolean nextCalled = new AtomicBoolean(false);
+
+    private MultiFirstProcessor() {
+    }
+
+    static <T> MultiFirstProcessor<T> create() {
+        return new MultiFirstProcessor<>();
+    }
+
+    @Override
+    public void onNext(T item) {
+        if (!nextCalled.getAndSet(true)) {
+            super.onNext(item);
+        }
+    }
 
     @Override
     protected void hookOnNext(T item) {

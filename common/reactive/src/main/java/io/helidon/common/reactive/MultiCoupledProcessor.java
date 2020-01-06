@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,17 +51,24 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private Flow.Subscription passedInPublisherSubscription;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
 
+    private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
+        this.passedInSubscriber = SubscriberReference.create(passedInSubscriber);
+        this.passedInPublisher = passedInPublisher;
+        this.inletSubscriber = this;
+    }
 
     /**
      * Create new {@link MultiCoupledProcessor}.
      *
      * @param passedInSubscriber to send items from inlet to
      * @param passedInPublisher  to get items for outlet from
+     * @param <T>                Inlet and passed in subscriber item type
+     * @param <R>                Outlet and passed in publisher item type
+     * @return {@link MultiCoupledProcessor}
      */
-    public MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
-        this.passedInSubscriber = SubscriberReference.create(passedInSubscriber);
-        this.passedInPublisher = passedInPublisher;
-        this.inletSubscriber = this;
+    public static <T, R> MultiCoupledProcessor<T, R> create(Flow.Subscriber<T> passedInSubscriber,
+                                                            Flow.Publisher<R> passedInPublisher) {
+        return new MultiCoupledProcessor<>(passedInSubscriber, passedInPublisher);
     }
 
     @Override
@@ -117,7 +124,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void request(long n) {
                 // Request from outlet subscriber
-                StreamValidationUtils.checkRecursionDepth303(2, (actDepth, t) -> outletSubscriber.onError(t));
+                StreamValidationUtils.checkRecursionDepth(2, (actDepth, t) -> outletSubscriber.onError(t));
                 passedInPublisherSubscription.request(n);
             }
 
@@ -145,7 +152,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         passedInSubscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-                StreamValidationUtils.checkRecursionDepth303(5, (actDepth, t) -> passedInSubscriber.onError(t));
+                StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> passedInSubscriber.onError(t));
                 inletSubscription.request(n);
             }
 

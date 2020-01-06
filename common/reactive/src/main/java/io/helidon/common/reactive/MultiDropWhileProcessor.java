@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,19 @@ public class MultiDropWhileProcessor<T> extends BufferedProcessor<T, T> implemen
 
     private boolean foundNotMatching = false;
 
+    private MultiDropWhileProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
+    }
+
     /**
      * Drop the longest prefix of elements from this stream that satisfy the given predicate.
      *
+     * @param <T>       Item type
      * @param predicate provided predicate to filter stream with
+     * @return {@link MultiDropWhileProcessor}
      */
-    public MultiDropWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public static <T> MultiDropWhileProcessor<T> create(Predicate<T> predicate) {
+        return new MultiDropWhileProcessor<>(predicate);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ class SubscriberReference<T> implements Flow.Subscriber<T> {
         this.subscriber = Optional.of(subscriber);
     }
 
-    public static <T> SubscriberReference<T> create(Flow.Subscriber<T> subscriber) {
+    static <T> SubscriberReference<T> create(Flow.Subscriber<T> subscriber) {
         return new SubscriberReference<>(subscriber);
     }
 
-    public void releaseReference() {
+    void releaseReference() {
         this.subscriber = Optional.empty();
     }
 

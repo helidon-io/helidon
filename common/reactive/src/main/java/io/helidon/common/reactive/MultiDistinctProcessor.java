@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,20 @@ import java.util.concurrent.Flow;
  * @param <T> item type
  */
 public class MultiDistinctProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
-    private final HashSet<T> distinctSet;
+
+    private final HashSet<T> distinctSet = new HashSet<T>();
+
+    private MultiDistinctProcessor() {
+    }
 
     /**
      * Create new {@link MultiDistinctProcessor}.
+     *
+     * @param <T> item type
+     * @return {@link MultiDistinctProcessor}
      */
-    public MultiDistinctProcessor() {
-        this.distinctSet = new HashSet<T>();
+    public static <T> MultiDistinctProcessor<T> create() {
+        return new MultiDistinctProcessor<>();
     }
 
     @Override
