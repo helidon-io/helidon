@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class ConcatPublisher<T> implements Multi<T> {
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-                if (!StreamValidationUtils.checkRequestParam309(n, subscriber::onError)) {
+                if (!StreamValidationUtils.checkRequestParam(n, subscriber::onError)) {
                     return;
                 }
                 requested.set(n);

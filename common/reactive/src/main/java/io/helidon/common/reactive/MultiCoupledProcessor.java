@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void request(long n) {
                 // Request from outlet subscriber
-                StreamValidationUtils.checkRecursionDepth303(2, (actDepth, t) -> outletSubscriber.onError(t));
+                StreamValidationUtils.checkRecursionDepth(2, (actDepth, t) -> outletSubscriber.onError(t));
                 passedInPublisherSubscription.request(n);
             }
 
@@ -152,7 +152,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         passedInSubscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-                StreamValidationUtils.checkRecursionDepth303(5, (actDepth, t) -> passedInSubscriber.onError(t));
+                StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> passedInSubscriber.onError(t));
                 inletSubscription.request(n);
             }
 

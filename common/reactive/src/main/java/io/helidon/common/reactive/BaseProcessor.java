@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,8 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void request(long n) {
-        StreamValidationUtils.checkRequestParam309(n, this::failAndCancel);
-        StreamValidationUtils.checkRecursionDepth303(5, (actDepth, t) -> failAndCancel(t));
+        StreamValidationUtils.checkRequestParam(n, this::failAndCancel);
+        StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> failAndCancel(t));
         requested.increment(n, this::failAndCancel);
         tryRequest(subscription);
         if (done) {
