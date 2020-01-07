@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ module io.helidon.config {
     uses io.helidon.config.spi.OverrideSourceProvider;
     uses io.helidon.config.spi.RetryPolicyProvider;
     uses io.helidon.config.spi.PollingStrategyProvider;
+
+    uses org.eclipse.microprofile.config.spi.ConfigSource;
+    uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
+    uses org.eclipse.microprofile.config.spi.Converter;
 
     uses java.nio.file.spi.FileTypeDetector;
 
