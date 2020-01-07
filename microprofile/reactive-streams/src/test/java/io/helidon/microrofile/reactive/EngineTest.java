@@ -820,11 +820,11 @@ public class EngineTest {
 
     @Test
     void finiteStream() throws InterruptedException, ExecutionException, TimeoutException {
-        finiteOnCompleteTest(new MultiPeekProcessor<>(integer -> Function.identity()));
-        finiteOnCompleteTest(new MultiFilterProcessor<>(integer -> true));
-        finiteOnCompleteTest(new MultiTakeWhileProcessor<>(integer -> true));
-        finiteOnCompleteTest(new MultiDropWhileProcessor<>(integer -> false));
-        finiteOnCompleteTest(new MultiSkipProcessor<>(0L));
+        finiteOnCompleteTest(MultiPeekProcessor.create(integer -> Function.identity()));
+        finiteOnCompleteTest(MultiFilterProcessor.create(integer -> true));
+        finiteOnCompleteTest(MultiTakeWhileProcessor.create(integer -> true));
+        finiteOnCompleteTest(MultiDropWhileProcessor.create(integer -> false));
+        finiteOnCompleteTest(MultiSkipProcessor.create(0L));
     }
 
     @Test

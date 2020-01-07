@@ -28,13 +28,19 @@ public class MultiFilterProcessor<T> extends BufferedProcessor<T, T> implements 
 
     private Predicate<T> predicate;
 
+    private MultiFilterProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
+    }
+
     /**
      * Processor filtering stream with supplied predicate.
      *
      * @param predicate provided predicate to filter stream with
+     * @param <T>       both input/output type
+     * @return {@link MultiFilterProcessor}
      */
-    public MultiFilterProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public static <T> MultiFilterProcessor<T> create(Predicate<T> predicate) {
+        return new MultiFilterProcessor<>(predicate);
     }
 
     @Override

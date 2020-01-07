@@ -26,13 +26,20 @@ import java.util.concurrent.Flow;
  * @param <T> item type
  */
 public class MultiDistinctProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
-    private final HashSet<T> distinctSet;
+
+    private final HashSet<T> distinctSet = new HashSet<T>();
+
+    private MultiDistinctProcessor() {
+    }
 
     /**
      * Create new {@link MultiDistinctProcessor}.
+     *
+     * @param <T> item type
+     * @return {@link MultiDistinctProcessor}
      */
-    public MultiDistinctProcessor() {
-        this.distinctSet = new HashSet<T>();
+    public static <T> MultiDistinctProcessor<T> create() {
+        return new MultiDistinctProcessor<>();
     }
 
     @Override

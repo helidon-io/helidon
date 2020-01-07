@@ -29,13 +29,19 @@ public class MultiLimitProcessor<T> extends BufferedProcessor<T, T> implements M
 
     private final AtomicLong counter;
 
+    private MultiLimitProcessor(Long limit) {
+        counter = new AtomicLong(limit);
+    }
+
     /**
      * Processor with specified number of allowed items.
      *
      * @param limit number of items to pass
+     * @param <T>   both input/output type
+     * @return {@link MultiLimitProcessor}
      */
-    public MultiLimitProcessor(Long limit) {
-        counter = new AtomicLong(limit);
+    public static <T> MultiLimitProcessor<T> create(Long limit) {
+        return new MultiLimitProcessor<>(limit);
     }
 
     @Override

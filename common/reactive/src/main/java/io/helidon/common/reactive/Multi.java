@@ -42,7 +42,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> map(Mapper<T, U> mapper) {
-        MultiMapProcessor<T, U> processor = new MultiMapProcessor<>(mapper);
+        MultiMapProcessor<T, U> processor = MultiMapProcessor.create(mapper);
         this.subscribe(processor);
         return processor;
     }
@@ -54,7 +54,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> peek(Consumer<T> consumer) {
-        MultiPeekProcessor<T> processor = new MultiPeekProcessor<T>(consumer);
+        MultiPeekProcessor<T> processor = MultiPeekProcessor.create(consumer);
         this.subscribe(processor);
         return processor;
     }
@@ -65,7 +65,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> distinct() {
-        MultiDistinctProcessor<T> processor = new MultiDistinctProcessor<>();
+        MultiDistinctProcessor<T> processor = MultiDistinctProcessor.create();
         this.subscribe(processor);
         return processor;
     }
@@ -77,7 +77,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> filter(Predicate<T> predicate) {
-        MultiFilterProcessor<T> processor = new MultiFilterProcessor<>(predicate);
+        MultiFilterProcessor<T> processor = MultiFilterProcessor.create(predicate);
         this.subscribe(processor);
         return processor;
     }
@@ -91,7 +91,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> takeWhile(Predicate<T> predicate) {
-        MultiTakeWhileProcessor<T> processor = new MultiTakeWhileProcessor<>(predicate);
+        MultiTakeWhileProcessor<T> processor = MultiTakeWhileProcessor.create(predicate);
         this.subscribe(processor);
         return processor;
     }
@@ -105,7 +105,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> dropWhile(Predicate<T> predicate) {
-        MultiDropWhileProcessor<T> processor = new MultiDropWhileProcessor<>(predicate);
+        MultiDropWhileProcessor<T> processor = MultiDropWhileProcessor.create(predicate);
         this.subscribe(processor);
         return processor;
     }
@@ -117,7 +117,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> limit(long limit) {
-        MultiLimitProcessor<T> processor = new MultiLimitProcessor<>(limit);
+        MultiLimitProcessor<T> processor = MultiLimitProcessor.create(limit);
         this.subscribe(processor);
         return processor;
     }
@@ -129,7 +129,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> skip(long skip) {
-        MultiSkipProcessor<T> processor = new MultiSkipProcessor<>(skip);
+        MultiSkipProcessor<T> processor = MultiSkipProcessor.create(skip);
         this.subscribe(processor);
         return processor;
     }
@@ -197,7 +197,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      */
     default Single<T> first() {
-        MultiFirstProcessor<T> processor = new MultiFirstProcessor<>();
+        MultiFirstProcessor<T> processor = MultiFirstProcessor.create();
         this.subscribe(processor);
         return processor;
     }
@@ -227,7 +227,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if iterable is {@code null}
      */
     static <T> Multi<T> from(Iterable<T> iterable) {
-        return Multi.from(new OfPublisher<T>(iterable));
+        return Multi.from(IterablePublisher.create(iterable));
     }
 
 
@@ -240,7 +240,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if items is {@code null}
      */
     static <T> Multi<T> just(Collection<T> items) {
-        return new MultiFromPublisher<>(new FixedItemsPublisher<>(items));
+        return Multi.from(items);
     }
 
     /**
@@ -253,7 +253,7 @@ public interface Multi<T> extends Subscribable<T> {
      */
     @SafeVarargs
     static <T> Multi<T> just(T... items) {
-        return new MultiFromPublisher<>(new FixedItemsPublisher<>(List.of(items)));
+        return Multi.from(List.of(items));
     }
 
     /**
@@ -266,7 +266,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if error is {@code null}
      */
     static <T> Multi<T> error(Throwable error) {
-        return new FailedPublisher<T>(error);
+        return MultiError.create(error);
     }
 
     /**
@@ -276,7 +276,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     static <T> Multi<T> empty() {
-        return MultiEmpty.<T>instance();
+        return MultiEmpty.instance();
     }
 
     /**
@@ -286,7 +286,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     static <T> Multi<T> never() {
-        return MultiNever.<T>instance();
+        return MultiNever.instance();
     }
 
     /**

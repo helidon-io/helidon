@@ -28,13 +28,19 @@ public class MultiPeekProcessor<T> extends BufferedProcessor<T, T> implements Mu
 
     private Consumer<T> consumer;
 
+    private MultiPeekProcessor(Consumer<T> consumer) {
+        this.consumer = consumer;
+    }
+
     /**
      * Invoke supplied consumer for every item in the stream.
      *
      * @param consumer supplied consumer to be invoke for every item
+     * @param <T>      both input/output type
+     * @return {@link MultiPeekProcessor}
      */
-    public MultiPeekProcessor(Consumer<T> consumer) {
-        this.consumer = consumer;
+    public static <T> MultiPeekProcessor<T> create(Consumer<T> consumer) {
+        return new MultiPeekProcessor<>(consumer);
     }
 
     @Override

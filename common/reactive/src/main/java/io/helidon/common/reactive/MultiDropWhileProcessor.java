@@ -29,13 +29,19 @@ public class MultiDropWhileProcessor<T> extends BufferedProcessor<T, T> implemen
 
     private boolean foundNotMatching = false;
 
+    private MultiDropWhileProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
+    }
+
     /**
      * Drop the longest prefix of elements from this stream that satisfy the given predicate.
      *
+     * @param <T>       Item type
      * @param predicate provided predicate to filter stream with
+     * @return {@link MultiDropWhileProcessor}
      */
-    public MultiDropWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public static <T> MultiDropWhileProcessor<T> create(Predicate<T> predicate) {
+        return new MultiDropWhileProcessor<>(predicate);
     }
 
     @Override

@@ -28,13 +28,19 @@ public class MultiSkipProcessor<T> extends BufferedProcessor<T, T> implements Mu
 
     private final AtomicLong counter;
 
+    private MultiSkipProcessor(Long skip) {
+        counter = new AtomicLong(skip);
+    }
+
     /**
      * Create new {@link MultiSkipProcessor}.
      *
      * @param skip number of items to be skipped
+     * @param <T>  item type
+     * @return {@link MultiSkipProcessor}
      */
-    public MultiSkipProcessor(Long skip) {
-        counter = new AtomicLong(skip);
+    public static <T> MultiSkipProcessor<T> create(Long skip) {
+        return new MultiSkipProcessor<T>(skip);
     }
 
     @Override

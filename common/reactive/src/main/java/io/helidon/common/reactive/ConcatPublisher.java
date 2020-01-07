@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @param <T> item type
  */
-public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
+public class ConcatPublisher<T> implements Multi<T> {
     private FirstProcessor firstProcessor;
     private SecondProcessor secondProcessor;
     private Flow.Subscriber<T> subscriber;

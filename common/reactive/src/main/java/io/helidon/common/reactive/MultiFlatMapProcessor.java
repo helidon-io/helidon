@@ -40,11 +40,10 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
     private RequestedCounter requestCounter = new RequestedCounter();
     private Flow.Subscription innerSubscription;
     private AtomicBoolean onCompleteReceivedAlready = new AtomicBoolean(false);
-    private PublisherBuffer<T> buffer;
+    private PublisherBuffer<T> buffer = new PublisherBuffer<>();
     private Optional<Throwable> error = Optional.empty();
 
     private MultiFlatMapProcessor() {
-        buffer = new PublisherBuffer<>();
     }
 
     /**
