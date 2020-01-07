@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -145,16 +143,20 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             preparedStatement = connection.prepareStatement(jdbcStatement);
             List<String> namesOrder = parser.namesOrder();
             // SQL statement and provided parameters integrity check
-            if (namesOrder.size() != parameters.size()) {
+            if (namesOrder.size() > parameters.size()) {
                 throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
             }
             // Set parameters into prepared statement
             int i = 1;
             for (String name : namesOrder) {
-                Object value = parameters.get(name);
-                LOGGER.finest(String.format("Mapped parameter %d: %s -> %s", i, name, value));
-                preparedStatement.setObject(i, value);
-                i++;
+                if (parameters.containsKey(name)) {
+                    Object value = parameters.get(name);
+                    LOGGER.finest(String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                    preparedStatement.setObject(i, value);
+                    i++;
+                } else {
+                    throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+                }
             }
             return preparedStatement;
         } catch (SQLException e) {
@@ -196,45 +198,23 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
     }
 
     private static String namedStatementErrorMessage(final List<String> namesOrder, final Map<String, Object> parameters) {
-        // Parameters in parameters map missing in query
-        Set<String> notInQuery = new HashSet<>(parameters.keySet());
         // Parameters in query missing in parameters Map
         List<String> notInParams = new ArrayList<>(namesOrder.size());
         for (String name : namesOrder) {
-            if (!notInQuery.remove(name)) {
+            if (!parameters.containsKey(name)) {
                 notInParams.add(name);
             }
         }
         StringBuilder sb = new StringBuilder();
-        if (!notInQuery.isEmpty()) {
-            sb.append("Parameters missing in query: ");
-            boolean first = true;
-            for (String name : notInQuery) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(", ");
-                }
-                sb.append(name);
+        sb.append("Query parameters missing in Map: ");
+        boolean first = true;
+        for (String name : notInParams) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
             }
-            if (!notInParams.isEmpty()) {
-                sb.append(", p");
-            }
-        }
-        if (!notInParams.isEmpty()) {
-            if (notInQuery.isEmpty()) {
-                sb.append(", q");
-            }
-            sb.append("Query parameters missing in Map: ");
-            boolean first = true;
-            for (String name : notInParams) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(", ");
-                }
-                sb.append(name);
-            }
+            sb.append(name);
         }
         return sb.toString();
     }

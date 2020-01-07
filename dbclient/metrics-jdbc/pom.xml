@@ -20,31 +20,20 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>helidon-dbclient-project</artifactId>
         <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-project</artifactId>
         <version>2.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-dbclient-jdbc</artifactId>
-    <name>Helidon DB Client JDBC</name>
-    <description>Helidon DB implementation for JDBC</description>
+    <artifactId>helidon-dbclient-metrics-jdbc</artifactId>
+    <name>Helidon DB Client JDBC Metrics</name>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
+    <description>Metrics support for Helidon DB implementation for JDBC</description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-configurable</artifactId>
+            <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
@@ -55,14 +44,9 @@
             <artifactId>HikariCP</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>4.1.2</version>
         </dependency>
     </dependencies>
 </project>

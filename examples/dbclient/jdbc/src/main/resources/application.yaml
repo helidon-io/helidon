@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,8 +28,10 @@ db:
     url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
     username: user
     password: password
+    poolName: mysql
     initializationFailTimeout: -1
     connectionTimeout: 2000
+    metrics: true
   interceptors:
     tracing:
       global:

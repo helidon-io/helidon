@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
@@ -34,6 +36,11 @@ import io.helidon.dbclient.common.InterceptorSupport;
 import io.helidon.dbclient.spi.DbClientProviderBuilder;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
+import static io.helidon.dbclient.common.DbConfig.Properties.PASSWORD;
+import static io.helidon.dbclient.common.DbConfig.Properties.URL;
+import static io.helidon.dbclient.common.DbConfig.Properties.USERNAME;
+import static io.helidon.dbclient.jdbc.ConnectionPool.Builder.processConfigNode;
+
 /**
  * Fluent API builder for {@link JdbcDbClientProviderBuilder} that implements
  * the {@link io.helidon.dbclient.spi.DbClientProviderBuilder} from Helidon DB API.
@@ -45,6 +52,8 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
     private String url;
     private String username;
     private String password;
+    private Properties properties;
+    private Properties internal;
     private DbStatements statements;
     private MapperManager mapperManager;
     private DbMapperManager dbMapperManager;
@@ -52,22 +61,26 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
     private ConnectionPool connectionPool;
 
     JdbcDbClientProviderBuilder() {
+        properties = new Properties();
+        internal = new Properties();
     }
 
     @Override
     public DbClient build() {
-        if (null == dbMapperManager) {
-            this.dbMapperManager = dbMapperBuilder.build();
-        }
-        if (null == mapperManager) {
-            this.mapperManager = MapperManager.create();
-        }
         if (null == connectionPool) {
             connectionPool = ConnectionPool.builder()
                     .url(url)
                     .username(username)
                     .password(password)
+                    .properties(properties)
+                    .internalProperties(internal)
                     .build();
+        }
+        if (null == dbMapperManager) {
+            this.dbMapperManager = dbMapperBuilder.build();
+        }
+        if (null == mapperManager) {
+            this.mapperManager = MapperManager.create();
         }
         if (null == executorService) {
             executorService = ThreadPoolSupplier.create();
@@ -78,10 +91,22 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
     @Override
     public JdbcDbClientProviderBuilder config(Config config) {
         config.get("connection").asNode().ifPresentOrElse(conn -> {
-            conn.get("url").asString().ifPresent(this::url);
-            conn.get("username").asString().ifPresent(this::url);
-            conn.get("password").asString().ifPresent(this::password);
-            connectionPool(conn.as(ConnectionPool::create).get());
+            Map<String, String> poolConfig = conn.detach().asMap().get();
+            poolConfig.forEach((key, value) -> {
+                switch (key) {
+                    case URL:
+                        url(value);
+                        break;
+                    case USERNAME:
+                        username(value);
+                        break;
+                    case PASSWORD:
+                        password(value);
+                        break;
+                    default:
+                        processConfigNode(key, value, properties, internal);
+                }
+            });
         }, () -> {
             throw new DbClientException(String.format(
                     "No database connection configuration (%s) was found",

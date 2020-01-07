@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbClientException;
 
@@ -29,11 +31,8 @@ import com.zaxxer.hikari.HikariDataSource;
  */
 public class HikariConnectionPool implements ConnectionPool {
 
-    /** Default connection pool name. */
-    private static final String DEFAULT_NAME = "Helidon JDBC Connection Pool";
-
-    /** Properties prefix. */
-    private static final String PROPERTIES_PREFIX = "dataSource.";
+    /** Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(HikariConnectionPool.class.getName());
 
     /** Hikari Connection Pool instance. */
     private final HikariDataSource dataSource;
@@ -48,6 +47,8 @@ public class HikariConnectionPool implements ConnectionPool {
      * @param username database connection user name
      * @param password database connection password
      * @param properties additional connection pool properties (names without {@code dataSource.} prefix)
+     * @param internal internal configuration properties (not accepted by Hikari CP)
+     * @param extensions all loaded JDBC DB CLient extensions
      * @param dbType database type
      */
     HikariConnectionPool(
@@ -55,6 +56,8 @@ public class HikariConnectionPool implements ConnectionPool {
             final String username,
             final String password,
             final Properties properties,
+            final Properties internal,
+            final List<JdbcClientExtension> extensions,
             final String dbType
     ) {
         this.dbType = dbType;
@@ -62,6 +65,10 @@ public class HikariConnectionPool implements ConnectionPool {
         config.setJdbcUrl(url);
         config.setUsername(username);
         config.setPassword(password);
+        // Apply configuration update from extensions
+        extensions.forEach(interceptor -> {
+            interceptor.configure(config, internal);
+        });
         this.dataSource = new HikariDataSource(config);
     }
 

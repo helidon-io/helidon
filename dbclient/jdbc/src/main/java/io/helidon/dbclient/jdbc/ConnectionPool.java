@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,19 @@
 package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
+import io.helidon.dbclient.jdbc.spi.JdbcClientExtensionProvider;
+
+import static io.helidon.dbclient.common.DbConfig.Properties.METRICS;
+import static io.helidon.dbclient.common.DbConfig.Properties.PASSWORD;
+import static io.helidon.dbclient.common.DbConfig.Properties.URL;
+import static io.helidon.dbclient.common.DbConfig.Properties.USERNAME;
 
 /**
  * JDBC Configuration parameters.
@@ -96,14 +103,18 @@ public interface ConnectionPool {
      * Fluent API builder for {@link io.helidon.dbclient.jdbc.ConnectionPool}.
      */
     final class Builder implements io.helidon.common.Builder<ConnectionPool> {
+
         //jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
         private static final Pattern URL_PATTERN = Pattern.compile("(\\w+:\\w+):.*");
         private String url;
         private String username;
         private String password;
         private Properties properties;
+        private Properties internal;
 
         private Builder() {
+            properties = new Properties();
+            internal = new Properties();
         }
 
         @Override
@@ -112,25 +123,49 @@ public interface ConnectionPool {
             String dbType = matcher.matches()
                     ? matcher.group(1)
                     : JdbcDbClientProvider.JDBC_DB_TYPE;
-            return new HikariConnectionPool(url, username, password, properties, dbType);
+            // Add properties from extensions
+            final List<JdbcClientExtension> extensions = JdbcClientExtensionProvider.extensions();
+            return new HikariConnectionPool(url, username, password, properties, internal, extensions, dbType);
+        }
+
+        /**
+         * Split properties on Hikari CP and internal.
+         *
+         * @param key property key
+         * @param value property value
+         * @param properties Hikari CP properties
+         * @param internal internal properties (not accepted by Hikari CP)
+         */
+        static void processConfigNode(
+                final String key,
+                final String value,
+                final Properties properties,
+                final Properties internal
+        ) {
+            switch (key) {
+                case METRICS:
+                    internal.put(key, value);
+                    break;
+                default:
+                    properties.put(key, value);
+            }
         }
 
         public Builder config(Config config) {
             Map<String, String> poolConfig = config.detach().asMap().get();
-            properties = new Properties();
             poolConfig.forEach((key, value) -> {
                 switch (key) {
-                    case "url":
+                    case URL:
                         url(value);
                         break;
-                    case "username":
+                    case USERNAME:
                         username(value);
                         break;
-                    case "password":
+                    case PASSWORD:
                         password(value);
                         break;
                     default:
-                        properties.put(key, value);
+                        processConfigNode(key, value, properties, internal);
                 }
             });
             return this;
@@ -153,6 +188,11 @@ public interface ConnectionPool {
 
         public Builder properties(Properties properties) {
             this.properties = properties;
+            return this;
+        }
+
+        public Builder internalProperties(Properties properties) {
+            this.internal = properties;
             return this;
         }
 
