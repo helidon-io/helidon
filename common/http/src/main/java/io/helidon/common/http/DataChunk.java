@@ -17,6 +17,8 @@
 package io.helidon.common.http;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * The DataChunk represents a part of the HTTP body content.
@@ -105,6 +107,7 @@ public interface DataChunk {
     static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback, boolean readOnly) {
         return new DataChunk() {
             private boolean isReleased = false;
+            private CompletableFuture<DataChunk> writeFuture;
 
             @Override
             public ByteBuffer data() {
@@ -130,6 +133,16 @@ public interface DataChunk {
             @Override
             public boolean isReadOnly() {
                 return readOnly;
+            }
+
+            @Override
+            public void writeFuture(CompletableFuture<DataChunk> writeFuture) {
+                this.writeFuture = writeFuture;
+            }
+
+            @Override
+            public Optional<CompletableFuture<DataChunk>> writeFuture() {
+                return Optional.ofNullable(writeFuture);
             }
         };
     }
@@ -258,5 +271,23 @@ public interface DataChunk {
      */
     default boolean isFlushChunk() {
         return flush() && data().limit() == 0;
+    }
+
+    /**
+     * Set a write future that will complete when data chunk has been
+     * written to a connection.
+     *
+     * @param writeFuture Write future.
+     */
+    default void writeFuture(CompletableFuture<DataChunk> writeFuture) {
+    }
+
+    /**
+     * Returns a write future associated with this chunk.
+     *
+     * @return Write future if one has ben set.
+     */
+    default Optional<CompletableFuture<DataChunk>> writeFuture() {
+        return Optional.empty();
     }
 }
