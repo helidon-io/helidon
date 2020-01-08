@@ -31,15 +31,21 @@ public final class MultiMapProcessor<T, U> extends BufferedProcessor<T, U> imple
 
     private final Mapper<T, U> mapper;
 
+    private MultiMapProcessor(Mapper<T, U> mapper) {
+        this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
+    }
+
     /**
      * Processor of {@link Publisher} to {@link Single} that publishes and maps each received item.
      *
      * @param mapper supplied for all items to be mapped with
+     * @param <T>    subscribed type
+     * @param <U>    published type
+     * @return {@link MultiMapProcessor}
      */
-    public MultiMapProcessor(Mapper<T, U> mapper) {
-        this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
+    public static <T, U> MultiMapProcessor<T, U> create(Mapper<T, U> mapper) {
+        return new MultiMapProcessor<T, U>(mapper);
     }
-
 
     @Override
     protected void hookOnCancel(Flow.Subscription subscription) {
