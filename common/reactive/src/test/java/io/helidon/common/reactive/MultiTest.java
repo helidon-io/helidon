@@ -38,6 +38,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -444,6 +445,16 @@ public class MultiTest {
                 .get();
 
         assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void testConcatWithError() throws ExecutionException, InterruptedException {
+        Assertions.assertThrows(Exception.class, () -> Multi.concat(Multi.just(1, 2, 3), Multi.error(new Exception()))
+                .collectList()
+                .get());
+        Assertions.assertThrows(Exception.class, () -> Multi.concat(Multi.error(new Exception()), Multi.just(1, 2, 3))
+                .collectList()
+                .get());
     }
 
     @Test

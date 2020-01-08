@@ -23,7 +23,7 @@ import java.util.function.Predicate;
 /**
  * Take the longest prefix of elements from this stream that satisfy the given predicate.
  *
- * @param <T> <T> Item type
+ * @param <T> Item type
  */
 public class MultiTakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
@@ -36,7 +36,7 @@ public class MultiTakeWhileProcessor<T> extends BufferedProcessor<T, T> implemen
      * Create new {@link MultiTakeWhileProcessor}.
      *
      * @param predicate provided predicate to filter stream with
-     * @param <T>       <T> Item type
+     * @param <T>       Item type
      * @return {@link MultiTakeWhileProcessor}
      */
     public static <T> MultiTakeWhileProcessor<T> create(Predicate<T> predicate) {

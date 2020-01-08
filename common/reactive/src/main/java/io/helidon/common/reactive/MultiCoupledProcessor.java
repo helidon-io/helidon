@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Coupled processor sends items received to the passed in subscriber, and emits items received from the passed in publisher.
- * <pre>
+ * <pre>{@code
  *     +
  *     |  Inlet/upstream publisher
  * +-------+
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * +-------+
  *     |  Outlet/downstream subscriber
  *     v
- * </pre>
+ * }</pre>
  *
  * @param <T> Inlet and passed in subscriber item type
  * @param <R> Outlet and passed in publisher item type

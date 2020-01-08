@@ -167,10 +167,10 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     /**
-     * Processor's {@link io.helidon.common.reactive.Flow.Subscription} registered by
-     * {@link BaseProcessor#onSubscribe(io.helidon.common.reactive.Flow.Subscription)}.
+     * Processor's {@link Flow.Subscription} registered by
+     * {@link BaseProcessor#onSubscribe(Flow.Subscription)}.
      *
-     * @return {@link io.helidon.common.reactive.Flow.Subscription}
+     * @return {@link Flow.Subscription}
      */
     protected Optional<Subscription> getSubscription() {
         return Optional.ofNullable(subscription);
@@ -312,9 +312,9 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     /**
-     * Responsible for calling {@link io.helidon.common.reactive.Flow.Subscription#request(long)}.
+     * Responsible for calling {@link Flow.Subscription#request(long)}.
      *
-     * @param subscription {@link io.helidon.common.reactive.Flow.Subscription} to make a request from
+     * @param subscription {@link Flow.Subscription} to make a request from
      */
     protected void tryRequest(Subscription subscription) {
         if (subscription != null && !subscriber.isClosed()) {

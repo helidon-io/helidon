@@ -60,7 +60,7 @@ public class StreamValidationUtils {
      * Validation of Reactive Streams Specification for JVM rule 3.9.
      * <br>
      * While the {@code Subscription} is not cancelled, {@code Subscription.request(long n)}
-     * MUST signal onError with a {@link java.lang.IllegalArgumentException} if the argument is <= 0.
+     * MUST signal onError with a {@link java.lang.IllegalArgumentException} if the argument is less or equal to 0.
      * The cause message SHOULD explain that non-positive request signals are illegal.
      *
      * @param requestParam number of requested items to be validated.
