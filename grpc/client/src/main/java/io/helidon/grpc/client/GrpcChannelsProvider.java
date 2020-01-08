@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
 
-import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
@@ -126,14 +125,14 @@ public class GrpcChannelsProvider {
     // --------------- private methods of GrpcChannelsProvider ---------------
 
     /**
-     * Returns a {@link io.grpc.Channel} for the specified channel configuration name.
+     * Returns a {@link io.grpc.ManagedChannel} for the specified channel configuration name.
      *
      * @param name the name of the channel configuration as specified in the configuration file
-     * @return a new instance of {@link io.grpc.Channel}
+     * @return a new instance of {@link io.grpc.ManagedChannel}
      * @throws NullPointerException if name is null
      * @throws IllegalArgumentException if name is empty
      */
-    public Channel channel(String name) {
+    public ManagedChannel channel(String name) {
         if (name == null) {
             throw new NullPointerException("name cannot be null.");
         }
@@ -152,25 +151,47 @@ public class GrpcChannelsProvider {
         return channelConfigs;
     }
 
-    private Channel createChannel(GrpcChannelDescriptor descriptor) {
+    private ManagedChannel createChannel(GrpcChannelDescriptor descriptor) {
+        ManagedChannelBuilder<?> builder =  descriptor.tlsDescriptor()
+                .map(tlsDescriptor -> createNettyChannelBuilder(descriptor, tlsDescriptor))
+                .orElse(createManagedChannelBuilder(descriptor));
 
-        ManagedChannel channel;
-        GrpcTlsDescriptor tlsDescriptor = descriptor.tlsDescriptor();
+        descriptor.loadBalancerPolicy().ifPresent(builder::defaultLoadBalancingPolicy);
+        descriptor.nameResolverFactory().ifPresent(builder::nameResolverFactory);
 
-        if (tlsDescriptor == null || !tlsDescriptor.isEnabled()) {
-            ManagedChannelBuilder builder = ManagedChannelBuilder.forAddress(descriptor.host(), descriptor.port());
-            channel = builder.usePlaintext().build();
-        } else {
-            SslContext sslContext = createClientSslContext(tlsDescriptor.tlsCaCert(),
-                                                           tlsDescriptor.tlsCert(),
-                                                           tlsDescriptor.tlsKey());
+        return builder.build();
+    }
 
-            channel = NettyChannelBuilder.forAddress(descriptor.host(), descriptor.port())
-                                         .negotiationType(NegotiationType.TLS)
-                                         .sslContext(sslContext)
-                                         .build();
-        }
-        return channel;
+    /**
+     * Create a TLS enabled {@link ManagedChannelBuilder}.
+     *
+     * @param descriptor the {@link GrpcChannelDescriptor} to use to configure the builder
+     * @return a plain (non-TLS) ManagedChannelBuilder
+     */
+    @SuppressWarnings("rawtypes")
+    private ManagedChannelBuilder createNettyChannelBuilder(GrpcChannelDescriptor descriptor,
+                                                               GrpcTlsDescriptor tlsDescriptor) {
+        return descriptor.target()
+                         .map(NettyChannelBuilder::forTarget)
+                         .orElse(NettyChannelBuilder.forAddress(descriptor.host(), descriptor.port()))
+                         .negotiationType(NegotiationType.TLS)
+                         .sslContext(createClientSslContext(tlsDescriptor.tlsCaCert(),
+                                                            tlsDescriptor.tlsCert(),
+                                                            tlsDescriptor.tlsKey()));
+    }
+
+    /**
+     * Create a plain (non-TLS) {@link ManagedChannelBuilder}.
+     *
+     * @param descriptor the {@link GrpcChannelDescriptor} to use to configure the builder
+     * @return a plain (non-TLS) ManagedChannelBuilder
+     */
+    @SuppressWarnings("rawtypes")
+    private ManagedChannelBuilder createManagedChannelBuilder(GrpcChannelDescriptor descriptor) {
+        return descriptor.target()
+                         .map(ManagedChannelBuilder::forTarget)
+                         .orElse(ManagedChannelBuilder.forAddress(descriptor.host(), descriptor.port()))
+                         .usePlaintext();
     }
 
     /**
