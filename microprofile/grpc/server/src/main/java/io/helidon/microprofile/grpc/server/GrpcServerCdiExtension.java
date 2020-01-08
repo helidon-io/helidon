@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.microprofile.grpc.server;
 
 import java.lang.annotation.Annotation;
 import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -72,8 +74,10 @@ public class GrpcServerCdiExtension
 
         Config config = resolveConfig(beanManager);
         GrpcServerConfiguration.Builder serverConfiguration = GrpcServerConfiguration.builder(config.get("grpc"));
+        CompletableFuture<GrpcServer> startedFuture = new CompletableFuture<>();
+        CompletableFuture<GrpcServer> shutdownFuture = new CompletableFuture<>();
 
-        loadExtensions(beanManager, config, routingBuilder, serverConfiguration);
+        loadExtensions(beanManager, config, routingBuilder, serverConfiguration, startedFuture, shutdownFuture);
         server = GrpcServer.create(serverConfiguration.build(), routingBuilder.build());
         long beforeT = System.nanoTime();
 
@@ -81,6 +85,7 @@ public class GrpcServerCdiExtension
                 .whenComplete((grpcServer, throwable) -> {
                     if (null != throwable) {
                         STARTUP_LOGGER.log(Level.SEVERE, throwable, () -> "gRPC server startup failed");
+                        startedFuture.completeExceptionally(throwable);
                     } else {
                         long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
 
@@ -88,6 +93,17 @@ public class GrpcServerCdiExtension
                         STARTUP_LOGGER.finest("gRPC server started up");
                         LOGGER.info(() -> "gRPC server started on localhost:" + port + " (and all other host addresses) "
                                 + "in " + t + " milliseconds.");
+
+                        grpcServer.whenShutdown()
+                                .whenComplete((server, error) -> {
+                                    if (error == null) {
+                                        shutdownFuture.complete(server);
+                                    } else {
+                                        shutdownFuture.completeExceptionally(error);
+                                    }
+                                });
+
+                        startedFuture.complete(grpcServer);
                     }
                 });
 
@@ -196,7 +212,9 @@ public class GrpcServerCdiExtension
     private void loadExtensions(BeanManager beanManager,
                                 Config config,
                                 GrpcRouting.Builder routingBuilder,
-                                GrpcServerConfiguration.Builder serverConfiguration) {
+                                GrpcServerConfiguration.Builder serverConfiguration,
+                                CompletionStage<GrpcServer> whenStarted,
+                                CompletionStage<GrpcServer> whenShutdown) {
 
         GrpcMpContext context = new GrpcMpContext() {
             @Override
@@ -217,6 +235,16 @@ public class GrpcServerCdiExtension
             @Override
             public BeanManager beanManager() {
                 return beanManager;
+            }
+
+            @Override
+            public CompletionStage<GrpcServer> whenStarted() {
+                return whenStarted;
+            }
+
+            @Override
+            public CompletionStage<GrpcServer> whenShutdown() {
+                return whenShutdown;
             }
         };
 

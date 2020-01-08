@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.grpc.server;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
@@ -191,7 +192,10 @@ public class GrpcServiceBuilder
 
         if (grpcInterceptors != null) {
             for (Class<?> interceptorClass : grpcInterceptors.value()) {
-                interceptors.add(resolveInterceptor(beanManager, interceptorClass));
+                ServerInterceptor interceptor = resolveInterceptor(beanManager, interceptorClass);
+                if (interceptor != null) {
+                    interceptors.add(interceptor);
+                }
             }
         }
 
@@ -220,34 +224,45 @@ public class GrpcServiceBuilder
     }
 
     private void configureServiceInterceptors(ServiceDescriptor.Builder builder, BeanManager beanManager) {
-        Class<?> serviceClass = serviceClass();
-        Class<?> annotatedClass = annotatedServiceClass();
+        if (beanManager != null) {
+            Class<?> serviceClass = serviceClass();
+            Class<?> annotatedClass = annotatedServiceClass();
 
-        configureServiceInterceptors(builder, beanManager, serviceClass());
+            configureServiceInterceptors(builder, beanManager, serviceClass());
 
-        if (!serviceClass.equals(annotatedClass)) {
-            configureServiceInterceptors(builder, beanManager, annotatedServiceClass());
+            if (!serviceClass.equals(annotatedClass)) {
+                configureServiceInterceptors(builder, beanManager, annotatedServiceClass());
+            }
         }
     }
 
     private void configureServiceInterceptors(ServiceDescriptor.Builder builder, BeanManager beanManager, Class<?> cls) {
-        for (Annotation annotation : cls.getAnnotations()) {
-            if (annotation.annotationType().isAnnotationPresent(GrpcInterceptorBinding.class)) {
-                builder.intercept(lookupInterceptor(annotation, beanManager));
+        if (beanManager != null) {
+            for (Annotation annotation : cls.getAnnotations()) {
+                if (annotation.annotationType().isAnnotationPresent(GrpcInterceptorBinding.class)) {
+                    builder.intercept(lookupInterceptor(annotation, beanManager));
+                }
             }
-        }
 
-        GrpcInterceptors grpcInterceptors = cls.getAnnotation(GrpcInterceptors.class);
-        if (grpcInterceptors != null) {
-            for (Class<?> interceptorClass : grpcInterceptors.value()) {
-                if (ServerInterceptor.class.isAssignableFrom(interceptorClass)) {
-                    builder.intercept(resolveInterceptor(beanManager, interceptorClass));
+            GrpcInterceptors grpcInterceptors = cls.getAnnotation(GrpcInterceptors.class);
+            if (grpcInterceptors != null) {
+                for (Class<?> interceptorClass : grpcInterceptors.value()) {
+                    if (ServerInterceptor.class.isAssignableFrom(interceptorClass)) {
+                        ServerInterceptor interceptor = resolveInterceptor(beanManager, interceptorClass);
+                        if (interceptor != null) {
+                            builder.intercept(interceptor);
+                        }
+                    }
                 }
             }
         }
     }
 
     private List<ServerInterceptor> lookupMethodInterceptors(BeanManager beanManager, AnnotatedMethod method) {
+        if (beanManager == null) {
+            return Collections.emptyList();
+        }
+
         List<ServerInterceptor> interceptors = new ArrayList<>();
         for (Annotation annotation : method.getAnnotations()) {
             if (annotation.annotationType().isAnnotationPresent(GrpcInterceptorBinding.class)) {
@@ -279,6 +294,10 @@ public class GrpcServiceBuilder
     }
 
     private ServerInterceptor resolveInterceptor(BeanManager beanManager, Class<?> cls) {
+        if (beanManager == null) {
+            return null;
+        }
+
         if (ServerInterceptor.class.isAssignableFrom(cls)) {
             javax.enterprise.inject.Instance<?> instance = beanManager.createInstance().select(cls, Any.Literal.INSTANCE);
             if (instance.isResolvable()) {

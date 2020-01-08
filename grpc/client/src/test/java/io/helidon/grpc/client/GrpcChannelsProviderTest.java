@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.grpc.client;
+
+import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
@@ -70,7 +72,10 @@ public class GrpcChannelsProviderTest {
         GrpcChannelDescriptor cfg = GrpcChannelDescriptor.builder().build();
         assertThat(cfg.host(), equalTo(DEFAULT_HOST));
         assertThat(cfg.port(), equalTo(DEFAULT_PORT));
-        assertThat(cfg.tlsDescriptor(), nullValue());
+        assertThat(cfg.tlsDescriptor().isPresent(), is(false));
+        assertThat(cfg.target().isPresent(), is(false));
+        assertThat(cfg.loadBalancerPolicy().isPresent(), is(false));
+        assertThat(cfg.nameResolverFactory().isPresent(), is(false));
     }
 
     @Test
@@ -78,7 +83,10 @@ public class GrpcChannelsProviderTest {
         GrpcChannelDescriptor cfg = GrpcChannelDescriptor.builder().host("abc.com").build();
         assertThat(cfg.host(), equalTo("abc.com"));
         assertThat(cfg.port(), equalTo(DEFAULT_PORT));
-        assertThat(cfg.tlsDescriptor(), nullValue());
+        assertThat(cfg.tlsDescriptor().isPresent(), is(false));
+        assertThat(cfg.target().isPresent(), is(false));
+        assertThat(cfg.loadBalancerPolicy().isPresent(), is(false));
+        assertThat(cfg.nameResolverFactory().isPresent(), is(false));
     }
 
     @Test
@@ -86,7 +94,10 @@ public class GrpcChannelsProviderTest {
         GrpcChannelDescriptor cfg = GrpcChannelDescriptor.builder().port(4096).build();
         assertThat(cfg.host(), equalTo("localhost"));
         assertThat(cfg.port(), equalTo(4096));
-        assertThat(cfg.tlsDescriptor(), nullValue());
+        assertThat(cfg.tlsDescriptor().isPresent(), is(false));
+        assertThat(cfg.target().isPresent(), is(false));
+        assertThat(cfg.loadBalancerPolicy().isPresent(), is(false));
+        assertThat(cfg.nameResolverFactory().isPresent(), is(false));
     }
 
     @Test
@@ -96,7 +107,12 @@ public class GrpcChannelsProviderTest {
                 .build();
         assertThat(cfg.host(), equalTo("localhost"));
         assertThat(cfg.port(), equalTo(1408));
-        assertThat(cfg.tlsDescriptor().isEnabled(), is(true));
+        Optional<GrpcTlsDescriptor> descriptor = cfg.tlsDescriptor();
+        assertThat(descriptor.isPresent(), is(true));
+        assertThat(descriptor.get().isEnabled(), is(true));
+        assertThat(cfg.target().isPresent(), is(false));
+        assertThat(cfg.loadBalancerPolicy().isPresent(), is(false));
+        assertThat(cfg.nameResolverFactory().isPresent(), is(false));
     }
 
     @Test
@@ -115,10 +131,33 @@ public class GrpcChannelsProviderTest {
                 .build();
         assertThat(cfg.host(), equalTo("localhost"));
         assertThat(cfg.port(), equalTo(1408));
-        assertThat(cfg.tlsDescriptor().isEnabled(), is(true));
-        assertThat(cfg.tlsDescriptor().tlsCaCert(), is(sameInstance(trustResource)));
-        assertThat(cfg.tlsDescriptor().tlsCert(), is(sameInstance(certResource)));
-        assertThat(cfg.tlsDescriptor().tlsKey(), is(sameInstance(keyResource)));
+        Optional<GrpcTlsDescriptor> descriptor = cfg.tlsDescriptor();
+        assertThat(descriptor.isPresent(), is(true));
+        GrpcTlsDescriptor tlsDescriptor = descriptor.get();
+        assertThat(tlsDescriptor.isEnabled(), is(true));
+        assertThat(tlsDescriptor.tlsCaCert(), is(sameInstance(trustResource)));
+        assertThat(tlsDescriptor.tlsCert(), is(sameInstance(certResource)));
+        assertThat(tlsDescriptor.tlsKey(), is(sameInstance(keyResource)));
+    }
+
+    @Test
+    public void testChannelWithTarget() {
+        String target = "dns://127.0.0.1:22";
+        GrpcChannelDescriptor cfg = GrpcChannelDescriptor.builder()
+                .target(target)
+                .build();
+        assertThat(cfg.target().isPresent(), is(true));
+        assertThat(cfg.target().get(), is(target));
+    }
+
+    @Test
+    public void testChannelWithLoadBalancer() {
+        String policy = "round-robin";
+        GrpcChannelDescriptor cfg = GrpcChannelDescriptor.builder()
+                .loadBalancerPolicy(policy)
+                .build();
+        assertThat(cfg.loadBalancerPolicy().isPresent(), is(true));
+        assertThat(cfg.loadBalancerPolicy().get(), is(policy));
     }
 
     @Test
@@ -129,7 +168,7 @@ public class GrpcChannelsProviderTest {
                 DEFAULT_HOST_PORT_SSL_DISABLED_CFG
         };
 
-        assertThat(grpcConfig.channels().size(), equalTo(expectedChannelConfigNames.length + 1));
+        assertThat(grpcConfig.channels().size(), equalTo(expectedChannelConfigNames.length + 2));
         assertThat(grpcConfig.channels().keySet(), hasItems(expectedChannelConfigNames));
         assertThat(grpcConfig.channels().keySet(), hasItems(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME));
     }
@@ -139,7 +178,10 @@ public class GrpcChannelsProviderTest {
         GrpcChannelDescriptor chCfg = grpcConfig.channels().get(DEFAULT_HOST_PORT_CFG);
         assertThat(chCfg.host(), equalTo("localhost"));
         assertThat(chCfg.port(), equalTo(1408));
-        assertThat(chCfg.tlsDescriptor(), nullValue());
+        assertThat(chCfg.tlsDescriptor().isPresent(), is(false));
+        assertThat(chCfg.target().isPresent(), is(false));
+        assertThat(chCfg.loadBalancerPolicy().isPresent(), is(false));
+        assertThat(chCfg.nameResolverFactory().isPresent(), is(false));
     }
 
     @Test
@@ -147,7 +189,10 @@ public class GrpcChannelsProviderTest {
         GrpcChannelDescriptor chCfg = grpcConfig.channels().get(DEFAULT_HOST_CFG);
         assertThat(chCfg.host(), equalTo("localhost"));
         assertThat(chCfg.port(), equalTo(4096));
-        assertThat(chCfg.tlsDescriptor(), nullValue());
+        assertThat(chCfg.tlsDescriptor().isPresent(), is(false));
+        assertThat(chCfg.target().isPresent(), is(false));
+        assertThat(chCfg.loadBalancerPolicy().isPresent(), is(false));
+        assertThat(chCfg.nameResolverFactory().isPresent(), is(false));
     }
 
     @Test
@@ -155,7 +200,10 @@ public class GrpcChannelsProviderTest {
         GrpcChannelDescriptor chCfg = grpcConfig.channels().get(DEFAULT_PORT_CFG);
         assertThat(chCfg.host(), equalTo("non_default_host.com"));
         assertThat(chCfg.port(), equalTo(1408));
-        assertThat(chCfg.tlsDescriptor(), nullValue());
+        assertThat(chCfg.tlsDescriptor().isPresent(), is(false));
+        assertThat(chCfg.target().isPresent(), is(false));
+        assertThat(chCfg.loadBalancerPolicy().isPresent(), is(false));
+        assertThat(chCfg.nameResolverFactory().isPresent(), is(false));
     }
 
     @Test
@@ -164,19 +212,8 @@ public class GrpcChannelsProviderTest {
         assertThat(chCfg.host(), equalTo("localhost"));
         assertThat(chCfg.port(), equalTo(1408));
 
-        Resource keyResource = Resource.create(CLIENT_KEY);
-        Resource certResource = Resource.create(CLIENT_CERT);
-        Resource trustResource = Resource.create(CA_CERT);
-
-        GrpcTlsDescriptor ssl = chCfg.tlsDescriptor();
-        assertThat(ssl, notNullValue());
-        assertThat(ssl.isEnabled(), equalTo(false));
-        assertThat(ssl.tlsKey(), is(notNullValue()));
-        assertThat(ssl.tlsKey().location(), is(keyResource.location()));
-        assertThat(ssl.tlsCert(), is(notNullValue()));
-        assertThat(ssl.tlsCert().location(), endsWith(certResource.location()));
-        assertThat(ssl.tlsCaCert(), is(notNullValue()));
-        assertThat(ssl.tlsCaCert().location(), endsWith(trustResource.location()));
+        Optional<GrpcTlsDescriptor> descriptor = chCfg.tlsDescriptor();
+        assertThat(descriptor.isPresent(), is(false));
     }
 
     @Test
@@ -187,7 +224,9 @@ public class GrpcChannelsProviderTest {
 
         Resource trustResource = Resource.create(CA_CERT);
 
-        GrpcTlsDescriptor ssl = chCfg.tlsDescriptor();
+        Optional<GrpcTlsDescriptor> descriptor = chCfg.tlsDescriptor();
+        assertThat(descriptor.isPresent(), is(true));
+        GrpcTlsDescriptor ssl = descriptor.get();
         assertThat(ssl, notNullValue());
         assertThat(ssl.isEnabled(), equalTo(true));
         assertThat(ssl.tlsKey(), nullValue());
@@ -206,7 +245,9 @@ public class GrpcChannelsProviderTest {
         Resource certResource = Resource.create(CLIENT_CERT);
         Resource trustResource = Resource.create(CA_CERT);
 
-        GrpcTlsDescriptor ssl = chCfg.tlsDescriptor();
+        Optional<GrpcTlsDescriptor> descriptor = chCfg.tlsDescriptor();
+        assertThat(descriptor.isPresent(), is(true));
+        GrpcTlsDescriptor ssl = descriptor.get();
         assertThat(ssl, notNullValue());
         assertThat(ssl.isEnabled(), equalTo(true));
         assertThat(ssl.tlsKey(), is(notNullValue()));
