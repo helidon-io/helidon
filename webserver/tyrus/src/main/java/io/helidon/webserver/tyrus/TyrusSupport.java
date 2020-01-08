@@ -40,6 +40,8 @@ import org.glassfish.tyrus.server.TyrusServerContainer;
 import org.glassfish.tyrus.spi.Connection;
 import org.glassfish.tyrus.spi.WebSocketEngine;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Class TyrusSupport implemented as a Helidon service.
  */
@@ -176,7 +178,8 @@ public class TyrusSupport implements Service {
 
             // Write reason for failure if not successful
             if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
-                publisherWriter.write(ByteBuffer.wrap(upgradeResponse.getReasonPhrase().getBytes()), null);
+                publisherWriter.write(ByteBuffer.wrap(
+                        upgradeResponse.getReasonPhrase().getBytes(UTF_8)), null);
             }
 
             // Flush upgrade response
