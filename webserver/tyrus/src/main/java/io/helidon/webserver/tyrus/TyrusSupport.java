@@ -16,9 +16,6 @@
 
 package io.helidon.webserver.tyrus;
 
-import javax.websocket.DeploymentException;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpointConfig;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -26,11 +23,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.websocket.DeploymentException;
+import javax.websocket.server.HandshakeRequest;
+import javax.websocket.server.ServerEndpointConfig;
+
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
 import org.glassfish.tyrus.core.RequestContext;
 import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 import org.glassfish.tyrus.core.TyrusWebSocketEngine;

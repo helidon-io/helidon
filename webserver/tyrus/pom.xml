@@ -28,11 +28,7 @@
     </parent>
 
     <artifactId>helidon-webserver-tyrus</artifactId>
-
-    <properties>  <!-- TODO -->
-        <websocket-api-version>1.1.1</websocket-api-version>
-        <tyrus-version>1.15</tyrus-version>
-    </properties>
+    <name>Helidon WebServer Tyrus</name>
 
     <dependencies>
         <dependency>
@@ -50,22 +46,18 @@
         <dependency>
             <groupId>jakarta.websocket</groupId>
             <artifactId>jakarta.websocket-api</artifactId>
-            <version>${websocket-api-version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.tyrus</groupId>
             <artifactId>tyrus-core</artifactId>
-            <version>${tyrus-version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.tyrus</groupId>
             <artifactId>tyrus-client</artifactId>
-            <version>${tyrus-version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.tyrus</groupId>
             <artifactId>tyrus-server</artifactId>
-            <version>${tyrus-version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

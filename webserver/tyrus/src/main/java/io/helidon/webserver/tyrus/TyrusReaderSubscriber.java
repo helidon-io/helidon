@@ -16,12 +16,14 @@
 
 package io.helidon.webserver.tyrus;
 
-import javax.websocket.CloseReason;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
+import javax.websocket.CloseReason;
+
 import io.helidon.common.http.DataChunk;
+
 import org.glassfish.tyrus.spi.Connection;
 
 import static javax.websocket.CloseReason.CloseCodes.NORMAL_CLOSURE;
