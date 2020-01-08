@@ -238,22 +238,6 @@ public class BaseProcessorTest {
     }
 
     @Test
-    @Disabled("Against https://github.com/reactive-streams/reactive-streams-jvm#2.5")
-    public void testSubscriptionNotCanceled() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscription subscription = new TestSubscription();
-        processor.onSubscribe(subscription);
-        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.cancel();
-            }
-        };
-        processor.subscribe(subscriber);
-        assertThat(subscription.canceled, is(equalTo(false)));
-    }
-
-    @Test
     public void testNotEnoughRequestToSubmit() {
         TestProcessor<String> processor = new TestProcessor<>();
         TestSubscriber<String> subscriber = new TestSubscriber<>();

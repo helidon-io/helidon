@@ -44,11 +44,6 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBu
         this.ctx = ctx;
     }
 
-    @Override
-    protected void hookOnCancel() {
-        ctx.close();
-    }
-
     /**
      * This method is called whenever
      * {@link java.util.concurrent.Flow.Subscription#request(long)} is
