@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package io.helidon.webserver;
 
-import javax.net.ssl.SSLEngine;
-
 import java.nio.charset.StandardCharsets;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+
+import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.http.DataChunk;
 
@@ -230,7 +229,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private static void removeHandshakeHandler(ChannelHandlerContext ctx) {
         ChannelHandler handshakeHandler = null;
-        for (Iterator<Map.Entry<String, ChannelHandler>> it = ctx.pipeline().iterator(); it.hasNext(); ) {
+        for (Iterator<Map.Entry<String, ChannelHandler>> it = ctx.pipeline().iterator(); it.hasNext();) {
             ChannelHandler handler = it.next().getValue();
             if (handler.getClass().getName().endsWith("WebSocketServerProtocolHandshakeHandler")) {
                 handshakeHandler = handler;
