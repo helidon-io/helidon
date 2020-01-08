@@ -199,8 +199,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
 
             if (msg instanceof LastHttpContent) {
-                requestContext.publisher().complete();
-                requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
                 if (!isWebSocketUpgrade) {
                     requestContext.publisher().complete();
                     requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
@@ -210,16 +208,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 // exceptionally complete the publisher and close the connection
                 throw new IllegalStateException("It is not expected to not have readable content.");
             }
+        }
 
-            // We receive a raw bytebuf if connection was upgraded to WebSockets
-            if (msg instanceof ByteBuf) {
-                if (!isWebSocketUpgrade) {
-                    throw new IllegalStateException("Received ByteBuf without upgrading to WebSockets");
-                }
-                // Simply forward raw bytebuf to Tyrus for processing
-                LOGGER.fine("Received ByteBuf of WebSockets connection" + msg);
-                requestContext.publisher().submit((ByteBuf) msg);
+        // We receive a raw bytebuf if connection was upgraded to WebSockets
+        if (msg instanceof ByteBuf) {
+            if (!isWebSocketUpgrade) {
+                throw new IllegalStateException("Received ByteBuf without upgrading to WebSockets");
             }
+            // Simply forward raw bytebuf to Tyrus for processing
+            LOGGER.fine("Received ByteBuf of WebSockets connection" + msg);
+            requestContext.publisher().submit((ByteBuf) msg);
         }
     }
 

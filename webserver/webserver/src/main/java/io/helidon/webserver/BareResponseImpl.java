@@ -78,7 +78,7 @@ class BareResponseImpl implements BareResponse {
     private volatile DataChunk firstChunk;
     private volatile DefaultHttpResponse response;
     private volatile boolean lengthOptimization;
-    private volatile Boolean isWebSocketUpgrade;
+    private volatile boolean isWebSocketUpgrade = false;
 
     /**
      * @param ctx the channel handler context
@@ -184,9 +184,6 @@ class BareResponseImpl implements BareResponse {
      * @throws IllegalStateException If headers not written yet.
      */
     boolean isWebSocketUpgrade() {
-        if (isWebSocketUpgrade == null) {
-            throw new IllegalStateException("Status and response headers not written");
-        }
         return isWebSocketUpgrade;
     }
 
