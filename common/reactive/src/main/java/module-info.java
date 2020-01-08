@@ -25,5 +25,4 @@ module io.helidon.common.reactive {
     requires io.helidon.common.mapper;
 
     exports io.helidon.common.reactive;
-    exports io.helidon.common.reactive.valve;
 }

@@ -28,10 +28,6 @@
     <artifactId>helidon-common-reactive</artifactId>
     <name>Helidon Common Reactive</name>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
