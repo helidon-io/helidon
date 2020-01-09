@@ -298,6 +298,6 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     static <T> Multi<T> concat(Multi<T> firstMulti, Multi<T> secondMulti) {
-        return new ConcatPublisher<>(firstMulti, secondMulti);
+        return ConcatPublisher.create(firstMulti, secondMulti);
     }
 }

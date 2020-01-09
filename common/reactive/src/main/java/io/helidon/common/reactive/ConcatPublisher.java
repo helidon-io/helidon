@@ -35,15 +35,21 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     private Flow.Publisher<T> secondPublisher;
     private AtomicLong requested = new AtomicLong();
 
+    private ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
+        this.firstPublisher = firstPublisher;
+        this.secondPublisher = secondPublisher;
+    }
+
     /**
      * Create new {@link ConcatPublisher}.
      *
      * @param firstPublisher  first stream
      * @param secondPublisher second stream
+     * @param <T>             item type
+     * @return {@link ConcatPublisher}
      */
-    public ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
-        this.firstPublisher = firstPublisher;
-        this.secondPublisher = secondPublisher;
+    public static <T> ConcatPublisher<T> create(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
+        return new ConcatPublisher<>(firstPublisher, secondPublisher);
     }
 
     @Override
