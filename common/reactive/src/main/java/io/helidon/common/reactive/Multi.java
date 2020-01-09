@@ -15,18 +15,14 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -46,8 +42,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> map(Mapper<T, U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return new MultiMapperPublisher<>(this, mapper);
+        MultiMapProcessor<T, U> processor = MultiMapProcessor.create(mapper);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -57,8 +54,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> peek(Consumer<T> consumer) {
-        return new MultiTappedPublisher<>(this, null, consumer,
-                null, null, null, null);
+        MultiPeekProcessor<T> processor = MultiPeekProcessor.create(consumer);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -67,7 +65,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> distinct() {
-        return new MultiDistinctPublisher<>(this, v -> v);
+        MultiDistinctProcessor<T> processor = MultiDistinctProcessor.create();
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -77,7 +77,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> filter(Predicate<T> predicate) {
-        return new MultiFilterPublisher<>(this, predicate);
+        MultiFilterProcessor<T> processor = MultiFilterProcessor.create(predicate);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -89,7 +91,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> takeWhile(Predicate<T> predicate) {
-        return new MultiTakeWhilePublisher<>(this, predicate);
+        MultiTakeWhileProcessor<T> processor = MultiTakeWhileProcessor.create(predicate);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -100,9 +104,10 @@ public interface Multi<T> extends Subscribable<T> {
      * @param predicate predicate to filter stream with
      * @return Multi
      */
-    default Multi<T> dropWhile(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return new MultiDropWhilePublisher<>(this, predicate);
+    default Multi<T> dropWhile(Predicate<T> predicate) {
+        MultiDropWhileProcessor<T> processor = MultiDropWhileProcessor.create(predicate);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -112,7 +117,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> limit(long limit) {
-        return new MultiLimitPublisher<>(this, limit);
+        MultiLimitProcessor<T> processor = MultiLimitProcessor.create(limit);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -122,7 +129,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> skip(long skip) {
-        return new MultiSkipPublisher<>(this, skip);
+        MultiSkipProcessor<T> processor = MultiSkipProcessor.create(skip);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -167,7 +176,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      */
     default Single<List<T>> collectList() {
-        return collect(ArrayList::new, List::add);
+        return collect(new ListCollector<>());
     }
 
     /**
@@ -179,38 +188,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if collector is {@code null}
      */
     default <U> Single<U> collect(Collector<T, U> collector) {
-        return collect(() -> collector, Collector::collect).map(Collector::value);
-    }
-
-    /**
-     * Collect the items of this {@link Multi} into a collection provided via a {@link Supplier}
-     * and mutated by a {@code BiConsumer} callback.
-     * @param collectionSupplier the {@link Supplier} that is called for each incoming {@link Subscriber}
-     *                           to create a fresh collection to collect items into
-     * @param accumulator the {@link BiConsumer} that receives the collection and the current item to put in
-     * @param <U> the type of the collection and result
-     * @return Single
-     * @throws NullPointerException if {@code collectionSupplier} or {@code combiner} is {@code null}
-     */
-    default <U> Single<U> collect(Supplier<U> collectionSupplier, BiConsumer<U, T> accumulator) {
-        Objects.requireNonNull(collectionSupplier, "collectionSupplier is null");
-        Objects.requireNonNull(accumulator, "combiner is null");
-        return new MultiCollectPublisher<>(this, collectionSupplier, accumulator);
-    }
-
-    /**
-     * Collects up upstream items with the help of a the callbacks of
-     * a {@link java.util.stream.Collector}.
-     * @param collector the collector whose {@code supplier()}, {@code accumulator()} and {@code finisher()} callbacks
-     *                  are used for collecting upstream items into a final form.
-     * @param <A> the accumulator type
-     * @param <R> the result type
-     * @return Single
-     * @throws NullPointerException if {@code collector} is {@code null}
-     */
-    default <A, R> Single<R> collectStream(java.util.stream.Collector<T, A, R> collector) {
-        Objects.requireNonNull(collector, "collector is null");
-        return new MultiCollectorPublisher<>(this, collector);
+        MultiCollectingProcessor<? super T, U> processor = new MultiCollectingProcessor<>(collector);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -219,7 +199,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      */
     default Single<T> first() {
-        return new MultiFirstPublisher<>(this);
+        MultiFirstProcessor<T> processor = MultiFirstProcessor.create();
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
@@ -247,7 +229,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if iterable is {@code null}
      */
     static <T> Multi<T> from(Iterable<T> iterable) {
-        return new MultiFromIterable<>(iterable);
+        return Multi.from(IterablePublisher.create(iterable));
     }
 
 
@@ -257,7 +239,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>   item type
      * @param items items to publish
      * @return Multi
-     * @throws NullPointerException if {@code items} is {@code null}
+     * @throws NullPointerException if items is {@code null}
      */
     static <T> Multi<T> just(Collection<T> items) {
         return Multi.from(items);
@@ -269,29 +251,11 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>   item type
      * @param items items to publish
      * @return Multi
-     * @throws NullPointerException if {@code items} is {@code null}
+     * @throws NullPointerException if items is {@code null}
      */
     @SafeVarargs
     static <T> Multi<T> just(T... items) {
-        if (items.length == 0) {
-            return empty();
-        }
-        if (items.length == 1) {
-            return singleton(items[0]);
-        }
-        return new MultiFromArrayPublisher<>(items);
-    }
-
-    /**
-     * Create a {@link Multi} that emits a pre-existing item and then completes.
-     * @param item the item to emit.
-     * @param <T> the type of the item
-     * @return Multi
-     * @throws NullPointerException if {@code item} is {@code null}
-     */
-    static <T> Multi<T> singleton(T item) {
-        Objects.requireNonNull(item, "item is null");
-        return new MultiJustPublisher<>(item);
+        return Multi.from(List.of(items));
     }
 
     /**
@@ -337,113 +301,5 @@ public interface Multi<T> extends Subscribable<T> {
      */
     static <T> Multi<T> concat(Multi<T> firstMulti, Multi<T> secondMulti) {
         return ConcatPublisher.create(firstMulti, secondMulti);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
-     *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onTerminate(Runnable onTerminate) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                e -> onTerminate.run(),
-                onTerminate,
-                null,
-                onTerminate);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
-     *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onComplete(Runnable onTerminate) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                onTerminate,
-                null,
-                null);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onError signal is received.
-     *
-     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                onErrorConsumer,
-                null,
-                null,
-                null);
-    }
-
-    /**
-     * Emits a range of ever increasing integers.
-     * @param start the initial integer value
-     * @param count the number of integers to emit
-     * @return Multi
-     * @throws IllegalArgumentException if {@code count} is negative
-     */
-    static Multi<Integer> range(int start, int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count >= required");
-        }
-        if (count == 0) {
-            return empty();
-        }
-        if (count == 1) {
-            return singleton(start);
-        }
-        return new MultiRangePublisher(start, start + count);
-    }
-
-    /**
-     * Emits a range of ever increasing longs.
-     * @param start the initial long value
-     * @param count the number of longs to emit
-     * @return Multi
-     * @throws IllegalArgumentException if {@code count} is negative
-     */
-    static Multi<Long> rangeLong(long start, long count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count >= required");
-        }
-        if (count == 0) {
-            return empty();
-        }
-        if (count == 1) {
-            return singleton(start);
-        }
-        return new MultiRangeLongPublisher(start, start + count);
-    }
-
-    /**
-     * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
-     *
-     * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
-     * @return Multi
-     */
-    default Multi<T> onErrorResume(Function<? super Throwable, ? extends T> onError) {
-        return onErrorResumeWith(e -> Multi.singleton(onError.apply(e)));
-    }
-
-    /**
-     * Resume stream from supplied publisher if onError signal is intercepted.
-     *
-     * @param onError supplier of new stream publisher
-     * @return Multi
-     */
-    default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
-        return new MultiOnErrorResumeWith<>(this, onError);
     }
 }
