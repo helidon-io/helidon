@@ -16,42 +16,68 @@
 
 package io.helidon.webserver.tyrus;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
+
+import javax.websocket.HandshakeResponse;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
+import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpoint;
-import java.io.IOException;
-import java.util.logging.Logger;
+import javax.websocket.server.ServerEndpointConfig;
 
+/**
+ * Class EchoEndpoint. Only one instance of this endpoint should be used at
+ * a time. See static {@code EchoEndpoint#modifyHandshakeCalled}.
+ */
 @ServerEndpoint(
         value = "/echo",
         encoders = { UppercaseCodec.class },
         decoders = { UppercaseCodec.class },
-        configurator = ServerConfigurator.class
+        configurator = EchoEndpoint.ServerConfigurator.class
 )
 public class EchoEndpoint {
     private static final Logger LOGGER = Logger.getLogger(EchoEndpoint.class.getName());
 
+    static AtomicBoolean modifyHandshakeCalled = new AtomicBoolean(false);
+
+    public static class ServerConfigurator extends ServerEndpointConfig.Configurator {
+
+        @Override
+        public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
+            LOGGER.info("ServerConfigurator called during handshake");
+            super.modifyHandshake(sec, request, response);
+            EchoEndpoint.modifyHandshakeCalled.set(true);
+        }
+    }
+
     @OnOpen
     public void onOpen(Session session) throws IOException {
         LOGGER.info("OnOpen called");
+        if (!modifyHandshakeCalled.get()) {
+            session.close();        // unexpected
+        }
     }
 
     @OnMessage
     public void echo(Session session, String message) throws IOException {
-        LOGGER.info("OnMessage called with '" + message + "'");
+        LOGGER.info("Endpoint OnMessage called '" + message + "'");
         session.getBasicRemote().sendText(message);
     }
 
     @OnError
     public void onError(Throwable t) {
         LOGGER.info("OnError called");
+        modifyHandshakeCalled.set(false);
     }
 
     @OnClose
     public void onClose(Session session) {
         LOGGER.info("OnClose called");
+        modifyHandshakeCalled.set(false);
     }
 }

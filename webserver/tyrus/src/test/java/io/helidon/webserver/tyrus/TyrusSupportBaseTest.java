@@ -24,26 +24,26 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.testsupport.LoggingTestUtils;
+import org.junit.jupiter.api.AfterAll;
 
 /**
- * The TyrusExampleMain.
+ * The TyrusSupportBaseTest.
  */
-public final class TyrusExampleMain {
+public class TyrusSupportBaseTest {
 
-    public static final TyrusExampleMain INSTANCE = new TyrusExampleMain();
+    private static WebServer webServer;
 
-    private TyrusExampleMain() {
+    @AfterAll
+    public static void stopServer() {
+        webServer.shutdown();
     }
 
-    private volatile WebServer webServer;
-
-    public static void main(String... args) throws InterruptedException, ExecutionException, TimeoutException {
-        LoggingTestUtils.initializeLogging();
-        INSTANCE.webServer(false);
+    WebServer webServer() {
+        return webServer;
     }
 
-    synchronized WebServer webServer(boolean testing) throws InterruptedException, TimeoutException, ExecutionException {
+    synchronized static WebServer webServer(boolean testing, Class<?>... endpoints)
+            throws InterruptedException, TimeoutException, ExecutionException {
         if (webServer != null) {
             return webServer;
         }
@@ -56,11 +56,16 @@ public final class TyrusExampleMain {
             builder.port(8080);
         }
 
+        // Register each of the endpoints
+        TyrusSupport.Builder tyrusSupportBuilder = TyrusSupport.builder();
+        for (Class<?> c : endpoints) {
+            tyrusSupportBuilder.register(c);
+        }
+
         webServer = WebServer.create(
                 builder.build(),
                 Routing.builder().register(
-                        "/tyrus",
-                        TyrusSupport.builder().register(EchoEndpoint.class).build()));
+                        "/tyrus", tyrusSupportBuilder.build()));
 
         webServer.start().toCompletableFuture().get(10, TimeUnit.SECONDS);
 
