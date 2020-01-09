@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,15 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.concurrent.ExecutionException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A generic processor used for the implementation of {@link Multi} and {@link Single}.
@@ -35,9 +38,14 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     private final RequestedCounter requested;
     private final AtomicBoolean ready;
     private final AtomicBoolean subscribed;
+    private SubscriberReference<? super U> referencedSubscriber;
+    private ReentrantLock publisherSequentialLock = new ReentrantLock();
     private volatile boolean done;
     private Throwable error;
 
+    /**
+     * Generic processor used for the implementation of {@link Multi} and {@link Single}.
+     */
     BaseProcessor() {
         requested = new RequestedCounter();
         ready = new AtomicBoolean();
@@ -46,8 +54,10 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     }
 
     @Override
-    public final void request(long n) {
-        requested.increment(n, ex -> onError(ex));
+    public void request(long n) {
+        StreamValidationUtils.checkRequestParam(n, this::failAndCancel);
+        StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> failAndCancel(t));
+        requested.increment(n, this::failAndCancel);
         tryRequest(subscription);
         if (done) {
             tryComplete();
@@ -55,32 +65,61 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     }
 
     @Override
-    public final void cancel() {
+    public void cancel() {
         subscriber.cancel();
-    }
-
-    @Override
-    public final void onSubscribe(Subscription s) {
-        if (subscription == null) {
-            this.subscription = s;
-            tryRequest(s);
-        }
-    }
-
-    @Override
-    public final void onNext(T item) {
-        if (subscriber.isClosed()) {
-            throw new IllegalStateException("Subscriber is closed!");
-        }
         try {
-            hookOnNext(item);
+            hookOnCancel(subscription);
         } catch (Throwable ex) {
-            onError(ex);
+            failAndCancel(ex);
         }
     }
 
     @Override
-    public final void onError(Throwable ex) {
+    public void onSubscribe(Subscription s) {
+        try {
+            // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+            publisherSequentialLock.lock();
+            // https://github.com/reactive-streams/reactive-streams-jvm#2.13
+            Objects.requireNonNull(s);
+            if (subscription == null) {
+                this.subscription = s;
+                tryRequest(s);
+            } else {
+                // https://github.com/reactive-streams/reactive-streams-jvm#2.5
+                s.cancel();
+            }
+        } finally {
+            publisherSequentialLock.unlock();
+        }
+    }
+
+    @Override
+    public void onNext(T item) {
+        try {
+            publisherSequentialLock.lock();
+            if (done) {
+                throw new IllegalStateException("Subscriber is closed!");
+            }
+            // https://github.com/reactive-streams/reactive-streams-jvm#2.13
+            Objects.requireNonNull(item);
+            try {
+                hookOnNext(item);
+            } catch (Throwable ex) {
+                failAndCancel(ex);
+            }
+        } finally {
+            publisherSequentialLock.unlock();
+        }
+    }
+
+    /**
+     * OnError downstream.
+     *
+     * @param ex Exception to be reported downstream
+     */
+    protected void fail(Throwable ex) {
+        // https://github.com/reactive-streams/reactive-streams-jvm#2.13
+        Objects.requireNonNull(ex);
         done = true;
         if (error == null) {
             error = ex;
@@ -88,25 +127,76 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
         tryComplete();
     }
 
+    /**
+     * OnError downstream and cancel upstream.
+     *
+     * @param ex Exception to be reported downstream
+     */
+    protected void failAndCancel(Throwable ex) {
+        getSubscription().ifPresent(Flow.Subscription::cancel);
+        fail(ex);
+    }
+
     @Override
-    public final void onComplete() {
+    public void onError(Throwable ex) {
+        fail(ex);
+    }
+
+    @Override
+    public void onComplete() {
         done = true;
         tryComplete();
     }
 
     @Override
     public void subscribe(Subscriber<? super U> s) {
-        if (subscriber.register(s)) {
-            ready.set(true);
-            s.onSubscribe(this);
-            if (done) {
-                tryComplete();
+        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
+        referencedSubscriber = SubscriberReference.create(s);
+        try {
+            publisherSequentialLock.lock();
+            if (subscriber.register(s)) {
+                ready.set(true);
+                s.onSubscribe(this);
+                if (done) {
+                    tryComplete();
+                }
             }
+        } finally {
+            publisherSequentialLock.unlock();
         }
     }
 
     /**
+     * Processor's {@link Flow.Subscription} registered by
+     * {@link BaseProcessor#onSubscribe(Flow.Subscription)}.
+     *
+     * @return {@link Flow.Subscription}
+     */
+    protected Optional<Subscription> getSubscription() {
+        return Optional.ofNullable(subscription);
+    }
+
+    /**
+     * Processor's {@link SingleSubscriberHolder}.
+     *
+     * @return {@link SingleSubscriberHolder}
+     */
+    protected SingleSubscriberHolder<U> getSubscriber() {
+        return subscriber;
+    }
+
+    /**
+     * Returns {@link RequestedCounter} with information about requested vs. submitted items.
+     *
+     * @return {@link RequestedCounter}
+     */
+    protected RequestedCounter getRequestedCounter() {
+        return requested;
+    }
+
+    /**
      * Submit an item to the subscriber.
+     *
      * @param item item to be submitted
      */
     protected void submit(U item) {
@@ -115,19 +205,27 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
                 subscriber.get().onNext(item);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
-                onError(ex);
-            } catch (ExecutionException ex) {
-                onError(ex);
+                failAndCancel(ex);
             } catch (Throwable ex) {
-                onError(ex);
+                failAndCancel(ex);
             }
         } else {
-            onError(new IllegalStateException("Not enough request to submit item"));
+            notEnoughRequest(item);
         }
     }
 
     /**
+     * Define what to do when there is not enough requests to submit item.
+     *
+     * @param item Item for submitting
+     */
+    protected void notEnoughRequest(U item) {
+        onError(new IllegalStateException("Not enough request to submit item"));
+    }
+
+    /**
      * Hook for {@link Subscriber#onNext(java.lang.Object)}.
+     *
      * @param item next item
      */
     protected void hookOnNext(T item) {
@@ -135,6 +233,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     /**
      * Hook for {@link Subscriber#onError(java.lang.Throwable)}.
+     *
      * @param error error received
      */
     protected void hookOnError(Throwable error) {
@@ -147,7 +246,19 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     }
 
     /**
+     * Hook for {@link SingleSubscriberHolder#cancel()}.
+     *
+     * @param subscription of the processor for optional passing cancel event
+     */
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
+        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
+        referencedSubscriber.releaseReference();
+    }
+
+    /**
      * Subscribe the subscriber after the given delegate publisher.
+     *
      * @param delegate delegate publisher
      */
     protected final void doSubscribe(Publisher<U> delegate) {
@@ -165,7 +276,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
                 @Override
                 public void onError(Throwable ex) {
-                    BaseProcessor.this.onError(ex);
+                    BaseProcessor.this.failAndCancel(ex);
                 }
 
                 @Override
@@ -181,7 +292,10 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
         sub.onError(ex);
     }
 
-    private void tryComplete() {
+    /**
+     * Try close processor's subscriber.
+     */
+    protected void tryComplete() {
         if (ready.get() && !subscriber.isClosed()) {
             if (error != null) {
                 subscriber.close(sub -> completeOnError(sub, error));
@@ -197,11 +311,16 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
         }
     }
 
-    private void tryRequest(Subscription s) {
-        if (s != null && !subscriber.isClosed()) {
+    /**
+     * Responsible for calling {@link Flow.Subscription#request(long)}.
+     *
+     * @param subscription {@link Flow.Subscription} to make a request from
+     */
+    protected void tryRequest(Subscription subscription) {
+        if (subscription != null && !subscriber.isClosed()) {
             long n = requested.get();
             if (n > 0) {
-                s.request(n);
+                subscription.request(n);
             }
         }
     }

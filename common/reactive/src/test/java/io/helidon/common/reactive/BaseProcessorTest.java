@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -234,21 +235,6 @@ public class BaseProcessorTest {
         processor.subscribe(subscriber2);
         assertThat(subscriber1.getSubcription(), is(not(nullValue())));
         assertThat(subscriber2.getSubcription(), is(nullValue()));
-    }
-
-    @Test
-    public void testSubscriptionNotCanceled() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscription subscription = new TestSubscription();
-        processor.onSubscribe(subscription);
-        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.cancel();
-            }
-        };
-        processor.subscribe(subscriber);
-        assertThat(subscription.canceled, is(equalTo(false)));
     }
 
     @Test

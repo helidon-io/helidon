@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.mapper.Mapper;
@@ -26,19 +27,37 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class MultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
+public final class MultiMapProcessor<T, U> extends BufferedProcessor<T, U> implements Multi<U> {
 
     private final Mapper<T, U> mapper;
 
-    MultiMappingProcessor(Mapper<T, U> mapper) {
+    private MultiMapProcessor(Mapper<T, U> mapper) {
         this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
+    }
+
+    /**
+     * Processor of {@link Publisher} to {@link Single} that publishes and maps each received item.
+     *
+     * @param mapper supplied for all items to be mapped with
+     * @param <T>    subscribed type
+     * @param <U>    published type
+     * @return {@link MultiMapProcessor}
+     */
+    public static <T, U> MultiMapProcessor<T, U> create(Mapper<T, U> mapper) {
+        return new MultiMapProcessor<T, U>(mapper);
+    }
+
+    @Override
+    protected void hookOnCancel(Flow.Subscription subscription) {
+        subscription.cancel();
     }
 
     @Override
     protected void hookOnNext(T item) {
         U value = mapper.map(item);
         if (value == null) {
-            onError(new IllegalStateException("Mapper returned a null value"));
+            getSubscription().ifPresent(Flow.Subscription::cancel);
+            onError(new NullPointerException("Mapper returned a null value"));
         } else {
             submit(value);
         }
