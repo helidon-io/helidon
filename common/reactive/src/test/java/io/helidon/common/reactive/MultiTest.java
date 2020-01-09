@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -370,6 +371,14 @@ public class MultiTest {
                 .collectList()
                 .get();
         assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void testFlatMapWithEmptyInnerStream() throws ExecutionException, InterruptedException, TimeoutException {
+        List<Integer> result = Multi.<Flow.Publisher<Integer>>just(Multi.empty(), Multi.just(1, 2))
+                .flatMap(i -> i)
+                .collectList().get(1, TimeUnit.SECONDS);
+        assertThat(result, is(equalTo(List.of(1, 2))));
     }
 
     @Test

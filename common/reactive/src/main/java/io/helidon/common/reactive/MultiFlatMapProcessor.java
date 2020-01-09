@@ -28,14 +28,15 @@ import java.util.function.Function;
 /**
  * Flatten the elements emitted by publishers produced by the mapper function to this stream.
  *
- * @param <T> item type
+ * @param <T> input item type
+ * @param <X> output item type
  */
-public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> {
+public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<X> {
 
     private static final int DEFAULT_BUFFER_SIZE = 64;
 
-    private Function<T, Flow.Publisher<T>> mapper;
-    private SubscriberReference<? super T> subscriber;
+    private Function<T, Flow.Publisher<X>> mapper;
+    private SubscriberReference<? super X> subscriber;
     private Flow.Subscription subscription;
     private RequestedCounter requestCounter = new RequestedCounter();
     private Flow.Subscription innerSubscription;
@@ -51,13 +52,14 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
      * Create new {@link MultiFlatMapProcessor} with item to {@link java.lang.Iterable} mapper.
      *
      * @param mapper to provide iterable for every item from upstream
-     * @param <T>    item type
+     * @param <T>    input item type
+     * @param <R>    output item type
      * @return {@link MultiFlatMapProcessor}
      */
     @SuppressWarnings("unchecked")
-    public static <T> MultiFlatMapProcessor<T> fromIterableMapper(Function<T, Iterable<T>> mapper) {
-        MultiFlatMapProcessor<T> flatMapProcessor = new MultiFlatMapProcessor<>();
-        flatMapProcessor.mapper = o -> (Multi<T>) Multi.from(mapper.apply(o));
+    public static <T, R> MultiFlatMapProcessor<T, R> fromIterableMapper(Function<T, Iterable<R>> mapper) {
+        MultiFlatMapProcessor<T, R> flatMapProcessor = new MultiFlatMapProcessor<>();
+        flatMapProcessor.mapper = o -> (Multi<R>) Multi.from(mapper.apply(o));
         return flatMapProcessor;
     }
 
@@ -65,14 +67,14 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
      * Create new {@link MultiFlatMapProcessor} with item to {@link java.util.concurrent.Flow.Publisher} mapper.
      *
      * @param mapper to provide iterable for every item from upstream
-     * @param <T>    item type
+     * @param <T>    input item type
+     * @param <U>    output item type
      * @return {@link MultiFlatMapProcessor}
      */
     @SuppressWarnings("unchecked")
-    public static <T> MultiFlatMapProcessor<T> fromPublisherMapper(Function<?, Flow.Publisher<T>> mapper) {
-        Function<T, Flow.Publisher<T>> publisherMapper = (Function<T, Flow.Publisher<T>>) mapper;
-        MultiFlatMapProcessor<T> flatMapProcessor = new MultiFlatMapProcessor<T>();
-        flatMapProcessor.mapper = t -> (Flow.Publisher<T>) publisherMapper.apply(t);
+    public static <T, U> MultiFlatMapProcessor<T, U> fromPublisherMapper(Function<T, Flow.Publisher<U>> mapper) {
+        MultiFlatMapProcessor<T, U> flatMapProcessor = new MultiFlatMapProcessor<>();
+        flatMapProcessor.mapper = t -> (Flow.Publisher<U>) mapper.apply(t);
         return flatMapProcessor;
     }
 
@@ -97,7 +99,7 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super T> subscriber) {
+    public void subscribe(Flow.Subscriber<? super X> subscriber) {
         this.subscriber = SubscriberReference.create(subscriber);
         if (Objects.nonNull(this.subscription)) {
             subscriber.onSubscribe(new FlatMapSubscription());
@@ -149,7 +151,7 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
         private int bufferSize = Integer.parseInt(
                 System.getProperty("helidon.common.reactive.flatMap.buffer.size", String.valueOf(DEFAULT_BUFFER_SIZE)));
         private BlockingQueue<U> buffer = new ArrayBlockingQueue<>(bufferSize);
-        private InnerSubscriber<? super T> lastSubscriber = null;
+        private InnerSubscriber<? super X> lastSubscriber = null;
 
         public boolean isComplete() {
             return Objects.isNull(lastSubscriber) || (lastSubscriber.isDone() && buffer.isEmpty());
@@ -174,8 +176,8 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
         }
 
         @SuppressWarnings("unchecked")
-        public InnerSubscriber<? super T> executeMapper(U item) {
-            InnerSubscriber<? super T> innerSubscriber = null;
+        public InnerSubscriber<? super X> executeMapper(U item) {
+            InnerSubscriber<? super X> innerSubscriber = null;
             try {
                 innerSubscriber = new InnerSubscriber<>();
                 innerSubscriber.whenComplete(this::tryNext);
@@ -211,7 +213,7 @@ public class MultiFlatMapProcessor<T> implements Flow.Processor<T, T>, Multi<T> 
         @SuppressWarnings("unchecked")
         public void onNext(R o) {
             Objects.requireNonNull(o);
-            MultiFlatMapProcessor.this.subscriber.onNext((T) o);
+            MultiFlatMapProcessor.this.subscriber.onNext((X) o);
             //just counting leftovers
             requestCounter.tryDecrement();
         }
