@@ -17,9 +17,6 @@
 
 package io.helidon.microprofile.reactive;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +26,7 @@ import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.reactive.BufferedProcessor;
 import io.helidon.common.reactive.ConcatPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.MultiCoupledProcessor;
@@ -140,12 +138,7 @@ final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer<Stage>
             Subscriber<Object> subscriber = GraphBuilder.create()
                     .from(stage.getSubscriber()).getSubscriberWithCompletionStage().getSubscriber();
             Publisher<Object> publisher = GraphBuilder.create().from(stage.getPublisher()).getPublisher();
-            addProcessor(
-                    MultiCoupledProcessor.create(
-                            HybridSubscriber.from(subscriber),
-                            HybridPublisher.from(publisher)
-                    )
-            );
+            addProcessor(MultiCoupledProcessor.create(HybridSubscriber.from(subscriber), HybridPublisher.from(publisher)));
         });
         registerStage(Stage.OnTerminate.class, stage -> {
             addProcessor(MultiTappedProcessor.create()
@@ -202,6 +195,11 @@ final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer<Stage>
     @SuppressWarnings("unchecked")
     private void addProcessor(Processor<?, ?> processor) {
         processorList.add(HybridProcessor.from((Processor<Object, Object>) processor));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T, U> void addProcessor(BufferedProcessor<T, U> processor) {
+        processorList.add(HybridProcessor.from((BufferedProcessor<Object, Object>) processor));
     }
 
     @SuppressWarnings("unchecked")
@@ -339,15 +337,5 @@ final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer<Stage>
     private <S extends Stage> GraphBuilder registerStage(Class<S> stageType, Consumer<S> consumer) {
         this.put(stageType, (Consumer<Stage>) consumer);
         return this;
-    }
-
-    private void writeObject(ObjectOutputStream stream)
-            throws IOException {
-        stream.defaultWriteObject();
-    }
-
-    private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException {
-        stream.defaultReadObject();
     }
 }

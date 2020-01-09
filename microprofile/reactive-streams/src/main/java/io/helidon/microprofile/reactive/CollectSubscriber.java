@@ -25,6 +25,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
@@ -45,7 +46,8 @@ class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Object> {
 
     private final Processor<Object, Object> connectingProcessor;
     private final BiConsumer accumulator;
-    private Object cumulatedVal = List.of();
+    private final BinaryOperator combiner;
+    private Object cumulatedVal;
     private final Function finisher;
     private Subscriber<Object> subscriber;
     private CompletableFuture<Object> completableFuture = new CompletableFuture<>();
@@ -66,6 +68,7 @@ class CollectSubscriber<T> implements SubscriberWithCompletionStage<T, Object> {
                       List<Flow.Processor<Object, Object>> precedingProcessorList) {
         this.collectStage = collectStage;
         accumulator = (BiConsumer) collectStage.getCollector().accumulator();
+        combiner = (BinaryOperator) collectStage.getCollector().combiner();
         finisher = (Function) collectStage.getCollector().finisher();
         //preceding processors
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));

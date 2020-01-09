@@ -29,7 +29,18 @@ import org.reactivestreams.Subscriber;
  *
  * @param <T> type of items
  */
-public interface HybridPublisher<T> extends Flow.Publisher<T>, Publisher<T> {
+public class HybridPublisher<T> implements Flow.Publisher<T>, Publisher<T> {
+
+    private Flow.Publisher<T> flowPublisher;
+    private Publisher<T> reactivePublisher;
+
+    private HybridPublisher(Flow.Publisher<T> flowPublisher) {
+        this.flowPublisher = flowPublisher;
+    }
+
+    private HybridPublisher(Publisher<T> reactivePublisher) {
+        this.reactivePublisher = reactivePublisher;
+    }
 
     /**
      * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridPublisher}
@@ -41,13 +52,8 @@ public interface HybridPublisher<T> extends Flow.Publisher<T>, Publisher<T> {
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    static <T> HybridPublisher<T> from(Publisher<T> publisher) {
-        return new HybridPublisher<T>() {
-            @Override
-            public void subscribe(Subscriber<? super T> subscriber) {
-                publisher.subscribe(subscriber);
-            }
-        };
+    public static <T> HybridPublisher<T> from(Publisher<T> publisher) {
+        return new HybridPublisher<T>(publisher);
     }
 
     /**
@@ -60,22 +66,17 @@ public interface HybridPublisher<T> extends Flow.Publisher<T>, Publisher<T> {
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    static <T> HybridPublisher<T> from(Flow.Publisher<T> publisher) {
-        return new HybridPublisher<T>() {
-            @Override
-            public void subscribe(Flow.Subscriber<? super T> subscriber) {
-                publisher.subscribe(subscriber);
-            }
-        };
+    public static <T> HybridPublisher<T> from(Flow.Publisher<T> publisher) {
+        return new HybridPublisher<T>(publisher);
     }
 
     @Override
-    default void subscribe(Flow.Subscriber<? super T> subscriber) {
-        subscribe((Subscriber<? super T>) HybridSubscriber.from(subscriber));
+    public void subscribe(Flow.Subscriber<? super T> subscriber) {
+        reactivePublisher.subscribe(HybridSubscriber.from(subscriber));
     }
 
     @Override
-    default void subscribe(Subscriber<? super T> subscriber) {
-        subscribe((Flow.Subscriber<? super T>) HybridSubscriber.from(subscriber));
+    public void subscribe(Subscriber<? super T> subscriber) {
+        flowPublisher.subscribe(HybridSubscriber.from(subscriber));
     }
 }

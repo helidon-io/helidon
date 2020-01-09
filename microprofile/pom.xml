@@ -49,8 +49,6 @@
         <module>grpc</module>
         <module>cdi</module>
         <module>weld</module>
-        <module>websocket</module>
         <module>reactive-streams</module>
-        <module>messaging</module>
     </modules>
 </project>
