@@ -23,43 +23,73 @@ class TransactionalConnectionPinningDataSource extends ConnectionPinningDataSour
 
     private boolean oldAutoCommit;
 
-    private Connection connection;
-    
-    TransactionalConnectionPinningDataSource(final ConnectionSupplier connectionSource) throws SQLException {
-        super(connectionSource);
+
+    /*
+     * Constructors.
+     */
+
+
+    /**
+     * Creates a new {@link TransactionalConnectionPinningDataSource}.
+     *
+     * @param connectionSupplier a {@link ConnectionSupplier}; must
+     * not be {@code null}
+     *
+     * @exception SQLException if an error occurs
+     *
+     * @exception NullPointerException if {@code connectionSupplier}
+     * is {@code null}
+     */
+    TransactionalConnectionPinningDataSource(final ConnectionSupplier connectionSupplier) throws SQLException {
+        super(connectionSupplier);
     }
 
+
+    /*
+     * Instance methods.
+     */
+
+
+    /**
+     * @exception SQLException if an error occurs
+     *
+     * @exception NullPointerException if {@code connection} is {@code null}
+     */
     @Override
-    protected void configureConnection(final Connection connection) throws SQLException {
-        super.configureConnection(connection);
-        this.oldAutoCommit = connection.getAutoCommit();
-        if (this.oldAutoCommit) {
+    protected ConditionallyCloseableConnection configureConnection(ConditionallyCloseableConnection connection)
+        throws SQLException {
+        connection = super.configureConnection(connection);
+        final boolean oldAutoCommit = connection.getAutoCommit();
+        if (oldAutoCommit) {
             connection.setAutoCommit(false);
         }
-        this.connection = connection;
+        this.oldAutoCommit = oldAutoCommit;
+        return connection;
     }
 
+    /**
+     * @exception SQLException if an error occurs
+     *
+     * @exception NullPointerException if {@code connection} is {@code null}
+     */
     @Override
     protected void resetConnection(final Connection connection) throws SQLException {
-        this.connection = null;
         super.resetConnection(connection);
-        if (this.oldAutoCommit) {
-            connection.setAutoCommit(true);
-        }
+        connection.setAutoCommit(this.oldAutoCommit);
     }
 
     final void rollback() throws SQLException {
-        final Connection connection = this.connection;
+        final Connection connection = this.getPinnedConnection();
         if (connection != null) {
             connection.rollback();
         }
     }
 
     final void commit() throws SQLException {
-        final Connection connection = this.connection;
+        final Connection connection = this.getPinnedConnection();
         if (connection != null) {
             connection.commit();
         }
     }
-    
+
 }

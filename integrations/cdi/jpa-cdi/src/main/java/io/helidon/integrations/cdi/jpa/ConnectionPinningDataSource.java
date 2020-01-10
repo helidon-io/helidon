@@ -17,70 +17,114 @@ package io.helidon.integrations.cdi.jpa;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.WeakHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.sql.DataSource;
 
 /**
  * An {@link AbstractDataSource} that {@linkplain #getConnection()
- * supplies} the same {@link Connection} over and over again until
- * such time as the {@link #setConnectionCloseable()} method is
- * called.
- * 
+ * supplies} the same {@link Connection} over and over again to the
+ * same {@link Thread} until such time as the {@link
+ * #setConnectionCloseable()} method is called.
+ *
  * <h2>Thread Safety</h2>
  *
- * <p>Instances of this class are not safe for concurrent use by
- * multiple threads.  The JDBC specification in recent revisions
- * has deliberately retracted all language related to thread
+ * <p>Instances of this class are safe for concurrent use by multiple
+ * threads.  Note, however, that the JDBC specification in recent
+ * revisions has deliberately retracted all language related to thread
  * safety, indicating that most if not all JDBC constructs are
  * expected to be used by a single thread only.</p>
- *
- * <p>The one notable exception to this general policy is the {@link
- * #setConnectionCloseable()} method, which is safe for concurrent use
- * by multiple threads.</p>
  *
  * @see #setConnectionCloseable()
  */
 class ConnectionPinningDataSource extends AbstractDataSource {
 
-    private PinnableConnection pinnedConnection;
+    private static final ThreadLocal<? extends Map<ConnectionPinningDataSource, ConditionallyCloseableConnection>>
+        PINNED_CONNECTION_MAP_THREAD_LOCAL = ThreadLocal.withInitial(() -> new WeakHashMap<>());
 
     private final ConnectionSupplier connectionSource;
 
-    private volatile boolean connectionCloseable;
-
-    ConnectionPinningDataSource(final ConnectionSupplier connectionSource) throws SQLException {
+    ConnectionPinningDataSource(final ConnectionSupplier connectionSource) {
         super();
         this.connectionSource = Objects.requireNonNull(connectionSource);
+        PINNED_CONNECTION_MAP_THREAD_LOCAL.get().put(this, null);
     }
 
+    protected final ConditionallyCloseableConnection getPinnedConnection() {
+        final Map<ConnectionPinningDataSource, ConditionallyCloseableConnection> map = PINNED_CONNECTION_MAP_THREAD_LOCAL.get();
+        assert map != null;
+        assert map.containsKey(this);
+        final ConditionallyCloseableConnection returnValue = map.get(this);
+        return returnValue;
+    }
+
+    /**
+     * @exception IllegalStateException if an override of either the
+     * {@link #createPinnableConnection(ConnectionSupplier)} method or
+     * the {@link
+     * #configureConnection(ConditionallyCloseableConnection)} method
+     * returned {@code null}
+     *
+     * @see #createPinnableConnection(ConnectionSupplier)
+     *
+     * @see #configureConnection(ConditionallyCloseableConnection)
+     */
     @Override
     public final Connection getConnection() throws SQLException {
-        PinnableConnection returnValue = this.pinnedConnection;
-        if (returnValue == null || returnValue.isClosed() || this.isConnectionCloseable()) {
-            // If returnValue is not null and is not closed but
-            // isConnectionCloseable() returns true, then we are in a
-            // situation where a Connection supplied by this method is
-            // Out There In The World, but is not closed, but *can* be
-            // closed.  Here, we return a new one (and pin it).  This
-            // means the extant one is now a leak.
-            returnValue = this.createPinnableConnection(this.connectionSource);
+        ConditionallyCloseableConnection returnValue = this.getPinnedConnection();
+        if (returnValue == null || returnValue.isClosed() || returnValue.isCloseable()) {
+            // Get a new connection for this thread because the
+            // existing one is null, closed or is not closed but can
+            // be closed by its current user whom we know nothing
+            // about.
+            returnValue = this.configureConnection(this.createPinnableConnection(this.connectionSource));
             if (returnValue == null) {
-                throw new IllegalStateException("createPinnableConnection(ConnectionSupplier) == null");
+                throw new IllegalStateException("configureConnection(ConditionallyCloseableConnection) == null");
             }
-            this.configureConnection(returnValue);
-            this.pinnedConnection = returnValue;
-            this.connectionCloseable = false;
+            PINNED_CONNECTION_MAP_THREAD_LOCAL.get().put(this, returnValue);
         }
         return returnValue;
     }
 
-    protected PinnableConnection createPinnableConnection(final ConnectionSupplier connectionSource) throws SQLException {
-        return new PinnableConnection(connectionSource.getConnection());
+    /**
+     * Returns a new, non-{@code null} {@link
+     * ConditionallyCloseableConnection} when invoked.
+     *
+     * <p>The default implementation of this method returns a new,
+     * non-{@code null} {@link PinnableConnection}.</p>
+     *
+     * <p>Note that after this method is called, the {@link
+     * #configureConnection(ConditionallyCloseableConnection)} method
+     * will be called with the return value of this method as its sole
+     * parameter.</p>
+     *
+     * @param connectionSupplier a {@link ConnectionSupplier} that can
+     * be used to produce a {@link Connection} that might be wrapped
+     * by the {@link ConditionallyCloseableConnection} that will be
+     * returned; will not be {@code null}
+     *
+     * @return a new, non-{@code null} {@link
+     * ConditionallyCloseableConnection}
+     *
+     * @exception SQLException if an error occurs
+     *
+     * @exception NullPointerException if somehow {@code
+     * connectionSupplier} is {@code null}
+     *
+     * @see ConnectionSupplier
+     *
+     * @see #configureConnection(ConditionallyCloseableConnection)
+     */
+    protected ConditionallyCloseableConnection createPinnableConnection(final ConnectionSupplier connectionSupplier)
+        throws SQLException {
+        return new PinnableConnection(connectionSupplier.getConnection());
     }
 
-    protected void configureConnection(final Connection connection) throws SQLException {
-        
+    protected ConditionallyCloseableConnection configureConnection(final ConditionallyCloseableConnection connection)
+        throws SQLException {
+        return connection;
     }
 
     protected void resetConnection(final Connection connection) throws SQLException {
@@ -97,69 +141,38 @@ class ConnectionPinningDataSource extends AbstractDataSource {
      * {@link Connection} {@linkplain #getConnection() supplied} by
      * this {@link ConnectionPinningDataSource}.
      *
-     * <p>This method calls {@link #setConnectionCloseable()}.</p>
-     * 
      * <p>The {@link Connection} in question is {@linkplain
      * Connection#close() closed}.</p>
      *
      * @exception SQLException if an error occurs
      */
-    private final void reset() throws SQLException {
-        final Connection pinnedConnection = this.pinnedConnection;
-        this.pinnedConnection = null;
-        this.setConnectionCloseable();
-        if (pinnedConnection != null) {
+    final void reset() throws SQLException {
+        final ConditionallyCloseableConnection pinnedConnection = PINNED_CONNECTION_MAP_THREAD_LOCAL.get().put(this, null);
+        if (pinnedConnection != null && !pinnedConnection.isClosed()) {
+            pinnedConnection.setCloseable(true);
             pinnedConnection.close();
         }
     }
 
-    /**
-     * Marks the outstanding {@link Connection} (if any) produced by
-     * the {@link #getConnection()} method as being
-     * <em>closeable</em>, i.e. when its {@link Connection#close()}
-     * method is invoked it will actually forward the close operation
-     * on to the underlying connection.  In addition, a subsequent
-     * call to {@Link #getConnection()} will return a new {@link
-     * Connection}.
-     *
-     * <h2>Thread Safety</h2>
-     *
-     * <p>This method is safe for concurrent use by multiple
-     * {@link Thread}s.</p>
-     *
-     * <h2>Idempotency</h2>
-     *
-     * <p>This method is idempotent.</p>
-     */
-    final void setConnectionCloseable() {
-        this.connectionCloseable = true;
-    }
+    protected class PinnableConnection extends ConditionallyCloseableConnection {
 
-    final boolean isConnectionCloseable() {
-        return this.connectionCloseable;
-    }
-
-    private class PinnableConnection extends ConditionallyCloseableConnection {
-
-        private PinnableConnection(final Connection delegate) {
+        protected PinnableConnection(final Connection delegate) {
             super(delegate);
         }
-        
+
         @Override
-        protected final boolean isCloseable() throws SQLException {
-            return ConnectionPinningDataSource.this.isConnectionCloseable();
+        protected final void reset() throws SQLException {
+            super.reset();
+            ConnectionPinningDataSource.this.resetConnection(this);
         }
 
-        protected final void reset() throws SQLException {
-            ConnectionPinningDataSource.this.resetConnection(this);            
-        }
-        
         @Override
         protected final void closed() throws SQLException {
+            super.closed();
             assert this.isClosed();
             ConnectionPinningDataSource.this.reset();
         }
     }
 
-    
+
 }

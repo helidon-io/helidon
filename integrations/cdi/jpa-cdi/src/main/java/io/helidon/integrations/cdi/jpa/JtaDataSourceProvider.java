@@ -242,7 +242,6 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
                     RuntimeException problem = null;
                     for (final ConnectionPinningDataSource notificationTarget : notificationTargets) {
                         assert notificationTarget != null;
-                        notificationTarget.setConnectionCloseable();
                         if (notificationTarget instanceof TransactionalConnectionPinningDataSource) {
                             final TransactionalConnectionPinningDataSource tds = (TransactionalConnectionPinningDataSource) notificationTarget;
                             try {
@@ -262,6 +261,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
                                 } else {
                                     problem.addSuppressed(sqlException);
                                 }
+                            }
+                        }
+                        try {
+                            notificationTarget.reset();
+                        } catch (final SQLException sqlException) {
+                            if (problem == null) {
+                                problem = new IllegalStateException(sqlException.getMessage(), sqlException);
+                            } else {
+                                problem.addSuppressed(sqlException);
                             }
                         }
                     }
