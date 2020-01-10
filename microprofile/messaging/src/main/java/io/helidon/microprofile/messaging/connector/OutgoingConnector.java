@@ -17,8 +17,8 @@
 
 package io.helidon.microprofile.messaging.connector;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.messaging.channel.ChannelRouter;
@@ -42,9 +42,9 @@ import org.reactivestreams.Subscriber;
 public class OutgoingConnector implements PublishingConnector {
 
     private final Config config;
-    private final String connectorName;
-    private final IncomingConnectorFactory connectorFactory;
-    private final Map<String, Publisher> publisherMap = new ConcurrentHashMap<>();
+    private String connectorName;
+    private IncomingConnectorFactory connectorFactory;
+    private Map<String, Publisher> publisherMap = new HashMap<>();
 
     /**
      * Create new {@link OutgoingConnector}.
@@ -72,9 +72,13 @@ public class OutgoingConnector implements PublishingConnector {
 
     @Override
     public Publisher getPublisher(String channelName) {
-        Publisher publisher = publisherMap.computeIfAbsent(channelName, cn -> connectorFactory
-                .getPublisherBuilder(getConnectorConfig(cn))
-                .buildRs());
+        Publisher publisher = publisherMap.get(channelName);
+        if (publisher == null) {
+            publisher = connectorFactory
+                    .getPublisherBuilder(getConnectorConfig(channelName))
+                    .buildRs();
+            publisherMap.put(channelName, publisher);
+        }
         return publisher;
     }
 

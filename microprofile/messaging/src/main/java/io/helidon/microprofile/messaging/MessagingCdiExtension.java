@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
@@ -43,17 +42,12 @@ public class MessagingCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
 
     private ChannelRouter channelRouter = new ChannelRouter();
-    private List<DeploymentException> deploymentExceptions = new ArrayList<>();
 
     private void registerChannelMethods(
             @Observes
             @WithAnnotations({Incoming.class, Outgoing.class}) ProcessAnnotatedType<?> pat) {
         // Lookup channel methods
-        try {
-            pat.getAnnotatedType().getMethods().forEach(m -> channelRouter.registerMethod(m));
-        } catch (DeploymentException e) {
-            deploymentExceptions.add(e);
-        }
+        pat.getAnnotatedType().getMethods().forEach(m -> channelRouter.registerMethod(m));
     }
 
     private void onProcessBean(@Observes ProcessManagedBean event) {
@@ -66,12 +60,6 @@ public class MessagingCdiExtension implements Extension {
     }
 
     private void makeConnections(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
-        if (!deploymentExceptions.isEmpty()) {
-            deploymentExceptions.stream()
-                    .skip(1)
-                    .forEach(thrown -> LOGGER.log(Level.SEVERE, thrown.getMessage(), thrown));
-            throw deploymentExceptions.get(0);
-        }
         LOGGER.info("Final connect");
         // Subscribe subscribers and publish publishers
         channelRouter.connect(beanManager);

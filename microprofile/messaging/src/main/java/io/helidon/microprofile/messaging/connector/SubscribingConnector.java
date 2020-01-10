@@ -19,7 +19,6 @@ package io.helidon.microprofile.messaging.connector;
 
 import io.helidon.config.Config;
 
-import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Subscriber;
 
 interface SubscribingConnector extends ConfigurableConnector {
@@ -29,5 +28,5 @@ interface SubscribingConnector extends ConfigurableConnector {
         return getRootConfig().get("mp.messaging.outgoing");
     }
 
-    Subscriber<? extends Message<?>> getSubscriber(String channelName);
+    Subscriber getSubscriber(String channelName);
 }
