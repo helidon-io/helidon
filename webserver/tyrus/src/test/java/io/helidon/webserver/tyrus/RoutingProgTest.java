@@ -26,21 +26,25 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Class EchoServiceTest.
+ * Class RoutingProgTest.
  */
-public class EchoServiceProgTest extends TyrusSupportBaseTest {
+public class RoutingProgTest extends TyrusSupportBaseTest {
 
     @BeforeAll
     public static void startServer() throws Exception {
-        ServerEndpointConfig.Builder builder = ServerEndpointConfig.Builder.create(
+        ServerEndpointConfig.Builder builder1 = ServerEndpointConfig.Builder.create(
                 EchoEndpointProg.class, "/echo");
-        builder.encoders(Collections.singletonList(UppercaseCodec.class));
-        builder.decoders(Collections.singletonList(UppercaseCodec.class));
-        webServer(true, builder.build());
+        builder1.encoders(Collections.singletonList(UppercaseCodec.class));
+        builder1.decoders(Collections.singletonList(UppercaseCodec.class));
+        ServerEndpointConfig.Builder builder2 = ServerEndpointConfig.Builder.create(
+                DoubleEchoEndpointProg.class, "/doubleEcho");
+        builder2.encoders(Collections.singletonList(UppercaseCodec.class));
+        builder2.decoders(Collections.singletonList(UppercaseCodec.class));
+        webServer(true, builder1.build(), builder2.build());
     }
 
     @Test
-    public void testEchoSingle() {
+    public void testEcho() {
         try {
             URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
             new EchoClient(uri).echo("One");
@@ -50,10 +54,10 @@ public class EchoServiceProgTest extends TyrusSupportBaseTest {
     }
 
     @Test
-    public void testEchoMultiple() {
+    public void testDoubleEcho() {
         try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
-            new EchoClient(uri).echo("One", "Two", "Three");
+            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/doubleEcho");
+            new EchoClient(uri, (s1, s2) -> s2.equals(s1 + s1)).echo("One");
         } catch (Exception e) {
             fail("Unexpected exception " + e);
         }

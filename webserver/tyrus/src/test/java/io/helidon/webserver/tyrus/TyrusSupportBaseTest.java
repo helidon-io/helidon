@@ -16,11 +16,12 @@
 
 package io.helidon.webserver.tyrus;
 
-import javax.websocket.server.ServerEndpointConfig;
 import java.net.InetAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
@@ -76,14 +77,6 @@ public class TyrusSupportBaseTest {
                         "/tyrus", tyrusSupportBuilder.build()));
 
         webServer.start().toCompletableFuture().get(10, TimeUnit.SECONDS);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                webServer.shutdown().toCompletableFuture().get(10, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        }));
 
         if (!testing) {
             System.out.println("WebServer Tyrus application started.");

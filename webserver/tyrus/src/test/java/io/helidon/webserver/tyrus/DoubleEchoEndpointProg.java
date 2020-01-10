@@ -27,10 +27,10 @@ import javax.websocket.Session;
 import static io.helidon.webserver.tyrus.UppercaseCodec.isDecoded;
 
 /**
- * Class EchoEndpointProg. Using WebSocket programmatic API.
+ * Class DoubleEchoEndpointProg. Using WebSocket programmatic API.
  */
-public class EchoEndpointProg extends Endpoint {
-    private static final Logger LOGGER = Logger.getLogger(EchoEndpointProg.class.getName());
+public class DoubleEchoEndpointProg extends Endpoint {
+    private static final Logger LOGGER = Logger.getLogger(DoubleEchoEndpointProg.class.getName());
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
@@ -41,7 +41,7 @@ public class EchoEndpointProg extends Endpoint {
                     throw new InternalError("Message has not been decoded");
                 }
                 try {
-                    session.getBasicRemote().sendObject(message);       // calls encoder
+                    session.getBasicRemote().sendObject(message + message);     // calls encoder
                 } catch (Exception e) {
                     LOGGER.info(e.getMessage());
                 }

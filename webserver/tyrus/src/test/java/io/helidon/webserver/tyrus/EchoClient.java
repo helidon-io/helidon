@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
 import javax.websocket.ClientEndpointConfig;
@@ -45,9 +46,15 @@ public class EchoClient {
     private static final long TIMEOUT_SECONDS = 10;
 
     private final URI uri;
+    private final BiFunction<String, String, Boolean> equals;
 
     public EchoClient(URI uri) {
+        this(uri, String::equals);
+    }
+
+    public EchoClient(URI uri, BiFunction<String, String, Boolean> equals) {
         this.uri = uri;
+        this.equals = equals;
     }
 
     /**
@@ -75,7 +82,7 @@ public class EchoClient {
                             LOGGER.info("Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertTrue(message.equals(messages[index]));
+                            assertTrue(equals.apply(messages[index], message));
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {

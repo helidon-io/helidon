@@ -16,10 +16,11 @@
 
 package io.helidon.webserver.tyrus;
 
+import java.util.logging.Logger;
+
 import javax.websocket.Decoder;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
-import java.util.logging.Logger;
 
 /**
  * Class UppercaseCodec.
@@ -55,7 +56,7 @@ public class UppercaseCodec implements Decoder.Text<String>, Encoder.Text<String
     @Override
     public String encode(String s) {
         LOGGER.info("UppercaseCodec encode called");
-        return s.substring(ENCODING_PREFIX.length());
+        return s.replace(ENCODING_PREFIX, "");
     }
 
     public static boolean isDecoded(String s) {
