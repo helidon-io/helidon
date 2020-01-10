@@ -27,10 +27,16 @@ import java.util.logging.Logger;
 public class UppercaseCodec implements Decoder.Text<String>, Encoder.Text<String> {
     private static final Logger LOGGER = Logger.getLogger(UppercaseCodec.class.getName());
 
+    private static final String ENCODING_PREFIX = "\0\0";
+
+    public UppercaseCodec() {
+        LOGGER.info("UppercaseCodec instance created");
+    }
+
     @Override
     public String decode(String s) {
         LOGGER.info("UppercaseCodec decode called");
-        return s.toUpperCase();
+        return ENCODING_PREFIX + s;
     }
 
     @Override
@@ -49,6 +55,10 @@ public class UppercaseCodec implements Decoder.Text<String>, Encoder.Text<String
     @Override
     public String encode(String s) {
         LOGGER.info("UppercaseCodec encode called");
-        return s.toUpperCase();
+        return s.substring(ENCODING_PREFIX.length());
+    }
+
+    public static boolean isDecoded(String s) {
+        return s.startsWith(ENCODING_PREFIX);
     }
 }

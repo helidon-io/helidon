@@ -87,12 +87,18 @@ public class TyrusSupport implements Service {
     public static final class Builder implements io.helidon.common.Builder<TyrusSupport> {
 
         private Set<Class<?>> endpointClasses = new HashSet<>();
+        private Set<ServerEndpointConfig> endpointConfigs = new HashSet<>();
 
         private Builder() {
         }
 
         Builder register(Class<?> endpointClass) {
             endpointClasses.add(endpointClass);
+            return this;
+        }
+
+        Builder register(ServerEndpointConfig endpointConfig) {
+            endpointConfigs.add(endpointConfig);
             return this;
         }
 
@@ -122,6 +128,14 @@ public class TyrusSupport implements Service {
             // Register classes with context path "/"
             WebSocketEngine engine = serverContainer.getWebSocketEngine();
             endpointClasses.forEach(c -> {
+                try {
+                    // Context path handled by Helidon based on app's routes
+                    engine.register(c, "/");
+                } catch (DeploymentException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            endpointConfigs.forEach(c -> {
                 try {
                     // Context path handled by Helidon based on app's routes
                     engine.register(c, "/");

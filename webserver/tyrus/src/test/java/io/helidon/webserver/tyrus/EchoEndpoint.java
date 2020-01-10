@@ -30,6 +30,8 @@ import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 
+import static io.helidon.webserver.tyrus.UppercaseCodec.isDecoded;
+
 /**
  * Class EchoEndpoint. Only one instance of this endpoint should be used at
  * a time. See static {@code EchoEndpoint#modifyHandshakeCalled}.
@@ -64,9 +66,12 @@ public class EchoEndpoint {
     }
 
     @OnMessage
-    public void echo(Session session, String message) throws IOException {
+    public void echo(Session session, String message) throws Exception {
         LOGGER.info("Endpoint OnMessage called '" + message + "'");
-        session.getBasicRemote().sendText(message);
+        if (!isDecoded(message)) {
+            throw new InternalError("Message has not been decoded");
+        }
+        session.getBasicRemote().sendObject(message);       // calls encoder
     }
 
     @OnError

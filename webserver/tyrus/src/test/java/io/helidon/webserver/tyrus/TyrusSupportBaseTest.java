@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.tyrus;
 
+import javax.websocket.server.ServerEndpointConfig;
 import java.net.InetAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -36,13 +37,14 @@ public class TyrusSupportBaseTest {
     @AfterAll
     public static void stopServer() {
         webServer.shutdown();
+        webServer = null;
     }
 
     WebServer webServer() {
         return webServer;
     }
 
-    synchronized static WebServer webServer(boolean testing, Class<?>... endpoints)
+    synchronized static WebServer webServer(boolean testing, Object... endpoints)
             throws InterruptedException, TimeoutException, ExecutionException {
         if (webServer != null) {
             return webServer;
@@ -58,8 +60,14 @@ public class TyrusSupportBaseTest {
 
         // Register each of the endpoints
         TyrusSupport.Builder tyrusSupportBuilder = TyrusSupport.builder();
-        for (Class<?> c : endpoints) {
-            tyrusSupportBuilder.register(c);
+        for (Object o : endpoints) {
+            if (o instanceof ServerEndpointConfig) {
+                tyrusSupportBuilder.register((ServerEndpointConfig) o);
+            } else if (o instanceof Class<?>) {
+                tyrusSupportBuilder.register((Class<?>) o);
+            } else {
+                throw new IllegalArgumentException("Illegal argument " + o.toString());
+            }
         }
 
         webServer = WebServer.create(

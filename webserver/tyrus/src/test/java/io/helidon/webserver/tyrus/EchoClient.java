@@ -75,7 +75,7 @@ public class EchoClient {
                             LOGGER.info("Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertTrue(message.equalsIgnoreCase(messages[index]));
+                            assertTrue(message.equals(messages[index]));
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {
