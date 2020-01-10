@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,18 +28,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.microprofile.server.Server;
-import io.helidon.microprofile.server.ServerCdiExtension;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,7 +50,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractCDITest {
 
-    static Server singleServerReference;
+    static final AtomicReference<Server> singleServerReference = new AtomicReference<>();
 
     static {
         try (InputStream is = AbstractCDITest.class.getResourceAsStream("/logging.properties")) {
@@ -68,7 +67,7 @@ public abstract class AbstractCDITest {
     }
 
     protected void cdiBeanClasses(Set<Class<?>> classes) {
-        //noop
+
     }
 
     @BeforeEach
@@ -81,13 +80,10 @@ public abstract class AbstractCDITest {
 
     @AfterEach
     public void tearDown() {
-        try {
-            singleServerReference.stop();
-            cdiContainer.close();
-        } catch (Throwable t) {
-            //emergency cleanup see #1446
-            stopCdiContainer();
-        }
+        Optional.ofNullable(cdiContainer)
+                .ifPresent(SeContainer::close);
+        Optional.ofNullable(singleServerReference.get())
+                .ifPresent(Server::stop);
     }
 
 
@@ -119,28 +115,13 @@ public abstract class AbstractCDITest {
         final Server.Builder builder = Server.builder();
         assertNotNull(builder);
         builder.config(config);
-        singleServerReference = builder.build();
+        singleServerReference.set(builder.build());
         ConfigProviderResolver.instance()
                 .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         assertNotNull(initializer);
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
-    }
-
-    protected static void stopCdiContainer() {
-        try {
-            ServerCdiExtension server = CDI.current()
-                    .getBeanManager()
-                    .getExtension(ServerCdiExtension.class);
-
-            if (server.started()) {
-                SeContainer container = (SeContainer) CDI.current();
-                container.close();
-            }
-        } catch (IllegalStateException e) {
-            //noop container is not running
-        }
     }
 
     protected static final class CdiTestCase {

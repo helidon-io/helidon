@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,11 @@ public class CompletionStageV1Bean extends AbstractShapeTestBean {
     public CompletionStage<Integer> getPayloadAsync() {
         return CompletableFuture.supplyAsync(() -> testSequence.incrementAndGet(), Executors.newSingleThreadExecutor());
     }
+
+//    @Outgoing("generator-payload-async")
+//    public Integer getPayloadAsyncs() {
+//        return testSequence.incrementAndGet();
+//    }
 
     @Incoming("generator-payload-async")
     public Subscriber<Integer> getFromInfiniteAsyncPayloadGenerator() {

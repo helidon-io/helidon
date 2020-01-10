@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,6 @@ public class ProcessorPublisherBuilderMsg2MsgNoneAckBean implements AssertableTe
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
-    @SuppressWarnings("unchecked")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
     public PublisherBuilder<Message<String>> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());

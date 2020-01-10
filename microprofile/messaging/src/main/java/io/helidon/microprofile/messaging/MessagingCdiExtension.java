@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,19 @@ package io.helidon.microprofile.messaging;
 
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 
-import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
+import io.helidon.microprofile.messaging.channel.ChannelRouter;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * MicroProfile Reactive Messaging CDI Extension.
@@ -46,20 +38,16 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 public class MessagingCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Messaging");
-    }
-
-    private final ChannelRouter channelRouter = new ChannelRouter();
+    private ChannelRouter channelRouter = new ChannelRouter();
 
     private void registerChannelMethods(
             @Observes
             @WithAnnotations({Incoming.class, Outgoing.class}) ProcessAnnotatedType<?> pat) {
         // Lookup channel methods
-        pat.getAnnotatedType().getMethods().forEach(channelRouter::registerMethod);
+        pat.getAnnotatedType().getMethods().forEach(m -> channelRouter.registerMethod(m));
     }
 
-    private void onProcessBean(@Observes ProcessManagedBean<?> event) {
+    private void onProcessBean(@Observes ProcessManagedBean event) {
         // Lookup connectors
         if (null != event.getAnnotatedBeanClass().getAnnotation(Connector.class)) {
             channelRouter.registerConnectorFactory(event.getBean());
@@ -68,21 +56,11 @@ public class MessagingCdiExtension implements Extension {
         channelRouter.registerBeanReference(event.getBean());
     }
 
-    private void deploymentValidation(@Observes AfterDeploymentValidation event) {
-        Errors.Collector errors = channelRouter.getErrors();
-        boolean hasFatal = errors.hasFatal();
-        Errors errorMessages = errors.collect();
-        if (hasFatal) {
-            throw new DeploymentException(errorMessages.toString());
-        } else {
-            errorMessages.log(LOGGER);
-        }
-    }
-
-    private void makeConnections(@Observes @Priority(PLATFORM_AFTER + 101) @Initialized(ApplicationScoped.class) Object event,
-                                 BeanManager beanManager) {
-        // Subscribe subscribers, publish publishers and invoke "onAssembly" methods
+    private void makeConnections(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
+        LOGGER.info("Final connect");
+        // Subscribe subscribers and publish publishers
         channelRouter.connect(beanManager);
+        LOGGER.info("All connected");
     }
 
 }
