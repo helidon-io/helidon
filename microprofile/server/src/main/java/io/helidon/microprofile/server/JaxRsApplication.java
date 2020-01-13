@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public final class JaxRsApplication {
     private final String contextRoot;
     private final ResourceConfig config;
     private final ExecutorService executorService;
+    private final String appName;
     private final String appClassName;
     private final String routingName;
     private final boolean routingNameRequired;
@@ -81,13 +82,24 @@ public final class JaxRsApplication {
         this.appClassName = builder.appClassName;
         this.routingName = builder.routingName;
         this.routingNameRequired = builder.routingNameRequired;
+        this.appName = builder.appName;
     }
 
-    String contextRoot() {
-        return contextRoot;
+    @Override
+    public String toString() {
+        return "JAX-RS Application: " + appName;
     }
 
-    ResourceConfig resourceConfig() {
+    Optional<String> contextRoot() {
+        return Optional.ofNullable(contextRoot);
+    }
+
+    /**
+     * Resource config of this application.
+     *
+     * @return config to register additional providers
+     */
+    public ResourceConfig resourceConfig() {
         return config;
     }
 
@@ -99,22 +111,26 @@ public final class JaxRsApplication {
         return appClassName;
     }
 
-    String routingName() {
-        return routingName;
+    Optional<String> routingName() {
+        return Optional.ofNullable(routingName);
     }
 
     boolean routingNameRequired() {
         return routingNameRequired;
     }
 
+    String appName() {
+        return appName;
+    }
+
     /**
      * Fluent API builder to create {@link JaxRsApplication} instances.
      */
     public static class Builder {
-        private static final String DEFAULT_CONTEXT_ROOT = "/";
         private String contextRoot;
         private ResourceConfig config;
         private ExecutorService executorService;
+        private String appName;
         private String appClassName;
         private String routingName;
         private boolean routingNameRequired;
@@ -160,6 +176,7 @@ public final class JaxRsApplication {
             contextRoot(clazz);
             routingName(clazz);
             appClassName = clazz.getName();
+            appNameUpdate(clazz.getSimpleName());
 
             return this;
         }
@@ -179,7 +196,19 @@ public final class JaxRsApplication {
             contextRoot(appClass);
             routingName(appClass);
             appClassName = appClass.getName();
+            appNameUpdate(appClass.getSimpleName());
 
+            return this;
+        }
+
+        /**
+         * Configure an explicit application name.
+         *
+         * @param name name to use for this application, mostly for troubleshooting purposes
+         * @return updated builder instance
+         */
+        public Builder appName(String name) {
+            this.appName = name;
             return this;
         }
 
@@ -196,16 +225,57 @@ public final class JaxRsApplication {
         }
 
         /**
+         * Configure a routing name. This tells us this application should bind to a named port of the
+         * web server.
+         * To reset routing name to default, configure the {@link io.helidon.microprofile.server.RoutingName#DEFAULT_NAME}.
+         *
+         * @param routingName name to use
+         * @return updated builder instance
+         */
+        public Builder routingName(String routingName) {
+            if (routingName.equals(RoutingName.DEFAULT_NAME)) {
+                this.routingName = null;
+            } else {
+                this.routingName = routingName;
+            }
+            return this;
+        }
+
+        /**
+         * In case the {@link #routingName()} is configured to a non-default name, you can control with this property
+         * whether the name is required (and boot would fail if such a named port is not configured), or default
+         * routing is used when the named one is missing.
+         *
+         * @param routingNameRequired set to {@code true} if the named routing must be configured on web server, set to
+         * {@code false} to use default routing if the named routing is missing
+         * @return updated builder instance
+         */
+        public Builder routingNameRequired(boolean routingNameRequired) {
+            this.routingNameRequired = routingNameRequired;
+            return this;
+        }
+
+        /**
          * Create a new instance based on this builder.
          *
          * @return application ready to be registered with {@link Server.Builder#addApplication(JaxRsApplication)}
          */
         public JaxRsApplication build() {
-            if (null == contextRoot) {
-                contextRoot = DEFAULT_CONTEXT_ROOT;
+            if ((null == appName) && (null != appClassName)) {
+                int lastDot = appClassName.lastIndexOf('.');
+                if (lastDot > 0) {
+                    appName = appClassName.substring(lastDot + 1);
+                } else {
+                    appName = appClassName;
+                }
             }
-
             return new JaxRsApplication(this);
+        }
+
+        private void appNameUpdate(String newName) {
+            if (null == this.appName) {
+                this.appName = newName;
+            }
         }
 
         private static ResourceConfig toConfig(Application application) {
@@ -223,6 +293,12 @@ public final class JaxRsApplication {
             ApplicationPath path = clazz.getAnnotation(ApplicationPath.class);
             if (null != path) {
                 contextRoot = normalize(path.value());
+                return;
+            }
+
+            RoutingPath routingPath = clazz.getAnnotation(RoutingPath.class);
+            if (null != routingPath) {
+                contextRoot = routingPath.value();
             }
         }
 
@@ -234,7 +310,7 @@ public final class JaxRsApplication {
          */
         private static String normalize(String contextRoot) {
             int length = contextRoot.length();
-            return length > 1 && contextRoot.endsWith("/") ? contextRoot.substring(0, length - 1) : contextRoot;
+            return ((length > 1) && contextRoot.endsWith("/")) ? contextRoot.substring(0, length - 1) : contextRoot;
         }
 
         private void routingName(Class<?> clazz) {
@@ -246,6 +322,23 @@ public final class JaxRsApplication {
                 this.routingName = rn.value();
                 this.routingNameRequired = rn.required();
             }
+        }
+
+        /**
+         * Configure an application class without inspecting it for annotations and
+         * without creating a config from it.
+         *
+         * @param applicationClass class to use
+         * @return updated builer instance
+         */
+        public Builder applicationClass(Class<? extends Application> applicationClass) {
+            this.appClassName = applicationClass.getName();
+
+            if (applicationClass != Application.class) {
+                contextRoot(applicationClass);
+                routingName(applicationClass);
+            }
+            return this;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
-import com.sun.nio.file.SensitivityWatchEventModifier;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -63,7 +62,7 @@ public class FilesystemWatchPollingStrategyTest {
         Files.write(Files.createFile(new File(watchedDir, "username").toPath()), "libor".getBytes());
 
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedDir.toPath(), null));
-        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+        //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
 
         SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
@@ -117,7 +116,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
-        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+        //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
@@ -159,7 +158,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path subdir = dirPath.resolve("subdir");
         Path watchedPath = subdir.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
-        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+        //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
@@ -204,7 +203,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
-        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
@@ -307,7 +306,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
-        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
@@ -347,7 +346,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
-        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         mockPollingStrategy.startWatchService();
 
         assertThat(mockPollingStrategy.watchThreadFuture(), notNullValue());
@@ -361,7 +360,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
-        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         mockPollingStrategy.startWatchService();
         mockPollingStrategy.stopWatchService();
 

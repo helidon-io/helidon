@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
  * Class CountedBean.
  */
 @Dependent
-@Counted(monotonic = true)
+@Counted
 public class CountedBean {
 
-    @Counted(monotonic = true)
+    @Counted
     public void method1() {
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,8 +127,16 @@ class ConfigMapperManager implements ConfigMapper {
         }
     }
 
+    /**
+     * Provides mapping from a class to a supported class.
+     * This is used to map Java primitives to their respective object classes.
+     *
+     * @param type type to map
+     * @param <T> type of the class
+     * @return object type for primitives, or the same class if not a primitive
+     */
     @SuppressWarnings("unchecked")
-    static <T> Class<T> supportedType(Class<T> type) {
+    public static <T> Class<T> supportedType(Class<T> type) {
         return (Class<T>) REPLACED_TYPES.getOrDefault(type, type);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -811,7 +811,7 @@ public class Security {
             }
 
             if (auditProviders.isEmpty()) {
-                DefaultAuditProvider provider = config.as(DefaultAuditProvider::create).get();
+                DefaultAuditProvider provider = DefaultAuditProvider.create(config);
                 addAuditProvider(provider);
             }
 
@@ -840,70 +840,12 @@ public class Security {
 
             config.get("tracing.enabled").as(Boolean.class).ifPresent(this::tracingEnabled);
             //iterate through all providers and find them
-            config.get("providers").asList(Config.class).get().forEach(pConf -> {
-                AtomicReference<SecurityProviderService> service = new AtomicReference<>();
-                AtomicReference<Config> providerSpecific = new AtomicReference<>();
+            config.get("providers")
+                    .asList(Config.class)
+                    .ifPresent(confList -> {
+                        confList.forEach(pConf -> providerFromConfig(configKeyToService, classNameToService, knownKeys, pConf));
+                    });
 
-                // if we have name and class, use them
-                String className = pConf.get("class").asString().orElse(null);
-
-                if (null == className) {
-                    findProviderService(configKeyToService, knownKeys, pConf, service, providerSpecific);
-                } else {
-                    // explicit class name - the most detailed configuration possible
-                    SecurityProviderService providerService = classNameToService.get(className);
-                    if (null == providerService) {
-                        findProviderSpecificConfig(pConf, providerSpecific);
-                    } else {
-                        service.set(providerService);
-                        providerSpecific.set(pConf.get(providerService.providerConfigKey()));
-                    }
-                }
-
-                Config providerSpecificConfig = providerSpecific.get();
-                SecurityProviderService providerService = service.get();
-
-                if ((null == className) && (null == providerService)) {
-                    throw new SecurityException(
-                            "Each configured provider MUST have a \"class\" configuration property defined or a custom "
-                                    + "configuration section mapped to that provider, supported keys: " + knownKeys);
-                }
-
-                String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
-                boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().orElse(true);
-                boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().orElse(true);
-                boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().orElse(true);
-                boolean isAudit = pConf.get("is-audit-provider").asBoolean().orElse(true);
-                boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean().orElse(true);
-
-                SecurityProvider provider;
-                if (null == providerService) {
-                    provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
-                } else {
-                    provider = providerService.providerInstance(providerSpecificConfig);
-                }
-
-                if (isAuthn && (provider instanceof AuthenticationProvider)) {
-                    addAuthenticationProvider((AuthenticationProvider) provider, name);
-                }
-                if (isAuthz && (provider instanceof AuthorizationProvider)) {
-                    addAuthorizationProvider((AuthorizationProvider) provider, name);
-                }
-                if (isClientSec && (provider instanceof OutboundSecurityProvider)) {
-                    addOutboundSecurityProvider((OutboundSecurityProvider) provider, name);
-                }
-                if (isAudit && (provider instanceof AuditProvider)) {
-                    addAuditProvider((AuditProvider) provider);
-                }
-                if (isSubjectMapper && (provider instanceof SubjectMappingProvider)) {
-                    subjectMappingProvider((SubjectMappingProvider) provider);
-                }
-            });
-
-            if (allProviders.isEmpty()) {
-                throw new SecurityException(
-                        "Security is not configured. At least one security provider MUST be present.");
-            }
 
             String defaultAtnProvider = config.get("default-authentication-provider").asString().orElse(null);
             if (null != defaultAtnProvider) {
@@ -950,6 +892,67 @@ public class Security {
                 break;
             default:
                 throw new IllegalStateException("Invalid enum option: " + pType + ", probably version mis-match");
+            }
+        }
+
+        private void providerFromConfig(Map<String, SecurityProviderService> configKeyToService,
+                                        Map<String, SecurityProviderService> classNameToService, String knownKeys, Config pConf) {
+            AtomicReference<SecurityProviderService> service = new AtomicReference<>();
+            AtomicReference<Config> providerSpecific = new AtomicReference<>();
+
+            // if we have name and class, use them
+            String className = pConf.get("class").asString().orElse(null);
+
+            if (null == className) {
+                findProviderService(configKeyToService, knownKeys, pConf, service, providerSpecific);
+            } else {
+                // explicit class name - the most detailed configuration possible
+                SecurityProviderService providerService = classNameToService.get(className);
+                if (null == providerService) {
+                    findProviderSpecificConfig(pConf, providerSpecific);
+                } else {
+                    service.set(providerService);
+                    providerSpecific.set(pConf.get(providerService.providerConfigKey()));
+                }
+            }
+
+            Config providerSpecificConfig = providerSpecific.get();
+            SecurityProviderService providerService = service.get();
+
+            if ((null == className) && (null == providerService)) {
+                throw new SecurityException(
+                        "Each configured provider MUST have a \"class\" configuration property defined or a custom "
+                                + "configuration section mapped to that provider, supported keys: " + knownKeys);
+            }
+
+            String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
+            boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().orElse(true);
+            boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().orElse(true);
+            boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().orElse(true);
+            boolean isAudit = pConf.get("is-audit-provider").asBoolean().orElse(true);
+            boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean().orElse(true);
+
+            SecurityProvider provider;
+            if (null == providerService) {
+                provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
+            } else {
+                provider = providerService.providerInstance(providerSpecificConfig);
+            }
+
+            if (isAuthn && (provider instanceof AuthenticationProvider)) {
+                addAuthenticationProvider((AuthenticationProvider) provider, name);
+            }
+            if (isAuthz && (provider instanceof AuthorizationProvider)) {
+                addAuthorizationProvider((AuthorizationProvider) provider, name);
+            }
+            if (isClientSec && (provider instanceof OutboundSecurityProvider)) {
+                addOutboundSecurityProvider((OutboundSecurityProvider) provider, name);
+            }
+            if (isAudit && (provider instanceof AuditProvider)) {
+                addAuditProvider((AuditProvider) provider);
+            }
+            if (isSubjectMapper && (provider instanceof SubjectMappingProvider)) {
+                subjectMappingProvider((SubjectMappingProvider) provider);
             }
         }
 
@@ -1093,6 +1096,14 @@ public class Security {
                                                     + "or Providers and Config as parameters.",
                                             e);
             }
+        }
+
+        /**
+         * Check whether any provider is configured.
+         * @return {@code true} if no provider is configured, {@code false} if there is at least one provider configured
+         */
+        public boolean noProvider() {
+            return allProviders.isEmpty();
         }
     }
 }

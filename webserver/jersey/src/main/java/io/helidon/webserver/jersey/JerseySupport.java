@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
@@ -136,7 +137,9 @@ public class JerseySupport implements Service {
 
     private static ExecutorService getDefaultThreadPool() {
         if (DEFAULT_THREAD_POOL.get() == null) {
-            Config executorConfig = Config.create().get("server.executor-service");
+            Config executorConfig = ((Config) ConfigProvider.getConfig())
+                    .get("server.executor-service");
+
             DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
                                             .name("server")
                                             .config(executorConfig)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import javax.enterprise.inject.spi.Extension;
+
+import io.helidon.microprofile.oidc.OidcCdiExtension;
+
 /**
  * Microprofile OIDC integration.
  */
@@ -26,5 +30,5 @@ module io.helidon.microprofile.oidc {
 
     exports io.helidon.microprofile.oidc;
 
-    provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.oidc.OidcMpService;
+    provides Extension with OidcCdiExtension;
 }

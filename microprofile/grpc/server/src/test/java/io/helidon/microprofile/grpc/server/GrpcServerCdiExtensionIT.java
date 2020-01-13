@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
 import io.helidon.grpc.server.GrpcServer;
@@ -59,7 +60,7 @@ public class GrpcServerCdiExtensionIT {
     @BeforeAll
     public static void startServer() {
         server = Server.create().start();
-        beanManager = server.cdiContainer().getBeanManager();
+        beanManager = CDI.current().getBeanManager();
     }
 
     @AfterAll

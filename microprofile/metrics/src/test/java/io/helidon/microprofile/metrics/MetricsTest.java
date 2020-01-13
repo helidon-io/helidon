@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.helidon.metrics.MetricsSupport;
@@ -28,11 +25,12 @@ import io.helidon.metrics.MetricsSupport;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -44,7 +42,7 @@ import static org.hamcrest.number.OrderingComparison.greaterThan;
 public class MetricsTest extends MetricsBaseTest {
 
     @Test
-    public void testCounted1() throws Exception {
+    public void testCounted1() {
         CountedBean bean = newBean(CountedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Counter counter = getMetric(bean, "method1");
@@ -52,7 +50,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testCounted2() throws Exception {
+    public void testCounted2() {
         CountedBean bean = newBean(CountedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Counter counter = getMetric(bean, "method1");
@@ -60,7 +58,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testMetered1() throws Exception {
+    public void testMetered1() {
         MeteredBean bean = newBean(MeteredBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Meter meter = getMetric(bean, "method1");
@@ -69,7 +67,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testMetered2() throws Exception {
+    public void testMetered2() {
         MeteredBean bean = newBean(MeteredBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Meter meter = getMetric(bean, "method2");
@@ -78,7 +76,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testTimed1() throws Exception {
+    public void testTimed1() {
         TimedBean bean = newBean(TimedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Timer timer = getMetric(bean, "method1");
@@ -87,7 +85,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testTimed2() throws Exception {
+    public void testTimed2() {
         TimedBean bean = newBean(TimedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Timer timer = getMetric(bean, "method2");
@@ -96,7 +94,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testInjection() throws Exception {
+    public void testInjection() {
         InjectedBean bean = newBean(InjectedBean.class);
         assertThat(bean.counter, notNullValue());
         assertThat(bean.meter, notNullValue());
@@ -106,7 +104,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testGauge() throws Exception {
+    public void testGauge() {
         final int EXPECTED_VALUE = 42;
         GaugedBean bean = newBean(GaugedBean.class);
         bean.setValue(EXPECTED_VALUE);
@@ -117,68 +115,32 @@ public class MetricsTest extends MetricsBaseTest {
         Gauge<Integer> otherGauge = getMetric(bean, "retrieveValue");
         valueViaGauge = otherGauge.getValue();
         assertThat(valueViaGauge, is(EXPECTED_VALUE));
+
+        Gauge<GaugedBean.MyValue> customTypeGauge = getMetric(bean, "getMyValue");
+        GaugedBean.MyValue valueViaCustomGauge = customTypeGauge.getValue();
+        assertThat(valueViaCustomGauge.intValue(), is(EXPECTED_VALUE));
     }
 
     @Test
     public void testGaugeMetadata() {
-        final int EXPECTED_VALUE = 42;
+        final int expectedValue = 42;
         GaugedBean bean = newBean(GaugedBean.class);
-        bean.setValue(EXPECTED_VALUE);
+        bean.setValue(expectedValue);
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
-        String promData = MetricsSupport.toPrometheusData(gauge);
+        String promData = MetricsSupport.toPrometheusData(
+                new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge).trim();
 
-        Pattern prometheusDataPattern = Pattern.compile("(?s)#\\s+TYPE\\s+(\\w+):(\\w+)\\s*gauge.*#\\s*HELP.*\\{([^\\}]*)\\}\\s*(\\d*).*");
-        Matcher m = prometheusDataPattern.matcher(promData);
-        assertThat("Prometheus data " + promData + " for gauge bean did not match regex pattern", m.matches(), is(true));
-        assertThat("Expected to find metric metadata and data in Prometheus data as 4 groups", m.groupCount(), is(4));
-        String beanScope = m.group(1);
-        String promName = m.group(2);
-        String tags = m.group(3);
-        String value = m.group(4);
-        String gaugeUnitsFromName = promName.substring(promName.lastIndexOf('_')+1);
-        assertThat("Unexpected bean scope for injected gauge", beanScope, is("application"));
-        assertThat("Unexpected units for injected gauge in Prometheus data", gaugeUnitsFromName, is(MetricUnits.SECONDS));
-
-        assertThat("Unexpected tags for injected gauge in Prometheus data",
-                   tagsStringToMap(tags),
-                   is(tagsStringToMap(GaugedBean.TAGS)));
-
-        assertThat("Unexpected gauge value (in seconds)",
-                   Integer.parseInt(value),
-                   is(EXPECTED_VALUE * 60));
-        /*
-         * Here is an example of the Prometheus data:
-         *
-# TYPE application:io_helidon_microprofile_metrics_cdi_gauged_bean_gauge_for_injection_test_seconds gauge
-# HELP application:io_helidon_microprofile_metrics_cdi_gauged_bean_gauge_for_injection_test_seconds
-application:io_helidon_microprofile_metrics_cdi_gauged_bean_gauge_for_injection_test_seconds{tag1="valA",tag2="valB"} 2520
-         *
-         */
+        assertThat(promData, containsString("# TYPE application_gaugeForInjectionTest_seconds gauge"));
+        assertThat(promData, containsString("\n# HELP application_gaugeForInjectionTest_seconds"));
+        assertThat(promData, containsString("\napplication_gaugeForInjectionTest_seconds "
+                + (expectedValue * 60)));
     }
 
     @Test
     public void testAbsoluteGaugeBeanName() {
-        Set<String> gauges =  getMetricRegistry().getGauges().keySet();
+        Set<String> gauges =  getMetricRegistry().getGauges()
+                .keySet().stream().map(MetricID::getName).collect(Collectors.toSet());
         assertThat(gauges, CoreMatchers.hasItem("secondsSinceBeginningOfTime"));
-    }
-
-    /**
-     * Converts a tag string to a Map.
-     * <p>
-     * The tag string contains comma-separated substrings of the form key=value
-     * Each value can (but does not have to be) enclosed in double quotes (key="value")
-     *
-     * @param tagString String as described above
-     * @return Map
-     */
-    private Map<String, String> tagsStringToMap(String tagString) {
-        Map<String, String> result = new HashMap<>();
-        Pattern tagPattern = Pattern.compile("(\\w+)=\"?(\\w+)\"?");
-        Matcher m = tagPattern.matcher(tagString);
-        while (m.find()) {
-            result.put(m.group(1), m.group(2));
-        }
-        return result;
     }
 }

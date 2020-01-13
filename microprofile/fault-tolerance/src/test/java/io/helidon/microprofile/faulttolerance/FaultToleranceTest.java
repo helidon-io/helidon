@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,15 +28,12 @@ import java.util.stream.Stream;
 
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
+
+import io.helidon.microprofile.cdi.HelidonContainer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Class FaultToleranceTest.
@@ -51,10 +48,7 @@ public abstract class FaultToleranceTest {
 
     @BeforeAll
     public static void startCdiContainer() {
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertThat(initializer, is(notNullValue()));
-        initializer.addExtensions(new SyntheticBeanExtension<>(SyntheticRetryBean.class));
-        cdiContainer = initializer.initialize();
+        cdiContainer = HelidonContainer.instance().start();
     }
 
     @AfterAll

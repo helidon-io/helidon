@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -358,31 +358,6 @@
             <!-- microprofile -->
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>helidon-microprofile-1.1</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>helidon-microprofile-1.2</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>helidon-microprofile-2.2</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>helidon-microprofile-3.0</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>helidon-microprofile-3.1</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
                 <artifactId>helidon-microprofile-core</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -412,8 +387,13 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.metrics</groupId>
-                <artifactId>helidon-microprofile-metrics2</artifactId>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>weld-se-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.cdi</groupId>
+                <artifactId>helidon-microprofile-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -447,11 +427,7 @@
                 <artifactId>helidon-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.metrics</groupId>
-                <artifactId>helidon-metrics2</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
+
             <!-- health checks -->
             <dependency>
                 <groupId>io.helidon.health</groupId>
@@ -703,6 +679,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.graal</groupId>
+                <artifactId>helidon-mp-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- OpenAPI support -->

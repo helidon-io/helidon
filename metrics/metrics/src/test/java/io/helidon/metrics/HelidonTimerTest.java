@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -58,19 +59,21 @@ class HelidonTimerTest {
 
     private static HelidonTimer timer;
     private static HelidonTimer dataSetTimer;
+    private static MetricID dataSetTimerID;
     private static TestClock timerClock = TestClock.create();
     private static Metadata meta;
     private static TestClock dataSetTimerClock = TestClock.create();
 
     @BeforeAll
     static void initClass() {
-        meta = new Metadata("response_time",
+        meta = new HelidonMetadata("response_time",
                             "Responses",
                             "Server response time for /index.html",
                             MetricType.TIMER,
                             MetricUnits.NANOSECONDS);
 
         dataSetTimer = HelidonTimer.create("application", meta, dataSetTimerClock);
+        dataSetTimerID = new MetricID("response_time");
 
         for (long i : SAMPLE_LONG_DATA) {
             dataSetTimer.update(i, TimeUnit.NANOSECONDS);
@@ -169,7 +172,7 @@ class HelidonTimerTest {
         dataSetTimerClock.setMillis(System.currentTimeMillis());
 
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        dataSetTimer.jsonData(builder);
+        dataSetTimer.jsonData(builder, dataSetTimerID);
 
         JsonObject json = builder.build();
         JsonObject metricData = json.getJsonObject("response_time");
@@ -194,24 +197,26 @@ class HelidonTimerTest {
 
     @Test
     void testPrometheus() {
-        String prometheusData = dataSetTimer.prometheusData();
-        assertThat(prometheusData, startsWith("# TYPE application:response_time_rate_per_second gauge\n"
-                                                      + "application:response_time_rate_per_second 200.0\n"
-                                                      + "# TYPE application:response_time_one_min_rate_per_second gauge\n"
-                                                      + "application:response_time_one_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application:response_time_five_min_rate_per_second gauge\n"
-                                                      + "application:response_time_five_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application:response_time_fifteen_min_rate_per_second gauge\n"
-                                                      + "application:response_time_fifteen_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application:response_time_mean_seconds gauge\n"
-                                                      + "application:response_time_mean_seconds "));
-        assertThat(prometheusData, containsString("# TYPE application:response_time_max_seconds gauge\n"
-                                                          + "application:response_time_max_seconds "));
+        final StringBuilder sb = new StringBuilder();
+        dataSetTimer.prometheusData(sb, dataSetTimerID);
+        final String prometheusData = sb.toString();
+        assertThat(prometheusData, startsWith("# TYPE application_response_time_rate_per_second gauge\n"
+                                                      + "application_response_time_rate_per_second 200.0\n"
+                                                      + "# TYPE application_response_time_one_min_rate_per_second gauge\n"
+                                                      + "application_response_time_one_min_rate_per_second 0.0\n"
+                                                      + "# TYPE application_response_time_five_min_rate_per_second gauge\n"
+                                                      + "application_response_time_five_min_rate_per_second 0.0\n"
+                                                      + "# TYPE application_response_time_fifteen_min_rate_per_second gauge\n"
+                                                      + "application_response_time_fifteen_min_rate_per_second 0.0\n"
+                                                      + "# TYPE application_response_time_mean_seconds gauge\n"
+                                                      + "application_response_time_mean_seconds "));
+        assertThat(prometheusData, containsString("# TYPE application_response_time_max_seconds gauge\n"
+                                                          + "application_response_time_max_seconds "));
 
-        assertThat(prometheusData, containsString("# TYPE application:response_time_seconds summary\n"
-                                                          + "# HELP application:response_time_seconds Server response time for "
+        assertThat(prometheusData, containsString("# TYPE application_response_time_seconds summary\n"
+                                                          + "# HELP application_response_time_seconds Server response time for "
                                                           + "/index.html\n"
-                                                          + "application:response_time_seconds_count 200"));
+                                                          + "application_response_time_seconds_count 200"));
     }
 
     private void withTolerance(String field, double actual, double expectedValue) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,30 +21,37 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Class MetricUtil.
  */
 public final class MetricUtil {
-
     private static final Logger LOGGER = Logger.getLogger(MetricUtil.class.getName());
 
     private MetricUtil() {
     }
 
+    /**
+     * DO NOT USE THIS METHOD please.
+     *
+     * @param element element
+     * @param annotClass annotation class
+     * @param clazz class
+     * @param <E> element type
+     * @param <A> annotation type
+     * @return lookup result
+     * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
+     */
     @SuppressWarnings("unchecked")
-    static <E extends Member & AnnotatedElement, A extends Annotation>
+    @Deprecated
+    public static <E extends Member & AnnotatedElement, A extends Annotation>
     LookupResult<A> lookupAnnotation(E element, Class<? extends Annotation> annotClass, Class<?> clazz) {
         // First check annotation on element
         A annotation = (A) element.getAnnotation(annotClass);
@@ -59,17 +66,23 @@ public final class MetricUtil {
         return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
     }
 
+    static <E extends Member & AnnotatedElement>
+    MetricID getMetricID(E element, Class<?> clazz, MatchingType matchingType, String explicitName, String[] tags,
+                         boolean absolute) {
+        return new MetricID(getMetricName(element, clazz, matchingType, explicitName, absolute), tags(tags));
+    }
+
     /**
-     * Determine the name to use for a metric.
+     * This method is intended only for other Helidon components.
      *
-     * @param element the annotated element
-     * @param clazz the annotated class
-     * @param matchingType the type that is annotated
-     * @param explicitName the optional explicit name to use
-     * @param absolute {@code true} if the name is absolute, {@code false} if it is relative
-     * @param <E> the type of the annotated element
+     * @param element such as method
+     * @param clazz class
+     * @param matchingType type to match
+     * @param explicitName name
+     * @param absolute if absolute
+     * @param <E> type of element
      *
-     * @return the name to use for a metric
+     * @return name of the metric
      */
     public static <E extends Member & AnnotatedElement>
     String getMetricName(E element, Class<?> clazz, MatchingType matchingType, String explicitName, boolean absolute) {
@@ -96,7 +109,10 @@ public final class MetricUtil {
                     result = clazz.getName() + "." + result;
                 }
             } else {
-                // absolute?
+                // Absolute must be false at class level, issue warning here
+                if (absolute) {
+                    LOGGER.warning(() -> "Attribute 'absolute=true' in metric annotation ignored at class level");
+                }
                 result = clazz.getPackage().getName() + "." + explicitName
                         + "." + getElementName(element, clazz);
             }
@@ -106,100 +122,49 @@ public final class MetricUtil {
         return result;
     }
 
-    /**
-     * Register a metric.
-     *
-     * @param element the annotated element
-     * @param clazz the annotated class
-     * @param lookupResult the annotation lookup result
-     * @param <E> the annotated element type
-     */
-    public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
-        registerMetric(element, clazz, lookupResult.getAnnotation(), lookupResult.getType());
-    }
-
-    /**
-     * Register a metric.
-     *
-     * @param element the annotated element
-     * @param clazz the annotated class
-     * @param annotation the annotation to register
-     * @param type the {@link MatchingType} indicating the type of annotated element
-     * @param <E> the annotated element type
-     */
-    public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
-        MetricRegistry registry = getMetricRegistry();
-
-        if (annotation instanceof Counted) {
-            Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, type, counted.name(), counted.absolute());
-            Metadata meta = new Metadata(metricName,
-                                         counted.displayName(),
-                                         counted.description(),
-                                         MetricType.COUNTER,
-                                         counted.unit(),
-                                         toTags(counted.tags()));
-            registry.counter(meta);
-            LOGGER.log(Level.FINE, () -> "### Registered counter " + metricName);
-        } else if (annotation instanceof Metered) {
-            Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, type, metered.name(), metered.absolute());
-            Metadata meta = new Metadata(metricName,
-                                         metered.displayName(),
-                                         metered.description(),
-                                         MetricType.METERED,
-                                         metered.unit(),
-                                         toTags(metered.tags()));
-            registry.meter(meta);
-            LOGGER.log(Level.FINE, () -> "### Registered meter " + metricName);
-        } else if (annotation instanceof Timed) {
-            Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, type, timed.name(), timed.absolute());
-            Metadata meta = new Metadata(metricName,
-                                         timed.displayName(),
-                                         timed.description(),
-                                         MetricType.TIMER,
-                                         timed.unit(),
-                                         toTags(timed.tags()));
-            registry.timer(meta);
-            LOGGER.log(Level.FINE, () -> "### Registered timer " + metricName);
-        }
-    }
-
-    private static MetricRegistry getMetricRegistry() {
-        return RegistryProducer.getDefaultRegistry();
-    }
-
-    static String toTags(String[] tags) {
-        if (null == tags || tags.length == 0) {
-            return "";
-        }
-        return String.join(",", tags);
-    }
-
     static <E extends Member & AnnotatedElement>
     String getElementName(E element, Class<?> clazz) {
         return element instanceof Constructor ? clazz.getSimpleName() : element.getName();
     }
 
+    static Tag[] tags(String[] tagStrings) {
+        final List<Tag> result = new ArrayList<>();
+        for (int i = 0; i < tagStrings.length; i++) {
+            final int eq = tagStrings[i].indexOf("=");
+            if (eq > 0) {
+                final String tagName = tagStrings[i].substring(0, eq);
+                final String tagValue = tagStrings[i].substring(eq + 1);
+                result.add(new Tag(tagName, tagValue));
+            }
+        }
+        return result.toArray(new Tag[result.size()]);
+    }
+
     /**
-     * An enum used to indicate whether a metric annotation
-     * applies to a class or a method.
+     * DO NOT USE THIS CLASS please.
+     *
+     * Types of possible matching.
+     * @deprecated This class is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
      */
+    @Deprecated
     public enum MatchingType {
         /**
-         * The metric annotation applies to a method.
+         * Method.
          */
         METHOD,
         /**
-         * The metric annotation applies to a class.
+         * Class.
          */
         CLASS
     }
 
-    static class LookupResult<A extends Annotation> {
+    /**
+     * DO NOT USE THIS CLASS please.
+     * @param <A> type of annotation
+     * @deprecated This class is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
+     */
+    @Deprecated
+    public static class LookupResult<A extends Annotation> {
 
         private final MatchingType type;
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,39 +33,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <scope>provided</scope>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld.se</groupId>
-            <artifactId>weld-se-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <!-- redirecting Weld logging to JUL logging -->
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -80,6 +53,55 @@
             <artifactId>helidon-common-service-loader</artifactId>
         </dependency>
         <dependency>
+            <groupId>javax.interceptor</groupId>
+            <artifactId>javax.interceptor-api</artifactId>
+            <scope>provided></scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <!-- this is to include JSON-P native image configuration -->
+            <groupId>io.helidon.media.jsonp</groupId>
+            <artifactId>helidon-media-jsonp-common</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <!-- redirecting Weld logging to JUL logging -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
             <!-- Jersey integration with Weld -->
             <groupId>org.glassfish.jersey.ext.cdi</groupId>
             <artifactId>jersey-weld2-se</artifactId>
@@ -88,16 +110,26 @@
                     <groupId>org.glassfish.jersey.core</groupId>
                     <artifactId>jersey-server</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.weld.se</groupId>
+                    <artifactId>weld-se-core</artifactId>
+                </exclusion>
             </exclusions>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-media-jsonp</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-testing</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
@@ -111,6 +143,10 @@
                 <exclusion>
                     <groupId>org.glassfish.jersey.core</groupId>
                     <artifactId>jersey-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jakarta.annotation</groupId>
+                    <artifactId>jakarta.annotation-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

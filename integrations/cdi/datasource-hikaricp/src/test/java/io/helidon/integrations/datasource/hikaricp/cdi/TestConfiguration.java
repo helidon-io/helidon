@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.sql.DataSource;
@@ -58,10 +57,6 @@ class TestConfiguration {
         // instead of ConfigProvider#getConfig() so we follow suit
         // here for fidelity.
         builder.config(ConfigProviderResolver.instance().getConfig(Thread.currentThread().getContextClassLoader()));
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
-            .addBeanClasses(TestConfiguration.class);
-        assertNotNull(initializer);
-        builder.cdiContainer(initializer.initialize());
         this.server = builder.build();
         assertNotNull(this.server);
         this.server.start();

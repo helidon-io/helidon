@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
-            <version>${version.lib.microprofile-metrics1-api}</version>
+            <version>${version.lib.microprofile-metrics-api}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -103,11 +103,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld.se</groupId>
-            <artifactId>weld-se-core</artifactId>
-            <scope>test</scope>
         </dependency>
         <!-- To keep HK2 from complaining when run with Java9+ -->
         <dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ final class MetaConfigFinder {
 
     static Optional<ConfigSource> findConfigSource(Function<String, Boolean> supportedMediaType) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        return findSource(supportedMediaType, cl, CONFIG_PREFIX);
+        return findSource(supportedMediaType, cl, CONFIG_PREFIX, "config source");
     }
 
     private static Optional<ConfigSource> findMetaConfigSource(Function<String, Boolean> supportedMediaType) {
@@ -63,12 +63,12 @@ final class MetaConfigFinder {
         String property = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
         if (null != property) {
             // is it a file
-            source = findFile(property);
+            source = findFile(property, "meta configuration");
             if (source.isPresent()) {
                 return source;
             }
             // so it is a classpath resource?
-            source = findClasspath(cl, property);
+            source = findClasspath(cl, property, "meta configuration");
             if (source.isPresent()) {
                 return source;
             }
@@ -76,12 +76,13 @@ final class MetaConfigFinder {
             LOGGER.info("Meta configuration file not found: " + property);
         }
 
-        return findSource(supportedMediaType, cl, META_CONFIG_PREFIX);
+        return findSource(supportedMediaType, cl, META_CONFIG_PREFIX, "meta configuration");
     }
 
     private static Optional<ConfigSource> findSource(Function<String, Boolean> supportedMediaType,
                                                      ClassLoader cl,
-                                                     String configPrefix) {
+                                                     String configPrefix,
+                                                     String type) {
         Optional<ConfigSource> source;
 
         List<String> validSuffixes = CONFIG_SUFFIXES.stream()
@@ -91,7 +92,7 @@ final class MetaConfigFinder {
         //  look into the file system - in current user directory
         source = validSuffixes.stream()
                 .map(suf -> configPrefix + suf)
-                .map(MetaConfigFinder::findFile)
+                .map(it -> findFile(it, type))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst();
@@ -103,26 +104,26 @@ final class MetaConfigFinder {
         // and finally try to find meta configuration on classpath
         return validSuffixes.stream()
                 .map(suf -> configPrefix + suf)
-                .map(resource -> MetaConfigFinder.findClasspath(cl, resource))
+                .map(resource -> MetaConfigFinder.findClasspath(cl, resource, type))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst();
     }
 
-    private static Optional<ConfigSource> findFile(String name) {
+    private static Optional<ConfigSource> findFile(String name, String type) {
         Path path = Paths.get(name);
         if (Files.exists(path) && Files.isReadable(path) && !Files.isDirectory(path)) {
-            LOGGER.info("Found config source file: " + path.toAbsolutePath());
+            LOGGER.info("Found " + type + " file: " + path.toAbsolutePath());
             return Optional.of(ConfigSources.file(path).build());
         }
         return Optional.empty();
     }
 
-    private static Optional<ConfigSource> findClasspath(ClassLoader cl, String name) {
+    private static Optional<ConfigSource> findClasspath(ClassLoader cl, String name, String type) {
         // so it is a classpath resource?
         URL resource = cl.getResource(name);
         if (null != resource) {
-            LOGGER.info("Found config source resource: " + resource.getPath());
+            LOGGER.fine(() -> "Found " + type + " resource: " + resource.getPath());
             return Optional.of(ConfigSources.classpath(name).build());
         }
         return Optional.empty();
