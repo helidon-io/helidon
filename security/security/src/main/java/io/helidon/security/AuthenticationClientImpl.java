@@ -96,7 +96,8 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
                 context.audit(SecurityAuditEvent
                                       .success(
                                               AuditEvent.AUTHN_TYPE_PREFIX + ".authenticate",
-                                              "Provider %s. Subject %s")
+                                              "Path %s. Provider %s. Subject %s")
+                                      .addParam(AuditEvent.AuditParam.plain("path", providerRequest.env().path()))
                                       .addParam(AuditEvent.AuditParam
                                                         .plain("provider", providerInstance.getClass().getName()))
                                       .addParam(AuditEvent.AuditParam.plain("subject", response.user())));

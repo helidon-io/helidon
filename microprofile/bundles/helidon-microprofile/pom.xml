@@ -56,7 +56,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.jwt</groupId>
-            <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
+            <artifactId>helidon-microprofile-jwt-auth</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.integration</groupId>

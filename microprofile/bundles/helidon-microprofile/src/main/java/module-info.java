@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ module io.helidon.microprofile.bundle {
     requires transitive io.helidon.microprofile.health;
     requires transitive io.helidon.microprofile.metrics;
     requires transitive io.helidon.microprofile.faulttolerance;
-    requires transitive io.helidon.microprofile.jwt.auth.cdi;
+    requires transitive io.helidon.microprofile.jwt.auth;
     requires transitive io.helidon.microprofile.tracing;
     requires transitive io.helidon.microprofile.restclient;
     requires transitive io.helidon.microprofile.openapi;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -882,6 +882,11 @@ public class Jwt {
         this.atHash.ifPresent(it -> objectBuilder.add("at_hash", JwtUtil.base64Url(it)));
         this.cHash.ifPresent(it -> objectBuilder.add("c_hash", JwtUtil.base64Url(it)));
         this.nonce.ifPresent(it -> objectBuilder.add("nonce", it));
+
+        this.scopes.ifPresent(it -> {
+            String scopesString = String.join(" ", it);
+            objectBuilder.add("scope", scopesString);
+        });
 
         return objectBuilder.build();
     }

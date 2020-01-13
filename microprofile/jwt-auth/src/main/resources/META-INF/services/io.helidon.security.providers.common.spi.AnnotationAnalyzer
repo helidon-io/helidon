@@ -13,11 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-app.message=Properties message
-app.jaxrs.message=JAX-RS MP message
-app.jaxrs.number=42
 
-mp.jwt.verify.publickey.location=/verify-jwk.json
-mp.jwt.verify.issuer=native-image-mp1
-
-features.print-details=true
+io.helidon.microprofile.jwt.auth.JwtAuthAnnotationAnalyzer

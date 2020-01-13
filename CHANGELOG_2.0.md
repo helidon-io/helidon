@@ -86,6 +86,16 @@ New recommended option to start Helidon MP:
 `io.helidon.microprofile.server.Server` is still available, though the features are much reduced
 
 
+#### MicroProfile JWT-Auth
+If a JAX-RS application exists that is annotated with `@LoginConfig` with value `MP-JWT`, the correct authentication
+provider is added to security.
+The startup would fail if the provider is required yet not configured.
+
+#### Security in MP
+If there is no authentication provider configured, authentication will always fail.
+If there is no authorization provider configured, ABAC provider will be configured.
+(original behavior - these were configured if there was no provider configured overall) 
+
 ### Improvements
 
 - JAX-RS applications now work similar to how they work in application servers

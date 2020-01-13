@@ -41,6 +41,7 @@ public final class JaxRsApplication {
     private final String appClassName;
     private final String routingName;
     private final boolean routingNameRequired;
+    private final Class<? extends Application> appClass;
 
     /**
      * Create a new instance based on an JAX-RS Application class.
@@ -83,6 +84,7 @@ public final class JaxRsApplication {
         this.routingName = builder.routingName;
         this.routingNameRequired = builder.routingNameRequired;
         this.appName = builder.appName;
+        this.appClass = builder.appClass;
     }
 
     @Override
@@ -124,9 +126,19 @@ public final class JaxRsApplication {
     }
 
     /**
+     * Application class, if this application is based on an actual class.
+     *
+     * @return application class or empty optional if this is a synthetic application
+     */
+    public Optional<Class<? extends Application>> applicationClass() {
+        return Optional.ofNullable(appClass);
+    }
+
+    /**
      * Fluent API builder to create {@link JaxRsApplication} instances.
      */
     public static class Builder {
+        private Class<? extends Application> appClass;
         private String contextRoot;
         private ResourceConfig config;
         private ExecutorService executorService;
@@ -172,10 +184,11 @@ public final class JaxRsApplication {
         public Builder application(Application app) {
             this.config = toConfig(app);
 
-            Class<?> clazz = app.getClass();
+            Class<? extends Application> clazz = app.getClass();
             contextRoot(clazz);
             routingName(clazz);
-            appClassName = clazz.getName();
+            this.appClass = clazz;
+            this.appClassName = clazz.getName();
             appNameUpdate(clazz.getSimpleName());
 
             return this;
@@ -195,7 +208,8 @@ public final class JaxRsApplication {
 
             contextRoot(appClass);
             routingName(appClass);
-            appClassName = appClass.getName();
+            this.appClass = appClass;
+            this.appClassName = appClass.getName();
             appNameUpdate(appClass.getSimpleName());
 
             return this;
@@ -332,6 +346,7 @@ public final class JaxRsApplication {
          * @return updated builer instance
          */
         public Builder applicationClass(Class<? extends Application> applicationClass) {
+            this.appClass = applicationClass;
             this.appClassName = applicationClass.getName();
 
             if (applicationClass != Application.class) {
