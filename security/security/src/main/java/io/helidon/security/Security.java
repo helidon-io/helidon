@@ -32,6 +32,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -412,6 +413,8 @@ public class Security {
         private SecurityTime serverTime = SecurityTime.builder().build();
         private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
 
+        private Set<String> providerNames = new HashSet<>();
+
         private Builder() {
         }
 
@@ -631,6 +634,9 @@ public class Security {
             }
             this.atnProviders.add(namedProvider);
             this.allProviders.put(provider, true);
+            if (null != name) {
+                this.providerNames.add(name);
+            }
             return this;
         }
 
@@ -684,6 +690,9 @@ public class Security {
             }
             this.atzProviders.add(namedProvider);
             this.allProviders.put(provider, true);
+            if (null != name) {
+                this.providerNames.add(name);
+            }
             return this;
         }
 
@@ -751,6 +760,7 @@ public class Security {
 
             this.outboundProviders.add(new NamedProvider<>(name, provider));
             this.allProviders.put(provider, true);
+            this.providerNames.add(name);
 
             return this;
         }
@@ -827,8 +837,7 @@ public class Security {
             }
 
             if (atzProviders.isEmpty()) {
-                addAuthorizationProvider(context -> CompletableFuture
-                        .completedFuture(AuthorizationResponse.permit()), "default");
+                addAuthorizationProvider(new DefaultAtzProvider(), "default");
             }
 
             return new Security(this);
@@ -851,7 +860,6 @@ public class Security {
                     .ifPresent(confList -> {
                         confList.forEach(pConf -> providerFromConfig(configKeyToService, classNameToService, knownKeys, pConf));
                     });
-
 
             String defaultAtnProvider = config.get("default-authentication-provider").asString().orElse(null);
             if (null != defaultAtnProvider) {
@@ -1106,10 +1114,47 @@ public class Security {
 
         /**
          * Check whether any provider is configured.
+         * @param providerClass type of provider of interest (can be {@link io.helidon.security.spi.AuthenticationProvider} and
+         *                      other interfaces implementing {@link io.helidon.security.spi.SecurityProvider})
          * @return {@code true} if no provider is configured, {@code false} if there is at least one provider configured
          */
-        public boolean noProvider() {
+        public boolean noProvider(Class<? extends SecurityProvider> providerClass) {
+            if (providerClass.equals(AuthenticationProvider.class)) {
+                return atnProviders.isEmpty();
+            }
+            if (providerClass.equals(AuthorizationProvider.class)) {
+                return atzProviders.isEmpty();
+            }
+            if (providerClass.equals(OutboundSecurityProvider.class)) {
+                return outboundProviders.isEmpty();
+            }
+            if (providerClass.equals(AuditProvider.class)) {
+                return auditProviders.isEmpty();
+            }
+            if (providerClass.equals(SubjectMappingProvider.class)) {
+                return subjectMappingProvider == null;
+            }
+
             return allProviders.isEmpty();
+        }
+
+        /**
+         * Check whether a provider with the name is configured.
+         * @param name name of a provider
+         * @return true if such a provider is configured
+         */
+        public boolean hasProvider(String name) {
+            return providerNames
+                    .stream()
+                    .anyMatch(name::equals);
+        }
+
+        private static class DefaultAtzProvider implements AuthorizationProvider {
+            @Override
+            public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
+                return CompletableFuture
+                        .completedFuture(AuthorizationResponse.permit());
+            }
         }
     }
 }

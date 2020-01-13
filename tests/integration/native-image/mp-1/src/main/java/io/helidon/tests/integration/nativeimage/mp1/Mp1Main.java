@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -33,13 +34,22 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import io.helidon.common.Errors;
+import io.helidon.common.configurable.Resource;
 import io.helidon.microprofile.server.Server;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.jwt.jwk.JwkRSA;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
+
+import static io.helidon.common.http.Http.Status.OK_200;
+import static io.helidon.common.http.Http.Status.UNAUTHORIZED_401;
 
 /**
  * Main class of this integration test.
@@ -59,6 +69,8 @@ public final class Mp1Main {
         // cleanup before tests
         cleanup();
 
+        String jwtToken = generateJwtToken();
+
         // start CDI
         //Main.main(args);
 
@@ -71,9 +83,34 @@ public final class Mp1Main {
                 .start();
 
         long now = System.currentTimeMillis();
-        testBean();
+        testBean(jwtToken);
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
+    }
+
+    private static String generateJwtToken() {
+        Jwt jwt = Jwt.builder()
+                .subject("jack")
+                .addUserGroup("admin")
+                .addScope("admin_scope")
+                .algorithm(JwkRSA.ALG_RS256)
+                .issuer("native-image-mp1")
+                .audience("http://localhost:8087/jwt")
+                .issueTime(Instant.now())
+                .userPrincipal("jack")
+                .keyId("SIGNING_KEY")
+                .build();
+
+        JwkKeys jwkKeys = JwkKeys.builder()
+                .resource(Resource.create("sign-jwk.json"))
+                .build();
+
+        SignedJwt signed = SignedJwt.sign(jwt, jwkKeys.forKeyId("sign-rsa").get());
+        String tokenContent = signed.tokenContent();
+
+        System.out.println("JWT token to use for /jwt requests: " + tokenContent);
+
+        return tokenContent;
     }
 
     private static void cleanup() {
@@ -88,7 +125,7 @@ public final class Mp1Main {
         }
     }
 
-    private static void testBean() {
+    private static void testBean(String jwtToken) {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target("http://localhost:8087");
 
@@ -130,6 +167,9 @@ public final class Mp1Main {
             }
         });
 
+        // JWT-Auth
+        validateJwtProtectedResource(collector, target, jwtToken);
+
         // Metrics
         validateMetrics(collector, target);
 
@@ -144,6 +184,75 @@ public final class Mp1Main {
 
         collector.collect()
                 .checkValid();
+    }
+
+    private static void validateJwtProtectedResource(Errors.Collector collector, WebTarget target, String jwtToken) {
+        WebTarget jwtTarget = target.path("/jwt");
+
+        // public
+        Response response = jwtTarget.path("/public")
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!"Hello anybody".equals(entity)) {
+                collector.fatal("Endpoint /jwt/public should return \"Hello anybody\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint /jwt/public should be accessible without authentication. Status received: " + response
+                    .getStatus());
+        }
+
+        // scope
+        response = jwtTarget.path("/scope")
+                .request()
+                .get();
+
+        if (response.getStatus() != UNAUTHORIZED_401.code()) {
+            collector.fatal("Endpoint /jwt/scope should be protected by JWT Auth, yet response status was " + response
+                    .getStatus());
+        }
+
+        response = jwtTarget.path("/scope")
+                .request()
+                .header("Authorization", "bearer " + jwtToken)
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!"Hello scope".equals(entity)) {
+                collector.fatal("Endpoint /jwt/scope should return \"Hello scope\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint /jwt/scope should be accessible with JWT Auth. Status received: " + response
+                    .getStatus());
+        }
+
+        // role
+        response = jwtTarget.path("/role")
+                .request()
+                .get();
+
+        if (response.getStatus() != UNAUTHORIZED_401.code()) {
+            collector.fatal("Endpoint /jwt/role should be protected by JWT Auth, yet response status was " + response
+                    .getStatus());
+        }
+
+        response = jwtTarget.path("/role")
+                .request()
+                .header("Authorization", "bearer " + jwtToken)
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!"Hello role".equals(entity)) {
+                collector.fatal("Endpoint /jwt/role should return \"Hello role\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint /jwt/role should be accessible with JWT Auth. Status received: " + response
+                    .getStatus());
+        }
     }
 
     private static void validateTracing(Errors.Collector collector) {

@@ -2,6 +2,12 @@
     "resources": [
         {
             "pattern": "web/.*"
+        },
+        {
+            "pattern": "sign-jwk.json"
+        },
+        {
+            "pattern": "verify-jwk.json"
         }
     ]
 }

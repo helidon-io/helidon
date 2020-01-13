@@ -451,11 +451,6 @@
                 <artifactId>helidon-microprofile-jwt-auth</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.jwt</groupId>
-                <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- common -->
             <dependency>
