@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,15 @@
  */
 package io.helidon.integrations.graal.nativeimage.extension;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -29,40 +31,47 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
+import javax.json.stream.JsonParsingException;
+
+import io.helidon.config.MpConfigProviderResolver;
 
 import com.oracle.svm.core.annotate.AutomaticFeature;
+import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;
 import com.oracle.svm.hosted.FeatureImpl;
+import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
 
 /**
  * Feature to add reflection configuration to the image for Helidon, CDI and Jersey.
+ * Override the one in dependencies (native-image-extension from Helidon)
  */
 @AutomaticFeature
 public class HelidonReflectionFeature implements Feature {
-    // The following options should be configurable. Now cannot use the native-image configuration options
-    private static final Set<String> EXCLUDES = new HashSet<>();
-
-    private static boolean enabled = true;
-    private static boolean trace = false;
-    private static boolean traceParsing = false;
+    private static final boolean ENABLED = NativeConfig.option("reflection.enable-feature", true);
+    private static final boolean TRACE_PARSING = NativeConfig.option("reflection.trace-parsing", false);
+    private static final boolean TRACE = NativeConfig.option("reflection.trace", false);
 
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
-        return enabled;
+        return ENABLED;
     }
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
+        // to add a startup hook:
+        //RuntimeSupport.getRuntimeSupport().addStartupHook(() -> {});
+
         // load configuration
         HelidonReflectionConfiguration config = loadConfiguration(access);
         // create context (to know what was processed and what should be registered)
-        BeforeAnalysisContext context = new BeforeAnalysisContext(access);
+        BeforeAnalysisContext context = new BeforeAnalysisContext(access, config.excluded);
 
         // process each configured annotation
         config.annotations().forEach(it -> processAnnotated(context, it));
@@ -71,49 +80,78 @@ public class HelidonReflectionFeature implements Feature {
         // process each configured class
         config.classes().forEach(it -> addSingleClass(context, it));
 
-        // Jersey classes mostly moved to this extension, as they are valid both for client and server
-        // See org.glassfish.jersey.internal.inject.Providers
-        // see META-INF/native-image/helidon/reflection-config.json
+        // rest client registration (proxy support)
+        processRegisterRestClient(context);
 
         registerForReflection(context);
+    }
+
+    @Override
+    public void beforeCompilation(BeforeCompilationAccess access) {
+        MpConfigProviderResolver.buildTimeEnd();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processRegisterRestClient(BeforeAnalysisContext context) {
+        String restClientAnnotationClassName = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
+        Class<? extends Annotation> restClientAnnotation = (Class<? extends Annotation>) context.access()
+                .findClassByName(restClientAnnotationClassName);
+
+        if (null == restClientAnnotation) {
+            return;
+        }
+
+        traceParsing(() -> "Looking up annotated by " + restClientAnnotationClassName);
+
+        List<Class<?>> annotatedList = context.access().findAnnotatedClasses(restClientAnnotation);
+        DynamicProxyRegistry proxyRegistry = ImageSingletons.lookup(DynamicProxyRegistry.class);
+        Class<?> autoCloseable = context.access().findClassByName("java.lang.AutoCloseable");
+        Class<?> closeable = context.access().findClassByName("java.io.Closeable");
+
+        annotatedList.forEach(it -> {
+            if (context.isExcluded(it)) {
+                traceParsing(() -> "Class " + it.getName() + " annotated by " + restClientAnnotationClassName + " is excluded");
+            } else {
+                // we need to add it for reflection
+                processClassHierarchy(context, it);
+                // and we also need to create a proxy
+                traceParsing(() -> "Registering a proxy for class " + it.getName());
+                proxyRegistry.addProxyClass(it, autoCloseable, closeable);
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
     private void registerForReflection(BeforeAnalysisContext context) {
         Set<Class<?>> toRegister = context.toRegister();
-        FeatureImpl.BeforeAnalysisAccessImpl access = context.access();
 
-        if (trace) {
+        if (TRACE) {
             System.out.println("***********************************");
             System.out.println("** Registering " + toRegister.size() + " classes for reflection");
             System.out.println("***********************************");
         }
 
-        Class<? extends Annotation> atInject = (Class<? extends Annotation>) access.findClassByName("javax.inject.Inject");
-        Class<? extends Annotation> atContext = (Class<? extends Annotation>) access.findClassByName("javax.ws.rs.core.Context");
-
         // register for reflection
         for (Class<?> aClass : toRegister) {
-            if (EXCLUDES.contains(aClass.getName())) {
-                if (trace) {
-                    System.out.println("Excluding " + aClass.getName() + " from registration");
-                }
-                continue;
-            }
-            if (trace) {
+            if (TRACE) {
                 System.out.println("Registering " + aClass.getName() + " for reflection");
             }
             RuntimeReflection.register(aClass);
-            RuntimeReflection.register(aClass.getMethods());
+
+            registerMethods(aClass);
 
             if (aClass.isInterface()) {
                 continue;
             }
 
-            RuntimeReflection.register(aClass.getFields());
+            registerFields(aClass);
 
-            registerFields(atInject, atContext, aClass);
+            registerConstructors(aClass);
+        }
+    }
 
+    private void registerConstructors(Class<?> aClass) {
+        try {
             // find all public constructors
             Set<Constructor<?>> constructors = new LinkedHashSet<>(Arrays.asList(aClass.getConstructors()));
             // add all declared
@@ -121,40 +159,92 @@ public class HelidonReflectionFeature implements Feature {
 
             for (Constructor<?> constructor : constructors) {
                 RuntimeReflection.register(constructor);
-                if (trace) {
+                if (TRACE) {
                     System.out.println("    " + constructor);
                 }
+            }
+        } catch (NoClassDefFoundError e) {
+            if (TRACE) {
+                System.out.println("Constructors of "
+                                           + aClass.getName()
+                                           + " not added to reflection, as a type is not on classpath: "
+                                           + e.getMessage());
             }
         }
     }
 
-    private void registerFields(Class<? extends Annotation> atInject, Class<? extends Annotation> atContext, Class<?> aClass) {
+    private void registerMethods(Class<?> aClass) {
+        try {
+            Method[] methods = aClass.getMethods();
+            for (Method method : methods) {
+                boolean register = true;
+
+                // we do not want wait, notify etc
+                register = (method.getDeclaringClass() != Object.class);
+
+                if (register) {
+                    // we do not want toString(), hashCode(), equals(java.lang.Object)
+                    switch (method.getName()) {
+                    case "hashCode":
+                    case "toString":
+                        register = !hasParams(method);
+                        break;
+                    case "equals":
+                        register = !hasParams(method, Object.class);
+                        break;
+                    default:
+                        // do nothing
+                    }
+                }
+
+                if (register) {
+                    if (TRACE) {
+                        System.out.println("  " + method.getName() + "(" + Arrays.toString(method.getParameterTypes()) + ")");
+                    }
+                    RuntimeReflection.register(method);
+                }
+            }
+        } catch (Throwable e) {
+            if (TRACE) {
+                System.out.println("   Cannot register methods of " + aClass.getName() + ": " + e.getClass().getName() + ": " + e
+                        .getMessage());
+            }
+        }
+    }
+
+    private boolean hasParams(Method method, Class<?>... params) {
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        return Arrays.equals(params, parameterTypes);
+    }
+
+    private void registerFields(Class<?> aClass) {
+        try {
+            // public fields
+            RuntimeReflection.register(aClass.getFields());
+        } catch (NoClassDefFoundError e) {
+            if (TRACE) {
+                System.out.println("Public fields of "
+                                           + aClass.getName()
+                                           + " not added to reflection, as a type is not on classpath: "
+                                           + e.getMessage());
+            }
+        }
         try {
             for (Field declaredField : aClass.getDeclaredFields()) {
                 // there may be fields referencing classes not on the classpath
                 if (!Modifier.isPublic(declaredField.getModifiers())) {
                     // public already registered
-                    if (null != atInject) {
-                        if (declaredField.isAnnotationPresent(atInject)) {
-                            RuntimeReflection.register(declaredField);
-                            if (trace) {
-                                System.out.println("    @Inject " + declaredField);
-                            }
-                            continue;
-                        }
-                    }
-                    if (null != atContext) {
-                        if (declaredField.isAnnotationPresent(atContext)) {
-                            RuntimeReflection.register(declaredField);
-                            if (trace) {
-                                System.out.println("    @Context " + declaredField);
-                            }
+                    Annotation[] annotations = declaredField.getAnnotations();
+                    if (annotations.length > 0) {
+                        RuntimeReflection.register(declaredField);
+                        if (TRACE) {
+                            System.out.println("    Annotated " + declaredField);
                         }
                     }
                 }
             }
         } catch (NoClassDefFoundError e) {
-            if (trace) {
+            if (TRACE) {
                 System.out.println("Fields of "
                                            + aClass.getName()
                                            + " not added to reflection, as a type is not on classpath: "
@@ -163,28 +253,38 @@ public class HelidonReflectionFeature implements Feature {
         }
     }
 
-    private void processClassHierarchy(BeforeAnalysisContext context, Class<?> superclass) {
-        if (!Modifier.isInterface(superclass.getModifiers())) {
-            context.register(superclass);
+    private void addSingleClass(BeforeAnalysisContext context,
+                                Class<?> theClass) {
+        if (context.process(theClass)) {
+            traceParsing(theClass::getName);
+            traceParsing(() -> "  Added for registration");
+            superclasses(context, theClass);
+            context.register(theClass);
         }
+    }
 
-        if (traceParsing) {
-            System.out.println("Looking up implementors of " + superclass.getName());
-        }
+    private void processClassHierarchy(BeforeAnalysisContext context,
+                                       Class<?> superclass) {
+
+        // this class is always registered (interface or class)
+        context.register(superclass);
+
+        traceParsing(() -> "Looking up implementors of " + superclass.getName());
+
         findSubclasses(context, superclass);
         for (Class<?> anInterface : superclass.getInterfaces()) {
-            addSingleClass(context, anInterface);
-        }
-
-        Class<?> nextSuper = superclass.getSuperclass();
-        while (null != nextSuper) {
-            addSingleClass(context, nextSuper);
-            nextSuper = nextSuper.getSuperclass();
+            // unless excluded
+            if (context.isExcluded(anInterface)) {
+                traceParsing(() -> "  Interface " + anInterface.getName() + " is explicitly excluded");
+            } else {
+                addSingleClass(context, anInterface);
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void processAnnotated(BeforeAnalysisContext context, Class<?> annotationClass) {
+    private void processAnnotated(BeforeAnalysisContext context,
+                                  Class<?> annotationClass) {
 
         Class<? extends Annotation> annotation;
         try {
@@ -194,50 +294,41 @@ public class HelidonReflectionFeature implements Feature {
                                             e);
         }
 
-        if (traceParsing) {
-            System.out.println("Looking up annotated by " + annotationClass.getName());
-        }
+        traceParsing(() -> "Looking up annotated by " + annotationClass.getName());
+
         List<Class<?>> annotatedList = context.access().findAnnotatedClasses(annotation);
 
-        annotatedList.forEach(it -> processClassHierarchy(context, it));
-    }
-
-    private void addSingleClass(BeforeAnalysisContext context, Class<?> theClass) {
-        if (context.processed(theClass)) {
-            return;
-        }
-        if (traceParsing) {
-            System.out.println(theClass.getName());
-            System.out.println("  Added for registration");
-        }
-        context.register(theClass);
+        annotatedList.forEach(it -> {
+            if (context.isExcluded(it)) {
+                traceParsing(() -> "Class " + it.getName() + " annotated by " + annotationClass.getName() + " is excluded");
+            } else {
+                processClassHierarchy(context, it);
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
     private void findSubclasses(BeforeAnalysisContext context, Class<?> aClass) {
-        if (EXCLUDES.contains(aClass.getName())) {
-            if (trace) {
-                System.out.println("Excluding " + aClass.getName() + " from registration");
-            }
-            return;
-        }
         List<Class<?>> subclasses = context.access().findSubclasses((Class<Object>) aClass);
 
         processClasses(context, subclasses);
     }
 
     private void processClasses(BeforeAnalysisContext context, List<Class<?>> classes) {
-
         for (Class<?> aClass : classes) {
             if (context.process(aClass)) {
-                if (traceParsing) {
-                    System.out.println("    " + aClass.getName());
+                if (context.isExcluded(aClass)) {
+                    traceParsing(() -> "    Excluding " + aClass.getName() + " from registration");
+                    continue;
                 }
+
+                traceParsing(() -> "    " + aClass.getName());
+
                 int modifiers = aClass.getModifiers();
 
-                if (traceParsing) {
-                    System.out.println("        Added for registration");
-                }
+                traceParsing(() -> "        Added for registration");
+
+                superclasses(context, aClass);
                 context.register(aClass);
 
                 if (!Modifier.isFinal(modifiers)) {
@@ -247,44 +338,23 @@ public class HelidonReflectionFeature implements Feature {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void findSubclasses(FeatureImpl.BeforeAnalysisAccessImpl access,
-                                Set<Class<?>> toRegister,
-                                Set<Class<?>> processed,
-                                Class<?> aClass) {
+    private void superclasses(BeforeAnalysisContext context, Class<?> aClass) {
+        Class<?> nextSuper = aClass.getSuperclass();
+        while (null != nextSuper) {
+            if (context.process(nextSuper)) {
+                if (context.isExcluded(nextSuper)) {
+                    Class<?> toLog = nextSuper;
+                    traceParsing(() -> "  Class " + toLog.getName() + " is explicitly excluded");
+                    nextSuper = null;
+                } else {
+                    traceParsing(nextSuper::getName);
+                    traceParsing(() -> "  Added for registration");
 
-        List<Class<?>> subclasses = access.findSubclasses((Class<Object>) aClass);
-
-        processClasses(access,
-                       toRegister,
-                       processed,
-                       subclasses);
-    }
-
-    private void processClasses(FeatureImpl.BeforeAnalysisAccessImpl access,
-                                Set<Class<?>> toRegister,
-                                Set<Class<?>> processed,
-                                List<Class<?>> classes) {
-
-        for (Class<?> aClass : classes) {
-            if (processed.contains(aClass)) {
-                continue;
-            }
-            processed.add(aClass);
-
-            if (traceParsing) {
-                System.out.println("    " + aClass.getName());
-            }
-            int modifiers = aClass.getModifiers();
-            if (!Modifier.isInterface(modifiers)) {
-                if (traceParsing) {
-                    System.out.println("        Added for registration");
+                    context.register(nextSuper);
+                    nextSuper = nextSuper.getSuperclass();
                 }
-                toRegister.add(aClass);
-            }
-
-            if (!Modifier.isFinal(modifiers)) {
-                findSubclasses(access, toRegister, processed, aClass);
+            } else {
+                nextSuper = nextSuper.getSuperclass();
             }
         }
     }
@@ -295,37 +365,60 @@ public class HelidonReflectionFeature implements Feature {
         // to get the classloader to retrieve our configuration
         ClassLoader cl = configClass.getClassLoader();
         try {
-            Enumeration<URL> resources = cl.getResources("META-INF/native-image/helidon/reflection-config.json");
+            Enumeration<URL> resources = cl.getResources("META-INF/helidon/native-image/reflection-config.json");
             HelidonReflectionConfiguration config = new HelidonReflectionConfiguration();
             JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
-                JsonObject configurationJson = readerFactory.createReader(url.openStream()).readObject();
-                jsonArray(access, config.annotations, configurationJson.getJsonArray("annotated"), "Annotation");
-                jsonArray(access, config.hierarchy, configurationJson.getJsonArray("class-hierarchy"), "Class hierarchy");
-                jsonArray(access, config.classes, configurationJson.getJsonArray("classes"), "Single");
+                try {
+                    JsonObject configurationJson = readerFactory.createReader(url.openStream()).readObject();
+                    jsonArray(access, config.annotations, configurationJson.getJsonArray("annotated"), "Annotation");
+                    jsonArray(access, config.hierarchy, configurationJson.getJsonArray("class-hierarchy"), "Class hierarchy");
+                    jsonArray(access, config.classes, configurationJson.getJsonArray("classes"), "Single");
+                    jsonArray(access, config.excluded, configurationJson.getJsonArray("exclude"), "Exclude");
+                } catch (JsonParsingException e) {
+                    System.err.println("Failed to process configuration file: " + url);
+                    throw e;
+                }
             }
 
             return config;
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to process configuration from helidon-reflection-config.json files", e);
         }
     }
 
-    private void jsonArray(BeforeAnalysisAccess access, List<Class<?>> classList, JsonArray classNames, String desc) {
+    private void jsonArray(BeforeAnalysisAccess access, Collection<Class<?>> classList, JsonArray classNames, String desc) {
         if (null == classNames) {
             return;
         }
         for (int i = 0; i < classNames.size(); i++) {
             String className = classNames.getString(i);
+            boolean isArray = false;
+            if (className.endsWith("[]")) {
+                // an array
+                isArray = true;
+                className = className.substring(0, className.length() - 2);
+            }
             Class<?> clazz = access.findClassByName(className);
             if (null == clazz) {
-                if (traceParsing) {
-                    System.out.println(desc + " class \"" + className + "\" configured for reflection is not on classpath");
-                }
+                final String logName = className;
+                traceParsing(() -> desc + " class \"" + logName + "\" configured for reflection is not on classpath");
+                continue;
             } else {
                 classList.add(clazz);
             }
+
+            if (isArray) {
+                Object anArray = Array.newInstance(clazz, 0);
+                classList.add(anArray.getClass());
+            }
+        }
+    }
+
+    private void traceParsing(Supplier<String> message) {
+        if (TRACE_PARSING) {
+            System.out.println(message.get());
         }
     }
 
@@ -333,6 +426,7 @@ public class HelidonReflectionFeature implements Feature {
         private final List<Class<?>> annotations = new LinkedList<>();
         private final List<Class<?>> hierarchy = new LinkedList<>();
         private final List<Class<?>> classes = new LinkedList<>();
+        private final Set<Class<?>> excluded = new HashSet<>();
 
         private List<Class<?>> annotations() {
             return annotations;
@@ -351,9 +445,11 @@ public class HelidonReflectionFeature implements Feature {
         private final FeatureImpl.BeforeAnalysisAccessImpl access;
         private final Set<Class<?>> processed = new HashSet<>();
         private final Set<Class<?>> toRegister = new LinkedHashSet<>();
+        private final Set<Class<?>> excluded = new HashSet<>();
 
-        private BeforeAnalysisContext(BeforeAnalysisAccess access) {
+        private BeforeAnalysisContext(BeforeAnalysisAccess access, Set<Class<?>> excluded) {
             this.access = (FeatureImpl.BeforeAnalysisAccessImpl) access;
+            this.excluded.addAll(excluded);
         }
 
         public FeatureImpl.BeforeAnalysisAccessImpl access() {
@@ -364,16 +460,16 @@ public class HelidonReflectionFeature implements Feature {
             return processed.add(theClass);
         }
 
-        public boolean processed(Class<?> theClass) {
-            return processed.contains(theClass);
-        }
-
         public void register(Class<?> theClass) {
             this.toRegister.add(theClass);
         }
 
         public Set<Class<?>> toRegister() {
             return toRegister;
+        }
+
+        boolean isExcluded(Class<?> theClass) {
+            return excluded.contains(theClass);
         }
     }
 }

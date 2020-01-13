@@ -23,13 +23,13 @@
         <packages>
             <package name="org.eclipse.microprofile.config.tck.*"/>
         </packages>
-        <classes>
-<!--            <class name="org.eclipse.microprofile.config.tck.CdiOptionalInjectionTest">-->
+<!--        <classes>-->
+<!--            <class name="org.eclipse.microprofile.config.tck.CDIPropertyNameMatchingTest">-->
 <!--                <methods>-->
-<!--                    <include name="testImplicitConverterCharSequenceParse"/>-->
+<!--                    <include name="testPropertyFromEnvironmentVariables"/>-->
 <!--                </methods>-->
 <!--            </class>-->
-        </classes>
+<!--        </classes>-->
     </test>
 
 </suite>

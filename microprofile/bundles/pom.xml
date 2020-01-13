@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,12 +39,6 @@
 
     <modules>
         <module>internal-test-libs</module>
-        <module>helidon-microprofile-1.1</module>
-        <module>helidon-microprofile-1.0</module>
-        <module>helidon-microprofile-1.2</module>
-        <module>helidon-microprofile-2.2</module>
-        <module>helidon-microprofile-3.0</module>
-        <module>helidon-microprofile-3.1</module>
         <module>helidon-microprofile-core</module>
         <module>helidon-microprofile</module>
     </modules>

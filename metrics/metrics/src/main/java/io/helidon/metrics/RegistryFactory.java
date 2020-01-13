@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
      * for {@link Type#BASE} returns a final registry (cannot register new metrics).
      *
      * @param type type of registry
-     * @return Registry for the type defined.
+     * @return MetricRegistry for the type defined.
      */
     public MetricRegistry getRegistry(Type type) {
         if (type == Type.BASE) {

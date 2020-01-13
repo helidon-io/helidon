@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
     <name>Helidon Microprofile Examples Implicit Hello World</name>
 
     <description>
-        Microprofile example with implicit bootstrapping (server.Main(new String[0])
+        Microprofile example with implicit bootstrapping (cdi.Main(new String[0])
     </description>
 
     <dependencies>
@@ -43,6 +43,7 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>

@@ -1,0 +1,13 @@
+{
+    "resources": [
+        {
+            "pattern": "META-INF/beans.xml"
+        },
+        {
+            "pattern": "META-INF/jandex.idx"
+        },
+        {
+            "pattern": "weld-build.properties"
+        }
+    ]
+}

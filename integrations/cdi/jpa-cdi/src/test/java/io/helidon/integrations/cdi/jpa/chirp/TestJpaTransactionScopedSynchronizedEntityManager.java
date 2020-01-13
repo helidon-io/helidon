@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
     @Inject
     @Named("chirp")
     private DataSource dataSource;
-    
+
     @PersistenceContext(
         type = PersistenceContextType.TRANSACTION,
         synchronization = SynchronizationType.SYNCHRONIZED,
@@ -181,7 +181,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // Get a BeanManager for later use.
         final BeanManager beanManager = this.cdiContainer.getBeanManager();
         assertNotNull(beanManager);
-        
+
         // Get a CDI contextual reference to this test instance.  It
         // is important to use "self" in this test instead of "this".
         final TestJpaTransactionScopedSynchronizedEntityManager self =
@@ -197,7 +197,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // Get a DataSource for JPA-independent testing and assertions.
         final DataSource dataSource = self.getDataSource();
         assertNotNull(dataSource);
-        
+
         // We haven't started any kind of transaction yet and we
         // aren't testing anything using
         // the @javax.transaction.Transactional annotation so there is
@@ -213,7 +213,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
             em.persist(author);
             fail("A TransactionRequiredException should have been thrown");
         } catch (final TransactionRequiredException expected) {
-            
+
         }
 
         // Get the TransactionManager that normally is behind the
@@ -257,7 +257,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // to one anymore.
         assertFalse(em.isJoinedToTransaction());
         assertFalse(transactionScopedContext.isActive());
-        
+
         // Our PersistenceContextType is TRANSACTION, not EXTENDED, so
         // the underlying persistence context dies with the
         // transaction so the EntityManager's persistence context
@@ -279,14 +279,14 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
 
         assertFalse(em.isJoinedToTransaction());
         assertFalse(transactionScopedContext.isActive());
-        
+
         // Note that its ID is still 1.
         assertEquals(Integer.valueOf(1), author.getId());
 
         assertDatabaseIsEmpty(dataSource);
 
         tm.begin();
-        
+
         try {
             assertTrue(em.isJoinedToTransaction());
             assertTrue(transactionScopedContext.isActive());
@@ -314,7 +314,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
             assertTrue(transactionScopedContext.isActive());
             assertTrue(em.contains(author));
             assertTrue(em.isJoinedToTransaction());
-            
+
             tm.commit();
 
             // Make sure the TransactionContext is NOT active.

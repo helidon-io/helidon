@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Registry for base metrics as required by Microprofile metrics specification.
@@ -42,8 +43,8 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * <li>All "Thread JVM Stats" are supported (section 4.2. of the spec).</li>
  * <li>NONE of "Thread Pool Stats" are supported (section 4.3. of the spec) - Vendor specific approach.</li>
  * <li>All "ClassLoading JVM Stats" are supported (section 4.4. of the spec).</li>
- * <li>Available Processors and System Load Average (where available from JVM) metrics from "Operating System" (section 4.5 of
- * the spec).</li>
+ * <li>Available Processors and System Load Average (where available from JVM) metrics from "Operating System"
+ * (section 4.5 of the spec).</li>
  * </ul>
  *
  * Each metric can be disabled by using the following configuration property:
@@ -51,129 +52,140 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * all base metrics set {@code helidon.metrics.base.enabled=false}.
  */
 final class BaseRegistry extends Registry {
+
     private static final String CONFIG_METRIC_ENABLED_BASE = "base.";
     static final String BASE_ENABLED_KEY = CONFIG_METRIC_ENABLED_BASE + "enabled";
 
-    private static final Metadata MEMORY_USED_HEAP = new Metadata("memory.usedHeap",
-                                                                  "Used Heap Memory",
-                                                                  "Displays the amount of used heap memory in bytes.",
-                                                                  MetricType.GAUGE,
-                                                                  MetricUnits.BYTES);
+    private static final Metadata MEMORY_USED_HEAP =
+            new HelidonMetadata("memory.usedHeap",
+                    "Used Heap Memory",
+                    "Displays the amount of used heap memory in bytes.",
+                    MetricType.GAUGE,
+                    MetricUnits.BYTES);
 
-    private static final Metadata MEMORY_COMMITTED_HEAP = new Metadata("memory.committedHeap",
-                                                                       "Committed Heap Memory",
-                                                                       "Displays the amount of memory in bytes that is "
-                                                                               + "committed for the Java virtual "
-                                                                               + "machine to use. This amount of memory is "
-                                                                               + "guaranteed for the Java virtual "
-                                                                               + "machine to use.",
-                                                                       MetricType.GAUGE,
-                                                                       MetricUnits.BYTES);
+    private static final Metadata MEMORY_COMMITTED_HEAP =
+            new HelidonMetadata("memory.committedHeap",
+                    "Committed Heap Memory",
+                    "Displays the amount of memory in bytes that is "
+                            + "committed for the Java virtual "
+                            + "machine to use. This amount of memory is "
+                            + "guaranteed for the Java virtual "
+                            + "machine to use.",
+                    MetricType.GAUGE,
+                    MetricUnits.BYTES);
 
-    private static final Metadata MEMORY_MAX_HEAP = new Metadata("memory.maxHeap",
-                                                                 "Max Heap Memory",
-                                                                 "Displays the maximum amount of heap memory in bytes that can"
-                                                                         + " be used for "
-                                                                         + "memory management. This attribute displays -1 if "
-                                                                         + "the maximum heap "
-                                                                         + "memory size is undefined. This amount of memory is "
-                                                                         + "not guaranteed to be "
-                                                                         + "available for memory management if it is greater "
-                                                                         + "than the amount of "
-                                                                         + "committed memory. The Java virtual machine may fail"
-                                                                         + " to allocate memory "
-                                                                         + "even if the amount of used memory does not exceed "
-                                                                         + "this maximum size.",
-                                                                 MetricType.GAUGE,
-                                                                 MetricUnits.BYTES);
+    private static final Metadata MEMORY_MAX_HEAP =
+            new HelidonMetadata("memory.maxHeap",
+                    "Max Heap Memory",
+                    "Displays the maximum amount of heap memory in bytes that can"
+                            + " be used for "
+                            + "memory management. This attribute displays -1 if "
+                            + "the maximum heap "
+                            + "memory size is undefined. This amount of memory is "
+                            + "not guaranteed to be "
+                            + "available for memory management if it is greater "
+                            + "than the amount of "
+                            + "committed memory. The Java virtual machine may fail"
+                            + " to allocate memory "
+                            + "even if the amount of used memory does not exceed "
+                            + "this maximum size.",
+                    MetricType.GAUGE,
+                    MetricUnits.BYTES);
 
-    private static final Metadata JVM_UPTIME = new Metadata("jvm.uptime",
-                                                            "JVM Uptime",
-                                                            "Displays the start time of the Java virtual machine in "
-                                                                    + "milliseconds. This "
-                                                                    + "attribute displays the approximate time when the Java "
-                                                                    + "virtual machine "
-                                                                    + "started.",
-                                                            MetricType.GAUGE,
-                                                            MetricUnits.MILLISECONDS);
+    private static final Metadata JVM_UPTIME =
+            new HelidonMetadata("jvm.uptime",
+                    "JVM Uptime",
+                    "Displays the start time of the Java virtual machine in "
+                            + "milliseconds. This "
+                            + "attribute displays the approximate time when the Java "
+                            + "virtual machine "
+                            + "started.",
+                    MetricType.GAUGE,
+                    MetricUnits.MILLISECONDS);
 
-    private static final Metadata THREAD_COUNT = new Metadata("thread.count",
-                                                              "Thread Count",
-                                                              "Displays the current number of live threads including both "
-                                                                      + "daemon and nondaemon threads",
-                                                              MetricType.COUNTER,
-                                                              MetricUnits.NONE);
+    private static final Metadata THREAD_COUNT =
+            new HelidonMetadata("thread.count",
+                    "Thread Count",
+                    "Displays the current number of live threads including both "
+                            + "daemon and nondaemon threads",
+                    MetricType.GAUGE,
+                    MetricUnits.NONE);
 
-    private static final Metadata THREAD_DAEMON_COUNT = new Metadata("thread.daemon.count",
-                                                                     "Daemon Thread Count",
-                                                                     "Displays the current number of live daemon threads.",
-                                                                     MetricType.COUNTER,
-                                                                     MetricUnits.NONE);
+    private static final Metadata THREAD_DAEMON_COUNT =
+            new HelidonMetadata("thread.daemon.count",
+                    "Daemon Thread Count",
+                    "Displays the current number of live daemon threads.",
+                    MetricType.GAUGE,
+                    MetricUnits.NONE);
 
-    private static final Metadata THREAD_MAX_COUNT = new Metadata("thread.max.count",
-                                                                  "Peak Thread Count",
-                                                                  "Displays the peak live thread count since the Java "
-                                                                          + "virtual machine started or "
-                                                                          + "peak was reset. This includes daemon and "
-                                                                          + "non-daemon threads.",
-                                                                  MetricType.COUNTER,
-                                                                  MetricUnits.NONE);
+    private static final Metadata THREAD_MAX_COUNT =
+            new HelidonMetadata("thread.max.count",
+                    "Peak Thread Count",
+                    "Displays the peak live thread count since the Java "
+                            + "virtual machine started or "
+                            + "peak was reset. This includes daemon and "
+                            + "non-daemon threads.",
+                    MetricType.GAUGE,
+                    MetricUnits.NONE);
 
-    private static final Metadata CL_LOADED_COUNT = new Metadata("classloader.currentLoadedClass.count",
-                                                                 "Current Loaded Class Count",
-                                                                 "Displays the number of classes that are currently loaded in "
-                                                                         + "the Java virtual "
-                                                                         + "machine.",
-                                                                 MetricType.COUNTER,
-                                                                 MetricUnits.NONE);
+    private static final Metadata CL_LOADED_COUNT =
+            new HelidonMetadata("classloader.loadedClasses.count",
+                    "Current Loaded Class Count",
+                    "Displays the number of classes that are currently loaded in "
+                            + "the Java virtual machine.",
+                    MetricType.GAUGE,
+                    MetricUnits.NONE);
 
-    private static final Metadata CL_LOADED_TOTAL = new Metadata("classloader.totalLoadedClass.count",
-                                                                 "Total Loaded Class Count",
-                                                                 "Displays the total number of classes that have been loaded "
-                                                                         + "since the Java "
-                                                                         + "virtual machine has started execution.",
-                                                                 MetricType.COUNTER,
-                                                                 MetricUnits.NONE);
+    private static final Metadata CL_LOADED_TOTAL =
+            new HelidonMetadata("classloader.loadedClasses.total",
+                    "Total Loaded Class Count",
+                    "Displays the total number of classes that have been loaded "
+                            + "since the Java virtual machine has started execution.",
+                    MetricType.COUNTER,
+                    MetricUnits.NONE);
 
-    private static final Metadata CL_UNLOADED_COUNT = new Metadata("classloader.totalUnloadedClass.count",
-                                                                   "Total Unloaded Class Count",
-                                                                   "Displays the total number of classes unloaded since the Java "
-                                                                           + "virtual machine "
-                                                                           + "has started execution.",
-                                                                   MetricType.COUNTER,
-                                                                   MetricUnits.NONE);
+    private static final Metadata CL_UNLOADED_COUNT =
+            new HelidonMetadata("classloader.unloadedClasses.total",
+                    "Total Unloaded Class Count",
+                    "Displays the total number of classes unloaded since the Java "
+                            + "virtual machine has started execution.",
+                    MetricType.COUNTER,
+                    MetricUnits.NONE);
 
-    private static final Metadata OS_AVAILABLE_CPU = new Metadata("cpu.availableProcessors",
-                                                                  "Available Processors",
-                                                                  "Displays the number of processors available to the Java "
-                                                                          + "virtual machine. This "
-                                                                          + "value may change during a particular invocation of"
-                                                                          + " the virtual machine.",
-                                                                  MetricType.GAUGE,
-                                                                  MetricUnits.NONE);
+    private static final Metadata OS_AVAILABLE_CPU =
+            new HelidonMetadata("cpu.availableProcessors",
+                    "Available Processors",
+                    "Displays the number of processors available to the Java "
+                            + "virtual machine. This "
+                            + "value may change during a particular invocation of"
+                            + " the virtual machine.",
+                    MetricType.GAUGE,
+                    MetricUnits.NONE);
 
-    private static final Metadata OS_LOAD_AVERAGE = new Metadata("cpu.systemLoadAverage",
-                                                                 "System Load Average",
-                                                                 "Displays the system load average for the last minute. The "
-                                                                         + "system load average "
-                                                                         + "is the sum of the number of runnable entities "
-                                                                         + "queued to the available "
-                                                                         + "processors and the number of runnable entities "
-                                                                         + "running on the available "
-                                                                         + "processors averaged over a period of time. The way "
-                                                                         + "in which the load average "
-                                                                         + "is calculated is operating system specific but is "
-                                                                         + "typically a damped timedependent "
-                                                                         + "average. If the load average is not available, a "
-                                                                         + "negative value is "
-                                                                         + "displayed. This attribute is designed to provide a "
-                                                                         + "hint about the system load "
-                                                                         + "and may be queried frequently. The load average may"
-                                                                         + " be unavailable on some "
-                                                                         + "platforms where it is expensive to implement this "
-                                                                         + "method.",
-                                                                 MetricType.GAUGE,
-                                                                 MetricUnits.NONE);
+    private static final Metadata OS_LOAD_AVERAGE =
+            new HelidonMetadata("cpu.systemLoadAverage",
+                    "System Load Average",
+                    "Displays the system load average for the last minute. The "
+                            + "system load average "
+                            + "is the sum of the number of runnable entities "
+                            + "queued to the available "
+                            + "processors and the number of runnable entities "
+                            + "running on the available "
+                            + "processors averaged over a period of time. The way "
+                            + "in which the load average "
+                            + "is calculated is operating system specific but is "
+                            + "typically a damped timedependent "
+                            + "average. If the load average is not available, a "
+                            + "negative value is "
+                            + "displayed. This attribute is designed to provide a "
+                            + "hint about the system load "
+                            + "and may be queried frequently. The load average may"
+                            + " be unavailable on some "
+                            + "platforms where it is expensive to implement this "
+                            + "method.",
+                    MetricType.GAUGE,
+                    MetricUnits.NONE);
+
     private final Config config;
 
     private BaseRegistry(Config config) {
@@ -199,12 +211,12 @@ final class BaseRegistry extends Registry {
         register(result, JVM_UPTIME, (Gauge<Long>) runtimeBean::getUptime);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        register(result, THREAD_COUNT, (SimpleCounter) threadBean::getThreadCount);
-        register(result, THREAD_DAEMON_COUNT, (SimpleCounter) threadBean::getDaemonThreadCount);
-        register(result, THREAD_MAX_COUNT, (SimpleCounter) threadBean::getPeakThreadCount);
+        register(result, THREAD_COUNT, (Gauge<Integer>) threadBean::getThreadCount);
+        register(result, THREAD_DAEMON_COUNT, (Gauge<Integer>) threadBean::getDaemonThreadCount);
+        register(result, THREAD_MAX_COUNT, (Gauge<Integer>) threadBean::getPeakThreadCount);
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
-        register(result, CL_LOADED_COUNT, (SimpleCounter) clBean::getLoadedClassCount);
+        register(result, CL_LOADED_COUNT, (Gauge<Integer>) clBean::getLoadedClassCount);
         register(result, CL_LOADED_TOTAL, (SimpleCounter) clBean::getTotalLoadedClassCount);
         register(result, CL_UNLOADED_COUNT, (SimpleCounter) clBean::getUnloadedClassCount);
 
@@ -215,15 +227,17 @@ final class BaseRegistry extends Registry {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            register(result, gcCountMeta(poolName), (Gauge<Long>) gcBean::getCollectionCount);
-            register(result, gcTimeMeta(poolName), (Gauge<Long>) gcBean::getCollectionTime);
+            register(result, gcCountMeta(), (SimpleCounter) gcBean::getCollectionCount,
+                    new Tag("name", poolName));
+            register(result, gcTimeMeta(), (Gauge<Long>) gcBean::getCollectionTime,
+                    new Tag("name", poolName));
         }
 
         return result;
     }
 
-    static Metadata gcTimeMeta(String poolName) {
-        return new Metadata("gc." + poolName + ".time",
+    private static Metadata gcTimeMeta() {
+        return new HelidonMetadata("gc.time",
                             "Garbage Collection Time",
                             "Displays the approximate accumulated collection elapsed time in milliseconds. "
                                     + "This attribute displays -1 if the collection elapsed time is undefined for this "
@@ -235,21 +249,18 @@ final class BaseRegistry extends Registry {
                             MetricUnits.MILLISECONDS);
     }
 
-    static Metadata gcCountMeta(String poolName) {
-        return new Metadata("gc." + poolName + ".count",
+    private static Metadata gcCountMeta() {
+        return new HelidonMetadata("gc.total",
                             "Garbage Collection Count",
                             "Displays the total number of collections that have occurred. This attribute lists "
                                     + "-1 if the collection count is undefined for this collector.",
-                            MetricType.GAUGE,
+                            MetricType.COUNTER,
                             MetricUnits.NONE);
     }
 
-    private static void register(BaseRegistry registry,
-                                 Metadata meta,
-                                 Metric metric) {
-
+    private static void register(BaseRegistry registry, Metadata meta, Metric metric, Tag... tags) {
         if (registry.config.get(CONFIG_METRIC_ENABLED_BASE + meta.getName() + ".enabled").asBoolean().orElse(true)) {
-            registry.register(meta, metric);
+            registry.register(meta, metric, tags);
         }
     }
 
@@ -263,16 +274,6 @@ final class BaseRegistry extends Registry {
         @Override
         default void inc(long n) {
             throw new IllegalStateException("Cannot increase a system counter");
-        }
-
-        @Override
-        default void dec() {
-            throw new IllegalStateException("Cannot decrease a system counter");
-        }
-
-        @Override
-        default void dec(long n) {
-            throw new IllegalStateException("Cannot decrease a system counter");
         }
     }
 }

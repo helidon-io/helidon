@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.microprofile.example.staticc;
 
 import java.io.IOException;
-import java.util.logging.LogManager;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
@@ -42,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class StaticContentTest {
     @BeforeAll
     static void initClass() throws IOException {
-        LogManager.getLogManager().readConfiguration(StaticContentTest.class.getResourceAsStream("/logging.properties"));
         Main.main(new String[0]);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.metrics;
 
+import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.text.DecimalFormat;
@@ -33,6 +33,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -70,23 +71,23 @@ class HelidonHistogramTest {
             850, 870, 870, 880, 880, 880, 890, 890, 890, 890, 900, 910, 920, 920, 920, 930, 940, 950, 950, 950, 960,
             960, 960, 960, 970, 970, 970, 970, 980, 980, 980, 990, 990};
 
-    private static final String EXPECTED_PROMETHEUS_OUTPUT = "# TYPE application:file_sizes_mean_bytes gauge\n"
-            + "application:file_sizes_mean_bytes 50634.99999999998\n"
-            + "# TYPE application:file_sizes_max_bytes gauge\n"
-            + "application:file_sizes_max_bytes 99000\n"
-            + "# TYPE application:file_sizes_min_bytes gauge\n"
-            + "application:file_sizes_min_bytes 0\n"
-            + "# TYPE application:file_sizes_stddev_bytes gauge\n"
-            + "application:file_sizes_stddev_bytes 29438.949964290514\n"
-            + "# TYPE application:file_sizes_bytes summary\n"
-            + "# HELP application:file_sizes_bytes Users file size\n"
-            + "application:file_sizes_bytes_count 200\n"
-            + "application:file_sizes_bytes{quantile=\"0.5\"} 48000\n"
-            + "application:file_sizes_bytes{quantile=\"0.75\"} 75000\n"
-            + "application:file_sizes_bytes{quantile=\"0.95\"} 96000\n"
-            + "application:file_sizes_bytes{quantile=\"0.98\"} 98000\n"
-            + "application:file_sizes_bytes{quantile=\"0.99\"} 98000\n"
-            + "application:file_sizes_bytes{quantile=\"0.999\"} 99000\n";
+    private static final String EXPECTED_PROMETHEUS_OUTPUT = "# TYPE application_file_sizes_mean_bytes gauge\n"
+            + "application_file_sizes_mean_bytes 50634.99999999998\n"
+            + "# TYPE application_file_sizes_max_bytes gauge\n"
+            + "application_file_sizes_max_bytes 99000\n"
+            + "# TYPE application_file_sizes_min_bytes gauge\n"
+            + "application_file_sizes_min_bytes 0\n"
+            + "# TYPE application_file_sizes_stddev_bytes gauge\n"
+            + "application_file_sizes_stddev_bytes 29438.949964290514\n"
+            + "# TYPE application_file_sizes_bytes summary\n"
+            + "# HELP application_file_sizes_bytes Users file size\n"
+            + "application_file_sizes_bytes_count 200\n"
+            + "application_file_sizes_bytes{quantile=\"0.5\"} 48000\n"
+            + "application_file_sizes_bytes{quantile=\"0.75\"} 75000\n"
+            + "application_file_sizes_bytes{quantile=\"0.95\"} 96000\n"
+            + "application_file_sizes_bytes{quantile=\"0.98\"} 98000\n"
+            + "application_file_sizes_bytes{quantile=\"0.99\"} 98000\n"
+            + "application_file_sizes_bytes{quantile=\"0.999\"} 99000\n";
 
     /**
      * Parses a {@code Stream| of text lines (presumably in Prometheus/OpenMetrics format) into a {@code Stream}
@@ -115,6 +116,7 @@ class HelidonHistogramTest {
 
     private static Metadata meta;
     private static HelidonHistogram histoInt;
+    private static MetricID histoIntID;
     private static HelidonHistogram delegatingHistoInt;
     private static HelidonHistogram histoLong;
     private static HelidonHistogram delegatingHistoLong;
@@ -122,13 +124,14 @@ class HelidonHistogramTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new Metadata("file_sizes",
+        meta = new HelidonMetadata("file_sizes",
                             "theDisplayName",
                             "Users file size",
                             MetricType.HISTOGRAM,
                             MetricUnits.KILOBYTES);
 
         histoInt = HelidonHistogram.create("application", meta);
+        histoIntID = new MetricID("file_sizes");
         delegatingHistoInt = HelidonHistogram.create("application", meta, HelidonHistogram.create("ignored", meta));
         histoLong = HelidonHistogram.create("application", meta);
         delegatingHistoLong = HelidonHistogram.create("application", meta, HelidonHistogram.create("ignored", meta));
@@ -158,6 +161,7 @@ class HelidonHistogramTest {
             return null; // never executed - the preceding fail will see to that
         }
     }
+
     @Test
     void testCounts() {
         assertAll("All counts must be 200",
@@ -184,7 +188,7 @@ class HelidonHistogramTest {
     @Test
     void testJson() {
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        histoInt.jsonData(builder);
+        histoInt.jsonData(builder, new MetricID("file_sizes"));
 
         JsonObject result = builder.build();
 
@@ -204,9 +208,10 @@ class HelidonHistogramTest {
     }
 
     @Test
-    void testPrometheus() {
+    void testPrometheus() throws IOException, ParseException {
         final StringBuilder sb = new StringBuilder();
-        parsePrometheusText(new LineNumberReader(new StringReader(histoInt.prometheusData())).lines())
+        histoInt.prometheusData(sb, histoIntID);
+        parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
                 .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
                                     EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),
                                     is(withinTolerance(entry.getValue()))));

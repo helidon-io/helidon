@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@ package io.helidon.microprofile.example.helloworld.explicit;
 
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
+
 import io.helidon.microprofile.server.Server;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
 
 /**
  * Explicit example.
@@ -40,14 +41,13 @@ public class Main {
      */
     public static void main(String[] args) {
         LOGGER.finest("Main method");
-        Weld weld = new Weld();
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         LOGGER.finest("Weld instance");
-        WeldContainer cdiContainer = weld.initialize();
+        SeContainer cdiContainer = initializer.initialize();
         LOGGER.finest("Weld initialized");
 
         Server server = Server.builder()
                 .addApplication(HelloWorldApplication.class)
-                .cdiContainer(cdiContainer)
                 // using a customized helidon config instance (in this case the default...)
                 .config(ConfigProviderResolver.instance()
                                 .getBuilder()

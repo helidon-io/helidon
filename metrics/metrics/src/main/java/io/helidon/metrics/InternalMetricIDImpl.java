@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,104 +16,51 @@
  */
 package io.helidon.metrics;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.MetricID;
-import io.helidon.common.metrics.InternalBridge.Tag;
 
-import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
- * Implementation of a version-neutral metric identifier.
+ *
  */
-class InternalMetricIDImpl implements InternalBridge.MetricID, Comparable<MetricID> {
+class InternalMetricIDImpl implements InternalBridge.MetricID {
 
-    /*
-     * Harvest the automatically-created tags from a dummy instance of {@code Metadata}.
-     * We'll use these to augment any caller-supplied tags when instantiating an ID.
-     */
-    private static final Map<String, String> GLOBAL_TAGS = Collections.unmodifiableMap(
-            new org.eclipse.microprofile.metrics.Metadata("thisIsPrivate", MetricType.INVALID)
-                    .getTags());
+    private final MetricID delegate;
 
-    private final String name;
-    private final Map<String, String> tags;
-
-    /**
-     * Creates a new instance using a name (no tags).
-     *
-     * @param name the name for the identifier
-     */
     InternalMetricIDImpl(String name) {
-        this.name = name;
-        tags = GLOBAL_TAGS; // No need to copy it; it's already immutable.
+        delegate = new org.eclipse.microprofile.metrics.MetricID(name);
     }
 
-    /**
-     * Creates a new instance using a name and tags.
-     *
-     * @param name the name for the identifier
-     * @param tags tags to be associated with the identifier
-     */
     InternalMetricIDImpl(String name, Map<String, String> tags) {
-        this.name = name;
-        this.tags = Collections.unmodifiableMap(augmentedTags(tags));
+        delegate = new org.eclipse.microprofile.metrics.MetricID(name, toTagArray(tags));
     }
 
-    /**
-     *
-     * @return the name from the identifier
-     */
+    private Tag[] toTagArray(Map<String, String> tags) {
+        return tags.entrySet().stream()
+                .map(entry -> new Tag(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList())
+                .toArray(new Tag[0]);
+    }
+
     @Override
     public String getName() {
-        return name;
+        return delegate.getName();
     }
 
-    /**
-     *
-     * @return the tags from the identifier, as a {@code Map}
-     */
     @Override
     public Map<String, String> getTags() {
-        return Collections.unmodifiableMap(tags);
-    }
-
-    /**
-     * Provides the tags as a {@code List}. The returned {@code Tag} objects
-     * are separate from those associated with the ID so changes to the tags
-     * made by the caller do not perturb the original ID.
-     *
-     * @return the {@code Tag}s
-     */
-    @Override
-    public List<Tag> getTagsAsList() {
-        return tags.entrySet().stream()
-                .map(entry -> Tag.newTag(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Describes the tags as a single string: name1=value1,name2=value2,...
-     *
-     * @return {@code String} containing the tags
-     */
-    @Override
-    public String getTagsAsString() {
-        return tags.entrySet().stream()
-                .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
-                .collect(Collectors.joining(","));
+        return delegate.getTags();
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 29 * hash + Objects.hashCode(this.name);
+        int hash = 3;
+        hash = 37 * hash + Objects.hashCode(this.delegate);
         return hash;
     }
 
@@ -129,37 +76,19 @@ class InternalMetricIDImpl implements InternalBridge.MetricID, Comparable<Metric
             return false;
         }
         final InternalMetricIDImpl other = (InternalMetricIDImpl) obj;
-        return Objects.equals(this.name, other.name);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("MetricID{name='%s', tags=[%s]}", name, getTags());
-    }
-
-    @Override
-    public int compareTo(MetricID o) {
-        return name.compareTo(Objects.requireNonNull(o).getName());
+        return Objects.equals(this.delegate, other.delegate);
     }
 
     static class FactoryImpl implements Factory {
 
         @Override
-        public MetricID newMetricID(String name) {
+        public io.helidon.common.metrics.InternalBridge.MetricID newMetricID(String name) {
             return new InternalMetricIDImpl(name);
         }
 
         @Override
-        public MetricID newMetricID(String name, Map<String, String> tags) {
+        public io.helidon.common.metrics.InternalBridge.MetricID newMetricID(String name, Map<String, String> tags) {
             return new InternalMetricIDImpl(name, tags);
         }
-
     }
-
-    private static Map<String, String> augmentedTags(Map<String, String> explicitTags) {
-        final Map<String, String> result = new HashMap<>(GLOBAL_TAGS);
-        result.putAll(explicitTags);
-        return result;
-    }
-
 }

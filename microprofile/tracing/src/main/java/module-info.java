@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import javax.enterprise.inject.spi.Extension;
 
 /**
  * Eclipse Microprofile Tracing implementation for helidon microprofile.
@@ -42,6 +44,6 @@ module io.helidon.microprofile.tracing {
 
     exports io.helidon.microprofile.tracing;
 
-    provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.tracing.MpTracingService;
+    provides Extension with io.helidon.microprofile.tracing.TracingCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.tracing.MpTracingAutoDiscoverable;
 }

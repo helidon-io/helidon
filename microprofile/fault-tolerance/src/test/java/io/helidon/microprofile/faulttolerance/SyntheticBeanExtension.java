@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,8 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 
-class SyntheticBeanExtension<T> implements Extension {
-    final Class<T> type;
-
-    SyntheticBeanExtension(Class<T> type) {
-        this.type = type;
-    }
+public class SyntheticBeanExtension implements Extension {
+    final Class<?> type = SyntheticRetryBean.class;
 
     void restSynthetic(@Observes AfterBeanDiscovery abd) {
     	abd.addBean(new SyntheticBean<>(type));

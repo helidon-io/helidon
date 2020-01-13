@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,8 +173,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
             startServer(context, classPath, classNames);
         } catch (IOException e) {
+            LOGGER.log(Level.INFO, "Failed to start container", e);
             throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
         } catch (ReflectiveOperationException e) {
+            LOGGER.log(Level.INFO, "Failed to start container", e);
             throw new DefinitionException(e.getCause());        // validation exceptions
         }
 
