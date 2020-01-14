@@ -21,7 +21,7 @@ package io.helidon.common;
  */
 public enum HelidonFlavor {
     /**
-     * The "standard edition" flavor.
+     * The "Standard Edition" flavor.
      */
     SE,
     /**

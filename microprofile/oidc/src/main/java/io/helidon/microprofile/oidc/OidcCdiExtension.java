@@ -22,6 +22,8 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -31,6 +33,10 @@ import io.helidon.security.providers.oidc.OidcSupport;
  * Microprofile extension that brings support for Open ID Connect.
  */
 public final class OidcCdiExtension implements Extension {
+    static {
+        HelidonFeatures.register(HelidonFlavor.MP, "Security", "MP", "OIDC");
+    }
+
     private Config config;
 
     private void configure(@Observes @RuntimeStart Config config) {

@@ -41,6 +41,8 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -94,6 +96,11 @@ public final class MetricsSupport implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Metrics");
+    }
+
     private final String context;
     private final RegistryFactory rf;
 

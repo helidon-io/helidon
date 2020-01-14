@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Priority;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.Prioritized;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
@@ -64,6 +66,10 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 class BuilderImpl implements Config.Builder {
     static final Executor DEFAULT_CHANGES_EXECUTOR = Executors.newCachedThreadPool(new ConfigThreadFactory("config"));
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Config");
+    }
 
     /*
      * Config sources

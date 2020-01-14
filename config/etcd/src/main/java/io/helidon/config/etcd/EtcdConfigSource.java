@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
@@ -42,6 +43,10 @@ import io.helidon.config.spi.ConfigParser;
 public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdConfigSource.class.getName());
+
+    static {
+        HelidonFeatures.register("Config", "etcd");
+    }
 
     private final EtcdEndpoint endpoint;
     private final EtcdClient client;

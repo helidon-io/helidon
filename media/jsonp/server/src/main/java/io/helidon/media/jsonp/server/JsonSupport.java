@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import javax.json.JsonReader;
 import javax.json.JsonStructure;
 import javax.json.JsonWriter;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Content;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
@@ -75,6 +77,10 @@ import static io.helidon.media.common.ContentTypeCharset.determineCharset;
  */
 public final class JsonSupport extends JsonService {
     private static final JsonSupport INSTANCE = new JsonSupport(JsonProcessing.create());
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "JSON-P");
+    }
 
     private final JsonProcessing processingSupport;
 

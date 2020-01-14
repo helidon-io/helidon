@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,9 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
+
 import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
@@ -67,6 +70,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * JWT Authentication CDI extension class.
  */
 public class JwtAuthCdiExtension implements Extension {
+    static {
+        HelidonFeatures.register(HelidonFlavor.MP, "Security", "MP", "JWT-Auth");
+    }
 
     private final List<ClaimIP> qualifiers = new LinkedList<>();
 
