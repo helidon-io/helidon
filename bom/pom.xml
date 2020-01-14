@@ -795,6 +795,16 @@
                 <artifactId>helidon-microprofile-openapi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-reactive-streams</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-messaging</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
