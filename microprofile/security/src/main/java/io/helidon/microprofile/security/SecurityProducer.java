@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package io.helidon.microprofile.security;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -38,16 +40,24 @@ class SecurityProducer {
     @Produces
     Security security() {
         return Contexts.context()
-                .flatMap(context -> context.get(Security.class))
+                .flatMap(this::security)
                 .orElseThrow(() -> new IllegalStateException("Security cannot be injected when not configured"));
     }
 
     @RequestScoped
     @Produces
-    SecurityContext securityContext(Security security) {
+    SecurityContext securityContext() {
         return Contexts.context()
-                .flatMap(context -> context.get(SecurityContext.class))
-                .orElseGet(() -> emptyContext(security));
+                .flatMap(this::securityContext)
+                .orElseGet(() -> emptyContext(security()));
+    }
+
+    private Optional<SecurityContext> securityContext(Context context) {
+        return context.get(SecurityContext.class);
+    }
+
+    private Optional<Security> security(Context context) {
+        return context.get(Security.class);
     }
 
     private SecurityContext emptyContext(Security security) {

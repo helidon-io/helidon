@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 
@@ -29,13 +30,27 @@ final class MultiError<T> implements Multi<T> {
 
     private final Throwable error;
 
-    MultiError(Throwable error) {
+    private MultiError(Throwable error) {
         this.error = Objects.requireNonNull(error, "error");
+    }
+
+    static <T> MultiError<T> create(Throwable error) {
+        return new MultiError<T>(error);
     }
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        subscriber.onSubscribe(EmptySubscription.INSTANCE);
+        subscriber.onSubscribe(new Flow.Subscription() {
+            @Override
+            public void request(long n) {
+                subscriber.onError(error);
+            }
+
+            @Override
+            public void cancel() {
+
+            }
+        });
         subscriber.onError(error);
     }
 }

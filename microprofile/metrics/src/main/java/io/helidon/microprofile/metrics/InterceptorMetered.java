@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ final class InterceptorMetered extends InterceptorBase<Meter, Metered> {
         super(registry,
               Metered.class,
               Metered::name,
+              Metered::tags,
               Metered::absolute,
               MetricRegistry::getMeters,
               "meter");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ public class MpConfigBuilder implements ConfigBuilder {
         delegate.disableEnvironmentVariablesSource();
         delegate.disableSourceServices();
         delegate.disableMpMapperServices();
-        delegate.metaConfig();
     }
 
     @Override
@@ -80,5 +79,10 @@ public class MpConfigBuilder implements ConfigBuilder {
     @Override
     public Config build() {
         return delegate.build();
+    }
+
+    ConfigBuilder metaConfig(io.helidon.config.Config metaConfig) {
+        delegate.config(metaConfig);
+        return this;
     }
 }

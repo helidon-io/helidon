@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -457,13 +457,15 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             }
 
             result = jaegerConfig().getTracer();
+            LOGGER.info(() -> "Creating Jaeger tracer for '" + serviceName + "' configured with " + protocol + "://"
+                    + host + ":" + port);
         } else {
             LOGGER.info("Jaeger Tracer is explicitly disabled.");
             result = NoopTracerFactory.create();
         }
 
         if (global) {
-            GlobalTracer.register(result);
+            GlobalTracer.registerIfAbsent(result);
         }
 
         return result;

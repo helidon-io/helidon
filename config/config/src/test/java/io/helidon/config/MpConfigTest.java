@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,4 @@ public class MpConfigTest {
         Integer[] values = config.getValue("mp-list", Integer[].class);
         assertThat(values, arrayContaining(1, 2, 3));
     }
-
-    // TODO if I use app1.node1.value instead to test overriding, the override fails
-    //   probably relate to it being an object node in properties and value node in map?
 }

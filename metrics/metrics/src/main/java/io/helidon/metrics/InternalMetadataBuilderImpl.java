@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,64 +17,64 @@
 package io.helidon.metrics;
 
 import java.util.Map;
-import java.util.Objects;
 
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.common.metrics.InternalBridge.Metadata;
+import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
+ * Fluent-style builder for version-neutral {@link Metadata}.
  *
  */
-class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBuilder {
+class InternalMetadataBuilderImpl implements MetadataBuilder {
 
-    private String name;
-    private String displayName;
-    private String description;
-    private MetricType type;
-    private String unit;
-    private boolean reusable;
+    private final org.eclipse.microprofile.metrics.MetadataBuilder delegate;
 
     InternalMetadataBuilderImpl() {
-    }
-
-    InternalMetadataBuilderImpl(Metadata metadata) {
-        this.name = metadata.getName();
-        this.type = metadata.getTypeRaw();
-        this.reusable = metadata.isReusable();
-        this.displayName = metadata.getDisplayName();
-        metadata.getDescription().ifPresent(this::withDescription);
-        metadata.getUnit().ifPresent(this::withUnit);
+        delegate = new org.eclipse.microprofile.metrics.MetadataBuilder();
     }
 
     @Override
-    public InternalMetadataBuilderImpl withName(String name) {
-        this.name = Objects.requireNonNull(name, "name cannot be null");
+    public MetadataBuilder withName(String name) {
+        delegate.withName(name);
         return this;
     }
 
     @Override
-    public InternalMetadataBuilderImpl withDisplayName(String displayName) {
-        this.displayName = Objects.requireNonNull(displayName, "displayName cannot be null");
+    public MetadataBuilder withDisplayName(String displayName) {
+        delegate.withDisplayName(displayName);
         return this;
     }
 
     @Override
-    public InternalMetadataBuilderImpl withDescription(String description) {
-        this.description = Objects.requireNonNull(description, "description cannot be null");
+    public MetadataBuilder withDescription(String description) {
+        delegate.withDescription(description);
         return this;
     }
 
     @Override
-    public InternalMetadataBuilderImpl withType(MetricType type) {
-        this.type = Objects.requireNonNull(type, "type cannot be null");
+    public MetadataBuilder withType(MetricType type) {
+        delegate.withType(type);
         return this;
     }
 
     @Override
-    public InternalMetadataBuilderImpl withUnit(String unit) {
-        this.unit = Objects.requireNonNull(unit, "unit cannot be null");
+    public MetadataBuilder withUnit(String unit) {
+        delegate.withUnit(unit);
+        return this;
+    }
+
+    @Override
+    public MetadataBuilder reusable() {
+        delegate.reusable();
+        return this;
+    }
+
+    @Override
+    public MetadataBuilder notReusable() {
+        delegate.notReusable();
         return this;
     }
 
@@ -84,30 +84,28 @@ class InternalMetadataBuilderImpl implements InternalBridge.Metadata.MetadataBui
     }
 
     @Override
-    public InternalMetadataBuilderImpl reusable() {
-        this.reusable = true;
-        return this;
+    public InternalBridge.Metadata build() {
+        return new InternalMetadataImpl(delegate.build());
     }
 
     @Override
-    public InternalMetadataBuilderImpl notReusable() {
-        this.reusable = false;
-        return this;
-    }
-
-    public boolean isReusable() {
-        return reusable;
+    public int hashCode() {
+        return delegate.hashCode();
     }
 
     @Override
-    public Metadata build() {
-        if (name == null) {
-            throw new IllegalStateException("name must be assigned");
-        }
-        return new InternalMetadataImpl(name, displayName, description, type, unit, reusable, null);
+    public boolean equals(Object obj) {
+        return (obj != null)
+                && (this.getClass().isAssignableFrom(obj.getClass()))
+                && delegate.equals(((InternalMetadataBuilderImpl) obj).delegate);
     }
 
-    static class FactoryImpl implements Metadata.MetadataBuilder.Factory {
+    @Override
+    public String toString() {
+        return delegate.toString();
+    }
+
+    static class FactoryImpl implements Factory {
 
         @Override
         public Metadata.MetadataBuilder newMetadataBuilder() {

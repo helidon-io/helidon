@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
     }
 
     /**
-     * Create a new fluent API builder.
+     * Create a new builder.
      *
      * @return builder to create new instances of file override source
      */

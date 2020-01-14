@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,7 +243,7 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
     }
 
     private <T> T mpFindValue(Config config, String propertyName, Class<T> propertyType) {
-        // TODO this is a hardcoded fix for TCK tests that expect system properties to be mutable
+        // this is a workaround TCK tests that expect system properties to be mutable
         //  Helidon config does the same, yet with a slight delay (polling reasons)
         //  we need to check if system properties are enabled and first - if so, do this
 
@@ -383,10 +383,11 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
             }
         }
 
-        // TODO this must be changed, as otherwise we would not get changes in MP
+        // see #1183
+        // this must be changed, as otherwise we would not get changes in MP
         //       and why did it work when the MpConfig was a separate implementation?
         //        onChange(newConfig -> {
-        //            // TODO this does not work - seems that when there is more than one subscriber, the events are not delivered
+        //            // this does not work - seems that when there is more than one subscriber, the events are not delivered
         //            latestConfig.set(newConfig);
         //        });
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.microprofile.grpc.core.RpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
 import io.helidon.microprofile.metrics.MetricUtil;
+import io.helidon.microprofile.metrics.MetricsCdiExtension;
 
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -36,7 +37,6 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
-import static io.helidon.microprofile.metrics.MetricUtil.registerMetric;
 
 /**
  * A {@link AnnotatedServiceConfigurer} that adds a
@@ -116,7 +116,9 @@ public class MetricsConfigurer
                                                        builder.name(),
                                                        grpcMethodName));
 
-            registerMetric(method, annotatedClass, annotation, MetricUtil.MatchingType.METHOD);
+            MetricUtil.LookupResult<? extends Annotation> lookupResult
+                    = MetricUtil.lookupAnnotation(method, annotation.annotationType(), annotatedClass);
+            MetricsCdiExtension.registerMetric(method, annotatedClass, lookupResult);
             builder.intercept(grpcMethodName, interceptor.nameFunction(new ConstantNamingFunction(metricName)));
         }
     }

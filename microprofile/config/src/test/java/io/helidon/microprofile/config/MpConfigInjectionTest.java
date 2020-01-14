@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
 import javax.inject.Qualifier;
 
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
+import io.helidon.microprofile.cdi.HelidonContainer;
 import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
 import io.helidon.microprofile.config.Converters.Parse;
@@ -43,7 +42,6 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
@@ -51,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  */
 @ExtendWith(RestoreSystemPropertiesExt.class)
 class MpConfigInjectionTest {
-    private static SeContainer container;
+    private static HelidonContainer container;
 
     @BeforeAll
     static void initClass() {
@@ -64,16 +62,14 @@ class MpConfigInjectionTest {
         System.setProperty("inject.ctor", "ctor");
 
         // CDI container
-
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertThat(initializer, is(notNullValue()));
-        container = initializer.initialize();
+        container = HelidonContainer.instance();
+        container.start();
     }
 
     @AfterAll
     static void destroyClass() {
         if (null != container) {
-            container.close();
+            container.shutdown();
         }
     }
 

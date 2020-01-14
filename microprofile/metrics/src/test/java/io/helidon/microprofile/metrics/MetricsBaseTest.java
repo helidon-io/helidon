@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,15 @@
 package io.helidon.microprofile.metrics;
 
 import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 
+import io.helidon.microprofile.cdi.HelidonContainer;
+
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Class MetricsBaseTest.
@@ -42,9 +40,7 @@ public class MetricsBaseTest {
 
     @BeforeAll
     public synchronized static void startCdiContainer() {
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertThat(initializer, is(notNullValue()));
-        cdiContainer = initializer.initialize();
+        cdiContainer = HelidonContainer.instance().start();
     }
 
     @AfterAll
@@ -63,9 +59,9 @@ public class MetricsBaseTest {
 
     @SuppressWarnings("unchecked")
     static <T extends Metric> T getMetric(Object bean, String name) {
-        String metricName = String.format(METRIC_NAME_TEMPLATE,
-                                          MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
-                                          name);
+        MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+                MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
+                name));
         return (T) getMetricRegistry().getMetrics().get(metricName);
     }
 

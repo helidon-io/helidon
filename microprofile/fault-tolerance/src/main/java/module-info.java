@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,5 @@ module io.helidon.microprofile.faulttolerance {
     requires microprofile.metrics.api;
     requires microprofile.fault.tolerance.api;
 
-    provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.faulttolerance.FaultToleranceMpService;
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
 }

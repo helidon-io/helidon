@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
  */
 package io.helidon.metrics;
 
+import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.SortedMap;
+import java.util.stream.Collectors;
 
 import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.MetricID;
+import io.helidon.common.metrics.InternalBridge.Metadata;
 
 import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -39,12 +42,12 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  */
 public class InternalBridgeTest {
 
-    private static InternalBridge ib;
-    private static InternalBridge.MetricRegistry.RegistryFactory ibFactory;
+    private static io.helidon.common.metrics.InternalBridge ib;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry.RegistryFactory ibFactory;
     private static RegistryFactory factory;
-    private static InternalBridge.MetricRegistry ibVendor;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry ibVendor;
     private static MetricRegistry vendor;
-    private static InternalBridge.MetricRegistry ibApp;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry ibApp;
     private static MetricRegistry app;
 
     public InternalBridgeTest() {
@@ -52,7 +55,7 @@ public class InternalBridgeTest {
 
     @BeforeAll
     private static void loadFactory() {
-        ib = InternalBridge.INSTANCE;
+        ib = io.helidon.common.metrics.InternalBridge.INSTANCE;
         ibFactory = ib.getRegistryFactory();
         factory = RegistryFactory.getInstance();
         ibVendor = ibFactory.getBridgeRegistry(MetricRegistry.Type.VENDOR);
@@ -69,19 +72,59 @@ public class InternalBridgeTest {
 
     @Test
     public void testTags() {
-        String globalTags = System.getenv(Metadata.GLOBAL_TAGS_VARIABLE);
-        String expectedTags = (globalTags == null ? "" : globalTags + ",") + "t1=one,t2=two";
-        Metadata metadata = new Metadata("MyCounter", "MyCounter display",
-                "This is a test counter", MetricType.COUNTER, MetricUnits.NONE,
-                expectedTags);
-        Counter counter = app.counter(metadata);
+        String globalTags = System.getenv(MetricID.GLOBAL_TAGS_VARIABLE);
+        Map<String, String> expectedTags = new HashMap<>();
+        expectedTags.put("t1", "one");
+        expectedTags.put("t2", "two");
 
-        Optional<Map.Entry<? extends MetricID, ? extends Metric>> lookedUpCounter = ibApp.getBridgeMetric("MyCounter");
-        assertEquals(expectedTags,
-                lookedUpCounter
-                    .map(entry -> entry.getKey().getTagsAsString())
-                    .orElse("Counter lookup failed"));
+        if (globalTags != null) {
+            Arrays.stream(globalTags.split(","))
+                    .map(expr -> {
+                        final int eq = expr.indexOf("=");
+                        if (eq <= 0) {
+                            return null;
+                        }
+                        String tag = expr.substring(0, eq);
+                        String value = expr.substring(eq + 1);
+                        return new AbstractMap.SimpleEntry<>(tag, value);
+                    })
+                    .filter(entry -> entry != null)
+                    .forEach(entry -> expectedTags.put(entry.getKey(), entry.getValue()));
+
+        }
+
+        org.eclipse.microprofile.metrics.Tag[] expectedTagsArray =
+                expectedTags.entrySet().stream()
+                .map(entry -> new org.eclipse.microprofile.metrics.Tag(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList())
+                .toArray(new org.eclipse.microprofile.metrics.Tag[0]);
+
+        Metadata internalMetadata = InternalBridge.newMetadataBuilder()
+                .withName("MyCounter")
+                .withDisplayName("MyCounter display")
+                .withDescription("This is a test counter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build();
+
+        org.eclipse.microprofile.metrics.Metadata metadata = new org.eclipse.microprofile.metrics.MetadataBuilder()
+                .withName("MyCounter")
+                .withDisplayName("MyCounter display")
+                .withDescription("This is a test counter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build();
+
+        Counter counter = ibApp.counter(internalMetadata, expectedTags);
+
+        org.eclipse.microprofile.metrics.MetricID expectedMetricID =
+                new org.eclipse.microprofile.metrics.MetricID("MyCounter", expectedTagsArray);
+
+        SortedMap<MetricID, Counter> matchedCounters = app.getCounters(
+            (metricID, metric) -> metricID.getName().equals("MyCounter"));
+
+        assertEquals(1, matchedCounters.size());
+        assertEquals(counter, matchedCounters.get(expectedMetricID));
 
     }
-
 }
