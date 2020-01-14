@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,6 @@ public class SimpleKafkaTest {
         // Consumer
         SimpleKafkaConsumer<Long, String> consumer = new SimpleKafkaConsumer<>(TEST_CONSUMER_1, config);
         Future<?> consumerClosedFuture = consumer.consumeAsync(r -> {
-            // FIXME junit will not catch it if fails
             assertEquals(TEST_MESSAGE, r.value());
             consumer.close();
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package io.helidon.messaging.kafka.connector;
 
-import java.util.Collection;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
@@ -53,8 +50,8 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
      */
     public static final String CONNECTOR_NAME = "helidon-kafka";
 
-    private Queue<SimpleKafkaConsumer<Object, Object>> consumers = new ConcurrentLinkedQueue<>();
-    private static final Logger LOGGER = Logger.getLogger(KafkaConnectorFactory.class.getName());
+    private List<SimpleKafkaConsumer<Object, Object>> consumers = new CopyOnWriteArrayList<>();
+    private ThreadPoolSupplier threadPoolSupplier = null;
 
     /**
      * Called when container is terminated.
@@ -62,13 +59,10 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
      * @param event termination event
      */
     public void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        SimpleKafkaConsumer<Object, Object> consumer;
-        while ((consumer = consumers.poll()) != null) {
-            consumer.close();
-        }
+        consumers.forEach(SimpleKafkaConsumer::close);
     }
 
-    public Collection<SimpleKafkaConsumer<Object, Object>> getConsumers() {
+    public List<SimpleKafkaConsumer<Object, Object>> getConsumers() {
         return consumers;
     }
 
@@ -77,7 +71,7 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
         Config helidonConfig = (Config) config;
         SimpleKafkaConsumer<Object, Object> simpleKafkaConsumer = new SimpleKafkaConsumer<>(helidonConfig);
         consumers.add(simpleKafkaConsumer);
-        return simpleKafkaConsumer.createPushPublisherBuilder(ThreadPoolSupplier.create(helidonConfig.get("executor-service")).get());
+        return simpleKafkaConsumer.createPushPublisherBuilder(getThreadPoolSupplier(helidonConfig).get());
     }
 
     @Override
@@ -95,13 +89,15 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
 
             @Override
             public void onNext(Message<?> message) {
+                //TODO: Future!!!
                 simpleKafkaProducer.produce(message.getPayload());
                 message.ack();
             }
 
             @Override
             public void onError(Throwable t) {
-                LOGGER.log(Level.SEVERE, "The Kafka subscription has failed", t);
+                //TODO properly propagate!!!
+                throw new RuntimeException(t);
             }
 
             @Override
@@ -109,5 +105,15 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
                 simpleKafkaProducer.close();
             }
         });
+    }
+
+    private ThreadPoolSupplier getThreadPoolSupplier(Config config) {
+        synchronized (this) {
+            if (this.threadPoolSupplier != null) {
+                return this.threadPoolSupplier;
+            }
+            this.threadPoolSupplier = ThreadPoolSupplier.create(config.get("executor-service"));
+            return threadPoolSupplier;
+        }
     }
 }
