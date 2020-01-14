@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import javax.el.ValueExpression;
 import javax.el.VariableMapper;
 
 import io.helidon.common.Errors;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
@@ -46,6 +47,11 @@ import io.helidon.security.abac.policy.spi.PolicyExecutor;
 public final class JavaxElPolicyExecutor implements PolicyExecutor {
     private static final Logger LOGGER = Logger.getLogger(JavaxElPolicyExecutor.class.getName());
     private static final AttributeResolver ATTRIBUTE_RESOLVER = new AttributeResolver();
+
+    static {
+        HelidonFeatures.register("Security", "Authorization", "ABAC", "Policy", "EL");
+    }
+
     private final ExpressionFactory ef;
     private final List<CustomFunction> customMethods = new LinkedList<>();
 

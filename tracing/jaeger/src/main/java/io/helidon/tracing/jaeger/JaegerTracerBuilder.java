@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.tracing.TracerBuilder;
 
@@ -154,6 +155,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final String DEFAULT_HTTP_HOST = "localhost";
     static final int DEFAULT_HTTP_PORT = 14268;
     static final String DEFAULT_HTTP_PATH = "/api/traces";
+
+    static {
+        HelidonFeatures.register("Tracing", "Jaeger");
+    }
 
     private final Map<String, String> tags = new HashMap<>();
     private final List<Configuration.Propagation> propagations = new ArrayList<>();

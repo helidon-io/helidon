@@ -94,7 +94,7 @@ class NettyWebServer implements WebServer {
                    Map<String, Routing> namedRoutings) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
-        HelidonFeatures.print(HelidonFlavor.SE);
+        HelidonFeatures.print(HelidonFlavor.SE, config.printFeatureDetails());
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
         // the contextual registry needs to be created as a different type is expected. Once we remove ContextualRegistry

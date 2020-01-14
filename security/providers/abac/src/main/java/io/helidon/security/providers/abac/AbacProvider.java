@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.Errors;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
@@ -54,6 +55,10 @@ import io.helidon.security.spi.SynchronousProvider;
  * @see #create(Config)
  */
 public final class AbacProvider extends SynchronousProvider implements AuthorizationProvider {
+    static {
+        HelidonFeatures.register("Security", "Authorization", "ABAC");
+    }
+
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
     private final Set<Class<? extends Annotation>> supportedAnnotations;
     private final Set<String> supportedConfigKeys;

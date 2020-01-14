@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.grpc.core.PriorityBag;
 
@@ -242,6 +244,10 @@ public interface GrpcServer {
      */
     final class Builder
             implements io.helidon.common.Builder<GrpcServer> {
+
+        static {
+            HelidonFeatures.register(HelidonFlavor.SE, "gRPC Server");
+        }
 
         private final GrpcRouting routing;
 

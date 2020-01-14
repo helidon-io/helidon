@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.media.jackson.server;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.media.jackson.common.JacksonProcessing;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.JsonService;
@@ -37,6 +39,10 @@ import static io.helidon.media.common.ContentTypeCharset.determineCharset;
  * support to Helidon.
  */
 public final class JacksonSupport extends JsonService {
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "Jackson");
+    }
+
     private final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends ObjectMapper> objectMapperProvider;
 
     /**

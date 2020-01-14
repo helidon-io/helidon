@@ -40,6 +40,8 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
@@ -91,6 +93,10 @@ public class Security {
     );
 
     private static final Logger LOGGER = Logger.getLogger(Security.class.getName());
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Security");
+    }
 
     private final Collection<Class<? extends Annotation>> annotations = new LinkedList<>();
     private final List<Consumer<AuditProvider.TracedAuditEvent>> auditors = new LinkedList<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
@@ -60,6 +61,10 @@ import static java.util.Collections.singleton;
 public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     private static final Logger LOGGER = Logger.getLogger(GitConfigSource.class.getName());
+
+    static {
+        HelidonFeatures.register("Config", "git");
+    }
 
     private final URI uri;
     private final String branch;

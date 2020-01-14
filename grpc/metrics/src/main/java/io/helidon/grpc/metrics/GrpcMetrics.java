@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 import io.helidon.grpc.core.GrpcHelper;
@@ -51,6 +52,11 @@ import org.eclipse.microprofile.metrics.Timer;
 @Priority(InterceptorPriorities.TRACING + 1)
 public class GrpcMetrics
         implements ServerInterceptor, ServiceDescriptor.Configurer, MethodDescriptor.Configurer {
+
+    static {
+        HelidonFeatures.register("gRPC Server", "Metrics");
+        HelidonFeatures.register("gRPC Client", "Metrics");
+    }
 
     /**
      * The registry of vendor metrics.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -67,6 +68,10 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
      * Configure this for outbound requests to override user to use.
      */
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
+
+    static {
+        HelidonFeatures.register("Security", "Authentication", "JWT");
+    }
 
     private final boolean optional;
     private final boolean authenticate;
@@ -115,6 +120,10 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         if (!verifySignature) {
             LOGGER.info("JWT Signature validation is disabled. Any JWT will be accepted.");
+        }
+
+        if (propagate) {
+            HelidonFeatures.register("Security", "Outbound", "JWT");
         }
     }
 

@@ -34,7 +34,7 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  */
 public class AccessLogCdiExtension implements Extension {
     static {
-        HelidonFeatures.register(HelidonFlavor.MP, "AccessLog");
+        HelidonFeatures.register(HelidonFlavor.MP, "Server", "AccessLog");
     }
 
     private void setUpAccessLog(@Observes @Priority(PLATFORM_BEFORE + 10) @RuntimeStart Config config,
