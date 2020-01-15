@@ -47,9 +47,9 @@ inject_credentials
 
 echo "============================="
 ls /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
+echo "Removing opentracing-api 0.31.0 artifacts from local maven repo"
+rm -rf "/pipeline/cache/local_repository/io/opentracing/opentracing-api/0.31.0/"
 echo "============================="
-
-exit 1
 
 mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
