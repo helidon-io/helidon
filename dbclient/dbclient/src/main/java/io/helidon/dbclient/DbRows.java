@@ -17,10 +17,10 @@ package io.helidon.dbclient;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.reactive.Flow;
 
 /**
  * Execution result containing result set with multiple rows.

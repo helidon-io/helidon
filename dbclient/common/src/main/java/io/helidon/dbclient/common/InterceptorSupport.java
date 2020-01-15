@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.dbclient.DbInterceptor;
 import io.helidon.dbclient.DbStatementType;
@@ -83,7 +82,7 @@ public interface InterceptorSupport {
                         addAll(result, typeInterceptors.get(dbStatementType));
                         result.addAll(interceptors);
                         return Optional.of(Collections.unmodifiableList(result));
-                    }).orElseGet(CollectionsHelper::listOf);
+                    }).orElseGet(List::of);
                 }
 
                 private void addAll(List<DbInterceptor> result, List<DbInterceptor> dbInterceptors) {

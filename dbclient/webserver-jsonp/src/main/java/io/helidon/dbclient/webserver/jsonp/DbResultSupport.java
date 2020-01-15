@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -29,7 +30,6 @@ import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow;
 import io.helidon.dbclient.DbResult;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;

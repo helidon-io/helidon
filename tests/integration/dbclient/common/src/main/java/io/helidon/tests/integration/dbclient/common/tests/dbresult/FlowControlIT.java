@@ -18,10 +18,10 @@ package io.helidon.tests.integration.dbclient.common.tests.dbresult;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.logging.Logger;
 
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Type;

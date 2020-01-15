@@ -22,7 +22,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
@@ -91,8 +90,7 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
                 return;
             }
             cs.thenAccept(entity -> {
-                OptionalHelper.from(context)
-                        .ifPresentOrElse(theContext -> {
+                context.ifPresentOrElse(theContext -> {
                             Contexts.runInContext(theContext, () -> entityHandler.accept(req, res, entity));
                         }, () -> entityHandler.accept(req, res, entity));
 

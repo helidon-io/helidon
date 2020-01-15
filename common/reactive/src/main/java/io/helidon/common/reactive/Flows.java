@@ -15,6 +15,8 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.concurrent.Flow;
+
 /**
  * Utilities for Flow API.
  */

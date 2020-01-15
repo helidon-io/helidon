@@ -18,12 +18,12 @@ package io.helidon.dbclient.mongodb;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.MappingProcessor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbMapperManager;

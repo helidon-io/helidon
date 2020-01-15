@@ -18,10 +18,9 @@ package io.helidon.common.reactive;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 
 /**
  * {@link io.helidon.common.reactive.Single} exposed as a {@link java.util.concurrent.CompletableFuture}.

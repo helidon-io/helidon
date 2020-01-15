@@ -154,9 +154,15 @@ public class ServerMetricsCheckIT {
     @Test
     public void testHttpMetrics() throws IOException, InterruptedException, ExecutionException {
         // Call select-pokemons to trigger it
-        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons")
-        ).toCompletableFuture().get();
+        DbRows<DbRow> rows;
+        try {
+            rows = DB_CLIENT.execute(exec -> exec
+                    .namedQuery("select-pokemons")
+            ).toCompletableFuture().get();
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw t;
+        }
         List<DbRow> pokemonList = rows.collect().toCompletableFuture().get();
         // Call insert-pokemon to trigger it
         Pokemon pokemon = new Pokemon(BASE_ID+1, "Lickitung", TYPES.get(1));

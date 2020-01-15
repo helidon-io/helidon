@@ -26,6 +26,7 @@ import io.helidon.dbclient.DbStatementType;
 import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -55,7 +56,7 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
         this.measureSuccess = builder.measureSuccess();
         String tmpDescription;
         if (builder.description() == null) {
-            tmpDescription = ((null == meta) ? "" : meta.getDescription());
+            tmpDescription = ((null == meta) ? null : meta.getDescription().orElse(null));
         } else {
             tmpDescription = builder.description();
         }
@@ -71,20 +72,13 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
 
         T metric = cache.computeIfAbsent(statementName, s -> {
             String name = nameFunction.apply(statementName, dbStatementType);
-            Metadata metadata;
-
-            if (null == meta) {
-                metadata = new Metadata(name, metricType());
-                metadata.setDescription(description);
-            } else {
-                metadata = new Metadata(name,
-                                        meta.getDisplayName(),
-                                        description,
-                                        meta.getTypeRaw(),
-                                        meta.getUnit(),
-                                        meta.getTagsAsString());
+            MetadataBuilder builder = meta == null
+                    ? Metadata.builder().withName(name).withType(metricType())
+                    : Metadata.builder(meta);
+            if (description != null) {
+                builder = builder.withDescription(description);
             }
-            return metric(registry, metadata);
+            return metric(registry, builder.build());
         });
 
         executeMetric(metric, interceptorContext.statementFuture());

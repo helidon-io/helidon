@@ -16,10 +16,10 @@
 package io.helidon.dbclient.mongodb;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.dbclient.DbRow;
 
 import org.bson.Document;

@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
@@ -118,14 +117,12 @@ class DbMapperManagerImpl implements DbMapperManager {
 
     private <T> Optional<DbMapper<T>> fromProviders(Class<T> type) {
         return providers.stream()
-                .flatMap(provider -> OptionalHelper.from(provider.mapper(type)).stream())
-                .findFirst();
+                .flatMap(provider -> provider.mapper(type).stream()).findFirst();
     }
 
     private <T> Optional<DbMapper<T>> fromProviders(GenericType<T> type) {
         return providers.stream()
-                .flatMap(provider -> OptionalHelper.from(provider.mapper(type)).stream())
-                .findFirst();
+                .flatMap(provider -> provider.mapper(type).stream()).findFirst();
     }
 
     private RuntimeException createMapperException(Object source,

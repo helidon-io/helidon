@@ -15,9 +15,9 @@
  */
 package io.helidon.dbclient.tracing;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbInterceptor;
@@ -82,22 +82,22 @@ public class DbClientTracing implements DbInterceptor {
 
         interceptorContext.statementFuture().thenAccept(nothing -> {
             if (spanConfig.logEnabled("statement-finish", true)) {
-                span.log(CollectionsHelper.mapOf("type", "statement"));
+                span.log(Map.of("type", "statement"));
             }
         });
 
         interceptorContext.resultFuture().thenAccept(count -> {
             if (spanConfig.logEnabled("result-finish", true)) {
-                span.log(CollectionsHelper.mapOf("type", "result",
-                                                 "count", count));
+                span.log(Map.of("type", "result",
+                                "count", count));
             }
             span.finish();
         }).exceptionally(throwable -> {
             Tags.ERROR.set(span, Boolean.TRUE);
-            span.log(CollectionsHelper.mapOf("event", "error",
-                                             "error.kind", "Exception",
-                                             "error.object", throwable,
-                                             "message", throwable.getMessage()));
+            span.log(Map.of("event", "error",
+                            "error.kind", "Exception",
+                            "error.object", throwable,
+                            "message", throwable.getMessage()));
             span.finish();
             return null;
         });

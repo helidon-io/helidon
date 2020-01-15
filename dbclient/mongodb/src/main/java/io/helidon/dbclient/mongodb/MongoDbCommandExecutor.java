@@ -18,12 +18,12 @@ package io.helidon.dbclient.mongodb;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbRow;
