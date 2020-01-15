@@ -31,13 +31,13 @@
     <name>Helidon Microprofile Tests TCK</name>
 
     <modules>
+        <module>tck-opentracing</module>
         <module>tck-config</module>
         <module>tck-health</module>
         <module>tck-metrics</module>
         <module>tck-fault-tolerance</module>
         <module>tck-jwt-auth</module>
         <module>tck-openapi</module>
-        <module>tck-opentracing</module>
         <module>tck-rest-client</module>
     </modules>
 
