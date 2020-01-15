@@ -47,7 +47,11 @@ inject_credentials
 
 echo "============================="
 ls /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
+mvn -U -f ${WS_DIR}/microprofile/tests/tck/tck-opentracing/pom.xml dependency:go-offline
+ls /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
 echo "============================="
+
+exit 1
 
 mvn -U -f ${WS_DIR}/pom.xml \
     clean install -e \
