@@ -45,6 +45,12 @@ fi
 
 inject_credentials
 
+echo "============================="
+ls /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
+echo "============================="
+
+exit 1
+
 mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
     -B \
