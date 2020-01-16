@@ -67,6 +67,9 @@
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.0.8</version.lib.rxjava>
+        <!-- This is to force upgrade of transitive dep from arquillian -->
+        <!-- 2.x versions used http (not https) to access maven central -->
+        <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.surefire.testng>3.0.0-M3</version.lib.surefire.testng>
         <version.lib.testng>6.13.1</version.lib.testng>
@@ -875,6 +878,17 @@
                 <groupId>org.jboss.arquillian.container</groupId>
                 <artifactId>arquillian-weld-embedded</artifactId>
                 <version>${version.lib.arquillian-weld-embedded}</version>
+            </dependency>
+            <!-- Force update of shrinkwrap version used by arquillian -->
+            <dependency>
+                <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+                <version>${version.lib.shrinkwrap-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                <artifactId>shrinkwrap-resolver-api-maven</artifactId>
+                <version>${version.lib.shrinkwrap-resolver}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.config</groupId>
