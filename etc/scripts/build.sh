@@ -20,8 +20,6 @@ set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
 
 on_error(){
-    echo "==== Listing opentracing-api:"
-    ls -R ${LOCAL_REPO}/io/opentracing/opentracing-api/
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
@@ -46,20 +44,6 @@ if [ "${WERCKER}" = "true" -o "${GITLAB}" = "true" ] ; then
 fi
 
 inject_credentials
-
-echo "============================="
-readonly LOCAL_REPO=${WERCKER_CACHE_DIR}/local_repository
-echo "==== WERCKER_CACHE_DIR=${WERCKER_CACHE_DIR}"
-echo "==== LOCAL_REPO=${LOCAL_REPO}"
-echo "==== Finding any *.lastUpdated files..."
-find ${LOCAL_REPO}/ -name "*.lastUpdated" -print
-echo "==== Removing *.lastUpdated files..."
-find ${LOCAL_REPO}/ -name "*.lastUpdated" | xargs rm
-echo "==== Finding any *.lastUpdated files again..."
-find ${LOCAL_REPO}/ -name "*.lastUpdated" -print
-echo "==== Listing opentracing-api:"
-ls -R ${LOCAL_REPO}/io/opentracing/opentracing-api/
-echo "============================="
 
 mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
