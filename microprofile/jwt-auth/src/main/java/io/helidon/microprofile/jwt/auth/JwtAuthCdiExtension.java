@@ -168,7 +168,7 @@ public class JwtAuthCdiExtension implements Extension {
         // Security extension to update and check builder
         SecurityCdiExtension security = bm.getExtension(SecurityCdiExtension.class);
 
-        if (security.securityBuilder().hasProvider("mp-jwt-auth")) {
+        if (security.securityBuilder().hasProvider(JwtAuthProviderService.PROVIDER_NAME)) {
             return;
         }
 
@@ -189,7 +189,7 @@ public class JwtAuthCdiExtension implements Extension {
         }
 
         security.securityBuilder()
-                .addProvider(JwtAuthProvider.create(config), "mp-jwt-auth");
+                .addProvider(JwtAuthProvider.create(config), JwtAuthProviderService.PROVIDER_NAME);
     }
 
     @SuppressWarnings("Duplicates")
