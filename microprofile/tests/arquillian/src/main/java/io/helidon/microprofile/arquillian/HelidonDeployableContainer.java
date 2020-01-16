@@ -109,6 +109,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public void start() {
         dummyServer = Server.builder().build();
+        // No-op
     }
 
     @Override
