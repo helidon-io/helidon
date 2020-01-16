@@ -20,6 +20,7 @@ set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
 
 on_error(){
+    ls /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
@@ -47,13 +48,11 @@ inject_credentials
 
 echo "============================="
 ls /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
-mvn -U -f ${WS_DIR}/microprofile/tests/tck/tck-opentracing/pom.xml dependency:go-offline
+rm -rf /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
 ls /pipeline/cache/local_repository/io/opentracing/opentracing-api/*
 echo "============================="
 
-exit 1
-
-mvn -U -f ${WS_DIR}/pom.xml \
+mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
     -B \
     -Pexamples,integrations,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
