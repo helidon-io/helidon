@@ -32,19 +32,25 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DefinitionException;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.microprofile.server.Server;
 
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -87,6 +93,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      */
     private final Map<String, RunContext> contexts = new HashMap<>();
 
+    private static ConcurrentLinkedQueue<Runnable> stopCalls = new ConcurrentLinkedQueue<>();
+    private Server dummyServer = null;
+
     @Override
     public Class<HelidonContainerConfiguration> getConfigurationClass() {
         return HelidonContainerConfiguration.class;
@@ -99,6 +108,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     @Override
     public void start() {
+        dummyServer = Server.builder().build();
         // No-op
     }
 
@@ -189,6 +199,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     void startServer(RunContext context, URL[] classPath, Set<String> classNames)
             throws ReflectiveOperationException {
+
+        Optional.ofNullable((SeContainer) CDI.current())
+                .ifPresent(SeContainer::close);
+        stopAll();
+
         context.classLoader = new MyClassloader(new URLClassLoader(classPath));
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
@@ -232,6 +247,14 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         context.runner = context.runnerClass
                 .getDeclaredConstructor()
                 .newInstance();
+
+        stopCalls.add(() -> {
+            try {
+                context.runnerClass.getDeclaredMethod("stop").invoke(context.runner);
+            } catch (ReflectiveOperationException e) {
+                LOGGER.log(Level.WARNING, "Can't stop embedded Helidon", e);
+            }
+        });
 
         context.runnerClass
                 .getDeclaredMethod("start", Config.class, HelidonContainerConfiguration.class, Set.class, ClassLoader.class)
@@ -326,6 +349,15 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         }
     }
 
+    void stopAll() {
+        Runnable polled = stopCalls.poll();
+        while (Objects.nonNull(polled)) {
+            polled.run();
+            polled = stopCalls.poll();
+        }
+        dummyServer.stop();
+    }
+
     @Override
     public void deploy(Descriptor descriptor) {
         // No-Op
@@ -414,7 +446,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
         @Override
         public void close() throws IOException {
-             this.wrapped.close();
+            this.wrapped.close();
         }
     }
 }
