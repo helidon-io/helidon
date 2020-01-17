@@ -79,12 +79,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
 
 
     /**
+     * Creates a new {@link JtaDataSourceProvider}.
+     *
      * <p>This constructor exists only to conform to <a
      * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#unproxyable">section
      * 3.15 of the CDI specification</a> and for no other purpose.</p>
      *
      * @deprecated Please use the {@link
-     * #JtaDataSourceProvider(Instance)} constructor instead.
+     * #JtaDataSourceProvider(Instance, TransactionSupport)}
+     * constructor instead.
      */
     @Deprecated
     JtaDataSourceProvider() {
@@ -93,9 +96,19 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         this.transactionSupport = null;
     }
 
+    /**
+     * Creates a new {@link JtaDataSourceProvider}.
+     *
+     * @param objects an {@link Instance} providing access to CDI
+     * beans; must not be {@code null}
+     *
+     * @param transactionSupport a {@link JtaTransactionSupport} used for
+     * its {@link TransactionSupport#getStatus()} method; must not be
+     * {@code null}
+     */
     @Inject
     JtaDataSourceProvider(final Instance<Object> objects,
-                          final TransactionSupport transactionSupport) {
+                          final JtaTransactionSupport transactionSupport) {
         super();
         this.objects = Objects.requireNonNull(objects);
         this.transactionSupport = Objects.requireNonNull(transactionSupport);

@@ -16,7 +16,6 @@
 package io.helidon.integrations.cdi.jpa;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -28,12 +27,13 @@ import javax.sql.DataSource;
  * that uses a {@link BeanManager} to look up relevant {@link
  * DataSource}s.
  *
+ * <p>This class should be used only when JTA transactions are not
+ * supported.</p>
+ *
  * @see PersistenceUnitInfoBean.DataSourceProvider
  *
- * @deprecated Please use {@link JtaDataSourceProvider} instead.
+ * @see JtaDataSourceProvider
  */
-@Deprecated
-@Vetoed
 @ApplicationScoped
 class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
 
