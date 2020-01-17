@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,8 +149,10 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * </tr>
  * <tr>
  *     <td>cookie-same-site</td>
- *     <td>Strict</td>
- *     <td>When using cookie, used to set the SameSite cookie value. Can be "Strict" or "Lax"</td>
+ *     <td>Lax</td>
+ *     <td>When using cookie, used to set the SameSite cookie value. Can be "Strict" or "Lax".
+ *     Setting this to "Strict" will result in infinite redirects when calling OIDC on a different host.
+ *     </td>
  * </tr>
  * <tr>
  *     <td>query-param-use</td>
@@ -260,7 +262,7 @@ public final class OidcConfig {
     static final String DEFAULT_COOKIE_PATH = "/";
     static final boolean DEFAULT_COOKIE_HTTP_ONLY = true;
     static final boolean DEFAULT_COOKIE_SECURE = false;
-    static final String DEFAULT_COOKIE_SAME_SITE = "Strict";
+    static final String DEFAULT_COOKIE_SAME_SITE = "Lax";
     static final String DEFAULT_PARAM_NAME = "accessToken";
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
