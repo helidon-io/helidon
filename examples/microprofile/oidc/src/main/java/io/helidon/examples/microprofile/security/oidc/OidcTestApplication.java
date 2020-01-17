@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.example.idcs;
+package io.helidon.examples.microprofile.security.oidc;
 
 import java.util.Set;
 
@@ -25,13 +25,14 @@ import javax.ws.rs.core.Application;
 import io.helidon.common.CollectionsHelper;
 
 /**
- * Example JAX-RS application with resources protected by IDCS.
+ * A simple JAX-rs application that just returns the single {@link OidcResource resource}.
  */
 @ApplicationScoped
-@ApplicationPath("/rest")
-public class IdcsApplication extends Application {
+@ApplicationPath("/")
+public class OidcTestApplication extends Application {
+
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(IdcsResource.class);
+        return CollectionsHelper.setOf(OidcResource.class);
     }
 }

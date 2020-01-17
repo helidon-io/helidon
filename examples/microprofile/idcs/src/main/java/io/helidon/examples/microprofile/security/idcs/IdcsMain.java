@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.security.examples.oidc;
+
+package io.helidon.examples.microprofile.security.idcs;
 
 import java.io.IOException;
-import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
@@ -25,26 +25,33 @@ import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 
 /**
- * Main class for MP.
+ * IDCS example.
  */
-public final class OidcMain {
-    private OidcMain() {
+public final class IdcsMain {
+    private IdcsMain() {
     }
 
     /**
-     * Start the application.
-     * @param args ignored.
-     * @throws IOException in case the logging configuration fails
+     * Start the server and use the application picked up by CDI.
+     *
+     * @param args command line arguments, ignored
+     * @throws IOException when logging configuration fails
      */
     public static void main(String[] args) throws IOException {
-        LogManager.getLogManager().readConfiguration(OidcMain.class.getResourceAsStream("/logging.properties"));
-
-        Server server = Server.builder()
+        Server.builder()
                 .config(buildConfig())
                 .build()
                 .start();
 
-        System.out.println("http://localhost:" + server.port() + "/test");
+        System.out.println("Endpoints:");
+        System.out.println("Login");
+        System.out.println("  http://localhost:7987/rest/login");
+        System.out.println("Full security with scopes and roles (see IdcsResource.java)");
+        System.out.println("  http://localhost:7987/rest/scopes");
+        System.out.println("A protected reactive service (see application.yaml - security.web-server)");
+        System.out.println("  http://localhost:7987/reactive");
+        System.out.println("A protected static resource (see application.yaml - security.web-server");
+        System.out.println("  http://localhost:7987/web/resource.html");
     }
 
     private static Config buildConfig() {

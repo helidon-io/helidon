@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,16 +25,16 @@
         <version>1.4.2-SNAPSHOT</version>
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.examples.security</groupId>
-    <artifactId>helidon-examples-security-oidc-login</artifactId>
-    <name>Helidon Security Examples OIDC</name>
+    <groupId>io.helidon.examples.microprofile</groupId>
+    <artifactId>helidon-examples-microprofile-security-oidc-login</artifactId>
+    <name>Helidon Microprofile Examples OIDC Security</name>
 
     <description>
-        Example of login using (any) OIDC provider.
+        Microprofile example with (any) OIDC provider integration.
     </description>
 
     <properties>
-        <mainClass>io.helidon.security.examples.oidc.OidcMain</mainClass>
+        <mainClass>io.helidon.examples.microprofile.security.oidc.OidcMain</mainClass>
     </properties>
 
     <dependencies>
@@ -42,11 +42,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile-2.2</artifactId>
-        </dependency>
-        <!-- Helidon MicroProfile Security -->
-        <dependency>
-            <groupId>io.helidon.microprofile</groupId>
-            <artifactId>helidon-microprofile-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>

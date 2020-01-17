@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.example.idcs;
+package io.helidon.examples.microprofile.security.idcs;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -32,13 +32,6 @@ import io.helidon.security.annotations.Authenticated;
  */
 @Path("/")
 public class IdcsResource {
-    // bug: JC-304
-    //    @GET
-    //    @Authenticated(optional = true)
-    //    public String getCurrentSubject(@Context SecurityContext context) {
-    //        return context.getUser().toString();
-    //    }
-
     /**
      * A protected resource (authentication required).
      *
