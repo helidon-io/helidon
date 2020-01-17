@@ -18,6 +18,7 @@ package io.helidon.webserver.tyrus;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -55,9 +56,13 @@ public class TyrusSupport implements Service {
 
     private final WebSocketEngine engine;
     private final TyrusHandler handler = new TyrusHandler();
+    private Set<Class<?>> endpointClasses;
+    private Set<ServerEndpointConfig> endpointConfigs;
 
-    TyrusSupport(WebSocketEngine engine) {
+    TyrusSupport(WebSocketEngine engine, Set<Class<?>> endpointClasses, Set<ServerEndpointConfig> endpointConfigs) {
         this.engine = engine;
+        this.endpointClasses = endpointClasses;
+        this.endpointConfigs = endpointConfigs;
     }
 
     /**
@@ -70,6 +75,24 @@ public class TyrusSupport implements Service {
     public void update(Routing.Rules routingRules) {
         LOGGER.info("Updating TyrusSupport routing routes");
         routingRules.any(handler);
+    }
+
+    /**
+     * Access to endpoint classes.
+     *
+     * @return Immutable set of end endpoint classes.
+     */
+    public Set<Class<?>> endpointClasses() {
+        return Collections.unmodifiableSet(endpointClasses);
+    }
+
+    /**
+     * Access to endpoint configs.
+     *
+     * @return Immutable set of end endpoint configs.
+     */
+    public Set<ServerEndpointConfig> endpointConfigs() {
+        return Collections.unmodifiableSet(endpointConfigs);
     }
 
     /**
@@ -92,12 +115,24 @@ public class TyrusSupport implements Service {
         private Builder() {
         }
 
-        Builder register(Class<?> endpointClass) {
+        /**
+         * Register an endpoint class.
+         *
+         * @param endpointClass The class.
+         * @return The builder.
+         */
+        public Builder register(Class<?> endpointClass) {
             endpointClasses.add(endpointClass);
             return this;
         }
 
-        Builder register(ServerEndpointConfig endpointConfig) {
+        /**
+         * Register an endpoint config.
+         *
+         * @param endpointConfig The endpoint config.
+         * @return The builder.
+         */
+        public Builder register(ServerEndpointConfig endpointConfig) {
             endpointConfigs.add(endpointConfig);
             return this;
         }
@@ -145,7 +180,7 @@ public class TyrusSupport implements Service {
             });
 
             // Create TyrusSupport using WebSocket engine
-            return new TyrusSupport(serverContainer.getWebSocketEngine());
+            return new TyrusSupport(serverContainer.getWebSocketEngine(), endpointClasses, endpointConfigs);
         }
     }
 

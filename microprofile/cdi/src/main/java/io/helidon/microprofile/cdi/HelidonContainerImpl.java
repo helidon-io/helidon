@@ -16,8 +16,10 @@
 package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
@@ -138,7 +140,13 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         addHelidonBeanDefiningAnnotations();
 
-        ResourceLoader resourceLoader = new WeldResourceLoader();
+        ResourceLoader resourceLoader = new WeldResourceLoader() {
+            @Override
+            public Collection<URL> getResources(String name) {
+                Collection<URL> resources = super.getResources(name);
+                return new HashSet<>(resources);    // drops duplicates when using patch-module
+            }
+        };
         setResourceLoader(resourceLoader);
 
         Config config = (Config) ConfigProvider.getConfig();

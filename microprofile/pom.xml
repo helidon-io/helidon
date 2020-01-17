@@ -49,5 +49,6 @@
         <module>grpc</module>
         <module>cdi</module>
         <module>weld</module>
+        <module>tyrus</module>
     </modules>
 </project>

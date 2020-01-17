@@ -49,6 +49,8 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.tyrus.WebSocketApplication;
+import io.helidon.microprofile.tyrus.WebSocketCdiExtension;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.Service;
@@ -56,6 +58,7 @@ import io.helidon.webserver.SocketConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
+import io.helidon.webserver.tyrus.TyrusSupport;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -116,6 +119,9 @@ public class ServerCdiExtension implements Extension {
 
         // register static content if configured
         registerStaticContent();
+
+        // register websocket endpoints
+        registerWebSockets(beanManager, serverConfig);
 
         // start the webserver
         WebServer.Builder wsBuilder = WebServer.builder(routingBuilder.build());
@@ -191,6 +197,20 @@ public class ServerCdiExtension implements Extension {
             routingBuilder.register(context.asString().get(), staticContent);
         } else {
             routingBuilder.register(staticContent);
+        }
+    }
+
+    private void registerWebSockets(BeanManager beanManager, ServerConfiguration serverConfig) {
+        try {
+            WebSocketCdiExtension extension = beanManager.getExtension(WebSocketCdiExtension.class);
+            WebSocketApplication app = extension.toWebSocketApplication().build();
+            TyrusSupport.Builder builder = TyrusSupport.builder();
+            app.endpointClasses().forEach(builder::register);
+            app.endpointConfigs().forEach(builder::register);
+            Routing.Builder routing = serverRoutingBuilder();
+            routing.register("/websocket", builder.build());
+        } catch (IllegalArgumentException e) {
+            LOGGER.fine("Unable to load WebSocket extension");
         }
     }
 
