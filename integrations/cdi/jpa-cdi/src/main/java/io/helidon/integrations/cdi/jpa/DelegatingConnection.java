@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@ import java.util.concurrent.Executor;
 class DelegatingConnection implements Connection {
 
     private final Connection delegate;
-    
+
     protected DelegatingConnection(final Connection delegate) {
         super();
         this.delegate = Objects.requireNonNull(delegate);
     }
-    
+
     @Override
     public Statement createStatement() throws SQLException {
         return this.delegate.createStatement();
@@ -146,12 +146,18 @@ class DelegatingConnection implements Connection {
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency) throws SQLException {
+    public PreparedStatement prepareStatement(final String sql,
+                                              final int resultSetType,
+                                              final int resultSetConcurrency)
+      throws SQLException {
         return this.delegate.prepareStatement(sql, resultSetType, resultSetConcurrency);
     }
 
     @Override
-    public CallableStatement prepareCall(final String sql, final int resultSetType, final int resultSetConcurrency) throws SQLException {
+    public CallableStatement prepareCall(final String sql,
+                                         final int resultSetType,
+                                         final int resultSetConcurrency)
+      throws SQLException {
         return this.delegate.prepareCall(sql, resultSetType, resultSetConcurrency);
     }
 
@@ -196,17 +202,27 @@ class DelegatingConnection implements Connection {
     }
 
     @Override
-    public Statement createStatement(final int resultSetType, final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
+    public Statement createStatement(final int resultSetType,
+                                     final int resultSetConcurrency,
+                                     final int resultSetHoldability)
+      throws SQLException {
         return this.delegate.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
+    public PreparedStatement prepareStatement(final String sql, final int resultSetType,
+                                              final int resultSetConcurrency,
+                                              final int resultSetHoldability)
+      throws SQLException {
         return this.delegate.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     @Override
-    public CallableStatement prepareCall(final String sql, final int resultSetType, final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
+    public CallableStatement prepareCall(final String sql,
+                                         final int resultSetType,
+                                         final int resultSetConcurrency,
+                                         final int resultSetHoldability)
+      throws SQLException {
         return this.delegate.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
@@ -316,7 +332,10 @@ class DelegatingConnection implements Connection {
     }
 
     @Override
-    public boolean setShardingKeyIfValid(final ShardingKey shardingKey, final ShardingKey superShardingKey, final int timeout) throws SQLException {
+    public boolean setShardingKeyIfValid(final ShardingKey shardingKey,
+                                         final ShardingKey superShardingKey,
+                                         final int timeout)
+      throws SQLException {
         return this.delegate.setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
     }
 

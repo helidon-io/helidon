@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -540,7 +541,10 @@ public class JpaExtension implements Extension {
                                 new PersistenceUnitInfoBean(persistenceUnitName,
                                                             persistenceUnitRoot,
                                                             null,
-                                                            () -> beanManager.createInstance().select(DataSourceProvider.class).get(),
+                                                            () -> beanManager
+                                                                .createInstance()
+                                                                .select(DataSourceProvider.class)
+                                                                .get(),
                                                             properties);
                             this.implicitPersistenceUnits.put(persistenceUnitName, persistenceUnit);
                         }
@@ -1463,16 +1467,30 @@ public class JpaExtension implements Extension {
             while (urls.hasMoreElements()) {
                 final URL url = urls.nextElement();
                 assert url != null;
-                Collection<? extends PersistenceUnitInfo> persistenceUnitInfos = null;
+                Collection<PersistenceUnitInfo> persistenceUnitInfos = null;
+                Persistence persistence = null;
                 try (InputStream inputStream = new BufferedInputStream(url.openStream())) {
                     final XMLStreamReader reader = xmlInputFactory.createXMLStreamReader(inputStream);
-                    persistenceUnitInfos =
-                        PersistenceUnitInfoBean.fromPersistence((Persistence) unmarshaller.unmarshal(reader),
-                                                                classLoader,
-                                                                tempClassLoaderSupplier,
-                                                                new URL(url, ".."), // i.e. META-INF/..
-                                                                this.unlistedManagedClassesByPersistenceUnitNames,
-                                                                dataSourceProviderSupplier);
+                    try {
+                        persistence = (Persistence) unmarshaller.unmarshal(reader);
+                    } finally {
+                        reader.close();
+                    }
+                }
+                final Collection<? extends Persistence.PersistenceUnit> persistenceUnits = persistence.getPersistenceUnit();
+                if (persistenceUnits != null && !persistenceUnits.isEmpty()) {
+                    persistenceUnitInfos = new ArrayList<>();
+                    for (final Persistence.PersistenceUnit persistenceUnit : persistenceUnits) {
+                        if (persistenceUnit != null) {
+                            persistenceUnitInfos
+                                .add(PersistenceUnitInfoBean.fromPersistenceUnit(persistenceUnit,
+                                                                                 classLoader,
+                                                                                 tempClassLoaderSupplier,
+                                                                                 new URL(url, ".."), // i.e. META-INF/..
+                                                                                 unlistedManagedClassesByPersistenceUnitNames,
+                                                                                 dataSourceProviderSupplier));
+                        }
+                    }
                 }
                 if (persistenceUnitInfos != null && !persistenceUnitInfos.isEmpty()) {
                     for (final PersistenceUnitInfo persistenceUnitInfo : persistenceUnitInfos) {
@@ -1521,11 +1539,9 @@ public class JpaExtension implements Extension {
         }
     }
 
-
     /*
      * Static methods.
      */
-
 
     /**
      * Returns {@code true} if the supplied {@link AnnotatedField} is

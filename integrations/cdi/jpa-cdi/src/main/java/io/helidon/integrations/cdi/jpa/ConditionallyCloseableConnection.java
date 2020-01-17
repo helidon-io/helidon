@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,13 +69,34 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      * @exception NullPointerException if {@code delegate} is {@code
      * null}
      *
+     * @see #ConditionallyCloseableConnection(Connection, boolean)
+     *
+     * @see #setCloseable(boolean)
+     */
+    ConditionallyCloseableConnection(final Connection delegate) {
+        this(delegate, true);
+    }
+
+    /**
+     * Creates a new {@link ConditionallyCloseableConnection}.
+     *
+     * @param delegate the {@link Connection} to wrap; must not be
+     * {@code null}
+     *
+     * @param closeable the initial value for this {@link
+     * ConditionallyCloseableConnection}'s {@linkplain #isCloseable()
+     * closeable} status
+     *
+     * @exception NullPointerException if {@code delegate} is {@code
+     * null}
+     *
      * @see #setCloseable(boolean)
      *
      * @see DelegatingConnection#DelegatingConnection(Connection)
      */
-    ConditionallyCloseableConnection(final Connection delegate) {
+    ConditionallyCloseableConnection(final Connection delegate, final boolean closeable) {
         super(delegate);
-        this.setCloseable(true);
+        this.setCloseable(closeable);
     }
 
 
@@ -83,7 +104,7 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      * Instance methods.
      */
 
-    
+
     /**
      * Overrides the {@link DelegatingConnection#close()} method so
      * that when it is invoked this {@link
@@ -108,11 +129,12 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      * @see #closed()
      */
     @Override
-    public final void close() throws SQLException {
+    public void close() throws SQLException {
         if (!this.isClosed() && this.isCloseable()) {
             this.reset();
             super.close();
             this.closed();
+            assert this.isClosed();
         }
     }
 

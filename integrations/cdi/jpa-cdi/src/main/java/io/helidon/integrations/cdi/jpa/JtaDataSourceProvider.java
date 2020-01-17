@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,37 +15,23 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
-import java.io.PrintWriter;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Destroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.AmbiguousResolutionException;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.inject.Inject;
-import javax.sql.CommonDataSource;
-import javax.sql.ConnectionPoolDataSource;
+import javax.inject.Named;
 import javax.sql.DataSource;
-import javax.sql.XAConnection;
 import javax.sql.XADataSource;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
 import javax.transaction.TransactionSynchronizationRegistry;
 
@@ -56,47 +42,63 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
     /*
      * Static fields.
      */
-    
-    
-    private static final Set<ConnectionPinningDataSource> notificationTargets = new CopyOnWriteArraySet<>();
+
+
+    /**
+     * A {@link ThreadLocal} {@link Set} of {@link Synchronization}s
+     * that will be {@linkplain
+     * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
+     * registered} at the start of a JTA transaction.
+     *
+     * <p>This field is never {@code null}.</p>
+     *
+     * <p>The {@link Set} {@linkplain ThreadLocal#get() contained by
+     * this <code>ThreadLocal</code>} is not {@code null} until the
+     * application scope is destroyed.</p>
+     *
+     * <p>The {@link Set} {@linkplain ThreadLocal#get() contained by
+     * this <code>ThreadLocal</code>} may be empty at any point.</p>
+     */
+    private static final ThreadLocal<? extends Set<Synchronization>> SYNCHRONIZATIONS_TO_REGISTER =
+        ThreadLocal.withInitial(() -> new HashSet<>());
 
 
     /*
      * Instance fields.
      */
-    
-    
-    private final Instance<Object> instance;
-    
-    private final Instance<CommonDataSource> commonDataSources;
+
+
+    private final Instance<Object> objects;
+
+    private final TransactionSupport transactionSupport;
 
 
     /*
      * Constructors.
      */
 
-    
+
     /**
      * <p>This constructor exists only to conform to <a
      * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#unproxyable">section
      * 3.15 of the CDI specification</a> and for no other purpose.</p>
      *
      * @deprecated Please use the {@link
-     * #BeanManagerBackedDataSourceProvider(BeanManager)} constructor
-     * instead.
+     * #JtaDataSourceProvider(Instance)} constructor instead.
      */
     @Deprecated
     JtaDataSourceProvider() {
         super();
-        this.instance = null;
-        this.commonDataSources = null;
+        this.objects = null;
+        this.transactionSupport = null;
     }
 
     @Inject
-    JtaDataSourceProvider(final Instance<Object> instance) {
+    JtaDataSourceProvider(final Instance<Object> objects,
+                          final TransactionSupport transactionSupport) {
         super();
-        this.instance = Objects.requireNonNull(instance);
-        this.commonDataSources = Objects.requireNonNull(instance.select(CommonDataSource.class));
+        this.objects = Objects.requireNonNull(objects);
+        this.transactionSupport = Objects.requireNonNull(transactionSupport);
     }
 
 
@@ -104,7 +106,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * Instance methods.
      */
 
-    
+
     /**
      * Supplies a {@link DataSource}.
      *
@@ -131,153 +133,80 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @see PersistenceUnitInfoBean#getNonJtaDataSource()
      */
     @Override
-    public DataSource getDataSource(final boolean jta, final boolean useDefaultJta, final String dataSourceName) {
-        final Instance<CommonDataSource> commonDataSources;
-        if (dataSourceName == null) {
-            if (useDefaultJta) {
-                commonDataSources = this.commonDataSources;
-            } else {
-                commonDataSources = null;
-            }
-        } else {
-            commonDataSources = this.commonDataSources.select(NamedLiteral.of(dataSourceName));
-        }
-        final ConnectionPinningDataSource returnValue;
-        if (commonDataSources == null || commonDataSources.isUnsatisfied()) {
-            returnValue = null;
-        } else {
-            XADataSource xaDataSource = null;
-            ConnectionPoolDataSource connectionPoolDataSource = null;
-            DataSource dataSource = null;
-            for (final CommonDataSource commonDataSource : commonDataSources) {
-                assert commonDataSource != null;
-                if (commonDataSource instanceof XADataSource) {
-                    if (xaDataSource != null) {
-                        throw new AmbiguousResolutionException();
-                    }
-                    xaDataSource = (XADataSource) commonDataSource;
-                } else if (commonDataSource instanceof ConnectionPoolDataSource) {
-                    if (connectionPoolDataSource != null) {
-                        throw new AmbiguousResolutionException();
-                    }
-                    connectionPoolDataSource = (ConnectionPoolDataSource) commonDataSource;
-                } else if (commonDataSource instanceof DataSource) {
-                    if (dataSource != null) {
-                        throw new AmbiguousResolutionException();
-                    }
-                    dataSource = (DataSource) commonDataSource;
-                } else {
-                    throw new IllegalStateException("Unexpected commonDataSource: " + commonDataSource);
-                }
-            }
+    public DataSource getDataSource(final boolean jta,
+                                    final boolean useDefaultJta,
+                                    final String dataSourceName) {
+        final DataSource returnValue;
+        if (jta) {
             try {
-                if (xaDataSource == null) {
-                    if (connectionPoolDataSource == null) {
-                        if (dataSource == null) {
-                            // Technically speaking this should be
-                            // impossible given that we already called
-                            // isUnsatisfied() above.
-                            throw new UnsatisfiedResolutionException();
+                if (dataSourceName == null) {
+                    if (useDefaultJta) {
+                        final Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class);
+                        if (xaDataSources.isUnsatisfied()) {
+                            returnValue = this.convert(this.objects.select(DataSource.class).get(), jta);
                         } else {
-                            returnValue = this.convert(dataSource);
+                            returnValue = this.convert(xaDataSources.get(), jta);
                         }
                     } else {
-                        returnValue = this.convert(connectionPoolDataSource);
+                        returnValue = null;
                     }
                 } else {
-                    returnValue = this.convert(xaDataSource);
+                    final Named named = NamedLiteral.of(dataSourceName);
+                    final Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class, named);
+                    if (xaDataSources.isUnsatisfied()) {
+                        returnValue = this.convert(this.objects.select(DataSource.class, named).get(), jta);
+                    } else {
+                        returnValue = this.convert(xaDataSources.get(), jta);
+                    }
                 }
             } catch (final SQLException sqlException) {
                 throw new IllegalStateException(sqlException.getMessage(), sqlException);
             }
-        }
-        if (returnValue != null) {
-            notificationTargets.add(returnValue);
+        } else if (dataSourceName == null) {
+            returnValue = null;
+        } else {
+            returnValue = this.objects.select(DataSource.class, NamedLiteral.of(dataSourceName)).get();
         }
         return returnValue;
     }
 
-    private ConnectionPinningDataSource convert(final XADataSource xaDataSource) throws SQLException {
+    private DataSource convert(final XADataSource xaDataSource, final boolean jta)
+        throws SQLException {
         Objects.requireNonNull(xaDataSource);
-        final XAConnection xaConnection = xaDataSource.getXAConnection();
-        assert xaConnection != null;
-        final Connection connection = xaConnection.getConnection();
-        assert connection != null;
-        // 
-        return null;
+        throw new UnsupportedOperationException(Messages.format("xaIsUnsupported"));
     }
 
-    private ConnectionPinningDataSource convert(final ConnectionPoolDataSource connectionPoolDataSource) throws SQLException {
-        Objects.requireNonNull(connectionPoolDataSource);
-        return null;
+    private DataSource convert(final DataSource dataSource, final boolean jta)
+        throws SQLException {
+        final DataSource returnValue;
+        if (!jta || dataSource == null || (dataSource instanceof JtaDataSource)) {
+            returnValue = dataSource;
+        } else if (dataSource instanceof XADataSource) {
+            // Edge case
+            returnValue = this.convert((XADataSource) dataSource, jta);
+        } else {
+            final JtaDataSource jtaDataSource = new JtaDataSource(dataSource, this.transactionSupport);
+            SYNCHRONIZATIONS_TO_REGISTER.get().add(jtaDataSource);
+            returnValue = jtaDataSource;
+        }
+        return returnValue;
     }
-    
-    private TransactionalConnectionPinningDataSource convert(final DataSource dataSource) throws SQLException {
-        return new TransactionalConnectionPinningDataSource(dataSource::getConnection);
+
+    private static void whenApplicationTerminates(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event) {
+        SYNCHRONIZATIONS_TO_REGISTER.get().clear();
+        SYNCHRONIZATIONS_TO_REGISTER.remove();
     }
 
-
-    /*
-     * Static methods.
-     */
-
-
-    private static void frob(@Observes
-                             @Initialized(TransactionScoped.class)
-                             final Object event,
-                             final Transaction transaction,
-                             final TransactionSynchronizationRegistry tsr)
-        throws SystemException {
-        assert transaction != null;
-        assert transaction.getStatus() == Status.STATUS_ACTIVE;
-        assert tsr != null;
-        tsr.registerInterposedSynchronization(new Synchronization() {
-                @Override
-                public final void beforeCompletion() {
-
+    private static void whenTransactionStarts(@Observes @Initialized(TransactionScoped.class) final Object event,
+                                              final TransactionSynchronizationRegistry tsr) {
+        if (tsr != null) {
+            assert tsr.getTransactionStatus() == Status.STATUS_ACTIVE;
+            for (final Synchronization synchronization : SYNCHRONIZATIONS_TO_REGISTER.get()) {
+                if (synchronization != null) {
+                    tsr.registerInterposedSynchronization(synchronization);
                 }
-
-                @Override
-                public final void afterCompletion(final int status) {
-                    RuntimeException problem = null;
-                    for (final ConnectionPinningDataSource notificationTarget : notificationTargets) {
-                        assert notificationTarget != null;
-                        if (notificationTarget instanceof TransactionalConnectionPinningDataSource) {
-                            final TransactionalConnectionPinningDataSource tds = (TransactionalConnectionPinningDataSource) notificationTarget;
-                            try {
-                                switch (status) {
-                                case Status.STATUS_COMMITTED:
-                                    tds.commit();
-                                    break;
-                                case Status.STATUS_ROLLEDBACK:
-                                    tds.rollback();
-                                    break;
-                                default:
-                                    throw new IllegalStateException(String.valueOf(status));
-                                }
-                            } catch (final SQLException sqlException) {
-                                if (problem == null) {
-                                    problem = new IllegalStateException(sqlException.getMessage(), sqlException);
-                                } else {
-                                    problem.addSuppressed(sqlException);
-                                }
-                            }
-                        }
-                        try {
-                            notificationTarget.reset();
-                        } catch (final SQLException sqlException) {
-                            if (problem == null) {
-                                problem = new IllegalStateException(sqlException.getMessage(), sqlException);
-                            } else {
-                                problem.addSuppressed(sqlException);
-                            }
-                        }
-                    }
-                    if (problem != null) {
-                        throw problem;
-                    }
-                }
-            });
+            }
+        }
     }
 
 }
