@@ -45,9 +45,13 @@ fi
 
 inject_credentials
 
+echo "========="
+mvn --version
+echo "========="
+
 mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
     -B \
-    -Pexamples,integrations,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
+    -Pexamples,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
 
 examples/quickstarts/archetypes/test-archetypes.sh
