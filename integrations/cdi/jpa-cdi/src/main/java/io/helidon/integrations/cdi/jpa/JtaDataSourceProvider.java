@@ -32,6 +32,7 @@ import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
+import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
 import javax.transaction.TransactionSynchronizationRegistry;
 
@@ -70,7 +71,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
 
     private final Instance<Object> objects;
 
-    private final TransactionSupport transactionSupport;
+    private final TransactionManager transactionManager;
 
 
     /*
@@ -86,14 +87,14 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * 3.15 of the CDI specification</a> and for no other purpose.</p>
      *
      * @deprecated Please use the {@link
-     * #JtaDataSourceProvider(Instance, TransactionSupport)}
+     * #JtaDataSourceProvider(Instance, TransactionManager)}
      * constructor instead.
      */
     @Deprecated
     JtaDataSourceProvider() {
         super();
         this.objects = null;
-        this.transactionSupport = null;
+        this.transactionManager = null;
     }
 
     /**
@@ -102,16 +103,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @param objects an {@link Instance} providing access to CDI
      * beans; must not be {@code null}
      *
-     * @param transactionSupport a {@link JtaTransactionSupport} used for
-     * its {@link TransactionSupport#getStatus()} method; must not be
-     * {@code null}
+     * @param transactionManager a {@link TransactionManager}; must
+     * not be {@code null}
      */
     @Inject
     JtaDataSourceProvider(final Instance<Object> objects,
-                          final JtaTransactionSupport transactionSupport) {
+                          final TransactionManager transactionManager) {
         super();
         this.objects = Objects.requireNonNull(objects);
-        this.transactionSupport = Objects.requireNonNull(transactionSupport);
+        this.transactionManager = Objects.requireNonNull(transactionManager);
     }
 
 
@@ -186,7 +186,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
     private DataSource convert(final XADataSource xaDataSource, final boolean jta)
         throws SQLException {
         Objects.requireNonNull(xaDataSource);
-        throw new UnsupportedOperationException(Messages.format("xaIsUnsupported"));
+        return new XADataSourceWrappingDataSource(xaDataSource, this.transactionManager);
     }
 
     private DataSource convert(final DataSource dataSource, final boolean jta)
@@ -198,7 +198,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
             // Edge case
             returnValue = this.convert((XADataSource) dataSource, jta);
         } else {
-            final JtaDataSource jtaDataSource = new JtaDataSource(dataSource, this.transactionSupport);
+            final JtaDataSource jtaDataSource = new JtaDataSource(dataSource, this.transactionManager);
             SYNCHRONIZATIONS_TO_REGISTER.get().add(jtaDataSource);
             returnValue = jtaDataSource;
         }

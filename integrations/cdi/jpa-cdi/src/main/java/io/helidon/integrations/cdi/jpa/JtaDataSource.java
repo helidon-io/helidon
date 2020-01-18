@@ -26,6 +26,8 @@ import javax.enterprise.inject.Vetoed;
 import javax.sql.DataSource;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
+import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
 
 /**
  * An {@link AbstractDataSource} and a {@link Synchronization} that
@@ -67,7 +69,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
     private final DataSource delegate;
 
-    private final TransactionSupport transactionSupport;
+    private final TransactionManager transactionManager;
 
 
     /*
@@ -76,11 +78,11 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
 
     JtaDataSource(final DataSource delegate,
-                  final TransactionSupport transactionSupport) {
+                  final TransactionManager transactionManager) {
         super();
         CONNECTION_STORAGE.get().put(this, new HashMap<>());
         this.delegate = Objects.requireNonNull(delegate);
-        this.transactionSupport = Objects.requireNonNull(transactionSupport);
+        this.transactionManager = Objects.requireNonNull(transactionManager);
     }
 
 
@@ -447,7 +449,13 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
                                      final boolean useZeroArgumentForm)
         throws SQLException {
         final Connection returnValue;
-        if (this.transactionSupport.getStatus() == Status.STATUS_ACTIVE) {
+        int status = -1;
+        try {
+            status = this.transactionManager.getStatus();
+        } catch (final SystemException exception) {
+            throw new SQLException(exception.getMessage(), exception);
+        }
+        if (status == Status.STATUS_ACTIVE) {
             @SuppressWarnings("unchecked")
             Map<Object, TransactionSpecificConnection> myConnectionMap = CONNECTION_STORAGE.get().get(this);
             assert myConnectionMap != null;
