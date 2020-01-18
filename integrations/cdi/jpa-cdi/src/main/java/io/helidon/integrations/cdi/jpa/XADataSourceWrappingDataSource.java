@@ -27,7 +27,6 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import javax.transaction.xa.XAResource;
 
 @Vetoed
 class XADataSourceWrappingDataSource extends AbstractDataSource {
@@ -35,7 +34,7 @@ class XADataSourceWrappingDataSource extends AbstractDataSource {
     private final XADataSource xaDataSource;
 
     private final TransactionManager tm;
-  
+
     XADataSourceWrappingDataSource(final XADataSource xaDataSource,
                                    final TransactionManager transactionManager) {
         super();
@@ -84,5 +83,5 @@ class XADataSourceWrappingDataSource extends AbstractDataSource {
         return xaConnection.getConnection();
     }
 
-    
+
 }
