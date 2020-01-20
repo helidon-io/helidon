@@ -367,7 +367,7 @@ public class MultiTest {
         final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
         final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
         List<String> result = Multi.just(TEST_DATA)
-                .flatMap(s -> Multi.just(s.chars().mapToObj(Character::toString).collect(Collectors.toList())))
+                .flatMap(s -> Multi.just(s.chars().mapToObj(c -> Character.toString((char) c)).collect(Collectors.toList())))
                 .collectList()
                 .get();
         assertThat(result, is(equalTo(EXPECTED)));
@@ -386,7 +386,7 @@ public class MultiTest {
         final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
         final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
         List<String> result = Multi.just(TEST_DATA)
-                .flatMapIterable(s -> s.chars().mapToObj(Character::toString).collect(Collectors.toList()))
+                .flatMapIterable(s -> s.chars().mapToObj(c -> Character.toString((char) c)).collect(Collectors.toList()))
                 .collectList()
                 .get();
         assertThat(result, is(equalTo(EXPECTED)));
