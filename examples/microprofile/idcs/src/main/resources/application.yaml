@@ -35,6 +35,7 @@ security:
     proxy-host: "if you need proxy"
   providers:
     - abac:
+      # Adds ABAC Provider - it does not require any configuration
     - oidc:
         client-id: "${ALIAS=security.properties.idcs-client-id}"
         client-secret: "${ALIAS=security.properties.idcs-client-secret}"

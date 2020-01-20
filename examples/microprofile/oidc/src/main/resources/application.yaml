@@ -34,6 +34,7 @@ security:
     frontend-uri: "http://localhost:7987"
   providers:
     - abac:
+      # Adds ABAC Provider - it does not require any configuration
     - oidc:
         # use a custom name, so it does not clash with other examples
         cookie-name: "OIDC_EXAMPLE_COOKIE"

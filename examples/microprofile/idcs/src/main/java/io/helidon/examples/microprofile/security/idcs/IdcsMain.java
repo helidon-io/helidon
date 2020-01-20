@@ -16,8 +16,6 @@
 
 package io.helidon.examples.microprofile.security.idcs;
 
-import java.io.IOException;
-
 import io.helidon.microprofile.server.Server;
 
 /**
@@ -31,9 +29,8 @@ public final class IdcsMain {
      * Start the server and use the application picked up by CDI.
      *
      * @param args command line arguments, ignored
-     * @throws IOException when logging configuration fails
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Server.create().start();
 
         System.out.println("Endpoints:");

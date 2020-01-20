@@ -48,6 +48,12 @@ property handling:
 Helidon now supports only MicroProfile Metrics 2.x. Modules for Metrics 1.x were removed, and 
 modules for 2.x were renamed from `metrics2` to `metrics`.
 
+#### Security
+
+- When OIDC provider is configured to use cookie (default configuration) to carry authentication information,
+    the cookie `Same-Site` is now set to `Lax` (used to be `Strict`). This is to prevent infinite redirects, as 
+    browsers would refuse to set the cookie on redirected requests (due to this setting)
+
 
 #### Microprofile Bundles
 We have removed all versioned MP bundles.
