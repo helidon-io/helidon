@@ -52,7 +52,8 @@ modules for 2.x were renamed from `metrics2` to `metrics`.
 
 - When OIDC provider is configured to use cookie (default configuration) to carry authentication information,
     the cookie `Same-Site` is now set to `Lax` (used to be `Strict`). This is to prevent infinite redirects, as 
-    browsers would refuse to set the cookie on redirected requests (due to this setting)
+    browsers would refuse to set the cookie on redirected requests (due to this setting).
+    Only in case the frontend host and identity host match, we leave `Strict` as the default
 
 
 #### Microprofile Bundles

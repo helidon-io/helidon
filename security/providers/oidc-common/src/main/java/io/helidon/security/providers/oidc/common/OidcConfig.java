@@ -734,6 +734,7 @@ public final class OidcConfig {
         private String realm = DEFAULT_REALM;
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
+        private boolean cookieSameSiteDefault = true;
 
         @Override
         public OidcConfig build() {
@@ -803,6 +804,23 @@ public final class OidcConfig {
             }
 
             collector.collect().checkValid();
+
+            if (cookieSameSiteDefault && useCookie) {
+                // compare frontend and oidc endpoints to see if
+                // we should use lax or strict by default
+                if (null != identityUri) {
+                    String identityHost = identityUri.getHost();
+                    if (null != frontendUri) {
+                        String frontendHost = URI.create(frontendUri).getHost();
+                        if (identityHost.equals(frontendHost)) {
+                            LOGGER.info("As frontend host and identity host are equal, setting Same-Site policy to Strict"
+                                                + " this can be overridden using configuration option of OIDC: "
+                                                + "\"cookie-same-site\"");
+                            this.cookieSameSite = "Strict";
+                        }
+                    }
+                }
+            }
 
             return new OidcConfig(this);
         }
@@ -1106,6 +1124,7 @@ public final class OidcConfig {
          */
         public Builder cookieSameSite(String sameSite) {
             this.cookieSameSite = sameSite;
+            this.cookieSameSiteDefault = false;
             return this;
         }
 
