@@ -704,6 +704,7 @@ public final class OidcConfig {
         private boolean cookieHttpOnly = DEFAULT_COOKIE_HTTP_ONLY;
         private boolean cookieSecure = DEFAULT_COOKIE_SECURE;
         private String cookieSameSite = DEFAULT_COOKIE_SAME_SITE;
+        private boolean cookieSameSiteDefault = true;
 
         private boolean useParam = DEFAULT_PARAM_USE;
         private String paramName = DEFAULT_PARAM_NAME;
@@ -803,6 +804,11 @@ public final class OidcConfig {
             }
 
             collector.collect().checkValid();
+
+            if (cookieSameSiteDefault && useCookie) {
+                LOGGER.warning("Cookie Same-Site is now set to \"Lax\" by default. Used to be \"Strict\" in previous "
+                                       + "versions of Helidon. This is to prevent infinite redirects.");
+            }
 
             return new OidcConfig(this);
         }
@@ -1106,6 +1112,7 @@ public final class OidcConfig {
          */
         public Builder cookieSameSite(String sameSite) {
             this.cookieSameSite = sameSite;
+            this.cookieSameSiteDefault = false;
             return this;
         }
 
