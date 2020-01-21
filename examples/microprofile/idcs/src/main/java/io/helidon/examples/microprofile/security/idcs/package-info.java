@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * An OIDC (Open ID Connect) example.
+ * Example of integration with IDCS (through Open ID Connect).
  */
-package io.helidon.security.examples.oidc;
+package io.helidon.examples.microprofile.security.idcs;

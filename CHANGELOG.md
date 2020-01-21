@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [next-release]
+### Notes
+
+This is a bug fix release of Helidon.
+
+### Fixes
+- Security: OIDC redirect with cookies now uses `Same-Site` policy of `Lax` by default to prevent infinite redirects.
+    If the default value is use, a warning is printed explaining the change.
+
 ## [1.4.1]
 
 ### Notes
