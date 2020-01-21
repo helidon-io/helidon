@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.example.idcs;
-
-import java.io.IOException;
-import java.util.logging.LogManager;
+package io.helidon.examples.microprofile.security.idcs;
 
 import io.helidon.microprofile.server.Server;
 
@@ -32,10 +29,8 @@ public final class IdcsMain {
      * Start the server and use the application picked up by CDI.
      *
      * @param args command line arguments, ignored
-     * @throws IOException when logging configuration fails
      */
-    public static void main(String[] args) throws IOException {
-        LogManager.getLogManager().readConfiguration(IdcsMain.class.getResourceAsStream("/logging.properties"));
+    public static void main(String[] args) {
         Server.create().start();
 
         System.out.println("Endpoints:");
@@ -43,5 +38,9 @@ public final class IdcsMain {
         System.out.println("  http://localhost:7987/rest/login");
         System.out.println("Full security with scopes and roles (see IdcsResource.java)");
         System.out.println("  http://localhost:7987/rest/scopes");
+        System.out.println("A protected reactive service (see application.yaml - security.web-server)");
+        System.out.println("  http://localhost:7987/reactive");
+        System.out.println("A protected static resource (see application.yaml - security.web-server");
+        System.out.println("  http://localhost:7987/web/resource.html");
     }
 }

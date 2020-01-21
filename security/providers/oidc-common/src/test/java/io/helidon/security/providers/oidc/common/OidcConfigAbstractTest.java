@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ abstract class OidcConfigAbstractTest {
                   () -> assertThat("Base scopes to use", config.baseScopes(), is(OidcConfig.DEFAULT_BASE_SCOPES)),
                   () -> assertThat("Cookie value prefix", config.cookieValuePrefix(), is("JSESSIONID=")),
                   () -> assertThat("Cookie name", config.cookieName(), is(OidcConfig.DEFAULT_COOKIE_NAME)),
-                  () -> assertThat("Cookie options", config.cookieOptions(), is(";Path=/;HttpOnly;SameSite=Strict")),
+                  () -> assertThat("Cookie options", config.cookieOptions(), is(";Path=/;HttpOnly;SameSite=Lax")),
                   () -> assertThat("Audience", config.audience(), is("https://identity.oracle.com")),
                   () -> assertThat("Parameter name", config.paramName(), is("accessToken")),
                   () -> assertThat("Issuer", config.issuer(), nullValue()),

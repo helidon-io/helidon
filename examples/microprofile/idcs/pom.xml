@@ -36,7 +36,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.microprofile.example.idcs.IdcsMain</mainClass>
+        <mainClass>io.helidon.examples.microprofile.security.idcs.IdcsMain</mainClass>
     </properties>
 
     <dependencies>
@@ -47,6 +47,10 @@
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-oidc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-idcs-mapper</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>

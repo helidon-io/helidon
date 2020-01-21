@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,8 +149,10 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * </tr>
  * <tr>
  *     <td>cookie-same-site</td>
- *     <td>Strict</td>
- *     <td>When using cookie, used to set the SameSite cookie value. Can be "Strict" or "Lax"</td>
+ *     <td>Lax</td>
+ *     <td>When using cookie, used to set the SameSite cookie value. Can be "Strict" or "Lax".
+ *     Setting this to "Strict" will result in infinite redirects when calling OIDC on a different host.
+ *     </td>
  * </tr>
  * <tr>
  *     <td>query-param-use</td>
@@ -260,7 +262,7 @@ public final class OidcConfig {
     static final String DEFAULT_COOKIE_PATH = "/";
     static final boolean DEFAULT_COOKIE_HTTP_ONLY = true;
     static final boolean DEFAULT_COOKIE_SECURE = false;
-    static final String DEFAULT_COOKIE_SAME_SITE = "Strict";
+    static final String DEFAULT_COOKIE_SAME_SITE = "Lax";
     static final String DEFAULT_PARAM_NAME = "accessToken";
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
@@ -732,6 +734,7 @@ public final class OidcConfig {
         private String realm = DEFAULT_REALM;
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
+        private boolean cookieSameSiteDefault = true;
 
         @Override
         public OidcConfig build() {
@@ -801,6 +804,23 @@ public final class OidcConfig {
             }
 
             collector.collect().checkValid();
+
+            if (cookieSameSiteDefault && useCookie) {
+                // compare frontend and oidc endpoints to see if
+                // we should use lax or strict by default
+                if (null != identityUri) {
+                    String identityHost = identityUri.getHost();
+                    if (null != frontendUri) {
+                        String frontendHost = URI.create(frontendUri).getHost();
+                        if (identityHost.equals(frontendHost)) {
+                            LOGGER.info("As frontend host and identity host are equal, setting Same-Site policy to Strict"
+                                                + " this can be overridden using configuration option of OIDC: "
+                                                + "\"cookie-same-site\"");
+                            this.cookieSameSite = "Strict";
+                        }
+                    }
+                }
+            }
 
             return new OidcConfig(this);
         }
@@ -1104,6 +1124,7 @@ public final class OidcConfig {
          */
         public Builder cookieSameSite(String sameSite) {
             this.cookieSameSite = sameSite;
+            this.cookieSameSiteDefault = false;
             return this;
         }
 

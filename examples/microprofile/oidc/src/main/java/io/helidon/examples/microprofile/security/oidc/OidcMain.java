@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.security.examples.oidc;
-
-import java.io.IOException;
-import java.util.logging.LogManager;
+package io.helidon.examples.microprofile.security.oidc;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
@@ -34,11 +31,8 @@ public final class OidcMain {
     /**
      * Start the application.
      * @param args ignored.
-     * @throws IOException in case the logging configuration fails
      */
-    public static void main(String[] args) throws IOException {
-        LogManager.getLogManager().readConfiguration(OidcMain.class.getResourceAsStream("/logging.properties"));
-
+    public static void main(String[] args) {
         Server server = Server.builder()
                 .config(buildConfig())
                 .build()

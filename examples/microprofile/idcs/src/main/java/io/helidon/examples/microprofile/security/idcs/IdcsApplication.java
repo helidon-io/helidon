@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.security.examples.idcs;
 
-import java.util.Collections;
+package io.helidon.examples.microprofile.security.idcs;
+
 import java.util.Set;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 /**
- * TODO javadoc.
+ * Example JAX-RS application with resources protected by IDCS.
  */
-@ApplicationPath("/jersey")
-public class JerseyApplication extends Application {
+@ApplicationScoped
+@ApplicationPath("/rest")
+public class IdcsApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
-        return Collections.singleton(JerseyResource.class);
+        return Set.of(IdcsResource.class);
     }
 }

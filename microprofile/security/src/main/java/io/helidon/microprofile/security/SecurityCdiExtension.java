@@ -114,7 +114,7 @@ public class SecurityCdiExtension implements Extension {
         Config webServerConfig = config.get("security.web-server");
         if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().orElse(true)) {
             server.serverRoutingBuilder()
-                    .register(WebSecurity.create(security, config));
+                    .register(WebSecurity.create(security, config.get("security")));
         }
     }
 
