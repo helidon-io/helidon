@@ -39,16 +39,6 @@ public class JdbcMetricsCounter implements Counter {
     }
 
     @Override
-    public void dec() {
-        counter.dec();
-    }
-
-    @Override
-    public void dec(long n) {
-        counter.dec(n);
-    }
-
-    @Override
     public long getCount() {
         return counter.getCount();
     }
