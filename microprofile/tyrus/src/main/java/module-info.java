@@ -19,7 +19,6 @@
  */
 module io.helidon.microprofile.tyrus {
     requires java.logging;
-    requires java.annotation;
     requires javax.inject;
     requires javax.interceptor.api;
 
@@ -27,6 +26,8 @@ module io.helidon.microprofile.tyrus {
     requires transitive jakarta.websocket.api;
 
     requires io.helidon.common;
+    requires tyrus.core;
 
     exports io.helidon.microprofile.tyrus;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
 }

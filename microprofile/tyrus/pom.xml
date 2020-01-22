@@ -33,12 +33,20 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-tyrus</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.websocket</groupId>
@@ -52,11 +60,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.cdi</groupId>
-            <artifactId>helidon-microprofile-cdi</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

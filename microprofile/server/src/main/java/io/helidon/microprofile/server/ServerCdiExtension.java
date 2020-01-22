@@ -300,6 +300,7 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void registerWebServerServices(BeanManager beanManager,
                                            ServerConfiguration serverConfig) {
         List<Bean<?>> beans = prioritySort(beanManager.getBeans(Service.class));

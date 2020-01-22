@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-
 /**
  * Implementation of a layer that binds microprofile components together and
  * runs an HTTP server.
@@ -28,8 +26,8 @@ module io.helidon.microprofile.server {
 
     requires transitive io.helidon.microprofile.cdi;
 
-    requires transitive cdi.api;
-    requires transitive java.ws.rs;
+    requires cdi.api;
+    requires java.ws.rs;
     requires javax.interceptor.api;
 
     requires java.logging;
@@ -37,12 +35,16 @@ module io.helidon.microprofile.server {
 
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires java.management;
+
     requires io.helidon.microprofile.tyrus;
     requires io.helidon.webserver.tyrus;
+    requires jakarta.websocket.api;
 
     exports io.helidon.microprofile.server;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.server.ServerCdiExtension, JaxRsCdiExtension;
+    provides javax.enterprise.inject.spi.Extension with
+            io.helidon.microprofile.server.ServerCdiExtension,
+            io.helidon.microprofile.server.JaxRsCdiExtension;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.server to weld.core.impl;

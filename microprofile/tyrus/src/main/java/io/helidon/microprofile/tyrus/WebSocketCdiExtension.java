@@ -37,11 +37,16 @@ public class WebSocketCdiExtension implements Extension {
         HelidonFeatures.register(HelidonFlavor.MP, "WebSocket");
     }
 
-    private WebSocketApplication.Builder applicationBuilder = WebSocketApplication.builder();
+    private WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
 
-    private void endpoints(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> applicationType) {
-        LOGGER.info(() -> "Annotated endpoint found " + applicationType.getAnnotatedType().getJavaClass());
-        applicationBuilder.endpointClass(applicationType.getAnnotatedType().getJavaClass());
+    /**
+     * Collects endpoints annotated with {@code ServerEndpoint}.
+     *
+     * @param endpoint Type of endpoint.
+     */
+    private void endpoints(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> endpoint) {
+        LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        appBuilder.endpointClass(endpoint.getAnnotatedType().getJavaClass());
     }
 
     /**
@@ -50,6 +55,6 @@ public class WebSocketCdiExtension implements Extension {
      * @return Application builder.
      */
     public WebSocketApplication.Builder toWebSocketApplication() {
-        return applicationBuilder;
+        return appBuilder;
     }
 }
