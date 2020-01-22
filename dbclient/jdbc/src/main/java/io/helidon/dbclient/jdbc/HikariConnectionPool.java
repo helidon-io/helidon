@@ -17,7 +17,7 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Properties;
+import java.util.List;
 
 import io.helidon.dbclient.DbClientException;
 
@@ -34,27 +34,16 @@ public class HikariConnectionPool implements ConnectionPool {
     /** The type of this database. */
     private final String dbType;
 
-    /**
-     * Creates an instance of Hikari Connection Pool from common connection pool builder.
-     *
-     * @param url database connection URL
-     * @param username database connection user name
-     * @param password database connection password
-     * @param properties additional connection pool properties (names without {@code dataSource.} prefix)
-     * @param dbType database type
-     */
-    HikariConnectionPool(
-            final String url,
-            final String username,
-            final String password,
-            final Properties properties,
-            final String dbType
-    ) {
+    HikariConnectionPool(Builder builder, String dbType, List<HikariCpExtension> extensions) {
         this.dbType = dbType;
-        final HikariConfig config = new HikariConfig(properties);
-        config.setJdbcUrl(url);
-        config.setUsername(username);
-        config.setPassword(password);
+        HikariConfig config = new HikariConfig(builder.properties());
+        config.setJdbcUrl(builder.url());
+        config.setUsername(builder.username());
+        config.setPassword(builder.password());
+        // Apply configuration update from extensions
+        extensions.forEach(interceptor -> {
+            interceptor.configure(config);
+        });
         this.dataSource = new HikariDataSource(config);
     }
 

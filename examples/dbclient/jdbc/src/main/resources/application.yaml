@@ -30,8 +30,14 @@ db:
     url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
     username: user
     password: password
+    poolName: mysql
     initializationFailTimeout: -1
     connectionTimeout: 2000
+    helidon:
+      pool-metrics:
+        enabled: true
+        # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
+        name-prefix: "hikari."
   interceptors:
     tracing:
       global:

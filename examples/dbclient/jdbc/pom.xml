@@ -35,10 +35,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-jdbc</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health</artifactId>
         </dependency>
@@ -56,11 +52,19 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-metrics-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
@@ -104,4 +108,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

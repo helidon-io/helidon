@@ -16,12 +16,17 @@
 package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 
 /**
  * JDBC Configuration parameters.
@@ -94,14 +99,39 @@ public interface ConnectionPool {
 
     /**
      * Fluent API builder for {@link io.helidon.dbclient.jdbc.ConnectionPool}.
+     * The builder will produce a connection pool based on Hikari connection pool and will support
+     * {@link io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider} to enhance the Hikari pool.
      */
     final class Builder implements io.helidon.common.Builder<ConnectionPool> {
+        /**
+         * Database connection URL configuration key.
+         */
+        static final String URL = "url";
+        /**
+         * Database connection user name configuration key.
+         */
+        static final String USERNAME = "username";
+        /**
+         * Database connection user password configuration key.
+         */
+        static final String PASSWORD = "password";
+        /**
+         * Database connection configuration key for Helidon specific
+         * properties.
+         */
+        static final String HELIDON_RESERVED_CONFIG_KEY = "helidon";
+
         //jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
         private static final Pattern URL_PATTERN = Pattern.compile("(\\w+:\\w+):.*");
+
+        private Properties properties = new Properties();
+
         private String url;
         private String username;
         private String password;
-        private Properties properties;
+        private Config extensionsConfig;
+        private final HelidonServiceLoader.Builder<HikariCpExtensionProvider> extensionLoader = HelidonServiceLoader
+                .builder(ServiceLoader.load(HikariCpExtensionProvider.class));
 
         private Builder() {
         }
@@ -112,27 +142,43 @@ public interface ConnectionPool {
             String dbType = matcher.matches()
                     ? matcher.group(1)
                     : JdbcDbClientProvider.JDBC_DB_TYPE;
-            return new HikariConnectionPool(url, username, password, properties, dbType);
+
+            return new HikariConnectionPool(this, dbType, extensions());
+        }
+
+        private List<HikariCpExtension> extensions() {
+            if (null == extensionsConfig) {
+                extensionsConfig = Config.empty();
+            }
+            return extensionLoader.build()
+                    .asList()
+                    .stream()
+                    .map(provider -> provider.extension(extensionsConfig.get(provider.configKey())))
+                    .collect(Collectors.toList());
         }
 
         public Builder config(Config config) {
             Map<String, String> poolConfig = config.detach().asMap().get();
-            properties = new Properties();
             poolConfig.forEach((key, value) -> {
                 switch (key) {
-                    case "url":
-                        url(value);
-                        break;
-                    case "username":
-                        username(value);
-                        break;
-                    case "password":
-                        password(value);
-                        break;
-                    default:
-                        properties.put(key, value);
+                case URL:
+                    url(value);
+                    break;
+                case USERNAME:
+                    username(value);
+                    break;
+                case PASSWORD:
+                    password(value);
+                    break;
+                default:
+                    if (!key.startsWith(HELIDON_RESERVED_CONFIG_KEY + ".")) {
+                        // all other properties are sent to the pool
+                        properties.setProperty(key, value);
+                    }
+
                 }
             });
+            this.extensionsConfig = config.get(HELIDON_RESERVED_CONFIG_KEY);
             return this;
         }
 
@@ -156,6 +202,20 @@ public interface ConnectionPool {
             return this;
         }
 
-    }
+        Properties properties() {
+            return properties;
+        }
 
+        String url() {
+            return url;
+        }
+
+        String username() {
+            return username;
+        }
+
+        String password() {
+            return password;
+        }
+    }
 }

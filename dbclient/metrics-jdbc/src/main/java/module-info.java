@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,19 @@
 import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 
 /**
- * Helidon Common Mapper.
+ * Helidon JDBC DB Client Metrics.
  */
-module io.helidon.dbclient.jdbc {
-    uses HikariCpExtensionProvider;
+module io.helidon.dbclient.metrics.jdbc {
     requires java.logging;
-    requires java.sql;
+    requires io.helidon.dbclient;
+    requires io.helidon.dbclient.jdbc;
+    requires io.helidon.metrics;
+    requires io.helidon.dbclient.metrics;
     requires com.zaxxer.hikari;
+    requires com.codahale.metrics;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.dbclient;
-    requires transitive io.helidon.dbclient.common;
+    exports io.helidon.dbclient.metrics.jdbc;
 
-    exports io.helidon.dbclient.jdbc;
-    exports io.helidon.dbclient.jdbc.spi;
+    provides HikariCpExtensionProvider with io.helidon.dbclient.metrics.jdbc.JdbcMetricsExtensionProvider;
 
-    provides io.helidon.dbclient.spi.DbClientProvider with io.helidon.dbclient.jdbc.JdbcDbClientProvider;
 }

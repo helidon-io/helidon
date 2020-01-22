@@ -498,7 +498,7 @@ final class StatementParsers {
         };
 
         private static final Action COPY_ACTION = Parser::copyChar;
-        private static final Action VAAP_ACTION = IndexedParser::vaap;
+        private static final Action VAAP_ACTION = IndexedParser::nextParam;
         /**
          * States TRANSITION ACTION table.
          */
@@ -513,7 +513,7 @@ final class StatementParsers {
          *
          * @param parser parser instance
          */
-        private static void vaap(Parser parser) {
+        private static void nextParam(Parser parser) {
             if (((IndexedParser) parser).parIt.hasNext()) {
                 parser.sb.append(toJson(((IndexedParser) parser).parIt.next()));
             } else {

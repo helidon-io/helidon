@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.dbclient.metrics.jdbc;
 
+import io.helidon.config.Config;
+import io.helidon.dbclient.jdbc.HikariCpExtension;
 import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 
 /**
- * Helidon Common Mapper.
+ * JDBC Configuration Interceptor Provider for Metrics.
+ *
+ * Returns JDBC Configuration Interceptor instance on request.
  */
-module io.helidon.dbclient.jdbc {
-    uses HikariCpExtensionProvider;
-    requires java.logging;
-    requires java.sql;
-    requires com.zaxxer.hikari;
+public class JdbcMetricsExtensionProvider implements HikariCpExtensionProvider {
+    @Override
+    public String configKey() {
+        return "pool-metrics";
+    }
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.dbclient;
-    requires transitive io.helidon.dbclient.common;
-
-    exports io.helidon.dbclient.jdbc;
-    exports io.helidon.dbclient.jdbc.spi;
-
-    provides io.helidon.dbclient.spi.DbClientProvider with io.helidon.dbclient.jdbc.JdbcDbClientProvider;
+    @Override
+    public HikariCpExtension extension(Config config) {
+        return HikariMetricsExtension.create(config);
+    }
 }

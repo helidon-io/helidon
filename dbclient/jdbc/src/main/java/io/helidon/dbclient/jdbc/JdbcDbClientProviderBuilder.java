@@ -42,6 +42,7 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
 
     private final InterceptorSupport.Builder interceptors = InterceptorSupport.builder();
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
+
     private String url;
     private String username;
     private String password;
@@ -56,18 +57,23 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
 
     @Override
     public DbClient build() {
-        if (null == dbMapperManager) {
-            this.dbMapperManager = dbMapperBuilder.build();
-        }
-        if (null == mapperManager) {
-            this.mapperManager = MapperManager.create();
-        }
         if (null == connectionPool) {
+            if (null == url) {
+                throw new DbClientException("No database connection configuration (%s) was found. Use \"connection\" "
+                                                    + "configuration key, or configure on builder using \"connectionPool"
+                                                    + "(ConnectionPool)\"");
+            }
             connectionPool = ConnectionPool.builder()
                     .url(url)
                     .username(username)
                     .password(password)
                     .build();
+        }
+        if (null == dbMapperManager) {
+            this.dbMapperManager = dbMapperBuilder.build();
+        }
+        if (null == mapperManager) {
+            this.mapperManager = MapperManager.create();
         }
         if (null == executorService) {
             executorService = ThreadPoolSupplier.create();
@@ -77,16 +83,10 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
 
     @Override
     public JdbcDbClientProviderBuilder config(Config config) {
-        config.get("connection").asNode().ifPresentOrElse(conn -> {
-            conn.get("url").asString().ifPresent(this::url);
-            conn.get("username").asString().ifPresent(this::url);
-            conn.get("password").asString().ifPresent(this::password);
-            connectionPool(conn.as(ConnectionPool::create).get());
-        }, () -> {
-            throw new DbClientException(String.format(
-                    "No database connection configuration (%s) was found",
-                    config.get("connection").key()));
-        });
+        config.get("connection")
+                .detach()
+                .ifExists(cfg -> connectionPool(ConnectionPool.create(cfg)));
+
         config.get("statements").as(DbStatements::create).ifPresent(this::statements);
         config.get("executor-service").as(ThreadPoolSupplier::create).ifPresent(this::executorService);
         return this;
