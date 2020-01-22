@@ -87,7 +87,7 @@ public class IndexBuilder implements Extension {
      * @param event {@code ProcessAnnotatedType} event
      */
     private <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> event) {
-        if (indexURLs == null) {
+        if (indexURLs.isEmpty()) {
             Class<?> c = event.getAnnotatedType()
                     .getJavaClass();
             annotatedTypes.add(c);
@@ -103,7 +103,7 @@ public class IndexBuilder implements Extension {
      * reading class bytecode from the classpath
      */
     public IndexView indexView() throws IOException {
-        return indexURLs != null ? existingIndexFileReader() : indexFromHarvestedClasses();
+        return !indexURLs.isEmpty() ? existingIndexFileReader() : indexFromHarvestedClasses();
     }
 
     /**
