@@ -96,7 +96,7 @@
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
-        <version.plugin.glassfish-copyright>1.48</version.plugin.glassfish-copyright>
+        <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.helidon-build-tools>1.0.10</version.plugin.helidon-build-tools>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
@@ -172,6 +172,7 @@
         <module>jersey</module>
         <module>webclient</module>
         <module>integrations</module>
+        <module>dbclient</module>
     </modules>
 
     <build>
