@@ -30,17 +30,27 @@ def optionalFiles = [
 ]
 
 // remove optional files that should not be included
-def processOptionalFiles(prop, fnames) {
+optionalFiles.each{ prop, fnames ->
   if (request.getProperties().get(prop).matches("n|no|false")) {
-    fnames.each{ fname -> new File(fname).delete() }
+    fnames.each{ fname ->
+      request.getProperties().each { entry ->
+        fname = fname.replaceAll("__${entry.key}__","${entry.value}")
+      }
+      new File(fname).delete()
+    }
   }
 }
-optionalFiles.each{ key, value -> processOptionalFiles(key, value) }
 
 // rename .vm files
-def renameVmFile(file) {
+rootDir.traverse(type: groovy.io.FileType.FILES, maxDepth: -1) { file ->
   if (file.path.endsWith(".vm")) {
     file.renameTo file.path.substring(0, file.path.length() - 3)
   }
 }
-rootDir.traverse(type: groovy.io.FileType.FILES, maxDepth: -1) { file -> renameVmFile(file) }
+
+// delete empty dirs
+rootDir.traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: -1, postDir: { dir ->
+  if (dir.list().length == 0) {
+    dir.delete()
+  }
+})
