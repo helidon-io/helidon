@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  *
  * @param <T> Item type
  */
-public class MultiDropWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiDropWhileProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 
     private boolean foundNotMatching = false;

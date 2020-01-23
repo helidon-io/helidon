@@ -115,7 +115,7 @@ public class EngineTest {
                 .map(Integer::parseInt)
                 .filter(i -> i % 2 == 0)
                 .limit(5L)
-                .to(ReactiveStreams.fromSubscriber(new ConsumableSubscriber<>(sum::addAndGet, 10)))
+                .to(ReactiveStreams.fromSubscriber(new ConsumableSubscriber<>(sum::addAndGet, 15)))
                 .run();
         assertEquals(2 + 4 + 6 + 8 + 10, sum.get());
     }

@@ -56,12 +56,13 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     @Override
     public void request(long n) {
         StreamValidationUtils.checkRequestParam(n, this::failAndCancel);
-        StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> failAndCancel(t));
-        requested.increment(n, this::failAndCancel);
-        tryRequest(subscription);
-        if (done) {
-            tryComplete();
-        }
+        StreamValidationUtils.checkRecursionDepth("BaseProcessor.request", 10, () -> {
+            requested.increment(n, this::failAndCancel);
+            tryRequest(subscription);
+            if (done) {
+                tryComplete();
+            }
+        }, (actDepth, t) -> failAndCancel(t));
     }
 
     @Override

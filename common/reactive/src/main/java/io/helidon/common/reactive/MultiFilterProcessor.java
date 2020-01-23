@@ -48,7 +48,7 @@ public class MultiFilterProcessor<T> extends BufferedProcessor<T, T> implements 
         if (predicate.test(item)) {
             submit(item);
         } else {
-            tryRequest(getSubscription().get());
+            getRequestedCounter().increment(1, this::fail);
         }
     }
 }

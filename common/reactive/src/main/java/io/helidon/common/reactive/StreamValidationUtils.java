@@ -17,8 +17,11 @@
 
 package io.helidon.common.reactive;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -26,6 +29,10 @@ import java.util.function.Consumer;
  * Helper methods for stream validation.
  */
 public class StreamValidationUtils {
+
+    private static final long USE_STACK_WALKER = -1000;
+    private static ThreadLocal<Map<String, AtomicLong>> recursionDepthThreadLocal = new ThreadLocal<>();
+
 
     private StreamValidationUtils() {
     }
@@ -36,24 +43,75 @@ public class StreamValidationUtils {
      * {@code Subscription.request} MUST place an upper bound on possible synchronous
      * recursion between {@code Publisher} and {@code Subscriber}.
      *
-     * @param maxDepth   maximal expected recursion depth
-     * @param onExceeded called if recursion is deeper than maxDepth,
-     *                   provided with actual depth and spec compliant exception.
-     * @param <T>        payload type of the subscriber
+     * @param key          key to differentiate multiple checks on one thread
+     * @param maxDepth     maximal expected recursion depth
+     * @param guardedBlock code block to check recursion for
+     * @param onExceeded   called if recursion is deeper than maxDepth,
+     *                     provided with actual depth and spec compliant exception.
+     * @param <T>          payload type of the subscriber
      * @return true if valid
      * @see <a href="https://github.com/reactive-streams/reactive-streams-jvm#3.3">reactive-streams/reactive-streams-jvm#3.3</a>
      */
-    public static <T> boolean checkRecursionDepth(int maxDepth, BiConsumer<Long, Throwable> onExceeded) {
-        Long recursionDepth = getRecursionDepth();
-        if (recursionDepth > maxDepth) {
+    public static <T> boolean checkRecursionDepth(String key, int maxDepth, Runnable guardedBlock,
+                                                  BiConsumer<Long, Throwable> onExceeded) {
+        Map<String, AtomicLong> counterMap = recursionDepthThreadLocal.get();
+        if (Objects.isNull(counterMap)) {
+            counterMap = new HashMap<>();
+            counterMap.put(key, new AtomicLong(0));
+            recursionDepthThreadLocal.set(counterMap);
+        }
+
+        counterMap.putIfAbsent(key, new AtomicLong(0));
+        AtomicLong recursionDepthCounter = counterMap.get(key);
+
+        if (recursionDepthCounter.get() <= USE_STACK_WALKER) {
+            // We have lost count last time lets reset expensive way
+            long recursionDepth = getRecursionDepthByStackAnalysis();
+            recursionDepthCounter.set(--recursionDepth);
+        }
+
+        if (recursionDepthCounter.incrementAndGet() > maxDepth) {
+            long exceededRecursionDepth = recursionDepthCounter.get();
+            //Do reset in case exception is thrown
+            recursionDepthCounter.set(USE_STACK_WALKER);
             Optional.of(onExceeded)
                     .ifPresent(onExc -> onExc
-                            .accept(recursionDepth, new IllegalCallerException(String
+                            .accept(exceededRecursionDepth, new IllegalCallerException(String
                                     .format("Recursion depth exceeded, max depth expected %d but actual is %d, rule 3.3",
-                                            maxDepth, recursionDepth))));
+                                            maxDepth, exceededRecursionDepth))));
             return false;
         }
-        return true;
+        try {
+            guardedBlock.run();
+            recursionDepthCounter.decrementAndGet();
+            return true;
+        } catch (Throwable e) {
+            // Do reset in case exception is thrown
+            // we cant track exception jump up the stack so lets reset with stack-walker next time
+            recursionDepthCounter.set(USE_STACK_WALKER);
+            throw e;
+        }
+    }
+
+    private static Long getRecursionDepthByStackAnalysis() {
+        StackTraceElement parentElement = StackWalker.getInstance()
+                .walk(stackFrameStream -> stackFrameStream.skip(1).findFirst())
+                .get()
+                .toStackTraceElement();
+        return StackWalker.getInstance()
+                .walk(ss -> ss
+                        .map(StackWalker.StackFrame::toStackTraceElement)
+                        .filter(el -> stackTraceElementEquals(el, parentElement))
+                        .count());
+    }
+
+    private static boolean stackTraceElementEquals(StackTraceElement a, StackTraceElement b) {
+        return Objects.equals(a.getClassLoaderName(), b.getClassLoaderName())
+                && Objects.equals(a.getModuleName(), b.getModuleName())
+                && Objects.equals(a.getModuleVersion(), b.getModuleVersion())
+                && Objects.equals(a.getClassName(), b.getClassName())
+                && Objects.equals(a.getMethodName(), b.getMethodName());
+
     }
 
     /**
@@ -77,27 +135,5 @@ public class StreamValidationUtils {
             return false;
         }
         return true;
-    }
-
-
-    static Long getRecursionDepth() {
-        StackTraceElement parentElement = StackWalker.getInstance()
-                .walk(stackFrameStream -> stackFrameStream.skip(1).findFirst())
-                .get()
-                .toStackTraceElement();
-        return StackWalker.getInstance()
-                .walk(ss -> ss
-                        .map(StackWalker.StackFrame::toStackTraceElement)
-                        .filter(el -> stackTraceElementEquals(el, parentElement))
-                        .count());
-    }
-
-    static boolean stackTraceElementEquals(StackTraceElement a, StackTraceElement b) {
-        return Objects.equals(a.getClassLoaderName(), b.getClassLoaderName())
-                && Objects.equals(a.getModuleName(), b.getModuleName())
-                && Objects.equals(a.getModuleVersion(), b.getModuleVersion())
-                && Objects.equals(a.getClassName(), b.getClassName())
-                && Objects.equals(a.getMethodName(), b.getMethodName());
-
     }
 }

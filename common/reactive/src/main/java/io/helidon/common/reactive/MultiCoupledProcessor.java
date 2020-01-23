@@ -124,8 +124,11 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void request(long n) {
                 // Request from outlet subscriber
-                StreamValidationUtils.checkRecursionDepth(2, (actDepth, t) -> outletSubscriber.onError(t));
-                passedInPublisherSubscription.request(n);
+                StreamValidationUtils.checkRecursionDepth(
+                        "MultiCoupledProcessor1",
+                        8,
+                        () -> passedInPublisherSubscription.request(n),
+                        (actDepth, t) -> outletSubscriber.onError(t));
             }
 
             @Override
@@ -152,8 +155,11 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         passedInSubscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-                StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> passedInSubscriber.onError(t));
-                inletSubscription.request(n);
+                StreamValidationUtils.checkRecursionDepth(
+                        "MultiCoupledProcessor2",
+                        8,
+                        () -> inletSubscription.request(n),
+                        (actDepth, t) -> passedInSubscriber.onError(t));
             }
 
             @Override

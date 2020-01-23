@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,35 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class RecursionDepthTest {
     @Test
-    void depthTest() {
-        assertFalse(StreamValidationUtils.getRecursionDepth() > 1);
-        recursionMethod(4, new AtomicInteger(5), Assertions::assertTrue);
-        recursionMethod(1, new AtomicInteger(1), Assertions::assertFalse);
-        recursionMethod(10, new AtomicInteger(9), Assertions::assertFalse);
-        recursionMethod(15, new AtomicInteger(20), Assertions::assertTrue);
+    void depthTestPositive() {
+        recursiveMethod(5, new AtomicInteger(5));
+        recursiveMethod(5, new AtomicInteger(4));
+        recursiveMethod(5, new AtomicInteger(3));
+        recursiveMethod(5, new AtomicInteger(2));
+        recursiveMethod(5, new AtomicInteger(1));
     }
 
-    void recursionMethod(int maxDepth, AtomicInteger counter, Consumer<Boolean> runInDepth) {
-        if (counter.decrementAndGet() == 0) {
-            runInDepth.accept(StreamValidationUtils.getRecursionDepth() > maxDepth);
-            return;
+    @Test
+    void depthTestNegative() {
+        assertThrows(RuntimeException.class, () -> recursiveMethod(5, new AtomicInteger(6)));
+        assertThrows(RuntimeException.class, () -> recursiveMethod(5, new AtomicInteger(7)));
+        assertThrows(RuntimeException.class, () -> recursiveMethod(5, new AtomicInteger(200)));
+    }
+
+    private void recursiveMethod(int maxDepth, AtomicInteger counter) {
+        if (counter.decrementAndGet() >= 0) {
+            StreamValidationUtils.checkRecursionDepth("RecursionDepthTest1", maxDepth,
+                    () -> recursiveMethod(maxDepth, counter),
+                    (aLong, throwable) -> {
+                        throw new RuntimeException(throwable);
+                    });
         }
-        recursionMethod(maxDepth, counter, runInDepth);
     }
 }

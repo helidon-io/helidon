@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Flow;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 /**
@@ -40,6 +41,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     private volatile boolean onCompleteReceivedAlready = false;
     private PublisherBuffer<T> buffer;
     private Optional<Throwable> error = Optional.empty();
+    private ReentrantLock publisherSequentialLock = new ReentrantLock();
+
 
     private MultiFlatMapProcessor() {
         buffer = new PublisherBuffer<>();
@@ -106,13 +109,19 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        if (Objects.nonNull(this.subscription)) {
-            subscription.cancel();
-            return;
-        }
-        this.subscription = subscription;
-        if (Objects.nonNull(subscriber)) {
-            subscriber.onSubscribe(new FlatMapSubscription());
+        try {
+            // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+            publisherSequentialLock.lock();
+            if (Objects.nonNull(this.subscription)) {
+                subscription.cancel();
+                return;
+            }
+            this.subscription = subscription;
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onSubscribe(new FlatMapSubscription());
+            }
+        } finally {
+            publisherSequentialLock.unlock();
         }
     }
 
@@ -120,26 +129,43 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     public void onNext(T o) {
         Objects.requireNonNull(o);
         try {
+            // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+            publisherSequentialLock.lock();
             buffer.offer(o);
         } catch (Throwable t) {
             onError(t);
+        } finally {
+            publisherSequentialLock.unlock();
         }
     }
 
     @Override
     public void onError(Throwable t) {
-        this.error = Optional.of(t);
-        if (Objects.nonNull(subscriber)) {
-            subscriber.onError(t);
+        try {
+            // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+            publisherSequentialLock.lock();
+            this.error = Optional.of(t);
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onError(t);
+            }
+
+        } finally {
+            publisherSequentialLock.unlock();
         }
     }
 
     @Override
     public void onComplete() {
-        onCompleteReceivedAlready = true;
-        if (buffer.isComplete()) {
-            //Have to wait for all Publishers to be finished
-            subscriber.onComplete();
+        try {
+            // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+            publisherSequentialLock.lock();
+            onCompleteReceivedAlready = true;
+            if (buffer.isComplete()) {
+                //Have to wait for all Publishers to be finished
+                subscriber.onComplete();
+            }
+        } finally {
+            publisherSequentialLock.unlock();
         }
     }
 
@@ -191,43 +217,70 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
         private volatile boolean subscriptionAcked = false;
         private volatile boolean done = false;
-
+        private ReentrantLock innerSubscriberSequentialLock = new ReentrantLock();
         private Optional<Runnable> whenCompleteObserver = Optional.empty();
 
         @Override
         public void onSubscribe(Flow.Subscription innerSubscription) {
-            Objects.requireNonNull(innerSubscription);
-            if (subscriptionAcked) {
-                innerSubscription.cancel();
-                return;
+            try {
+                // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+                innerSubscriberSequentialLock.lock();
+                Objects.requireNonNull(innerSubscription);
+                if (subscriptionAcked) {
+                    innerSubscription.cancel();
+                    return;
+                }
+                subscriptionAcked = true;
+                MultiFlatMapProcessor.this.innerSubscription = innerSubscription;
+                innerSubscription.request(Long.MAX_VALUE);
+            } finally {
+                innerSubscriberSequentialLock.unlock();
             }
-            subscriptionAcked = true;
-            MultiFlatMapProcessor.this.innerSubscription = innerSubscription;
-            innerSubscription.request(Long.MAX_VALUE);
         }
 
         @Override
         public void onNext(X o) {
-            Objects.requireNonNull(o);
-            MultiFlatMapProcessor.this.subscriber.onNext(o);
-            //just counting leftovers
-            requestCounter.tryDecrement();
+            try {
+                // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+                innerSubscriberSequentialLock.lock();
+
+                Objects.requireNonNull(o);
+                MultiFlatMapProcessor.this.subscriber.onNext(o);
+                //just counting leftovers
+                requestCounter.tryDecrement();
+            } finally {
+                innerSubscriberSequentialLock.unlock();
+            }
         }
 
         @Override
         public void onError(Throwable t) {
-            Objects.requireNonNull(t);
-            MultiFlatMapProcessor.this.subscription.cancel();
-            MultiFlatMapProcessor.this.onError(t);
+            try {
+                // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+                innerSubscriberSequentialLock.lock();
+
+                Objects.requireNonNull(t);
+                MultiFlatMapProcessor.this.subscription.cancel();
+                MultiFlatMapProcessor.this.onError(t);
+            } finally {
+                innerSubscriberSequentialLock.unlock();
+            }
         }
 
         @Override
         public void onComplete() {
-            done = true;
-            whenCompleteObserver.ifPresent(Runnable::run);
-            long requestCount = requestCounter.get();
-            if (requestCount > 0) {
-                subscription.request(requestCount);
+            try {
+                // https://github.com/reactive-streams/reactive-streams-jvm#1.3
+                innerSubscriberSequentialLock.lock();
+
+                done = true;
+                whenCompleteObserver.ifPresent(Runnable::run);
+                long requestCount = requestCounter.get();
+                if (requestCount > 0) {
+                    subscription.request(requestCount);
+                }
+            } finally {
+                innerSubscriberSequentialLock.unlock();
             }
         }
 

@@ -36,13 +36,22 @@ public abstract class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
     @Override
     protected void tryRequest(Flow.Subscription subscription) {
         if (!getSubscriber().isClosed() && !buffer.isEmpty()) {
-            try {
-                submit(buffer.take());
-            } catch (InterruptedException e) {
-                failAndCancel(e);
-            }
+            tryDrainBuffer();
         } else {
             super.tryRequest(subscription);
+        }
+    }
+
+    private void tryDrainBuffer() {
+        while (!buffer.isEmpty() && getRequestedCounter().tryDecrement()) {
+            try {
+                getSubscriber().get().onNext(buffer.take());
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                failAndCancel(ex);
+            } catch (Throwable ex) {
+                failAndCancel(ex);
+            }
         }
     }
 

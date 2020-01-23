@@ -27,7 +27,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> subscribed type
  * @param <U> published type
  */
-public final class MultiMapProcessor<T, U> extends BufferedProcessor<T, U> implements Multi<U> {
+public final class MultiMapProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
 
     private final Mapper<T, U> mapper;
 

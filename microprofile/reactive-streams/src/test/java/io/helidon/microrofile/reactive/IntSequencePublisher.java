@@ -17,18 +17,23 @@
 
 package io.helidon.microrofile.reactive;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import io.helidon.common.reactive.RequestedCounter;
+
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class IntSequencePublisher implements Publisher<Integer>, Subscription {
 
-    private AtomicBoolean closed = new AtomicBoolean(false);
+    private boolean closed = false;
     private AtomicInteger sequence = new AtomicInteger(0);
     private Subscriber<? super Integer> subscriber;
+    private RequestedCounter requestCounter = new RequestedCounter();
+    private AtomicBoolean trampolineLock = new AtomicBoolean(false);
+
 
     public IntSequencePublisher() {
     }
@@ -41,15 +46,25 @@ public class IntSequencePublisher implements Publisher<Integer>, Subscription {
 
     @Override
     public void request(long n) {
-        for (long i = 0; i < n
-                && !closed.get(); i++) {
-            subscriber.onNext(sequence.incrementAndGet());
+        requestCounter.increment(n, subscriber::onError);
+        trySubmit();
+    }
+
+    private void trySubmit() {
+        if (!trampolineLock.getAndSet(true)) {
+            try {
+                while (requestCounter.tryDecrement() && !closed) {
+                    subscriber.onNext(sequence.incrementAndGet());
+                }
+            } finally {
+                trampolineLock.set(false);
+            }
         }
     }
 
     @Override
     public void cancel() {
-        closed.set(true);
+        closed = true;
         subscriber.onComplete();
     }
 }
