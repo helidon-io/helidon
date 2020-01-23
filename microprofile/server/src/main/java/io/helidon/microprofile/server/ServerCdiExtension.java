@@ -244,6 +244,7 @@ public class ServerCdiExtension implements Extension {
             }
 
             // Finally register WebSockets in Helidon routing
+            LOGGER.info("Registering websocket application at " + path);
             Routing.Builder routing = serverRoutingBuilder();
             routing.register(path, builder.build());
         } catch (IllegalArgumentException e) {
