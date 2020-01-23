@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 
 /**
  * Class WebSocketExtensionTest.
@@ -47,16 +46,17 @@ public class WebSocketCdiExtensionTest {
         }
     }
 
-    private WebSocketApplication webSocketApplication() {
-        BeanManager beanManager = cdiContainer.getBeanManager();
-        WebSocketCdiExtension extension = beanManager.getExtension(WebSocketCdiExtension.class);
-        return extension.toWebSocketApplication().build();
-    }
-
     @Test
     public void testExtension() {
         WebSocketApplication application = webSocketApplication();
-        assertThat(application.endpointClasses().size(), is(greaterThan(0)));
-        assertThat(application.endpointConfigs().size(), is(0));
+        assertThat(application.applicationClass().isPresent(), is(true));
+        assertThat(application.annotatedEndpoints().size(), is(1));
+        assertThat(application.programmaticEndpoints().size(), is(1));
+    }
+
+    private WebSocketApplication webSocketApplication() {
+        BeanManager beanManager = cdiContainer.getBeanManager();
+        WebSocketCdiExtension extension = beanManager.getExtension(WebSocketCdiExtension.class);
+        return extension.toWebSocketApplication();
     }
 }

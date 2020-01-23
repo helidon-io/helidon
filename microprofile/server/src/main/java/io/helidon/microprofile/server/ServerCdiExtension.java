@@ -39,8 +39,12 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
+import javax.websocket.server.ServerApplicationConfig;
+import javax.websocket.server.ServerEndpointConfig;
+import javax.ws.rs.ApplicationPath;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -74,6 +78,8 @@ public class ServerCdiExtension implements Extension {
     }
 
     private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
+
+    private static final String DEFAULT_WEBSOCKET_PATH = "/websocket";
 
     // build time
     private ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
@@ -203,14 +209,45 @@ public class ServerCdiExtension implements Extension {
     private void registerWebSockets(BeanManager beanManager, ServerConfiguration serverConfig) {
         try {
             WebSocketCdiExtension extension = beanManager.getExtension(WebSocketCdiExtension.class);
-            WebSocketApplication app = extension.toWebSocketApplication().build();
+            WebSocketApplication app = extension.toWebSocketApplication();
+
+            // If application present call its methods
+            String path = DEFAULT_WEBSOCKET_PATH;
             TyrusSupport.Builder builder = TyrusSupport.builder();
-            app.endpointClasses().forEach(builder::register);
-            app.endpointConfigs().forEach(builder::register);
+            Optional<Class<? extends ServerApplicationConfig>> applicationClass = app.applicationClass();
+            if (applicationClass.isPresent()) {
+                Class<? extends ServerApplicationConfig> c = applicationClass.get();
+                ServerApplicationConfig instance = CDI.current().select(c).get();
+                if (instance == null) {
+                    try {
+                        instance = c.getDeclaredConstructor().newInstance();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to instantiate websocket application " + c, e);
+                    }
+                }
+                Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
+                Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
+
+                // Helidon extension - allow @ApplicationPath class for WebSockets
+                ApplicationPath appPath = c.getAnnotation(ApplicationPath.class);
+                if (appPath != null) {
+                    path = appPath.value();
+                }
+
+                // Register classes and configs
+                endpointClasses.forEach(builder::register);
+                endpointConfigs.forEach(builder::register);
+            } else {
+                // Direct registration without calling application class
+                app.annotatedEndpoints().forEach(builder::register);
+                app.programmaticEndpoints().forEach(builder::register);
+            }
+
+            // Finally register WebSockets in Helidon routing
             Routing.Builder routing = serverRoutingBuilder();
-            routing.register("/websocket", builder.build());
+            routing.register(path, builder.build());
         } catch (IllegalArgumentException e) {
-            LOGGER.fine("Unable to load WebSocket extension");
+            throw new RuntimeException("Unable to load WebSocket extension", e);
         }
     }
 

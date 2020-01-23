@@ -30,6 +30,7 @@ import javax.ws.rs.core.Application;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.microprofile.cdi.HelidonContainer;
+import io.helidon.microprofile.tyrus.WebSocketApplication;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -136,6 +137,7 @@ public interface Server {
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
         private final List<JaxRsApplication> applications = new LinkedList<>();
+        private final List<WebSocketApplication> wsApplications = new LinkedList<>();
         private Config config;
         private String host;
         private String basePath;
@@ -363,6 +365,18 @@ public interface Server {
          */
         public Builder addApplication(Application application) {
             this.applications.add(JaxRsApplication.create(application));
+            return this;
+        }
+
+        /**
+         * Adds a WebSocket application to the server. If more than one application is added, they
+         * must be registered on different paths.
+         *
+         * @param wsApplication websocket application
+         * @return modified builder
+         */
+        public Builder addApplication(WebSocketApplication wsApplication) {
+            this.wsApplications.add(wsApplication);
             return this;
         }
 

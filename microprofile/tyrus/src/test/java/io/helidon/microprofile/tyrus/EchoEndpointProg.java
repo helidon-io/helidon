@@ -17,19 +17,27 @@
 package io.helidon.microprofile.tyrus;
 
 import javax.enterprise.context.Dependent;
-import javax.websocket.OnMessage;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
+import javax.websocket.MessageHandler;
 import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
 
 /**
- * Class EchoEndpoint.
+ * Class EchoEndpointProg. Using WebSocket programmatic API.
  */
 @Dependent
-@ServerEndpoint("/echo")
-public class EchoEndpoint {
+public class EchoEndpointProg extends Endpoint {
 
-    @OnMessage
-    public void echo(Session session, String message) throws Exception {
-        session.getBasicRemote().sendObject(message);
+    @Override
+    public void onOpen(Session session, EndpointConfig endpointConfig) {
+        session.addMessageHandler(new MessageHandler.Whole<String>() {
+            @Override
+            public void onMessage(String message) {
+                try {
+                    session.getBasicRemote().sendObject(message);       // calls encoder
+                } catch (Exception e) {
+                }
+            }
+        });
     }
 }

@@ -22,6 +22,8 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
+import javax.websocket.Endpoint;
+import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpoint;
 
 import io.helidon.common.HelidonFeatures;
@@ -40,21 +42,41 @@ public class WebSocketCdiExtension implements Extension {
     private WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
 
     /**
-     * Collects endpoints annotated with {@code ServerEndpoint}.
+     * Collect application class extending {@code ServerApplicationConfig}.
      *
-     * @param endpoint Type of endpoint.
+     * @param applicationClass Application class.
      */
-    private void endpoints(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> endpoint) {
-        LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
-        appBuilder.endpointClass(endpoint.getAnnotatedType().getJavaClass());
+    private void applicationClass(@Observes ProcessAnnotatedType<? extends ServerApplicationConfig> applicationClass) {
+        LOGGER.info(() -> "Application class found " + applicationClass.getAnnotatedType().getJavaClass());
+        appBuilder.applicationClass(applicationClass.getAnnotatedType().getJavaClass());
     }
 
     /**
-     * Provides access to websocket application builder.
+     * Collect annotated endpoints.
      *
-     * @return Application builder.
+     * @param endpoint The endpoint.
      */
-    public WebSocketApplication.Builder toWebSocketApplication() {
-        return appBuilder;
+    private void endpointClasses(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> endpoint) {
+        LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        appBuilder.annotatedEndpoint(endpoint.getAnnotatedType().getJavaClass());
+    }
+
+    /**
+     * Collects programmatic endpoints .
+     *
+     * @param endpoint The endpoint.
+     */
+    private void endpointConfig(@Observes ProcessAnnotatedType<? extends Endpoint> endpoint) {
+        LOGGER.info(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        appBuilder.programmaticEndpoint(endpoint.getAnnotatedType().getJavaClass());
+    }
+
+    /**
+     * Provides access to websocket application.
+     *
+     * @return Application.
+     */
+    public WebSocketApplication toWebSocketApplication() {
+        return appBuilder.build();
     }
 }

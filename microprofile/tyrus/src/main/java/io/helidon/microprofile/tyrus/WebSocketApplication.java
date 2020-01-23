@@ -16,44 +16,26 @@
 
 package io.helidon.microprofile.tyrus;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
-import javax.websocket.server.ServerEndpoint;
-import javax.websocket.server.ServerEndpointConfig;
+import javax.websocket.Endpoint;
+import javax.websocket.server.ServerApplicationConfig;
 
 /**
  * Represents a websocket application with class and config endpoints.
  */
 public final class WebSocketApplication {
 
-    private List<Class<?>> endpointClasses;
-    private List<Class<? extends ServerEndpointConfig>> endpointConfigs;
-
-    /**
-     * Creates a websocket application from classes and configs.
-     *
-     * @param classesOrConfigs Classes and configs.
-     * @return A websocket application.
-     */
-    @SuppressWarnings("unchecked")
-    public static WebSocketApplication create(Class<?>... classesOrConfigs) {
-        Builder builder = new Builder();
-        for (Class<?> c : classesOrConfigs) {
-            if (ServerEndpointConfig.class.isAssignableFrom(c)) {
-                builder.endpointConfig((Class<? extends ServerEndpointConfig>) c);
-            } else if (c.isAnnotationPresent(ServerEndpoint.class)) {
-                builder.endpointClass(c);
-            } else {
-                throw new IllegalArgumentException("Unable to create WebSocket application using " + c);
-            }
-        }
-        return builder.build();
-    }
+    private Class<? extends ServerApplicationConfig> applicationClass;
+    private Set<Class<?>> annotatedEndpoints;
+    private Set<Class<? extends Endpoint>> programmaticEndpoints;
 
     private WebSocketApplication(Builder builder) {
-        this.endpointConfigs = builder.endpointConfigs;
-        this.endpointClasses = builder.endpointClasses;
+        this.applicationClass = builder.applicationClass;
+        this.annotatedEndpoints = builder.annotatedEndpoints;
+        this.programmaticEndpoints = builder.programmaticEndpoints;
     }
 
     /**
@@ -66,21 +48,30 @@ public final class WebSocketApplication {
     }
 
     /**
-     * Get list of config endpoints.
+     * Get access to application class, if present.
      *
-     * @return List of config endpoints.
+     * @return Application class optional.
      */
-    public List<Class<? extends ServerEndpointConfig>> endpointConfigs() {
-        return endpointConfigs;
+    public Optional<Class<? extends ServerApplicationConfig>> applicationClass() {
+        return Optional.ofNullable(applicationClass);
     }
 
     /**
-     * Get list of endpoint classes.
+     * Get list of programmatic endpoints.
      *
-     * @return List of endpoint classes.
+     * @return List of config endpoints.
      */
-    public List<Class<?>> endpointClasses() {
-        return endpointClasses;
+    public Set<Class<? extends Endpoint>> programmaticEndpoints() {
+        return programmaticEndpoints;
+    }
+
+    /**
+     * Get list of annotated endpoints.
+     *
+     * @return List of annotated endpoint.
+     */
+    public Set<Class<?>> annotatedEndpoints() {
+        return annotatedEndpoints;
     }
 
     /**
@@ -88,28 +79,43 @@ public final class WebSocketApplication {
      */
     public static class Builder {
 
-        private List<Class<?>> endpointClasses = new ArrayList<>();
-        private List<Class<? extends ServerEndpointConfig>> endpointConfigs = new ArrayList<>();
+        private Class<? extends ServerApplicationConfig> applicationClass;
+        private Set<Class<?>> annotatedEndpoints = new HashSet<>();
+        private Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
 
         /**
-         * Add single config endpoint.
+         * Set an application class in the builder.
          *
-         * @param endpointConfig Endpoint config.
+         * @param applicationClass The application class.
          * @return The builder.
          */
-        public Builder endpointConfig(Class<? extends ServerEndpointConfig> endpointConfig) {
-            endpointConfigs.add(endpointConfig);
+        public Builder applicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
+            if (this.applicationClass != null) {
+                throw new IllegalStateException("At most one subclass of ServerApplicationConfig is permitted");
+            }
+            this.applicationClass = applicationClass;
             return this;
         }
 
         /**
-         * Add single endpoint class.
+         * Add single programmatic endpoint.
          *
-         * @param endpointClass Endpoint class.
+         * @param programmaticEndpoint Programmatic endpoint.
          * @return The builder.
          */
-        public Builder endpointClass(Class<?> endpointClass) {
-            endpointClasses.add(endpointClass);
+        public Builder programmaticEndpoint(Class<? extends Endpoint> programmaticEndpoint) {
+            programmaticEndpoints.add(programmaticEndpoint);
+            return this;
+        }
+
+        /**
+         * Add single annotated endpoint.
+         *
+         * @param annotatedEndpoint Annotated endpoint.
+         * @return The builder.
+         */
+        public Builder annotatedEndpoint(Class<?> annotatedEndpoint) {
+            annotatedEndpoints.add(annotatedEndpoint);
             return this;
         }
 

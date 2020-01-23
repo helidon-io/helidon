@@ -17,19 +17,24 @@
 package io.helidon.microprofile.tyrus;
 
 import javax.enterprise.context.Dependent;
-import javax.websocket.OnMessage;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
+import javax.websocket.Endpoint;
+import javax.websocket.server.ServerApplicationConfig;
+import javax.websocket.server.ServerEndpointConfig;
+import java.util.Collections;
+import java.util.Set;
 
 /**
- * Class EchoEndpoint.
+ * Class EndpointApplication.
  */
 @Dependent
-@ServerEndpoint("/echo")
-public class EchoEndpoint {
+public class EndpointApplication implements ServerApplicationConfig {
+    @Override
+    public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpointClasses) {
+        return Collections.emptySet();
+    }
 
-    @OnMessage
-    public void echo(Session session, String message) throws Exception {
-        session.getBasicRemote().sendObject(message);
+    @Override
+    public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> scanned) {
+        return Collections.emptySet();
     }
 }
