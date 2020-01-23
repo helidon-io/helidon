@@ -25,6 +25,7 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.microprofile.cdi.HelidonContainer;
+import io.helidon.microprofile.tyrus.WebSocketCdiExtension;
 
 import static io.helidon.microprofile.server.Server.Builder.IN_PROGRESS_OR_RUNNING;
 
@@ -67,6 +68,10 @@ public class ServerImpl implements Server {
                 .bindAddress(listenHost);
 
         serverExtension.listenHost(this.host);
+
+        // Update extension with manually configured application -- overrides scanning
+        WebSocketCdiExtension wsExtension = beanManager.getExtension(WebSocketCdiExtension.class);
+        builder.websocketApplication().ifPresent(wsExtension::applicationClass);
 
         STARTUP_LOGGER.finest("Builders ready");
 

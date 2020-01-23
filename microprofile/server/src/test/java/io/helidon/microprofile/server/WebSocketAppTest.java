@@ -49,7 +49,9 @@ public class WebSocketAppTest {
 
     @BeforeAll
     static void initClass() {
-        server = Server.create();
+        Server.Builder builder = Server.builder();
+        builder.websocketApplication(EndpointApplication.class);
+        server = builder.build();
         server.start();
     }
 
@@ -72,7 +74,6 @@ public class WebSocketAppTest {
         echoClient.echo("hi", "how are you?");
     }
 
-    @Dependent      // scanned by CDI
     @ApplicationPath("/web")
     public static class EndpointApplication implements ServerApplicationConfig {
         @Override

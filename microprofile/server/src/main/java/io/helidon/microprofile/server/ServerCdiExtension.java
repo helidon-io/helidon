@@ -37,6 +37,7 @@ import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
@@ -217,7 +218,16 @@ public class ServerCdiExtension implements Extension {
             Optional<Class<? extends ServerApplicationConfig>> applicationClass = app.applicationClass();
             if (applicationClass.isPresent()) {
                 Class<? extends ServerApplicationConfig> c = applicationClass.get();
-                ServerApplicationConfig instance = CDI.current().select(c).get();
+
+                // Attempt to instantiate via CDI
+                ServerApplicationConfig instance = null;
+                try {
+                    instance = CDI.current().select(c).get();
+                } catch (UnsatisfiedResolutionException e) {
+                    // falls through
+                }
+
+                // Otherwise, we create instance directly
                 if (instance == null) {
                     try {
                         instance = c.getDeclaredConstructor().newInstance();

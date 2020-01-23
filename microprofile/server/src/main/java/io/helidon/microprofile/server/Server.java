@@ -19,18 +19,19 @@ package io.helidon.microprofile.server;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.websocket.server.ServerApplicationConfig;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.microprofile.cdi.HelidonContainer;
-import io.helidon.microprofile.tyrus.WebSocketApplication;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -137,7 +138,6 @@ public interface Server {
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
         private final List<JaxRsApplication> applications = new LinkedList<>();
-        private final List<WebSocketApplication> wsApplications = new LinkedList<>();
         private Config config;
         private String host;
         private String basePath;
@@ -145,6 +145,7 @@ public interface Server {
         private Supplier<? extends ExecutorService> defaultExecutorService;
         private JaxRsCdiExtension jaxRs;
         private boolean retainDiscovered = false;
+        private Class<? extends ServerApplicationConfig> wsApplication;
 
         private Builder() {
             if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
@@ -369,14 +370,16 @@ public interface Server {
         }
 
         /**
-         * Adds a WebSocket application to the server. If more than one application is added, they
-         * must be registered on different paths.
+         * Registers a WebSocket application in the server. At most one application can be registered.
          *
          * @param wsApplication websocket application
          * @return modified builder
          */
-        public Builder addApplication(WebSocketApplication wsApplication) {
-            this.wsApplications.add(wsApplication);
+        public Builder websocketApplication(Class<? extends ServerApplicationConfig> wsApplication) {
+            if (this.wsApplication != null) {
+                throw new IllegalStateException("Cannot register more than one websocket application");
+            }
+            this.wsApplication = wsApplication;
             return this;
         }
 
@@ -504,6 +507,10 @@ public interface Server {
 
         int port() {
             return port;
+        }
+
+        Optional<Class<? extends ServerApplicationConfig>> websocketApplication() {
+            return Optional.ofNullable(wsApplication);
         }
     }
 }

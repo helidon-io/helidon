@@ -52,6 +52,16 @@ public class WebSocketCdiExtension implements Extension {
     }
 
     /**
+     * Overrides a websocket application class.
+     *
+     * @param applicationClass Application class.
+     */
+    public void applicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
+        LOGGER.info(() -> "Using manually set application class  " + applicationClass);
+        appBuilder.updateApplicationClass(applicationClass);
+    }
+
+    /**
      * Collect annotated endpoints.
      *
      * @param endpoint The endpoint.

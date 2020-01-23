@@ -84,6 +84,19 @@ public final class WebSocketApplication {
         private Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
 
         /**
+         * Updates an application class in the builder. Clears all results from scanning.
+         *
+         * @param applicationClass The application class.
+         * @return The builder.
+         */
+        Builder updateApplicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
+            this.applicationClass = applicationClass;
+            annotatedEndpoints.clear();
+            programmaticEndpoints.clear();
+            return this;
+        }
+
+        /**
          * Set an application class in the builder.
          *
          * @param applicationClass The application class.
