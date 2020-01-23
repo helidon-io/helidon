@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2016, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>1.4.2-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -56,11 +56,15 @@
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.18</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
+        <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
+        <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.0.8</version.lib.rxjava>
+        <!-- This is to force upgrade of transitive dep from arquillian -->
+        <!-- 2.x versions used http (not https) to access maven central -->
+        <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.surefire.testng>3.0.0-M3</version.lib.surefire.testng>
         <version.lib.testng>6.13.1</version.lib.testng>
@@ -685,6 +689,12 @@
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>${version.lib.jgit}</version>
             </dependency>
+            <!-- Used to update version used by jgit -->
+            <dependency>
+                <groupId>com.jcraft</groupId>
+                <artifactId>jsch</artifactId>
+                <version>${version.lib.jsch}</version>
+            </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit.junit</artifactId>
@@ -802,6 +812,17 @@
                 <groupId>org.jboss.arquillian.container</groupId>
                 <artifactId>arquillian-weld-embedded</artifactId>
                 <version>${version.lib.arquillian-weld-embedded}</version>
+            </dependency>
+            <!-- Force update of shrinkwrap version used by arquillian -->
+            <dependency>
+                <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+                <version>${version.lib.shrinkwrap-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                <artifactId>shrinkwrap-resolver-api-maven</artifactId>
+                <version>${version.lib.shrinkwrap-resolver}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.config</groupId>

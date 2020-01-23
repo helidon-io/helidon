@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,18 +34,28 @@ security:
     frontend-uri: "http://localhost:7987"
     proxy-host: "if you need proxy"
   providers:
-  - abac:
-  - oidc:
-      client-id: "${ALIAS=security.properties.idcs-client-id}"
-      client-secret: "${ALIAS=security.properties.idcs-client-secret}"
-      identity-uri: "${ALIAS=security.properties.idcs-uri}"
-      # A prefix used for custom scopes
-      scope-audience: "http://localhost:7987/test-application"
-      proxy-host: "${ALIAS=security.properties.proxy-host}"
-      frontend-uri: "${ALIAS=security.properties.frontend-uri}"
-      # Retrieve roles
-      idcs-roles: true
+    - abac:
+      # Adds ABAC Provider - it does not require any configuration
+    - oidc:
+        client-id: "${ALIAS=security.properties.idcs-client-id}"
+        client-secret: "${ALIAS=security.properties.idcs-client-secret}"
+        identity-uri: "${ALIAS=security.properties.idcs-uri}"
+        # A prefix used for custom scopes
+        scope-audience: "http://localhost:7987/test-application"
+        proxy-host: "${ALIAS=security.properties.proxy-host}"
+        frontend-uri: "${ALIAS=security.properties.frontend-uri}"
+    - idcs-role-mapper:
+        multitenant: false
+        oidc-config:
+          # we must repeat IDCS configuration, as in this case
+          # IDCS serves both as open ID connect authenticator and
+          # as a role mapper. Using minimal configuration here
+          client-id: "${ALIAS=security.properties.idcs-client-id}"
+          client-secret: "${ALIAS=security.properties.idcs-client-secret}"
+          identity-uri: "${ALIAS=security.properties.idcs-uri}"
   web-server:
     paths:
-    - path: "/web[/{*}]"
-      authenticate: true
+      - path: "/web[/{*}]"
+        authenticate: true
+      - path: "/reactive[/{*}]"
+        authenticate: true

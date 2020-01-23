@@ -227,14 +227,16 @@ public final class JaxRsApplication {
         }
 
         /**
-         * Normalizes a context root by stripping off a trailing slash.
+         * Normalizes a context root by stripping off a trailing slash and adding a leading slash.
          *
          * @param contextRoot Context root to normalize.
          * @return Normalized context root.
          */
         private static String normalize(String contextRoot) {
             int length = contextRoot.length();
-            return length > 1 && contextRoot.endsWith("/") ? contextRoot.substring(0, length - 1) : contextRoot;
+            String result = ((length > 1) && contextRoot.endsWith("/")) ? contextRoot.substring(0, length - 1) : contextRoot;
+            result = result.startsWith("/") ? result : ("/" + result);
+            return result;
         }
 
         private void routingName(Class<?> clazz) {

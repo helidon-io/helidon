@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>1.4.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-git</artifactId>
     <name>Helidon Config Git</name>
@@ -78,12 +78,6 @@
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit.junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- needed for jgit junit dependency -->
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

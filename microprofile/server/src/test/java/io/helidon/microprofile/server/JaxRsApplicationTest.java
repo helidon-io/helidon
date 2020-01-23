@@ -45,5 +45,7 @@ public class JaxRsApplicationTest {
         assertThat(app4.contextRoot(), is("/foo/bar"));
         JaxRsApplication app5 = JaxRsApplication.builder().application(MyApplication.class).build();
         assertThat(app5.contextRoot(), is("/foo/bar"));
+        JaxRsApplication app6 = JaxRsApplication.builder().contextRoot("foo/bar/").build();
+        assertThat(app6.contextRoot(), is("/foo/bar"));
     }
 }

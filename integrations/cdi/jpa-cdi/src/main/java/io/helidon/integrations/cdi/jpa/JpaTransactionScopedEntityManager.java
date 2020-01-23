@@ -190,7 +190,10 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
                                           selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
         assert beans != null;
         assert beans.size() == 1 : "beans.size() != 1: " + beans;
-        this.nonTransactionalEntityManagerBean = (Bean<NonTransactionalEntityManager>) this.beanManager.resolve(beans);
+        @SuppressWarnings("unchecked")
+        final Bean<NonTransactionalEntityManager> nonTransactionalEntityManagerBean =
+            (Bean<NonTransactionalEntityManager>) this.beanManager.resolve(beans);
+        this.nonTransactionalEntityManagerBean = nonTransactionalEntityManagerBean;
         assert this.nonTransactionalEntityManagerBean != null;
         beans = null;
 

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>1.4.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-etcd</artifactId>
     <name>Helidon Config Etcd</name>
@@ -68,10 +68,6 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>

@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [next-release]
+### Notes
+
+This is a bug fix release of Helidon.
+
+### Fixes
+- Security: OIDC redirect with cookies now uses `Same-Site` policy of `Lax` by default to prevent infinite redirects.
+    If the default value is use, a warning is printed explaining the change.
+
+## [1.4.1]
+
+### Notes
+
+This is a bug fix release of Helidon.
+
+### Fixes
+
+- WebServer: Better recovery for invalid URLs and content types [1233](https://github.com/oracle/helidon/pull/1233)
+- Metrics: Fix Unable to find reusable metric with tags [1241](https://github.com/oracle/helidon/pull/1241)
+- Metrics: Fix Metrics type of Fault Tolerance is displayed as invalid [1179](https://github.com/oracle/helidon/pull/1179)
+- Security: Allow use of exception instead of abortWith in Jersey security. [1224](https://github.com/oracle/helidon/pull/1224)
+- Security: Outbound with OIDC provider no longer causes an UnsupportedOperationException [1195](https://github.com/oracle/helidon/pull/1195)
+- Add support for Lazy values [1225](https://github.com/oracle/helidon/pull/1225)
+- Upgrade Google libraries for Google login provider. [1199](https://github.com/oracle/helidon/pull/1199)
+- Upgrade config libraries [1234](https://github.com/oracle/helidon/pull/1234)
+- Upgrade MP Fault Tolerance to 2.0.2 and Failsafe 2.2.3 [1197](https://github.com/oracle/helidon/pull/1197) [1186](https://github.com/oracle/helidon/pull/1186)
+- Upgrade of libraries related to tracing [1169](https://github.com/oracle/helidon/pull/1169)
+- JPA: Relax requirements on container-managed persistence units which can now be resource-local [1245](https://github.com/oracle/helidon/pull/1245)
+- JPA: Addressing several rollback-related issues [1189](https://github.com/oracle/helidon/pull/1189)
+
+
 ## [1.4.0] 
 
 ### Notes
@@ -564,6 +595,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.1]: https://github.com/oracle/helidon/compare/1.4.0..1.4.1
 [1.4.0]: https://github.com/oracle/helidon/compare/1.3.1...1.4.0
 [1.3.1]: https://github.com/oracle/helidon/compare/1.3.0...1.3.1
 [1.3.0]: https://github.com/oracle/helidon/compare/1.2.1...1.3.0

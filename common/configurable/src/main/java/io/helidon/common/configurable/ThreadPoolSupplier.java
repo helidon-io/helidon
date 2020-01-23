@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
@@ -56,7 +57,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final int growthThreshold;
     private final int growthRate;
     private final ThreadPool.RejectionHandler rejectionHandler;
-    private volatile ExecutorService instance;
+    private final LazyValue<ExecutorService> lazyValue = LazyValue.create(() -> Contexts.wrap(getThreadPool()));
 
     private ThreadPoolSupplier(Builder builder) {
         this.corePoolSize = builder.corePoolSize;
@@ -89,7 +90,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      */
     public static ThreadPoolSupplier create(Config config) {
         return builder().config(config)
-                        .build();
+                .build();
     }
 
     /**
@@ -120,11 +121,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     }
 
     @Override
-    public synchronized ExecutorService get() {
-        if (null == instance) {
-            instance = Contexts.wrap(getThreadPool());
-        }
-        return instance;
+    public ExecutorService get() {
+        return lazyValue.get();
     }
 
     /**
@@ -357,7 +355,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          *     <li>there are no idle threads, and</li>
          *     <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
          *     </ul>
-         *     <p>For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
+         *     <p>For example, a rate of 20 means that while these conditions are met one thread will be added for every 5
+         *     submitted
          *     tasks.
          *     <p>A rate of 0 selects the default {@link ThreadPoolExecutor} growth behavior: a thread is added only when a
          *     submitted task is rejected because the queue is full.</td>

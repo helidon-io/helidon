@@ -151,8 +151,9 @@ final class EntityManagerFactories {
         Objects.requireNonNull(beanManager);
 
         final PersistenceUnitInfo pu = getPersistenceUnitInfo(instance, suppliedQualifiers);
-        if (PersistenceUnitTransactionType.RESOURCE_LOCAL.equals(pu.getTransactionType())) {
-            throw new PersistenceException(Messages.format("resourceLocalPersistenceUnitDisallowed", pu));
+        assert pu != null;
+        if (LOGGER.isLoggable(Level.WARNING) && PersistenceUnitTransactionType.RESOURCE_LOCAL.equals(pu.getTransactionType())) {
+          LOGGER.logp(Level.WARNING, cn, mn, "resourceLocalPersistenceUnitWarning", pu);
         }
 
         PersistenceProvider persistenceProvider = null;
@@ -278,6 +279,7 @@ final class EntityManagerFactories {
         // This may very well throw a resolution exception; that is
         // anticipated.
         final PersistenceUnitInfo returnValue = puInstance.get();
+        assert returnValue != null;
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
