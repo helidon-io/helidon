@@ -116,7 +116,7 @@ public class IndexBuilder implements Extension {
         List<IndexView> indices = new ArrayList<>();
         for (URL indexURL : indexURLs) {
             try (InputStream indexIS = indexURL.openStream()) {
-                LOGGER.log(Level.FINE, "Adding Jandex index at {0}", INDEX_PATH);
+                LOGGER.log(Level.FINE, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
             } catch (IOException ex) {
                 throw new IOException("Attempted to read from previously-located index file "
