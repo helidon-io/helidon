@@ -58,6 +58,28 @@
                             <fileSets>
                                 <fileSet>
                                     <directory>${project.build.directory}/test-classes</directory>
+                                    <excludes>
+                                        <exclude>**/other/*.class</exclude>
+                                    </excludes>
+                                </fileSet>
+                            </fileSets>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>make-second-test-index</id>
+                        <goals>
+                            <goal>jandex</goal>
+                        </goals>
+                        <phase>process-test-classes</phase>
+                        <configuration>
+                            <classesDir>${project.build.directory}/test-classes}</classesDir>
+                            <indexName>other.idx</indexName>
+                            <fileSets>
+                                <fileSet>
+                                    <directory>${project.build.directory}/test-classes</directory>
+                                    <includes>
+                                        <include>**/other/*.class</include>
+                                    </includes>
                                 </fileSet>
                             </fileSets>
                         </configuration>
