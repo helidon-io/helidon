@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -62,8 +63,9 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
-     * Exposes this {@link Single} instance as a {@link CompletionStage}. Note that if this {@link Single} completes without a
-     * value, the resulting {@link CompletionStage} will be completed exceptionally with an {@link IllegalStateException}
+     * Exposes this {@link Single} instance as a {@link CompletionStage}.
+     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
      *
      * @return CompletionStage
      */
@@ -74,6 +76,26 @@ public interface Single<T> extends Subscribable<T> {
             return subscriber;
         } catch (Throwable ex) {
             CompletableFuture<T> future = new CompletableFuture<>();
+            future.completeExceptionally(ex);
+            return future;
+        }
+    }
+
+    /**
+     * Exposes this {@link Single} instance as a {@link CompletionStage} with {@code Optional<T>} return type
+     * of the asynchronous operation.
+     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
+     *
+     * @return CompletionStage
+     */
+    default CompletionStage<Optional<T>> toOptionalStage() {
+        try {
+            SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();
+            this.subscribe(subscriber);
+            return subscriber;
+        } catch (Throwable ex) {
+            CompletableFuture<Optional<T>> future = new CompletableFuture<>();
             future.completeExceptionally(ex);
             return future;
         }
