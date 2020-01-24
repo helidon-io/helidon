@@ -18,19 +18,44 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
 public class RecursionDepthTest {
+
+    private static final Logger LOGGER = Logger.getLogger(RecursionDepthTest.class.getName());
+
     @Test
     void depthTestPositive() {
+        IntStream.rangeClosed(1, 5)
+                .mapToObj(AtomicInteger::new)
+                .forEach(i -> recursiveMethod(5, i));
+    }
+
+    @Test
+    void stackJumpPollutionTest() {
+        recursiveMethod(5, 1, 3, new AtomicInteger(5));
         recursiveMethod(5, new AtomicInteger(5));
-        recursiveMethod(5, new AtomicInteger(4));
-        recursiveMethod(5, new AtomicInteger(3));
-        recursiveMethod(5, new AtomicInteger(2));
-        recursiveMethod(5, new AtomicInteger(1));
+        recursiveMethod(10, 2, 8, new AtomicInteger(10));
+        recursiveMethod(10, new AtomicInteger(10));
+        recursiveMethod(5, 1, 2, new AtomicInteger(5));
+        recursiveMethod(5, new AtomicInteger(5));
+        recursiveMethod(5, new AtomicInteger(5));
+    }
+
+    @Test
+    void stackJumpPollutionTestWithInnerCallbackException() {
+        assertThrows(RuntimeException.class, () -> recursiveMethod(2, 1, 3, new AtomicInteger(5)));
+        recursiveMethod(5, new AtomicInteger(5));
+        recursiveMethod(9, 2, 8, new AtomicInteger(10));
+        recursiveMethod(10, new AtomicInteger(10));
+        recursiveMethod(5, 1, 2, new AtomicInteger(5));
+        recursiveMethod(5, new AtomicInteger(5));
+        recursiveMethod(5, new AtomicInteger(5));
     }
 
     @Test
@@ -41,12 +66,35 @@ public class RecursionDepthTest {
     }
 
     private void recursiveMethod(int maxDepth, AtomicInteger counter) {
-        if (counter.decrementAndGet() >= 0) {
-            StreamValidationUtils.checkRecursionDepth("RecursionDepthTest1", maxDepth,
-                    () -> recursiveMethod(maxDepth, counter),
-                    (aLong, throwable) -> {
-                        throw new RuntimeException(throwable);
-                    });
+        recursiveMethod(maxDepth, -1, -1, counter);
+    }
+
+    private void recursiveMethod(int maxDepth, int throwAtLevel, int catchAtLevel, AtomicInteger counter) {
+        int currentLevelCounter = counter.decrementAndGet();
+        if (currentLevelCounter >= 0) {
+            if (currentLevelCounter == throwAtLevel) {
+                throw new StackJumpException(throwAtLevel);
+            }
+            try {
+                StreamValidationUtils.checkRecursionDepth("RecursionDepthTest1", maxDepth,
+                        () -> recursiveMethod(maxDepth, throwAtLevel, catchAtLevel, counter),
+                        (aLong, throwable) -> {
+                            throw new RuntimeException(throwable);
+                        });
+            } catch (StackJumpException sje) {
+                if (currentLevelCounter == catchAtLevel) {
+
+                    LOGGER.info(String.format("%s to %d", sje.getMessage(), catchAtLevel));
+                } else {
+                    throw sje;
+                }
+            }
+        }
+    }
+
+    private class StackJumpException extends RuntimeException {
+        public StackJumpException(int throwAtLevel) {
+            super(String.format("Jumped from stack frame %d", throwAtLevel));
         }
     }
 }

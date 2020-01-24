@@ -30,7 +30,6 @@ import java.util.function.Consumer;
  */
 public class StreamValidationUtils {
 
-    private static final long USE_STACK_WALKER = -1000;
     private static ThreadLocal<Map<String, AtomicLong>> recursionDepthThreadLocal = new ThreadLocal<>();
 
 
@@ -63,55 +62,23 @@ public class StreamValidationUtils {
 
         counterMap.putIfAbsent(key, new AtomicLong(0));
         AtomicLong recursionDepthCounter = counterMap.get(key);
-
-        if (recursionDepthCounter.get() <= USE_STACK_WALKER) {
-            // We have lost count last time lets reset expensive way
-            long recursionDepth = getRecursionDepthByStackAnalysis();
-            recursionDepthCounter.set(--recursionDepth);
-        }
-
-        if (recursionDepthCounter.incrementAndGet() > maxDepth) {
-            long exceededRecursionDepth = recursionDepthCounter.get();
-            //Do reset in case exception is thrown
-            recursionDepthCounter.set(USE_STACK_WALKER);
-            Optional.of(onExceeded)
-                    .ifPresent(onExc -> onExc
-                            .accept(exceededRecursionDepth, new IllegalCallerException(String
-                                    .format("Recursion depth exceeded, max depth expected %d but actual is %d, rule 3.3",
-                                            maxDepth, exceededRecursionDepth))));
-            return false;
-        }
         try {
+            if (recursionDepthCounter.incrementAndGet() > maxDepth) {
+                long exceededRecursionDepth = recursionDepthCounter.get();
+                Optional.of(onExceeded)
+                        .ifPresent(onExc -> onExc
+                                .accept(exceededRecursionDepth, new IllegalCallerException(String
+                                        .format("Recursion depth exceeded, max depth expected %d but actual is %d, rule 3.3",
+                                                maxDepth, exceededRecursionDepth))));
+                return false;
+            }
+
+
             guardedBlock.run();
-            recursionDepthCounter.decrementAndGet();
             return true;
-        } catch (Throwable e) {
-            // Do reset in case exception is thrown
-            // we cant track exception jump up the stack so lets reset with stack-walker next time
-            recursionDepthCounter.set(USE_STACK_WALKER);
-            throw e;
+        } finally {
+            recursionDepthCounter.decrementAndGet();
         }
-    }
-
-    private static Long getRecursionDepthByStackAnalysis() {
-        StackTraceElement parentElement = StackWalker.getInstance()
-                .walk(stackFrameStream -> stackFrameStream.skip(1).findFirst())
-                .get()
-                .toStackTraceElement();
-        return StackWalker.getInstance()
-                .walk(ss -> ss
-                        .map(StackWalker.StackFrame::toStackTraceElement)
-                        .filter(el -> stackTraceElementEquals(el, parentElement))
-                        .count());
-    }
-
-    private static boolean stackTraceElementEquals(StackTraceElement a, StackTraceElement b) {
-        return Objects.equals(a.getClassLoaderName(), b.getClassLoaderName())
-                && Objects.equals(a.getModuleName(), b.getModuleName())
-                && Objects.equals(a.getModuleVersion(), b.getModuleVersion())
-                && Objects.equals(a.getClassName(), b.getClassName())
-                && Objects.equals(a.getMethodName(), b.getMethodName());
-
     }
 
     /**
