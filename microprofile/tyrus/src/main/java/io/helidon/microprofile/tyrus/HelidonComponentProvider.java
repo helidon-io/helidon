@@ -42,7 +42,7 @@ public class HelidonComponentProvider extends ComponentProvider {
     public boolean destroy(Object o) {
         try {
             CDI.current().destroy(o);
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException | IllegalStateException e) {
             return false;
         }
         return true;

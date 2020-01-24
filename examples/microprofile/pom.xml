@@ -38,5 +38,6 @@
         <module>mp1_1-security</module>
         <module>idcs</module>
         <module>openapi-basic</module>
+        <module>websocket</module>
     </modules>
 </project>

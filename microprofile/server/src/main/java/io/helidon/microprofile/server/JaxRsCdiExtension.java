@@ -104,7 +104,7 @@ public class JaxRsCdiExtension implements Extension {
                                         .collect(Collectors.toList()));
 
         applications.clear();
-        resources.clear();
+        // resources.clear();
 
         return applicationMetas;
     }

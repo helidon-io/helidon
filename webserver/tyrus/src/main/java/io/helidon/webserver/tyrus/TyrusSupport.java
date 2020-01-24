@@ -227,8 +227,10 @@ public class TyrusSupport implements Service {
 
             // Write reason for failure if not successful
             if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
-                publisherWriter.write(ByteBuffer.wrap(
-                        upgradeResponse.getReasonPhrase().getBytes(UTF_8)), null);
+                String reason = upgradeResponse.getReasonPhrase();
+                if (reason != null) {
+                    publisherWriter.write(ByteBuffer.wrap(reason.getBytes(UTF_8)), null);
+                }
             }
 
             // Flush upgrade response
@@ -239,8 +241,10 @@ public class TyrusSupport implements Service {
                     closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason));
 
             // Set up reader to pass data back to Tyrus
-            TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection);
-            req.content().subscribe(subscriber);
+            if (connection != null) {
+                TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection);
+                req.content().subscribe(subscriber);
+            }
         }
     }
 }

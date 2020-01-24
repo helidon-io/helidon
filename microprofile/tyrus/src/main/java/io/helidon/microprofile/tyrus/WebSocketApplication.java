@@ -19,6 +19,7 @@ package io.helidon.microprofile.tyrus;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
@@ -78,6 +79,7 @@ public final class WebSocketApplication {
      * Fluent API builder to create {@link WebSocketApplication} instances.
      */
     public static class Builder {
+        private static final Logger LOGGER = Logger.getLogger(WebSocketApplication.Builder.class.getName());
 
         private Class<? extends ServerApplicationConfig> applicationClass;
         private Set<Class<?>> annotatedEndpoints = new HashSet<>();
@@ -90,9 +92,10 @@ public final class WebSocketApplication {
          * @return The builder.
          */
         Builder updateApplicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
+            if (this.applicationClass != null) {
+                LOGGER.fine(() -> "Overriding websocket application using " + applicationClass);
+            }
             this.applicationClass = applicationClass;
-            annotatedEndpoints.clear();
-            programmaticEndpoints.clear();
             return this;
         }
 
