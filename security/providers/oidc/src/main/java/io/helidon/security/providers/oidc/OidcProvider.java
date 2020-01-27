@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import io.helidon.security.Grant;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.Role;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityLevel;
@@ -97,10 +98,12 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     private final Pattern attemptPattern;
     private final boolean propagate;
     private final OidcOutboundConfig outboundConfig;
+    private final boolean useJwtGroups;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.oidcConfig = builder.oidcConfig;
         this.propagate = builder.propagate;
+        this.useJwtGroups = builder.useJwtGroups;
         this.outboundConfig = oidcOutboundConfig;
 
         attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
@@ -495,12 +498,16 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
 
-        Optional<List<String>> scopes = jwt.scopes();
-
         Subject.Builder subjectBuilder = Subject.builder()
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
 
+        if (useJwtGroups) {
+            Optional<List<String>> userGroups = jwt.userGroups();
+            userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
+        }
+
+        Optional<List<String>> scopes = jwt.scopes();
         scopes.ifPresent(scopeList -> scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
                                                                                                  .name(scope)
                                                                                                  .type("scope")
@@ -543,6 +550,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         // identity propagation is disabled by default. In general we should not reuse the same token
         // for outbound calls, unless it is the same audience
         private boolean propagate;
+        private boolean useJwtGroups = true;
         private OutboundConfig outboundConfig;
         private TokenHandler defaultOutboundHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
@@ -608,6 +616,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             if (null == outboundConfig) {
                 config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             }
+            config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
 
             return this;
         }
@@ -644,6 +653,18 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
          */
         public Builder oidcConfig(OidcConfig config) {
             this.oidcConfig = config;
+            return this;
+        }
+
+        /**
+         * Claim {@code groups} from JWT will be used to automatically add
+         *  groups to current subject (may be used with {@link javax.annotation.security.RolesAllowed} annotation).
+         *
+         * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
+         * @return updated builder instance
+         */
+        public Builder useJwtGroups(boolean useJwtGroups) {
+            this.useJwtGroups = useJwtGroups;
             return this;
         }
     }
