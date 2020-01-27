@@ -19,7 +19,6 @@ package io.helidon.microprofile.example.websocket;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
@@ -33,7 +32,6 @@ import javax.websocket.server.ServerEndpoint;
 /**
  * Class MessageBoardEndpoint.
  */
-@Dependent
 @ServerEndpoint(
         value = "/board",
         encoders = { MessageBoardEndpoint.UppercaseEncoder.class }

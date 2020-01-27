@@ -138,7 +138,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
-        addHelidonBeanDefiningAnnotations();
+        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path", "javax.websocket.server.ServerEndpoint");
 
         ResourceLoader resourceLoader = new WeldResourceLoader() {
             @Override
@@ -206,14 +206,15 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     }
 
     @SuppressWarnings("unchecked")
-    private void addHelidonBeanDefiningAnnotations() {
-        // I have to do this using reflection, as JAX-RS may not be on the classpath
-        String pathClassName = "javax.ws.rs.Path";
-        try {
-            Class<? extends Annotation> clazz = (Class<? extends Annotation>) Class.forName(pathClassName);
-            addBeanDefiningAnnotations(clazz);
-        } catch (Throwable e) {
-            LOGGER.log(Level.FINEST, e, () -> pathClassName + " is not on the classpath, it will be ignored by CDI");
+    private void addHelidonBeanDefiningAnnotations(String... classNames) {
+        // I have to do this using reflection since annotation may not be in classpath
+        for (String className : classNames) {
+            try {
+                Class<? extends Annotation> clazz = (Class<? extends Annotation>) Class.forName(className);
+                addBeanDefiningAnnotations(clazz);
+            } catch (Throwable e) {
+                LOGGER.log(Level.FINEST, e, () -> className + " is not in the classpath, it will be ignored by CDI");
+            }
         }
     }
 

@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.example.websocket;
 
-import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -26,7 +25,6 @@ import javax.ws.rs.Path;
  * Class MessageQueueResource.
  */
 @Path("rest")
-@RequestScoped
 public class MessageQueueResource {
 
     @Inject
