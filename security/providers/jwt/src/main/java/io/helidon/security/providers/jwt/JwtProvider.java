@@ -35,6 +35,7 @@ import io.helidon.security.Grant;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.Role;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
@@ -88,6 +89,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     private final String issuer;
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
     private final Jwk defaultJwk;
+    private final boolean useJwtGroups;
 
     private JwtProvider(Builder builder) {
         this.optional = builder.optional;
@@ -102,6 +104,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         this.issuer = builder.issuer;
         this.expectedAudience = builder.expectedAudience;
         this.verifySignature = builder.verifySignature;
+        this.useJwtGroups = builder.useJwtGroups;
 
         if (null == atnTokenHandler) {
             defaultTokenHandler = TokenHandler.builder()
@@ -212,12 +215,16 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
 
-        Optional<List<String>> scopes = jwt.scopes();
-
         Subject.Builder subjectBuilder = Subject.builder()
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
 
+        if (useJwtGroups) {
+            Optional<List<String>> userGroups = jwt.userGroups();
+            userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
+        }
+
+        Optional<List<String>> scopes = jwt.scopes();
         scopes.ifPresent(scopeList -> {
             scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
                                                                        .name(scope)
@@ -607,6 +614,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
+        private boolean useJwtGroups = true;
 
         private Builder() {
         }
@@ -797,6 +805,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").ifExists(this::outbound);
             config.get("allow-unsigned").asBoolean().ifPresent(this::allowUnsigned);
+            config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
 
             return this;
         }
@@ -808,6 +817,18 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          */
         public void expectedAudience(String audience) {
             this.expectedAudience = audience;
+        }
+
+        /**
+         * Claim {@code groups} from JWT will be used to automatically add
+         *  groups to current subject (may be used with {@link javax.annotation.security.RolesAllowed} annotation).
+         *
+         * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
+         * @return updated builder instance
+         */
+        public Builder useJwtGroups(boolean useJwtGroups) {
+            this.useJwtGroups = useJwtGroups;
+            return this;
         }
 
         private void verifyKeys(Config config) {
