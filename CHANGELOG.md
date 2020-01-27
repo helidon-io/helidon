@@ -13,6 +13,7 @@ This is a bug fix release of Helidon.
 ### Fixes
 - Security: OIDC redirect with cookies now uses `Same-Site` policy of `Lax` by default to prevent infinite redirects.
     If the default value is use, a warning is printed explaining the change.
+- Security: OIDC and JWT: `groups` claim in a JWT is now honored and a `Role` is created in subject for each such group. 
 
 ## [1.4.1]
 
