@@ -40,6 +40,8 @@ import io.helidon.security.Security;
 import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.abac.AbacProvider;
+import io.helidon.security.spi.AuthenticationProvider;
+import io.helidon.security.spi.AuthorizationProvider;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
@@ -73,14 +75,21 @@ public class SecurityCdiExtension implements Extension {
     private void registerSecurity(@Observes @Initialized(ApplicationScoped.class) @Priority(PLATFORM_AFTER) Object adv,
                                   BeanManager bm) {
 
-        if (securityBuilder.noProvider()) {
+        if (securityBuilder.noProvider(AuthenticationProvider.class)) {
             LOGGER.info(
-                    "Security extension for microprofile is enabled, yet security configuration is missing from config "
-                            + "(requires providers configuration at key security.providers). Security will not have any valid "
-                            + "authentication provider and ABAC provider is configured for authorization.");
+                    "Security extension for microprofile is enabled, yet security configuration for authentication provider "
+                            + "is missing from config (requires providers configuration at key security.providers). "
+                            + "Security will not have any valid authentication provider");
 
-            securityBuilder.addAuthenticationProvider(this::failingAtnProvider)
-                    .addAuthorizationProvider(AbacProvider.create());
+            securityBuilder.addAuthenticationProvider(this::failingAtnProvider);
+        }
+
+        if (securityBuilder.noProvider(AuthorizationProvider.class)) {
+            LOGGER.info(
+                    "Security extension for microprofile is enabled, yet security configuration for authorization provider "
+                            + "is missing from config (requires providers configuration at key security.providers). "
+                            + "ABAC provider is configured for authorization.");
+            securityBuilder.addAuthorizationProvider(AbacProvider.create());
         }
 
         Security security = securityBuilder.build();
@@ -105,7 +114,7 @@ public class SecurityCdiExtension implements Extension {
         Config webServerConfig = config.get("security.web-server");
         if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().orElse(true)) {
             server.serverRoutingBuilder()
-                    .register(WebSecurity.create(security, config));
+                    .register(WebSecurity.create(security, config.get("security")));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,7 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
         this.request = request;
         this.providerName = providerName;
         this.providerRequest = new ProviderRequest(context,
-                                                   request.resources(),
-                                                   request.requestEntity(),
-                                                   request.responseEntity());
+                                                   request.resources());
     }
 
     @Override
@@ -54,24 +52,22 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
                         //Audit success
                         context.audit(SecurityAuditEvent.success(
                                 AuditEvent.AUTHZ_TYPE_PREFIX + ".authorize",
-                                "Provider %s. Request %s. Subject %s")
+                                "Path %s. Provider %s. Subject %s")
+                                              .addParam(AuditEvent.AuditParam.plain("path", providerRequest.env().path()))
                                               .addParam(AuditEvent.AuditParam
                                                                 .plain("provider", providerInstance.getClass().getName()))
-                                              .addParam(AuditEvent.AuditParam.plain("request", this))
                                               .addParam(AuditEvent.AuditParam.plain("subject",
-                                                                                    context.user()
-                                                                                            .orElse(SecurityContext.ANONYMOUS))));
+                                                                                    context.user())));
                     } else {
                         //Audit failure
                         context.audit(SecurityAuditEvent.failure(
                                 AuditEvent.AUTHZ_TYPE_PREFIX + ".authorize",
-                                "Provider %s, Description %s, Request %s. Subject %s")
+                                "Path %s. Provider %s, Description %s, Request %s. Subject %s")
+                                              .addParam(AuditEvent.AuditParam.plain("path", providerRequest.env().path()))
                                               .addParam(AuditEvent.AuditParam
                                                                 .plain("provider", providerInstance.getClass().getName()))
                                               .addParam(AuditEvent.AuditParam.plain("request", this))
-                                              .addParam(AuditEvent.AuditParam.plain("subject",
-                                                                                    context.user()
-                                                                                            .orElse(SecurityContext.ANONYMOUS)))
+                                              .addParam(AuditEvent.AuditParam.plain("subject", context.user()))
                                               .addParam(AuditEvent.AuditParam
                                                                 .plain("message", response.description().orElse(null)))
                                               .addParam(AuditEvent.AuditParam
@@ -83,14 +79,13 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
                     //Audit failure
                     context.audit(SecurityAuditEvent.error(
                             AuditEvent.AUTHZ_TYPE_PREFIX + ".authorize",
-                            "Provider %s, Description %s, Request %s. Subject %s. %s: %s")
+                            "Path %s. Provider %s, Description %s, Request %s. Subject %s. %s: %s")
+                                          .addParam(AuditEvent.AuditParam.plain("path", providerRequest.env().path()))
                                           .addParam(AuditEvent.AuditParam
                                                             .plain("provider", providerInstance.getClass().getName()))
                                           .addParam(AuditEvent.AuditParam.plain("description", "Audit failure"))
                                           .addParam(AuditEvent.AuditParam.plain("request", this))
-                                          .addParam(AuditEvent.AuditParam.plain("subject",
-                                                                                context.user()
-                                                                                        .orElse(SecurityContext.ANONYMOUS)))
+                                          .addParam(AuditEvent.AuditParam.plain("subject", context.user()))
                                           .addParam(AuditEvent.AuditParam.plain("message", throwable.getMessage()))
                                           .addParam(AuditEvent.AuditParam.plain("exception", throwable)));
                     throw new SecurityException(throwable);

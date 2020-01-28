@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
     private final Map<String, Supplier<Object>> resources = new HashMap<>();
     private String providerName;
     private boolean isOptional;
-    private Entity responseEntity;
-    private Entity requestEntity;
     private Span tracingSpan;
     private SpanContext tracingSpanContext;
 
@@ -157,28 +155,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
     }
 
     /**
-     * Set the request message to use when security provider requires access to it.
-     *
-     * @param entity Message to use, may be null (e.g. for requests without entity)
-     * @return updated builder instance
-     */
-    public T requestMessage(Entity entity) {
-        this.requestEntity = entity;
-        return myInstance;
-    }
-
-    /**
-     * Set the response message to use when security provider requires access to it.
-     *
-     * @param entity Message to use, may be null (e.g. for responses without entity)
-     * @return updated builder instance
-     */
-    public T responseMessage(Entity entity) {
-        this.responseEntity = entity;
-        return myInstance;
-    }
-
-    /**
      * Build the security request. Not using name "build" on purpose, so overriding classes can build their expected
      * type.
      *
@@ -195,8 +171,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
     private final class SecurityRequestImpl implements SecurityRequest {
         private final String providerName;
         private final boolean isOptional;
-        private final Entity responseEntity;
-        private final Entity requestEntity;
         private final Span tracingSpan;
         private final Optional<SpanContext> tracingSpanContext;
         private final Map<String, Supplier<Object>> resources = new HashMap<>();
@@ -204,8 +178,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
         private SecurityRequestImpl(SecurityRequestBuilder<?> builder) {
             this.providerName = builder.providerName;
             this.isOptional = builder.isOptional;
-            this.responseEntity = builder.responseEntity;
-            this.requestEntity = builder.requestEntity;
             this.tracingSpan = builder.tracingSpan;
             this.tracingSpanContext = Optional.ofNullable(builder.tracingSpanContext);
             this.resources.putAll(builder.resources);
@@ -214,16 +186,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
         @Override
         public boolean isOptional() {
             return isOptional;
-        }
-
-        @Override
-        public Optional<Entity> requestEntity() {
-            return Optional.ofNullable(requestEntity);
-        }
-
-        @Override
-        public Optional<Entity> responseEntity() {
-            return Optional.ofNullable(responseEntity);
         }
 
         @Override
@@ -245,8 +207,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
             return "SecurityRequestImpl{"
                     + "providerName='" + providerName + '\''
                     + ", isOptional=" + isOptional
-                    + ", responseEntity=" + responseEntity
-                    + ", requestEntity=" + requestEntity
                     + ", tracingSpan=" + tracingSpan
                     + '}';
         }

@@ -48,6 +48,13 @@ property handling:
 Helidon now supports only MicroProfile Metrics 2.x. Modules for Metrics 1.x were removed, and 
 modules for 2.x were renamed from `metrics2` to `metrics`.
 
+#### Security
+
+- When OIDC provider is configured to use cookie (default configuration) to carry authentication information,
+    the cookie `Same-Site` is now set to `Lax` (used to be `Strict`). This is to prevent infinite redirects, as 
+    browsers would refuse to set the cookie on redirected requests (due to this setting).
+    Only in case the frontend host and identity host match, we leave `Strict` as the default
+
 
 #### Microprofile Bundles
 We have removed all versioned MP bundles.
@@ -85,6 +92,16 @@ New recommended option to start Helidon MP:
 `io.helidon.microprofile.server.Main` is still available, just calls `io.helidon.microprofile.cdi.Main` and is deprecated.
 `io.helidon.microprofile.server.Server` is still available, though the features are much reduced
 
+
+#### MicroProfile JWT-Auth
+If a JAX-RS application exists that is annotated with `@LoginConfig` with value `MP-JWT`, the correct authentication
+provider is added to security.
+The startup would fail if the provider is required yet not configured.
+
+#### Security in MP
+If there is no authentication provider configured, authentication will always fail.
+If there is no authorization provider configured, ABAC provider will be configured.
+(original behavior - these were configured if there was no provider configured overall) 
 
 ### Improvements
 

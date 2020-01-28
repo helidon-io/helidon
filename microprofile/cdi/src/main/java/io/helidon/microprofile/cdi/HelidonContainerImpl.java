@@ -308,7 +308,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         now = System.currentTimeMillis() - now;
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");
 
-        HelidonFeatures.print(HelidonFlavor.MP);
+        HelidonFeatures.print(HelidonFlavor.MP, config.get("features.print-details").asBoolean().orElse(false));
+
         return this;
     }
 

@@ -82,16 +82,22 @@ public class JaxRsCdiExtension implements Extension {
     public List<JaxRsApplication> applicationsToRun() {
         if (applications.isEmpty() && applicationMetas.isEmpty()) {
             // create a synthetic application from all resource classes
-            applicationMetas.add(JaxRsApplication.builder()
-                                         .applicationClass(Application.class)
-                                         .config(ResourceConfig.forApplication(new Application() {
-                                             @Override
-                                             public Set<Class<?>> getClasses() {
-                                                 return new HashSet<>(resources);
-                                             }
-                                         }))
-                                         .appName("SyntheticApplication")
-                                         .build());
+            // the classes set must be created before the lambda, as resources are cleared later on
+            if (resources.isEmpty()) {
+                LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
+            } else {
+                Set<Class<?>> classes = new HashSet<>(resources);
+                applicationMetas.add(JaxRsApplication.builder()
+                                             .applicationClass(Application.class)
+                                             .config(ResourceConfig.forApplication(new Application() {
+                                                 @Override
+                                                 public Set<Class<?>> getClasses() {
+                                                     return classes;
+                                                 }
+                                             }))
+                                             .appName("SyntheticApplication")
+                                             .build());
+            }
         }
 
         // make sure the resources are used as a default if application does not define any
@@ -104,7 +110,7 @@ public class JaxRsCdiExtension implements Extension {
                                         .collect(Collectors.toList()));
 
         applications.clear();
-        // resources.clear();
+        resources.clear();
 
         return applicationMetas;
     }

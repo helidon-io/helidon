@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,28 +36,6 @@ public interface SecurityRequest {
      */
     default boolean isOptional() {
         return false;
-    }
-
-    /**
-     * Access request message entity.
-     *
-     * @return Entity of the request, if current request has entity
-     * @deprecated Access to entity is to be removed from security
-     */
-    @Deprecated
-    default Optional<Entity> requestEntity() {
-        return Optional.empty();
-    }
-
-    /**
-     * Access response message entity.
-     *
-     * @return Entity of the response, if current response can have entity
-     * @deprecated Access to entity is to be removed from security
-     */
-    @Deprecated
-    default Optional<Entity> responseEntity() {
-        return Optional.empty();
     }
 
     /**

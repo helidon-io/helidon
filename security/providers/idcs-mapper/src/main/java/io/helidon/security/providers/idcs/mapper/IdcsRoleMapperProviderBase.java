@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
      */
     protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
+
+    private static final int STATUS_NOT_AUTHENTICATED = 401;
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
@@ -188,7 +190,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * @return list of grants obtained from the IDCS response
      */
     protected Optional<List<? extends Grant>> processServerResponse(Response groupResponse, String subjectName) {
-        if (groupResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+        Response.StatusType statusInfo = groupResponse.getStatusInfo();
+        if (statusInfo.getFamily() == Response.Status.Family.SUCCESSFUL) {
             JsonObject jsonObject = groupResponse.readEntity(JsonObject.class);
             JsonArray groups = jsonObject.getJsonArray("groups");
             JsonArray appRoles = jsonObject.getJsonArray("appRoles");
@@ -222,12 +225,25 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
             return Optional.of(result);
         } else {
-            LOGGER.warning("Cannot read groups for user \""
-                                   + subjectName
-                                   + "\". Response code: "
-                                   + groupResponse.getStatus()
-                                   + ", entity: "
-                                   + groupResponse.readEntity(String.class));
+            if (statusInfo.getStatusCode() == STATUS_NOT_AUTHENTICATED) {
+                // most likely not allowed to do this
+                LOGGER.warning("Cannot read groups for user \""
+                                       + subjectName
+                                       + "\". Response code: "
+                                       + groupResponse.getStatus()
+                                       + ", make sure your IDCS client has role \"Authenticator Client\" added on the client"
+                                       + " configuration page"
+                                       + ", entity: "
+                                       + groupResponse.readEntity(String.class));
+            } else {
+                LOGGER.warning("Cannot read groups for user \""
+                                       + subjectName
+                                       + "\". Response code: "
+                                       + groupResponse.getStatus()
+                                       + ", entity: "
+                                       + groupResponse.readEntity(String.class));
+            }
+
             return Optional.empty();
         }
     }

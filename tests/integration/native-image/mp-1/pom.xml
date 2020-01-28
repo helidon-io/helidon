@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,17 +33,9 @@
         This test makes sure the following helidon modules can be compiled into native image:
         - Microprofile CDI
         - Microprofile Server
-        - Microprofile Tracing
-            - Jaeger Tracer
-        - Microprofile Access Log
-        - Microprofile Fault Tolerance
-        - Microprofile Metrics
-        - Microprofile Health Check
-        - Microprofile Rest Client
-        - Microprofile Config
-            - YAML configuration
-        - JSON-P
-        - JSON-B
+        - Microprofile Tracing - Jaeger Tracer - Microprofile Access Log - Microprofile Fault Tolerance - Microprofile Metrics -
+        Microprofile Health Check - Microprofile Rest Client - Microprofile Config - YAML configuration - JSON-P - JSON-B -
+        Microprofile JWT-Auth
     </description>
 
     <properties>
@@ -84,6 +76,10 @@
             <artifactId>helidon-microprofile-rest-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.jwt</groupId>
+            <artifactId>helidon-microprofile-jwt-auth</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
@@ -97,6 +93,7 @@
             <artifactId>helidon-microprofile-config</artifactId>
             <exclusions>
                 <exclusion>
+                    <!-- this library uses method handles and that is not (maybe yet) supported by native-image -->
                     <groupId>io.helidon.config</groupId>
                     <artifactId>helidon-config-object-mapping</artifactId>
                 </exclusion>
