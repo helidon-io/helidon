@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.example.websocket;
+package io.helidon.webserver.examples.websocket;
 
 import javax.websocket.ClientEndpointConfig;
 import javax.websocket.CloseReason;
@@ -34,12 +34,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.microprofile.server.Server;
+import io.helidon.webserver.WebServer;
 import org.glassfish.tyrus.client.ClientManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.examples.websocket.Main.startWebServer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -52,19 +53,18 @@ public class MessageBoardTest {
 
     private static Client restClient = ClientBuilder.newClient();
     private static ClientManager websocketClient = ClientManager.createClient();
-    private static Server server;
+    private static WebServer server;
 
     private String[] messages = { "Whisky", "Tango", "Foxtrot" };
 
     @BeforeAll
     static void initClass() {
-        server = Server.create();
-        server.start();
+        server = startWebServer();
     }
 
     @AfterAll
     static void destroyClass() {
-        server.stop();
+        server.shutdown();
     }
 
     @Test
