@@ -95,10 +95,10 @@ public class StreamValidationUtils {
      */
     public static boolean checkRequestParam(long requestParam, Consumer<? super IllegalArgumentException> onExceeded) {
         if (requestParam <= 0) {
-            Optional.of(onExceeded)
-                    .ifPresent(onExc -> onExc
-                            .accept(new IllegalArgumentException(String
-                                    .format("Non-positive subscription request %d, rule 3.9", requestParam))));
+            if (Objects.nonNull(onExceeded)) {
+                onExceeded.accept(new IllegalArgumentException(String
+                        .format("Non-positive subscription request %d, rule 3.9", requestParam)));
+            }
             return false;
         }
         return true;
