@@ -25,7 +25,7 @@ import java.util.function.Predicate;
  *
  * @param <T> Item type
  */
-public class MultiTakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiTakeWhileProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
     private Predicate<T> predicate;
 
     private MultiTakeWhileProcessor(Predicate<T> predicate) {

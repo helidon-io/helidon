@@ -25,7 +25,7 @@ import java.util.concurrent.Flow;
  *
  * @param <T> item type
  */
-public class MultiDistinctProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiDistinctProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private final HashSet<T> distinctSet = new HashSet<T>();
 

@@ -15,29 +15,21 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
-
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
+package io.helidon.microprofile.reactive;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
 
-public class ConcatProcessorTest extends AbstractProcessorTest {
-
+public class MultiDropWhileProcessorTest extends AbstractProcessorTest {
     @Override
-    protected Publisher<Long> getPublisher(long items) {
-        return ReactiveStreams.concat(
-                ReactiveStreams.fromIterable(LongStream.range(0, items / 2).boxed().collect(Collectors.toList())),
-                ReactiveStreams.fromIterable(LongStream.range(items / 2, items).boxed().collect(Collectors.toList()))
-        ).buildRs();
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().dropWhile(integer -> false).buildRs();
     }
 
     @Override
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
-        return ReactiveStreams.<Long>builder().peek(o -> {
-            throw new TestRuntimeException();
+        return ReactiveStreams.<Long>builder().dropWhile(i -> {
+            throw t;
         }).buildRs();
     }
 }

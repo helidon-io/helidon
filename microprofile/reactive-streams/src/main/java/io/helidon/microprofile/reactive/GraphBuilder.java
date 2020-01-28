@@ -26,7 +26,6 @@ import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.BufferedProcessor;
 import io.helidon.common.reactive.ConcatPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.MultiCoupledProcessor;
@@ -195,11 +194,6 @@ final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer<Stage>
     @SuppressWarnings("unchecked")
     private void addProcessor(Processor<?, ?> processor) {
         processorList.add(HybridProcessor.from((Processor<Object, Object>) processor));
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T, U> void addProcessor(BufferedProcessor<T, U> processor) {
-        processorList.add(HybridProcessor.from((BufferedProcessor<Object, Object>) processor));
     }
 
     @SuppressWarnings("unchecked")

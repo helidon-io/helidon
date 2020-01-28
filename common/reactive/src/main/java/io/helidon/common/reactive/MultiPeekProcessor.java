@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  *
  * @param <T> both input/output type
  */
-public class MultiPeekProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiPeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private Consumer<T> consumer;
 

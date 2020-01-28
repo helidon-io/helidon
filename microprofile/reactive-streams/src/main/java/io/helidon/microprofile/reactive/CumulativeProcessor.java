@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.reactive.MultiTappedProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import org.reactivestreams.Processor;
@@ -46,8 +45,9 @@ class CumulativeProcessor implements Processor<Object, Object> {
     CumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
         //preceding processors
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
-        //pass-thru if no processors provided
-        this.processorList.add(HybridProcessor.from(MultiTappedProcessor.create()));
+        // can't pass without buffer
+        // IdentityProcessorVerification.required_spec101_subscriptionRequestMustResultInTheCorrectNumberOfProducedElements
+        this.processorList.add(HybridProcessor.from(BufferedProcessor.create()));
     }
 
     @Override

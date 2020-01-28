@@ -15,23 +15,29 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
 
-import java.util.List;
+import java.util.concurrent.Flow;
 
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import io.helidon.common.reactive.MultiTappedProcessor;
+import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
+
 import org.reactivestreams.Processor;
 
-public class FlatMapIterableProcessorTest extends AbstractProcessorTest {
+public class MultiTappedProcessorTest extends AbstractProcessorTest {
     @Override
+    @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getProcessor() {
-        return ReactiveStreams.<Long>builder().flatMapIterable(aLong -> List.of(aLong)).buildRs();
+        Flow.Processor processor = MultiTappedProcessor.create();
+        return HybridProcessor.from(processor);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
-        return ReactiveStreams.<Long>builder().<Long>flatMapIterable(i -> {
+        Flow.Processor processor = MultiTappedProcessor.create().onNext(o -> {
             throw t;
-        }).buildRs();
+        });
+        return HybridProcessor.from(processor);
     }
 }

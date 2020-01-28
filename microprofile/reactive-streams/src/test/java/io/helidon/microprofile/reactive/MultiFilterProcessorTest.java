@@ -15,19 +15,21 @@
  *
  */
 
-package io.helidon.common.reactive;
+package io.helidon.microprofile.reactive;
 
-/**
- * Raised when back-pressure buffer overflows.
- */
-public class BackPressureOverflowException extends Exception {
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.Processor;
 
-    /**
-     * Create new {@link BackPressureOverflowException}.
-     *
-     * @param limit Overflown limit
-     */
-    public BackPressureOverflowException(int limit) {
-        super(String.format("Buffer limit %d exceeded.", limit));
+public class MultiFilterProcessorTest extends AbstractProcessorTest {
+    @Override
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().filter(i -> true).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().filter(i -> {
+            throw t;
+        }).buildRs();
     }
 }

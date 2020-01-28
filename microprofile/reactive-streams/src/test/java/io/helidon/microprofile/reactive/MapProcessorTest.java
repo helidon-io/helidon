@@ -15,7 +15,23 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
 
-public class TestThrowable extends Throwable {
+import java.util.function.Function;
+
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.Processor;
+
+public class MapProcessorTest extends AbstractProcessorTest {
+    @Override
+    protected Processor<Long, Long> getProcessor() {
+        return ReactiveStreams.<Long>builder().map(Function.identity()).buildRs();
+    }
+
+    @Override
+    protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
+        return ReactiveStreams.<Long>builder().<Long>map(i -> {
+            throw t;
+        }).buildRs();
+    }
 }

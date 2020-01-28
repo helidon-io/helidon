@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
 
 public class TestRuntimeException extends RuntimeException {
     public static final String TEST_MSG = TestRuntimeException.class.getSimpleName();

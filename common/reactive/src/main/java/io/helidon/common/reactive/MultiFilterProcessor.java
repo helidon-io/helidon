@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  *
  * @param <T> both input/output type
  */
-public class MultiFilterProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiFilterProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private Predicate<T> predicate;
 

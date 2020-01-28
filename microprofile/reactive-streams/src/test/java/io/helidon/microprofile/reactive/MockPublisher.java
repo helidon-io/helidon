@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
 
 import java.util.Optional;
 import java.util.function.Consumer;

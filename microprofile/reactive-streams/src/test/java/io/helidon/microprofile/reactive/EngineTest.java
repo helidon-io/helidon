@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -15,21 +15,38 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 
-public class MultiFilterProcessorTest extends AbstractProcessorTest {
+public class MultiSkipProcessorTest extends AbstractProcessorTest {
     @Override
     protected Processor<Long, Long> getProcessor() {
-        return ReactiveStreams.<Long>builder().filter(i -> true).buildRs();
+        return ReactiveStreams.<Long>builder().skip(0).buildRs();
     }
 
     @Override
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
-        return ReactiveStreams.<Long>builder().filter(i -> {
-            throw t;
-        }).buildRs();
+        return null;
+    }
+
+    @Test
+    void skipItems() throws InterruptedException, ExecutionException, TimeoutException {
+        List<Long> result = ReactiveStreams.of(1L, 2L, 3L, 4L)
+                .peek(System.out::println)
+                .skip(2)
+                .toList()
+                .run().toCompletableFuture().get(1, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList(3L, 4L), result);
     }
 }

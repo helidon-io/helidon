@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;

@@ -15,20 +15,22 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
+
+import java.util.List;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
 
-public class MultiDropWhileProcessorTest extends AbstractProcessorTest {
+public class FlatMapIterableProcessorTest extends AbstractProcessorTest {
     @Override
     protected Processor<Long, Long> getProcessor() {
-        return ReactiveStreams.<Long>builder().dropWhile(integer -> false).buildRs();
+        return ReactiveStreams.<Long>builder().flatMapIterable(aLong -> List.of(aLong)).buildRs();
     }
 
     @Override
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
-        return ReactiveStreams.<Long>builder().dropWhile(i -> {
+        return ReactiveStreams.<Long>builder().<Long>flatMapIterable(i -> {
             throw t;
         }).buildRs();
     }

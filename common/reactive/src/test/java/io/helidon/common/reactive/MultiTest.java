@@ -363,6 +363,16 @@ public class MultiTest {
     }
 
     @Test
+    void testOnErrorResumeWithFirst() throws ExecutionException, InterruptedException, TimeoutException {
+        Integer result = Multi.<Integer>error(new RuntimeException())
+                .onErrorResumeWith(throwable -> Multi.just(1, 2, 3))
+                .first()
+                .get(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
     void testFlatMap() throws ExecutionException, InterruptedException {
         final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
         final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");

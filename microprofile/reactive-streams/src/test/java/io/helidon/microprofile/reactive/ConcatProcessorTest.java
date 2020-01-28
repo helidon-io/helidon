@@ -15,29 +15,29 @@
  *
  */
 
-package io.helidon.microrofile.reactive;
+package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.MultiTappedProcessor;
-import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
 
-import java.util.concurrent.Flow;
+public class ConcatProcessorTest extends AbstractProcessorTest {
 
-public class MultiTappedProcessorTest extends AbstractProcessorTest {
     @Override
-    @SuppressWarnings("unchecked")
-    protected Processor<Long, Long> getProcessor() {
-        Flow.Processor processor = MultiTappedProcessor.create();
-        return HybridProcessor.from(processor);
+    protected Publisher<Long> getPublisher(long items) {
+        return ReactiveStreams.concat(
+                ReactiveStreams.fromIterable(LongStream.range(0, items / 2).boxed().collect(Collectors.toList())),
+                ReactiveStreams.fromIterable(LongStream.range(items / 2, items).boxed().collect(Collectors.toList()))
+        ).buildRs();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected Processor<Long, Long> getFailedProcessor(RuntimeException t) {
-        Flow.Processor processor = MultiTappedProcessor.create().onNext(o -> {
-            throw t;
-        });
-        return HybridProcessor.from(processor);
+        return ReactiveStreams.<Long>builder().peek(o -> {
+            throw new TestRuntimeException();
+        }).buildRs();
     }
 }

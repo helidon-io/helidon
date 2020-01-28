@@ -15,23 +15,32 @@
  *
  */
 
-package io.helidon.common.reactive;
+package io.helidon.microprofile.reactive;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Flow;
 
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.MultiTappedProcessor;
+
 /**
- * Processor with back-pressure buffer.
+ * Processor executing provided functions on passing signals onNext, onError, onComplete, onCancel.
  *
- * @param <T> subscribed type (input)
- * @param <U> published type (output)
+ * @param <R> Type of the processed items.
  */
-public abstract class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
+class BufferedProcessor<R> extends MultiTappedProcessor<R> implements Multi<R> {
 
     private static final int BACK_PRESSURE_BUFFER_SIZE = 1024;
 
-    private BlockingQueue<U> buffer = new ArrayBlockingQueue<U>(BACK_PRESSURE_BUFFER_SIZE);
+    private BlockingQueue<R> buffer = new ArrayBlockingQueue<>(BACK_PRESSURE_BUFFER_SIZE);
+
+    private BufferedProcessor() {
+    }
+
+    public static <R> BufferedProcessor<R> create() {
+        return new BufferedProcessor<>();
+    }
 
     @Override
     protected void tryRequest(Flow.Subscription subscription) {
@@ -56,7 +65,7 @@ public abstract class BufferedProcessor<T, U> extends BaseProcessor<T, U> {
     }
 
     @Override
-    protected void notEnoughRequest(U item) {
+    protected void notEnoughRequest(R item) {
         if (!buffer.offer(item)) {
             fail(new BackPressureOverflowException(BACK_PRESSURE_BUFFER_SIZE));
         }

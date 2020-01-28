@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @param <T> item type
  */
-public class MultiSkipProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiSkipProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private final AtomicLong counter;
 

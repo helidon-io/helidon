@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <T> subscribed type (input)
  * @param <U> published type (output)
  */
-abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
+public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     private Subscription subscription;
     private final SingleSubscriberHolder<U> subscriber;
@@ -46,7 +46,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     /**
      * Generic processor used for the implementation of {@link Multi} and {@link Single}.
      */
-    BaseProcessor() {
+    protected BaseProcessor() {
         requested = new RequestedCounter();
         ready = new AtomicBoolean();
         subscribed = new AtomicBoolean();
