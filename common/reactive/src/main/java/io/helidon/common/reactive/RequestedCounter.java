@@ -46,13 +46,11 @@ public class RequestedCounter {
                 return Long.MAX_VALUE;
             }
 
-            long r = original + increment;
-            // HD 2-12 Overflow iff both arguments have the opposite sign of the result; inspired by Math.addExact(long, long)
-            if (r == Long.MAX_VALUE || ((original ^ r) & (increment ^ r)) < 0) {
+            if (Long.MAX_VALUE - original > increment) {
+                return original + increment;
+            } else {
                 // unbounded reached
                 return Long.MAX_VALUE;
-            } else {
-                return r;
             }
         });
     }
