@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,7 +241,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                 }
             }
         } catch (SecurityException e) {
-            return AuthenticationResponse.failed("Failed to extract one of the confiugred tokens", e);
+            return AuthenticationResponse.failed("Failed to extract one of the configured tokens", e);
         }
 
         if (token.isPresent()) {
