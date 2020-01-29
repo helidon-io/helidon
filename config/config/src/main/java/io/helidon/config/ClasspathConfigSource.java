@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package io.helidon.config;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -90,7 +90,7 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
     }
 
     private Optional<String> probeContentType() {
-        return Optional.ofNullable(ConfigHelper.detectContentType(Paths.get(resource)));
+        return MediaTypes.detectType(resource);
     }
 
     @Override

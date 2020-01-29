@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package io.helidon.config.etcd;
 
 import java.io.StringReader;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigHelper;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
@@ -68,7 +67,7 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
     }
 
     private Optional<String> probeContentType() {
-        return Optional.ofNullable(ConfigHelper.detectContentType(Paths.get(endpoint.key())));
+        return MediaTypes.detectType(endpoint.key());
     }
 
     @Override
