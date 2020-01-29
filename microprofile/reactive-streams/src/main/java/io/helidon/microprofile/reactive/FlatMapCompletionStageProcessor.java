@@ -19,149 +19,141 @@ package io.helidon.microprofile.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Flow;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
-import org.reactivestreams.Processor;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.RequestedCounter;
+import io.helidon.common.reactive.SequentialSubscriber;
 
-class FlatMapCompletionStageProcessor implements Processor<Object, Object> {
+/**
+ * Flatten the elements emitted by publishers produced by the mapper function to this stream.
+ *
+ * @param <T> input item type
+ * @param <X> output item type
+ */
+class FlatMapCompletionStageProcessor<T, X> implements Flow.Processor<T, X>, Multi<X> {
 
-    private Subscription upstreamSubscription;
-    private Optional<Subscriber<? super Object>> downStreamSubscriber = Optional.empty();
-    private CSBuffer<Object> buffer;
-    private AtomicBoolean onCompleteReceivedAlready = new AtomicBoolean(false);
+    private Function<T, CompletionStage<X>> mapper;
+    private RequestedCounter requestCounter = new RequestedCounter();
+    private SequentialSubscriber<? super X> subscriber;
+    private Flow.Subscription subscription;
+    private volatile CompletionStage<X> lastCompletionStage;
+    private volatile boolean upstreamsCompleted;
+    private Optional<Throwable> error = Optional.empty();
+    private ReentrantLock stateLock = new ReentrantLock();
 
     @SuppressWarnings("unchecked")
     FlatMapCompletionStageProcessor(Function<?, CompletionStage<?>> mapper) {
         Function<Object, CompletionStage<?>> csMapper = (Function<Object, CompletionStage<?>>) mapper;
-        buffer = new CSBuffer<>(csMapper);
+        this.mapper = t -> (CompletionStage<X>) csMapper.apply(t);
     }
 
-    @Override
-    public void subscribe(Subscriber<? super Object> subscriber) {
-        downStreamSubscriber = Optional.of(subscriber);
-        if (Objects.nonNull(this.upstreamSubscription)) {
-            subscriber.onSubscribe(new InnerSubscription());
-        }
-    }
-
-    @Override
-    public void onSubscribe(Subscription upstreamSubscription) {
-        if (Objects.nonNull(this.upstreamSubscription)) {
-            upstreamSubscription.cancel();
-            return;
-        }
-        this.upstreamSubscription = upstreamSubscription;
-        downStreamSubscriber.ifPresent(s -> s.onSubscribe(new InnerSubscription()));
-    }
-
-    private class InnerSubscription implements Subscription {
+    private class FlatMapSubscription implements Flow.Subscription {
         @Override
         public void request(long n) {
-            upstreamSubscription.request(n);
+            stateLock(() -> {
+                requestCounter.increment(n, FlatMapCompletionStageProcessor.this::onError);
+                if (Objects.isNull(lastCompletionStage)) {
+                    subscription.request(1);
+                }
+            });
         }
 
         @Override
         public void cancel() {
-            upstreamSubscription.cancel();
+            subscription.cancel();
         }
     }
 
     @Override
-    public void onNext(Object o) {
+    public void subscribe(Flow.Subscriber<? super X> subscriber) {
+        this.subscriber = SequentialSubscriber.create(subscriber);
+        if (Objects.nonNull(this.subscription)) {
+            subscriber.onSubscribe(new FlatMapSubscription());
+        }
+        error.ifPresent(subscriber::onError);
+    }
+
+    @Override
+    public void onSubscribe(Flow.Subscription subscription) {
+        if (Objects.nonNull(this.subscription)) {
+            subscription.cancel();
+            return;
+        }
+        this.subscription = subscription;
+        if (Objects.nonNull(subscriber)) {
+            subscriber.onSubscribe(new FlatMapSubscription());
+        }
+    }
+
+    @Override
+    public void onNext(T o) {
         Objects.requireNonNull(o);
-        buffer.offer(o);
+        try {
+            stateLock(() -> {
+                lastCompletionStage = mapper.apply(o);
+                lastCompletionStage.whenComplete(this::completionStageOnComplete);
+            });
+        } catch (Throwable t) {
+            subscription.cancel();
+            subscriber.onError(t);
+        }
+    }
+
+    private void completionStageOnComplete(X item, Throwable t) {
+        if (Objects.nonNull(t)) {
+            subscription.cancel();
+            this.onError(t);
+        } else if (Objects.isNull(item)) {
+            subscription.cancel();
+            this.onError(new NullPointerException());
+            return;
+        }
+
+        stateLock(() -> {
+            lastCompletionStage = null;
+            if (requestCounter.tryDecrement()) {
+                subscriber.onNext(item);
+            }
+            if (upstreamsCompleted) {
+                subscriber.onComplete();
+            } else if (requestCounter.get() > 0) {
+                subscription.request(1);
+            }
+        });
     }
 
     @Override
     public void onError(Throwable t) {
-        Objects.requireNonNull(t);
-        downStreamSubscriber.get().onError(t);
+        this.error = Optional.of(t);
+        if (Objects.nonNull(subscriber)) {
+            subscriber.onError(t);
+        }
     }
 
     @Override
     public void onComplete() {
-        onCompleteReceivedAlready.set(true);
-        if (buffer.isComplete()) {
-            //Have to wait for all CS to be finished
-            downStreamSubscriber.get().onComplete();
-        }
+        stateLock(() -> {
+            upstreamsCompleted = true;
+            if (requestCounter.get() == 0 || Objects.isNull(lastCompletionStage)) {
+                //Have to wait for all completion stages to be completed
+                subscriber.onComplete();
+            }
+        });
     }
 
-    private class CSBuffer<U> {
-
-        private BlockingQueue<Object> buffer = new ArrayBlockingQueue<>(64);
-        private Function<Object, CompletionStage<Object>> mapper;
-        private CompletableFuture<Object> lastCs = null;
-        private ReentrantLock bufferLock = new ReentrantLock();
-
-        @SuppressWarnings("unchecked")
-        CSBuffer(Function<Object, CompletionStage<?>> mapper) {
-            this.mapper = o -> (CompletionStage<Object>) mapper.apply(o);
-        }
-
-        boolean isComplete() {
-            return Objects.isNull(lastCs) || (lastCs.isDone() && buffer.isEmpty());
-        }
-
-        @SuppressWarnings("unchecked")
-        void tryNext(Object o, Throwable t) {
-            try {
-                bufferLock.lock();
-                if (Objects.nonNull(t)) {
-                    upstreamSubscription.cancel();
-                    downStreamSubscriber.get().onError(t);
-                }
-
-                if (Objects.isNull(o)) {
-                    upstreamSubscription.cancel();
-                    downStreamSubscriber.get().onError(new NullPointerException());
-                }
-                downStreamSubscriber.get().onNext((U) o);
-                Object nextItem = buffer.poll();
-                if (Objects.nonNull(nextItem)) {
-                    lastCs = executeMapper(nextItem);
-                    lastCs.whenComplete(this::tryNext);
-                } else if (onCompleteReceivedAlready.get()) {
-                    // Received onComplete and all CS are done
-                    downStreamSubscriber.get().onComplete();
-                }
-            } finally {
-                bufferLock.unlock();
-            }
-        }
-
-        void offer(Object o) {
-            try {
-                bufferLock.lock();
-                if (buffer.isEmpty() && (Objects.isNull(lastCs) || lastCs.isDone())) {
-                    lastCs = executeMapper(o);
-                    lastCs.whenComplete(this::tryNext);
-                } else {
-                    buffer.add(o);
-                }
-            } finally {
-                bufferLock.unlock();
-            }
-        }
-
-        CompletableFuture<Object> executeMapper(Object item) {
-            CompletableFuture<Object> cs;
-            try {
-                cs = mapper.apply(item).toCompletableFuture();
-            } catch (Throwable t) {
-                upstreamSubscription.cancel();
-                downStreamSubscriber.get().onError(t);
-                cs = CompletableFuture.failedFuture(t);
-            }
-            return cs;
+    /**
+     * Protect critical sections when working with states of completionStage.
+     */
+    private void stateLock(Runnable runnable) {
+        try {
+            stateLock.lock();
+            runnable.run();
+        } finally {
+            stateLock.unlock();
         }
     }
 }

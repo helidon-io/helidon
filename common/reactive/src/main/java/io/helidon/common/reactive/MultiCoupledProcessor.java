@@ -43,8 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<R> {
 
-    private SubscriberReference<T> passedInSubscriber;
-    private SubscriberReference<? super R> outletSubscriber;
+    private SequentialSubscriber<T> passedInSubscriber;
+    private SequentialSubscriber<? super R> outletSubscriber;
     private Flow.Publisher<R> passedInPublisher;
     private Flow.Subscriber<? super T> inletSubscriber;
     private Flow.Subscription inletSubscription;
@@ -52,7 +52,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private AtomicBoolean cancelled = new AtomicBoolean(false);
 
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
-        this.passedInSubscriber = SubscriberReference.create(passedInSubscriber);
+        this.passedInSubscriber = SequentialSubscriber.create(passedInSubscriber);
         this.passedInPublisher = passedInPublisher;
         this.inletSubscriber = this;
     }
@@ -73,7 +73,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
 
     @Override
     public void subscribe(Flow.Subscriber<? super R> outletSubscriber) {
-        this.outletSubscriber = SubscriberReference.create(outletSubscriber);
+        this.outletSubscriber = SequentialSubscriber.create(outletSubscriber);
         passedInPublisher.subscribe(new Flow.Subscriber<R>() {
 
             @Override
@@ -137,8 +137,6 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 passedInSubscriber.onComplete();
                 Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
                 passedInPublisherSubscription.cancel();
-                MultiCoupledProcessor.this.passedInSubscriber.releaseReference();
-                MultiCoupledProcessor.this.outletSubscriber.releaseReference();
             }
         });
     }
@@ -171,8 +169,6 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 inletSubscription.cancel();
                 outletSubscriber.onComplete();
                 passedInPublisherSubscription.cancel();
-                passedInSubscriber.releaseReference();
-                outletSubscriber.releaseReference();
             }
         });
     }

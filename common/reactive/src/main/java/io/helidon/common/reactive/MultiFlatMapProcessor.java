@@ -34,13 +34,12 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
     private Function<T, Flow.Publisher<X>> mapper;
     private RequestedCounter requestCounter = new RequestedCounter();
-    private SubscriberReference<? super X> subscriber;
+    private SequentialSubscriber<? super X> subscriber;
     private Flow.Subscription subscription;
     private volatile Flow.Subscription innerSubscription;
     private volatile Flow.Publisher<X> innerPublisher;
     private volatile boolean upstreamsCompleted;
     private Optional<Throwable> error = Optional.empty();
-    private ReentrantLock seqLock = new ReentrantLock();
     private ReentrantLock stateLock = new ReentrantLock();
 
 
@@ -92,19 +91,17 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
         public void cancel() {
             subscription.cancel();
             Optional.ofNullable(innerSubscription).ifPresent(Flow.Subscription::cancel);
-            // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-            subscriber.releaseReference();
         }
     }
 
     @Override
     public void subscribe(Flow.Subscriber<? super X> subscriber) {
         stateLock(() -> {
-            this.subscriber = SubscriberReference.create(subscriber);
+            this.subscriber = SequentialSubscriber.create(subscriber);
             if (Objects.nonNull(this.subscription)) {
-                seqLock(() -> subscriber.onSubscribe(new FlatMapSubscription()));
+                this.subscriber.onSubscribe(new FlatMapSubscription());
             }
-            error.ifPresent(subscriber::onError);
+            error.ifPresent(this.subscriber::onError);
         });
     }
 
@@ -129,10 +126,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
             innerPublisher = mapper.apply(o);
             innerPublisher.subscribe(new InnerSubscriber());
         } catch (Throwable t) {
-            seqLock(() -> {
-                subscription.cancel();
-                subscriber.onError(t);
-            });
+            subscription.cancel();
+            subscriber.onError(t);
         }
     }
 
@@ -140,7 +135,7 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     public void onError(Throwable t) {
         this.error = Optional.of(t);
         if (Objects.nonNull(subscriber)) {
-            seqLock(() -> subscriber.onError(t));
+            subscriber.onError(t);
         }
     }
 
@@ -160,14 +155,12 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            seqLock(() -> {
-                if (alreadySubscribed.getAndSet(true)) {
-                    subscription.cancel();
-                    return;
-                }
-                innerSubscription = subscription;
-                innerSubscription.request(requestCounter.get());
-            });
+            if (alreadySubscribed.getAndSet(true)) {
+                subscription.cancel();
+                return;
+            }
+            innerSubscription = subscription;
+            innerSubscription.request(requestCounter.get());
         }
 
         @Override
@@ -175,7 +168,7 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
             Objects.requireNonNull(item);
             stateLock(() -> {
                 if (requestCounter.tryDecrement()) {
-                    seqLock(() -> subscriber.onNext(item));
+                    subscriber.onNext(item);
                 }
             });
         }
@@ -183,10 +176,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
         @Override
         public void onError(Throwable throwable) {
             Objects.requireNonNull(throwable);
-            seqLock(() -> {
-                subscription.cancel();
-                subscriber.onError(throwable);
-            });
+            subscription.cancel();
+            subscriber.onError(throwable);
         }
 
         @Override
@@ -194,25 +185,12 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
             stateLock(() -> {
                 innerPublisher = null;
                 if (upstreamsCompleted) {
-                    seqLock(() -> subscriber.onComplete());
+                    subscriber.onComplete();
                 }
                 if (requestCounter.get() > 0) {
                     subscription.request(1);
                 }
             });
-        }
-    }
-
-    /**
-     * OnSubscribe, onNext, onError and onComplete signaled to a Subscriber MUST be signaled serially.
-     * https://github.com/reactive-streams/reactive-streams-jvm#1.3
-     */
-    private void seqLock(Runnable runnable) {
-        try {
-            seqLock.lock();
-            runnable.run();
-        } finally {
-            seqLock.unlock();
         }
     }
 

@@ -38,7 +38,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     private final RequestedCounter requested;
     private final AtomicBoolean ready;
     private final AtomicBoolean subscribed;
-    private SubscriberReference<? super U> referencedSubscriber;
     private ReentrantLock publisherSequentialLock = new ReentrantLock();
     private volatile boolean done;
     private Throwable error;
@@ -56,13 +55,11 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     @Override
     public void request(long n) {
         StreamValidationUtils.checkRequestParam(n, this::failAndCancel);
-        StreamValidationUtils.checkRecursionDepth("BaseProcessor.request", 10, () -> {
-            requested.increment(n, this::failAndCancel);
-            tryRequest(subscription);
-            if (done) {
-                tryComplete();
-            }
-        }, (actDepth, t) -> failAndCancel(t));
+        requested.increment(n, this::failAndCancel);
+        tryRequest(subscription);
+        if (done) {
+            tryComplete();
+        }
     }
 
     @Override
@@ -151,8 +148,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void subscribe(Subscriber<? super U> s) {
-        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-        referencedSubscriber = SubscriberReference.create(s);
         try {
             publisherSequentialLock.lock();
             if (subscriber.register(s)) {
@@ -253,8 +248,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      */
     protected void hookOnCancel(Flow.Subscription subscription) {
         Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
-        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-        referencedSubscriber.releaseReference();
     }
 
     /**
