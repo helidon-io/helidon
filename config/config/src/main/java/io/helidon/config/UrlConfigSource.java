@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
@@ -162,25 +160,8 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         return mediaType;
     }
 
-    private String probeContentType() throws URISyntaxException {
-        URI uri = url.toURI();
-        Path path;
-        switch (uri.getScheme()) {
-            case "jar":
-                String relativePath = uri.getSchemeSpecificPart();
-                int idx = relativePath.indexOf("!");
-                if (idx > 0 && idx < relativePath.length()) {
-                    relativePath = relativePath.substring(idx + 1);
-                }
-                path = Paths.get(relativePath);
-                break;
-            case "file":
-                path = Paths.get(uri);
-                break;
-            default:
-                path = Paths.get(url.getPath());
-        }
-        return ConfigHelper.detectContentType(path);
+    private String probeContentType() {
+        return MediaTypes.detectType(url).orElse(null);
     }
 
     @Override

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -302,15 +302,15 @@ has to figure out what parser to use. It does so by:
 Most applications let the config system try to infer the media type of the
 config source.
 
-By default config source implementations use the Java Service
-`java.nio.file.spi.FileTypeDetector` API to infer the source media type from
+By default config source implementations use the
+`io.helidon.common.media.type.MediaTypes` API to infer the source media type from
 the source, typically (but not always) based on the file type portion of the file path.
-The config system registers implementations of
-the `java.nio.file.spi.FileTypeDetector` SPI that recognize
-the supported formats: `.properties`, `.yaml`, `.json` and `.conf`. To handle
-other formats you can implement and register your own `FileTypeDetector`
+Helidon media type module has a predefined set of mappings as configured in
+`common/media-type/src/main/resources/io/helidon/common/media/type/default-media-types.properties`, including
+the Config supported formats: `.properties`, `.yaml`, `.json` and `.conf`. To handle
+other formats you can implement and register your own `io.helidon.common.media.type.spi.MediaTypeDetector` Java Service
 implementations. (Typically you would also write and register a config parser
-to translate that format; see <<locating-parser,Locating a Parser>> below.)
+to translate that format; see <<locating-parser,Locating a Parser>> below.).
 
 ===== By Application Directive
 Your application can specify what media type to use in interpreting a config
@@ -331,9 +331,8 @@ type in the path `props`.
 media type explicitly.
 
 Note that a file type detector _could_ be written to
-also inspect the contents of the file to infer the media type. The detector
-which the config system provides looks only for the `.properties` file type in the
-path.
+also inspect the contents of the file to infer the media type. The detectors
+provided by Helidon only inspect the suffix in the name of the file.
 
 ==== Locating a Parser [[locating-parser]]
 ===== By Inference from `media-type`

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,24 @@
 
 package io.helidon.config.yaml.internal;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 
-import io.helidon.config.ConfigHelper;
+import io.helidon.common.media.type.MediaTypes;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.testing.OptionalMatcher.value;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link YamlFileTypeDetector}.
+ * Test left in to make sure we correctly evaluate yaml file type suffix.
  */
 public class YamlFileTypeDetectorTest {
 
     @Test
-    public void testProbeContentType() throws IOException {
-        assertThat(ConfigHelper.detectContentType(Paths.get("config.yaml")), is("application/x-yaml"));
+    public void testProbeContentType() {
+        assertThat(MediaTypes.detectType(Paths.get("config.yaml")), value(is("application/x-yaml")));
     }
 
 }
