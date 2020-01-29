@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 package io.helidon.tests.integration.nativeimage.mp1;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -48,6 +50,7 @@ import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
+import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
 import static io.helidon.common.http.Http.Status.OK_200;
 import static io.helidon.common.http.Http.Status.UNAUTHORIZED_401;
 
@@ -170,6 +173,12 @@ public final class Mp1Main {
         // JWT-Auth
         validateJwtProtectedResource(collector, target, jwtToken);
 
+        // OIDC Authentication (same as JWT-Auth, using a different provider with different configuration)
+        validateOidcProtectedResource(collector, target, jwtToken);
+
+        // Basic-Auth
+        validateBasicAuthProtectedResource(collector, target);
+
         // Metrics
         validateMetrics(collector, target);
 
@@ -186,73 +195,46 @@ public final class Mp1Main {
                 .checkValid();
     }
 
-    private static void validateJwtProtectedResource(Errors.Collector collector, WebTarget target, String jwtToken) {
-        WebTarget jwtTarget = target.path("/jwt");
+    private static void validateBasicAuthProtectedResource(Errors.Collector collector, WebTarget target) {
+        String path = "/basic";
+        WebTarget basicAuthTarget = target.path(path);
+
+        testPublic(collector, basicAuthTarget, path);
+
+        testScopeNoAuth(collector, basicAuthTarget, path);
+        testScopeAuth(collector, basicAuthTarget, path, basic("jack", "password"), false);
+
+        testRoleNoAuth(collector, basicAuthTarget, path);
+        testRoleAuth(collector, basicAuthTarget, path, basic("jack", "password"), true);
+        testRoleAuth(collector, basicAuthTarget, path, basic("john", "password"), false);
+    }
+
+    private static void validateEndpointWithJwtHeader(Errors.Collector collector,
+                                                      WebTarget target,
+                                                      String path,
+                                                      String jwtToken) {
+        WebTarget jwtTarget = target.path(path);
 
         // public
-        Response response = jwtTarget.path("/public")
-                .request()
-                .get();
-
-        if (response.getStatus() == OK_200.code()) {
-            String entity = response.readEntity(String.class);
-            if (!"Hello anybody".equals(entity)) {
-                collector.fatal("Endpoint /jwt/public should return \"Hello anybody\", but returned \"" + entity + "\"");
-            }
-        } else {
-            collector.fatal("Endpoint /jwt/public should be accessible without authentication. Status received: " + response
-                    .getStatus());
-        }
+        testPublic(collector, jwtTarget, path);
 
         // scope
-        response = jwtTarget.path("/scope")
-                .request()
-                .get();
+        String authorizationHeader = "bearer " + jwtToken;
+        testScopeNoAuth(collector, jwtTarget, path);
+        testScopeAuth(collector, jwtTarget, path, authorizationHeader, true);
 
-        if (response.getStatus() != UNAUTHORIZED_401.code()) {
-            collector.fatal("Endpoint /jwt/scope should be protected by JWT Auth, yet response status was " + response
-                    .getStatus());
-        }
-
-        response = jwtTarget.path("/scope")
-                .request()
-                .header("Authorization", "bearer " + jwtToken)
-                .get();
-
-        if (response.getStatus() == OK_200.code()) {
-            String entity = response.readEntity(String.class);
-            if (!"Hello scope".equals(entity)) {
-                collector.fatal("Endpoint /jwt/scope should return \"Hello scope\", but returned \"" + entity + "\"");
-            }
-        } else {
-            collector.fatal("Endpoint /jwt/scope should be accessible with JWT Auth. Status received: " + response
-                    .getStatus());
-        }
 
         // role
-        response = jwtTarget.path("/role")
-                .request()
-                .get();
+        testRoleNoAuth(collector, jwtTarget, path);
+        testRoleAuth(collector, jwtTarget, path, authorizationHeader, true);
+    }
 
-        if (response.getStatus() != UNAUTHORIZED_401.code()) {
-            collector.fatal("Endpoint /jwt/role should be protected by JWT Auth, yet response status was " + response
-                    .getStatus());
-        }
+    private static void validateOidcProtectedResource(Errors.Collector collector, WebTarget target, String jwtToken) {
+        validateEndpointWithJwtHeader(collector, target, "/oidc", jwtToken);
+    }
 
-        response = jwtTarget.path("/role")
-                .request()
-                .header("Authorization", "bearer " + jwtToken)
-                .get();
-
-        if (response.getStatus() == OK_200.code()) {
-            String entity = response.readEntity(String.class);
-            if (!"Hello role".equals(entity)) {
-                collector.fatal("Endpoint /jwt/role should return \"Hello role\", but returned \"" + entity + "\"");
-            }
-        } else {
-            collector.fatal("Endpoint /jwt/role should be accessible with JWT Auth. Status received: " + response
-                    .getStatus());
-        }
+    private static void validateJwtProtectedResource(Errors.Collector collector, WebTarget target, String jwtToken) {
+        validateEndpointWithJwtHeader(collector, target, "/jwt", jwtToken);
     }
 
     private static void validateTracing(Errors.Collector collector) {
@@ -382,6 +364,110 @@ public final class Mp1Main {
         if (!expected.equals(actual)) {
             collector.fatal(assertionName + ", expected \"" + expected + "\", actual: \"" + actual + "\"");
         }
+    }
+
+
+    private static void testPublic(Errors.Collector collector, WebTarget target, String path) {
+        // public
+        Response response = target.path("/public")
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!"Hello anybody".equals(entity)) {
+                collector.fatal("Endpoint " + path + "/public should return \"Hello anybody\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + "/public should be accessible without authentication. Status received: "
+                                    + response.getStatus());
+        }
+    }
+
+    private static void testScopeNoAuth(Errors.Collector collector, WebTarget target, String path) {
+        Response response = target.path("/scope")
+                .request()
+                .get();
+
+        if (response.getStatus() != UNAUTHORIZED_401.code()) {
+            collector.fatal("Endpoint " + path + "/scope should be protected, yet response status was "
+                                    + response.getStatus());
+        }
+    }
+
+    private static void testScopeAuth(Errors.Collector collector,
+                                      WebTarget target,
+                                      String path,
+                                      String authorizationHeader,
+                                      boolean shouldSucceed) {
+        Response response = target.path("/scope")
+                .request()
+                .header("Authorization", authorizationHeader)
+                .get();
+
+        if (shouldSucceed) {
+            if (response.getStatus() == OK_200.code()) {
+                String entity = response.readEntity(String.class);
+                if (!"Hello scope".equals(entity)) {
+                    collector.fatal("Endpoint " + path + "/scope should return \"Hello scope\", but returned \"" + entity + "\"");
+                }
+            } else {
+                collector.fatal("Endpoint " + path + "/scope should be accessible with JWT Token. Status received: " + response
+                        .getStatus());
+            }
+        } else {
+            if (response.getStatus() == OK_200.code()) {
+                collector.fatal("Endpoint " + path + "/scope should not be accessible even when authenticated");
+            } else if (response.getStatus() != FORBIDDEN_403.code()) {
+                collector.fatal("Endpoint " + path + "/scope should have been forbidden, but returned code "
+                                        + response.getStatus());
+            }
+        }
+    }
+
+    private static void testRoleNoAuth(Errors.Collector collector, WebTarget target, String path) {
+        Response response = target.path("/role")
+                .request()
+                .get();
+
+        if (response.getStatus() != UNAUTHORIZED_401.code()) {
+            collector.fatal("Endpoint " + path + "/role should be protected, yet response status was "
+                                    + response.getStatus());
+        }
+    }
+
+    private static void testRoleAuth(Errors.Collector collector,
+                                     WebTarget target,
+                                     String path,
+                                     String authorizationHeader,
+                                     boolean shouldSucceed) {
+        Response response = target.path("/role")
+                .request()
+                .header("Authorization", authorizationHeader)
+                .get();
+
+        if (shouldSucceed) {
+            if (response.getStatus() == OK_200.code()) {
+                String entity = response.readEntity(String.class);
+                if (!"Hello role".equals(entity)) {
+                    collector.fatal("Endpoint " + path + "/role should return \"Hello role\", but returned \"" + entity + "\"");
+                }
+            } else {
+                collector.fatal("Endpoint " + path + "/role should be accessible with security. Status received: "
+                                        + response.getStatus());
+            }
+        } else {
+            if (response.getStatus() == OK_200.code()) {
+                collector.fatal("Endpoint " + path + "/role should not be accessible, as user does not have the correct role");
+            } else if (response.getStatus() != FORBIDDEN_403.code()) {
+                collector.fatal("Endpoint " + path + "/role should have been forbidden, but returned code "
+                                        + response.getStatus());
+            }
+        }
+    }
+
+    private static String basic(String username, String password) {
+        return "basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
     }
 }
 
