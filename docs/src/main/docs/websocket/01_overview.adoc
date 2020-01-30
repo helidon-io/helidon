@@ -204,7 +204,7 @@ session and the message received that triggered the call.
 So what else is needed to run this Helidon MP app? Nothing else
 other than the supporting classes `MessageQueue` and `UppercaseEncoder`.
 Helidon MP declares both `@Path` and `@ServerEndpoint` as
-bean-defining annotation, so all that is needed is for CDI
+bean defining annotation, so all that is needed is for CDI
 discovery to be enabled.
 
 By default, all JAX-RS resources will be placed under the
@@ -214,14 +214,15 @@ by providing subclasses/implementations for `jakarta.ws.rs.Application`
 and `jakarta.websocket.server.ServerApplicationConfig`, respectively.
 JAX-RS uses `@ApplicationPath` on application subclasses to provide
 this root path, but since there is no equivalent in the WebSocket
-API, Helidon MP also supports `@ApplicationPath` as an annotation
+API, Helidon MP uses its own annotation `@RoutingPath`
 on `jakarta.websocket.server.ServerApplicationConfig` implementations.
 
 For instance, if in our example we include the following class:
 
 [source,java]
 ----
-@ApplicationPath("/web")
+@ApplicationScoped
+@RoutingPath("/web")
 public class MessageBoardApplication implements ServerApplicationConfig {
     @Override
     public Set<ServerEndpointConfig> getEndpointConfigs(
@@ -238,7 +239,12 @@ public class MessageBoardApplication implements ServerApplicationConfig {
 ----
 
 the root path for WebSocket endpoints will be  `"/web"` instead of the default
-`"/websocket"`.
+`"/websocket"`. Note that `@RoutingPath` is _not_ a bean defining annotation,
+thus the use of `@ApplicationScoped` --which, as before, requires CDI
+bean discovery mode to be annotated. In addition to `@RoutingPath`, these
+classes can be annotated with `@RoutingName` to associate an endpoint
+with a Helidon named socket. Please refer to the Javadoc for that annotation
+for additional information.
 
 Helidon MP provides developers the option to control the application's `main`,
 including the server bootstrap steps. For this reason, the builder for
