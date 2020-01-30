@@ -122,7 +122,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
         Map<Long, DbColumn> byNumbers = new HashMap<>();
 
         for (int i = 1; i <= columnCount; i++) {
-            String name = metaData.getColumnName(i);
+            String name = metaData.getColumnLabel(i);
             String sqlType = metaData.getColumnTypeName(i);
             Class<?> javaClass = classByName(metaData.getColumnClassName(i));
             DbColumn column = new DbColumn() {
