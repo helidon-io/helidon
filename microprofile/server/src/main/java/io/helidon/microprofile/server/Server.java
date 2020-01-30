@@ -72,6 +72,20 @@ public interface Server {
     }
 
     /**
+     * Create a server instance using a Websocket application class.
+     *
+     * @param applicationClass websocket application class
+     * @return server instance to be started
+     * @throws MpException in case the server fails to be created
+     * @see #builder()
+     */
+    static Server create(Class<? extends ServerApplicationConfig> applicationClass) throws MpException {
+        Builder builder = builder();
+        builder.websocketApplication(applicationClass);
+        return builder.build();
+    }
+
+    /**
      * Create a server instance for discovered JAX-RS application (through CDI).
      *
      * @return Server instance to be started

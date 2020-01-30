@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.server;
 
-import javax.enterprise.context.Dependent;
+import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -29,7 +29,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
-import javax.ws.rs.ApplicationPath;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -74,7 +74,7 @@ public class WebSocketAppTest {
         echoClient.echo("hi", "how are you?");
     }
 
-    @ApplicationPath("/web")
+    @RoutingPath("/web")
     public static class EndpointApplication implements ServerApplicationConfig {
         @Override
         public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpoints) {

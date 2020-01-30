@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.server;
 
-import javax.enterprise.context.Dependent;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -57,7 +56,6 @@ public class WebSocketTest {
         echoClient.echo("hi", "how are you?");
     }
 
-    @Dependent
     @ServerEndpoint("/echo")
     public static class EchoEndpoint {
         private static final Logger LOGGER = Logger.getLogger(EchoEndpoint.class.getName());

@@ -22,18 +22,28 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import javax.websocket.DeploymentException;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
+import io.helidon.common.configurable.ServerThreadPoolSupplier;
+import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.tyrus.core.RequestContext;
 import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 import org.glassfish.tyrus.core.TyrusWebSocketEngine;
@@ -54,15 +64,22 @@ public class TyrusSupport implements Service {
      */
     private static final ByteBuffer FLUSH_BUFFER = ByteBuffer.allocateDirect(0);
 
+    private static final AtomicReference<ExecutorService> DEFAULT_THREAD_POOL = new AtomicReference<>();
+
     private final WebSocketEngine engine;
     private final TyrusHandler handler = new TyrusHandler();
     private Set<Class<?>> endpointClasses;
     private Set<ServerEndpointConfig> endpointConfigs;
+    private ExecutorService executorService;
 
     TyrusSupport(WebSocketEngine engine, Set<Class<?>> endpointClasses, Set<ServerEndpointConfig> endpointConfigs) {
         this.engine = engine;
         this.endpointClasses = endpointClasses;
         this.endpointConfigs = endpointConfigs;
+        this.executorService = createExecutorService();
+        if (this.executorService != null) {
+            this.executorService = Contexts.wrap(this.executorService);
+        }
     }
 
     /**
@@ -185,6 +202,25 @@ public class TyrusSupport implements Service {
     }
 
     /**
+     * Creates executor service for Websocket in MP. No executor for SE.
+     *
+     * @return Executor service or {@code null}.
+     */
+    private static ExecutorService createExecutorService() {
+        if (HelidonFeatures.flavor() == HelidonFlavor.MP && DEFAULT_THREAD_POOL.get() == null) {
+            Config executorConfig = ((Config) ConfigProvider.getConfig())
+                    .get("websocket.executor-service");
+
+            DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
+                    .name("websocket")
+                    .config(executorConfig)
+                    .build()
+                    .get());
+        }
+        return DEFAULT_THREAD_POOL.get();
+    }
+
+    /**
      * A Helidon handler that integrates with Tyrus and can process WebSocket
      * upgrade requests.
      */
@@ -237,12 +273,26 @@ public class TyrusSupport implements Service {
             publisherWriter.write(FLUSH_BUFFER, null);
 
             // Setup the WebSocket connection and internally the ReaderHandler
-            Connection connection = upgradeInfo.createConnection(publisherWriter,
-                    closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason));
+            Connection connection;
+            if (executorService != null) {
+                try {
+                    // Set up connection and call @onOpen
+                    Future<Connection> future = executorService.submit(() ->
+                            upgradeInfo.createConnection(publisherWriter,
+                                    closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason)));
+                    connection = future.get();      // Need to sync here
+                } catch (InterruptedException | ExecutionException e) {
+                    LOGGER.warning("Unable to create websocket connection");
+                    throw new RuntimeException(e);
+                }
+            } else {
+                connection = upgradeInfo.createConnection(publisherWriter,
+                        closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason));
+            }
 
             // Set up reader to pass data back to Tyrus
             if (connection != null) {
-                TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection);
+                TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection, executorService);
                 req.content().subscribe(subscriber);
             }
         }

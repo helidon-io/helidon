@@ -17,6 +17,7 @@
 package io.helidon.webserver.tyrus;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
@@ -35,40 +36,51 @@ import static javax.websocket.CloseReason.CloseCodes.UNEXPECTED_CONDITION;
 public class TyrusReaderSubscriber implements Flow.Subscriber<DataChunk> {
     private static final Logger LOGGER = Logger.getLogger(TyrusSupport.class.getName());
 
-    private static final int MAX_RETRIES = 3;
+    private static final int MAX_RETRIES = 5;
     private static final CloseReason CONNECTION_CLOSED = new CloseReason(NORMAL_CLOSURE, "Connection closed");
 
     private final Connection connection;
+    private final ExecutorService executorService;
+    private Flow.Subscription subscription;
 
-    TyrusReaderSubscriber(Connection connection) {
+    TyrusReaderSubscriber(Connection connection, ExecutorService executorService) {
         if (connection == null) {
             throw new IllegalArgumentException("Connection cannot be null");
         }
         this.connection = connection;
+        this.executorService = executorService;
     }
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        subscription.request(Long.MAX_VALUE);
+        this.subscription = subscription;
+        subscription.request(1L);
     }
 
     @Override
     public void onNext(DataChunk item) {
-        // Send data to Tyrus
-        ByteBuffer data = item.data();
-        connection.getReadHandler().handle(data);
+        if (executorService == null) {
+            submitBuffer(item.data());
+        } else {
+            executorService.submit(() -> submitBuffer(item.data()));
+        }
+    }
 
-        // Retry a few times if Tyrus did not consume all data
+    /**
+     * Submits data buffer to Tyrus. Retries a few times to make sure the entire buffer
+     * is consumed or logs an error.
+     *
+     * @param data Data buffer.
+     */
+    private void submitBuffer(ByteBuffer data) {
         int retries = MAX_RETRIES;
         while (data.remaining() > 0 && retries-- > 0) {
-            LOGGER.warning("Tyrus did not consume all data buffer");
             connection.getReadHandler().handle(data);
         }
-
-        // Report error if data is still unconsumed
         if (retries == 0) {
-            throw new RuntimeException("Tyrus unable to consume data buffer");
+            LOGGER.warning("Tyrus did not consume all data buffer after " + MAX_RETRIES + " retries");
         }
+        subscription.request(1L);
     }
 
     @Override
