@@ -11,8 +11,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 This is a bug fix release of Helidon.
 
 ### Fixes
-- Security: OIDC redirect with cookies now uses `Same-Site` policy of `Lax` by default to prevent infinite redirects.
-    If the default value is use, a warning is printed explaining the change.
+
+- JAX-RS: Application path had to contain leading "/" [1261](https://github.com/oracle/helidon/pull/1261)
+- Security: JWT and OIDC security providers now support groups claim (1.x) [1325](https://github.com/oracle/helidon/pull/1325)
+- Security: Fixed infinite redirect issue with IDCS and OIDC provider [1314](https://github.com/oracle/helidon/pull/1314)
+- OpenAPI: Support multiple jandex.idx files on the classpath [1318](https://github.com/oracle/helidon/pull/1318)
+- gRPC minor enhancements [1277](https://github.com/oracle/helidon/pull/1277)
+- Archetypes: Fix optional files in bare archetypes. [1250](https://github.com/oracle/helidon/pull/1250)
+- Force upgrade of shrinkwrap used by arquillian to support https [1308](https://github.com/oracle/helidon/pull/1308)
+- Fix application jar class-path for SNAPSHOT versioned dependencies [1298](https://github.com/oracle/helidon/pull/1298)
+- Upgrade reactor to 3.3.1-RELEASE [1237](https://github.com/oracle/helidon/pull/1237)
+- Upgrade H2, HikariCP, Jedis Client, OCI Client [1270](https://github.com/oracle/helidon/pull/1270)
+
 
 ## [1.4.1]
 
