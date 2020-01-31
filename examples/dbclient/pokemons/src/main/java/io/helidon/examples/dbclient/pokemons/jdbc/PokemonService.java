@@ -65,7 +65,7 @@ public class PokemonService implements Service {
 
 
     /**
-     * Return index page
+     * Return index page.
      *
      * @param request  the server request
      * @param response the server response

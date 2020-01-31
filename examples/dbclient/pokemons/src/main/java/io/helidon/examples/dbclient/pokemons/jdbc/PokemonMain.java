@@ -38,11 +38,11 @@ import io.helidon.webserver.WebServer;
  */
 public final class PokemonMain {
 
-    /** Whether MongoDB support is selected. */
-    public static boolean MONGO;
-
     /** MongoDB configuration. Default configuration file {@code appliaction.yaml} contains MySQL/JDBC configuration. */
     private static final String MONGO_CFG = "mongo.yaml";
+
+    /** Whether MongoDB support is selected. */
+    public static boolean mongo;
 
     /**
      * Cannot be instantiated.
@@ -59,10 +59,10 @@ public final class PokemonMain {
     public static void main(final String[] args) throws IOException {
         if (args != null && args.length > 0 && args[0] != null && "mongo".equals(args[0].toLowerCase())) {
             System.out.println("MongoDB database selected");
-            MONGO = true;
+            mongo = true;
         } else {
             System.out.println("MySQL/JDBC database selected");
-            MONGO = false;
+            mongo = false;
         }
         startServer();
     }
@@ -79,7 +79,7 @@ public final class PokemonMain {
         LogManager.getLogManager().readConfiguration(PokemonMain.class.getResourceAsStream("/logging.properties"));
 
         // By default this will pick up application.yaml from the classpath
-        Config config = MONGO ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
+        Config config = mongo ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
 
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =
@@ -124,7 +124,7 @@ public final class PokemonMain {
 
         // Initialize database schema
         InitializeDb.init(dbClient);
-        
+
         return Routing.builder()
                 .register(JsonSupport.create())
                 .register(JsonBindingSupport.create())

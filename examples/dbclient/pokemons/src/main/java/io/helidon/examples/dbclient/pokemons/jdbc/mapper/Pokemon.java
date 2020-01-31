@@ -19,6 +19,7 @@ package io.helidon.examples.dbclient.pokemons.jdbc.mapper;
  * POJO representing Pokemon.
  */
 public class Pokemon {
+
     private int id;
     private String name;
     private int idType;
@@ -35,6 +36,7 @@ public class Pokemon {
      *
      * @param name name of the beast
      * @param type type of the beast
+     * @param idType id of beast type
      */
     public Pokemon(int id, String name, int idType) {
         this.name = name;
@@ -46,7 +48,7 @@ public class Pokemon {
     }
 
     public void setId(int id) {
-        this.id=id;
+        this.id = id;
     }
 
     public String getName() {
