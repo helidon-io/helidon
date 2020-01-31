@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,9 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
 
     private final String nonJtaDataSourceName;
 
-    private final DataSourceProvider dataSourceProvider;
+    private final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier;
+
+    private DataSourceProvider dataSourceProvider;
 
     private final String persistenceProviderClassName;
 
@@ -161,6 +163,68 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
              persistenceUnitName,
              null,
              dataSourceProvider,
+             properties,
+             SharedCacheMode.UNSPECIFIED,
+             PersistenceUnitTransactionType.JTA,
+             ValidationMode.AUTO);
+    }
+
+    /**
+     * Creates a new {@link PersistenceUnitInfoBean} using as many
+     * defaults as reasonably possible.
+     *
+     * @param persistenceUnitName the name of the persistence unit
+     * this {@link PersistenceUnitInfoBean} represents; must not be
+     * {@code null}
+     *
+     * @param persistenceUnitRootUrl the {@link URL} identifying the
+     * root of the persistence unit this {@link
+     * PersistenceUnitInfoBean} represents; must not be {@code null}
+     *
+     * @param managedClassNames a {@link Collection} of
+     * fully-qualified class names identifying JPA-managed classes
+     * (such as entity classes, mapped superclasses and the like); may
+     * be {@code null}.  The {@link Collection} is copied and no
+     * reference to it is retained.
+     *
+     * @param dataSourceProviderSupplier a {@link Supplier} capable of
+     * supplying {@link DataSourceProvider} instances; must not be
+     * {@code null}
+     *
+     * @param properties a {@link Properties} object representing the
+     * properties of the persistence unit represented by this {@link
+     * PersistenceUnitInfoBean}; may be {@code null}.  A reference is
+     * retained to this object.
+     *
+     * @exception NullPointerException if {@code persistenceUnitName},
+     * {@code persistenceUnitRootUrl} or {@code
+     * dataSourceProviderSupplier} is {@code null}
+     *
+     * @see #PersistenceUnitInfoBean(String, URL, String, String,
+     * ClassLoader, Supplier, Consumer, boolean, Collection,
+     * Collection, Collection, String, String, DataSourceProvider,
+     * Properties, SharedCacheMode, PersistenceUnitTransactionType,
+     * ValidationMode)
+     */
+    public PersistenceUnitInfoBean(final String persistenceUnitName,
+                                   final URL persistenceUnitRootUrl,
+                                   final Collection<? extends String> managedClassNames,
+                                   final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier,
+                                   final Properties properties) {
+        this(persistenceUnitName,
+             persistenceUnitRootUrl,
+             null,
+             null,
+             Thread.currentThread().getContextClassLoader(),
+             null,
+             null,
+             managedClassNames != null && !managedClassNames.isEmpty(),
+             null,
+             managedClassNames,
+             null,
+             persistenceUnitName,
+             null,
+             dataSourceProviderSupplier,
              properties,
              SharedCacheMode.UNSPECIFIED,
              PersistenceUnitTransactionType.JTA,
@@ -304,10 +368,167 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                    final SharedCacheMode sharedCacheMode,
                                    final PersistenceUnitTransactionType transactionType,
                                    final ValidationMode validationMode) {
+        this(persistenceUnitName,
+             persistenceUnitRootUrl,
+             persistenceXMLSchemaVersion,
+             persistenceProviderClassName,
+             classLoader,
+             tempClassLoaderSupplier,
+             classTransformerConsumer,
+             excludeUnlistedClasses,
+             jarFileUrls,
+             managedClassNames,
+             mappingFileNames,
+             jtaDataSourceName,
+             nonJtaDataSourceName,
+             () -> dataSourceProvider,
+             properties,
+             sharedCacheMode,
+             transactionType,
+             validationMode);
+    }
+
+    /**
+     * Creates a new {@link PersistenceUnitInfoBean}.
+     *
+     * @param persistenceUnitName the name of the persistence unit
+     * this {@link PersistenceUnitInfoBean} represents; must not be
+     * {@code null}
+     *
+     * @param persistenceUnitRootUrl the {@link URL} identifying the
+     * root of the persistence unit this {@link
+     * PersistenceUnitInfoBean} represents; must not be {@code null}
+     *
+     * @param persistenceXMLSchemaVersion a {@link String}
+     * representation of the version of JPA being supported; may be
+     * {@code null} in which case "{@code 2.2}" will be used instead
+     *
+     * @param persistenceProviderClassName the fully-qualified class
+     * name of a {@link PersistenceProvider} implementation; may be
+     * {@code null} in which case a default will be used
+     *
+     * @param classLoader a {@link ClassLoader} to be returned by the
+     * {@link #getClassLoader()} method; may be {@code null}
+     *
+     * @param tempClassLoaderSupplier a {@link Supplier} of {@link
+     * ClassLoader} instances to be used by the {@link
+     * #getNewTempClassLoader()} method; may be {@code null}
+     *
+     * @param classTransformerConsumer a {@link Consumer} of any
+     * {@link ClassTransformer}s that may be added via a JPA
+     * provider's invocation of the {@link
+     * #addTransformer(ClassTransformer)} method; may be {@code null}
+     * in which case no action will be taken
+     *
+     * @param excludeUnlistedClasses if {@code true}, then any
+     * automatically discovered managed classes not explicitly
+     * contained in {@code managedClassNames} will be excluded from
+     * consideration
+     *
+     * @param jarFileUrls a {@link Collection} of {@link URL}s
+     * identifying {@code .jar} files containing managed classes; may
+     * be {@code null}.  The {@link Collection} is copied and no
+     * reference to it is retained.
+     *
+     * @param managedClassNames a {@link Collection} of
+     * fully-qualified class names identifying JPA-managed classes
+     * (such as entity classes, mapped superclasses and the like); may
+     * be {@code null}.  The {@link Collection} is copied and no
+     * reference to it is retained.
+     *
+     * @param mappingFileNames a {@link Collection} of classpath
+     * resource names identifying JPA mapping files; may be {@code
+     * null}.  The {@link Collection} is copied and no reference to it
+     * is retained.
+     *
+     * @param jtaDataSourceName the name of a data source that may be
+     * enrolled in JTA-compliant transactions; may be {@code null}
+     *
+     * @param nonJtaDataSourceName the name of a data source that
+     * should not be enrolled in JTA-compliant transactions; may be
+     * {@code null}
+     *
+     * @param dataSourceProviderSupplier a {@link Supplier} capable of
+     * supplying {@link DataSourceProvider} instances; must not be
+     * {@code null}
+     *
+     * @param properties a {@link Properties} object representing the
+     * properties of the persistence unit represented by this {@link
+     * PersistenceUnitInfoBean}; may be {@code null}.  A reference is
+     * retained to this object.
+     *
+     * @param sharedCacheMode the {@link SharedCacheMode} this {@link
+     * PersistenceUnitInfoBean} will use; may be {@code null} in which
+     * case {@link SharedCacheMode#UNSPECIFIED} will be used instead
+     *
+     * @param transactionType the {@link
+     * PersistenceUnitTransactionType} this {@link
+     * PersistenceUnitInfoBean} will use; may be {@code null} in which
+     * case {@link PersistenceUnitTransactionType#JTA} will be used
+     * instead
+     *
+     * @param validationMode the {@link ValidationMode} this {@link
+     * PersistenceUnitInfoBean} will use; may be {@code null} in which
+     * case {@link ValidationMode#AUTO} will be used instead
+     *
+     * @exception NullPointerException if {@code persistenceUnitName},
+     * {@code persistenceUnitRootUrl} or {@code dataSourceProvider} is
+     * {@code null}
+     *
+     * @see #getPersistenceUnitName()
+     *
+     * @see #getPersistenceUnitRootUrl()
+     *
+     * @see #getPersistenceXMLSchemaVersion()
+     *
+     * @see #getPersistenceProviderClassName()
+     *
+     * @see #getClassLoader()
+     *
+     * @see #getNewTempClassLoader()
+     *
+     * @see #excludeUnlistedClasses()
+     *
+     * @see #getJarFileUrls()
+     *
+     * @see #getManagedClassNames()
+     *
+     * @see #getMappingFileNames()
+     *
+     * @see #getJtaDataSource()
+     *
+     * @see #getNonJtaDataSource()
+     *
+     * @see #getProperties()
+     *
+     * @see #getSharedCacheMode()
+     *
+     * @see #getTransactionType()
+     *
+     * @see #getValidationMode()
+     */
+    public PersistenceUnitInfoBean(final String persistenceUnitName,
+                                   final URL persistenceUnitRootUrl,
+                                   final String persistenceXMLSchemaVersion,
+                                   final String persistenceProviderClassName,
+                                   final ClassLoader classLoader,
+                                   final Supplier<? extends ClassLoader> tempClassLoaderSupplier,
+                                   final Consumer<? super ClassTransformer> classTransformerConsumer,
+                                   final boolean excludeUnlistedClasses,
+                                   final Collection<? extends URL> jarFileUrls,
+                                   final Collection<? extends String> managedClassNames,
+                                   final Collection<? extends String> mappingFileNames,
+                                   final String jtaDataSourceName,
+                                   final String nonJtaDataSourceName,
+                                   final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier,
+                                   final Properties properties,
+                                   final SharedCacheMode sharedCacheMode,
+                                   final PersistenceUnitTransactionType transactionType,
+                                   final ValidationMode validationMode) {
         super();
         Objects.requireNonNull(persistenceUnitName);
         Objects.requireNonNull(persistenceUnitRootUrl);
-        Objects.requireNonNull(dataSourceProvider);
+        Objects.requireNonNull(dataSourceProviderSupplier);
         Objects.requireNonNull(transactionType);
 
         this.persistenceUnitName = persistenceUnitName;
@@ -373,7 +594,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
             this.jtaDataSourceName = jtaDataSourceName;
         }
         this.nonJtaDataSourceName = nonJtaDataSourceName;
-        this.dataSourceProvider = dataSourceProvider;
+        this.dataSourceProviderSupplier = dataSourceProviderSupplier;
 
         if (sharedCacheMode == null) {
             this.sharedCacheMode = SharedCacheMode.UNSPECIFIED;
@@ -485,12 +706,22 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
 
     @Override
     public final DataSource getJtaDataSource() {
-        return this.dataSourceProvider.getDataSource(true, this.nonJtaDataSourceName == null, this.jtaDataSourceName);
+        DataSourceProvider dataSourceProvider = this.dataSourceProvider;
+        if (dataSourceProvider == null) {
+            dataSourceProvider = this.dataSourceProviderSupplier.get();
+            this.dataSourceProvider = dataSourceProvider;
+        }
+        return dataSourceProvider.getDataSource(true, this.nonJtaDataSourceName == null, this.jtaDataSourceName);
     }
 
     @Override
     public final DataSource getNonJtaDataSource() {
-        return this.dataSourceProvider.getDataSource(false, false, this.nonJtaDataSourceName);
+        DataSourceProvider dataSourceProvider = this.dataSourceProvider;
+        if (dataSourceProvider == null) {
+            dataSourceProvider = this.dataSourceProviderSupplier.get();
+            this.dataSourceProvider = dataSourceProvider;
+        }
+        return dataSourceProvider.getDataSource(false, false, this.nonJtaDataSourceName);
     }
 
     @Override
@@ -560,7 +791,12 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      * ClassLoader, Supplier, URL, Map, DataSourceProvider)
      *
      * @see PersistenceUnitInfo
+     *
+     * @deprecated Please use the {@link
+     * #fromPersistenceUnit(PersistenceUnit, ClassLoader, Supplier,
+     * URL, Map, Supplier)} method instead.
      */
+    @Deprecated
     public static final Collection<? extends PersistenceUnitInfoBean>
         fromPersistence(final Persistence persistence,
                         final ClassLoader classLoader,
@@ -569,6 +805,66 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                         Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
                         final DataSourceProvider dataSourceProvider)
         throws MalformedURLException {
+        return fromPersistence(persistence,
+                               classLoader,
+                               tempClassLoaderSupplier,
+                               rootUrl,
+                               unlistedClasses,
+                               () -> dataSourceProvider);
+    }
+
+    /**
+     * Creates and returns a {@link Collection} of {@link {@link
+     * PersistenceUnitInfoBean} instances from a supplied {@link
+     * Persistence} object.
+     *
+     * @param persistence the {@link Persistence} from which {@link
+     * PersistenceUnitInfoBean} instances should be synthesized; must
+     * not be {@code null}
+     *
+     * @param classLoader classLoader a {@link ClassLoader} that the resulting
+     * {@link PersistenceUnitInfoBean}s will use; may be {@code null}
+     *
+     * @param tempClassLoaderSupplier a {@link Supplier} of a {@link
+     * ClassLoader} that will be used to implement the {@link
+     * PersistenceUnitInfo#getNewTempClassLoader()} method; may be
+     * {@code null}
+     *
+     * @param rootUrl the {@link URL} representing the root of the
+     * persistence units; must not be {@code null}
+     *
+     * @param unlistedClasses a {@link Map} of managed classes indexed
+     * by persistence unit name whose values might not be explicitly
+     * listed in the supplied {@link PersistenceUnit}s; may be {@code
+     * null}
+     *
+     * @param dataSourceProviderSupplier a {@link Supplier} capable of
+     * producing {@link DataSourceProvider} instances; must not be
+     * {@code null}
+     *
+     * @return a non-{@code null} {@link Collection} of {@link
+     * PersistenceUnitInfoBean}s
+     *
+     * @exception MalformedURLException if a {@link URL} could not be
+     * constructed
+     *
+     * @exception NullPointerException if {@code persistence}, {@code
+     * rootUrl} or {@code dataSourceProviderSupplier} is {@code null}
+     *
+     * @deprecated Please use the {@link
+     * #fromPersistenceUnit(PersistenceUnit, ClassLoader, Supplier,
+     * URL, Map, Supplier)} method instead.
+     */
+    @Deprecated
+    public static final Collection<? extends PersistenceUnitInfoBean>
+        fromPersistence(final Persistence persistence,
+                        final ClassLoader classLoader,
+                        final Supplier<? extends ClassLoader> tempClassLoaderSupplier,
+                        final URL rootUrl,
+                        Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
+                        final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
+        throws MalformedURLException {
+
         Objects.requireNonNull(rootUrl);
         if (unlistedClasses == null) {
             unlistedClasses = Collections.emptyMap();
@@ -589,7 +885,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                                         tempClassLoaderSupplier,
                                                         rootUrl,
                                                         unlistedClasses,
-                                                        dataSourceProvider));
+                                                        dataSourceProviderSupplier));
                 }
             }
         }
@@ -656,7 +952,59 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                    () -> classLoader,
                                    rootUrl,
                                    unlistedClasses,
-                                   dataSourceProvider);
+                                   () -> dataSourceProvider);
+    }
+
+    /**
+     * Given a {@link PersistenceUnit} (a Java object representation
+     * of a {@code <persistence-unit>} element in a {@code
+     * META-INF/persistence.xml} resource), a {@link URL} representing
+     * the persistence unit's root, a {@link Map} of unlisted managed
+     * classes (entity classes, mapped superclasses and so on) indexed
+     * by persistence unit name, and a {@link
+     * DataSourceProviderSupplier} that can supply {@link
+     * DataSourceProvider} instances, returns a {@link
+     * PersistenceUnitInfoBean} representing the persistence unit in
+     * question.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @param persistenceUnit a {@link PersistenceUnit}; must not be
+     * {@code null}
+     *
+     * @param rootUrl the {@link URL} representing the root of the
+     * persistence unit; must not be {@code null}
+     *
+     * @param unlistedClasses a {@link Map} of managed classes indexed
+     * by persistence unit name whose values might not be explicitly
+     * listed in the supplied {@link PersistenceUnit}; may be {@code
+     * null}
+     *
+     * @param dataSourceProviderSupplier a {@link Supplier} capable of
+     * supplying {@link DataSourceProvider} instances; must not be
+     * {@code null}
+     *
+     * @return a non-{@code null} {@link PersistenceUnitInfoBean}
+     *
+     * @exception MalformedURLException if a {@link URL} could not be
+     * constructed
+     *
+     * @exception NullPointerException if {@code persistenceUnit},
+     * {@code rootUrl} or {@code dataSourceProviderSupplier} is {@code null}
+     */
+    public static final PersistenceUnitInfoBean
+        fromPersistenceUnit(final PersistenceUnit persistenceUnit,
+                            final URL rootUrl,
+                            final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
+                            final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
+        throws MalformedURLException {
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return fromPersistenceUnit(persistenceUnit,
+                                   classLoader,
+                                   () -> classLoader,
+                                   rootUrl,
+                                   unlistedClasses,
+                                   dataSourceProviderSupplier);
     }
 
     /**
@@ -717,9 +1065,76 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                             final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
                             final DataSourceProvider dataSourceProvider)
         throws MalformedURLException {
+        return fromPersistenceUnit(persistenceUnit,
+                                   classLoader,
+                                   tempClassLoaderSupplier,
+                                   rootUrl,
+                                   unlistedClasses,
+                                   () -> dataSourceProvider);
+    }
+
+    /**
+     * Given a {@link PersistenceUnit} (a Java object representation
+     * of a {@code <persistence-unit>} element in a {@code
+     * META-INF/persistence.xml} resource), a {@link ClassLoader} for
+     * loading JPA classes and resources, a {@link Supplier} of {@link
+     * ClassLoader} instances for helping to implement the {@link
+     * PersistenceUnitInfo#getNewTempClassLoader()} method, a {@link
+     * URL} representing the persistence unit's root, a {@link Map} of
+     * unlisted managed classes (entity classes, mapped superclasses
+     * and so on) indexed by persistence unit name, and a {@link
+     * DataSourceProvider} that can provide {@link DataSource}
+     * instances, returns a {@link PersistenceUnitInfoBean}
+     * representing the persistence unit in question.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @param persistenceUnit a {@link PersistenceUnit}; must not be
+     * {@code null}
+     *
+     * @param classLoader a {@link ClassLoader} that the resulting
+     * {@link PersistenceUnitInfoBean} will use; may be {@code null}
+     *
+     * @param tempClassLoaderSupplier a {@link Supplier} of a {@link
+     * ClassLoader} that will be used to implement the {@link
+     * PersistenceUnitInfo#getNewTempClassLoader()} method; may be
+     * {@code null}
+     *
+     * @param rootUrl the {@link URL} representing the root of the
+     * persistence unit; must not be {@code null}
+     *
+     * @param unlistedClasses a {@link Map} of managed classes indexed
+     * by persistence unit name whose values might not be explicitly
+     * listed in the supplied {@link PersistenceUnit}; may be {@code
+     * null}
+     *
+     * @param dataSourceProviderSupplier a {@link Supplier} of {@link
+     * DataSourceProvider} instances; must not be {@code null}
+     *
+     * @return a non-{@code null} {@link PersistenceUnitInfoBean}
+     *
+     * @exception MalformedURLException if a {@link URL} could not be
+     * constructed
+     *
+     * @exception NullPointerException if {@code persistenceUnit},
+     * {@code rootUrl} or {@code dataSourceProviderSupplier} is {@code
+     * null}
+     *
+     * @see PersistenceUnit
+     *
+     * @see PersistenceUnitInfo
+     */
+    public static final PersistenceUnitInfoBean
+        fromPersistenceUnit(final PersistenceUnit persistenceUnit,
+                            final ClassLoader classLoader,
+                            Supplier<? extends ClassLoader> tempClassLoaderSupplier,
+                            final URL rootUrl,
+                            final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
+                            final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
+        throws MalformedURLException {
         Objects.requireNonNull(persistenceUnit);
         Objects.requireNonNull(rootUrl);
-        Objects.requireNonNull(dataSourceProvider);
+        Objects.requireNonNull(dataSourceProviderSupplier);
 
         final Collection<? extends String> jarFiles = persistenceUnit.getJarFile();
         final List<URL> jarFileUrls = new ArrayList<>();
@@ -821,7 +1236,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                                         mappingFiles,
                                         persistenceUnit.getJtaDataSource(),
                                         persistenceUnit.getNonJtaDataSource(),
-                                        dataSourceProvider,
+                                        dataSourceProviderSupplier,
                                         properties,
                                         sharedCacheMode,
                                         transactionType,
