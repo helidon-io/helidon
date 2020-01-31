@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 import io.helidon.common.http.Http;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.examples.dbclient.pokemons.mapper.Pokemon;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -70,7 +69,7 @@ public class PokemonService implements Service {
      * @param request  the server request
      * @param response the server response
      */
-    protected void index(ServerRequest request, ServerResponse response) {
+    private void index(ServerRequest request, ServerResponse response) {
         response.send("Pokemon JDBC Example:\n"
         + "     GET /type                - List all pokemon types\n"
         + "     GET /pokemon             - List all pokemons\n"
@@ -91,7 +90,7 @@ public class PokemonService implements Service {
      * @param request  the server request
      * @param response the server response
      */
-    protected void listTypes(ServerRequest request, ServerResponse response) {
+    private void listTypes(ServerRequest request, ServerResponse response) {
         dbClient.execute(exec -> exec.namedQuery("select-all-types"))
                 .thenAccept(response::send)
                 .exceptionally(throwable -> sendError(throwable, response));
@@ -105,7 +104,7 @@ public class PokemonService implements Service {
      * @param request  the server request
      * @param response the server response
      */
-    protected void listPokemons(ServerRequest request, ServerResponse response) {
+    private void listPokemons(ServerRequest request, ServerResponse response) {
         dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
                 .thenAccept(response::send)
                 .exceptionally(throwable -> sendError(throwable, response));
@@ -185,7 +184,7 @@ public class PokemonService implements Service {
      * @param request  the server request
      * @param response the server response
      */
-    protected void deletePokemonById(ServerRequest request, ServerResponse response) {
+    private void deletePokemonById(ServerRequest request, ServerResponse response) {
         try {
             int id = Integer.parseInt(request.path().param("id"));
             dbClient.execute(exec -> exec
@@ -205,7 +204,7 @@ public class PokemonService implements Service {
      * @param request  the server request
      * @param response the server response
      */
-    protected void deleteAllPokemons(ServerRequest request, ServerResponse response) {
+    private void deleteAllPokemons(ServerRequest request, ServerResponse response) {
         // Response message contains information about deleted records from both tables
         StringBuilder sb = new StringBuilder();
         // Pokemon must be removed from both PokemonTypes and Pokemons tables in transaction
@@ -224,7 +223,7 @@ public class PokemonService implements Service {
      * @param response the server response
      * @param message entity content
      */
-    protected void sendNotFound(ServerResponse response, String message) {
+    private void sendNotFound(ServerResponse response, String message) {
         response.status(Http.Status.NOT_FOUND_404);
         response.send(message);
     }
@@ -235,7 +234,7 @@ public class PokemonService implements Service {
      * @param row row as read from the database
      * @param response server response
      */
-    protected void sendRow(DbRow row, ServerResponse response) {
+    private void sendRow(DbRow row, ServerResponse response) {
         response.send(row.as(javax.json.JsonObject.class));
     }
 
@@ -248,7 +247,7 @@ public class PokemonService implements Service {
      * @return {@code Void} so this method can be registered as a lambda
      *      with {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}
      */
-    protected <T> T sendError(Throwable throwable, ServerResponse response) {
+    private <T> T sendError(Throwable throwable, ServerResponse response) {
         Throwable realCause = throwable;
         if (throwable instanceof CompletionException) {
             realCause = throwable.getCause();

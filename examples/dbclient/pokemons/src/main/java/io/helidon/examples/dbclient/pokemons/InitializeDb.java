@@ -51,7 +51,7 @@ public class InitializeDb {
      *
      * @param dbClient database client
      */
-    protected static void initSchema(DbClient dbClient) {
+    private static void initSchema(DbClient dbClient) {
         try {
             dbClient.execute(exec -> exec
                     .namedDml("create-types")
@@ -74,7 +74,7 @@ public class InitializeDb {
      * @throws ExecutionException when database query failed
      * @throws InterruptedException if the current thread was interrupted
      */
-    protected static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
+    private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
         // Init pokemon types
         dbClient.execute(exec
                 -> initTypes(exec)
@@ -89,7 +89,7 @@ public class InitializeDb {
      * @throws ExecutionException when database query failed
      * @throws InterruptedException if the current thread was interrupted
      */
-    protected static void deleteData(DbClient dbClient) throws InterruptedException, ExecutionException {
+    private static void deleteData(DbClient dbClient) throws InterruptedException, ExecutionException {
         dbClient.execute(exec -> exec
                 .namedDelete("delete-all-pokemons")
                 .thenCompose(count -> exec.namedDelete("delete-all-types")))
@@ -111,7 +111,7 @@ public class InitializeDb {
      * @param exec database client executor
      * @return executed statements future
      */
-    protected static CompletionStage<Long> initTypes(DbExecute exec) {
+    private static CompletionStage<Long> initTypes(DbExecute exec) {
         CompletionStage<Long> stage = null;
         try (javax.json.JsonReader reader = javax.json.Json.createReader(InitializeDb.class.getResourceAsStream(TYPES))) {
             javax.json.JsonArray types = reader.readArray();
@@ -140,7 +140,7 @@ public class InitializeDb {
      * @param exec database client executor
      * @return executed statements future
      */
-    protected static CompletionStage<Long> initPokemons(DbExecute exec) {
+    private static CompletionStage<Long> initPokemons(DbExecute exec) {
         CompletionStage<Long> stage = null;
         try (javax.json.JsonReader reader = javax.json.Json.createReader(InitializeDb.class.getResourceAsStream(POKEMONS))) {
             javax.json.JsonArray pokemons = reader.readArray();

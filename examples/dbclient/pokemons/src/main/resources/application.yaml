@@ -42,32 +42,8 @@ db:
     tracing:
       global:
     metrics:
-      # possible also global:
       global:
         - type: METER
-          # changing the name format - by removing the parameter (statement name) we get an overall metric
-          name-format: "db.meter.overall"
-        - type: METER
-          # meter per statement name
-        - type: METER
-          # meter per statement type
-          name-format: "db.meter.%2$s"
-      named:
-        - names: ["select-all", "select-one"]
-          errors: false
-          type: TIMER
-          description: "Timer for successful selects"
-      typed:
-        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
-          type: COUNTER
-          errors: false
-          name-format: "db.counter.%s.success"
-          description: "Counter of successful DML statements"
-        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
-          type: COUNTER
-          success: false
-          name-format: "db.counter.%s.error"
-          description: "Counter of failed DML statements"
   statements:
     ## Ping statement
     ping: "DO 0"
