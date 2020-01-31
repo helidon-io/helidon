@@ -56,6 +56,21 @@ public class WebSocketTest {
         echoClient.echo("hi", "how are you?");
     }
 
+    /**
+     * Verify that endpoint methods are running in a Helidon thread pool.
+     *
+     * @param session Websocket session.
+     * @param logger A logger.
+     * @throws IOException Exception during close.
+     */
+    private static void verifyRunningThread(Session session, Logger logger) throws IOException {
+        Thread thread = Thread.currentThread();
+        if (!thread.getName().contains("helidon")) {
+            logger.warning("Websocket handler running in incorrect thread " + thread);
+            session.close();
+        }
+    }
+
     @ServerEndpoint("/echo")
     public static class EchoEndpoint {
         private static final Logger LOGGER = Logger.getLogger(EchoEndpoint.class.getName());
@@ -63,22 +78,25 @@ public class WebSocketTest {
         @OnOpen
         public void onOpen(Session session) throws IOException {
             LOGGER.info("OnOpen called");
+            verifyRunningThread(session, LOGGER);
         }
 
         @OnMessage
         public void echo(Session session, String message) throws Exception {
             LOGGER.info("Endpoint OnMessage called '" + message + "'");
+            verifyRunningThread(session, LOGGER);
             session.getBasicRemote().sendObject(message);
         }
 
         @OnError
-        public void onError(Throwable t) {
+        public void onError(Throwable t) throws IOException {
             LOGGER.info("OnError called");
         }
 
         @OnClose
-        public void onClose(Session session) {
+        public void onClose(Session session) throws IOException {
             LOGGER.info("OnClose called");
+            verifyRunningThread(session, LOGGER);
         }
     }
 }

@@ -47,6 +47,21 @@ public class EchoEndpoint {
 
     static AtomicBoolean modifyHandshakeCalled = new AtomicBoolean(false);
 
+    /**
+     * Verify that endpoint methods are running in a Helidon thread pool.
+     *
+     * @param session Websocket session.
+     * @param logger A logger.
+     * @throws IOException Exception during close.
+     */
+    private static void verifyRunningThread(Session session, Logger logger) throws IOException {
+        Thread thread = Thread.currentThread();
+        if (!thread.getName().contains("EventLoop")) {
+            logger.warning("Websocket handler running in incorrect thread " + thread);
+            session.close();
+        }
+    }
+
     public static class ServerConfigurator extends ServerEndpointConfig.Configurator {
 
         @Override
@@ -60,6 +75,7 @@ public class EchoEndpoint {
     @OnOpen
     public void onOpen(Session session) throws IOException {
         LOGGER.info("OnOpen called");
+        verifyRunningThread(session, LOGGER);
         if (!modifyHandshakeCalled.get()) {
             session.close();        // unexpected
         }
@@ -68,6 +84,7 @@ public class EchoEndpoint {
     @OnMessage
     public void echo(Session session, String message) throws Exception {
         LOGGER.info("Endpoint OnMessage called '" + message + "'");
+        verifyRunningThread(session, LOGGER);
         if (!isDecoded(message)) {
             throw new InternalError("Message has not been decoded");
         }
@@ -81,8 +98,9 @@ public class EchoEndpoint {
     }
 
     @OnClose
-    public void onClose(Session session) {
+    public void onClose(Session session) throws IOException {
         LOGGER.info("OnClose called");
+        verifyRunningThread(session, LOGGER);
         modifyHandshakeCalled.set(false);
     }
 }
