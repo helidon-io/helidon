@@ -40,11 +40,33 @@ docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root \
        -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
 ```
 
-Then run the `io.helidon.examples.dbclient.pokemons.jdbc.PokemonMain` class
+Then run the `io.helidon.examples.dbclient.pokemons.PokemonMain` class
+```
+cd <project_root>/examples/dbclient/pokemons
+java -jar target/helidon-examples-dbclient-pokemons.jar
+```
 or start application using Maven:
 ```
 cd <project_root>/examples/dbclient/pokemons
-mvn -pl jdbc -Pexec verify
+mvn -Pexec verify
+```
+
+### Run with MongoDB
+
+It's possible to run example with MongoDB database. Start it using docker:
+```
+docker run --rm --name mongo -p 27017:27017 mongo
+```
+
+Then run the `io.helidon.examples.dbclient.pokemons.jdbc.PokemonMain` class with `mongo` argument
+```
+cd <project_root>/examples/dbclient/pokemons
+java -jar target/helidon-examples-dbclient-pokemons.jar mongo
+```
+or start application using Maven:
+```
+cd <project_root>/examples/dbclient/pokemons
+mvn -Pexec verify -Darg=mongo
 ```
 
 ## Exercise

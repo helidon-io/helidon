@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.dbclient.pokemons.jdbc;
+package io.helidon.examples.dbclient.pokemons;
 
 import java.io.IOException;
 import java.util.logging.LogManager;

@@ -30,7 +30,7 @@
     <name>Helidon Examples DB Client: Pokemons Database</name>
 
     <properties>
-        <mainClass>io.helidon.examples.dbclient.pokemons.jdbc.PokemonMain</mainClass>
+        <mainClass>io.helidon.examples.dbclient.pokemons.PokemonMain</mainClass>
         <arg>jdbc</arg>
     </properties>
 

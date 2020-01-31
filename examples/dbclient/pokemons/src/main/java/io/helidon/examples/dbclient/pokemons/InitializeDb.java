@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.dbclient.pokemons.jdbc;
+package io.helidon.examples.dbclient.pokemons;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;

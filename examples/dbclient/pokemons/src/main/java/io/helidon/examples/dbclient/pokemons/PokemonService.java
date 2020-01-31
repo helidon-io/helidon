@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.dbclient.pokemons.jdbc;
+package io.helidon.examples.dbclient.pokemons;
 
 import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import io.helidon.common.http.Http;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.examples.dbclient.pokemons.jdbc.mapper.Pokemon;
+import io.helidon.examples.dbclient.pokemons.mapper.Pokemon;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;

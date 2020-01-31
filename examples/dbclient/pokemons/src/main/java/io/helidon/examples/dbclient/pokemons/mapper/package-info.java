@@ -17,4 +17,4 @@
 /**
  * Database statements to POJO mapping.
  */
-package io.helidon.examples.dbclient.pokemons.jdbc.mapper;
+package io.helidon.examples.dbclient.pokemons.mapper;
