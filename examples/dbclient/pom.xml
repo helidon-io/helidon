@@ -40,5 +40,6 @@
         <module>jdbc</module>
         <module>mongodb</module>
         <module>common</module>
+        <module>pokemons</module>
     </modules>
 </project>
