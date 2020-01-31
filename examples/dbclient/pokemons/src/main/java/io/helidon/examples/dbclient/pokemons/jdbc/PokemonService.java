@@ -186,14 +186,18 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     protected void deletePokemonById(ServerRequest request, ServerResponse response) {
-        int id = Integer.parseInt(request.path().param("id"));
-        dbClient.execute(exec -> exec
-                .createNamedDelete("delete-pokemon-by-id")
-                .addParam("id", id)
-                .execute())
-                .thenAccept(count -> response.send("Deleted: " + count + " values\n"))
-                .exceptionally(throwable -> sendError(throwable, response));
-     }
+        try {
+            int id = Integer.parseInt(request.path().param("id"));
+            dbClient.execute(exec -> exec
+                    .createNamedDelete("delete-pokemon-by-id")
+                    .addParam("id", id)
+                    .execute())
+                    .thenAccept(count -> response.send("Deleted: " + count + " values\n"))
+                    .exceptionally(throwable -> sendError(throwable, response));
+        } catch (NumberFormatException ex) {
+            sendError(ex, response);
+        }
+    }
 
     /**
      * Delete pokemon with specified id (key).
