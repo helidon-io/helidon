@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -654,12 +654,17 @@ class BuilderImpl implements Config.Builder {
     }
 
     private static void loadMapperServices(List<ConfigMapperProvider> providers) {
-        ServiceLoader.load(ConfigMapperProvider.class)
+        HelidonServiceLoader.builder(ServiceLoader.load(ConfigMapperProvider.class))
+                .defaultPriority(ConfigMapperProvider.PRIORITY)
+                .build()
                 .forEach(providers::add);
     }
 
     private static List<ConfigParser> loadParserServices() {
-        return loadPrioritizedServices(ConfigParser.class, ConfigParser.PRIORITY);
+        return HelidonServiceLoader.builder(ServiceLoader.load(ConfigParser.class))
+                .defaultPriority(ConfigParser.PRIORITY)
+                .build()
+                .asList();
     }
 
     private void addAutoLoadedFilters() {
@@ -680,15 +685,13 @@ class BuilderImpl implements Config.Builder {
         /*
          * Map each autoloaded ConfigFilter to a filter-providing function.
          */
-        ConfigUtils.asStream(ServiceLoader.load(ConfigFilter.class).iterator())
+        HelidonServiceLoader.builder(ServiceLoader.load(ConfigFilter.class))
+                .defaultPriority(ConfigFilter.PRIORITY)
+                .build()
+                .asList()
+                .stream()
                 .map(filter -> (Function<Config, ConfigFilter>) (Config t) -> filter)
                 .forEach(this::addFilter);
-    }
-
-    private static <T> List<T> loadPrioritizedServices(Class<T> serviceClass, int priority) {
-        return ConfigUtils
-                .asPrioritizedStream(ServiceLoader.load(serviceClass), priority)
-                .collect(Collectors.toList());
     }
 
     /**

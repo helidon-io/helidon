@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonFeatures;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
@@ -70,7 +71,8 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     private final boolean failIfNoneValidated;
 
     private AbacProvider(Builder builder) {
-        ServiceLoader<AbacValidatorService> services = ServiceLoader.load(AbacValidatorService.class);
+        HelidonServiceLoader<AbacValidatorService> services =
+                HelidonServiceLoader.create(ServiceLoader.load(AbacValidatorService.class));
 
         for (AbacValidatorService service : services) {
             validators.add(service.instantiate(builder.config.get(service.configKey())));

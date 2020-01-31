@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
@@ -1036,7 +1037,9 @@ public class Security {
                                             Map<String, SecurityProviderService> classNameToService) {
 
             Set<String> configKeys = new HashSet<>();
-            ServiceLoader<SecurityProviderService> loader = ServiceLoader.load(SecurityProviderService.class);
+            HelidonServiceLoader<SecurityProviderService> loader =
+                    HelidonServiceLoader.create(ServiceLoader.load(SecurityProviderService.class));
+
             loader.forEach(service -> {
                 String configKey = service.providerConfigKey();
                 if (null != configKey) {
