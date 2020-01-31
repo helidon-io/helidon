@@ -42,7 +42,11 @@ public final class PokemonMain {
     private static final String MONGO_CFG = "mongo.yaml";
 
     /** Whether MongoDB support is selected. */
-    public static boolean mongo;
+    private static boolean mongo;
+
+    static boolean isMongo() {
+        return mongo;
+    }
 
     /**
      * Cannot be instantiated.
@@ -79,7 +83,7 @@ public final class PokemonMain {
         LogManager.getLogManager().readConfiguration(PokemonMain.class.getResourceAsStream("/logging.properties"));
 
         // By default this will pick up application.yaml from the classpath
-        Config config = mongo ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
+        Config config = isMongo() ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
 
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =

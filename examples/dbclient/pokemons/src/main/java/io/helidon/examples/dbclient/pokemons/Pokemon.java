@@ -34,8 +34,8 @@ public class Pokemon {
     /**
      * Create pokemon with name and type.
      *
+     * @param id id of the beast
      * @param name name of the beast
-     * @param type type of the beast
      * @param idType id of beast type
      */
     public Pokemon(int id, String name, int idType) {

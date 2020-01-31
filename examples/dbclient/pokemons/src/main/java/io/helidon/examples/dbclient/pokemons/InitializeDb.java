@@ -37,7 +37,7 @@ public class InitializeDb {
      */
     static void init(DbClient dbClient) {
         try {
-            if (!PokemonMain.mongo) {
+            if (!PokemonMain.isMongo()) {
                 initSchema(dbClient);
             }
             initData(dbClient);
