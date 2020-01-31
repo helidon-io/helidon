@@ -141,6 +141,11 @@ with it a _message encoder_. For more information on message encoders and decode
 reader is referred to [2]; in this example, `UppercaseEncoder.class` simply uppercases every
 message sent from the server [3].
 
+Endpoint methods in Helidon SE are executed in Netty's worker thread pool. Threads in this
+pool are intended to be _non-blocking_, thus it is recommended for any blocking or
+long-running operation triggered by an endpoint method to be executed using a separate
+thread pool. See the documentation for `io.helidon.common.configurable.ThreadPoolSupplier`.
+
 
 == Helidon MP
 
@@ -253,11 +258,16 @@ including the server bootstrap steps. For this reason, the builder for
 server manually. Using this builder would be required for those applications
 for which CDI discovery is disabled.
 
+Unlike Helidon SE, all endpoint methods in Helidon MP are executed in
+a separate thread pool, independently of Netty. Therefore, there is no
+need to create additional threads for blocking or long-running operations
+as these will not affect Netty's ability to process networking data.
+
 For more information on the MP version of this example, the reader is
 referred to [4].
 
 
 - [1] https://projects.eclipse.org/projects/ee4j.tyrus
 - [2] https://projects.eclipse.org/projects/ee4j.websocket
-- [3] (Helidon SE Example)
-- [4] (Helidon MP Example)
+- [3] https://github.com/oracle/helidon/tree/websockets20/examples/webserver/websocket
+- [4] https://github.com/oracle/helidon/tree/websockets20/examples/microprofile/websocket
