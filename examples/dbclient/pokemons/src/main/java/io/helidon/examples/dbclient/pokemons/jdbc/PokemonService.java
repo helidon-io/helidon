@@ -187,7 +187,7 @@ public class PokemonService implements Service {
      */
     protected void deletePokemonById(ServerRequest request, ServerResponse response) {
         int id = Integer.parseInt(request.path().param("id"));
-        dbClient.inTransaction(tx -> tx
+        dbClient.execute(exec -> exec
                 .createNamedDelete("delete-pokemon-by-id")
                 .addParam("id", id)
                 .execute())
@@ -205,7 +205,7 @@ public class PokemonService implements Service {
         // Response message contains information about deleted records from both tables
         StringBuilder sb = new StringBuilder();
         // Pokemon must be removed from both PokemonTypes and Pokemons tables in transaction
-        dbClient.inTransaction(tx -> tx
+        dbClient.execute(exec -> exec
                 // Execute delete from PokemonTypes table
                 .createDelete("DELETE FROM Pokemons")
                 .execute())

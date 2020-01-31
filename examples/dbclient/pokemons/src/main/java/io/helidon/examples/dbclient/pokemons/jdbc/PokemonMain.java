@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.dbclient.pokemons.mongo;
+package io.helidon.examples.dbclient.pokemons.jdbc;
 
 import java.io.IOException;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.metrics.DbCounter;
-import io.helidon.dbclient.metrics.DbTimer;
-import io.helidon.dbclient.tracing.DbClientTracing;
 import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
@@ -41,6 +38,12 @@ import io.helidon.webserver.WebServer;
  */
 public final class PokemonMain {
 
+    /** Whether MongoDB support is selected. */
+    public static boolean MONGO;
+
+    /** MongoDB configuration. Default configuration file {@code appliaction.yaml} contains MySQL/JDBC configuration. */
+    private static final String MONGO_CFG = "mongo.yaml";
+
     /**
      * Cannot be instantiated.
      */
@@ -50,10 +53,17 @@ public final class PokemonMain {
     /**
      * Application main entry point.
      *
-     * @param args command line arguments.
+     * @param args Command line arguments. Run with MongoDB support when 1st argument is mongo, run with JDBC support otherwise.
      * @throws java.io.IOException if there are problems reading logging properties
      */
     public static void main(final String[] args) throws IOException {
+        if (args != null && args.length > 0 && args[0] != null && "mongo".equals(args[0].toLowerCase())) {
+            System.out.println("MongoDB database selected");
+            MONGO = true;
+        } else {
+            System.out.println("MySQL/JDBC database selected");
+            MONGO = false;
+        }
         startServer();
     }
 
@@ -69,15 +79,18 @@ public final class PokemonMain {
         LogManager.getLogManager().readConfiguration(PokemonMain.class.getResourceAsStream("/logging.properties"));
 
         // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
+        Config config = MONGO ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
 
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =
                 ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create("mongo-db").build())
+                        .tracer(TracerBuilder.create(config.get("tracing")).build())
                         .build();
 
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        // Prepare routing for the server
+        Routing routing = createRouting(config);
+
+        WebServer server = WebServer.create(serverConfig, routing);
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
@@ -86,7 +99,8 @@ public final class PokemonMain {
         });
 
         // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+        server.whenShutdown().thenRun(()
+                                              -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
     }
@@ -100,13 +114,8 @@ public final class PokemonMain {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
+        // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
         DbClient dbClient = DbClient.builder(dbConfig)
-                // add an interceptor to named statement(s)
-                .addInterceptor(DbCounter.create(), "select-all", "select-one")
-                // add an interceptor to statement type(s)
-                .addInterceptor(DbTimer.create(), DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT)
-                // add an interceptor to all statements
-                .addInterceptor(DbClientTracing.create())
                 .build();
 
         HealthSupport health = HealthSupport.builder()
@@ -115,20 +124,14 @@ public final class PokemonMain {
 
         // Initialize database schema
         InitializeDb.init(dbClient);
-
+        
         return Routing.builder()
-                .register("/db", JsonSupport.create())
-                .register("/db", JsonBindingSupport.create())
-                .register("/db", DbResultSupport.create())
+                .register(JsonSupport.create())
+                .register(JsonBindingSupport.create())
+                .register(DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/db", new PokemonService(dbClient))
                 .build();
     }
-
-    private static IllegalStateException noConfigError(String key) {
-        return new IllegalStateException("Attempting to create a Pokemon service with no configuration"
-                                                 + ", config key: " + key);
-    }
-
 }

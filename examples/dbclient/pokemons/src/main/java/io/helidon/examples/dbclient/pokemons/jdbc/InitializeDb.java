@@ -37,7 +37,9 @@ public class InitializeDb {
      */
     static void init(DbClient dbClient) {
         try {
-            initSchema(dbClient);
+            if (!PokemonMain.MONGO) {
+                initSchema(dbClient);
+            }
             initData(dbClient);
         } catch (ExecutionException | InterruptedException ex) {
             System.out.printf("Could not initialize database: %s", ex.getMessage());
@@ -74,9 +76,9 @@ public class InitializeDb {
      */
     protected static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
         // Init pokemon types
-        dbClient.inTransaction(tx
-                -> initTypes(tx)
-                        .thenCompose(count -> initPokemons(tx)))
+        dbClient.execute(exec
+                -> initTypes(exec)
+                        .thenCompose(count -> initPokemons(exec)))
                 .toCompletableFuture().get();
     }
 
@@ -88,9 +90,9 @@ public class InitializeDb {
      * @throws InterruptedException if the current thread was interrupted
      */
     protected static void deleteData(DbClient dbClient) throws InterruptedException, ExecutionException {
-        dbClient.inTransaction(tx -> tx
+        dbClient.execute(exec -> exec
                 .namedDelete("delete-all-pokemons")
-                .thenCompose(count -> tx.namedDelete("delete-all-types")))
+                .thenCompose(count -> exec.namedDelete("delete-all-types")))
                 .toCompletableFuture()
                 .get();
     }

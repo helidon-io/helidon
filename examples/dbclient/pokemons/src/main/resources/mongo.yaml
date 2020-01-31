@@ -20,11 +20,44 @@ server:
   features:
     print-details: true
 
+tracing:
+  service: jdbc-db
+
 # docker run --rm --name mongo -p 27017:27017 mongo
 db:
   source: "mongoDb"
   connection:
     url: "mongodb://127.0.0.1:27017/pokemon"
+  interceptors:
+    tracing:
+      global:
+    metrics:
+      # possible also global:
+      global:
+        - type: METER
+          # changing the name format - by removing the parameter (statement name) we get an overall metric
+          name-format: "db.meter.overall"
+        - type: METER
+          # meter per statement name
+        - type: METER
+          # meter per statement type
+          name-format: "db.meter.%2$s"
+      named:
+        - names: ["select-all", "select-one"]
+          errors: false
+          type: TIMER
+          description: "Timer for successful selects"
+      typed:
+        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
+          type: COUNTER
+          errors: false
+          name-format: "db.counter.%s.success"
+          description: "Counter of successful DML statements"
+        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
+          type: COUNTER
+          success: false
+          name-format: "db.counter.%s.error"
+          description: "Counter of failed DML statements"
   statements:
     ## Ping statement
     ping: '{
@@ -32,68 +65,59 @@ db:
             "query": { ping: 1 }
         }'
     ## Create database schema
-    create-types: "CREATE TABLE Types (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
-    create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
-    create-poketypes: "CREATE TABLE PokemonTypes (id_pokemon INTEGER NOT NULL REFERENCES Pokemon(id), id_type INTEGER NOT NULL REFERENCES Type(id))"
-    # Select all pokemons without type information
-    select-all-pokemons: '{
-            "collection": "pokemons",
+    # Select all types
+    select-all-types: '{
+            "collection": "types",
+            "operation": "query",
             "projection": { id: 1, name: 1, _id: 0 },
             "query": {}
         }'
-    # Select type names for pokemon specified by id
-    # TODO: Rewrite to MongoDB statement
-    select-type-by-pokemon: "SELECT t.name AS name FROM Types t INNER JOIN PokemonTypes p ON p.id_type = t.it WHERE p.id_pokemon = :idPokemon"
+    # Select all pokemons without type information
+    select-all-pokemons: '{
+            "collection": "pokemons",
+            "operation": "query",
+            "projection": { id: 1, name: 1, id_type: 1, _id: 0 },
+            "query": {}
+        }'
     # Select pokemon by id
     select-pokemon-by-id: '{
             "collection": "pokemons",
             "operation": "query",
-            "projection": { id: 1, name: 1, _id: 0 },
+            "projection": { id: 1, name: 1, id_type: 1, _id: 0 },
             "query": { id: $id }
         }'
     # Select pokemon by name
     select-pokemon-by-name: '{
             "collection": "pokemons",
             "operation": "query",
-            "projection": { id: 1, name: 1, _id: 0 },
+            "projection": { id: 1, name: 1, id_type: 1, _id: 0 },
             "query": { name: ? }
         }'
     # Insert records into database
     insert-type: '{
             "collection": "types",
-            "value": {
-                "id": ?,
-                "type": ?
-            }
-        }'
-    insert-pokemon: '{
-            "collection": "pokemons",
+            "operation": "insert",
             "value": {
                 "id": ?,
                 "name": ?
             }
         }'
-    insert-poketype: '{
-            "collection": "pokemon_types",
+    insert-pokemon: '{
+            "collection": "pokemons",
+            "operation": "insert",
             "value": {
-                "id_pokemon": ?,
+                "id": ?,
+                "name": ?,
                 "id_type": ?
             }
         }'
     # Update name of pokemon specified by id
-    update-pokemon-name-by-id: '{
+    update-pokemon-by-id: '{
             "collection": "pokemons",
             "operation": "update",
-            "value":{ $set: { "name": $name } },
+            "value":{ $set: { "name": $name, "id_type": $idType } },
             "query": { id: $id }
         }'
-    # Delete all types relation for pokemon specified by id
-    delete-poketype-by-id-pokemon:  '{
-            "collection": "pokemon_types",
-            "operation": "delete",
-            "query": { id_pokemon: $id }
-        }'
-    # "DELETE FROM PokemonTypes WHERE id_pokemon = :id"
     # Delete pokemon by id
     delete-pokemon-by-id: '{
             "collection": "pokemons",
@@ -106,15 +130,10 @@ db:
             "operation": "delete",
             "query": { }
         }'
-    # Delete all types relation
-    delete-all-poketypes:  '{
-            "collection": "pokemon_types",
-            "operation": "delete",
-            "query": { }
-        }'
     # Delete all pokemons
     delete-all-pokemons: '{
             "collection": "pokemons",
             "operation": "delete",
             "query": { }
         }'
+
