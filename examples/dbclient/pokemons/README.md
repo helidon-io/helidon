@@ -69,7 +69,7 @@ cd <project_root>/examples/dbclient/pokemons
 mvn -Pexec verify -Darg=mongo
 ```
 
-## Exercise
+## Testing Example
 
 The application has the following endpoints:
 
@@ -91,6 +91,7 @@ The query operation adds database trace.
 - `curl -i -X DELETE http://localhost:8079/db/pokemon/7` - delete pokemon with id 7
 
 ### Proxy
+
 Make sure that `localhost` is not being accessed trough proxy when proxy is configured on your system:
 ```
 export NO_PROXY='localhost'
