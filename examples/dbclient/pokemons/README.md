@@ -29,6 +29,7 @@ with 1:N relationship between *Types* and *Pokemons*
 ## Build
 
 ```
+cd <project_root>/examples/dbclient/pokemons
 mvn package
 ```
 
@@ -69,7 +70,7 @@ cd <project_root>/examples/dbclient/pokemons
 mvn -Pexec verify -Darg=mongo
 ```
 
-## Testing Example
+## Test Example
 
 The application has the following endpoints:
 
