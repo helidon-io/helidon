@@ -13,7 +13,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 This is the first milestone release of Helidon 2.0. It contains significant new
 features, enhancements and fixes. It also contains backward incompatible changes
-(see [section](#Backward incompatible changes) below ). This milestone release
+(see [section](#backward-incompatible-changes) below ). This milestone release
 is provided for customers that want early access to Helidon 2.0. It should be
 considered unstable and is not intended for production use. APIs and features
 might not be fully tested and are subject to change. Documentation is incomplete.
