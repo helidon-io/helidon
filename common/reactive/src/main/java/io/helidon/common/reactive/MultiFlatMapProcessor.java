@@ -30,17 +30,18 @@ import java.util.function.Function;
  * @param <T> input item type
  * @param <X> output item type
  */
-public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<X> {
+public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<X>, StrictProcessor {
 
     private Function<T, Flow.Publisher<X>> mapper;
     private RequestedCounter requestCounter = new RequestedCounter();
-    private SequentialSubscriber<? super X> subscriber;
+    private Flow.Subscriber<? super X> subscriber;
     private Flow.Subscription subscription;
     private volatile Flow.Subscription innerSubscription;
     private volatile Flow.Publisher<X> innerPublisher;
-    private volatile boolean upstreamsCompleted;
+    private AtomicBoolean upstreamsCompleted = new AtomicBoolean(false);
     private Optional<Throwable> error = Optional.empty();
     private ReentrantLock stateLock = new ReentrantLock();
+    private boolean strictMode = BaseProcessor.DEFAULT_STRICT_MODE;
 
 
     private MultiFlatMapProcessor() {
@@ -76,10 +77,16 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
         return flatMapProcessor;
     }
 
+    @Override
+    public MultiFlatMapProcessor<T, X> strictMode(boolean strictMode) {
+        this.strictMode = strictMode;
+        return this;
+    }
+
     private class FlatMapSubscription implements Flow.Subscription {
         @Override
         public void request(long n) {
-            stateLock(() -> requestCounter.increment(n, MultiFlatMapProcessor.this::onError));
+            requestCounter.increment(n, MultiFlatMapProcessor.this::onError);
             if (Objects.nonNull(innerSubscription)) {
                 innerSubscription.request(n);
             } else {
@@ -96,8 +103,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
     @Override
     public void subscribe(Flow.Subscriber<? super X> subscriber) {
+        this.subscriber = SequentialSubscriber.create(subscriber);
         stateLock(() -> {
-            this.subscriber = SequentialSubscriber.create(subscriber);
             if (Objects.nonNull(this.subscription)) {
                 this.subscriber.onSubscribe(new FlatMapSubscription());
             }
@@ -141,8 +148,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
     @Override
     public void onComplete() {
+        upstreamsCompleted.set(true);
         stateLock(() -> {
-            upstreamsCompleted = true;
             if (requestCounter.get() == 0 || Objects.isNull(innerPublisher)) {
                 //Have to wait for all Publishers to be finished
                 subscriber.onComplete();
@@ -166,11 +173,9 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
         @Override
         public void onNext(X item) {
             Objects.requireNonNull(item);
-            stateLock(() -> {
-                if (requestCounter.tryDecrement()) {
-                    subscriber.onNext(item);
-                }
-            });
+            if (requestCounter.tryDecrement()) {
+                subscriber.onNext(item);
+            }
         }
 
         @Override
@@ -182,15 +187,20 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
         @Override
         public void onComplete() {
+            if (upstreamsCompleted.get()) {
+                subscriber.onComplete();
+            }
             stateLock(() -> {
                 innerPublisher = null;
-                if (upstreamsCompleted) {
-                    subscriber.onComplete();
-                }
+            });
+            try {
+                requestCounter.lock();
                 if (requestCounter.get() > 0) {
                     subscription.request(1);
                 }
-            });
+            } finally {
+                requestCounter.unlock();
+            }
         }
     }
 
@@ -198,6 +208,10 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
      * Protect critical sections when working with states of innerPublisher.
      */
     private void stateLock(Runnable runnable) {
+        if (!strictMode) {
+            runnable.run();
+            return;
+        }
         try {
             stateLock.lock();
             runnable.run();

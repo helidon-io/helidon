@@ -72,6 +72,11 @@ public interface HybridProcessor<T, R> extends Flow.Processor<T, R>, Processor<T
             public void onComplete() {
                 processor.onComplete();
             }
+
+            @Override
+            public String toString() {
+                return processor.toString();
+            }
         };
     }
 
@@ -112,6 +117,11 @@ public interface HybridProcessor<T, R> extends Flow.Processor<T, R>, Processor<T
             @Override
             public void onComplete() {
                 processor.onComplete();
+            }
+
+            @Override
+            public String toString() {
+                return processor.toString();
             }
         };
     }

@@ -40,6 +40,7 @@ import io.helidon.common.reactive.MultiPeekProcessor;
 import io.helidon.common.reactive.MultiSkipProcessor;
 import io.helidon.common.reactive.MultiTakeWhileProcessor;
 import io.helidon.common.reactive.MultiTappedProcessor;
+import io.helidon.common.reactive.StrictProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
 import io.helidon.microprofile.reactive.hybrid.HybridSubscriber;
@@ -198,6 +199,9 @@ final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer<Stage>
 
     @SuppressWarnings("unchecked")
     private <T, U> void addProcessor(Flow.Processor<T, U> processor) {
+        if (processor instanceof StrictProcessor) {
+            ((StrictProcessor) processor).strictMode(true);
+        }
         processorList.add((Flow.Processor<Object, Object>) processor);
     }
 

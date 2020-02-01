@@ -29,6 +29,8 @@ import java.util.function.Function;
  */
 public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Multi<R> {
 
+    private Optional<Function<Long, Long>> onRequestFunction = Optional.empty();
+    private Optional<Function<Flow.Subscriber<? super R>, Flow.Subscriber<? super R>>> whenSubscribeFunction = Optional.empty();
     private Optional<Function<R, R>> onNextFunction = Optional.empty();
     private Optional<Consumer<Throwable>> onErrorConsumer = Optional.empty();
     private Optional<Runnable> onCompleteRunnable = Optional.empty();
@@ -62,6 +64,17 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
     }
 
     /**
+     * Set {@link java.util.function.Function} to be executed when subscribe signal is intercepted.
+     *
+     * @param function Function to be invoked.
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
+     */
+    public MultiTappedProcessor<R> whenSubscribe(Function<Flow.Subscriber<? super R>, Flow.Subscriber<? super R>> function) {
+        whenSubscribeFunction = Optional.ofNullable(function);
+        return this;
+    }
+
+    /**
      * Set {@link java.util.function.Consumer} to be executed when onError signal is intercepted.
      *
      * @param consumer Consumer to be executed when onError signal is intercepted,
@@ -85,6 +98,17 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
     }
 
     /**
+     * Set {@link java.util.function.Function} to be executed when request signal is intercepted.
+     *
+     * @param function Function to be invoked.
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
+     */
+    public MultiTappedProcessor<R> onRequest(Function<Long, Long> function) {
+        onRequestFunction = Optional.ofNullable(function);
+        return this;
+    }
+
+    /**
      * Set consumer to be executed when onCancel signal is intercepted.
      *
      * @param consumer Consumer to be executed when onCancel signal is intercepted,
@@ -94,6 +118,20 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
     public MultiTappedProcessor<R> onCancel(Consumer<Flow.Subscription> consumer) {
         onCancelConsumer = Optional.ofNullable(consumer);
         return this;
+    }
+
+    @Override
+    public void request(long n) {
+        super.request(onRequestFunction.map(r -> r.apply(n)).orElse(n));
+    }
+
+    @Override
+    public void subscribe(Flow.Subscriber<? super R> s) {
+        Flow.Subscriber<? super R> subscriber = s;
+        if (whenSubscribeFunction.isPresent()) {
+            subscriber = whenSubscribeFunction.map(f -> f.apply(s)).get();
+        }
+        super.subscribe(subscriber);
     }
 
     @Override

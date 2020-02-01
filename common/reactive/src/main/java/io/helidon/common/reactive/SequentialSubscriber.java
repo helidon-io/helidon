@@ -17,7 +17,10 @@
 
 package io.helidon.common.reactive;
 
+import java.util.LinkedList;
+import java.util.Objects;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -29,8 +32,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * https://github.com/reactive-streams/reactive-streams-jvm#1.3</a>
  */
 public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
+
     private Flow.Subscriber<T> subscriber;
     private ReentrantLock seqLock = new ReentrantLock();
+    private SignalQueue queue = new SignalQueue();
+    private volatile boolean done;
+    private boolean draining;
+
 
     private SequentialSubscriber(Flow.Subscriber<T> subscriber) {
         this.subscriber = subscriber;
@@ -48,36 +56,154 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
         return new SequentialSubscriber<>(subscriber);
     }
 
+    private AtomicBoolean subscribedAlready = new AtomicBoolean(false);
+
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        seqLock(() -> subscriber.onSubscribe(subscription));
+        if (subscribedAlready.getAndSet(true)) {
+            subscription.cancel();
+            return;
+        }
+        boolean cancel;
+        if (!done) {
+            try {
+                seqLock.lock();
+                if (done) {
+                    cancel = true;
+                } else {
+                    queue.onSubscribeInProgress();
+                    if (draining) {
+                        queue.addFirst(() -> subscriber.onSubscribe(subscription));
+                        return;
+                    }
+                    draining = true;
+                    cancel = false;
+                }
+            } finally {
+                seqLock.unlock();
+            }
+        } else {
+            cancel = true;
+        }
+        if (cancel) {
+            subscription.cancel();
+        } else {
+            subscriber.onSubscribe(subscription);
+            drainQueue();
+        }
     }
 
     @Override
     public void onNext(T item) {
-        seqLock(() -> subscriber.onNext(item));
+        if (done) return;
+        try {
+            seqLock.lock();
+            if (done) return;
+            // In case publisher is sending onNext signal directly from onSubscribe
+            queue.unblockQueueOnSameThead();
+            if (draining) {
+                queue.add(() -> submit(item));
+                return;
+            }
+            draining = true;
+        } finally {
+            seqLock.unlock();
+        }
+        submit(item);
+        drainQueue();
     }
 
     @Override
     public void onError(Throwable throwable) {
-        seqLock(() -> subscriber.onError(throwable));
+        if (done) return;
+        try {
+            seqLock.lock();
+            if (done) return;
+            done = true;
+            if (draining) {
+                queue = new ReadOnlySignalQueue(() -> subscriber.onError(throwable));
+                return;
+            }
+            draining = true;
+        } finally {
+            seqLock.unlock();
+        }
+        subscriber.onError(throwable);
     }
 
     @Override
     public void onComplete() {
-        seqLock(() -> subscriber.onComplete());
-    }
-
-    /**
-     * OnSubscribe, onNext, onError and onComplete signaled to a Subscriber MUST be signaled serially.
-     * https://github.com/reactive-streams/reactive-streams-jvm#1.3
-     */
-    private void seqLock(Runnable runnable) {
+        if (done) return;
         try {
             seqLock.lock();
-            runnable.run();
+            if (done) return;
+            done = true;
+            if (draining) {
+                queue = new ReadOnlySignalQueue(() -> subscriber.onComplete());
+                return;
+            }
+            draining = true;
         } finally {
             seqLock.unlock();
         }
+        subscriber.onComplete();
     }
+
+    private void drainQueue() {
+        while (true) {
+            Runnable job;
+            try {
+                seqLock.lock();
+                if (queue.isEmpty()) {
+                    draining = false;
+                    return;
+                }
+                job = queue.removeFirst();
+            } finally {
+                seqLock.unlock();
+            }
+            // Synchronized and out of lock call
+            job.run();
+        }
+    }
+
+    private void submit(T item) {
+        try {
+            subscriber.onNext(item);
+        } catch (Throwable ex) {
+            this.onError(ex);
+        }
+    }
+
+    private class ReadOnlySignalQueue extends SignalQueue {
+
+        ReadOnlySignalQueue(Runnable single) {
+            super();
+            super.add(single);
+        }
+
+        @Override
+        public boolean add(Runnable runnable) {
+            return false;
+        }
+    }
+
+    private class SignalQueue extends LinkedList<Runnable> {
+        private volatile Thread onSubscribingThread;
+
+        public boolean onSubscribeInProgress() {
+            if (onSubscribingThread != null) return true;
+            onSubscribingThread = Thread.currentThread();
+            return false;
+        }
+
+        public void unblockQueueOnSameThead() {
+            if (onSubscribingThread != null
+                    && Objects.equals(onSubscribingThread, Thread.currentThread())) {
+                draining = false;
+            }
+        }
+    }
+
+
 }

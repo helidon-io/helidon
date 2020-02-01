@@ -48,7 +48,7 @@ public class MultiFilterProcessor<T> extends BaseProcessor<T, T> implements Mult
         if (predicate.test(item)) {
             submit(item);
         } else {
-            getRequestedCounter().increment(1, this::fail);
+            tryRequest(getSubscription().get());
         }
     }
 }

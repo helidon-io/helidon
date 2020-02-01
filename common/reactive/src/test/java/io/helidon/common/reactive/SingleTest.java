@@ -231,7 +231,7 @@ public class SingleTest {
     public void testMapMany() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("f.o.o")
-                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
+                .mapMany((str) ->  new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));

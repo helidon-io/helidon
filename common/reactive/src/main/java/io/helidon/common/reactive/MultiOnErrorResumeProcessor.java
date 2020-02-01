@@ -29,10 +29,14 @@ import java.util.function.Function;
  *
  * @param <T> item type
  */
-public class MultiOnErrorResumeProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flow.Subscription, Multi<T> {
 
     private Function<Throwable, Flow.Publisher<T>> publisherSupplier;
-    private AtomicReference<Optional<Flow.Subscription>> onErrorPublisherSubscription = new AtomicReference<>(Optional.empty());
+    private AtomicReference<Flow.Subscription> subscription = new AtomicReference<>();
+    private AtomicReference<Flow.Subscriber<? super T>> subscriber = new AtomicReference<>();
+    private RequestedCounter requestedCounter = new RequestedCounter();
+    private Optional<Throwable> error = Optional.empty();
+    private boolean done;
 
     private MultiOnErrorResumeProcessor() {
     }
@@ -66,59 +70,100 @@ public class MultiOnErrorResumeProcessor<T> extends BaseProcessor<T, T> implemen
         return processor;
     }
 
+
     @Override
-    protected void tryRequest(Flow.Subscription subscription) {
-        super.tryRequest(onErrorPublisherSubscription.get()
-                .orElse(subscription));
+    public void subscribe(Flow.Subscriber<? super T> subscriber) {
+        this.subscriber.set(SequentialSubscriber.create(subscriber));
+        if (Objects.nonNull(this.subscription.get())) {
+            this.subscriber.get().onSubscribe(this);
+            if (done) {
+                tryComplete();
+            }
+        }
+        error.ifPresent(this::fail);
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        super.submit(item);
+    public void onSubscribe(Flow.Subscription subscription) {
+        this.subscription.set(subscription);
+        if (Objects.nonNull(subscriber.get())) {
+            subscriber.get().onSubscribe(this);
+        }
+    }
+
+    @Override
+    public void request(long n) {
+        requestedCounter.increment(n, this::onError);
+        subscription.get().request(n);
+    }
+
+    @Override
+    public void cancel() {
+        subscription.get().cancel();
+    }
+
+    @Override
+    public void onNext(T item) {
+        if (requestedCounter.tryDecrement()) {
+            subscriber.get().onNext(item);
+        } else {
+            onError(new IllegalStateException("Not enough request to submit item"));
+        }
     }
 
     @Override
     public void onError(Throwable ex) {
         Objects.requireNonNull(ex);
         try {
-            publisherSupplier.apply(ex).subscribe(new Flow.Subscriber<T>() {
+            publisherSupplier.apply(ex).subscribe(SequentialSubscriber.create(new Flow.Subscriber<T>() {
 
                 @Override
-                public void onSubscribe(Flow.Subscription subscription) {
-                    Objects.requireNonNull(subscription);
-                    onErrorPublisherSubscription.set(Optional.of(subscription));
-                    if (getRequestedCounter().get() > 0) {
-                        subscription.request(getRequestedCounter().get());
+                public void onSubscribe(Flow.Subscription s) {
+                    Objects.requireNonNull(s);
+                    subscription.set(s);
+                    if (requestedCounter.get() > 0) {
+                        s.request(requestedCounter.get());
                     }
                 }
 
                 @Override
                 public void onNext(T t) {
-                    submit(t);
+                    subscriber.get().onNext(t);
                 }
 
                 @Override
                 public void onError(Throwable t) {
-                    Objects.requireNonNull(t);
                     fail(t);
                 }
 
                 @Override
                 public void onComplete() {
                     MultiOnErrorResumeProcessor.this.onComplete();
-                    onErrorPublisherSubscription.set(Optional.empty());
                 }
-            });
+            }));
 
         } catch (Throwable t) {
-            onErrorPublisherSubscription.get().ifPresent(Flow.Subscription::cancel);
             fail(t);
         }
     }
 
+    private void fail(Throwable t) {
+        if (Objects.nonNull(subscriber.get())) {
+            subscriber.get().onError(t);
+        } else {
+            this.error = Optional.of(t);
+        }
+    }
+
     @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
-        onErrorPublisherSubscription.get().ifPresent(Flow.Subscription::cancel);
+    public void onComplete() {
+        done = true;
+        tryComplete();
+    }
+
+    private void tryComplete() {
+        if (Objects.nonNull(subscriber.get())) {
+            subscriber.get().onComplete();
+        }
     }
 }

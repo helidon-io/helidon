@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import io.helidon.common.reactive.Multi;
@@ -43,7 +42,6 @@ class FlatMapCompletionStageProcessor<T, X> implements Flow.Processor<T, X>, Mul
     private volatile CompletionStage<X> lastCompletionStage;
     private volatile boolean upstreamsCompleted;
     private Optional<Throwable> error = Optional.empty();
-    private ReentrantLock stateLock = new ReentrantLock();
 
     @SuppressWarnings("unchecked")
     FlatMapCompletionStageProcessor(Function<?, CompletionStage<?>> mapper) {
@@ -54,16 +52,17 @@ class FlatMapCompletionStageProcessor<T, X> implements Flow.Processor<T, X>, Mul
     private class FlatMapSubscription implements Flow.Subscription {
         @Override
         public void request(long n) {
-            stateLock(() -> {
+            if (requestCounter.get() > 0) {
                 requestCounter.increment(n, FlatMapCompletionStageProcessor.this::onError);
-                if (Objects.isNull(lastCompletionStage)) {
-                    subscription.request(1);
-                }
-            });
+                return;
+            }
+            requestCounter.increment(n, FlatMapCompletionStageProcessor.this::onError);
+            subscription.request(1);
         }
 
         @Override
         public void cancel() {
+            subscriber = null;
             subscription.cancel();
         }
     }
@@ -93,10 +92,8 @@ class FlatMapCompletionStageProcessor<T, X> implements Flow.Processor<T, X>, Mul
     public void onNext(T o) {
         Objects.requireNonNull(o);
         try {
-            stateLock(() -> {
-                lastCompletionStage = mapper.apply(o);
-                lastCompletionStage.whenComplete(this::completionStageOnComplete);
-            });
+            lastCompletionStage = mapper.apply(o);
+            lastCompletionStage.whenComplete(this::completionStageOnComplete);
         } catch (Throwable t) {
             subscription.cancel();
             subscriber.onError(t);
@@ -113,17 +110,25 @@ class FlatMapCompletionStageProcessor<T, X> implements Flow.Processor<T, X>, Mul
             return;
         }
 
-        stateLock(() -> {
-            lastCompletionStage = null;
-            if (requestCounter.tryDecrement()) {
-                subscriber.onNext(item);
-            }
-            if (upstreamsCompleted) {
-                subscriber.onComplete();
-            } else if (requestCounter.get() > 0) {
+        if (requestCounter.tryDecrement()) {
+            subscriber.onNext(item);
+        } else {
+            onError(new IllegalStateException("Not enough request to submit item"));
+        }
+
+        if (upstreamsCompleted) {
+            subscriber.onComplete();
+        }
+
+        lastCompletionStage = null;
+        try {
+            requestCounter.lock();
+            if (requestCounter.get() > 0) {
                 subscription.request(1);
             }
-        });
+        } finally {
+            requestCounter.unlock();
+        }
     }
 
     @Override
@@ -136,24 +141,10 @@ class FlatMapCompletionStageProcessor<T, X> implements Flow.Processor<T, X>, Mul
 
     @Override
     public void onComplete() {
-        stateLock(() -> {
-            upstreamsCompleted = true;
-            if (requestCounter.get() == 0 || Objects.isNull(lastCompletionStage)) {
-                //Have to wait for all completion stages to be completed
-                subscriber.onComplete();
-            }
-        });
-    }
-
-    /**
-     * Protect critical sections when working with states of completionStage.
-     */
-    private void stateLock(Runnable runnable) {
-        try {
-            stateLock.lock();
-            runnable.run();
-        } finally {
-            stateLock.unlock();
+        upstreamsCompleted = true;
+        if (requestCounter.get() == 0 || Objects.isNull(lastCompletionStage)) {
+            //Have to wait for all completion stages to be completed
+            subscriber.onComplete();
         }
     }
 }

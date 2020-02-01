@@ -49,7 +49,6 @@ public class MultiSkipProcessor<T> extends BaseProcessor<T, T> implements Multi<
         if (0 >= actCounter) {
             submit(item);
         } else {
-            getRequestedCounter().tryDecrement();
             request(1);
         }
     }

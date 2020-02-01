@@ -156,4 +156,8 @@ public class CoupledProcessorTest extends AbstractProcessorTest {
         //is cancelled afe
         assertThrows(CancellationException.class, () -> completionStage.toCompletableFuture().get(3, TimeUnit.SECONDS));
     }
+
+    @Override
+    void cancelOnError() {
+    }
 }
