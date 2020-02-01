@@ -31,7 +31,8 @@ public class Valves {
     @SuppressWarnings("rawtypes")
     private static final Valve EMPTY = new EmptyValve<>();
 
-    private Valves() {}
+    private Valves() {
+    }
 
     /**
      * Creates a {@link Valve} instance from provided array.

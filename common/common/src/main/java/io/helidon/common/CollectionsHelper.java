@@ -30,7 +30,8 @@ import java.util.Set;
  */
 public abstract class CollectionsHelper {
 
-    private CollectionsHelper(){};
+    private CollectionsHelper() {
+    }
 
     /**
      * Returns an immutable list containing zero elements.

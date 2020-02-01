@@ -144,7 +144,9 @@ package io.helidon.common.reactive;
  */
 public final class Flow {
 
-    private Flow() {} // uninstantiable
+    // uninstantiable
+    private Flow() {
+    }
 
     /**
      * A producer of items (and related control messages) received by

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,7 +204,8 @@ public final class PrometheusSupport implements Service {
         private CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         private String path;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Sets collector registry to use, default is {@link CollectorRegistry#defaultRegistry}.
