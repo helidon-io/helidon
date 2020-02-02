@@ -17,12 +17,7 @@
 
 package io.helidon.common.reactive;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -30,55 +25,8 @@ import java.util.function.Consumer;
  */
 public class StreamValidationUtils {
 
-    private static ThreadLocal<Map<String, AtomicLong>> recursionDepthThreadLocal = new ThreadLocal<>();
-
 
     private StreamValidationUtils() {
-    }
-
-    /**
-     * Validation of Reactive Streams Specification for JVM rule 3.3.
-     * <br>
-     * {@code Subscription.request} MUST place an upper bound on possible synchronous
-     * recursion between {@code Publisher} and {@code Subscriber}.
-     *
-     * @param key          key to differentiate multiple checks on one thread
-     * @param maxDepth     maximal expected recursion depth
-     * @param guardedBlock code block to check recursion for
-     * @param onExceeded   called if recursion is deeper than maxDepth,
-     *                     provided with actual depth and spec compliant exception.
-     * @param <T>          payload type of the subscriber
-     * @return true if valid
-     * @see <a href="https://github.com/reactive-streams/reactive-streams-jvm#3.3">reactive-streams/reactive-streams-jvm#3.3</a>
-     */
-    public static <T> boolean checkRecursionDepth(String key, int maxDepth, Runnable guardedBlock,
-                                                  BiConsumer<Long, Throwable> onExceeded) {
-        Map<String, AtomicLong> counterMap = recursionDepthThreadLocal.get();
-        if (Objects.isNull(counterMap)) {
-            counterMap = new HashMap<>();
-            counterMap.put(key, new AtomicLong(0));
-            recursionDepthThreadLocal.set(counterMap);
-        }
-
-        counterMap.putIfAbsent(key, new AtomicLong(0));
-        AtomicLong recursionDepthCounter = counterMap.get(key);
-        try {
-            if (recursionDepthCounter.incrementAndGet() > maxDepth) {
-                long exceededRecursionDepth = recursionDepthCounter.get();
-                Optional.of(onExceeded)
-                        .ifPresent(onExc -> onExc
-                                .accept(exceededRecursionDepth, new IllegalCallerException(String
-                                        .format("Recursion depth exceeded, max depth expected %d but actual is %d, rule 3.3",
-                                                maxDepth, exceededRecursionDepth))));
-                return false;
-            }
-
-
-            guardedBlock.run();
-            return true;
-        } finally {
-            recursionDepthCounter.decrementAndGet();
-        }
     }
 
     /**

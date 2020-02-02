@@ -17,8 +17,10 @@
 
 package io.helidon.common.reactive;
 
+import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,6 +52,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private Flow.Subscription inletSubscription;
     private Flow.Subscription passedInPublisherSubscription;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private Queue<Runnable> forbiddenCalls = new LinkedList<>();
 
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
         this.passedInSubscriber = SequentialSubscriber.create(passedInSubscriber);
@@ -78,7 +81,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
 
             @Override
             public void onSubscribe(Flow.Subscription passedInPublisherSubscription) {
-                //Passed in publisher called onSubscribed
+                //Passed in publisher called onSubscribe
                 Objects.requireNonNull(passedInPublisherSubscription);
                 // https://github.com/reactive-streams/reactive-streams-jvm#2.5
                 if (Objects.nonNull(MultiCoupledProcessor.this.passedInPublisherSubscription) || cancelled.get()) {
@@ -91,6 +94,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             @SuppressWarnings("unchecked")
             public void onNext(R t) {
+                tryForbiddenCalls();
                 //Passed in publisher sent onNext
                 Objects.requireNonNull(t);
                 outletSubscriber.onNext(t);
@@ -105,7 +109,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 passedInSubscriber.onError(t);
                 inletSubscriber.onError(t);
                 //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
+                forbiddenCalls.offer(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
             }
 
             @Override
@@ -115,7 +119,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 outletSubscriber.onComplete();
                 passedInSubscriber.onComplete();
                 //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
+                forbiddenCalls.offer(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
             }
         });
 
@@ -124,11 +128,8 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void request(long n) {
                 // Request from outlet subscriber
-                StreamValidationUtils.checkRecursionDepth(
-                        "MultiCoupledProcessor1",
-                        8,
-                        () -> passedInPublisherSubscription.request(n),
-                        (actDepth, t) -> outletSubscriber.onError(t));
+                passedInPublisherSubscription.request(n);
+                tryForbiddenCalls();
             }
 
             @Override
@@ -137,6 +138,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 passedInSubscriber.onComplete();
                 Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
                 passedInPublisherSubscription.cancel();
+                tryForbiddenCalls();
             }
         });
     }
@@ -153,11 +155,8 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         passedInSubscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-                StreamValidationUtils.checkRecursionDepth(
-                        "MultiCoupledProcessor2",
-                        8,
-                        () -> inletSubscription.request(n),
-                        (actDepth, t) -> passedInSubscriber.onError(t));
+                inletSubscription.request(n);
+                tryForbiddenCalls();
             }
 
             @Override
@@ -169,6 +168,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 inletSubscription.cancel();
                 outletSubscriber.onComplete();
                 passedInPublisherSubscription.cancel();
+                tryForbiddenCalls();
             }
         });
     }
@@ -195,6 +195,16 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         passedInSubscriber.onComplete();
         outletSubscriber.onComplete();
         passedInPublisherSubscription.cancel();
+    }
+
+    private void tryForbiddenCalls() {
+        while (true) {
+            Runnable polledCall = forbiddenCalls.poll();
+            if (Objects.isNull(polledCall)) {
+                return;
+            }
+            polledCall.run();
+        }
     }
 
 }

@@ -18,24 +18,16 @@
 package io.helidon.microprofile.reactive;
 
 import org.eclipse.microprofile.reactive.streams.operators.tck.ReactiveStreamsTck;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CoupledStageVerification;
 import org.reactivestreams.tck.TestEnvironment;
 
 public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamEngine> {
 
     public HelidonReactiveStreamsTckTest() {
-        super(new TestEnvironment(200, 200, false));
+        super(new TestEnvironment(200));
     }
 
     @Override
     protected HelidonReactiveStreamEngine createEngine() {
         return new HelidonReactiveStreamEngine();
-    }
-
-    @Override
-    protected boolean isEnabled(Object test) {
-        // Remove when TCK test issues are solved
-        return // https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                !(test instanceof CoupledStageVerification.ProcessorVerification);
     }
 }
