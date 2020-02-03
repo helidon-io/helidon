@@ -80,7 +80,6 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
     JtaDataSource(final DataSource delegate,
                   final TransactionManager transactionManager) {
         super();
-        CONNECTION_STORAGE.get().put(this, new HashMap<>());
         this.delegate = Objects.requireNonNull(delegate);
         this.transactionManager = Objects.requireNonNull(transactionManager);
     }
@@ -142,7 +141,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
         final Map<?, ? extends TransactionSpecificConnection> connectionMap =
             (Map<?, ? extends TransactionSpecificConnection>) CONNECTION_STORAGE.get().get(this);
 
-        if (connectionMap != null) {
+        if (connectionMap != null && !connectionMap.isEmpty()) {
             final Collection<? extends TransactionSpecificConnection> connections = connectionMap.values();
             assert connections != null;
             try {
@@ -456,8 +455,14 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
             throw new SQLException(exception.getMessage(), exception);
         }
         if (status == Status.STATUS_ACTIVE) {
-            @SuppressWarnings("unchecked")
-            Map<Object, TransactionSpecificConnection> myConnectionMap = CONNECTION_STORAGE.get().get(this);
+            final Map<JtaDataSource, Map<Object, TransactionSpecificConnection>> connectionStorageMap = CONNECTION_STORAGE.get();
+            assert connectionStorageMap != null;
+            // @SuppressWarnings("unchecked")
+            Map<Object, TransactionSpecificConnection> myConnectionMap = connectionStorageMap.get(this);
+            if (myConnectionMap == null) {
+                myConnectionMap = new HashMap<>();
+                connectionStorageMap.put(this, myConnectionMap);
+            }
             assert myConnectionMap != null;
             final Object id;
             if (useZeroArgumentForm) {
