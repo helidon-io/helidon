@@ -89,6 +89,13 @@ public final class Mp1Main {
         testBean(jwtToken);
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
+
+        try {
+            Thread.sleep(5000);
+            System.setProperty("app.message", "New message through change support");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String generateJwtToken() {

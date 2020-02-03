@@ -730,6 +730,11 @@ public final class ConfigSources {
         }
 
         @Override
+        protected Data<ConfigNode.ObjectNode, Instant> processLoadedData(Data<ConfigNode.ObjectNode, Instant> data) {
+            return super.processLoadedData(data);
+        }
+
+        @Override
         protected Data<ConfigNode.ObjectNode, Instant> loadData() throws ConfigException {
             return new Data<>(Optional.of(ConfigUtils
                                                   .mapToObjectNode(ConfigUtils.propertiesToMap(System.getProperties()), false)),
@@ -759,6 +764,11 @@ public final class ConfigSources {
                     .forEach(it -> result.put(it, System.getProperty(it)));
 
             return result;
+        }
+
+        @Override
+        public Flow.Publisher<Optional<ConfigNode.ObjectNode>> changes() {
+            return changesPublisher();
         }
 
         private static final class Builder extends AbstractSource.Builder<Builder, Instant, SystemPropertiesConfigSource> {
