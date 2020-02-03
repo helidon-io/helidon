@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -84,6 +86,37 @@ public class BaseProcessorTest {
         assertThrows(IllegalStateException.class, () -> processor.onNext("foo"));
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testCumulatedBackpressure() {
+        AtomicLong publisherReceivedRequestSum = new AtomicLong();
+        Flow.Publisher<String> publisher = subscriber -> {
+            subscriber.onSubscribe(new Subscription() {
+                @Override
+                public void request(long n) {
+                    publisherReceivedRequestSum.addAndGet(n);
+                }
+
+                @Override
+                public void cancel() {
+                    //noop
+                }
+            });
+        };
+        TestProcessor<String> processor = new TestProcessor<>();
+        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
+            @Override
+            public void onNext(String item) {
+                //noop
+            }
+        };
+        publisher.subscribe(processor);
+        processor.subscribe(subscriber);
+        subscriber.request(2);
+        subscriber.request(2);
+        subscriber.request(2);
+        assertThat(publisherReceivedRequestSum.get(), is(equalTo(6L)));
     }
 
     @Test

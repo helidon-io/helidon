@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,5 +83,14 @@ public class RequestedCounter {
      */
     public long get() {
         return requested.get();
+    }
+
+    /**
+     * Gets the current requested event counter value and resets it to 0.
+     *
+     * @return current value of the requested event counter.
+     */
+    public long getAndReset() {
+        return requested.getAndSet(0);
     }
 }
