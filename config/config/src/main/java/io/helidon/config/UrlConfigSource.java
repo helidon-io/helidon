@@ -114,22 +114,27 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
     }
 
     private ConfigParser.Content<Instant> genericContent(URLConnection urlConnection) throws IOException, URISyntaxException {
-        final String mediaType = mediaType(null);
         Reader reader = new InputStreamReader(urlConnection.getInputStream(),
                                               StandardCharsets.UTF_8);
 
-        return ConfigParser.Content.create(reader, mediaType, Optional.of(Instant.now()));
+        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
+        builder.stamp(Instant.now());
+        mediaType()
+                .or(this::probeContentType)
+                .ifPresent(builder::mediaType);
+
+        return builder.build();
     }
 
     private ConfigParser.Content<Instant> httpContent(HttpURLConnection connection) throws IOException, URISyntaxException {
         connection.setRequestMethod(GET_METHOD);
 
-        final String mediaType = mediaType(connection.getContentType());
-        final Optional<Instant> timestamp;
+        Optional<String> mediaType = mediaType(connection.getContentType());
+        final Instant timestamp;
         if (connection.getLastModified() != 0) {
-            timestamp = Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+            timestamp = Instant.ofEpochMilli(connection.getLastModified());
         } else {
-            timestamp = Optional.of(Instant.now());
+            timestamp = Instant.now();
             LOGGER.fine("Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
                                 + timestamp + "' as a content timestamp.");
         }
@@ -137,31 +142,33 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         Reader reader = new InputStreamReader(connection.getInputStream(),
                                               ConfigUtils.getContentCharset(connection.getContentEncoding()));
 
-        return ConfigParser.Content.create(reader, mediaType, timestamp);
+        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
+
+        builder.stamp(timestamp);
+        mediaType.ifPresent(builder::mediaType);
+
+        return builder.build();
     }
 
     @Override
-    protected String mediaType() {
-        //do not call ConfigHelper.guessMediaType here - it is done in content() method
+    protected Optional<String> mediaType() {
         return super.mediaType();
     }
 
-    private String mediaType(String responseMediaType) throws URISyntaxException {
-        String mediaType = mediaType();
-        if (mediaType == null) {
-            mediaType = responseMediaType;
-            if (mediaType == null) {
-                mediaType = probeContentType();
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.fine("HTTP response does not contain content-type, used guessed one: " + mediaType + ".");
-                }
-            }
-        }
-        return mediaType;
+    private Optional<String> mediaType(String responseMediaType) throws URISyntaxException {
+        return mediaType()
+                .or(() -> Optional.ofNullable(responseMediaType))
+                .or(() -> {
+                    Optional<String> mediaType = probeContentType();
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.fine("HTTP response does not contain content-type, used guessed one: " + mediaType + ".");
+                    }
+                    return mediaType;
+                });
     }
 
-    private String probeContentType() {
-        return MediaTypes.detectType(url).orElse(null);
+    private Optional<String> probeContentType() {
+        return MediaTypes.detectType(url);
     }
 
     @Override

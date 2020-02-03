@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,17 +37,18 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  */
 public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSource<S> {
 
-    private final String mediaType;
-    private final ConfigParser parser;
+    private final Optional<String> mediaType;
+    private final Optional<ConfigParser> parser;
 
     /**
      * Initializes config source from builder.
      *
      * @param builder builder to be initialized from
      */
-    protected AbstractParsableConfigSource(AbstractParsableConfigSource.Builder builder) {
+    protected AbstractParsableConfigSource(AbstractParsableConfigSource.Builder<?, ?, ?> builder) {
         super(builder);
 
+        // using Optional as field types, as we already get them as optional
         mediaType = builder.mediaType();
         parser = builder.parser();
     }
@@ -64,16 +65,16 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      *
      * @return source associated media type or {@code null} if unknown.
      */
-    protected String mediaType() {
+    protected Optional<String> mediaType() {
         return mediaType;
     }
 
     /**
-     * Returns source associated parser or {@code null} if unknown.
+     * Returns source associated parser or {@code empty} if unknown.
      *
-     * @return source associated parser or {@code null} if unknown.
+     * @return source associated parser or {@code empty} if unknown.
      */
-    protected ConfigParser parser() {
+    protected Optional<ConfigParser> parser() {
         return parser;
     }
 
@@ -94,12 +95,12 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      * @throws ConfigParserException in case of problem to parse configuration from the source
      */
     private ObjectNode parse(ConfigContext context, ConfigParser.Content<S> content) throws ConfigParserException {
-        return Optional.ofNullable(parser())
-                .or(() -> context.findParser(Optional.ofNullable(content.mediaType())
+        return parser()
+                .or(() -> context.findParser(content.mediaType()
                                                      .orElseThrow(() -> new ConfigException("Unknown media type."))))
                 .map(parser -> parser.parse(content))
                 .orElseThrow(() -> new ConfigException("Cannot find suitable parser for '"
-                                                               + content.mediaType() + "' media type."));
+                                                               + content.mediaType().orElse(null) + "' media type."));
     }
 
     /**
@@ -192,8 +193,8 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
          *
          * @return media type property.
          */
-        protected String mediaType() {
-            return mediaType;
+        protected Optional<String> mediaType() {
+            return Optional.ofNullable(mediaType);
         }
 
         /**
@@ -201,10 +202,9 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
          *
          * @return parser property.
          */
-        protected ConfigParser parser() {
-            return parser;
+        protected Optional<ConfigParser> parser() {
+            return Optional.ofNullable(parser);
         }
 
     }
-
 }

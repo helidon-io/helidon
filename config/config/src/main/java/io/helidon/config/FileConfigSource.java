@@ -19,7 +19,6 @@ package io.helidon.config;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
@@ -91,10 +90,9 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    protected String mediaType() {
-        return Optional.ofNullable(super.mediaType())
-                .or(this::probeContentType)
-                .orElse(null);
+    protected Optional<String> mediaType() {
+        return super.mediaType()
+                .or(this::probeContentType);
     }
 
     private Optional<String> probeContentType() {
@@ -108,12 +106,14 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     @Override
     protected Content<byte[]> content() throws ConfigException {
-        Optional<byte[]> stamp = dataStamp();
-        LOGGER.log(Level.FINE, String.format("Getting content from '%s'", filePath));
+        LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
 
-        return Content.create(new StringReader(FileSourceHelper.safeReadContent(filePath)),
-                              mediaType(),
-                              stamp);
+        Content.Builder<byte[]> builder = Content.builder(new StringReader(FileSourceHelper.safeReadContent(filePath)));
+
+        dataStamp().ifPresent(builder::stamp);
+        mediaType().ifPresent(builder::mediaType);
+
+        return builder.build();
     }
 
     /**
