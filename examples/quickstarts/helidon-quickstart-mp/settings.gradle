@@ -15,4 +15,3 @@
  */
 
 rootProject.name = 'quickstart-mp'
-enableFeaturePreview("IMPROVED_POM_SUPPORT")
