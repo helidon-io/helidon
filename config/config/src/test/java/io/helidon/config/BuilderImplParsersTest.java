@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,8 +75,8 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testContextFindParserNotAvailable() {
-        ConfigParser.Content content = mock(ConfigParser.Content.class);
-        when(content.mediaType()).thenReturn(TEST_MEDIA_TYPE);
+        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
+        when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));
 
         BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(List.of(
                 mockParser("application/hocon", "application/json"),
@@ -83,13 +84,13 @@ public class BuilderImplParsersTest {
                 mockParser("application/x-yaml")
         ));
 
-        assertThat(context.findParser(content.mediaType()), is(Optional.empty()));
+        assertThat(context.findParser(content.mediaType().get()), is(Optional.empty()));
     }
 
     @Test
     public void testContextFindParserFindFirst() {
-        ConfigParser.Content content = mock(ConfigParser.Content.class);
-        when(content.mediaType()).thenReturn(TEST_MEDIA_TYPE);
+        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
+        when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));
 
         ConfigParser firstParser = mockParser(TEST_MEDIA_TYPE);
 
@@ -100,7 +101,7 @@ public class BuilderImplParsersTest {
                 mockParser("application/x-yaml")
         ));
 
-        assertThat(context.findParser(content.mediaType()).get(), is(firstParser));
+        assertThat(context.findParser(content.mediaType().get()).get(), is(firstParser));
     }
 
     private ConfigParser mockParser(String... supportedMediaTypes) {

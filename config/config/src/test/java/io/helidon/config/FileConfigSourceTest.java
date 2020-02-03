@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -47,7 +46,6 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -88,7 +86,7 @@ public class FileConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.mediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(configSource.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
     }
 
     @Test
@@ -99,7 +97,7 @@ public class FileConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.mediaType(), Is.is("text/x-java-properties"));
+        assertThat(configSource.mediaType(), is(Optional.of("text/x-java-properties")));
     }
 
     @Test
@@ -110,7 +108,7 @@ public class FileConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.mediaType(), is(nullValue()));
+        assertThat(configSource.mediaType(), is(Optional.empty()));
     }
 
     @Test
@@ -145,7 +143,7 @@ public class FileConfigSourceTest {
             @Override
             public ObjectNode parse(Content content) throws ConfigParserException {
                 assertThat(content, notNullValue());
-                assertThat(content.mediaType(), is("application/hocon"));
+                assertThat(content.mediaType(), is(Optional.of("application/hocon")));
                 try {
                     assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
                 } catch (IOException e) {

@@ -22,13 +22,13 @@ module io.helidon.config.etcd {
     requires java.logging;
     requires transitive io.helidon.config;
     requires etcd4j;
-    requires io.grpc;
     requires grpc.protobuf;
     requires grpc.stub;
     requires com.google.protobuf;
     requires com.google.common;
     requires io.helidon.common;
     requires io.helidon.common.media.type;
+    requires grpc.api;
 
     exports io.helidon.config.etcd;
 

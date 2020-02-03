@@ -229,10 +229,9 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    protected String mediaType() {
-        return Optional.ofNullable(super.mediaType())
-                .or(this::probeContentType)
-                .orElse(null);
+    protected Optional<String> mediaType() {
+        return super.mediaType()
+                .or(this::probeContentType);
     }
 
     private Optional<String> probeContentType() {
@@ -255,14 +254,20 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     @Override
     protected ConfigParser.Content<byte[]> content() throws ConfigException {
-        Instant lastModifiedTime = lastModifiedTime(targetPath);
-        LOGGER.log(Level.FINE, String.format("Getting content from '%s'. Last stamp is %s.", targetPath, lastModifiedTime));
+        if (LOGGER.isLoggable(Level.FINE)) {
+            Instant lastModifiedTime = lastModifiedTime(targetPath);
+            LOGGER.log(Level.FINE, String.format("Getting content from '%s'. Last stamp is %s.", targetPath, lastModifiedTime));
+        }
 
-        LOGGER.finest(FileSourceHelper.safeReadContent(targetPath));
-        Optional<byte[]> stamp = dataStamp();
-        return ConfigParser.Content.create(new StringReader(FileSourceHelper.safeReadContent(targetPath)),
-                                           mediaType(),
-                                           stamp);
+        String fileContent = FileSourceHelper.safeReadContent(targetPath);
+        LOGGER.finest(fileContent);
+
+        ConfigParser.Content.Builder<byte[]> builder = ConfigParser.Content.builder(new StringReader(fileContent));
+
+        mediaType().ifPresent(builder::mediaType);
+        dataStamp().ifPresent(builder::stamp);
+
+        return builder.build();
     }
 
     GitConfigSourceBuilder.GitEndpoint gitEndpoint() {

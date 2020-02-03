@@ -83,10 +83,9 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
     }
 
     @Override
-    protected String mediaType() {
-        return Optional.ofNullable(super.mediaType())
-                .or(this::probeContentType)
-                .orElse(null);
+    protected Optional<String> mediaType() {
+        return super.mediaType()
+                .or(this::probeContentType);
     }
 
     private Optional<String> probeContentType() {
@@ -95,16 +94,22 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
 
     @Override
     protected Optional<Instant> dataStamp() {
-        return Optional.ofNullable(ClasspathSourceHelper.resourceTimestamp(resource));
+        return Optional.of(ClasspathSourceHelper.resourceTimestamp(resource));
     }
 
     @Override
     protected ConfigParser.Content<Instant> content() throws ConfigException {
         return ClasspathSourceHelper.content(resource,
                                              description(),
-                                             (inputStreamReader, instant) -> ConfigParser.Content.create(inputStreamReader,
-                                                                                                         mediaType(),
-                                                                                                         instant));
+                                             (inputStreamReader, instant) -> {
+                                                 ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content
+                                                         .builder(inputStreamReader);
+
+                                                 builder.stamp(instant);
+                                                 mediaType().ifPresent(builder::mediaType);
+
+                                                 return builder.build();
+                                             });
     }
 
     @Override
