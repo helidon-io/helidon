@@ -188,30 +188,10 @@ public class FileConfigSourceTest {
                 .build();
 
         CountDownLatch latch = new CountDownLatch(1);
-        config.changes().subscribe(new Flow.Subscriber<Config>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-            }
 
-            @Override
-            public void onNext(Config item) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                latch.countDown();
-            }
-
-            @Override
-            public void onComplete() {
-                latch.countDown();
-            }
-        });
-
-        config.onChange((event) -> true);
+        config.onChange(newConfig -> latch.countDown());
 
         assertThat(latch.await(120, TimeUnit.SECONDS), is(false));
-
     }
 
     @Test

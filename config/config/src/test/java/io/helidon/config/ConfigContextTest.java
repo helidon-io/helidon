@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,9 +126,8 @@ public class ConfigContextTest {
     public void testContextReloadNoPollingSourceSame(Map.Entry<String,String> e) throws InterruptedException {
         TestContext c = new TestContext(e);
         // subscribe on changes
-        TestingConfigChangeSubscriber subscriber1 = new TestingConfigChangeSubscriber();
-        c.config.changes().subscribe(subscriber1);
-        subscriber1.request1();
+        ConfigChangeListener listener = new ConfigChangeListener();
+        c.config.onChange(listener::onChange);
 
         // config contains old data
         assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
@@ -145,7 +144,7 @@ public class ConfigContextTest {
         assertConfigIsTheLast(c.config.context(), reloaded);
 
         // no other events
-        assertThat(subscriber1.getLastOnNext(500, false), is(nullValue()));
+        assertThat(listener.get(100, false), is(nullValue()));
     }
 
     private static void assertConfigIsTheLast(Config.Context context, Config config) {
@@ -159,9 +158,8 @@ public class ConfigContextTest {
     public void testContextReloadNoPollingSourceChanged(Map.Entry<String,String> e) throws InterruptedException {
         TestContext c = new TestContext(e);
         // subscribe on changes
-        TestingConfigChangeSubscriber subscriber1 = new TestingConfigChangeSubscriber();
-        c.config.changes().subscribe(subscriber1);
-        subscriber1.request1();
+        ConfigChangeListener listener = new ConfigChangeListener();
+        c.config.onChange(listener::onChange);
 
         // config contains old data
         assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
@@ -181,7 +179,7 @@ public class ConfigContextTest {
         assertConfigIsTheLast(c.config.context(), reloaded);
 
         // change event
-        Config last1 = subscriber1.getLastOnNext(200, true);
+        Config last1 = listener.get(100, true);
         assertThat(last1.key().toString(), is(c.key));
         assertThat(last1.get(PROP1).asString(), is(ConfigValues.simpleValue(c.newValue)));
     }
@@ -192,9 +190,8 @@ public class ConfigContextTest {
         ) throws InterruptedException {
         TestContext c = new TestContext(e);
         // subscribe on changes
-        TestingConfigChangeSubscriber subscriber1 = new TestingConfigChangeSubscriber();
-        c.config.changes().subscribe(subscriber1);
-        subscriber1.request1();
+        ConfigChangeListener listener = new ConfigChangeListener();
+        c.config.onChange(listener::onChange);
 
         // config contains old data
         assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
@@ -204,7 +201,7 @@ public class ConfigContextTest {
         c.changeSource(true, "old");
 
         // no other events
-        assertThat(subscriber1.getLastOnNext(500, false), is(nullValue()));
+        assertThat(listener.get(100, false), is(nullValue()));
 
         // context references the last reloaded config
         assertConfigIsTheLast(c.config.context(), c.config);
@@ -214,9 +211,8 @@ public class ConfigContextTest {
     @MethodSource("initParams")
     public void testWithPollingSourceChanged(Map.Entry<String,String> e) throws InterruptedException {
         TestContext c = new TestContext(e);// subscribe on changes
-        TestingConfigChangeSubscriber subscriber1 = new TestingConfigChangeSubscriber();
-        c.config.changes().subscribe(subscriber1);
-        subscriber1.request1();
+        ConfigChangeListener listener = new ConfigChangeListener();
+        c.config.onChange(listener::onChange);
 
         // config contains old data
         assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
@@ -226,7 +222,7 @@ public class ConfigContextTest {
         c.changeSource(true, "new");
 
         // change event
-        Config last1 = subscriber1.getLastOnNext(200, true);
+        Config last1 = listener.get(100, true);
         assertThat(last1.key().toString(), is(c.key));
         assertThat(last1.get(PROP1).asString(), is(ConfigValues.simpleValue(c.newValue)));
 

@@ -305,8 +305,7 @@ class ProviderImpl implements Config.Context {
      * The publisher repeats the last change event with any new subscriber.
      *
      * @return {@link Flow.Publisher} to be subscribed in. Never returns {@code null}.
-     * @see Config#changes()
-     * @see Config#onChange(Function)
+     * @see Config#onChange(java.util.function.Consumer)
      */
     public Flow.Publisher<ConfigDiff> changes() {
         return changesPublisher;

@@ -30,6 +30,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -342,8 +343,27 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
     }
 
     @Override
-    public Flow.Publisher<Config> changes() {
-        return changesPublisher;
+    public void onChange(Consumer<Config> onChangeConsumer) {
+        changesPublisher.subscribe(new Flow.Subscriber<>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                // I want all
+                subscription.request(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(Config item) {
+                onChangeConsumer.accept(item);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
     }
 
     void initMp() {
