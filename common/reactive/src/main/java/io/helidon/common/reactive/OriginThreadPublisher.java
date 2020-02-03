@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import java.util.logging.Logger;
  * {@link #submit(Object)}. In other words, whenever the source of chunks sends data, the same thread is used to deliver the data
  * to the subscriber.
  * <p>
- * Standard publisher implementations (such as {@link SubmissionPublisher} or Reactor Flux would use the same thread as
- * {@link Subscription#request(long)} was called on to deliver the chunk when the data are already available; this implementation
- * however strictly uses the originating thread.<p>
+ * Standard publisher implementations (such as {@link java.util.concurrent.SubmissionPublisher} or Reactor Flux would use
+ * the same thread as {@link Subscription#request(long)} was called on to deliver the chunk when the data are already available;
+ * this implementation however strictly uses the originating thread.<p>
  * In order to be able to achieve such behavior, this publisher provides hooks on subscription methods: {@link #hookOnCancel()}
  * and {@link #hookOnRequested(long, long)}.
  * </p>
