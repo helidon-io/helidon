@@ -1354,8 +1354,10 @@ public class JpaExtension implements Extension {
 
         Objects.requireNonNull(event);
 
+        int persistenceUnitCount = 0;
         PersistenceUnitInfoBean solePersistenceUnitInfoBean = null;
         for (final PersistenceUnitInfoBean persistenceUnitInfoBean : this.implicitPersistenceUnits.values()) {
+            assert persistenceUnitInfoBean != null;
             String persistenceUnitName = persistenceUnitInfoBean.getPersistenceUnitName();
             if (persistenceUnitName == null || persistenceUnitName.isEmpty()) {
                 persistenceUnitName = DEFAULT_PERSISTENCE_UNIT_NAME;
@@ -1381,14 +1383,21 @@ public class JpaExtension implements Extension {
                 .scope(ApplicationScoped.class)
                 .addQualifiers(NamedLiteral.of(persistenceUnitName))
                 .createWith(cc -> persistenceUnitInfoBean);
-            if (solePersistenceUnitInfoBean == null) {
+            if (persistenceUnitCount == 0) {
+                assert solePersistenceUnitInfoBean == null;
                 solePersistenceUnitInfoBean = persistenceUnitInfoBean;
-            } else {
+            } else if (solePersistenceUnitInfoBean != null) {
                 solePersistenceUnitInfoBean = null;
             }
             maybeAddPersistenceProviderBean(event, persistenceUnitInfoBean, providers);
+            persistenceUnitCount++;
         }
-        if (solePersistenceUnitInfoBean != null) {
+        switch (persistenceUnitCount) {
+        case 0:
+            break;
+
+        case 1:
+            assert solePersistenceUnitInfoBean != null;
             final String name = solePersistenceUnitInfoBean.getPersistenceUnitName();
             if (name != null && !name.isEmpty()) {
                 this.defaultPersistenceUnitInEffect = true;
@@ -1401,6 +1410,14 @@ public class JpaExtension implements Extension {
                     .addQualifiers(NamedLiteral.of(DEFAULT_PERSISTENCE_UNIT_NAME))
                     .createWith(cc -> instance);
             }
+            break;
+
+        default:
+            assert persistenceUnitCount > 1;
+            assert solePersistenceUnitInfoBean == null
+                : "Unexpected solePersistenceUnitInfoBean: " + solePersistenceUnitInfoBean
+                + " with persistenceUnitCount " + persistenceUnitCount;
+            break;
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
