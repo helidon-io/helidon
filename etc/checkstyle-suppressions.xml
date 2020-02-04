@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2016, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,23 +26,23 @@
             files="config/config/src/main/java/io/helidon/config/Config.java|integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
             lines="1"/>
 
-        <!-- Java comments with AsciiDoc tag:: and end:: in import section incorrectly flagged
-             as unacceptable blank lines within a package's imports. -->
-        <suppress checks="ImportOrder"
+    <!-- Java comments with AsciiDoc tag:: and end:: in import section incorrectly flagged
+         as unacceptable blank lines within a package's imports. -->
+    <suppress checks="ImportOrder"
             files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/Main.java"/>
-        <suppress checks="ImportOrder"
+    <suppress checks="ImportOrder"
             files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/GreetService.java"/>
-        <suppress checks="NoWhitespaceBefore|SeparatorWrap"
+    <suppress checks="NoWhitespaceBefore|SeparatorWrap"
             files="examples/guides/mp-restful-webservice/src/main/java/io/helidon/guides/mp/restfulwebservice/GreetApplication.java"/>
-        <!--
-         The following files are work taken over from other projects,
-            where we want to keep the author tag untouched
-        -->
-        <!-- Common HTTP project -->
-        <suppress id="Javadoc.javadocNoAuthor"
+    <!--
+     The following files are work taken over from other projects,
+        where we want to keep the author tag untouched
+    -->
+    <!-- Common HTTP project -->
+    <suppress id="Javadoc.javadocNoAuthor"
             files="common/http/Preconditions\.java|common/http/Ascii\.java|common/http/CharMatcher\.java"/>
-        <!-- Webserver project -->
-        <suppress id="Javadoc.javadocNoAuthor"
+    <!-- Webserver project -->
+    <suppress id="Javadoc.javadocNoAuthor"
             files="webserver/UriComponent\.java"/>
 </suppressions>
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2016, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@
         <version.lib.arquillian-weld-embedded>2.0.0.Final</version.lib.arquillian-weld-embedded>
         <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
         <version.lib.asm>6.0</version.lib.asm>
-        <version.lib.checkstyle>8.18</version.lib.checkstyle>
+        <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.classfilewriter>1.2.4.Final</version.lib.classfilewriter>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.jboss-annotations-api_1.3_spec>1.0.0.Final</version.lib.jboss-annotations-api_1.3_spec>
@@ -87,7 +87,7 @@
         <version.plugin.archetype-packaging>3.1.2</version.plugin.archetype-packaging>
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.build-helper>1.12</version.plugin.build-helper>
-        <version.plugin.checkstyle>2.17</version.plugin.checkstyle>
+        <version.plugin.checkstyle>3.1.0</version.plugin.checkstyle>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.directory>0.1</version.plugin.directory>
@@ -474,7 +474,9 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.plugin.checkstyle}</version>
                     <configuration>
-                        <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                        <sourceDirectories>
+                            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                        </sourceDirectories>
                     </configuration>
                     <dependencies>
                         <dependency>

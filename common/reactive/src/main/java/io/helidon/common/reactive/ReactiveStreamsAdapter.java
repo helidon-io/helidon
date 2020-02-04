@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,9 @@ import reactor.core.publisher.Flux;
 @Deprecated
 public final class ReactiveStreamsAdapter {
 
-    private ReactiveStreamsAdapter() {} // uninstantiable
+    // uninstantiable
+    private ReactiveStreamsAdapter() {
+    }
 
     /**
      * Return a {@link Flow.Publisher} from a {@link
