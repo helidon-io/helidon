@@ -171,7 +171,7 @@ class Serializer {
                     .contains(((Enum) propertyValue).name())) {
                 v = ((Enum) propertyValue).name().toLowerCase();
             }
-            NodeTuple result = super.representJavaBeanProperty(javaBean, p, v, customTag);
+            NodeTuple result = okToProcess(javaBean, property) ? super.representJavaBeanProperty(javaBean, p, v, customTag) : null;
             return result;
         }
 
@@ -207,6 +207,20 @@ class Serializer {
                 }
             });
             node.setValue(updatedTuples);
+        }
+
+        /**
+         * Some SmallRye implementation classes have properties not supported by the implemented interface, so ignore those or
+         * the serialized YAML will contain SmallRye-only properties.
+         *
+         * @param javaBean the bean being serialized
+         * @param property the property being serialized
+         * @return true if the property should be processes; false otherwise
+         */
+        private boolean okToProcess(Object javaBean, Property property) {
+            boolean reject = false;
+            reject |= Parameter.class.isAssignableFrom(javaBean.getClass()) && property.getName().equals("hidden");
+            return !reject;
         }
     }
 

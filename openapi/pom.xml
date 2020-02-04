@@ -34,6 +34,51 @@
 
     <packaging>jar</packaging>
 
+    <properties>
+        <openapi-interfaces-dir>${project.build.directory}/extracted-sources/openapi-interfaces</openapi-interfaces-dir>
+        <openapi-impls-dir>${project.build.directory}/extracted-sources/openapi-impls</openapi-impls-dir>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-openapi-interfaces</id>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>sources</classifier>
+                            <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
+                            <outputDirectory>${openapi-interfaces-dir}</outputDirectory>
+                            <includeGroupIds>org.eclipse.microprofile.openapi</includeGroupIds>
+                            <includeArtifactIds>microprofile-openapi-api</includeArtifactIds>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-openapi-impls</id>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>sources</classifier>
+                            <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
+                            <outputDirectory>${openapi-impls-dir}</outputDirectory>
+                            <includeGroupIds>io.smallrye</includeGroupIds>
+                            <includeArtifactIds>smallrye-open-api</includeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
