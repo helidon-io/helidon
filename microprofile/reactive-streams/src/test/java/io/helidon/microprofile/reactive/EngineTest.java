@@ -881,4 +881,15 @@ public class EngineTest {
         sub.request(1);
         sub.expectRequestCount(1);
     }
+
+    @Test
+    void errorOnTerminate() throws InterruptedException, ExecutionException, TimeoutException {
+        assertThrows(ExecutionException.class, () -> ReactiveStreams.of("foo")
+                .onTerminate(() -> {
+                    throw new TestRuntimeException();
+                })
+                .toList()
+                .run()
+                .toCompletableFuture().get(10, TimeUnit.MILLISECONDS));
+    }
 }

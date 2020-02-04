@@ -50,7 +50,7 @@ public class MultiDropWhileProcessor<T> extends BaseProcessor<T, T> implements M
             foundNotMatching = true;
             submit(item);
         } else {
-            tryRequest(getSubscription().get());
+            this.getSubscription().ifPresent(s -> s.request(1));
         }
 
     }

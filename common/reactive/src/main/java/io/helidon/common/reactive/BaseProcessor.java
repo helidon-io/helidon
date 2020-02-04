@@ -19,10 +19,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Processor;
-import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -35,11 +33,8 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     private Subscription subscription;
     private final SingleSubscriberHolder<U> subscriber;
-    private final RequestedCounter requested;
     private final RequestedCounter ableToSubmit;
     private final ReentrantLock subscriptionLock = new ReentrantLock();
-    private final AtomicBoolean ready;
-    private final AtomicBoolean subscribed;
     private volatile boolean done;
     private Throwable error;
     private boolean strictMode = DEFAULT_STRICT_MODE;
@@ -49,10 +44,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      * Generic processor used for the implementation of {@link Multi} and {@link Single}.
      */
     protected BaseProcessor() {
-        requested = new RequestedCounter(strictMode);
         ableToSubmit = new RequestedCounter(strictMode);
-        ready = new AtomicBoolean();
-        subscribed = new AtomicBoolean();
         subscriber = new SingleSubscriberHolder<>();
     }
 
@@ -65,13 +57,9 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     @Override
     public void request(long n) {
         ableToSubmit.increment(n, this::failAndCancel);
-        subscriptionLock(() -> {
-            if (subscription != null && !subscriber.isClosed()) {
-                subscription.request(n);
-            } else {
-                requested.increment(n, this::failAndCancel);
-            }
-        });
+        if (!subscriber.isClosed()) {
+            subscription.request(n);
+        }
         if (done) {
             tryComplete();
         }
@@ -93,11 +81,32 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         subscriptionLock(() -> {
             if (subscription == null) {
                 this.subscription = s;
-                tryRequest(s);
+                tryOnSubscribe();
             } else {
                 s.cancel();
             }
         });
+    }
+
+    @Override
+    public void subscribe(Subscriber<? super U> sub) {
+        subscriptionLock(() -> {
+            var s = sub;
+            if (strictMode) {
+                s = SequentialSubscriber.create(sub);
+            }
+            if (subscriber.register(s)) {
+                tryOnSubscribe();
+            }
+        });
+    }
+
+    private void tryOnSubscribe() {
+        if (Objects.nonNull(subscription) && subscriber.tryOnSubscribe(this)) {
+            if (done) {
+                tryComplete();
+            }
+        }
     }
 
     @Override
@@ -139,6 +148,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void onError(Throwable ex) {
+        hookOnError(ex);
         fail(ex);
     }
 
@@ -146,23 +156,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     public void onComplete() {
         done = true;
         tryComplete();
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super U> sub) {
-        subscriptionLock(() -> {
-            var s = sub;
-            if (strictMode) {
-                s = SequentialSubscriber.create(sub);
-            }
-            if (subscriber.register(s)) {
-                ready.set(true);
-                s.onSubscribe(this);
-                if (done) {
-                    tryComplete();
-                }
-            }
-        });
     }
 
     /**
@@ -191,17 +184,8 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
                 failAndCancel(ex);
             }
         } else {
-            notEnoughRequest(item);
+            onError(new IllegalStateException("Not enough request to submit item"));
         }
-    }
-
-    /**
-     * Define what to do when there is not enough requests to submit item.
-     *
-     * @param item Item for submitting
-     */
-    protected void notEnoughRequest(U item) {
-        onError(new IllegalStateException("Not enough request to submit item"));
     }
 
     /**
@@ -235,37 +219,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
     }
 
-    /**
-     * Subscribe the subscriber after the given delegate publisher.
-     *
-     * @param delegate delegate publisher
-     */
-    protected final void doSubscribe(Publisher<U> delegate) {
-        if (subscribed.compareAndSet(false, true)) {
-            delegate.subscribe(new Subscriber<>() {
-                @Override
-                public void onSubscribe(Subscription subscription) {
-                    tryRequest(ableToSubmit, subscription);
-                }
-
-                @Override
-                public void onNext(U item) {
-                    submit(item);
-                }
-
-                @Override
-                public void onError(Throwable ex) {
-                    BaseProcessor.this.failAndCancel(ex);
-                }
-
-                @Override
-                public void onComplete() {
-                    BaseProcessor.this.onComplete();
-                }
-            });
-        }
-    }
-
     private void completeOnError(Subscriber<? super U> sub, Throwable ex) {
         hookOnError(ex);
         sub.onError(ex);
@@ -275,45 +228,19 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      * Try close processor's subscriber.
      */
     protected void tryComplete() {
-        if (ready.get() && !subscriber.isClosed()) {
+        if (subscriber.isReady()) {
+            subscriber.tryOnSubscribe(this);
             if (error != null) {
                 subscriber.close(sub -> completeOnError(sub, error));
             } else {
                 try {
                     hookOnComplete();
                 } catch (Throwable ex) {
-                    subscriber.close(sub -> completeOnError(sub, ex));
+                    subscriber.close(sub -> sub.onError(ex));
                     return;
                 }
                 subscriber.close(Subscriber::onComplete);
             }
-        }
-    }
-
-    /**
-     * Responsible for calling {@link Flow.Subscription#request(long)}.
-     *
-     * @param subscription {@link Flow.Subscription} to make a request from
-     */
-    protected void tryRequest(Subscription subscription) {
-        tryRequest(requested, subscription);
-    }
-
-    private void tryRequest(RequestedCounter counter, Subscription subscription) {
-        if (subscription == null || subscriber.isClosed()) {
-            return;
-        }
-
-        long n;
-        try {
-            counter.lock();
-            n = counter.get();
-            if (n < 1) {
-                return;
-            }
-            subscription.request(n);
-        } finally {
-            counter.unlock();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
-
-import io.helidon.common.mapper.Mapper;
+import java.util.function.Function;
 
 /**
  * Processor of {@link Single} to {@link Publisher} that expands the first (and
@@ -27,29 +27,36 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class SingleMultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
+final class SingleMultiMappingProcessor<T, U> extends MultiFlatMapProcessor<T, U> implements Multi<U> {
 
-    private Publisher<U> delegate;
-    private final Mapper<T, Publisher<U>> mapper;
+    private CompletableFuture<Flow.Subscriber<? super U>> subscriberFuture = new CompletableFuture<>();
 
-    SingleMultiMappingProcessor(Mapper<T, Publisher<U>> mapper) {
-        this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
+    private SingleMultiMappingProcessor() {
+        super();
+    }
+
+    static <T, U> SingleMultiMappingProcessor<T, U> create() {
+        return new SingleMultiMappingProcessor<>();
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        Publisher<U> value = mapper.map(item);
-        if (value == null) {
-            onError(new IllegalStateException("Mapper returned a null value"));
-        } else {
-            delegate = value;
-        }
+    public SingleMultiMappingProcessor<T, U> mapper(Function<T, Publisher<U>> mapper) {
+        super.mapper(mapper);
+        return this;
     }
 
     @Override
-    protected void hookOnComplete() {
-        if (delegate != null) {
-            doSubscribe(delegate);
-        }
+    public void subscribe(Flow.Subscriber<? super U> subscriber) {
+        subscriberFuture.complete(subscriber);
+        super.subscribe(subscriber);
+    }
+
+    @Override
+    public void onComplete() {
+        subscriberFuture.whenComplete((s, t) -> {
+            if (error().isEmpty()) {
+                s.onComplete();
+            }
+        });
     }
 }

@@ -53,7 +53,7 @@ public class MultiDistinctProcessor<T> extends BaseProcessor<T, T> implements Mu
             distinctSet.add(item);
             submit(item);
         } else {
-            tryRequest(getSubscription().get());
+            this.getSubscription().ifPresent(s -> s.request(1));
         }
     }
 }

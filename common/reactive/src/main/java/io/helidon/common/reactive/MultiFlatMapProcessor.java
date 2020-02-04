@@ -44,7 +44,41 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     private boolean strictMode = BaseProcessor.DEFAULT_STRICT_MODE;
 
 
-    private MultiFlatMapProcessor() {
+    /**
+     * Create new {@link MultiFlatMapProcessor}.
+     */
+    protected MultiFlatMapProcessor() {
+    }
+
+    /**
+     * Create new {@link MultiFlatMapProcessor} with item to {@link java.lang.Iterable} mapper.
+     *
+     * @param mapper to provide iterable for every item from upstream
+     */
+    protected MultiFlatMapProcessor(Function<T, Flow.Publisher<X>> mapper) {
+        Objects.requireNonNull(mapper);
+        this.mapper = t -> (Flow.Publisher<X>) mapper.apply(t);
+    }
+
+    /**
+     * Set mapper used for publisher creation.
+     *
+     * @param mapper function used for publisher creation
+     * @return {@link MultiFlatMapProcessor}
+     */
+    protected MultiFlatMapProcessor<T, X> mapper(Function<T, Flow.Publisher<X>> mapper) {
+        Objects.requireNonNull(mapper);
+        this.mapper = mapper;
+        return this;
+    }
+
+    /**
+     * Return received error if any.
+     *
+     * @return Optional with received error if any
+     */
+    protected Optional<Throwable> error() {
+        return this.error;
     }
 
     /**
@@ -55,11 +89,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
      * @param <R>    output item type
      * @return {@link MultiFlatMapProcessor}
      */
-    @SuppressWarnings("unchecked")
     public static <T, R> MultiFlatMapProcessor<T, R> fromIterableMapper(Function<T, Iterable<R>> mapper) {
-        MultiFlatMapProcessor<T, R> flatMapProcessor = new MultiFlatMapProcessor<>();
-        flatMapProcessor.mapper = o -> (Multi<R>) Multi.from(mapper.apply(o));
-        return flatMapProcessor;
+        return new MultiFlatMapProcessor<>(o -> Multi.from(mapper.apply(o)));
     }
 
     /**
@@ -70,11 +101,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
      * @param <U>    output item type
      * @return {@link MultiFlatMapProcessor}
      */
-    @SuppressWarnings("unchecked")
     public static <T, U> MultiFlatMapProcessor<T, U> fromPublisherMapper(Function<T, Flow.Publisher<U>> mapper) {
-        MultiFlatMapProcessor<T, U> flatMapProcessor = new MultiFlatMapProcessor<>();
-        flatMapProcessor.mapper = t -> (Flow.Publisher<U>) mapper.apply(t);
-        return flatMapProcessor;
+        return new MultiFlatMapProcessor<>(mapper);
     }
 
     @Override
@@ -130,11 +158,17 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     public void onNext(T o) {
         Objects.requireNonNull(o);
         try {
-            innerPublisher = mapper.apply(o);
+            var mapperReturnedPublisher = mapper.apply(o);
+            if (Objects.isNull(mapperReturnedPublisher)) {
+                throw new IllegalStateException("Mapper returned a null value!");
+            }
+            stateLock(() -> {
+                innerPublisher = mapperReturnedPublisher;
+            });
             innerPublisher.subscribe(new InnerSubscriber());
         } catch (Throwable t) {
             subscription.cancel();
-            subscriber.onError(t);
+            onError(t);
         }
     }
 

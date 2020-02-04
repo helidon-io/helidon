@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,6 +54,8 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private Flow.Subscription passedInPublisherSubscription;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private Queue<Runnable> forbiddenCalls = new LinkedList<>();
+    private CompletableFuture<Void> readyToSignalPassedInSubscriber = new CompletableFuture<>();
+
 
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
         this.passedInSubscriber = SequentialSubscriber.create(passedInSubscriber);
@@ -100,26 +103,31 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 outletSubscriber.onNext(t);
             }
 
+
             @Override
             public void onError(Throwable t) {
                 //Passed in publisher sent onError
-                cancelled.set(true);
+                //cancelled.set(true);
                 Objects.requireNonNull(t);
                 outletSubscriber.onError(t);
-                passedInSubscriber.onError(t);
+                readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+                    //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
+                    forbiddenCalls.offer(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
+                    passedInSubscriber.onError(t);
+                });
                 inletSubscriber.onError(t);
-                //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                forbiddenCalls.offer(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
             }
 
             @Override
             public void onComplete() {
                 //Passed in publisher completed
-                cancelled.set(true);
+                //cancelled.set(true);
                 outletSubscriber.onComplete();
-                passedInSubscriber.onComplete();
-                //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                forbiddenCalls.offer(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
+                readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+                    //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
+                    forbiddenCalls.offer(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
+                    passedInSubscriber.onComplete();
+                });
             }
         });
 
@@ -171,6 +179,9 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 tryForbiddenCalls();
             }
         });
+
+        readyToSignalPassedInSubscriber.complete(null);
+        tryForbiddenCalls();
     }
 
     @Override
@@ -182,19 +193,21 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     @Override
     public void onError(Throwable t) {
         // Inlet/upstream publisher sent error
-        cancelled.set(true);
-        passedInSubscriber.onError(Objects.requireNonNull(t));
+        readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+            passedInSubscriber.onError(Objects.requireNonNull(t));
+        });
         outletSubscriber.onError(t);
-        passedInPublisherSubscription.cancel();
+        forbiddenCalls.add(() -> passedInPublisherSubscription.cancel());
     }
 
     @Override
     public void onComplete() {
         // Inlet/upstream publisher completed
-        cancelled.set(true);
-        passedInSubscriber.onComplete();
+        readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+            passedInSubscriber.onComplete();
+        });
         outletSubscriber.onComplete();
-        passedInPublisherSubscription.cancel();
+        forbiddenCalls.add(() -> passedInPublisherSubscription.cancel());
     }
 
     private void tryForbiddenCalls() {

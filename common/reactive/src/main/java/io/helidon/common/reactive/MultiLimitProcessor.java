@@ -46,7 +46,15 @@ public class MultiLimitProcessor<T> extends BaseProcessor<T, T> implements Multi
 
     @Override
     public void subscribe(Flow.Subscriber<? super T> s) {
+        if (counter.get() == 0L) {
+            tryComplete();
+        }
         super.subscribe(s);
+    }
+
+    @Override
+    public void onSubscribe(Flow.Subscription s) {
+        super.onSubscribe(s);
         if (counter.get() == 0L) {
             tryComplete();
         }
