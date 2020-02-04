@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -255,8 +256,7 @@ public class TyrusSupport implements Service {
 
             // Respond to upgrade request using response from Tyrus
             res.status(upgradeResponse.getStatus());
-            upgradeResponse.getHeaders().entrySet().forEach(e ->
-                    res.headers().add(e.getKey(), e.getValue()));
+            upgradeResponse.getHeaders().forEach((key, value) -> res.headers().add(key, value));
             TyrusWriterPublisher publisherWriter = new TyrusWriterPublisher();
             res.send(publisherWriter);
 
@@ -271,28 +271,24 @@ public class TyrusSupport implements Service {
             // Flush upgrade response
             publisherWriter.write(FLUSH_BUFFER, null);
 
-            // Setup the WebSocket connection and internally the ReaderHandler
-            Connection connection;
+            // Setup the WebSocket connection and subscriber, calls @onOpen
             if (executorService != null) {
-                try {
-                    // Set up connection and call @onOpen
-                    Future<Connection> future = executorService.submit(() ->
-                            upgradeInfo.createConnection(publisherWriter,
-                                    closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason)));
-                    connection = future.get();      // Need to sync here
-                } catch (InterruptedException | ExecutionException e) {
-                    LOGGER.warning("Unable to create websocket connection");
-                    throw new RuntimeException(e);
-                }
+                CompletableFuture<Connection> future =
+                        CompletableFuture.supplyAsync(
+                                () -> upgradeInfo.createConnection(publisherWriter,
+                                        closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason)),
+                                executorService);
+                future.thenAccept(c -> {
+                    TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(c, executorService);
+                    req.content().subscribe(subscriber);
+                });
             } else {
-                connection = upgradeInfo.createConnection(publisherWriter,
+                Connection connection = upgradeInfo.createConnection(publisherWriter,
                         closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason));
-            }
-
-            // Set up reader to pass data back to Tyrus
-            if (connection != null) {
-                TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection, executorService);
-                req.content().subscribe(subscriber);
+                if (connection != null) {
+                    TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection, executorService);
+                    req.content().subscribe(subscriber);
+                }
             }
         }
     }
