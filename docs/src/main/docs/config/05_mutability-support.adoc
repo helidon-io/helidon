@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ useful.
 ====
 This section describes the `Config.changes()` method. It is marked
 as deprecated because it returns an `io.helidon.reactive.Flow.Publisher` object.
-In a future Helidon release that requires Java 9 or later this method will be undeprecated 
+In a future Helidon release that requires Java 11 or later this method will be undeprecated
 and changed -- or a similar method will be added -- so that the return type is
 `java.util.concurrent.Flow.Publisher` instead. 
 
