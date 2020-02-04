@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [Unreleased] 
+## [2.0.0-M1] 
 
 ### Notes
 
@@ -34,7 +34,7 @@ Notable changes:
 - Security: Basic auth and OIDC in MP native image [1330](https://github.com/oracle/helidon/pull/1330)
 - Security: JWT and OIDC security providers now support groups claim. [1324](https://github.com/oracle/helidon/pull/1324)
 - Support for Helidon Features [1240](https://github.com/oracle/helidon/pull/1240)
-- Java 11: [1232](https://github.com/oracle/helidon/pull/1232) [1187](https://github.com/oracle/helidon/pull/1187) [1222](https://github.com/oracle/helidon/pull/1222)
+- Java 11: [1232](https://github.com/oracle/helidon/pull/1232) [1187](https://github.com/oracle/helidon/pull/1187) [1222](https://github.com/oracle/helidon/pull/1222) [1346](https://github.com/oracle/helidon/pull/1346)
 
 ### Fixes
 
@@ -43,6 +43,7 @@ Notable changes:
 - Config: replace reflection with service loader [1102](https://github.com/oracle/helidon/pull/1102)
 - Config: now uses common media type module instead of FileTypeDetector. [1332](https://github.com/oracle/helidon/pull/1332)
 - JPA: Permit non-XA DataSources to take part in JTA transactions [1316](https://github.com/oracle/helidon/pull/1316)
+- JPA: Fixes an issue with multiple persistence units [1342](https://github.com/oracle/helidon/pull/1342)
 - JPA: Address several rollback-related issues [1146](https://github.com/oracle/helidon/pull/1146)
 - JPA: Relax requirements on container-managed persistence units which can now be resource-local [1243](https://github.com/oracle/helidon/pull/1243)
 - OpenAPI: Support multiple jandex files on the classpath [1320](https://github.com/oracle/helidon/pull/1320)
@@ -187,4 +188,4 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.4.0...HEAD
+[2.0.0-M1]: https://github.com/oracle/helidon/compare/1.4.0...HEAD
