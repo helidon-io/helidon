@@ -236,7 +236,7 @@ public class TyrusSupport implements Service {
         public void accept(ServerRequest req, ServerResponse res) {
             // Skip this handler if not an upgrade request
             Optional<String> secWebSocketKey = req.headers().value(HandshakeRequest.SEC_WEBSOCKET_KEY);
-            if (!secWebSocketKey.isPresent()) {
+            if (secWebSocketKey.isEmpty()) {
                 req.next();
                 return;
             }
@@ -247,8 +247,7 @@ public class TyrusSupport implements Service {
             RequestContext requestContext = RequestContext.Builder.create()
                     .requestURI(URI.create(req.path().toString()))      // excludes context path
                     .build();
-            req.headers().toMap().entrySet().forEach(e ->
-                    requestContext.getHeaders().put(e.getKey(), e.getValue()));
+            req.headers().toMap().forEach((key, value) -> requestContext.getHeaders().put(key, value));
 
             // Use Tyrus to process a WebSocket upgrade request
             final TyrusUpgradeResponse upgradeResponse = new TyrusUpgradeResponse();

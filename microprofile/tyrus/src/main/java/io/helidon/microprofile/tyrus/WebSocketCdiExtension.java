@@ -47,7 +47,7 @@ public class WebSocketCdiExtension implements Extension {
      * @param applicationClass Application class.
      */
     private void applicationClass(@Observes ProcessAnnotatedType<? extends ServerApplicationConfig> applicationClass) {
-        LOGGER.info(() -> "Application class found " + applicationClass.getAnnotatedType().getJavaClass());
+        LOGGER.finest(() -> "Application class found " + applicationClass.getAnnotatedType().getJavaClass());
         appBuilder.applicationClass(applicationClass.getAnnotatedType().getJavaClass());
     }
 
@@ -57,7 +57,7 @@ public class WebSocketCdiExtension implements Extension {
      * @param applicationClass Application class.
      */
     public void applicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
-        LOGGER.info(() -> "Using manually set application class  " + applicationClass);
+        LOGGER.finest(() -> "Using manually set application class  " + applicationClass);
         appBuilder.updateApplicationClass(applicationClass);
     }
 
@@ -67,7 +67,7 @@ public class WebSocketCdiExtension implements Extension {
      * @param endpoint The endpoint.
      */
     private void endpointClasses(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> endpoint) {
-        LOGGER.info(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        LOGGER.finest(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.annotatedEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }
 
@@ -77,7 +77,7 @@ public class WebSocketCdiExtension implements Extension {
      * @param endpoint The endpoint.
      */
     private void endpointConfig(@Observes ProcessAnnotatedType<? extends Endpoint> endpoint) {
-        LOGGER.info(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        LOGGER.finest(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.programmaticEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }
 

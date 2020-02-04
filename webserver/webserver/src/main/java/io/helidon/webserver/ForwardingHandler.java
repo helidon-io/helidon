@@ -215,7 +215,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 throw new IllegalStateException("Received ByteBuf without upgrading to WebSockets");
             }
             // Simply forward raw bytebuf to Tyrus for processing
-            LOGGER.fine("Received ByteBuf of WebSockets connection" + msg);
+            LOGGER.finest(() -> "Received ByteBuf of WebSockets connection" + msg);
             requestContext.publisher().submit((ByteBuf) msg);
         }
     }
