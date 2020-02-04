@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ RUN set -x \
     && apt-get -y update \
     && apt-get -y install curl
 
-RUN curl -O -L https://github.com/oracle/graal/releases/download/vm-19.2.0/graalvm-ce-linux-amd64-19.2.0.tar.gz && \
+RUN curl -O -L https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.1/graalvm-ce-java11-linux-amd64-19.3.1.tar.gz && \
     tar -xvzf graalvm-*.tar.gz && \
     rm graalvm-*.tar.gz && \
     mv graalvm-* graalvm && \
@@ -30,23 +30,19 @@ RUN curl -O -L https://github.com/oracle/graal/releases/download/vm-19.2.0/graal
 
 RUN cd graalvm && \
     rm -rf \
-    sample \
-    man \
-    jre/man \
-    jre/languages \
-    src.zip \
+    languages \
+    lib/src.zip \
     bin/jvisualvm lib/visualvm \
-    bin/js jre/bin/js \
-    bin/node jre/bin/node \
-    bin/npm jre/bin/npm \
-    bin/polyglot jre/bin/polyglot \
-    bin/lli jre/bin/lli \
-    jre/lib/amd64/libjvmcicompiler.so \
-    jre/lib/amd64/liblcms.so \
-    jre/lib/boot/graaljs-scriptengine.jar \
-    jre/lib/graalvm/graal-truffle-compiler-libgraal.jar \
-    jre/lib/graalvm/graaljs-launcher.jar \
-    jre/lib/graalvm/sulong-launcher.jar
+    bin/js \
+    bin/node \
+    bin/npm \
+    bin/polyglot lib/polyglot \
+    bin/lli \
+    lib/libjvmcicompiler.so \
+    lib/liblcms.so \
+    lib/graalvm/graal-truffle-compiler-libgraal.jar \
+    lib/graalvm/graaljs-launcher.jar \
+    lib/graalvm/sulong-launcher.jar
 
 RUN echo "done!"
 
