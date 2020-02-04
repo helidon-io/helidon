@@ -35,4 +35,4 @@ build:
 release:
   steps:
     - script:
-        code: etc/scripts/release.sh release_build
+        code: etc/scripts/release.sh --version=2.0.0-M1 release_build
