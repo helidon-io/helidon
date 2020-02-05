@@ -49,7 +49,7 @@ public class MultiTakeWhileProcessor<T> extends BaseProcessor<T, T> implements M
             submit(item);
         } else {
             getSubscription().ifPresent(Flow.Subscription::cancel);
-            tryComplete();
+            onComplete();
         }
     }
 }

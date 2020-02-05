@@ -240,17 +240,6 @@ public class BaseProcessorTest {
         assertThat(subscriber2.getSubcription(), is(nullValue()));
     }
 
-    @Test
-    public void testNotEnoughRequestToSubmit() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        processor.submit("foo!");
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), is(empty()));
-    }
-
     private static class TestProcessor<T> extends BaseProcessor<T, T> {
 
         boolean complete;

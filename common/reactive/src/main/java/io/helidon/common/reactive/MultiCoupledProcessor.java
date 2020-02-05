@@ -53,8 +53,10 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private Flow.Subscription inletSubscription;
     private Flow.Subscription passedInPublisherSubscription;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private AtomicBoolean done = new AtomicBoolean(false);
     private Queue<Runnable> forbiddenCalls = new LinkedList<>();
     private CompletableFuture<Void> readyToSignalPassedInSubscriber = new CompletableFuture<>();
+    private CompletableFuture<Void> readyToSignalOutletSubscriber = new CompletableFuture<>();
 
 
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
@@ -97,8 +99,9 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             @SuppressWarnings("unchecked")
             public void onNext(R t) {
-                tryForbiddenCalls();
                 //Passed in publisher sent onNext
+                tryForbiddenCalls();
+                if (done.get()) return;
                 Objects.requireNonNull(t);
                 outletSubscriber.onNext(t);
             }
@@ -107,9 +110,11 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void onError(Throwable t) {
                 //Passed in publisher sent onError
-                //cancelled.set(true);
+                done.set(true);
                 Objects.requireNonNull(t);
-                outletSubscriber.onError(t);
+                readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+                    outletSubscriber.onError(t);
+                });
                 readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
                     //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
                     forbiddenCalls.offer(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
@@ -121,7 +126,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void onComplete() {
                 //Passed in publisher completed
-                //cancelled.set(true);
+                done.set(true);
                 outletSubscriber.onComplete();
                 readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
                     //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
@@ -145,10 +150,11 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 // Cancel from outlet subscriber
                 passedInSubscriber.onComplete();
                 Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
-                passedInPublisherSubscription.cancel();
+                Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel);
                 tryForbiddenCalls();
             }
         });
+        readyToSignalOutletSubscriber.complete(null);
     }
 
     @Override
@@ -187,22 +193,28 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     @Override
     public void onNext(T t) {
         // Inlet/upstream publisher sent onNext
+        if (done.get()) return;
         passedInSubscriber.onNext(Objects.requireNonNull(t));
     }
 
     @Override
     public void onError(Throwable t) {
         // Inlet/upstream publisher sent error
+        done.set(true);
+        Objects.requireNonNull(t);
         readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
-            passedInSubscriber.onError(Objects.requireNonNull(t));
+            passedInSubscriber.onError(t);
         });
-        outletSubscriber.onError(t);
+        readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+            outletSubscriber.onError(t);
+        });
         forbiddenCalls.add(() -> passedInPublisherSubscription.cancel());
     }
 
     @Override
     public void onComplete() {
         // Inlet/upstream publisher completed
+        done.set(true);
         readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
             passedInSubscriber.onComplete();
         });

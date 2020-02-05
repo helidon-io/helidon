@@ -40,7 +40,7 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     private volatile Flow.Publisher<X> innerPublisher;
     private AtomicBoolean upstreamsCompleted = new AtomicBoolean(false);
     private Optional<Throwable> error = Optional.empty();
-    private ReentrantLock stateLock = new ReentrantLock();
+    private ReentrantLock subscriptionLock = new ReentrantLock();
     private boolean strictMode = BaseProcessor.DEFAULT_STRICT_MODE;
 
 
@@ -131,8 +131,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
     @Override
     public void subscribe(Flow.Subscriber<? super X> subscriber) {
-        this.subscriber = SequentialSubscriber.create(subscriber);
-        stateLock(() -> {
+        subscriptionLock(() -> {
+            this.subscriber = SequentialSubscriber.create(subscriber);
             if (Objects.nonNull(this.subscription)) {
                 this.subscriber.onSubscribe(new FlatMapSubscription());
             }
@@ -142,7 +142,7 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        stateLock(() -> {
+        subscriptionLock(() -> {
             if (Objects.nonNull(this.subscription)) {
                 subscription.cancel();
                 return;
@@ -162,10 +162,10 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
             if (Objects.isNull(mapperReturnedPublisher)) {
                 throw new IllegalStateException("Mapper returned a null value!");
             }
-            stateLock(() -> {
+            subscriptionLock(() -> {
                 innerPublisher = mapperReturnedPublisher;
+                innerPublisher.subscribe(new InnerSubscriber());
             });
-            innerPublisher.subscribe(new InnerSubscriber());
         } catch (Throwable t) {
             subscription.cancel();
             onError(t);
@@ -183,10 +183,15 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     @Override
     public void onComplete() {
         upstreamsCompleted.set(true);
-        stateLock(() -> {
-            if (requestCounter.get() == 0 || Objects.isNull(innerPublisher)) {
-                //Have to wait for all Publishers to be finished
-                subscriber.onComplete();
+        subscriptionLock(() -> {
+            try {
+                requestCounter.lock();
+                if (requestCounter.get() == 0 || Objects.isNull(innerPublisher)) {
+                    //Have to wait for all Publishers to be finished
+                    subscriber.onComplete();
+                }
+            } finally {
+                requestCounter.unlock();
             }
         });
     }
@@ -207,9 +212,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
         @Override
         public void onNext(X item) {
             Objects.requireNonNull(item);
-            if (requestCounter.tryDecrement()) {
-                subscriber.onNext(item);
-            }
+            requestCounter.tryDecrement();
+            subscriber.onNext(item);
         }
 
         @Override
@@ -224,7 +228,7 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
             if (upstreamsCompleted.get()) {
                 subscriber.onComplete();
             }
-            stateLock(() -> {
+            subscriptionLock(() -> {
                 innerPublisher = null;
             });
             try {
@@ -241,16 +245,16 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     /**
      * Protect critical sections when working with states of innerPublisher.
      */
-    private void stateLock(Runnable runnable) {
+    private void subscriptionLock(Runnable runnable) {
         if (!strictMode) {
             runnable.run();
             return;
         }
         try {
-            stateLock.lock();
+            subscriptionLock.lock();
             runnable.run();
         } finally {
-            stateLock.unlock();
+            subscriptionLock.unlock();
         }
     }
 }

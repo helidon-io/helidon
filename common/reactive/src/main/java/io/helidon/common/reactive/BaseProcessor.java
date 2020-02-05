@@ -21,6 +21,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -32,10 +33,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription, StrictProcessor {
 
     private Subscription subscription;
-    private final SingleSubscriberHolder<U> subscriber;
-    private final RequestedCounter ableToSubmit;
+    private Subscriber<? super U> subscriber;
     private final ReentrantLock subscriptionLock = new ReentrantLock();
-    private volatile boolean done;
+    private final ReentrantLock cancelLock = new ReentrantLock();
+    private AtomicBoolean ready = new AtomicBoolean(false);
+    private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private volatile boolean completed;
     private Throwable error;
     private boolean strictMode = DEFAULT_STRICT_MODE;
 
@@ -44,8 +47,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      * Generic processor used for the implementation of {@link Multi} and {@link Single}.
      */
     protected BaseProcessor() {
-        ableToSubmit = new RequestedCounter(strictMode);
-        subscriber = new SingleSubscriberHolder<>();
+        subscriber = null;
     }
 
     @Override
@@ -56,23 +58,22 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
     @Override
     public void request(long n) {
-        ableToSubmit.increment(n, this::failAndCancel);
-        if (!subscriber.isClosed()) {
-            subscription.request(n);
-        }
-        if (done) {
-            tryComplete();
-        }
+        StreamValidationUtils.checkRequestParam(n, this::onError);
+        cancelLock(() -> {
+            if (!cancelled.get()) {
+                subscription.request(n);
+            }
+        });
     }
 
     @Override
     public void cancel() {
-        subscriber.cancel();
-        try {
-            hookOnCancel(subscription);
-        } catch (Throwable ex) {
-            failAndCancel(ex);
-        }
+        hookOnCancel(subscription);
+        cancelLock(() -> {
+            if (!cancelled.getAndSet(true)) {
+                subscription.cancel();
+            }
+        });
     }
 
     @Override
@@ -91,70 +92,68 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     @Override
     public void subscribe(Subscriber<? super U> sub) {
         subscriptionLock(() -> {
-            var s = sub;
+            subscriber = sub;
             if (strictMode) {
-                s = SequentialSubscriber.create(sub);
+                subscriber = SequentialSubscriber.create(sub);
             }
-            if (subscriber.register(s)) {
-                tryOnSubscribe();
-            }
+            tryOnSubscribe();
+            tryComplete();
         });
     }
 
-    private void tryOnSubscribe() {
-        if (Objects.nonNull(subscription) && subscriber.tryOnSubscribe(this)) {
-            if (done) {
-                tryComplete();
+
+    private boolean tryOnSubscribe() {
+        if (Objects.nonNull(subscription)
+                && Objects.nonNull(subscriber)) {
+            if (!ready.getAndSet(true)) {
+                subscriber.onSubscribe(this);
+                return true;
             }
         }
+        return false;
     }
 
     @Override
     public void onNext(T item) {
-        if (done) {
+        Objects.requireNonNull(item);
+        if (completed) {
             throw new IllegalStateException("Subscriber is closed!");
         }
-        Objects.requireNonNull(item);
         try {
             hookOnNext(item);
         } catch (Throwable ex) {
-            failAndCancel(ex);
+            Optional.ofNullable(subscription).ifPresent(Subscription::cancel);
+            onError(ex);
         }
     }
 
     /**
-     * OnError downstream.
+     * Submit an item to the subscriber.
      *
-     * @param ex Exception to be reported downstream
+     * @param item item to be submitted
      */
-    protected void fail(Throwable ex) {
-        Objects.requireNonNull(ex);
-        done = true;
-        if (error == null) {
-            error = ex;
+    protected void submit(U item) {
+        try {
+            subscriber.onNext(item);
+        } catch (Throwable ex) {
+            onError(ex);
         }
-        tryComplete();
-    }
-
-    /**
-     * OnError downstream and cancel upstream.
-     *
-     * @param ex Exception to be reported downstream
-     */
-    protected void failAndCancel(Throwable ex) {
-        getSubscription().ifPresent(Flow.Subscription::cancel);
-        fail(ex);
     }
 
     @Override
     public void onError(Throwable ex) {
-        hookOnError(ex);
-        fail(ex);
+        Objects.requireNonNull(ex);
+        if (error == null) {
+            error = ex;
+        } else if (!Objects.equals(ex, error)) {
+            error.addSuppressed(ex);
+        }
+        tryComplete();
     }
 
     @Override
     public void onComplete() {
-        done = true;
+        completed = true;
         tryComplete();
     }
 
@@ -166,26 +165,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      */
     protected Optional<Subscription> getSubscription() {
         return Optional.ofNullable(subscription);
-    }
-
-    /**
-     * Submit an item to the subscriber.
-     *
-     * @param item item to be submitted
-     */
-    protected void submit(U item) {
-        if (ableToSubmit.tryDecrement()) {
-            try {
-                subscriber.get().onNext(item);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                failAndCancel(ex);
-            } catch (Throwable ex) {
-                failAndCancel(ex);
-            }
-        } else {
-            onError(new IllegalStateException("Not enough request to submit item"));
-        }
     }
 
     /**
@@ -219,28 +198,26 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
     }
 
-    private void completeOnError(Subscriber<? super U> sub, Throwable ex) {
-        hookOnError(ex);
-        sub.onError(ex);
-    }
-
     /**
      * Try close processor's subscriber.
      */
     protected void tryComplete() {
-        if (subscriber.isReady()) {
-            subscriber.tryOnSubscribe(this);
-            if (error != null) {
-                subscriber.close(sub -> completeOnError(sub, error));
-            } else {
-                try {
-                    hookOnComplete();
-                } catch (Throwable ex) {
-                    subscriber.close(sub -> sub.onError(ex));
-                    return;
-                }
-                subscriber.close(Subscriber::onComplete);
+        if (Objects.isNull(subscriber)) return;
+        if (Objects.nonNull(error)) {
+            try {
+                hookOnError(error);
+            } catch (Throwable ex) {
+                error.addSuppressed(ex);
             }
+            subscriber.onError(error);
+        } else if (completed) {
+            try {
+                hookOnComplete();
+            } catch (Throwable ex) {
+                subscriber.onError(ex);
+                return;
+            }
+            subscriber.onComplete();
         }
     }
 
@@ -254,6 +231,19 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
             guardedBlock.run();
         } finally {
             subscriptionLock.unlock();
+        }
+    }
+
+    private void cancelLock(Runnable guardedBlock) {
+        if (!strictMode) {
+            guardedBlock.run();
+            return;
+        }
+        try {
+            cancelLock.lock();
+            guardedBlock.run();
+        } finally {
+            cancelLock.unlock();
         }
     }
 }

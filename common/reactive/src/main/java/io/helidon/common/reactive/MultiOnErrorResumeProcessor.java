@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 /**
@@ -32,8 +32,9 @@ import java.util.function.Function;
 public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flow.Subscription, Multi<T> {
 
     private Function<Throwable, Flow.Publisher<T>> publisherSupplier;
-    private AtomicReference<Flow.Subscription> subscription = new AtomicReference<>();
-    private AtomicReference<Flow.Subscriber<? super T>> subscriber = new AtomicReference<>();
+    private Flow.Subscription subscription;
+    private Flow.Subscriber<? super T> subscriber;
+    private final ReentrantLock subscriptionLock = new ReentrantLock();
     private RequestedCounter requestedCounter = new RequestedCounter();
     private Optional<Throwable> error = Optional.empty();
     private boolean done;
@@ -73,42 +74,43 @@ public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flo
 
     @Override
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
-        this.subscriber.set(SequentialSubscriber.create(subscriber));
-        if (Objects.nonNull(this.subscription.get())) {
-            this.subscriber.get().onSubscribe(this);
-            if (done) {
-                tryComplete();
+        subscriptionLock(() -> {
+            this.subscriber = SequentialSubscriber.create(subscriber);
+            if (Objects.nonNull(this.subscription)) {
+                this.subscriber.onSubscribe(this);
+                if (done) {
+                    tryComplete();
+                }
             }
-        }
+        });
         error.ifPresent(this::fail);
     }
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        this.subscription.set(subscription);
-        if (Objects.nonNull(subscriber.get())) {
-            subscriber.get().onSubscribe(this);
-        }
+        subscriptionLock(() -> {
+            this.subscription = subscription;
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onSubscribe(this);
+            }
+        });
     }
 
     @Override
     public void request(long n) {
         requestedCounter.increment(n, this::onError);
-        subscription.get().request(n);
+        subscriptionLock(() -> subscription.request(n));
     }
 
     @Override
     public void cancel() {
-        subscription.get().cancel();
+        subscriptionLock(() -> subscription.cancel());
     }
 
     @Override
     public void onNext(T item) {
-        if (requestedCounter.tryDecrement()) {
-            subscriber.get().onNext(item);
-        } else {
-            onError(new IllegalStateException("Not enough request to submit item"));
-        }
+        requestedCounter.tryDecrement();
+        subscriptionLock(() -> subscriber.onNext(item));
     }
 
     @Override
@@ -120,15 +122,20 @@ public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flo
                 @Override
                 public void onSubscribe(Flow.Subscription s) {
                     Objects.requireNonNull(s);
-                    subscription.set(s);
-                    if (requestedCounter.get() > 0) {
-                        s.request(requestedCounter.get());
+                    subscriptionLock(() -> subscription = s);
+                    try {
+                        requestedCounter.lock();
+                        if (requestedCounter.get() > 0) {
+                            s.request(requestedCounter.get());
+                        }
+                    } finally {
+                        requestedCounter.unlock();
                     }
                 }
 
                 @Override
                 public void onNext(T t) {
-                    subscriber.get().onNext(t);
+                    subscriptionLock(() -> subscriber.onNext(t));
                 }
 
                 @Override
@@ -148,11 +155,13 @@ public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flo
     }
 
     private void fail(Throwable t) {
-        if (Objects.nonNull(subscriber.get())) {
-            subscriber.get().onError(t);
-        } else {
-            this.error = Optional.of(t);
-        }
+        subscriptionLock(() -> {
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onError(t);
+            } else {
+                this.error = Optional.of(t);
+            }
+        });
     }
 
     @Override
@@ -162,8 +171,19 @@ public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flo
     }
 
     private void tryComplete() {
-        if (Objects.nonNull(subscriber.get())) {
-            subscriber.get().onComplete();
+        subscriptionLock(() -> {
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onComplete();
+            }
+        });
+    }
+
+    private void subscriptionLock(Runnable guardedBlock) {
+        try {
+            subscriptionLock.lock();
+            guardedBlock.run();
+        } finally {
+            subscriptionLock.unlock();
         }
     }
 }

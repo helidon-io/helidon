@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ final class MultiCollectingProcessor<T, U> extends BaseProcessor<T, U> implement
     protected void hookOnComplete() {
         U value = collector.value();
         if (value == null) {
-            onError(new IllegalStateException("Collector returned a null container"));
+            throw new IllegalStateException("Collector returned a null container");
         } else {
             submit(value);
         }

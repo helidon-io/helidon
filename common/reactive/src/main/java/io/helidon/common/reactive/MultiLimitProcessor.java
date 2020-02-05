@@ -47,7 +47,7 @@ public class MultiLimitProcessor<T> extends BaseProcessor<T, T> implements Multi
     @Override
     public void subscribe(Flow.Subscriber<? super T> s) {
         if (counter.get() == 0L) {
-            tryComplete();
+            onComplete();
         }
         super.subscribe(s);
     }
@@ -56,7 +56,7 @@ public class MultiLimitProcessor<T> extends BaseProcessor<T, T> implements Multi
     public void onSubscribe(Flow.Subscription s) {
         super.onSubscribe(s);
         if (counter.get() == 0L) {
-            tryComplete();
+            onComplete();
         }
     }
 
@@ -76,7 +76,7 @@ public class MultiLimitProcessor<T> extends BaseProcessor<T, T> implements Multi
             submit(item);
         } else {
             getSubscription().ifPresent(Flow.Subscription::cancel);
-            tryComplete();
+            onComplete();
         }
     }
 
