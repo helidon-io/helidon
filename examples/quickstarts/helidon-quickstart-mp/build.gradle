@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-    helidonversion = '1.2.2-SNAPSHOT'
+    helidonversion = '1.4.2-SNAPSHOT'
 }
 
 repositories {
@@ -38,20 +38,24 @@ repositories {
 }
 
 dependencies {
-    compile "io.helidon:helidon-bom:${project.helidonversion}"
-    compile 'io.helidon.microprofile.bundles:helidon-microprofile-1.2'
-    compile 'org.glassfish.jersey.media:jersey-media-json-binding:2.29'
-    runtime 'org.jboss:jandex:2.0.4.Final'
-    runtime 'javax.activation:javax.activation-api:1.2.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    // import Helidon BOM
+    implementation platform("io.helidon:helidon-dependencies:${project.helidonversion}")
+
+    implementation 'io.helidon.microprofile.bundles:helidon-microprofile'
+    implementation 'org.glassfish.jersey.media:jersey-media-json-binding'
+
+    runtimeOnly 'org.jboss:jandex'
+    runtimeOnly 'javax.activation:javax.activation-api'
+
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-api:'
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-api:'
 }
 
 // define a custom task to copy all dependencies in the runtime classpath
 // into build/libs/libs
 // uses built-in Copy
 task copyLibs(type: Copy) {
-  from configurations.runtime
+  from configurations.runtimeClasspath
   into 'build/libs/libs'
 }
 
@@ -66,7 +70,7 @@ jar {
   archiveName = "${project.name}.jar"
   manifest {
     attributes ('Main-Class': 'io.helidon.examples.quickstart.mp.Main',
-                'Class-Path': configurations.runtime.files.collect { "libs/$it.name" }.join(' ')
+                'Class-Path': configurations.runtimeClasspath.files.collect { "libs/$it.name" }.join(' ')
                )
   }
 }
