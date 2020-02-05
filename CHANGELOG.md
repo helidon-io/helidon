@@ -11,6 +11,18 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ### Notes
 
+This is the second milestone release of Helidon 2.0. 
+
+### Improvements
+
+### Fixes
+
+### Backward incompatible changes
+
+## [2.0.0-M1] 
+
+### Notes
+
 This is the first milestone release of Helidon 2.0. It contains significant new
 features, enhancements and fixes. It also contains backward incompatible changes
 (see [section](#backward-incompatible-changes) below ). This milestone release
@@ -43,6 +55,7 @@ Notable changes:
 - Config: replace reflection with service loader [1102](https://github.com/oracle/helidon/pull/1102)
 - Config: now uses common media type module instead of FileTypeDetector. [1332](https://github.com/oracle/helidon/pull/1332)
 - JPA: Permit non-XA DataSources to take part in JTA transactions [1316](https://github.com/oracle/helidon/pull/1316)
+- JPA: Fixes an issue with multiple persistence units [1342](https://github.com/oracle/helidon/pull/1342)
 - JPA: Address several rollback-related issues [1146](https://github.com/oracle/helidon/pull/1146)
 - JPA: Relax requirements on container-managed persistence units which can now be resource-local [1243](https://github.com/oracle/helidon/pull/1243)
 - OpenAPI: Support multiple jandex files on the classpath [1320](https://github.com/oracle/helidon/pull/1320)
@@ -187,4 +200,5 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.4.0...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0-M1...HEAD
+[2.0.0-M1]: https://github.com/oracle/helidon/compare/1.4.0...2.0.0-M1
