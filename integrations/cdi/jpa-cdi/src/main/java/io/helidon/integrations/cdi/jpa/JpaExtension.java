@@ -1106,7 +1106,11 @@ public class JpaExtension implements Extension {
                                                                                                  qualifiers,
                                                                                                  beanManager);
                     })
-                .disposeWith((emf, instance) -> emf.close());
+                .disposeWith((emf, instance) -> {
+                        if (emf.isOpen()) {
+                            emf.close();
+                        }
+                    });
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1290,7 +1294,9 @@ public class JpaExtension implements Extension {
                 // to a thread-specific singleton scope.  As it
                 // happens, this might actually be OK.
                 .disposeWith((em, instance) -> {
-                        em.close();
+                        if (em.isOpen()) {
+                            em.close();
+                        }
                     });
         }
 
