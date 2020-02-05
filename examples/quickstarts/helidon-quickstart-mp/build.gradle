@@ -48,7 +48,6 @@ dependencies {
     runtimeOnly 'javax.activation:javax.activation-api'
 
     testCompileOnly 'org.junit.jupiter:junit-jupiter-api:'
-    testCompileOnly 'org.junit.jupiter:junit-jupiter-api:'
 }
 
 // define a custom task to copy all dependencies in the runtime classpath
