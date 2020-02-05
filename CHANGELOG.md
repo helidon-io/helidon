@@ -13,8 +13,8 @@ This is a bug fix release of Helidon.
 ### Fixes
 
 - JAX-RS: Application path had to contain leading "/" [1261](https://github.com/oracle/helidon/pull/1261)
-- Security: JWT and OIDC security providers now support groups claim (1.x) [1325](https://github.com/oracle/helidon/pull/1325)
-- Security: Fixed infinite redirect issue with IDCS and OIDC provider [1314](https://github.com/oracle/helidon/pull/1314)
+- Security: OIDC and JWT: groups claim in a JWT is now honored and a Role is created in subject for each such group. [1325](https://github.com/oracle/helidon/pull/1325)
+- Security: OIDC redirect with cookies now uses Same-Site policy of Lax by default to prevent infinite redirects. If the default value is use, a warning is printed explaining the change. [1314](https://github.com/oracle/helidon/pull/1314)
 - OpenAPI: Support multiple jandex.idx files on the classpath [1318](https://github.com/oracle/helidon/pull/1318)
 - gRPC minor enhancements [1277](https://github.com/oracle/helidon/pull/1277)
 - Archetypes: Fix optional files in bare archetypes. [1250](https://github.com/oracle/helidon/pull/1250)
