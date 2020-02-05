@@ -16,25 +16,29 @@
 
 package io.helidon.microprofile.tyrus;
 
-import javax.enterprise.context.Dependent;
-import javax.websocket.Endpoint;
-import javax.websocket.server.ServerApplicationConfig;
-import javax.websocket.server.ServerEndpointConfig;
-import java.util.Collections;
-import java.util.Set;
+import io.helidon.microprofile.server.Server;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Class EndpointApplication.
+ * Class WebSocketBadAppTest.
  */
-@Dependent
-public class EndpointApplication implements ServerApplicationConfig {
-    @Override
-    public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpointClasses) {
-        return Collections.emptySet();
+public class WebSocketBadAppTest {
+
+    @BeforeAll
+    static void initClass() {
+        Server.Builder builder = Server.builder();
+        builder.websocketApplication(BadEndpointApplication.class);
+        assertThrows(IllegalArgumentException.class, builder::build);
     }
 
-    @Override
-    public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> scanned) {
-        return Collections.emptySet();
+    @Test
+    public void test() {
+        // no-op
+    }
+
+    public static class BadEndpointApplication /* implements ServerApplicationConfig */ {
     }
 }

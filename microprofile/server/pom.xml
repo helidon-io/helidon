@@ -53,10 +53,6 @@
             <artifactId>helidon-common-service-loader</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.tyrus</groupId>
-            <artifactId>helidon-microprofile-tyrus</artifactId>
-        </dependency>
-        <dependency>
             <groupId>javax.interceptor</groupId>
             <artifactId>javax.interceptor-api</artifactId>
             <scope>provided</scope>

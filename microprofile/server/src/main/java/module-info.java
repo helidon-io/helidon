@@ -36,10 +36,6 @@ module io.helidon.microprofile.server {
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires java.management;
 
-    requires io.helidon.microprofile.tyrus;
-    requires io.helidon.webserver.tyrus;
-    requires jakarta.websocket.api;
-
     exports io.helidon.microprofile.server;
 
     provides javax.enterprise.inject.spi.Extension with

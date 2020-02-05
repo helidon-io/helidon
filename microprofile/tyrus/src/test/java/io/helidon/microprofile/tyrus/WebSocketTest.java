@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.microprofile.tyrus;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.logging.Logger;
 
+import io.helidon.microprofile.server.Server;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

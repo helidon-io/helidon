@@ -37,14 +37,10 @@ import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
-import javax.websocket.server.ServerApplicationConfig;
-import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -53,8 +49,6 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.microprofile.tyrus.WebSocketApplication;
-import io.helidon.microprofile.tyrus.WebSocketCdiExtension;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.Service;
@@ -62,7 +56,6 @@ import io.helidon.webserver.SocketConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
-import io.helidon.webserver.tyrus.TyrusSupport;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -78,8 +71,6 @@ public class ServerCdiExtension implements Extension {
     }
 
     private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
-
-    private static final String DEFAULT_WEBSOCKET_PATH = "/websocket";
 
     // build time
     private ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
@@ -125,9 +116,6 @@ public class ServerCdiExtension implements Extension {
 
         // register static content if configured
         registerStaticContent();
-
-        // register websocket endpoints
-        registerWebSockets(beanManager, serverConfig);
 
         // start the webserver
         WebServer.Builder wsBuilder = WebServer.builder(routingBuilder.build());
@@ -206,95 +194,6 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
-    private void registerWebSockets(BeanManager beanManager, ServerConfiguration serverConfig) {
-        try {
-            WebSocketCdiExtension extension = beanManager.getExtension(WebSocketCdiExtension.class);
-            WebSocketApplication app = extension.toWebSocketApplication();
-
-            // If application present call its methods
-            TyrusSupport.Builder builder = TyrusSupport.builder();
-            Optional<Class<? extends ServerApplicationConfig>> appClass = app.applicationClass();
-
-            Optional<String> contextRoot = appClass.flatMap(c -> findContextRoot(config, c));
-            Optional<String> namedRouting = appClass.flatMap(c -> findNamedRouting(config, c));
-            boolean routingNameRequired = appClass.map(c -> isNamedRoutingRequired(config, c)).orElse(false);
-
-            Routing.Builder routing;
-            if (appClass.isPresent()) {
-                Class<? extends ServerApplicationConfig> c = appClass.get();
-
-                // Attempt to instantiate via CDI
-                ServerApplicationConfig instance = null;
-                try {
-                    instance = CDI.current().select(c).get();
-                } catch (UnsatisfiedResolutionException e) {
-                    // falls through
-                }
-
-                // Otherwise, we create instance directly
-                if (instance == null) {
-                    try {
-                        instance = c.getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Unable to instantiate websocket application " + c, e);
-                    }
-                }
-
-                // Call methods in application class
-                Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
-                Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
-
-                // Register classes and configs
-                endpointClasses.forEach(builder::register);
-                endpointConfigs.forEach(builder::register);
-
-                // Create routing builder
-                routing = routingBuilder(namedRouting, routingNameRequired, serverConfig, c.getName());
-            } else {
-                // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(builder::register);
-                app.programmaticEndpoints().forEach(builder::register);
-
-                // Create routing builder
-                routing = serverRoutingBuilder();
-            }
-
-            // Finally register WebSockets in Helidon routing
-            String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
-            LOGGER.info("Registering websocket application at " + rootPath);
-            routing.register(rootPath, builder.build());
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Unable to load WebSocket extension", e);
-        }
-    }
-
-    private Optional<String> findContextRoot(io.helidon.config.Config config,
-                                             Class<? extends ServerApplicationConfig> applicationClass) {
-        return config.get(applicationClass.getName() + "." + RoutingPath.CONFIG_KEY_PATH)
-                .asString()
-                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingPath.class))
-                                  .map(RoutingPath::value))
-                .map(path -> path.startsWith("/") ? path : ("/" + path));
-    }
-
-    private Optional<String> findNamedRouting(io.helidon.config.Config config,
-                                              Class<? extends ServerApplicationConfig> applicationClass) {
-        return config.get(applicationClass.getName() + "." + RoutingName.CONFIG_KEY_NAME)
-                .asString()
-                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingName.class))
-                                  .map(RoutingName::value))
-                .flatMap(name -> RoutingName.DEFAULT_NAME.equals(name) ? Optional.empty() : Optional.of(name));
-    }
-
-    private boolean isNamedRoutingRequired(io.helidon.config.Config config,
-                                           Class<? extends ServerApplicationConfig> applicationClass) {
-        return config.get(applicationClass.getName() + "." + RoutingName.CONFIG_KEY_REQUIRED)
-                .asBoolean()
-                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingName.class))
-                                  .map(RoutingName::required))
-                .orElse(false);
-    }
-
     private void registerClasspathStaticContent(Config config) {
         Config context = config.get("context");
 
@@ -361,8 +260,17 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
+    /**
+     * Provides access to routing builder.
+     *
+     * @param namedRouting Named routing.
+     * @param routingNameRequired Routing name required.
+     * @param serverConfig Server configuration.
+     * @param appName Application's name.
+     * @return The routing builder.
+     */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Routing.Builder routingBuilder(Optional<String> namedRouting, boolean routingNameRequired,
+    public Routing.Builder routingBuilder(Optional<String> namedRouting, boolean routingNameRequired,
                                            ServerConfiguration serverConfig, String appName) {
         if (namedRouting.isPresent()) {
             String socket = namedRouting.get();

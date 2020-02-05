@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.microprofile.tyrus;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -36,6 +35,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import io.helidon.microprofile.server.RoutingPath;
+import io.helidon.microprofile.server.Server;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

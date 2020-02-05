@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
-import javax.websocket.server.ServerApplicationConfig;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -72,14 +71,15 @@ public interface Server {
     }
 
     /**
-     * Create a server instance using a Websocket application class.
+     * Create a server instance using a Websocket application class. Application class
+     * is of type {@code lass<? extends ServerApplicationConfig>}.
      *
      * @param applicationClass websocket application class
      * @return server instance to be started
      * @throws MpException in case the server fails to be created
      * @see #builder()
      */
-    static Server create(Class<? extends ServerApplicationConfig> applicationClass) throws MpException {
+    static Server create(Class<?> applicationClass) throws MpException {
         Builder builder = builder();
         builder.websocketApplication(applicationClass);
         return builder.build();
@@ -159,7 +159,7 @@ public interface Server {
         private Supplier<? extends ExecutorService> defaultExecutorService;
         private JaxRsCdiExtension jaxRs;
         private boolean retainDiscovered = false;
-        private Class<? extends ServerApplicationConfig> wsApplication;
+        private Class<?> wsApplication;
 
         private Builder() {
             if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
@@ -389,7 +389,7 @@ public interface Server {
          * @param wsApplication websocket application
          * @return modified builder
          */
-        public Builder websocketApplication(Class<? extends ServerApplicationConfig> wsApplication) {
+        public Builder websocketApplication(Class<?> wsApplication) {
             if (this.wsApplication != null) {
                 throw new IllegalStateException("Cannot register more than one websocket application");
             }
@@ -523,7 +523,7 @@ public interface Server {
             return port;
         }
 
-        Optional<Class<? extends ServerApplicationConfig>> websocketApplication() {
+        Optional<Class<?>> websocketApplication() {
             return Optional.ofNullable(wsApplication);
         }
     }

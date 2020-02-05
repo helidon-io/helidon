@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.microprofile.tyrus;
 
 import javax.websocket.ClientEndpointConfig;
 import javax.websocket.CloseReason;

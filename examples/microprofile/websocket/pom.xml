@@ -41,6 +41,10 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.tyrus</groupId>
+            <artifactId>helidon-microprofile-tyrus</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
             <scope>test</scope>

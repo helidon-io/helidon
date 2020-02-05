@@ -16,18 +16,38 @@
 
 package io.helidon.microprofile.tyrus;
 
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.UnsatisfiedResolutionException;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpoint;
+import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.config.Config;
+import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.server.RoutingName;
+import io.helidon.microprofile.server.RoutingPath;
+import io.helidon.microprofile.server.ServerApplicationConfigEvent;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
+import io.helidon.webserver.tyrus.TyrusSupport;
+
+import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * Configure Tyrus related things.
@@ -35,11 +55,27 @@ import io.helidon.common.HelidonFlavor;
 public class WebSocketCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(WebSocketCdiExtension.class.getName());
 
+    private static final String DEFAULT_WEBSOCKET_PATH = "/websocket";
+
     static {
         HelidonFeatures.register(HelidonFlavor.MP, "WebSocket");
     }
 
+    private Config config;
+
+    private ServerCdiExtension serverCdiExtension;
+
     private WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
+
+    private void prepareRuntime(@Observes @RuntimeStart Config config) {
+        this.config = config;
+    }
+
+    private void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,
+                             BeanManager beanManager) {
+        serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
+        registerWebSockets(beanManager, serverCdiExtension.serverConfigBuilder().build());
+    }
 
     /**
      * Collect application class extending {@code ServerApplicationConfig}.
@@ -86,7 +122,112 @@ public class WebSocketCdiExtension implements Extension {
      *
      * @return Application.
      */
-    public WebSocketApplication toWebSocketApplication() {
+    WebSocketApplication toWebSocketApplication() {
         return appBuilder.build();
+    }
+
+    /**
+     * Event fired off by server to inform this extension that an application class
+     * has been set in the server's builder and that any application class scanned
+     * by this extension should be ignored.
+     *
+     * @param event Event containing new application class.
+     */
+    @SuppressWarnings("unchecked")
+    private void overrideApplication(@Observes ServerApplicationConfigEvent event) {
+        Class<?> applicationClass = event.applicationClass();
+        if (!ServerApplicationConfig.class.isAssignableFrom(applicationClass)) {
+            throw new IllegalArgumentException("Websocket application class " + applicationClass
+                + " must implement " + ServerApplicationConfig.class);
+        }
+        appBuilder.updateApplicationClass((Class<? extends ServerApplicationConfig>) event.applicationClass());
+    }
+
+    private void registerWebSockets(BeanManager beanManager, ServerConfiguration serverConfig) {
+        try {
+            WebSocketApplication app = toWebSocketApplication();
+
+            // If application present call its methods
+            TyrusSupport.Builder builder = TyrusSupport.builder();
+            Optional<Class<? extends ServerApplicationConfig>> appClass = app.applicationClass();
+
+            Optional<String> contextRoot = appClass.flatMap(c -> findContextRoot(config, c));
+            Optional<String> namedRouting = appClass.flatMap(c -> findNamedRouting(config, c));
+            boolean routingNameRequired = appClass.map(c -> isNamedRoutingRequired(config, c)).orElse(false);
+
+            Routing.Builder routing;
+            if (appClass.isPresent()) {
+                Class<? extends ServerApplicationConfig> c = appClass.get();
+
+                // Attempt to instantiate via CDI
+                ServerApplicationConfig instance = null;
+                try {
+                    instance = CDI.current().select(c).get();
+                } catch (UnsatisfiedResolutionException e) {
+                    // falls through
+                }
+
+                // Otherwise, we create instance directly
+                if (instance == null) {
+                    try {
+                        instance = c.getDeclaredConstructor().newInstance();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to instantiate websocket application " + c, e);
+                    }
+                }
+
+                // Call methods in application class
+                Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
+                Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
+
+                // Register classes and configs
+                endpointClasses.forEach(builder::register);
+                endpointConfigs.forEach(builder::register);
+
+                // Create routing builder
+                routing = serverCdiExtension.routingBuilder(namedRouting, routingNameRequired, serverConfig, c.getName());
+            } else {
+                // Direct registration without calling application class
+                app.annotatedEndpoints().forEach(builder::register);
+                app.programmaticEndpoints().forEach(builder::register);
+
+                // Create routing builder
+                routing = serverCdiExtension.serverRoutingBuilder();
+            }
+
+            // Finally register WebSockets in Helidon routing
+            String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
+            LOGGER.info("Registering websocket application at " + rootPath);
+            routing.register(rootPath, builder.build());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Unable to load WebSocket extension", e);
+        }
+    }
+
+    private Optional<String> findContextRoot(io.helidon.config.Config config,
+                                             Class<? extends ServerApplicationConfig> applicationClass) {
+        return config.get(applicationClass.getName() + "." + RoutingPath.CONFIG_KEY_PATH)
+                .asString()
+                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingPath.class))
+                        .map(RoutingPath::value))
+                .map(path -> path.startsWith("/") ? path : ("/" + path));
+    }
+
+    private Optional<String> findNamedRouting(io.helidon.config.Config config,
+                                              Class<? extends ServerApplicationConfig> applicationClass) {
+        return config.get(applicationClass.getName() + "." + RoutingName.CONFIG_KEY_NAME)
+                .asString()
+                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingName.class))
+                        .map(RoutingName::value))
+                .flatMap(name -> RoutingName.DEFAULT_NAME.equals(name) ? Optional.empty() : Optional.of(name));
+    }
+
+    private boolean isNamedRoutingRequired(io.helidon.config.Config config,
+                                           Class<? extends ServerApplicationConfig> applicationClass) {
+        return config.get(applicationClass.getName() + "." + RoutingName.CONFIG_KEY_REQUIRED)
+                .asBoolean()
+                .or(() -> Optional.ofNullable(applicationClass.getAnnotation(RoutingName.class))
+                        .map(RoutingName::required))
+                .orElse(false);
     }
 }

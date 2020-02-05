@@ -26,7 +26,11 @@ module io.helidon.microprofile.tyrus {
     requires transitive jakarta.websocket.api;
 
     requires io.helidon.common;
+    requires io.helidon.config;
+    requires io.helidon.microprofile.cdi;
     requires tyrus.core;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.webserver.tyrus;
 
     exports io.helidon.microprofile.tyrus;
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
