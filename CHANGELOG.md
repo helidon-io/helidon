@@ -23,7 +23,6 @@ This is a bug fix release of Helidon.
 - Upgrade reactor to 3.3.1-RELEASE [1237](https://github.com/oracle/helidon/pull/1237)
 - Upgrade H2, HikariCP, Jedis Client, OCI Client [1270](https://github.com/oracle/helidon/pull/1270)
 
-
 ## [1.4.1]
 
 ### Notes
