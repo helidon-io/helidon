@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  *
  */
 package io.helidon.openapi;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Paths;
@@ -34,22 +37,19 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeId;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 
-import java.util.HashMap;
-import java.util.Map;
-
 class CustomConstructor extends Constructor {
 
-    private static final Map<Class<?>, Class<?>> childMapTypes = new HashMap<>();
-    private static final Map<Class<?>, Class<?>> childMapOfListTypes = new HashMap<>();
+    private static final Map<Class<?>, Class<?>> CHILD_MAP_TYPES = new HashMap<>();
+    private static final Map<Class<?>, Class<?>> CHILD_MAP_OF_LIST_TYPES = new HashMap<>();
 
     static {
-        childMapTypes.put(Paths.class, PathItem.class);
-        childMapTypes.put(Callback.class, PathItem.class);
-        childMapTypes.put(Content.class, MediaType.class);
-        childMapTypes.put(APIResponses.class, APIResponse.class);
-        childMapTypes.put(ServerVariables.class, ServerVariable.class);
-        childMapTypes.put(Scopes.class, String.class);
-        childMapOfListTypes.put(SecurityRequirement.class, String.class);
+        CHILD_MAP_TYPES.put(Paths.class, PathItem.class);
+        CHILD_MAP_TYPES.put(Callback.class, PathItem.class);
+        CHILD_MAP_TYPES.put(Content.class, MediaType.class);
+        CHILD_MAP_TYPES.put(APIResponses.class, APIResponse.class);
+        CHILD_MAP_TYPES.put(ServerVariables.class, ServerVariable.class);
+        CHILD_MAP_TYPES.put(Scopes.class, String.class);
+        CHILD_MAP_OF_LIST_TYPES.put(SecurityRequirement.class, String.class);
     }
 
     CustomConstructor(TypeDescription td) {
@@ -59,16 +59,16 @@ class CustomConstructor extends Constructor {
     @Override
     protected void constructMapping2ndStep(MappingNode node, Map<Object, Object> mapping) {
         Class<?> parentType = node.getType();
-        if (childMapTypes.containsKey(parentType)) {
-            Class<?> childType = childMapTypes.get(parentType);
+        if (CHILD_MAP_TYPES.containsKey(parentType)) {
+            Class<?> childType = CHILD_MAP_TYPES.get(parentType);
             node.getValue().forEach(tuple -> {
                 Node valueNode = tuple.getValueNode();
                 if (valueNode.getType() == Object.class) {
                     valueNode.setType(childType);
                 }
             });
-        } else if (childMapOfListTypes.containsKey(parentType)) {
-            Class<?> childType = childMapOfListTypes.get(parentType);
+        } else if (CHILD_MAP_OF_LIST_TYPES.containsKey(parentType)) {
+            Class<?> childType = CHILD_MAP_OF_LIST_TYPES.get(parentType);
             node.getValue().forEach(tuple -> {
                 Node valueNode = tuple.getValueNode();
                 if (valueNode.getNodeId() == NodeId.sequence) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package io.helidon.openapi;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,6 +36,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
+
+import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -49,10 +57,11 @@ import io.smallrye.openapi.runtime.OpenApiProcessor;
 import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
+import io.smallrye.openapi.runtime.scanner.AnnotationScannerExtension;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
+import io.smallrye.openapi.runtime.scanner.OpenApiAnnotationScanner;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.jboss.jandex.IndexView;
-
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -84,6 +93,8 @@ public class OpenAPISupport implements Service {
     private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
     private static final String OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using specified OpenAPI static file %s";
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
+
+    private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
 
     private final String webContext;
 
@@ -154,8 +165,14 @@ public class OpenAPISupport implements Service {
 
     private void expandModelUsingAnnotations(OpenApiConfig config, IndexView indexView) throws IOException {
         if (indexView != null) {
-            OpenApiDocument.INSTANCE.modelFromAnnotations(
-                    OpenApiProcessor.modelFromAnnotations(config, new FilteredIndexView(indexView, config)));
+            if (config.scanDisable()) {
+                return;
+            }
+            List<AnnotationScannerExtension> scannerExtensions =
+                    CollectionsHelper.listOf(new HelidonAnnotationScannerExtension());
+            OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, new FilteredIndexView(indexView, config),
+                    scannerExtensions);
+            OpenApiDocument.INSTANCE.modelFromAnnotations(scanner.scan());
         }
     }
 
@@ -249,6 +266,55 @@ public class OpenAPISupport implements Service {
                     return DEFAULT_RESPONSE_MEDIA_TYPE;
                 });
         return resultMediaType;
+    }
+
+    private static class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
+
+        @Override
+        public Object parseExtension(String key, String value) {
+
+            // Inspired by SmallRye's JsonUtil#parseValue method.
+            if (value == null) {
+                return null;
+            }
+
+            value = value.trim();
+
+            if ("true".equals(value) || "false".equals(value)) {
+                return Boolean.valueOf(value);
+            }
+
+            // See if we should parse the value fully.
+            switch (value.charAt(0)) {
+                case '{':
+                case '[':
+                case '-':
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    try {
+                        JsonReader reader = JSON_READER_FACTORY.createReader(new StringReader(value));
+                        JsonObject json = reader.readObject();
+                        return json;
+                    } catch (Exception ex) {
+                        LOGGER.log(Level.SEVERE, String.format("Error parsing extension key: %s, value: %s", key, value), ex);
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+
+            // Treat as JSON string.
+            return value;
+        }
     }
 
     /**

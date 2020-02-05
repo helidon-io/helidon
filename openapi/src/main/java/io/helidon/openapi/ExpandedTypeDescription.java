@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,14 @@
  */
 package io.helidon.openapi;
 
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.yaml.snakeyaml.TypeDescription;
@@ -24,14 +32,6 @@ import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertySubstitute;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.ScalarNode;
-
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.lang.annotation.Annotation;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Extension of {@link TypeDescription} that handles of:
@@ -62,7 +62,7 @@ class ExpandedTypeDescription extends TypeDescription {
 
     private static final String EXTENSION_PROPERTY_PREFIX = "x-";
 
-    private final Map<String, Function<String, Enum<?>> > enumEvaluators = new HashMap<>();
+    private final Map<String, Function<String, Enum<?>>> enumEvaluators = new HashMap<>();
 
     private Class<?> impl;
 
@@ -219,8 +219,6 @@ class ExpandedTypeDescription extends TypeDescription {
      */
     static class ExtensionProperty extends Property {
 
-        private Class<?> type = null;
-
         ExtensionProperty(String name) {
             super(name, Object.class);
         }
@@ -252,8 +250,8 @@ class ExpandedTypeDescription extends TypeDescription {
 
         private Extensible<?> asExt(Object object) {
             if (!(object instanceof Extensible<?>)) {
-                throw new IllegalArgumentException(String.format("Cannot assign extension %s to " +
-                                "object of type %s that does not implement %s", getName(),
+                throw new IllegalArgumentException(String.format(
+                        "Cannot assign extension %s to object of type %s that does not implement %s", getName(),
                         object.getClass().getName(), Extensible.class.getName()));
             }
             return (Extensible<?>) object;

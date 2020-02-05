@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.openapi;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import io.smallrye.openapi.api.models.ComponentsImpl;
@@ -52,7 +53,6 @@ import io.smallrye.openapi.api.models.servers.ServerImpl;
 import io.smallrye.openapi.api.models.servers.ServerVariableImpl;
 import io.smallrye.openapi.api.models.servers.ServerVariablesImpl;
 import io.smallrye.openapi.api.models.tags.TagImpl;
-
 import org.eclipse.microprofile.openapi.models.Components;
 import org.eclipse.microprofile.openapi.models.ExternalDocumentation;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
@@ -84,7 +84,6 @@ import org.eclipse.microprofile.openapi.models.servers.Server;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariables;
 import org.eclipse.microprofile.openapi.models.tags.Tag;
-
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -96,15 +95,17 @@ import org.yaml.snakeyaml.constructor.Constructor;
  */
 class Parser {
 
+    private Parser() {}
+
     static OpenAPI parse(InputStream inputStream, OpenAPISupport.OpenAPIMediaType mediaType) {
         return mediaType.equals(OpenAPISupport.OpenAPIMediaType.JSON) ? parseJSON(inputStream) : parseYAML(inputStream);
     }
     static OpenAPI parseJSON(InputStream inputStream) {
-        return parseYAML(new InputStreamReader(inputStream));
+        return parseYAML(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
     }
 
     static OpenAPI parseYAML(InputStream inputStream) {
-        return parseYAML(new InputStreamReader(inputStream));
+        return parseYAML(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
     }
     static OpenAPI parseYAML(Reader input) {
         TypeDescription openAPITD = ExpandedTypeDescription.create(OpenAPI.class, OpenAPIImpl.class);

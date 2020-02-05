@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,10 @@ import io.smallrye.openapi.api.models.PathItemImpl;
 import io.smallrye.openapi.api.models.media.SchemaImpl;
 import io.smallrye.openapi.api.models.parameters.ParameterImpl;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
-
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
-
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.introspector.Property;
@@ -63,6 +61,8 @@ class Serializer {
 
     private static final DumperOptions YAML_DUMPER_OPTIONS = new DumperOptions();
     private static final DumperOptions JSON_DUMPER_OPTIONS = new DumperOptions();
+
+    private Serializer() {}
 
     static {
         YAML_DUMPER_OPTIONS.setIndent(2);
@@ -103,15 +103,15 @@ class Serializer {
 
         private static final String EXTENSIONS = "extensions";
 
-        private static final Map<Class<?>, Set<String>> childEnumNames = new HashMap<>();
-        private static final Map<Class<?>, Map<String, Set<String>>> childEnumValues =
+        private static final Map<Class<?>, Set<String>> CHILD_ENUM_NAMES = new HashMap<>();
+        private static final Map<Class<?>, Map<String, Set<String>>> CHILD_ENUM_VALUES =
                 new HashMap<>();
 
         static {
-            childEnumNames.put(PathItemImpl.class, toEnumNames(PathItem.HttpMethod.class));
-            childEnumValues.put(SchemaImpl.class,
+            CHILD_ENUM_NAMES.put(PathItemImpl.class, toEnumNames(PathItem.HttpMethod.class));
+            CHILD_ENUM_VALUES.put(SchemaImpl.class,
                     CollectionsHelper.mapOf("type", toEnumNames(Schema.SchemaType.class)));
-            childEnumValues.put(ParameterImpl.class,
+            CHILD_ENUM_VALUES.put(ParameterImpl.class,
                     CollectionsHelper.mapOf("style", toEnumNames(Parameter.Style.class),
                             "in", toEnumNames(Parameter.In.class)));
         }
@@ -127,11 +127,11 @@ class Serializer {
         // TODO use the following two methods from tests to make sure all enums in the OpenAPI
         //  interfaces are represented in the maps.
         Map<Class<?>, Set<String>> childEnumNames() {
-            return childEnumNames;
+            return CHILD_ENUM_NAMES;
         }
 
         Map<Class<?>, Map<String, Set<String>>> childEnumValues() {
-            return childEnumValues;
+            return CHILD_ENUM_VALUES;
         }
 
         private static <E extends Enum<E>> Set<String> toEnumNames(Class<E> enumType) {
@@ -144,8 +144,7 @@ class Serializer {
 
         @Override
         protected Node representScalar(Tag tag, String value, DumperOptions.ScalarStyle style) {
-            return super.representScalar(tag, value, isExemptedFromQuotes(tag) ?
-                    DumperOptions.ScalarStyle.PLAIN : style);
+            return super.representScalar(tag, value, isExemptedFromQuotes(tag) ? DumperOptions.ScalarStyle.PLAIN : style);
         }
 
         private boolean isExemptedFromQuotes(Tag tag) {
@@ -162,16 +161,17 @@ class Serializer {
 
             Property p = property;
             Object v = propertyValue;
-            if (childEnumNames.getOrDefault(javaBean.getClass(), Collections.emptySet()).contains(property.getName())) {
+            if (CHILD_ENUM_NAMES.getOrDefault(javaBean.getClass(), Collections.emptySet()).contains(property.getName())) {
                 p = new DelegatingProperty(property, property.getName().toLowerCase());
             }
-            if (propertyValue instanceof Enum && childEnumValues.getOrDefault(javaBean.getClass(),
+            if (propertyValue instanceof Enum && CHILD_ENUM_VALUES.getOrDefault(javaBean.getClass(),
                     Collections.emptyMap())
                     .getOrDefault(property.getName(), Collections.emptySet())
                     .contains(((Enum) propertyValue).name())) {
                 v = ((Enum) propertyValue).name().toLowerCase();
             }
-            NodeTuple result = okToProcess(javaBean, property) ? super.representJavaBeanProperty(javaBean, p, v, customTag) : null;
+            NodeTuple result = okToProcess(javaBean, property)
+                    ? super.representJavaBeanProperty(javaBean, p, v, customTag) : null;
             return result;
         }
 
