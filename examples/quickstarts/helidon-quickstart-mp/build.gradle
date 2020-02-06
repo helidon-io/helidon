@@ -15,7 +15,6 @@
  */
 
 apply plugin: 'java'
-apply plugin: 'maven'
 
 group = 'io.helidon.examples'
 version = '1.0-SNAPSHOT'
@@ -47,8 +46,7 @@ dependencies {
     runtimeOnly 'org.jboss:jandex'
     runtimeOnly 'javax.activation:javax.activation-api'
 
-    testCompileOnly 'org.junit.jupiter:junit-jupiter-api:5.1.0'
-    testCompileOnly 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-api'
 }
 
 // define a custom task to copy all dependencies in the runtime classpath
@@ -67,7 +65,7 @@ assemble.dependsOn copyLibs
 // set the main classpath
 // add each jar under build/libs/libs into the classpath
 jar {
-  archiveName = "${project.name}.jar"
+  archiveFileName = "${project.name}.jar"
   manifest {
     attributes ('Main-Class': 'io.helidon.examples.quickstart.mp.Main',
                 'Class-Path': configurations.runtimeClasspath.files.collect { "libs/$it.name" }.join(' ')
