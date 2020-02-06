@@ -37,7 +37,7 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 /**
- * Implementation of {@link WriterContext}.
+ * Implementation of {@link MessageBodyWriters}.
  */
 public final class MessageBodyWriterContext extends MessageBodyContext implements MessageBodyWriters, MessageBodyFilters {
 
@@ -266,7 +266,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
             if (fallback != null) {
                 writer = (MessageBodyWriter<T>) writers.select(type, this, fallback.writers);
             } else {
-                writer = (MessageBodyWriter<T>) writers.select(type, this, null);
+                writer = (MessageBodyWriter<T>) writers.select(type, this);
             }
             if (writer == null) {
                 return writerNotFound(type.getTypeName());
@@ -331,7 +331,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
             if (fallback != null) {
                 writer = (MessageBodyStreamWriter<T>) swriters.select(type, this, fallback.swriters);
             } else {
-                writer = (MessageBodyStreamWriter<T>) swriters.select(type, null);
+                writer = (MessageBodyStreamWriter<T>) swriters.select(type, this);
             }
             if (writer == null) {
                 return writerNotFound(type.getTypeName());
