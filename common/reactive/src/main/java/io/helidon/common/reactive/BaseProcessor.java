@@ -35,7 +35,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     private Subscription subscription;
     private Subscriber<? super U> subscriber;
     private final ReentrantLock subscriptionLock = new ReentrantLock();
-    private final ReentrantLock cancelLock = new ReentrantLock();
     private AtomicBoolean ready = new AtomicBoolean(false);
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private volatile boolean completed;
@@ -59,21 +58,17 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     @Override
     public void request(long n) {
         StreamValidationUtils.checkRequestParam(n, this::onError);
-        cancelLock(() -> {
-            if (!cancelled.get()) {
-                subscription.request(n);
-            }
-        });
+        if (!cancelled.get()) {
+            subscription.request(n);
+        }
     }
 
     @Override
     public void cancel() {
         hookOnCancel(subscription);
-        cancelLock(() -> {
-            if (!cancelled.getAndSet(true)) {
-                subscription.cancel();
-            }
-        });
+        if (!cancelled.getAndSet(true)) {
+            subscription.cancel();
+        }
     }
 
     @Override
@@ -234,16 +229,4 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
         }
     }
 
-    private void cancelLock(Runnable guardedBlock) {
-        if (!strictMode) {
-            guardedBlock.run();
-            return;
-        }
-        try {
-            cancelLock.lock();
-            guardedBlock.run();
-        } finally {
-            cancelLock.unlock();
-        }
-    }
 }
