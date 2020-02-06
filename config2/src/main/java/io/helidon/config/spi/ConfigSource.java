@@ -19,9 +19,9 @@ package io.helidon.config.spi;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigNode;
+import io.helidon.config.Key;
 
 /**
  * Do not implement this interface directly, rather choose one or more of the interfaces in this class.
@@ -106,7 +106,7 @@ public interface ConfigSource {
      */
     @FunctionalInterface
     interface LazySource extends ConfigSource {
-        Optional<ConfigNode> node(Config.Key key);
+        Optional<ConfigNode> node(Key key);
     }
 
     /**
@@ -127,7 +127,7 @@ public interface ConfigSource {
          * @param changedNode the key and node of the configuration that changed. This may be the whole config tree, or a specific
          *                    node depending on how fine grained the detection mechanism is
          */
-        void onChange(BiConsumer<Config.Key, ConfigNode> changedNode);
+        void onChange(BiConsumer<Key, ConfigNode> changedNode);
     }
 
     /**

@@ -168,7 +168,7 @@ public interface ConfigNode extends Supplier<String> {
          * @return empty object node.
          */
         static ObjectNode empty() {
-            return ConfigUtils.EmptyObjectNodeHolder.EMPTY;
+            return ObjectNodeImpl.EMPTY;
         }
 
         /**

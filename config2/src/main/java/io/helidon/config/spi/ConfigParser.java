@@ -66,11 +66,10 @@ public interface ConfigParser {
      * Never returns {@code null}.
      *
      * @param content a content to be parsed
-     * @param <S>     a type of data stamp
      * @return parsed hierarchical configuration representation
      * @throws io.helidon.config.spi.ConfigParserException in case of problem to parse configuration from the source
      */
-    <S> ObjectNode parse(Content<S> content) throws ConfigParserException;
+    ObjectNode parse(Content content) throws ConfigParserException;
 
     /**
      * {@link io.helidon.config.spi.ConfigSource} configuration Content to be
@@ -88,9 +87,9 @@ public interface ConfigParser {
          * is empty.
          * @return content media type if known, {@code empty} otherwise
          */
-        default Optional<String> mediaType() {
-            return Optional.empty();
-        }
+        Optional<String> mediaType();
+
+        Optional<ConfigParser> parser();
 
         /**
          * Returns an {@link java.io.InputStream} that is used to read configuration content from.
@@ -107,6 +106,8 @@ public interface ConfigParser {
         static Builder builder() {
             return new Builder();
         }
+
+        boolean exists();
 
         /**
          * Fluent API builder for {@link io.helidon.config.spi.ConfigParser.Content}.
@@ -132,6 +133,7 @@ public interface ConfigParser {
             @Override
             public Content build() {
                 final Optional<String> mediaType = Optional.ofNullable(this.mediaType);
+                final Optional<ConfigParser> finalParser = Optional.ofNullable(parser);
 
                 return new Content() {
                     @Override
@@ -155,11 +157,22 @@ public interface ConfigParser {
                             throw new ConfigException("Error while closing readable [" + data + "].", ex);
                         }
                     }
+
+                    @Override
+                    public Optional<ConfigParser> parser() {
+                        return finalParser;
+                    }
+
+                    @Override
+                    public boolean exists() {
+                        return exists;
+                    }
                 };
             }
 
             public Builder exists(boolean exists) {
                 this.exists = exists;
+                return this;
             }
 
             public Builder parsable(ParsableContentBuilder parsableContent) {
