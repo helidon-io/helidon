@@ -73,6 +73,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>javax.interceptor</groupId>
+            <artifactId>javax.interceptor-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
             <scope>test</scope>
