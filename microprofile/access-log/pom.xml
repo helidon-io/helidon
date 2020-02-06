@@ -42,9 +42,7 @@
         <dependency>
             <groupId>javax.interceptor</groupId>
             <artifactId>javax.interceptor-api</artifactId>
-            <scope>provided></scope>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
-
-
 </project>
