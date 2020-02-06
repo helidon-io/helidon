@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public interface Http2Configuration {
          * Sets value to enable HTTP/2 support.
          *
          * @param enableHttp2 New value.
-         * @return
+         * @return an updated builder
          */
         public Builder enable(boolean enableHttp2) {
             this.enableHttp2 = enableHttp2;
@@ -73,7 +73,7 @@ public interface Http2Configuration {
          * Sets max content length for HTTP/2.
          *
          * @param http2MaxContentLength New value for max content length.
-         * @return
+         * @return an updated builder
          */
         public Builder maxContentLength(int http2MaxContentLength) {
             this.http2MaxContentLength = http2MaxContentLength;
