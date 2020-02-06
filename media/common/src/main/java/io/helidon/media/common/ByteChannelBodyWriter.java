@@ -32,8 +32,6 @@ public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableBy
 
     static final RetrySchema DEFAULT_RETRY_SCHEMA = RetrySchema.linear(0, 10, 250);
 
-    private static final ByteChannelBodyWriter DEFAULT_INSTANCE = new ByteChannelBodyWriter(DEFAULT_RETRY_SCHEMA);
-
     private final ByteChannelToChunks mapper;
 
     /**
@@ -59,20 +57,20 @@ public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableBy
     }
 
     /**
-     * Create a new writer instance.
+     * Create a new instance of {@link ByteChannelBodyWriter} with the given {@link RetrySchema}.
      * @param schema retry schema
-     * @return ByteChannelWriter
+     * @return {@link ReadableByteChannel} message body writer
      */
     public static ByteChannelBodyWriter create(RetrySchema schema) {
         return new ByteChannelBodyWriter(schema);
     }
 
     /**
-     * Get the singleton instance that uses the default retry schema.
-     * @return ByteChannelBodyWriter
+     * Create a new instance of {@link ByteChannelBodyWriter}.
+     * @return {@link ReadableByteChannel} message body writer
      */
-    public static ByteChannelBodyWriter get() {
-        return DEFAULT_INSTANCE;
+    public static ByteChannelBodyWriter create() {
+        return new ByteChannelBodyWriter(DEFAULT_RETRY_SCHEMA);
     }
 
     /**

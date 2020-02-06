@@ -30,11 +30,6 @@ import io.helidon.common.reactive.Single;
 public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSequence> {
 
     /**
-     * Singleton instance.
-     */
-    private static final CharSequenceBodyWriter INSTANCE = new CharSequenceBodyWriter();
-
-    /**
      * Enforce the use of {@link #get()}.
      */
     private CharSequenceBodyWriter() {
@@ -54,11 +49,11 @@ public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSeque
     }
 
     /**
-     * Get the {@link CharSequenceBodyWriter} singleton.
-     * @return CharSequenceBodyWriter
+     * Create a new instance of {@link CharSequenceBodyWriter}.
+     * @return {@link CharSequence} message body writer.
      */
-    public static CharSequenceBodyWriter get() {
-        return INSTANCE;
+    public static CharSequenceBodyWriter create() {
+        return new CharSequenceBodyWriter();
     }
 
     private static final class CharSequenceToChunks implements Mapper<CharSequence, Publisher<DataChunk>> {

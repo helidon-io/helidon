@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,19 +56,6 @@ public interface DataChunk {
      */
     static DataChunk create(byte[] bytes) {
         return create(false, ByteBuffer.wrap(bytes));
-    }
-
-    /**
-     * Creates a simple byte array backed data chunk. The resulting
-     * instance doesn't have any kind of a lifecycle and as such, it doesn't need
-     * to be released.
-     *
-     * @param flush a signal that chunk should be written and flushed from any cache if possible
-     * @param bytes a byte array to create the request chunk from
-     * @return a request chunk
-     */
-    static DataChunk create(boolean flush, byte[] bytes) {
-        return create(flush, ByteBuffer.wrap(bytes));
     }
 
     /**

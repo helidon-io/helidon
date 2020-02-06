@@ -53,7 +53,7 @@ public final class JsonProcessing {
 
     /**
      * Provides a default instance for JSON-P readers and writers.
-     * @return {@code JsonProcessing} with default configuration
+     * @return json processing with default configuration
      */
     public static JsonProcessing create() {
         return Builder.DEFAULT_INSTANCE;
@@ -81,7 +81,6 @@ public final class JsonProcessing {
      * Fluent-API builder for {@link io.helidon.media.jsonp.common.JsonProcessing}.
      */
     public static class Builder implements io.helidon.common.Builder<JsonProcessing> {
-
         private static final JsonProcessing DEFAULT_INSTANCE = new JsonProcessing(readerFactory(null), writerFactory(null));
 
         private JsonWriterFactory jsonWriterFactory;
@@ -90,9 +89,7 @@ public final class JsonProcessing {
 
         @Override
         public JsonProcessing build() {
-            if ((null == jsonReaderFactory)
-                    && (null == jsonWriterFactory)
-                    && (null == jsonPConfig)) {
+            if ((null == jsonReaderFactory) && (null == jsonWriterFactory) && (null == jsonPConfig)) {
                 return DEFAULT_INSTANCE;
             }
 
@@ -111,12 +108,12 @@ public final class JsonProcessing {
             return new JsonProcessing(jsonReaderFactory, jsonWriterFactory);
         }
 
-        private static JsonReaderFactory readerFactory(Map<String, ?> config) {
-            return Json.createReaderFactory(config);
+        private static JsonReaderFactory readerFactory(Map<String, ?> jsonPConfig) {
+            return Json.createReaderFactory(jsonPConfig);
         }
 
-        private static JsonWriterFactory writerFactory(Map<String, ?> config) {
-            return Json.createWriterFactory(config);
+        private static JsonWriterFactory writerFactory(Map<String, ?> jsonPConfig) {
+            return Json.createWriterFactory(jsonPConfig);
         }
 
         /**

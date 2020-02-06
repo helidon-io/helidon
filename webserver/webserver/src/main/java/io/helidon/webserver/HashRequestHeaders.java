@@ -230,7 +230,7 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
                 }
             }
 
-            Parameters result = new HashParameters();
+            Parameters result = HashParameters.create();
             for (String baseToken : Utils.tokenize(',', "\"", false, cookieHeaderValue)) {
                 for (String token : Utils.tokenize(';', "\"", false, baseToken)) {
                     int eqInd = token.indexOf('=');

@@ -27,11 +27,6 @@ import io.helidon.common.reactive.Single;
 public final class StringBodyReader implements MessageBodyReader<String> {
 
     /**
-     * Singleton instance.
-     */
-    private static final StringBodyReader INSTANCE = new StringBodyReader();
-
-    /**
      * Private to enforce the use of {@link #get()}.
      */
     private StringBodyReader() {
@@ -51,10 +46,10 @@ public final class StringBodyReader implements MessageBodyReader<String> {
     }
 
     /**
-     * Create a new {@link StringBodyReader} instance.
-     * @return StringBodyReader
+     * Create a new instance of {@link StringBodyReader}.
+     * @return {@link String} message body reader.
      */
-    public static StringBodyReader get() {
-        return INSTANCE;
+    public static StringBodyReader create() {
+        return new StringBodyReader();
     }
 }

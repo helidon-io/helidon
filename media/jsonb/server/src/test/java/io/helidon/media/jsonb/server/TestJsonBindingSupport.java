@@ -15,12 +15,13 @@
  */
 package io.helidon.media.jsonb.server;
 
-import io.helidon.common.GenericType;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Handler;
@@ -28,7 +29,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 

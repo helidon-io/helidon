@@ -108,15 +108,15 @@ public final class MediaSupport {
         public Builder registerDefaults() {
             // default readers
             readerContext
-                    .registerReader(StringBodyReader.get())
-                    .registerReader(InputStreamBodyReader.get());
+                    .registerReader(StringBodyReader.create())
+                    .registerReader(InputStreamBodyReader.create());
 
             // default writers
             writerContext
-                    .registerWriter(CharSequenceBodyWriter.get())
-                    .registerWriter(ByteChannelBodyWriter.get())
-                    .registerWriter(PathBodyWriter.get())
-                    .registerWriter(FileBodyWriter.get());
+                    .registerWriter(CharSequenceBodyWriter.create())
+                    .registerWriter(ByteChannelBodyWriter.create())
+                    .registerWriter(PathBodyWriter.create())
+                    .registerWriter(FileBodyWriter.create());
             return this;
         }
 

@@ -72,7 +72,7 @@ public final class MessageBodyWriteableContent implements MessageBodyContent, Me
         Objects.requireNonNull(type, "type cannot be null!");
         this.stream = stream;
         this.type = (GenericType<Object>) type;
-        this.context = MessageBodyWriterContext.create(new HashParameters());
+        this.context = MessageBodyWriterContext.create(HashParameters.create());
         this.entity = null;
         this.publisher = null;
     }
