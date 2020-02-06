@@ -61,7 +61,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DataSourceDefinition(
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:chirp;INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
+    url = "jdbc:h2:mem:TestJpaTransactionScopedSynchronizedEntityManager;"
+        + "INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
     serverName = "",
     properties = {
         "user=sa"
