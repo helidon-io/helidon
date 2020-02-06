@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import java.util.Objects;
  * @author Kevin Bourrillion
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:RedundantModifier"})
-abstract class CharMatcher {
+public abstract class CharMatcher {
 
     /**
      * Constructor for use by subclasses. When subclassing, you may want to override
@@ -54,16 +54,21 @@ abstract class CharMatcher {
     /**
      * Determines whether a character is ASCII, meaning that its code point is less than 128.
      *
-     * @since 19.0 (since 1.0 as constant {@code ASCII})
+     * @return this CharMatcher instance
      */
     public static CharMatcher ascii() {
         return Ascii.INSTANCE;
     }
 
     /**
-     * Returns a {@code char} matcher that matches any character except the one specified.
+     * Returns a {@code char} matcher that matches any character except the one
+     * specified.
      *
-     * <p>To negate another {@code CharMatcher}, use {@link #negate()}.
+     * <p>
+     * To negate another {@code CharMatcher}, use {@link #negate()}.
+     *
+     * @param match the character that should not match
+     * @return CharMatcher
      */
     public static CharMatcher isNot(final char match) {
         return new IsNot(match);
@@ -72,7 +77,7 @@ abstract class CharMatcher {
     /**
      * Matches any character.
      *
-     * @since 19.0 (since 1.0 as constant {@code ANY})
+     * @return CharMatcher
      */
     public static CharMatcher any() {
         return Any.INSTANCE;
@@ -81,7 +86,7 @@ abstract class CharMatcher {
     /**
      * Matches no characters.
      *
-     * @since 19.0 (since 1.0 as constant {@code NONE})
+     * @return CharMatcher
      */
     public static CharMatcher none() {
         return None.INSTANCE;
@@ -91,7 +96,7 @@ abstract class CharMatcher {
      * Determines whether a character is an ISO control character as specified by
      * {@link Character#isISOControl(char)}.
      *
-     * @since 19.0 (since 1.0 as constant {@code JAVA_ISO_CONTROL})
+     * @return CharMatcher
      */
     public static CharMatcher javaIsoControl() {
         return JavaIsoControl.INSTANCE;
@@ -99,6 +104,8 @@ abstract class CharMatcher {
 
     /**
      * Returns a {@code char} matcher that matches only one specified character.
+     * @param match the character that should match
+     * @return CharMatcher
      */
     public static CharMatcher is(final char match) {
         return new Is(match);
@@ -111,6 +118,8 @@ abstract class CharMatcher {
     /**
      * Returns a {@code char} matcher that matches any character not present in the given character
      * sequence.
+     * @param sequence all the characters that should not be matched
+     * @return CharMatcher
      */
     public static CharMatcher noneOf(CharSequence sequence) {
         return anyOf(sequence).negate();
@@ -119,6 +128,8 @@ abstract class CharMatcher {
     /**
      * Returns a {@code char} matcher that matches any character present in the given character
      * sequence.
+     * @param sequence all the characters that should be matched
+     * @return CharMatcher
      */
     public static CharMatcher anyOf(final CharSequence sequence) {
         switch (sequence.length()) {
@@ -151,11 +162,18 @@ abstract class CharMatcher {
 
     /**
      * Determines a true or false value for the given character.
+     *
+     * @param c the character to match
+     * @return {@code true} if this {@code CharMatcher} instance matches the
+     * given character, {@code false} otherwise
      */
     public abstract boolean matches(char c);
 
     /**
      * Returns a matcher that matches any character not matched by this matcher.
+     *
+     * @return new {@code CharMatcher} instance representing the logical
+     * negation of this instance
      */
     public CharMatcher negate() {
         return new Negated(this);
@@ -163,6 +181,9 @@ abstract class CharMatcher {
 
     /**
      * Returns a matcher that matches any character matched by both this matcher and {@code other}.
+     * @param other the other instance
+     * @return new {@code CharMatcher} instance representing the logical
+     * and of this instance and the {@code other} instance
      */
     public CharMatcher and(CharMatcher other) {
         return new And(this, other);
@@ -170,6 +191,9 @@ abstract class CharMatcher {
 
     /**
      * Returns a matcher that matches any character matched by either this matcher or {@code other}.
+     * @param other the other instance
+     * @return new {@code CharMatcher} instance representing the logical
+     * and of this instance and the {@code other} instance
      */
     public CharMatcher or(CharMatcher other) {
         return new Or(this, other);
@@ -281,6 +305,8 @@ abstract class CharMatcher {
 
     /**
      * Returns the number of matching characters found in a character sequence.
+     * @param sequence sequence to count the number of matching characters
+     * @return count of matching characters
      */
     public int countIn(CharSequence sequence) {
         int count = 0;
@@ -327,14 +353,9 @@ abstract class CharMatcher {
     }
 
     /**
-     * A matcher for which precomputation will not yield any significant benefit.
+     * A matcher for which pre-computation will not yield any significant benefit.
      */
     abstract static class FastMatcher extends CharMatcher {
-
-        //        @Override
-        //        public final CharMatcher precomputed() {
-        //            return this;
-        //        }
 
         @Override
         public CharMatcher negate() {
@@ -350,11 +371,6 @@ abstract class CharMatcher {
         NegatedFastMatcher(CharMatcher original) {
             super(original);
         }
-
-        //        @Override
-        //        public final CharMatcher precomputed() {
-        //            return this;
-        //        }
     }
 
     /**
@@ -584,11 +600,6 @@ abstract class CharMatcher {
             return c == match;
         }
 
-        //        @Override
-        //        public String replaceFrom(CharSequence sequence, char replacement) {
-        //            return sequence.toString().replace(match, replacement);
-        //        }
-
         @Override
         public CharMatcher and(CharMatcher other) {
             return other.matches(match) ? this : none();
@@ -643,11 +654,6 @@ abstract class CharMatcher {
             return (start == length) ? -1 : start;
         }
 
-        //        @Override
-        //        public int lastIndexIn(CharSequence sequence) {
-        //            return sequence.length() - 1;
-        //        }
-
         @Override
         public boolean matchesAllOf(CharSequence sequence) {
             Objects.requireNonNull(sequence);
@@ -658,39 +664,6 @@ abstract class CharMatcher {
         public boolean matchesNoneOf(CharSequence sequence) {
             return sequence.length() == 0;
         }
-
-        //        @Override
-        //        public String removeFrom(CharSequence sequence) {
-        //            Objects.requireNonNull(sequence);
-        //            return "";
-        //        }
-        //
-        //        @Override
-        //        public String replaceFrom(CharSequence sequence, char replacement) {
-        //            char[] array = new char[sequence.length()];
-        //            Arrays.fill(array, replacement);
-        //            return new String(array);
-        //        }
-        //
-        //        @Override
-        //        public String replaceFrom(CharSequence sequence, CharSequence replacement) {
-        //            StringBuilder result = new StringBuilder(sequence.length() * replacement.length());
-        //            for (int i = 0; i < sequence.length(); i++) {
-        //                result.append(replacement);
-        //            }
-        //            return result.toString();
-        //        }
-        //
-        //        @Override
-        //        public String collapseFrom(CharSequence sequence, char replacement) {
-        //            return (sequence.length() == 0) ? "" : String.valueOf(replacement);
-        //        }
-        //
-        //        @Override
-        //        public String trimFrom(CharSequence sequence) {
-        //            Objects.requireNonNull(sequence);
-        //            return "";
-        //        }
 
         @Override
         public int countIn(CharSequence sequence) {
@@ -743,12 +716,6 @@ abstract class CharMatcher {
             return -1;
         }
 
-        //        @Override
-        //        public int lastIndexIn(CharSequence sequence) {
-        //            Objects.requireNonNull(sequence);
-        //            return -1;
-        //        }
-
         @Override
         public boolean matchesAllOf(CharSequence sequence) {
             return sequence.length() == 0;
@@ -759,42 +726,6 @@ abstract class CharMatcher {
             Objects.requireNonNull(sequence);
             return true;
         }
-
-        //        @Override
-        //        public String removeFrom(CharSequence sequence) {
-        //            return sequence.toString();
-        //        }
-        //
-        //        @Override
-        //        public String replaceFrom(CharSequence sequence, char replacement) {
-        //            return sequence.toString();
-        //        }
-        //
-        //        @Override
-        //        public String replaceFrom(CharSequence sequence, CharSequence replacement) {
-        //            Objects.requireNonNull(replacement);
-        //            return sequence.toString();
-        //        }
-        //
-        //        @Override
-        //        public String collapseFrom(CharSequence sequence, char replacement) {
-        //            return sequence.toString();
-        //        }
-        //
-        //        @Override
-        //        public String trimFrom(CharSequence sequence) {
-        //            return sequence.toString();
-        //        }
-        //
-        //        @Override
-        //        public String trimLeadingFrom(CharSequence sequence) {
-        //            return sequence.toString();
-        //        }
-        //
-        //        @Override
-        //        public String trimTrailingFrom(CharSequence sequence) {
-        //            return sequence.toString();
-        //        }
 
         @Override
         public int countIn(CharSequence sequence) {

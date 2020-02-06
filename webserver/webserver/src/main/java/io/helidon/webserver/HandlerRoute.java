@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class HandlerRoute implements Route {
         if (methods == null) {
             this.methodPredicate = new HttpMethodPredicate(null);
         } else if (methods instanceof Collection) {
-            this.methodPredicate = new HttpMethodPredicate((Collection) methods);
+            this.methodPredicate = new HttpMethodPredicate((Collection<Http.RequestMethod>) methods);
         } else {
             Collection<Http.RequestMethod> mtds = new ArrayList<>();
             for (Http.RequestMethod method : methods) {

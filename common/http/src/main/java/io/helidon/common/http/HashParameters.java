@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,13 +30,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 
-import io.helidon.common.http.Parameters;
-
 /**
  * A {@link ConcurrentSkipListMap} based {@link Parameters} implementation with
  * case-insensitive keys and immutable {@link List} of values that needs to be copied on each write.
  */
-class HashParameters implements Parameters {
+public class HashParameters implements Parameters {
 
     private static final List<String> EMPTY_STRING_LIST = Collections.emptyList();
 
@@ -45,7 +43,7 @@ class HashParameters implements Parameters {
     /**
      * Creates a new instance.
      */
-    HashParameters() {
+    public HashParameters() {
         this((Parameters) null);
     }
 
@@ -55,7 +53,7 @@ class HashParameters implements Parameters {
      *
      * @param initialContent initial content.
      */
-    HashParameters(Map<String, List<String>> initialContent) {
+    public HashParameters(Map<String, List<String>> initialContent) {
         if (initialContent == null) {
             content = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
         } else {
@@ -83,7 +81,7 @@ class HashParameters implements Parameters {
      *
      * @param initialContent initial content.
      */
-    HashParameters(Parameters initialContent) {
+    public HashParameters(Parameters initialContent) {
         this(initialContent == null ? null : initialContent.toMap());
     }
 
@@ -344,9 +342,7 @@ class HashParameters implements Parameters {
         if (!(o instanceof HashParameters)) {
             return false;
         }
-
         HashParameters that = (HashParameters) o;
-
         return content.equals(that.content);
     }
 

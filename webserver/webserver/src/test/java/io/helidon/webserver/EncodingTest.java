@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.utils.SocketHttpClient;
@@ -64,7 +65,7 @@ public class EncodingTest {
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", webServer.port());
     }
 
     /**

@@ -25,20 +25,20 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.http.ContextualRegistry;
 
 import io.opentracing.Tracer;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
  */
+@SuppressWarnings("deprecation")
 class ServerBasicConfig implements ServerConfiguration {
     private final SocketConfiguration socketConfig;
     private final int workers;
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
     private final ExperimentalConfiguration experimental;
-    private final ContextualRegistry context;
+    private final io.helidon.common.http.ContextualRegistry context;
     private final boolean printFeatureDetails;
 
     /**

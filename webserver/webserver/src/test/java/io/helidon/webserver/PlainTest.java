@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,12 +74,16 @@ public class PlainTest {
                            Thread.yield();
                            res.send("I'm deferred!");
                        }))
-                       .trace("/trace", (req, res) -> res.send("In trace!"))
+                       .trace("/trace", (req, res) -> {
+                           res.send("In trace!");
+                        })
                        .get("/force-chunked", (req, res) -> {
                            res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
                            res.send("abcd");
                        })
-                       .any(Handler.create(String.class, (req, res, entity) -> res.send("It works! Payload: " + entity)))
+                       .any(Handler.create(String.class, (req, res, entity) -> {
+                            res.send("It works! Payload: " + entity);
+                       }))
                        .build())
                              .start()
                              .toCompletableFuture()
@@ -285,6 +289,7 @@ public class PlainTest {
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
+
     @Test
     public void unconsumedDeferredLargePostDataCausesConnectionClose() throws Exception {
         // open
@@ -441,13 +446,6 @@ public class PlainTest {
             webServer.shutdown()
                      .toCompletableFuture()
                      .get(10, TimeUnit.SECONDS);
-        }
-    }
-
-    @Test
-    public void name() throws Exception {
-        for (byte b: "myData".getBytes()) {
-            System.out.println(b);
         }
     }
 }
