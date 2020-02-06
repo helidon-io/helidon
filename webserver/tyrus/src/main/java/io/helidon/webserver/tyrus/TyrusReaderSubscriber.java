@@ -43,6 +43,10 @@ public class TyrusReaderSubscriber implements Flow.Subscriber<DataChunk> {
     private final ExecutorService executorService;
     private Flow.Subscription subscription;
 
+    TyrusReaderSubscriber(Connection connection) {
+        this(connection, null);
+    }
+
     TyrusReaderSubscriber(Connection connection, ExecutorService executorService) {
         if (connection == null) {
             throw new IllegalArgumentException("Connection cannot be null");

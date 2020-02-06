@@ -272,7 +272,7 @@ public class TyrusSupport implements Service {
                 Connection connection = upgradeInfo.createConnection(publisherWriter,
                         closeReason -> LOGGER.fine(() -> "Connection closed: " + closeReason));
                 if (connection != null) {
-                    TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection, executorService);
+                    TyrusReaderSubscriber subscriber = new TyrusReaderSubscriber(connection);
                     req.content().subscribe(subscriber);
                 }
             }
