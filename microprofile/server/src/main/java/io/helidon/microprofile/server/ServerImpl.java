@@ -20,7 +20,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
-import javax.enterprise.event.Event;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
@@ -68,12 +67,6 @@ public class ServerImpl implements Server {
                 .bindAddress(listenHost);
 
         serverExtension.listenHost(this.host);
-
-        // Inform WebSocket extension of an app specified in builder
-        builder.websocketApplication().ifPresent(app -> {
-            Event<Object> event = container.getBeanManager().getEvent();
-            event.fire(new ServerApplicationConfigEvent(app));
-        });
 
         STARTUP_LOGGER.finest("Builders ready");
 

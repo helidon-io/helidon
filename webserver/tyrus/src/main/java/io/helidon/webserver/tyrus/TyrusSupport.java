@@ -24,25 +24,18 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import javax.websocket.DeploymentException;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
-import io.helidon.common.configurable.ServerThreadPoolSupplier;
-import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.tyrus.core.RequestContext;
 import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 import org.glassfish.tyrus.core.TyrusWebSocketEngine;
@@ -63,22 +56,26 @@ public class TyrusSupport implements Service {
      */
     private static final ByteBuffer FLUSH_BUFFER = ByteBuffer.allocateDirect(0);
 
-    private static final AtomicReference<ExecutorService> DEFAULT_THREAD_POOL = new AtomicReference<>();
-
     private final WebSocketEngine engine;
     private final TyrusHandler handler = new TyrusHandler();
     private Set<Class<?>> endpointClasses;
     private Set<ServerEndpointConfig> endpointConfigs;
-    private ExecutorService executorService;
+
+    /**
+     * Create from another instance.
+     *
+     * @param other The other instance.
+     */
+    protected TyrusSupport(TyrusSupport other) {
+        this.engine = other.engine;
+        this.endpointClasses = other.endpointClasses;
+        this.endpointConfigs = other.endpointConfigs;
+    }
 
     TyrusSupport(WebSocketEngine engine, Set<Class<?>> endpointClasses, Set<ServerEndpointConfig> endpointConfigs) {
         this.engine = engine;
         this.endpointClasses = endpointClasses;
         this.endpointConfigs = endpointConfigs;
-        this.executorService = createExecutorService();
-        if (this.executorService != null) {
-            this.executorService = Contexts.wrap(this.executorService);
-        }
     }
 
     /**
@@ -112,6 +109,15 @@ public class TyrusSupport implements Service {
     }
 
     /**
+     * Returns executor service, can be overridden.
+     *
+     * @return Executor service or {@code null}.
+     */
+    protected ExecutorService executorService() {
+        return null;
+    }
+
+    /**
      * Creates a builder for this class.
      *
      * @return A builder for this class.
@@ -123,7 +129,7 @@ public class TyrusSupport implements Service {
     /**
      * Builder for convenient way to create {@link TyrusSupport}.
      */
-    public static final class Builder implements io.helidon.common.Builder<TyrusSupport> {
+    public static class Builder implements io.helidon.common.Builder<TyrusSupport> {
 
         private Set<Class<?>> endpointClasses = new HashSet<>();
         private Set<ServerEndpointConfig> endpointConfigs = new HashSet<>();
@@ -201,25 +207,6 @@ public class TyrusSupport implements Service {
     }
 
     /**
-     * Creates executor service for Websocket in MP. No executor for SE.
-     *
-     * @return Executor service or {@code null}.
-     */
-    private static ExecutorService createExecutorService() {
-        if (HelidonFeatures.flavor() == HelidonFlavor.MP && DEFAULT_THREAD_POOL.get() == null) {
-            Config executorConfig = ((Config) ConfigProvider.getConfig())
-                    .get("websocket.executor-service");
-
-            DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
-                    .name("websocket")
-                    .config(executorConfig)
-                    .build()
-                    .get());
-        }
-        return DEFAULT_THREAD_POOL.get();
-    }
-
-    /**
      * A Helidon handler that integrates with Tyrus and can process WebSocket
      * upgrade requests.
      */
@@ -270,6 +257,7 @@ public class TyrusSupport implements Service {
             publisherWriter.write(FLUSH_BUFFER, null);
 
             // Setup the WebSocket connection and subscriber, calls @onOpen
+            ExecutorService executorService = executorService();
             if (executorService != null) {
                 CompletableFuture<Connection> future =
                         CompletableFuture.supplyAsync(

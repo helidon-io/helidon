@@ -41,7 +41,6 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
-import io.helidon.microprofile.server.ServerApplicationConfigEvent;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
@@ -126,23 +125,6 @@ public class WebSocketCdiExtension implements Extension {
         return appBuilder.build();
     }
 
-    /**
-     * Event fired off by server to inform this extension that an application class
-     * has been set in the server's builder and that any application class scanned
-     * by this extension should be ignored.
-     *
-     * @param event Event containing new application class.
-     */
-    @SuppressWarnings("unchecked")
-    private void overrideApplication(@Observes ServerApplicationConfigEvent event) {
-        Class<?> applicationClass = event.applicationClass();
-        if (!ServerApplicationConfig.class.isAssignableFrom(applicationClass)) {
-            throw new IllegalArgumentException("Websocket application class " + applicationClass
-                + " must implement " + ServerApplicationConfig.class);
-        }
-        appBuilder.updateApplicationClass((Class<? extends ServerApplicationConfig>) event.applicationClass());
-    }
-
     private void registerWebSockets(BeanManager beanManager, ServerConfiguration serverConfig) {
         try {
             WebSocketApplication app = toWebSocketApplication();
@@ -198,7 +180,7 @@ public class WebSocketCdiExtension implements Extension {
             // Finally register WebSockets in Helidon routing
             String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
             LOGGER.info("Registering websocket application at " + rootPath);
-            routing.register(rootPath, builder.build());
+            routing.register(rootPath, new TyrusSupportMp(builder.build()));
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Unable to load WebSocket extension", e);
         }

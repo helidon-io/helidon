@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.tyrus;
 
+import javax.enterprise.context.Dependent;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -51,7 +52,6 @@ public class WebSocketAppTest {
     @BeforeAll
     static void initClass() {
         Server.Builder builder = Server.builder();
-        builder.websocketApplication(EndpointApplication.class);
         server = builder.build();
         server.start();
     }
@@ -75,6 +75,7 @@ public class WebSocketAppTest {
         echoClient.echo("hi", "how are you?");
     }
 
+    @Dependent
     @RoutingPath("/web")
     public static class EndpointApplication implements ServerApplicationConfig {
         @Override
@@ -97,22 +98,26 @@ public class WebSocketAppTest {
         @OnOpen
         public void onOpen(Session session) throws IOException {
             LOGGER.info("OnOpen called");
+            verifyRunningThread(session, LOGGER);
         }
 
         @OnMessage
         public void echo(Session session, String message) throws Exception {
             LOGGER.info("OnMessage called '" + message + "'");
             session.getBasicRemote().sendObject(message);
+            verifyRunningThread(session, LOGGER);
         }
 
         @OnError
-        public void onError(Throwable t) {
+        public void onError(Throwable t, Session session) throws IOException {
             LOGGER.info("OnError called");
+            verifyRunningThread(session, LOGGER);
         }
 
         @OnClose
-        public void onClose(Session session) {
+        public void onClose(Session session) throws IOException {
             LOGGER.info("OnClose called");
+            verifyRunningThread(session, LOGGER);
         }
     }
 
@@ -145,6 +150,21 @@ public class WebSocketAppTest {
         public void onClose(Session session, CloseReason closeReason) {
             LOGGER.info("OnClose called");
             super.onClose(session, closeReason);
+        }
+    }
+
+    /**
+     * Verify that endpoint methods are running in a Helidon thread pool.
+     *
+     * @param session Websocket session.
+     * @param logger A logger.
+     * @throws IOException Exception during close.
+     */
+    private static void verifyRunningThread(Session session, Logger logger) throws IOException {
+        Thread thread = Thread.currentThread();
+        if (!thread.getName().contains("helidon")) {
+            logger.warning("Websocket handler running in incorrect thread " + thread);
+            session.close();
         }
     }
 }

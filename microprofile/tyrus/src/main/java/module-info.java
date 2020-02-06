@@ -31,6 +31,7 @@ module io.helidon.microprofile.tyrus {
     requires tyrus.core;
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.tyrus;
+    requires tyrus.spi;
 
     exports io.helidon.microprofile.tyrus;
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.tyrus.WebSocketCdiExtension;

@@ -19,7 +19,6 @@ package io.helidon.microprofile.server;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -67,21 +66,6 @@ public interface Server {
     static Server create(Class<? extends Application>... applicationClasses) throws MpException {
         Builder builder = builder();
         Arrays.stream(applicationClasses).forEach(builder::addApplication);
-        return builder.build();
-    }
-
-    /**
-     * Create a server instance using a Websocket application class. Application class
-     * is of type {@code lass<? extends ServerApplicationConfig>}.
-     *
-     * @param applicationClass websocket application class
-     * @return server instance to be started
-     * @throws MpException in case the server fails to be created
-     * @see #builder()
-     */
-    static Server create(Class<?> applicationClass) throws MpException {
-        Builder builder = builder();
-        builder.websocketApplication(applicationClass);
         return builder.build();
     }
 
@@ -159,7 +143,6 @@ public interface Server {
         private Supplier<? extends ExecutorService> defaultExecutorService;
         private JaxRsCdiExtension jaxRs;
         private boolean retainDiscovered = false;
-        private Class<?> wsApplication;
 
         private Builder() {
             if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
@@ -384,20 +367,6 @@ public interface Server {
         }
 
         /**
-         * Registers a WebSocket application in the server. At most one application can be registered.
-         *
-         * @param wsApplication websocket application
-         * @return modified builder
-         */
-        public Builder websocketApplication(Class<?> wsApplication) {
-            if (this.wsApplication != null) {
-                throw new IllegalStateException("Cannot register more than one websocket application");
-            }
-            this.wsApplication = wsApplication;
-            return this;
-        }
-
-        /**
          * If any application or resource class is added through this builder, applications discovered by CDI are ignored.
          * You can change this behavior by setting the retain discovered applications to {@code true}.
          *
@@ -521,10 +490,6 @@ public interface Server {
 
         int port() {
             return port;
-        }
-
-        Optional<Class<?>> websocketApplication() {
-            return Optional.ofNullable(wsApplication);
         }
     }
 }
