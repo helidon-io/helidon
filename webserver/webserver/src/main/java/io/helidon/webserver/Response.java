@@ -274,21 +274,12 @@ abstract class Response implements ServerResponse {
     private final class MessageBodyEventListener implements MessageBodyContext.EventListener {
 
         private Span span;
+        private volatile boolean sent;
 
-        // Sent switch just once from false to true near the beginning.
-        // It use combination with volatile to faster check.
-        private boolean sent;
-        private volatile boolean sentVolatile;
-
-        private void sendHeadersIfNeeded() {
-            if (headers != null && !sent && !sentVolatile) {
-                synchronized (this) {
-                    if (!sent && !sentVolatile) {
-                        sent = true;
-                        sentVolatile = true;
-                        headers.send();
-                    }
-                }
+        private synchronized void sendHeadersIfNeeded() {
+            if (headers != null && !sent) {
+                sent = true;
+                headers.send();
             }
         }
 
