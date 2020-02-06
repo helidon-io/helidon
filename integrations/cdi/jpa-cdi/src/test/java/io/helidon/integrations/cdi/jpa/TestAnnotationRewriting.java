@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DataSourceDefinition(
     name = "test",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:test",
+    url = "jdbc:h2:mem:TestAnnotationRewriting",
     serverName = "",
     properties = {
         "user=sa"
