@@ -78,6 +78,10 @@ class IterablePublisher<T> implements Flow.Publisher<T> {
                                     T next = iterator.next();
                                     Objects.requireNonNull(next);
                                     subscriber.onNext(next);
+                                    if (!iterator.hasNext() && !completed.getAndSet(true)) {
+                                        subscriber.onComplete();
+                                        break;
+                                    }
                                 } else {
                                     if (!completed.getAndSet(true)) {
                                         subscriber.onComplete();

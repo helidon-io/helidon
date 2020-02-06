@@ -32,16 +32,17 @@ import java.util.function.Function;
  */
 public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<X>, StrictProcessor {
 
+    private boolean strictMode = BaseProcessor.DEFAULT_STRICT_MODE;
     private Function<T, Flow.Publisher<X>> mapper;
-    private RequestedCounter requestCounter = new RequestedCounter();
+    private RequestedCounter requestCounter = new RequestedCounter(strictMode);
+    private RequestedCounter requestCounterUpstream = new RequestedCounter(strictMode);
     private Flow.Subscriber<? super X> subscriber;
     private Flow.Subscription subscription;
     private volatile Flow.Subscription innerSubscription;
     private volatile Flow.Publisher<X> innerPublisher;
-    private AtomicBoolean upstreamsCompleted = new AtomicBoolean(false);
+    private AtomicBoolean upstreamCompleted = new AtomicBoolean(false);
     private Optional<Throwable> error = Optional.empty();
     private ReentrantLock subscriptionLock = new ReentrantLock();
-    private boolean strictMode = BaseProcessor.DEFAULT_STRICT_MODE;
 
 
     /**
@@ -115,9 +116,10 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
         @Override
         public void request(long n) {
             requestCounter.increment(n, MultiFlatMapProcessor.this::onError);
-            if (Objects.nonNull(innerSubscription)) {
+            if (Objects.nonNull(innerSubscription) && Objects.nonNull(innerPublisher)) {
                 innerSubscription.request(n);
             } else {
+                requestCounterUpstream.increment(1, MultiFlatMapProcessor.this::onError);
                 subscription.request(1);
             }
         }
@@ -157,6 +159,7 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
     @Override
     public void onNext(T o) {
         Objects.requireNonNull(o);
+        requestCounterUpstream.tryDecrement();
         try {
             var mapperReturnedPublisher = mapper.apply(o);
             if (Objects.isNull(mapperReturnedPublisher)) {
@@ -182,7 +185,7 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
     @Override
     public void onComplete() {
-        upstreamsCompleted.set(true);
+        upstreamCompleted.set(true);
         subscriptionLock(() -> {
             try {
                 requestCounter.lock();
@@ -206,14 +209,24 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
                 return;
             }
             innerSubscription = subscription;
-            innerSubscription.request(requestCounter.get());
+            try {
+                requestCounter.lock();
+                if (requestCounter.get() > 0) {
+                    innerSubscription.request(requestCounter.get());
+                }
+            } finally {
+                requestCounter.unlock();
+            }
         }
 
         @Override
         public void onNext(X item) {
             Objects.requireNonNull(item);
-            requestCounter.tryDecrement();
-            subscriber.onNext(item);
+            if (requestCounter.tryDecrement()) {
+                subscriber.onNext(item);
+            } else {
+                onError(new IllegalStateException("Not enough request to submit item"));
+            }
         }
 
         @Override
@@ -225,16 +238,24 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
 
         @Override
         public void onComplete() {
-            if (upstreamsCompleted.get()) {
+            if (upstreamCompleted.get()) {
                 subscriber.onComplete();
+                return;
             }
             subscriptionLock(() -> {
                 innerPublisher = null;
             });
             try {
                 requestCounter.lock();
-                if (requestCounter.get() > 0) {
-                    subscription.request(1);
+                try {
+                    requestCounterUpstream.lock();
+
+                    if (requestCounter.get() > 0 && requestCounterUpstream.get() == 0) {
+                        requestCounterUpstream.increment(1, MultiFlatMapProcessor.this::onError);
+                        subscription.request(1);
+                    }
+                } finally {
+                    requestCounterUpstream.unlock();
                 }
             } finally {
                 requestCounter.unlock();

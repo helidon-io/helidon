@@ -18,9 +18,8 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Concat streams to one.
@@ -28,12 +27,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * @param <T> item type
  */
 public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
-    private FirstProcessor firstProcessor;
-    private SecondProcessor secondProcessor;
+    private FirstSubscriber firstSubscriber;
+    private SecondSubscriber secondSubscriber;
     private Flow.Subscriber<T> subscriber;
     private Flow.Publisher<T> firstPublisher;
     private Flow.Publisher<T> secondPublisher;
-    private AtomicLong requested = new AtomicLong();
+    private RequestedCounter requested = new RequestedCounter(true);
+    private ReentrantLock firstPublisherCompleteLock = new ReentrantLock();
 
     private ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
         this.firstPublisher = firstPublisher;
@@ -57,10 +57,10 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
         this.subscriber = (Flow.Subscriber<T>) subscriber;
 
-        this.firstProcessor = new FirstProcessor();
-        this.secondProcessor = new SecondProcessor();
+        this.firstSubscriber = new FirstSubscriber();
+        this.secondSubscriber = new SecondSubscriber();
 
-        firstPublisher.subscribe(firstProcessor);
+        firstPublisher.subscribe(firstSubscriber);
 
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
@@ -68,68 +68,68 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
                 if (!StreamValidationUtils.checkRequestParam(n, subscriber::onError)) {
                     return;
                 }
-                requested.set(n);
-                if (!firstProcessor.complete) {
-                    firstProcessor.subscription.request(n);
-                } else {
-                    secondProcessor.subscription.request(n);
-                }
+                requested.increment(n, subscriber::onError);
+                firstCompleteLock(() -> {
+                    if (!firstSubscriber.complete) {
+                        firstSubscriber.subscription.request(n);
+                    } else {
+                        secondSubscriber.subscription.request(n);
+                    }
+                });
             }
 
             @Override
             public void cancel() {
-                firstProcessor.subscription.cancel();
-                secondProcessor.subscription.cancel();
+                firstSubscriber.subscription.cancel();
+                secondSubscriber.subscription.cancel();
             }
         });
     }
 
-    private class FirstProcessor implements Flow.Processor<Object, Object> {
+    private class FirstSubscriber implements Flow.Subscriber<T> {
 
         private Flow.Subscription subscription;
         private boolean complete = false;
 
         @Override
-        public void subscribe(Flow.Subscriber<? super Object> s) {
-        }
-
-        @Override
         public void onSubscribe(Flow.Subscription subscription) {
             Objects.requireNonNull(subscription);
             this.subscription = subscription;
-            secondPublisher.subscribe(secondProcessor);
+            secondPublisher.subscribe(secondSubscriber);
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public void onNext(Object o) {
-            requested.decrementAndGet();
-            ConcatPublisher.this.subscriber.onNext((T) o);
+        public void onNext(T o) {
+            requested.tryDecrement();
+            ConcatPublisher.this.subscriber.onNext(o);
         }
 
         @Override
         public void onError(Throwable t) {
-            complete = true;
-            Optional.ofNullable(secondProcessor.subscription).ifPresent(Flow.Subscription::cancel);
+            firstCompleteLock(() -> complete = true);
+            secondSubscriber.subscription.cancel();
             subscription.cancel();
             ConcatPublisher.this.subscriber.onError(t);
         }
 
         @Override
         public void onComplete() {
-            complete = true;
-            Optional.ofNullable(secondProcessor.subscription).ifPresent(s -> s.request(requested.get()));
+            firstCompleteLock(() -> complete = true);
+            try {
+                requested.lock();
+                long n = requested.get();
+                if (n > 0) {
+                    secondSubscriber.subscription.request(n);
+                }
+            } finally {
+                requested.unlock();
+            }
         }
     }
 
-
-    private class SecondProcessor implements Flow.Processor<Object, Object> {
+    private class SecondSubscriber implements Flow.Subscriber<T> {
 
         private Flow.Subscription subscription;
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super Object> s) {
-        }
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
@@ -138,14 +138,13 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public void onNext(Object o) {
-            ConcatPublisher.this.subscriber.onNext((T) o);
+        public void onNext(T o) {
+            ConcatPublisher.this.subscriber.onNext(o);
         }
 
         @Override
         public void onError(Throwable t) {
-            firstProcessor.subscription.cancel();
+            firstSubscriber.subscription.cancel();
             subscription.cancel();
             ConcatPublisher.this.subscriber.onError(t);
         }
@@ -153,6 +152,15 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
         @Override
         public void onComplete() {
             ConcatPublisher.this.subscriber.onComplete();
+        }
+    }
+
+    private void firstCompleteLock(Runnable runnable) {
+        try {
+            firstPublisherCompleteLock.lock();
+            runnable.run();
+        } finally {
+            firstPublisherCompleteLock.unlock();
         }
     }
 }

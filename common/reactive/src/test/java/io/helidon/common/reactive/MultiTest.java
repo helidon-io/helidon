@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import io.helidon.common.mapper.Mapper;
@@ -486,6 +487,44 @@ public class MultiTest {
                 .collectList().get();
 
         assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void requestOneOfOneExpectComplete() {
+        TestSubscriber<String> subscriber = new TestSubscriber<>();
+        Multi.just("foo").subscribe(subscriber);
+        subscriber.request1();
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(List.of("foo")));
+    }
+
+    @Test
+    void requestTwiceOneOfTwoExpectComplete() {
+        TestSubscriber<String> subscriber = new TestSubscriber<>();
+        Multi.just("foo", "bar").subscribe(subscriber);
+        subscriber.request1();
+        subscriber.request1();
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(List.of("foo", "bar")));
+    }
+
+    @Test
+    void requestAllByMultipleExpectComplete() {
+        List<Integer> DATA = IntStream.range(0, 100).boxed().collect(Collectors.toList());
+        TestSubscriber<Integer> subscriber = new TestSubscriber<>();
+        Multi.just(DATA).subscribe(subscriber);
+        subscriber.request(1);
+        assertThat(subscriber.getItems().size(), is(1));
+        subscriber.request(48);
+        subscriber.request(1);
+        assertThat(subscriber.getItems().size(), is(50));
+        subscriber.request(50);
+        assertThat(subscriber.getItems().size(), is(100));
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(DATA));
     }
 
     private static class MultiTestSubscriber<T> extends TestSubscriber<T> {
