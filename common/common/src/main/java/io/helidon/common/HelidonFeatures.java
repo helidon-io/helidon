@@ -166,15 +166,6 @@ public final class HelidonFeatures {
         CURRENT_FLAVOR.compareAndSet(null, flavor);
     }
 
-    /**
-     * Get the currently set Helidon flavor.
-     *
-     * @return current flavor
-     */
-    public static HelidonFlavor flavor() {
-        return CURRENT_FLAVOR.get();
-    }
-
     static final class Node {
         private final Map<String, Node> children = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private final String name;
