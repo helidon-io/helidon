@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.core.Application;
 
@@ -159,6 +160,28 @@ public interface Server {
          * @throws MpException in case the server fails to be created
          */
         public Server build() {
+            // make sure server is not already running
+            try {
+                ServerCdiExtension server = CDI.current()
+                        .getBeanManager()
+                        .getExtension(ServerCdiExtension.class);
+
+                if (server.started()) {
+                    SeContainer container = (SeContainer) CDI.current();
+                    container.close();
+                    throw new MpException("Server is already started. Maybe you have initialized CDI yourself? "
+                                                  + "If you do so, then you cannot use Server.builder() to set up your server. "
+                                                  + "Config is initialized with defaults or using "
+                                                  + "meta-config.yaml; applications are discovered using CDI. "
+                                                  + "To use custom configuration, you can use "
+                                                  + "ConfigProviderResolver.instance().registerConfig(config, "
+                                                  + "classLoader);");
+                }
+            } catch (IllegalStateException ignored) {
+                // container is not running - server cannot be started in such a case
+                // ignore this
+            }
+
             // we may have shutdown the original instance, this is to ensure we use the current CDI.
             HelidonContainer instance = HelidonContainer.instance();
             // now run the build within context already

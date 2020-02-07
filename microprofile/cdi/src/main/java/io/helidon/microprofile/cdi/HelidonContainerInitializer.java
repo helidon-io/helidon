@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
             LOGGER.warning("You are using SeContainerInitializer. This application will not work with GraalVM native-image."
                                    + " You can disable this warning by configuring " + CONFIG_INITIALIZER_NO_WARN + "=true.");
         }
+        ContainerInstanceHolder.set(container);
     }
 
     @Override
