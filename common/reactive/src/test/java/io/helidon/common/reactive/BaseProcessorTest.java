@@ -237,7 +237,7 @@ public class BaseProcessorTest {
         TestSubscriber<String> subscriber2 = new TestSubscriber<>();
         processor.subscribe(subscriber2);
         assertThat(subscriber1.getSubcription(), is(not(nullValue())));
-        assertThat(subscriber2.getSubcription(), is(nullValue()));
+        assertThat(subscriber2.getSubcription(), is(not(nullValue())));
     }
 
     private static class TestProcessor<T> extends BaseProcessor<T, T> {

@@ -38,6 +38,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     private final ReentrantLock errorLock = new ReentrantLock();
     private AtomicBoolean ready = new AtomicBoolean(false);
     private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private AtomicBoolean closed = new AtomicBoolean(false);
     private volatile boolean completed;
     private Throwable error;
     private boolean strictMode = DEFAULT_STRICT_MODE;
@@ -89,6 +90,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     public void subscribe(Subscriber<? super U> sub) {
         subscriptionLock(() -> {
             if (Objects.nonNull(subscriber)) {
+                sub.onSubscribe(EmptySubscription.INSTANCE);
                 sub.onError(new IllegalStateException("This publisher only supports a single subscriber!"));
                 return;
             }
@@ -201,25 +203,29 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     }
 
     /**
-     * Try close processor's subscriber.
+     * Try close processor's subscriber with onError or onComplete,
+     * if successful release subscriber reference, no on* signal is allowed after that.
      */
     protected void tryComplete() {
         if (Objects.isNull(subscriber)) return;
-        if (Objects.nonNull(error)) {
+        if (Objects.nonNull(error) && !closed.getAndSet(true)) {
             try {
                 hookOnError(error);
             } catch (Throwable ex) {
                 error.addSuppressed(ex);
             }
             subscriber.onError(error);
-        } else if (completed) {
+            subscriber = null;
+        } else if (completed && !closed.getAndSet(true)) {
             try {
                 hookOnComplete();
             } catch (Throwable ex) {
                 subscriber.onError(ex);
+                subscriber = null;
                 return;
             }
             subscriber.onComplete();
+            subscriber = null;
         }
     }
 
