@@ -45,7 +45,7 @@
         <dependency>
             <groupId>javax.interceptor</groupId>
             <artifactId>javax.interceptor-api</artifactId>
-            <scope>provided></scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.bundles</groupId>
