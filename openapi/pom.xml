@@ -42,18 +42,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>generate-snakeyaml-parsing-helper</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
@@ -62,12 +50,14 @@
                         <goals>
                             <goal>unpack-dependencies</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <classifier>sources</classifier>
                             <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
                             <outputDirectory>${openapi-interfaces-dir}</outputDirectory>
                             <includeGroupIds>org.eclipse.microprofile.openapi</includeGroupIds>
                             <includeArtifactIds>microprofile-openapi-api</includeArtifactIds>
+                            <includes>org/eclipse/microprofile/openapi/models/**/*.java</includes>
                         </configuration>
                     </execution>
                     <execution>
@@ -75,12 +65,36 @@
                         <goals>
                             <goal>unpack-dependencies</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <classifier>sources</classifier>
                             <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
                             <outputDirectory>${openapi-impls-dir}</outputDirectory>
                             <includeGroupIds>io.smallrye</includeGroupIds>
                             <includeArtifactIds>smallrye-open-api</includeArtifactIds>
+                            <includes>io/smallrye/openapi/api/models/**/*.java</includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-snakeyaml-parsing-helper</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <outputClass>io.helidon.openapi.SnakeYAMLParserHelper</outputClass>
+                            <interfacesConfig>
+                                <inputDirectory>${openapi-interfaces-dir}</inputDirectory>
+                            </interfacesConfig>
+                            <implementationsConfig>
+                                <inputDirectory>${openapi-impls-dir}</inputDirectory>
+                            </implementationsConfig>
                         </configuration>
                     </execution>
                 </executions>
