@@ -35,6 +35,7 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     private Subscription subscription;
     private Subscriber<? super U> subscriber;
     private final ReentrantLock subscriptionLock = new ReentrantLock();
+    private final ReentrantLock errorLock = new ReentrantLock();
     private AtomicBoolean ready = new AtomicBoolean(false);
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private volatile boolean completed;
@@ -87,6 +88,10 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     @Override
     public void subscribe(Subscriber<? super U> sub) {
         subscriptionLock(() -> {
+            if (Objects.nonNull(subscriber)) {
+                sub.onError(new IllegalStateException("This publisher only supports a single subscriber!"));
+                return;
+            }
             subscriber = sub;
             if (strictMode) {
                 subscriber = SequentialSubscriber.create(sub);
@@ -138,12 +143,14 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     @Override
     public void onError(Throwable ex) {
         Objects.requireNonNull(ex);
-        if (error == null) {
-            error = ex;
-        } else if (!Objects.equals(ex, error)) {
-            error.addSuppressed(ex);
-        }
-        tryComplete();
+        errorLock(() -> {
+            if (error == null) {
+                error = ex;
+            } else if (!Objects.equals(ex, error)) {
+                error.addSuppressed(ex);
+            }
+            tryComplete();
+        });
     }
 
     @Override
@@ -226,6 +233,19 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
             guardedBlock.run();
         } finally {
             subscriptionLock.unlock();
+        }
+    }
+
+    private void errorLock(Runnable guardedBlock) {
+        if (!strictMode) {
+            guardedBlock.run();
+            return;
+        }
+        try {
+            errorLock.lock();
+            guardedBlock.run();
+        } finally {
+            errorLock.unlock();
         }
     }
 
