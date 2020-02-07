@@ -550,8 +550,8 @@ class BuilderImpl implements Config.Builder {
             envVarAliasGeneratorEnabled = true;
         }
 
-        if (sources.isEmpty()) {
-            // if there are no sources configured, use meta-configuration
+        if (sources.isEmpty() && prioritizedSources.isEmpty()) {
+            // if there are no sources configured, use meta-configuration (only in case we have no prioritized sources)
             targetSources.addAll(MetaConfig.configSources(mediaType -> context.findParser(mediaType).isPresent()));
         } else {
             targetSources.addAll(sources);
