@@ -18,6 +18,7 @@ package io.helidon.config.sources;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import io.helidon.config.ConfigException;
@@ -25,32 +26,44 @@ import io.helidon.config.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 
-public class SystemPropertiesConfigSource implements ConfigSource.EagerSource,
-                                                     ConfigSource.StampPollingSource<Map<String, String>> {
+public class MapConfigSource implements ConfigSource.EagerSource,
+                                        ConfigSource.StampPollingSource<Map<?, ?>> {
+    private Map<?, ?> theMap;
+
+    private MapConfigSource(Map<?, ?> theMap) {
+        this.theMap = theMap;
+    }
+
+    public static MapConfigSource create(Map<String, String> theMap) {
+        Objects.requireNonNull(theMap);
+        return new MapConfigSource(theMap);
+    }
+
+    public static MapConfigSource create(Properties properties) {
+        Objects.requireNonNull(properties);
+        return new MapConfigSource(properties);
+    }
+
     @Override
     public ConfigParser.Content load() throws ConfigException {
-        Map<String, String> currentProperties = new HashMap<>();
-        Properties sysProps = System.getProperties();
-        sysProps
-                .stringPropertyNames()
-                .forEach(key -> currentProperties.put(key, sysProps.getProperty(key)));
+        Map<?, ?> copyOfMap = new HashMap<>(theMap);
 
         return ConfigParser.Content.builder()
-                .pollingStamp(currentProperties)
-                .node(toNode(currentProperties))
+                .pollingStamp(copyOfMap)
+                .node(toNode(copyOfMap))
                 .build();
     }
 
-    private ConfigNode.ObjectNode toNode(Map<String, String> map) {
+    private ConfigNode.ObjectNode toNode(Map<?, ?> map) {
         ConfigNode.ObjectNode.Builder builder = ConfigNode.ObjectNode.builder();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            builder.addValue(entry.getKey(), entry.getValue());
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            builder.addValue(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
         }
         return builder.build();
     }
 
     @Override
-    public boolean isModified(Map<String, String> stamp) {
-        return !System.getProperties().equals(stamp);
+    public boolean isModified(Map<?, ?> stamp) {
+        return !theMap.equals(stamp);
     }
 }

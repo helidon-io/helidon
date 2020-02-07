@@ -98,6 +98,12 @@ public interface ConfigParser {
          */
         InputStream data();
 
+        ObjectNode node();
+
+        <T> Optional<T> stamp();
+
+        <T> Optional<T> target();
+
         /**
          * Create a fluent API builder for content.
          *
@@ -166,6 +172,24 @@ public interface ConfigParser {
                     @Override
                     public boolean exists() {
                         return exists;
+                    }
+
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public <T> Optional<T> stamp() {
+                        return Optional.ofNullable((T)stamp);
+                    }
+
+
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public <T> Optional<T> target() {
+                        return Optional.ofNullable((T)target);
+                    }
+
+                    @Override
+                    public ObjectNode node() {
+                        return rootNode;
                     }
                 };
             }

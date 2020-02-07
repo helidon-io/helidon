@@ -57,6 +57,6 @@ class ClasspathConfigSourceTest {
         assertThat("not-there.properties should not exist on classpath", source.exists(), is(false));
         assertThat("Description should not be null", source.description(), notNullValue());
 
-        assertThrows(NullPointerException.class, source::load);
+        assertThrows(RuntimeException.class, source::load);
     }
 }

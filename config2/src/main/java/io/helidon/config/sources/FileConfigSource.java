@@ -39,10 +39,14 @@ public class FileConfigSource implements ConfigSource.EagerSource,
     private final Optional<ConfigParser> configuredParser;
     private final Path filePath;
 
-    public FileConfigSource(Path filePath) {
+    private FileConfigSource(Path filePath) {
         this.filePath = filePath;
         this.configuredParser = Optional.empty();
         this.configuredMediaType = Optional.empty();
+    }
+
+    public static FileConfigSource create(Path path) {
+        return new FileConfigSource(path);
     }
 
     @Override
