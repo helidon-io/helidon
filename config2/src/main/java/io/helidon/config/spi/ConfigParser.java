@@ -91,6 +91,9 @@ public interface ConfigParser {
 
         Optional<ConfigParser> parser();
 
+        boolean hasData();
+        boolean hasNode();
+
         /**
          * Returns an {@link java.io.InputStream} that is used to read configuration content from.
          *
@@ -151,6 +154,17 @@ public interface ConfigParser {
                     @Override
                     public InputStream data() {
                         return data;
+                    }
+
+                    @Override
+                    public boolean hasData() {
+                        return null != data;
+                    }
+
+
+                    @Override
+                    public boolean hasNode() {
+                        return null != rootNode;
                     }
 
                     @Override

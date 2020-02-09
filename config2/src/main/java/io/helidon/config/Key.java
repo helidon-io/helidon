@@ -16,6 +16,8 @@
 
 package io.helidon.config;
 
+import java.util.List;
+
 /**
  * Object represents fully-qualified key of config node.
  * <p>
@@ -86,6 +88,8 @@ public interface Key extends Comparable<Key> {
 
     Key child(Key key);
 
+    List<String> elements();
+
     /**
      * Creates new instance of Key for specified {@code key} literal.
      * <p>
@@ -97,6 +101,10 @@ public interface Key extends Comparable<Key> {
      */
     static Key create(String key) {
         return ConfigKeyImpl.of(key);
+    }
+
+    static Key create(List<String> elements) {
+        return ConfigKeyImpl.of(elements);
     }
 
     /**

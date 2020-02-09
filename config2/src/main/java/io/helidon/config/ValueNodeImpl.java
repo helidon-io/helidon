@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.config.ConfigNode.ValueNode;
 
@@ -39,8 +40,8 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
     }
 
     @Override
-    public String get() {
-        return value;
+    public Optional<String> get() {
+        return Optional.ofNullable(value);
     }
 
     /**
@@ -63,7 +64,7 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
         if (valueNode instanceof ValueNodeImpl) {
             return (ValueNodeImpl) valueNode;
         }
-        return ValueNodeImpl.create(valueNode.get());
+        return ValueNodeImpl.create(valueNode.get().get());
     }
 
     @Override

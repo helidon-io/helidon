@@ -20,12 +20,13 @@ package io.helidon.config;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
  * Config node implementation.
  */
-public interface ConfigNode extends Supplier<String> {
+public interface ConfigNode extends Supplier<Optional<String>> {
     /**
      * Get the type of this node.
      *

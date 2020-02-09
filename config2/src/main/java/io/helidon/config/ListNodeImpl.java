@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.AbstractList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -51,9 +52,10 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
         if (listNode instanceof ListNodeImpl) {
             return (ListNodeImpl) listNode;
         }
-        return ListNodeBuilderImpl.from(listNode)
-                .value(listNode.get())
-                .build();
+        ListNodeBuilderImpl builder = ListNodeBuilderImpl.from(listNode);
+        listNode.get().ifPresent(builder::value);
+
+        return builder.build();
     }
 
     @Override
@@ -74,7 +76,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
         case LIST:
             return mergeWithList((ListNodeImpl) node);
         case VALUE:
-            return new ListNodeImpl(elements, ((ValueNodeImpl) node).get());
+            return new ListNodeImpl(elements, node.get().get());
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }
@@ -104,7 +106,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
         final ListNodeBuilderImpl builder = new ListNodeBuilderImpl(Function.identity());
 
         if (node.hasValue()) {
-            builder.value(node.get());
+            builder.value(node.get().get());
         } else if (hasValue()) {
             builder.value(value);
         }
@@ -156,7 +158,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
     }
 
     @Override
-    public String get() {
-        return value;
+    public Optional<String> get() {
+        return Optional.ofNullable(value);
     }
 }

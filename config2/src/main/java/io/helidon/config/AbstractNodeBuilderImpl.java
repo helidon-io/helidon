@@ -153,10 +153,10 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     }
 
     private void mergeValueMember(ValueNode member, MergingKey key, MergeableNode node, ID id) {
-        ObjectNode on = ObjectNodeBuilderImpl.create(Map.of(), tokenResolver).value(member.get()).build();
+        ObjectNode on = ObjectNodeBuilderImpl.create(Map.of(), tokenResolver).value(member.get().get()).build();
         ConfigNode merged = ObjectNodeBuilderImpl
                 .create(on, tokenResolver) // make copy of member
-                .value(on.get())
+                .value(on.get().get())
                 .deepMerge(key.rest(), node) // merge it with specified node
                 .build();
 
@@ -166,9 +166,10 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     private void mergeListMember(ListNode member, MergingKey key, MergeableNode node, ID id) {
         try {
             // deep merge of list with specified node
-            ConfigNode merged = ListNodeBuilderImpl.from(member, tokenResolver) // make copy of member
-                    .value(member.get())
-                    .deepMerge(key.rest(), node) // merge it with specified node
+            ListNodeBuilderImpl builder = ListNodeBuilderImpl.from(member, tokenResolver); // make copy of member
+            member.get().ifPresent(builder::value);
+
+            ConfigNode merged = builder.deepMerge(key.rest(), node) // merge it with specified node
                     .build();
             // updates/replaces original member associated by id with new merged value
             update(id, wrap(merged, tokenResolver));
@@ -180,10 +181,12 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     private void mergeObjectMember(ObjectNode member, MergingKey key, MergeableNode node, ID id) {
         try {
             // deep merge of object with specified node
-            ConfigNode merged = ObjectNodeBuilderImpl
-                    .create(member, tokenResolver) // make copy of member
-                    .value(member.get())
-                    .deepMerge(key.rest(), node) // merge it with specified node
+            ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl
+                    .create(member, tokenResolver);// make copy of member
+
+            member.get().ifPresent(builder::value);
+
+            ConfigNode merged = builder.deepMerge(key.rest(), node) // merge it with specified node
                     .build();
             // updates/replaces original member associated by id with new merged value
             update(id, wrap(merged, tokenResolver));

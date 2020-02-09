@@ -58,6 +58,17 @@ public class ConfigKeyImpl implements Key {
         this.fullKey = fullSB.toString();
     }
 
+    public ConfigKeyImpl(ConfigKeyImpl parent, List<String> elements) {
+        this.parent = parent;
+        this.name = elements.get(0);
+        this.path = new ArrayList<>(elements);
+        this.fullKey = String.join(".", path);
+    }
+
+    public static Key of(List<String> elements) {
+        return new ConfigKeyImpl(ConfigKeyImpl.of(), elements);
+    }
+
     @Override
     public ConfigKeyImpl parent() {
         if (null == parent) {
@@ -119,6 +130,11 @@ public class ConfigKeyImpl implements Key {
             }
         }
         return child(path);
+    }
+
+    @Override
+    public List<String> elements() {
+        return new ArrayList<>(path);
     }
 
     private ConfigKeyImpl child(List<String> path) {
