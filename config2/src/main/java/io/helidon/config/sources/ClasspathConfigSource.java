@@ -23,27 +23,30 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.ConfigException;
+import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ConfigSourceBase;
+import io.helidon.config.spi.ConfigSourceBuilderBase;
 import io.helidon.config.spi.Content;
 
-public class ClasspathConfigSource implements ConfigSource.ParsableSource {
+public class ClasspathConfigSource extends ConfigSourceBase implements ConfigSource.ParsableSource {
     private final URL resource;
+    private final Optional<String> configuredMediaType;
+    private final Optional<ConfigParser> configuredParser;
 
-    private ClasspathConfigSource(URL resource) {
-        this.resource = resource;
+    private ClasspathConfigSource(Builder builder) {
+        super(builder);
+        this.resource = builder.url;
+        this.configuredParser = builder.parser();
+        this.configuredMediaType = builder.mediaType();
     }
 
     public static ClasspathConfigSource create(String resource) {
-        String cleaned = resource.startsWith("/") ? resource.substring(1) : resource;
-
-        URL resourceUrl = Thread.currentThread()
-                .getContextClassLoader()
-                .getResource(cleaned);
-
-        return new ClasspathConfigSource(resourceUrl);
+        return builder().resource(resource).build();
     }
 
     public static Collection<? super ClasspathConfigSource> createAll(String resource) {
@@ -58,7 +61,7 @@ public class ClasspathConfigSource implements ConfigSource.ParsableSource {
                 List<? super ClasspathConfigSource> sources = new LinkedList<>();
                 while (resources.hasMoreElements()) {
                     URL url = resources.nextElement();
-                    sources.add(new ClasspathConfigSource(url));
+                    sources.add(builder().url(url).build());
                 }
                 return sources;
             } else {
@@ -69,6 +72,10 @@ public class ClasspathConfigSource implements ConfigSource.ParsableSource {
         } catch (IOException e) {
             throw new ConfigException("Could not access config resource " + resource, e);
         }
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -91,5 +98,41 @@ public class ClasspathConfigSource implements ConfigSource.ParsableSource {
         MediaTypes.detectType(resource).ifPresent(builder::mediaType);
 
         return builder.build();
+    }
+
+    public static class Builder extends ConfigSourceBuilderBase<Builder, Void>
+            implements ParsableSource.Builder<Builder> {
+        private URL url;
+
+        @Override
+        public Builder parser(ConfigParser parser) {
+            return super.parser(parser);
+        }
+
+        @Override
+        public Builder mediaType(String mediaType) {
+            return super.mediaType(mediaType);
+        }
+
+        @Override
+        public ClasspathConfigSource build() {
+            return new ClasspathConfigSource(this);
+        }
+
+        public Builder resource(String resource) {
+            String cleaned = resource.startsWith("/") ? resource.substring(1) : resource;
+
+            // the URL may not exist, and that is fine - maybe we are an optional config source
+            url = Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResource(cleaned);
+
+            return this;
+        }
+
+        private Builder url(URL url) {
+            this.url = url;
+            return this;
+        }
     }
 }

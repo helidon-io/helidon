@@ -24,24 +24,33 @@ import java.util.Properties;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ConfigSourceBase;
+import io.helidon.config.spi.ConfigSourceBuilderBase;
 import io.helidon.config.spi.Content;
+import io.helidon.config.spi.PollingStrategy;
 
-public class MapConfigSource implements ConfigSource.NodeSource,
-                                        ConfigSource.PollableSource<Map<?, ?>> {
-    private Map<?, ?> theMap;
+public class MapConfigSource extends ConfigSourceBase implements ConfigSource.NodeSource,
+                                                                 ConfigSource.PollableSource<Map<?, ?>> {
+    private final Map<?, ?> theMap;
 
-    private MapConfigSource(Map<?, ?> theMap) {
-        this.theMap = theMap;
+    public MapConfigSource(Builder builder) {
+        super(builder);
+        // we intentionally keep the original instance, so we can watch for changes
+        this.theMap = builder.map;
     }
 
     public static MapConfigSource create(Map<String, String> theMap) {
         Objects.requireNonNull(theMap);
-        return new MapConfigSource(theMap);
+        return builder().map(theMap).build();
     }
 
     public static MapConfigSource create(Properties properties) {
         Objects.requireNonNull(properties);
-        return new MapConfigSource(properties);
+        return builder().properties(properties).build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -65,5 +74,30 @@ public class MapConfigSource implements ConfigSource.NodeSource,
     @Override
     public boolean isModified(Map<?, ?> stamp) {
         return !theMap.equals(stamp);
+    }
+
+    public static class Builder extends ConfigSourceBuilderBase<Builder, Void>
+                    implements PollableSource.Builder<Builder> {
+        private Map<?, ?> map;
+
+        @Override
+        public MapConfigSource build() {
+            return new MapConfigSource(this);
+        }
+
+        public Builder map(Map<String, String> map) {
+            this.map = map;
+            return this;
+        }
+
+        public Builder properties(Properties properties) {
+            this.map = properties;
+            return this;
+        }
+
+        @Override
+        public Builder pollingStrategy(PollingStrategy pollingStrategy) {
+            return super.pollingStrategy(pollingStrategy);
+        }
     }
 }

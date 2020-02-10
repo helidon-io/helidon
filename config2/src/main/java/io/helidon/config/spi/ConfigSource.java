@@ -79,6 +79,23 @@ public interface ConfigSource {
         return true;
     }
 
+    default Optional<PollingStrategy> pollingStrategy() {
+        return Optional.empty();
+    }
+
+    default Optional<RetryPolicy> retryPolicy() {
+        return Optional.empty();
+    }
+
+    default Optional<ChangeWatcher<?>> changeWatcher() {
+        return Optional.empty();
+    }
+
+    interface Builder<T extends Builder<T>> extends io.helidon.common.Builder<ConfigSource> {
+        T retryPolicy(RetryPolicy policy);
+        T optional(boolean optional);
+    }
+
     /**
      * A source that can read all data from the underlying origin as a stream that can be parsed based on its media type.
      */
@@ -98,6 +115,11 @@ public interface ConfigSource {
          * Closes the @{code Source}, releasing any resources it holds.
          */
         default void close() {
+        }
+
+        interface Builder<T extends Builder<T>> extends ConfigSource.Builder<T> {
+            T parser(ConfigParser parser);
+            T mediaType(String mediaType);
         }
     }
 
@@ -164,10 +186,14 @@ public interface ConfigSource {
      */
     interface WatchableSource<T> {
         Class<T> targetType();
+
+        interface Builder<B extends Builder<B, T>, T>  extends ConfigSource.Builder<B> {
+            B changeWatcher(ChangeWatcher<T> changeWatcher);
+        }
     }
 
     /**
-     * A config source that supports usage of polling strategies that use a stamp.
+     * A config source that supports usage of polling strategies that do regular checks.
      *
      * @param <S> type of content stamp
      */
@@ -178,5 +204,13 @@ public interface ConfigSource {
          * @return {@code true} if the current data of this config source differ from the loaded data
          */
         boolean isModified(S stamp);
+
+        /**
+         * As there is no multi-inheritance in java, this must be an interface.
+         * You can use our abstract config source builder implementation as a base for your class.
+         */
+        interface Builder<T extends Builder<T>> extends ConfigSource.Builder<T> {
+            T pollingStrategy(PollingStrategy pollingStrategy);
+        }
     }
 }

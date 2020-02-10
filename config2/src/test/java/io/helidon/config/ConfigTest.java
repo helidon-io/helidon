@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.config.changes.FileChangeWatcher;
 import io.helidon.config.parsers.PropertiesConfigParser;
 import io.helidon.config.sources.ClasspathConfigSource;
 import io.helidon.config.sources.FileConfigSource;
@@ -56,8 +57,15 @@ class ConfigTest {
                 })
                 .build();
 
-        ConfigSourceSetup fileSource = ConfigSourceSetup.builder(FileConfigSource.create(Paths.get("not-there-at-all.properties")))
+        ConfigSourceSetup fileSource = ConfigSourceSetup
+                .builder(FileConfigSource.create(Paths.get("not-there-at-all.properties")))
                 .optional(true)
+                .build();
+
+        ConfigSourceSetup fileWithRetryAndWatching = ConfigSourceSetup
+                .builder(FileConfigSource.create(Paths.get("file.properties")))
+                .retryPolicy()
+                .changeWatcher(FileChangeWatcher.create())
                 .build();
 
         Config config = Config.createFromSetup(List.of(cpSource, fileSource));

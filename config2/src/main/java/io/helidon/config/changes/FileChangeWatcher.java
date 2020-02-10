@@ -46,6 +46,13 @@ public class FileChangeWatcher implements ChangeWatcher<Path> {
             .newSingleThreadScheduledExecutor(r -> new Thread(r, "FileChangeWatcher Thread"));
     private AtomicBoolean run = new AtomicBoolean(true);
 
+    private FileChangeWatcher() {
+    }
+
+    public static ChangeWatcher<?> create() {
+        return new FileChangeWatcher();
+    }
+
     @Override
     public Class<Path> type() {
         return Path.class;
