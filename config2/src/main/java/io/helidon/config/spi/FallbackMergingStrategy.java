@@ -56,10 +56,13 @@ public class FallbackMergingStrategy implements MergingStrategy {
         switch (node.nodeType()) {
         case OBJECT:
             builder.addObject(key, (ObjectNode) node);
+            break;
         case LIST:
             builder.addList(key, (ConfigNode.ListNode) node);
+            break;
         case VALUE:
             builder.addValue(key, (ConfigNode.ValueNode) node);
+            break;
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }

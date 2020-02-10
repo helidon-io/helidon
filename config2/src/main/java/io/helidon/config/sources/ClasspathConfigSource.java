@@ -23,21 +23,16 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.ConfigException;
-import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.Content;
 
-public class ClasspathConfigSource implements ConfigSource.EagerSource {
-    private final Optional<String> configuredMediaType;
-    private final Optional<ConfigParser> configuredParser;
+public class ClasspathConfigSource implements ConfigSource.ParsableSource {
     private final URL resource;
 
     private ClasspathConfigSource(URL resource) {
-        this.configuredMediaType = Optional.empty();
-        this.configuredParser = Optional.empty();
         this.resource = resource;
     }
 
@@ -82,22 +77,19 @@ public class ClasspathConfigSource implements ConfigSource.EagerSource {
     }
 
     @Override
-    public ConfigParser.Content load() throws ConfigException {
-        InputStream inputStream = null;
+    public Content.ParsableContent load() throws ConfigException {
+        InputStream inputStream;
         try {
             inputStream = resource.openStream();
         } catch (IOException e) {
             throw new ConfigException("Failed to read configuration from classpath, resource: " + resource, e);
         }
 
-        ConfigParser.ParsableContentBuilder parsable = ConfigParser.ParsableContentBuilder
-                .create(inputStream, "classpath " + resource);
+        Content.ParsableContentBuilder builder = Content.parsableBuilder()
+                .data(inputStream);
 
-        configuredMediaType.or(() -> MediaTypes.detectType(resource)).ifPresent(parsable::mediaType);
-        configuredParser.ifPresent(parsable::parser);
+        MediaTypes.detectType(resource).ifPresent(builder::mediaType);
 
-        return ConfigParser.Content.builder()
-                .parsable(parsable)
-                .build();
+        return builder.build();
     }
 }

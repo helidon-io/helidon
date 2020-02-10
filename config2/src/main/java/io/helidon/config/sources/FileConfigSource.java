@@ -27,22 +27,18 @@ import java.util.logging.Logger;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.ConfigException;
 import io.helidon.config.sources.FileSourceHelper.DataAndDigest;
-import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.Content;
 
-public class FileConfigSource implements ConfigSource.EagerSource,
-                                         ConfigSource.TargetPollingSource,
-                                         ConfigSource.StampPollingSource<byte[]> {
+public class FileConfigSource implements ConfigSource.ParsableSource,
+                                         ConfigSource.WatchableSource<Path>,
+                                         ConfigSource.PollableSource<byte[]> {
     private static final Logger LOGGER = Logger.getLogger(FileConfigSource.class.getName());
 
-    private final Optional<String> configuredMediaType;
-    private final Optional<ConfigParser> configuredParser;
     private final Path filePath;
 
     private FileConfigSource(Path filePath) {
         this.filePath = filePath;
-        this.configuredParser = Optional.empty();
-        this.configuredMediaType = Optional.empty();
     }
 
     public static FileConfigSource create(Path path) {
@@ -65,14 +61,19 @@ public class FileConfigSource implements ConfigSource.EagerSource,
     }
 
     @Override
-    public ConfigParser.Content load() throws ConfigException {
+    public Class<Path> targetType() {
+        return Path.class;
+    }
+
+    @Override
+    public Content.ParsableContent load() throws ConfigException {
         LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
 
         // now we need to create all the necessary steps in one go, to make sure the digest matches the file
         Optional<DataAndDigest> maybeDad = FileSourceHelper.readDataAndDigest(filePath);
 
         if (maybeDad.isEmpty()) {
-            return ConfigParser.Content.builder()
+            return Content.parsableBuilder()
                     .exists(false)
                     .build();
         }
@@ -83,18 +84,12 @@ public class FileConfigSource implements ConfigSource.EagerSource,
         /*
          * Build the content
          */
-        ConfigParser.Content.Builder builder = ConfigParser.Content.builder()
+        var builder = Content.parsableBuilder()
                 .pollingStamp(dad.digest())
-                .pollingTarget(filePath);
+                .pollingTarget(filePath)
+                .data(dataStream);
 
-        ConfigParser.ParsableContentBuilder parsable = ConfigParser.ParsableContentBuilder
-                .create(dataStream, "file: " + filePath.toString());
-
-        configuredParser.ifPresent(parsable::parser);
-        configuredMediaType.or(() -> MediaTypes.detectType(filePath))
-                .ifPresent(parsable::mediaType);
-
-        builder.parsable(parsable);
+        MediaTypes.detectType(filePath).ifPresent(builder::mediaType);
 
         return builder.build();
     }

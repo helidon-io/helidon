@@ -24,8 +24,15 @@ import java.util.Optional;
 import io.helidon.config.spi.ConfigSource;
 
 public interface Config {
+    static Config createFromSetup(Collection<ConfigSourceSetup> configSourceSetup) {
+        Builder builder = Config.builder();
+
+        configSourceSetup.forEach(builder::addSource);
+
+        return builder.build();
+    }
     static Config create(Collection<? extends ConfigSource> configSources) {
-        return builder()
+        return Config.builder()
                 .sources(configSources)
                 .build();
     }
@@ -35,24 +42,32 @@ public interface Config {
     }
 
     Config get(Key key);
+
     Config get(String key);
 
     Optional<String> getValue();
 
     class Builder implements io.helidon.common.Builder<Config> {
-        private List<ConfigSource> sources = new LinkedList<>();
+        private List<ConfigSourceSetup> sources = new LinkedList<>();
 
         @Override
         public Config build() {
-            return new ConfigRootImpl(this);
+            return new ConfigNodeImpl(this);
         }
 
         public Builder sources(Collection<? extends ConfigSource> configSources) {
-            this.sources.addAll(configSources);
+            configSources.stream()
+                    .map(ConfigSourceSetup::create)
+                    .forEach(this::addSource);
+
             return this;
         }
 
-        List<ConfigSource> sources() {
+        public void addSource(ConfigSourceSetup configSourceSetup) {
+            sources.add(configSourceSetup);
+        }
+
+        List<ConfigSourceSetup> sources() {
             return sources;
         }
     }

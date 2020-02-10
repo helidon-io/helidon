@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.Properties;
 
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.Content;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,7 @@ class ClasspathConfigSourceTest {
         assertThat("classpath.properties should exist on classpath", source.exists(), is(true));
         assertThat("Description should not be null", source.description(), notNullValue());
 
-        ConfigParser.Content content = source.load();
+        Content.ParsableContent content = source.load();
         // guessed from file suffix
         assertThat(content.mediaType(), is(Optional.of("text/x-java-properties")));
         assertThat(content.parser(), is(Optional.empty()));

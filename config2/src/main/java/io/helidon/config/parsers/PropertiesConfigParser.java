@@ -16,6 +16,7 @@
 
 package io.helidon.config.parsers;
 
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -26,6 +27,7 @@ import io.helidon.config.ConfigNode;
 import io.helidon.config.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
+import io.helidon.config.spi.Content;
 
 /**
  * {@link io.helidon.config.spi.ConfigParser} implementation that parses Java Properties content.
@@ -62,11 +64,11 @@ public class PropertiesConfigParser implements ConfigParser {
     }
 
     @Override
-    public ObjectNode parse(Content content) throws ConfigParserException {
+    public ObjectNode parse(Content.ParsableContent content) throws ConfigParserException {
         Properties properties = new Properties();
 
-        try (AutoCloseable readable = content.data()) {
-            properties.load(content.data());
+        try (InputStream readable = content.data()) {
+            properties.load(readable);
         } catch (Exception e) {
             throw new ConfigParserException("Cannot read from source: " + e.getLocalizedMessage(), e);
         }

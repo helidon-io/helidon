@@ -37,9 +37,9 @@ import io.helidon.config.Key;
  * <ul>
  *     <li>{@link io.helidon.config.spi.ConfigSource.EventSource} - a source capable of triggering events on change of underlying
  *     origin.</li>
- *     <li>{@link io.helidon.config.spi.ConfigSource.TargetPollingSource} - a source that provides a target of the origin data
+ *     <li>{@link io.helidon.config.spi.ConfigSource.WatchableSource} - a source that provides a target of the origin data
  *      that can be used by a polling strategy (such as {@link java.nio.file.Path}</li>
- *     <li>{@link io.helidon.config.spi.ConfigSource.StampPollingSource} - a source that provides a stamp
+ *     <li>{@link io.helidon.config.spi.ConfigSource.PollableSource} - a source that provides a stamp
  *     of the underlying origin data that can be used to determine changes in the origin data (such as digest of a file)</li>
  * </ul>
  * {@link io.helidon.config.spi.ConfigSource.EagerSource} sources in addition support two types of providing configuration tree:
@@ -80,10 +80,10 @@ public interface ConfigSource {
     }
 
     /**
-     * A source that can read all data from the underlying origin.
+     * A source that can read all data from the underlying origin as a stream that can be parsed based on its media type.
      */
     @FunctionalInterface
-    interface EagerSource extends ConfigSource {
+    interface ParsableSource extends ConfigSource {
         /**
          * Loads the underlying source data. This method is only called when the source {@link #exists()}.
          * <p>
@@ -92,7 +92,7 @@ public interface ConfigSource {
          * @return An instance of {@code T} as read from the underlying origin of the data (if it exists)
          * @throws io.helidon.config.ConfigException in case of errors loading from the underlying origin
          */
-        ConfigParser.Content load() throws ConfigException;
+        Content.ParsableContent load() throws ConfigException;
 
         /**
          * Closes the @{code Source}, releasing any resources it holds.
@@ -100,6 +100,29 @@ public interface ConfigSource {
         default void close() {
         }
     }
+
+    /**
+     * A source that can read all data from the underlying origin as a configuration node.
+     */
+    @FunctionalInterface
+    interface NodeSource extends ConfigSource {
+        /**
+         * Loads the underlying source data. This method is only called when the source {@link #exists()}.
+         * <p>
+         * The method can be invoked repeatedly, for example during retries.
+         *
+         * @return An instance of {@code T} as read from the underlying origin of the data (if it exists)
+         * @throws io.helidon.config.ConfigException in case of errors loading from the underlying origin
+         */
+        Content.NodeContent load() throws ConfigException;
+
+        /**
+         * Closes the @{code Source}, releasing any resources it holds.
+         */
+        default void close() {
+        }
+    }
+
 
     /**
      * A source that is not capable of loading all keys at once.
@@ -113,7 +136,7 @@ public interface ConfigSource {
      * A source that supports modifications.
      * A mutable source may either support a change subscription mechanism (e.g. the source is capable of notifications that
      * do not require external polling), or an explicit polling strategy that provides handling of change notifications
-     * as supported by {@link io.helidon.config.spi.ConfigSource.StampPollingSource}.
+     * as supported by {@link io.helidon.config.spi.ConfigSource.PollableSource}.
      *
      * Examples:
      *  - a cloud service may provide notifications through its API that a node changed
@@ -131,12 +154,16 @@ public interface ConfigSource {
     }
 
     /**
-     * Mark an config source with this interface to announce that this source provides a target that a Polling strategy can
+     * Mark a config source with this interface to announce that this source provides a target that a Polling strategy can
      * use.
      * The actual target is provided when invoking
-     * {@link io.helidon.config.spi.ConfigParser.Content.Builder#pollingTarget(Object)}.
+     * {@link Content.Builder#pollingTarget(Object)}.
+     *
+     * @param <T> Type of target of this config source
+     * @see io.helidon.config.spi.ChangeWatcher
      */
-    interface TargetPollingSource {
+    interface WatchableSource<T> {
+        Class<T> targetType();
     }
 
     /**
@@ -144,7 +171,7 @@ public interface ConfigSource {
      *
      * @param <S> type of content stamp
      */
-    interface StampPollingSource<S> {
+    interface PollableSource<S> {
         /**
          * This method is invoked to check if this source has changed.
          * @param stamp the stamp of the last loaded content

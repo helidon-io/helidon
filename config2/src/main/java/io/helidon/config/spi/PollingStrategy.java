@@ -16,5 +16,30 @@
 
 package io.helidon.config.spi;
 
+import java.time.Instant;
+
+import io.helidon.config.ChangeEventType;
+
 public interface PollingStrategy {
+    /**
+     * Start this polling strategy.
+     *
+     * @param polled a component receiving polling events.
+     */
+    void start(Polled polled);
+
+    default void stop() {
+    }
+
+    interface Polled {
+        /**
+         * Poll for changes.
+         * The result may be used to modify behavior of the {@link io.helidon.config.spi.PollingStrategy} triggering this
+         * poll event.
+         *
+         * @param when instant this polling request was created
+         * @return result of the polling
+         */
+        ChangeEventType poll(Instant when);
+    }
 }

@@ -27,11 +27,22 @@ class ConfigNodeImpl implements Config {
     private final Key parent;
     private final String name;
     private final Key key;
+
     private Config.Type type = null;
     private Optional<String> directValue;
     private ConfigNode node;
 
-    public ConfigNodeImpl(ConfigSourcesRuntime sources, Key parent, String name, Key key) {
+    ConfigNodeImpl(Builder builder) {
+        ConfigSetup setup = new ConfigSetup(builder);
+
+        this.sources = new ConfigSourcesRuntime(setup, builder.sources());
+        this.sources.init();
+        this.parent = ConfigKeyImpl.of();
+        this.name = "";
+        this.key = this.parent;
+    }
+
+    ConfigNodeImpl(ConfigSourcesRuntime sources, Key parent, String name, Key key) {
         this.sources = sources;
         this.parent = parent;
         this.name = name;
@@ -52,9 +63,10 @@ class ConfigNodeImpl implements Config {
         // or key = "enabled"
         List<String> elements = key.elements();
         String directChild = elements.get(0);
+        Key childKey = this.key.child(key);
 
         if (elements.size() == 1) {
-            return children.computeIfAbsent(directChild, it -> new ConfigNodeImpl(sources, this.key, it, key));
+            return children.computeIfAbsent(directChild, it -> new ConfigNodeImpl(sources, this.key, it, childKey));
         }
 
         Key directChildKey = this.key.child(Key.create(directChild));
@@ -115,9 +127,11 @@ class ConfigNodeImpl implements Config {
         switch (node.nodeType()) {
         case OBJECT:
             this.type = Type.OBJECT;
+            updateChildren((ConfigNode.ObjectNode) node);
             break;
         case LIST:
             this.type = Type.LIST;
+            updateChildren((ConfigNode.ListNode) node);
             break;
         case VALUE:
             this.type = Type.VALUE;
@@ -125,5 +139,31 @@ class ConfigNodeImpl implements Config {
         default:
             throw new IllegalStateException("Use of unsupported node type: " + node.nodeType());
         }
+    }
+
+    private void updateChildren(ConfigNode.ListNode node) {
+        Key thisNodeKey = this.key;
+
+        int size = node.size();
+        for (int i = 0; i < size; i++) {
+            String key = String.valueOf(i);
+            this.children.computeIfAbsent(key,
+                                          it -> new ConfigNodeImpl(sources,
+                                                                   thisNodeKey,
+                                                                   key,
+                                                                   thisNodeKey.child(Key.create(key))));
+        }
+    }
+
+    private void updateChildren(ConfigNode.ObjectNode node) {
+        Key thisNodeKey = this.key;
+
+        node.keySet().forEach(key -> {
+            this.children.computeIfAbsent(key,
+                                          it -> new ConfigNodeImpl(sources,
+                                                                   thisNodeKey,
+                                                                   key,
+                                                                   thisNodeKey.child(Key.create(key))));
+        });
     }
 }

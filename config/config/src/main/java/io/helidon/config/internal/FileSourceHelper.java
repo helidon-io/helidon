@@ -98,9 +98,11 @@ public class FileSourceHelper {
                 }
             }
         } catch (FileNotFoundException e) {
-            throw new ConfigException(String.format("File '%s' not found.", path), e);
+            throw new ConfigException(String.format("File '%s' not found. Absolute path: '%s'", path, path.toAbsolutePath()), e);
         } catch (IOException e) {
-            throw new ConfigException(String.format("Cannot obtain a lock for file '%s'.", path), e);
+            throw new ConfigException(String.format("Cannot obtain a lock for file '%s'. Absolute path: '%s'",
+                                                    path,
+                                                    path.toAbsolutePath()), e);
         }
     }
 
@@ -125,7 +127,7 @@ public class FileSourceHelper {
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.FINEST, "Cannot get a digest.", e);
+            LOGGER.log(Level.FINEST, "Cannot get a digest for path: " + path.toAbsolutePath(), e);
             return null;
         }
         return md.digest();

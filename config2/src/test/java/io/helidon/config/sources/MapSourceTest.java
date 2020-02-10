@@ -24,7 +24,7 @@ import io.helidon.config.ConfigNode;
 import io.helidon.config.ConfigNode.NodeType;
 import io.helidon.config.ConfigNode.ObjectNode;
 import io.helidon.config.ConfigNode.ValueNode;
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.Content;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,13 +59,11 @@ class MapSourceTest {
         assertThat("Map always exists", source.exists(), is(true));
         assertThat("Description should not be null", source.description(), notNullValue());
 
-        ConfigParser.Content content = source.load();
+        Content.NodeContent content = source.load();
 
-        ObjectNode node = content.node();
+        ObjectNode node = content.data();
         Map<?, ?> stamp = testTypedOptional(content.stamp(), "Stamp", Map.class);
         assertThat(content.target(), is(Optional.empty()));
-        assertThat(content.mediaType(), is(Optional.empty()));
-        assertThat(content.parser(), is(Optional.empty()));
 
         assertThat(node, is(notNullValue()));
         testNode(node, PROPERTY_NAME, NodeType.VALUE, null);
@@ -83,12 +81,10 @@ class MapSourceTest {
         // now reload
         content = source.load();
 
-        node = content.node();
+        node = content.data();
         Map<?, ?> newStamp = testTypedOptional(content.stamp(), "Stamp", Map.class);
         assertThat("Stamps differ", stamp, not(newStamp));
         assertThat(content.target(), is(Optional.empty()));
-        assertThat(content.mediaType(), is(Optional.empty()));
-        assertThat(content.parser(), is(Optional.empty()));
 
         assertThat(node, is(notNullValue()));
         testNode(node, PROPERTY_NAME, NodeType.VALUE, firstValue);
@@ -103,25 +99,25 @@ class MapSourceTest {
 
         MapConfigSource source = MapConfigSource.create(properties);
 
-        ConfigParser.Content content = source.load();
+        Content.NodeContent content = source.load();
         Map<?, ?> stamp = testTypedOptional(content.stamp(), "Stamp", Map.class);
-        ObjectNode node = content.node();
+        ObjectNode node = content.data();
         testNode(node, "http", NodeType.OBJECT, "true");
 
         // need to test other nodes
         ObjectNode httpNode = (ObjectNode) node.get("http");
         ObjectNode sslNode = (ObjectNode) httpNode.get("ssl");
-        assertThat(sslNode.get(), is("true"));
+        assertThat(sslNode.get(), is(Optional.of("true")));
         ValueNode protocolNode = (ValueNode) sslNode.get("protocol");
-        assertThat(protocolNode.get(), is("TLS"));
+        assertThat(protocolNode.get(), is(Optional.of("TLS")));
         ValueNode keyNode = (ValueNode) sslNode.get("key");
-        assertThat(keyNode.get(), is("myKey"));
+        assertThat(keyNode.get(), is(Optional.of("myKey")));
 
         // change support
         properties.put("http", "false");
         assertThat(source.isModified(stamp), is(true));
         content = source.load();
-        node = content.node();
+        node = content.data();
         testNode(node, "http", NodeType.OBJECT, "false");
     }
 
@@ -133,7 +129,7 @@ class MapSourceTest {
             assertThat("Key should be present", node.containsKey(key), is(true));
             ConfigNode configNode = node.get(key);
             assertThat(configNode.nodeType(), is(type));
-            assertThat(configNode.get(), is(value));
+            assertThat(configNode.get(), is(Optional.of(value)));
         }
     }
 

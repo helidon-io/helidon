@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import io.helidon.config.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.Content;
 
 class ConfigSourcesRuntime {
     private final List<ConfigSourceRuntime> runtimes = new LinkedList<>();
@@ -81,6 +82,8 @@ class ConfigSourcesRuntime {
         private final boolean isEager;
         private final boolean isMutable;
         private final boolean isEvent;
+        private final boolean isParsable;
+        private final boolean isNode;
         private final boolean isPollingStamp;
         private final boolean isPollingTarget;
 
@@ -89,13 +92,15 @@ class ConfigSourcesRuntime {
         ConfigSourceRuntime(ConfigSetup configSetup, ConfigSourceSetup sourceSetup) {
             this.configSetup = configSetup;
             this.setup = sourceSetup;
-            this.theSource = sourceSetup.theSource();
+            this.theSource = sourceSetup.configSource();
             this.isLazy = theSource instanceof ConfigSource.LazySource;
-            this.isEager = theSource instanceof ConfigSource.EagerSource;
+            this.isParsable = theSource instanceof ConfigSource.ParsableSource;
+            this.isNode = theSource instanceof ConfigSource.NodeSource;
+            this.isEager = isParsable || isNode;
 
             this.isEvent = theSource instanceof ConfigSource.EventSource;
-            this.isPollingStamp = theSource instanceof ConfigSource.StampPollingSource;
-            this.isPollingTarget = theSource instanceof ConfigSource.TargetPollingSource;
+            this.isPollingStamp = theSource instanceof ConfigSource.PollableSource;
+            this.isPollingTarget = theSource instanceof ConfigSource.WatchableSource;
             this.isMutable = isPollingTarget || isPollingStamp || isEvent;
 
             if (isLazy && isEager) {
@@ -126,10 +131,10 @@ class ConfigSourcesRuntime {
         }
 
         private Optional<ObjectNode> doLoad() {
-            ConfigParser.Content content = theSource.exists() ? loadEager() : null;
+            Content content = theSource.exists() ? loadEager() : null;
 
             if (null == content || !content.exists()) {
-                if (setup.isOptional()) {
+                if (setup.optional()) {
                     return Optional.empty();
                 } else {
                     throw new ConfigException("Mandatory config source " + theSource + " is not available");
@@ -137,17 +142,19 @@ class ConfigSourcesRuntime {
             }
 
             try {
-                if (content.hasData()) {
-                    // parsable
-                    ConfigParser parser = content.parser()
-                            .orElseGet(() -> locateParser(content.mediaType().orElseThrow(() -> new ConfigException(
-                                    "Neither media type nor parser is defined on a parsable config source " + theSource))));
-
-                    return Optional.ofNullable(parser.parse(content));
-                } else if (content.hasNode()) {
-                    return Optional.ofNullable(content.node());
+                if (isParsable) {
+                    Content.ParsableContent pContent = (Content.ParsableContent) content;
+                    ConfigParser parser = setup.parser()
+                            .or(pContent::parser)
+                            .orElseGet(() -> locateParser(setup.mediaType()
+                                                                  .or(pContent::mediaType)
+                                                                  .orElseThrow(() -> new ConfigException(
+                                                                          "Neither media type nor parser is defined on a "
+                                                                                  + "parsable config source " + theSource))));
+                    return Optional.of(parser.parse(pContent));
                 } else {
-                    throw new ConfigException("Config source  " + theSource + " provided neither data, nor config node.");
+                    Content.NodeContent nContent = (Content.NodeContent) content;
+                    return Optional.of(nContent.data());
                 }
             } finally {
                 content.close();
@@ -159,8 +166,14 @@ class ConfigSourcesRuntime {
                     .orElseThrow(() -> new ConfigException("Failed to find config parser for media type \"" + mediaType + "\""));
         }
 
-        private ConfigParser.Content loadEager() {
-            return ((ConfigSource.EagerSource) theSource).load();
+        private Content loadEager() {
+            if (isParsable) {
+                return ((ConfigSource.ParsableSource) theSource).load();
+            }
+            if (isNode) {
+                return ((ConfigSource.NodeSource) theSource).load();
+            }
+            return null;
         }
 
         public Optional<ConfigNode> getValue(Key key) {

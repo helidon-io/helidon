@@ -23,11 +23,11 @@ import java.util.Properties;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigNode;
-import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.Content;
 
-public class MapConfigSource implements ConfigSource.EagerSource,
-                                        ConfigSource.StampPollingSource<Map<?, ?>> {
+public class MapConfigSource implements ConfigSource.NodeSource,
+                                        ConfigSource.PollableSource<Map<?, ?>> {
     private Map<?, ?> theMap;
 
     private MapConfigSource(Map<?, ?> theMap) {
@@ -45,10 +45,10 @@ public class MapConfigSource implements ConfigSource.EagerSource,
     }
 
     @Override
-    public ConfigParser.Content load() throws ConfigException {
+    public Content.NodeContent load() throws ConfigException {
         Map<?, ?> copyOfMap = new HashMap<>(theMap);
 
-        return ConfigParser.Content.builder()
+        return Content.nodeBuilder()
                 .pollingStamp(copyOfMap)
                 .node(toNode(copyOfMap))
                 .build();

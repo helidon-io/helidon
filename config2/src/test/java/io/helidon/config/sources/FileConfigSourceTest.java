@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.Content;
 
 import org.junit.jupiter.api.Test;
 
@@ -69,7 +69,7 @@ class FileConfigSourceTest {
         assertThat("Description should not be null", source.description(), notNullValue());
 
         // this must work to prevent from race - in case somebody deletes the file after we check it exists
-        ConfigParser.Content content = source.load();
+        Content content = source.load();
         assertThat("File should not exist", content.exists(), is(false));
     }
 
@@ -81,7 +81,7 @@ class FileConfigSourceTest {
         return (T) object;
     }
 
-    private byte[] testContent(Path path, ConfigParser.Content content, String value) throws IOException {
+    private byte[] testContent(Path path, Content.ParsableContent content, String value) throws IOException {
         // guessed from file suffix
         assertThat(content.mediaType(), is(Optional.of("text/x-java-properties")));
         assertThat(content.parser(), is(Optional.empty()));
