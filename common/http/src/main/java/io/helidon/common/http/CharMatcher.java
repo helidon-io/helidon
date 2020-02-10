@@ -54,7 +54,7 @@ public abstract class CharMatcher {
     /**
      * Determines whether a character is ASCII, meaning that its code point is less than 128.
      *
-     * @return this CharMatcher instance
+     * @return a CharMatcher instance that matches ASCII characters
      */
     public static CharMatcher ascii() {
         return Ascii.INSTANCE;
@@ -68,7 +68,8 @@ public abstract class CharMatcher {
      * To negate another {@code CharMatcher}, use {@link #negate()}.
      *
      * @param match the character that should not match
-     * @return CharMatcher
+     * @return a CharMatcher instance that matches any character except the one
+     * specified
      */
     public static CharMatcher isNot(final char match) {
         return new IsNot(match);
@@ -77,16 +78,16 @@ public abstract class CharMatcher {
     /**
      * Matches any character.
      *
-     * @return CharMatcher
+     * @return a CharMatcher that matches any character
      */
     public static CharMatcher any() {
         return Any.INSTANCE;
     }
 
     /**
-     * Matches no characters.
+     * Matches no character.
      *
-     * @return CharMatcher
+     * @return a CharMatcher that matches no character
      */
     public static CharMatcher none() {
         return None.INSTANCE;
@@ -96,7 +97,7 @@ public abstract class CharMatcher {
      * Determines whether a character is an ISO control character as specified by
      * {@link Character#isISOControl(char)}.
      *
-     * @return CharMatcher
+     * @return a CharMatcher that matches ISO control character
      */
     public static CharMatcher javaIsoControl() {
         return JavaIsoControl.INSTANCE;
@@ -105,7 +106,7 @@ public abstract class CharMatcher {
     /**
      * Returns a {@code char} matcher that matches only one specified character.
      * @param match the character that should match
-     * @return CharMatcher
+     * @return a CharMatcher that matches the one specified character
      */
     public static CharMatcher is(final char match) {
         return new Is(match);
@@ -119,7 +120,7 @@ public abstract class CharMatcher {
      * Returns a {@code char} matcher that matches any character not present in the given character
      * sequence.
      * @param sequence all the characters that should not be matched
-     * @return CharMatcher
+     * @return a CharMatcher that matches any character not present in the given sequence
      */
     public static CharMatcher noneOf(CharSequence sequence) {
         return anyOf(sequence).negate();
@@ -129,7 +130,7 @@ public abstract class CharMatcher {
      * Returns a {@code char} matcher that matches any character present in the given character
      * sequence.
      * @param sequence all the characters that should be matched
-     * @return CharMatcher
+     * @return a CharMatcher that matches any character present in the given sequence
      */
     public static CharMatcher anyOf(final CharSequence sequence) {
         switch (sequence.length()) {

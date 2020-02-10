@@ -116,11 +116,12 @@ public class HashParameters implements Parameters {
 
     /**
      * Creates new instance of {@link HashParameters} as a concatenation of provided parameters.
+     * Values for keys found across the provided parameters are "concatenated" into a {@link List} entry for their respective key
+     * in the created {@link HashParameters} instance.
      *
-     * @param parameters parameters to concat.
-     * @return a concatenation, never {@code null}.
+     * @param parameters parameters to concatenate.
+     * @return a new instance of {@link HashParameters} that represents the concatenation of the provided parameters.
      */
-
     public static HashParameters concat(Parameters... parameters) {
         if (parameters == null || parameters.length == 0) {
             return new HashParameters();
@@ -136,9 +137,11 @@ public class HashParameters implements Parameters {
 
     /**
      * Creates new instance of {@link HashParameters} as a concatenation of provided parameters.
+     * Values for keys found across the provided parameters are "concatenated" into a {@link List} entry for their respective key
+     * in the created {@link HashParameters} instance.
      *
      * @param parameters parameters to concatenate.
-     * @return a concatenation, never {@code null}.
+     * @return a new instance of {@link HashParameters} that represents the concatenation of the provided parameters.
      */
     public static HashParameters concat(Iterable<Parameters> parameters) {
         ArrayList<Map<String, List<String>>> prms = new ArrayList<>();

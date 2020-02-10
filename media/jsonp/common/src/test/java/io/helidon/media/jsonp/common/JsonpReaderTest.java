@@ -19,7 +19,6 @@ package io.helidon.media.jsonp.common;
 import io.helidon.common.GenericType;
 
 import javax.json.JsonArray;
-import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.DataChunk;
@@ -31,10 +30,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The JsonContentReaderTest.
@@ -54,12 +52,7 @@ public class JsonpReaderTest {
 
     @Test
     public void incompatibleTypes() throws Exception {
-        try {
-            readJsonArray("{ \"p\" : \"val\" }");
-            fail("Should have thrown an exception");
-        } catch (ExecutionException ex) {
-            assertThat(ex.getCause(), is(instanceOf(JsonException.class)));
-        }
+        assertThrows(ExecutionException.class, () -> readJsonArray("{ \"p\" : \"val\" }"));
     }
 
     @Test
@@ -71,12 +64,7 @@ public class JsonpReaderTest {
 
     @Test
     public void invalidJson() throws Exception {
-        try {
-            readJsonObject("{ \"p\" : \"val\" ");
-            fail("Should have thrown an exception");
-        } catch (ExecutionException e) {
-            assertThat(e.getCause(), is(instanceOf(JsonException.class)));
-        }
+        assertThrows(ExecutionException.class, () -> readJsonObject("{ \"p\" : \"val\" "));
     }
 
     private static JsonObject readJsonObject(String json) throws Exception {

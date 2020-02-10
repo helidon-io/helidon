@@ -87,9 +87,6 @@ public final class Utils {
      * @return unwrapped string.
      */
     public static String unwrap(String str) {
-        if (str == null) {
-            return null;
-        }
         if (str.length() >= 2 && '"' == str.charAt(0) && '"' == str.charAt(str.length() - 1)) {
             return str.substring(1, str.length() - 1);
         }

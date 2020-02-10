@@ -66,18 +66,19 @@ public class GenericType<T> implements Type {
     private final Class<?> rawType;
 
     /**
-     * Constructs a new generic type, using the provided generic type
-     * information and deriving the class.
+     * Constructs a new generic type, using the provided generic type information and
+     * deriving the class.
      *
      * @param genericType the generic type
      * @param <N> generic type of the returned GenericType
      * @return new type wrapping the provided type
-     * @throws IllegalArgumentException if genericType is {@code null} or not an
-     * instance of {@code Class} or {@link ParameterizedType} whose raw type is
-     * an instance of {@code Class}.
+     * @throws IllegalArgumentException if genericType is {@code null} or not an instance of
+     *                                  {@code Class} or {@link ParameterizedType} whose raw
+     *                                  type is an instance of {@code Class}.
      */
     public static <N> GenericType<N> create(Type genericType) throws IllegalArgumentException {
         Objects.requireNonNull(genericType);
+
         return new GenericType<>(genericType, GenericTypeUtil.rawClass(genericType));
     }
 
