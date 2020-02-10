@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,8 +292,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             rootLogger.addHandler(newHandler);
         }
 
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
-
         bm.getEvent().select(Initialized.Literal.APPLICATION).fire(new ContainerInitialized(id));
 
         now = System.currentTimeMillis() - now;
@@ -301,6 +299,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         HelidonFeatures.print(HelidonFlavor.MP, config.get("features.print-details").asBoolean().orElse(false));
 
+        // shutdown hook should be added after all initialization is done, otherwise a race condition may happen
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
         return this;
     }
 
