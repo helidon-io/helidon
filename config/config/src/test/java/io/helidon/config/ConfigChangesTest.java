@@ -29,7 +29,6 @@ import io.helidon.config.spi.TestingConfigSource;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.ConfigTest.waitFor;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -271,26 +270,12 @@ public class ConfigChangesTest {
                 .sources(configSource)
                 .build();
 
-        //Config not yet subscribed on config source
-        assertThat(configSource.isSubscribePollingStrategyInvoked(), is(false));
-        assertThat(configSource.isCancelPollingStrategyInvoked(), is(false));
-
         List<ConfigChangeListener> subscribers = new LinkedList<>();
         List.of("", "key1", "sub.key1", "", "key1").forEach(key -> {
             ConfigChangeListener subscriber = new ConfigChangeListener();
             config.get(key).onChange(subscriber::onChange);
             subscribers.add(subscriber);
         });
-
-        //config factory contains 5 subscribers
-        assertThat(config.factory().provider().changesSubmitter().getNumberOfSubscribers(), is(5));
-
-        //Config already subscribed on config source
-        waitFor(configSource::isSubscribePollingStrategyInvoked, 500, 10);
-        assertThat(configSource.isCancelPollingStrategyInvoked(), is(false));
-
-        //config source just 1
-        assertThat(configSource.changesSubmitter().getNumberOfSubscribers(), is(1));
     }
 
     @Test

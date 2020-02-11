@@ -219,7 +219,7 @@ public class UrlOverrideSourceServerMockTest {
                 );
 
         // wait for event
-        Config newConfig = listener.get(100, true);
+        Config newConfig = listener.get(500, true);
 
         // new: key exists
         assertThat(newConfig.asString().get(), is("URL2"));

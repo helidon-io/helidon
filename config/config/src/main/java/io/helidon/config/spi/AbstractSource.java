@@ -122,7 +122,11 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         pollingEventSubscriber = null;
     }
 
-    Flow.Publisher<Optional<T>> changesPublisher() {
+    /**
+     * Publisher of changes of this source.
+     * @return publisher of source data
+     */
+    protected Flow.Publisher<Optional<T>> changesPublisher() {
         return changesPublisher;
     }
 
