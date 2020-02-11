@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,14 @@
  */
 package io.helidon.media.jackson.server;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
@@ -39,39 +37,63 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class JacksonSupportTest {
 
-    private static final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends ObjectMapper> objectMapperProvider = (req, res) -> new ObjectMapper();
-  
     @Test
     public void pingPong() throws Exception {
         final Routing routing = Routing.builder()
-            .register(JacksonSupport.create())
-            .post("/foo", Handler.create(Person.class, (req, res, person) -> res.send(person)))
-            .build();
+                .register(JacksonSupport.create())
+                .post("/foo", Handler.create(Person.class, (req, res, person) -> {
+                    res.send(person);
+                }))
+                .build();
         final String personJson = "{\"name\":\"Frank\"}";
         final TestResponse response = TestClient.create(routing)
-            .path("/foo")
-            .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), personJson));
+                .path("/foo")
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), personJson));
 
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.APPLICATION_JSON.toString()));
         final String json = response.asString().get(10, TimeUnit.SECONDS);
         assertThat(json, is(personJson));
     }
 
+    @Test
+    public void genericType() throws Exception {
+        GenericType<List<Person>> personsType = new GenericType<List<Person>>() {};
+        final Routing routing = Routing.builder()
+                .register(JacksonSupport.create())
+                .post("/foo", (req, res) -> {
+                    req.content().as(personsType)
+                            .thenAccept((List<Person> persons) -> {
+                        res.send(persons);
+                    });
+                })
+                .build();
+
+        final String personsJson = "[{\"name\":\"Frank\"},{\"name\":\"John\"}]";
+        final TestResponse response = TestClient.create(routing)
+            .path("/foo")
+            .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                    personsJson));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
+                is(MediaType.APPLICATION_JSON.toString()));
+        final String json = response.asString().get(10, TimeUnit.SECONDS);
+        assertThat(json, is(personsJson));
+    }
+
     public static final class Person {
-        
+
         private String name;
-        
+
         public Person() {
             super();
         }
-        
+
         public String getName() {
             return this.name;
         }
-        
+
         public void setName(final String name) {
             this.name = name;
         }
-        
+
     }
 }

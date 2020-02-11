@@ -28,6 +28,10 @@
     <artifactId>helidon-media-jsonp-common</artifactId>
     <name>Helidon Media JSON-P Common</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

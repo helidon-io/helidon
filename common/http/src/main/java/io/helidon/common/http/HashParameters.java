@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,13 +30,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 
-import io.helidon.common.http.Parameters;
-
 /**
  * A {@link ConcurrentSkipListMap} based {@link Parameters} implementation with
  * case-insensitive keys and immutable {@link List} of values that needs to be copied on each write.
  */
-class HashParameters implements Parameters {
+public class HashParameters implements Parameters {
 
     private static final List<String> EMPTY_STRING_LIST = Collections.emptyList();
 
@@ -45,7 +43,7 @@ class HashParameters implements Parameters {
     /**
      * Creates a new instance.
      */
-    HashParameters() {
+    protected HashParameters() {
         this((Parameters) null);
     }
 
@@ -55,7 +53,7 @@ class HashParameters implements Parameters {
      *
      * @param initialContent initial content.
      */
-    HashParameters(Map<String, List<String>> initialContent) {
+    protected HashParameters(Map<String, List<String>> initialContent) {
         if (initialContent == null) {
             content = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
         } else {
@@ -79,21 +77,51 @@ class HashParameters implements Parameters {
 
     /**
      * Creates a new instance from provided data.
-     * Initial data are copied.
+     * Initial data is copied.
      *
      * @param initialContent initial content.
      */
-    HashParameters(Parameters initialContent) {
+    protected HashParameters(Parameters initialContent) {
         this(initialContent == null ? null : initialContent.toMap());
     }
 
     /**
-     * Creates new instance of {@link HashParameters} as a concatenation of provided parameters.
+     * Creates a new empty instance {@link HashParameters}.
      *
-     * @param parameters parameters to concat.
-     * @return a concatenation, never {@code null}.
+     * @return a new instance of {@link HashParameters}.
      */
+    public static HashParameters create() {
+        return new HashParameters();
+    }
 
+    /**
+     * Creates a new instance {@link HashParameters} from provided data. Initial data is copied.
+     *
+     * @param initialContent initial content.
+     * @return a new instance of {@link HashParameters} initialized with the given content.
+     */
+    public static HashParameters create(Map<String, List<String>> initialContent) {
+        return new HashParameters(initialContent);
+    }
+
+    /**
+     * Creates a new instance {@link HashParameters} from provided data. Initial data is copied.
+     *
+     * @param initialContent initial content.
+     * @return a new instance of {@link HashParameters} initialized with the given content.
+     */
+    public static HashParameters create(Parameters initialContent) {
+        return new HashParameters(initialContent);
+    }
+
+    /**
+     * Creates new instance of {@link HashParameters} as a concatenation of provided parameters.
+     * Values for keys found across the provided parameters are "concatenated" into a {@link List} entry for their respective key
+     * in the created {@link HashParameters} instance.
+     *
+     * @param parameters parameters to concatenate.
+     * @return a new instance of {@link HashParameters} that represents the concatenation of the provided parameters.
+     */
     public static HashParameters concat(Parameters... parameters) {
         if (parameters == null || parameters.length == 0) {
             return new HashParameters();
@@ -109,9 +137,11 @@ class HashParameters implements Parameters {
 
     /**
      * Creates new instance of {@link HashParameters} as a concatenation of provided parameters.
+     * Values for keys found across the provided parameters are "concatenated" into a {@link List} entry for their respective key
+     * in the created {@link HashParameters} instance.
      *
-     * @param parameters parameters to concat.
-     * @return a concatenation, never {@code null}.
+     * @param parameters parameters to concatenate.
+     * @return a new instance of {@link HashParameters} that represents the concatenation of the provided parameters.
      */
     public static HashParameters concat(Iterable<Parameters> parameters) {
         ArrayList<Map<String, List<String>>> prms = new ArrayList<>();
@@ -344,9 +374,7 @@ class HashParameters implements Parameters {
         if (!(o instanceof HashParameters)) {
             return false;
         }
-
         HashParameters that = (HashParameters) o;
-
         return content.equals(that.content);
     }
 

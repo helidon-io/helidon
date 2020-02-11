@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,23 @@
 
 package io.helidon.webserver;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Flow;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
-import io.helidon.common.http.ContextualRegistry;
-import io.helidon.common.http.DataChunk;
+import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
-import io.helidon.common.http.Reader;
-import io.helidon.media.common.ContentReaders;
+import io.helidon.media.common.MessageBodyContext;
+import io.helidon.media.common.MessageBodyReadableContent;
+import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
@@ -56,20 +44,24 @@ import io.opentracing.tag.Tags;
 /**
  * The basic abstract implementation of {@link ServerRequest}.
  */
+@SuppressWarnings("deprecation")
 abstract class Request implements ServerRequest {
+
     private static final String TRACING_CONTENT_READ_NAME = "content-read";
 
     /**
-     * The default charset to use in case that no charset or no mime-type is defined in the content type header.
+     * The default charset to use in case that no charset or no mime-type is
+     * defined in the content type header.
      */
     static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     private final BareRequest bareRequest;
     private final WebServer webServer;
-    private final ContextualRegistry context;
+    private final io.helidon.common.http.ContextualRegistry context;
     private final Parameters queryParams;
-    private final RequestHeaders headers;
-    private final Content content;
+    private final HashRequestHeaders headers;
+    private final MessageBodyReadableContent content;
+    private final MessageBodyEventListener eventListener;
 
     /**
      * Creates new instance.
@@ -77,13 +69,16 @@ abstract class Request implements ServerRequest {
      * @param req bare request from HTTP SPI implementation.
      * @param webServer relevant server.
      */
-    Request(BareRequest req, WebServer webServer) {
+    Request(BareRequest req, WebServer webServer, HashRequestHeaders headers) {
         this.bareRequest = req;
         this.webServer = webServer;
-        this.context = ContextualRegistry.create(webServer.context());
+        this.headers = headers;
+        this.context = io.helidon.common.http.ContextualRegistry.create(webServer.context());
         this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
-        this.headers = new HashRequestHeaders(bareRequest.headers());
-        this.content = new Content();
+        this.eventListener = new MessageBodyEventListener();
+        MessageBodyReaderContext readerContext = MessageBodyReaderContext
+                .create(webServer.mediaSupport(), eventListener, headers, headers.contentType());
+        this.content = MessageBodyReadableContent.create(req.bodyPublisher(), readerContext);
     }
 
     /**
@@ -97,7 +92,8 @@ abstract class Request implements ServerRequest {
         this.context = request.context;
         this.queryParams = request.queryParams;
         this.headers = request.headers;
-        this.content = new Content(request.content);
+        this.content = request.content;
+        this.eventListener = request.eventListener;
     }
 
     /**
@@ -120,7 +116,8 @@ abstract class Request implements ServerRequest {
     }
 
     @Override
-    public ContextualRegistry context() {
+    @SuppressWarnings("deprecation")
+    public io.helidon.common.http.ContextualRegistry context() {
         return context;
     }
 
@@ -185,7 +182,7 @@ abstract class Request implements ServerRequest {
     }
 
     @Override
-    public Content content() {
+    public MessageBodyReadableContent content() {
         return this.content;
     }
 
@@ -194,138 +191,11 @@ abstract class Request implements ServerRequest {
         return bareRequest.requestId();
     }
 
-    private static CompletableFuture failedFuture(Throwable t) {
-        CompletableFuture result = new CompletableFuture<>();
-        result.completeExceptionally(t);
-        return result;
-    }
+    private final class MessageBodyEventListener implements MessageBodyContext.EventListener {
 
-    private static class InternalReader<T> implements Reader<T> {
+        private Span readSpan;
 
-        private final Predicate<Class<?>> predicate;
-        private final Reader<T> reader;
-
-        InternalReader(Predicate<Class<?>> predicate, Reader<T> reader) {
-            this.predicate = predicate;
-            this.reader = reader;
-        }
-
-        public boolean accept(Class<?> o) {
-            return o != null && predicate != null && predicate.test(o);
-        }
-
-        @Override
-        public CompletionStage<? extends T> apply(Flow.Publisher<DataChunk> publisher, Class<? super T> clazz) {
-            return reader.apply(publisher, clazz);
-        }
-    }
-
-    class Content implements io.helidon.common.http.Content {
-
-        private final Flow.Publisher<DataChunk> originalPublisher;
-        private final Deque<InternalReader<?>> readers;
-        private final List<Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>>> filters;
-        private final ReadWriteLock readersLock;
-        private final ReadWriteLock filtersLock;
-
-        private Content() {
-            this.originalPublisher = bareRequest.bodyPublisher();
-            this.readers = appendDefaultReaders(new LinkedList<>());
-            this.filters = new ArrayList<>();
-            this.readersLock = new ReentrantReadWriteLock();
-            this.filtersLock = new ReentrantReadWriteLock();
-        }
-
-        private Content(Content orig) {
-            this.originalPublisher = orig.originalPublisher;
-            this.readers = orig.readers;
-            this.filters = orig.filters;
-            this.readersLock = orig.readersLock;
-            this.filtersLock = orig.filtersLock;
-        }
-
-        private Deque<InternalReader<?>> appendDefaultReaders(final Deque<InternalReader<?>> readers) {
-            readers.addLast(reader(String.class, stringContentReader()));
-            readers.addLast(reader(byte[].class, ContentReaders.byteArrayReader()));
-            readers.addLast(reader(InputStream.class, ContentReaders.inputStreamReader()));
-            return readers;
-        }
-
-        @Override
-        public void registerFilter(Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> function) {
-
-            Objects.requireNonNull(function, "Parameter 'function' is null!");
-            try {
-                filtersLock.writeLock().lock();
-                filters.add(function);
-            } finally {
-                filtersLock.writeLock().unlock();
-            }
-        }
-
-        @Override
-        public <T> void registerReader(Class<T> type, Reader<T> reader) {
-            register(reader(type, reader));
-        }
-
-        @Override
-        public <T> void registerReader(Predicate<Class<?>> predicate, Reader<T> reader) {
-            register(new InternalReader<>(predicate, reader));
-        }
-
-        public <T> void register(InternalReader<T> reader) {
-            try {
-                readersLock.writeLock().lock();
-                readers.addFirst(reader);
-            } finally {
-                readersLock.writeLock().unlock();
-            }
-        }
-
-        private <T> InternalReader<T> reader(Class<T> clazz, Reader<T> reader) {
-            return new InternalReader<>(aClass -> clazz.isAssignableFrom(aClass), reader);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> CompletionStage<T> as(final Class<T> type) {
-            Span readSpan = createReadSpan(type);
-            CompletionStage<T> result;
-            try {
-                readersLock.readLock().lock();
-                result = (CompletionStage<T>) readerFor(type).apply(chainPublishers(), type);
-            } catch (IllegalArgumentException e) {
-                result = failedFuture(e);
-            } catch (Exception e) {
-                result = failedFuture(new IllegalArgumentException("Transformation failed!", e));
-            } finally {
-                readersLock.readLock().unlock();
-            }
-            // Close span
-            if (null != readSpan) {
-                result.thenRun(readSpan::finish)
-                        .exceptionally(t -> {
-                            finishSpanWithError(readSpan, t);
-                            return null;
-                        });
-            }
-            return result;
-        }
-
-        private void finishSpanWithError(Span readSpan, Throwable t) {
-            if (null == readSpan) {
-                // tracing of reads disabled
-                return;
-            }
-            Tags.ERROR.set(readSpan, Boolean.TRUE);
-            readSpan.log(Map.of("event", "error",
-                                                 "error.kind", "Exception",
-                                                 "error.object", t,
-                                                 "message", t.toString()));
-            readSpan.finish();
-        }
-
-        private <T> Span createReadSpan(Class<T> type) {
+        private <T> Span createReadSpan(GenericType<?> type) {
             // only create this span if we have a parent span
             SpanContext parentSpan = spanContext();
             if (null == parentSpan) {
@@ -345,7 +215,7 @@ abstract class Request implements ServerRequest {
                 spanBuilder.asChildOf(parentSpan);
 
                 if (type != null) {
-                    spanBuilder.withTag("requested.type", type.getName());
+                    spanBuilder.withTag("requested.type", type.getTypeName());
                 }
                 return spanBuilder.start();
             } else {
@@ -353,77 +223,33 @@ abstract class Request implements ServerRequest {
             }
         }
 
-        @SuppressWarnings("unchecked")
-        private <T> Reader<T> readerFor(final Class<T> type) {
-            return (Reader<T>) readers.stream()
-                                      .filter(reader -> reader.accept(type))
-                                      .findFirst()
-                                      .orElseThrow(() -> new IllegalArgumentException("No reader found for class: " + type));
-        }
-
-        private Reader<String> stringContentReader() {
-            try {
-                Charset charset = contentCharset(Request.this);
-                return ContentReaders.stringReader(charset);
-            } catch (final UnsupportedCharsetException e) {
-                return (publisher, clazz) -> {
-                    throw e;
-                };
-            }
-        }
-
         @Override
-        public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
-            try {
-                Span readSpan = createReadSpan(Flow.Publisher.class);
-                chainPublishers().subscribe(new Flow.Subscriber<DataChunk>() {
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        subscriber.onSubscribe(subscription);
-                    }
+        public void onEvent(MessageBodyContext.Event event) {
+            switch (event.eventType()) {
+                case BEFORE_ONSUBSCRIBE:
+                    GenericType<?> type = event.entityType().orElse(null);
+                    readSpan = createReadSpan(type);
+                    break;
 
-                    @Override
-                    public void onNext(DataChunk item) {
-                        subscriber.onNext(item);
+                case AFTER_ONERROR:
+                    if (readSpan != null) {
+                        Tags.ERROR.set(readSpan, Boolean.TRUE);
+                        Throwable ex = event.asErrorEvent().error();
+                        readSpan.log(Map.of("event", "error",
+                                "error.kind", "Exception",
+                                "error.object", ex,
+                                "message", ex.toString()));
+                        readSpan.finish();
                     }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        try {
-                            subscriber.onError(throwable);
-                        } finally {
-                            finishSpanWithError(readSpan, throwable);
-                        }
+                    break;
+                case AFTER_ONCOMPLETE:
+                    if (readSpan != null) {
+                        readSpan.finish();
                     }
-
-                    @Override
-                    public void onComplete() {
-                        try {
-                            subscriber.onComplete();
-                        } finally {
-                            if (null != readSpan) {
-                                // tracing disabled
-                                readSpan.finish();
-                            }
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                subscriber.onError(new IllegalArgumentException("Unexpected exception occurred during publishers chaining", e));
+                    break;
+                default:
+                    // do nothing
             }
-        }
-
-        private Flow.Publisher<DataChunk> chainPublishers() {
-            Flow.Publisher<DataChunk> lastPublisher = originalPublisher;
-            try {
-                filtersLock.readLock().lock();
-                for (Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> filter : filters) {
-                    lastPublisher = filter.apply(lastPublisher);
-                }
-            } finally {
-                filtersLock.readLock().unlock();
-            }
-            return lastPublisher;
         }
     }
 
@@ -487,7 +313,7 @@ abstract class Request implements ServerRequest {
             return absolutePath == null ? this : absolutePath;
         }
 
-        static Path create(Path contextual, String path, Map<String, String> params) {
+        static Path create(Path contextual, String path,  Map<String, String> params) {
             return create(contextual, path, path, params);
         }
 
@@ -509,7 +335,9 @@ abstract class Request implements ServerRequest {
                 map.putAll(params);
                 return new Path(path, rawPath, params, new Path(this.path, this.rawPath, map, null));
             } else {
-                HashMap<String, String> map = new HashMap<>(this.params.size() + params.size() + absolutePath.params.size());
+                int size = this.params.size() + params.size()
+                        + absolutePath.params.size();
+                HashMap<String, String> map = new HashMap<>(size);
                 map.putAll(absolutePath.params);
                 map.putAll(this.params);
                 map.putAll(params);

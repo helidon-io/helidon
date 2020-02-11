@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,16 @@ import io.helidon.common.http.Parameters;
 
 /**
  * Accessor for the {@link Charset} specified by a content-type header.
+ * @deprecated use {@link MessageBodyContext#charset()} instead
  */
+@Deprecated
 public class ContentTypeCharset {
+
+    /**
+     * Cannot be instanciated.
+     */
+    private ContentTypeCharset() {
+    }
 
     /**
      * Returns the {@link Charset} specified in the content-type header, using {@link StandardCharsets#UTF_8}
@@ -59,8 +67,5 @@ public class ContentTypeCharset {
                           }
                       })
                       .orElse(defaultCharset);
-    }
-
-    private ContentTypeCharset() {
     }
 }

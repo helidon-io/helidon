@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.media.common.ContentReaders;
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyFilter;
 import io.helidon.webserver.utils.TestUtils;
 
 import org.junit.jupiter.api.Test;
@@ -65,6 +67,7 @@ public class RequestContentTest {
         doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         doReturn(flux).when(bareRequestMock).bodyPublisher();
         WebServer webServer = mock(WebServer.class);
+        doReturn(MediaSupport.createWithDefaults()).when(webServer).mediaSupport();
         return new RequestTestStub(bareRequestMock, webServer);
     }
 
@@ -196,6 +199,7 @@ public class RequestContentTest {
         request.content().registerFilter(publisher -> {
             throw new IllegalStateException("failed-publisher-transformation");
         });
+
         request.content().registerReader(Duration.class, (publisher, clazz) -> {
             fail("Should not be called");
             throw new IllegalStateException("unreachable code");
@@ -208,9 +212,10 @@ public class RequestContentTest {
             fail("Should have thrown an exception");
         } catch (ExecutionException e) {
             assertThat(e.getCause(),
-                    allOf(instanceOf(IllegalArgumentException.class),
-                    hasProperty("message", containsString("Transformation failed!"))));
-            assertThat(e.getCause().getCause(), hasProperty("message", containsString("failed-publisher-transformation")));
+                    allOf(instanceOf(IllegalStateException.class),
+                        hasProperty("message", containsString("Transformation failed!"))));
+            assertThat(e.getCause().getCause(),
+                    hasProperty("message", containsString("failed-publisher-transformation")));
         }
     }
 
@@ -227,11 +232,10 @@ public class RequestContentTest {
             fail("Should have thrown an exception");
         } catch (ExecutionException e) {
             assertThat(e.getCause(),
-                    allOf(instanceOf(IllegalArgumentException.class),
-                    hasProperty("message",
-                            containsString("Transformation failed!"))));
-            assertThat(e.getCause().getCause(), hasProperty("message",
-                    containsString("failed-read")));
+                    allOf(instanceOf(IllegalStateException.class),
+                        hasProperty("message", containsString("Transformation failed!"))));
+            assertThat(e.getCause().getCause(),
+                    hasProperty("message", containsString("failed-read")));
         }
     }
 
@@ -248,7 +252,7 @@ public class RequestContentTest {
             future.get(10, TimeUnit.SECONDS);
             fail("Should have thrown an exception");
         } catch (ExecutionException e) {
-            assertThat(e.getCause(), instanceOf(IllegalArgumentException.class));
+            assertThat(e.getCause(), instanceOf(IllegalStateException.class));
         }
     }
 
@@ -256,7 +260,7 @@ public class RequestContentTest {
     public void nullFilter() throws Exception {
         Request request = requestTestStub(Single.never());
         assertThrows(NullPointerException.class, () -> {
-            request.content().registerFilter(null);
+            request.content().registerFilter((MessageBodyFilter)null);
         });
     }
 
@@ -301,7 +305,6 @@ public class RequestContentTest {
     @Test
     public void implicitByteArrayContentReader() throws Exception {
         Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
-
         CompletionStage<String> complete = request.content().as(byte[].class).thenApply(String::new);
         assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS),  is("test-string"));
     }
@@ -309,7 +312,6 @@ public class RequestContentTest {
     @Test
     public void implicitStringContentReader() throws Exception {
         Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
-
         CompletionStage<? extends String> complete = request.content().as(String.class);
         assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }

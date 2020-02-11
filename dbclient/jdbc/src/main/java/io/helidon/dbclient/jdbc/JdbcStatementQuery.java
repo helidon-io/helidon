@@ -236,6 +236,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <U> DbRows<U> map(GenericType<U> type) {
             GenericType<T> currentType = this.currentType;
 
@@ -243,7 +244,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
 
             if (null == currentType) {
                 theMapper = value -> mapperManager.map(value,
-                                                       GenericType.create(value.getClass()),
+                                                       GenericType.<T>create(value.getClass()),
                                                        type);
             } else if (currentType.equals(DbMapperManager.TYPE_DB_ROW)) {
                 // maybe we want the same type
@@ -258,7 +259,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                     } catch (MapperException originalException) {
                         // not found in db mappers, use generic mappers
                         try {
-                            return mapperManager.map(value,
+                            return mapperManager.map((DbRow) value,
                                                      DbMapperManager.TYPE_DB_ROW,
                                                      type);
                         } catch (MapperException ignored) {
