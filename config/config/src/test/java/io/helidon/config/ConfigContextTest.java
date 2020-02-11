@@ -144,7 +144,7 @@ public class ConfigContextTest {
         assertConfigIsTheLast(c.config.context(), reloaded);
 
         // no other events
-        assertThat(listener.get(100, false), is(nullValue()));
+        assertThat(listener.get(500, false), is(nullValue()));
     }
 
     private static void assertConfigIsTheLast(Config.Context context, Config config) {
@@ -179,7 +179,7 @@ public class ConfigContextTest {
         assertConfigIsTheLast(c.config.context(), reloaded);
 
         // change event
-        Config last1 = listener.get(100, true);
+        Config last1 = listener.get(500, true);
         assertThat(last1.key().toString(), is(c.key));
         assertThat(last1.get(PROP1).asString(), is(ConfigValues.simpleValue(c.newValue)));
     }
@@ -201,7 +201,7 @@ public class ConfigContextTest {
         c.changeSource(true, "old");
 
         // no other events
-        assertThat(listener.get(100, false), is(nullValue()));
+        assertThat(listener.get(500, false), is(nullValue()));
 
         // context references the last reloaded config
         assertConfigIsTheLast(c.config.context(), c.config);
@@ -222,7 +222,7 @@ public class ConfigContextTest {
         c.changeSource(true, "new");
 
         // change event
-        Config last1 = listener.get(100, true);
+        Config last1 = listener.get(500, true);
         assertThat(last1.key().toString(), is(c.key));
         assertThat(last1.get(PROP1).asString(), is(ConfigValues.simpleValue(c.newValue)));
 
