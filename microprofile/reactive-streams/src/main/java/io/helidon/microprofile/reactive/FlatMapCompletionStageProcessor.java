@@ -144,7 +144,9 @@ class FlatMapCompletionStageProcessor<T, X> implements Flow.Processor<T, X>, Mul
         upstreamsCompleted = true;
         if (requestCounter.get() == 0 || Objects.isNull(lastCompletionStage)) {
             //Have to wait for all completion stages to be completed
-            subscriber.onComplete();
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onComplete();
+            }
         }
     }
 }

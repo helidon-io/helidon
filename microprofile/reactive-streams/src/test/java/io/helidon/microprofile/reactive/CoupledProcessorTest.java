@@ -92,7 +92,7 @@ public class CoupledProcessorTest extends AbstractProcessorTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void spec317() throws InterruptedException, ExecutionException, TimeoutException {
+    void spec317() {
 
         MockPublisher mp = new MockPublisher();
         Processor<Long, Long> sub = new Processor<Long, Long>() {

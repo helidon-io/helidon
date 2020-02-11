@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.Optional;
 import java.util.concurrent.Flow;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -29,7 +30,7 @@ import java.util.function.Function;
  */
 public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Multi<R> {
 
-    private Optional<Function<Long, Long>> onRequestFunction = Optional.empty();
+    private Optional<BiFunction<Flow.Subscriber<? super R>, Long, Long>> onRequestFunction = Optional.empty();
     private Optional<Function<Flow.Subscriber<? super R>, Flow.Subscriber<? super R>>> whenSubscribeFunction = Optional.empty();
     private Optional<Function<R, R>> onNextFunction = Optional.empty();
     private Optional<Consumer<Throwable>> onErrorConsumer = Optional.empty();
@@ -103,7 +104,7 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
      * @param function Function to be invoked.
      * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
      */
-    public MultiTappedProcessor<R> onRequest(Function<Long, Long> function) {
+    public MultiTappedProcessor<R> onRequest(BiFunction<Flow.Subscriber<? super R>, Long, Long> function) {
         onRequestFunction = Optional.ofNullable(function);
         return this;
     }
@@ -122,7 +123,13 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
 
     @Override
     public void request(long n) {
-        super.request(onRequestFunction.map(r -> r.apply(n)).orElse(n));
+        super.request(onRequestFunction.map(r -> r.apply(super.getSubscriber(), n)).orElse(n));
+    }
+
+    @Override
+    public void cancel() {
+        onCancelConsumer.ifPresent(c -> c.accept(super.getSubscription()));
+        super.cancel();
     }
 
     @Override
@@ -135,25 +142,34 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
     }
 
     @Override
-    protected void hookOnNext(R item) {
-        submit(onNextFunction.map(f -> f.apply(item)).orElse(item));
+    public void onNext(R item) {
+        R value;
+        try {
+            value = onNextFunction.map(f -> f.apply(item)).orElse(item);
+        } catch (Throwable t) {
+            super.onError(t);
+            return;
+        }
+        super.onNext(value);
     }
 
     @Override
-    protected void hookOnError(Throwable error) {
-        onErrorConsumer.ifPresent(c -> c.accept(error));
-        super.hookOnError(error);
+    public void onError(Throwable error) {
+        try {
+            onErrorConsumer.ifPresent(c -> c.accept(error));
+        } catch (Throwable t) {
+            error.addSuppressed(t);
+        }
+        super.onError(error);
     }
 
     @Override
-    protected void hookOnComplete() {
-        onCompleteRunnable.ifPresent(Runnable::run);
-        super.hookOnComplete();
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        onCancelConsumer.ifPresent(c -> c.accept(subscription));
-        subscription.cancel();
+    public void onComplete() {
+        try {
+            onCompleteRunnable.ifPresent(Runnable::run);
+            super.onComplete();
+        } catch (Throwable t) {
+            super.onError(t);
+        }
     }
 }

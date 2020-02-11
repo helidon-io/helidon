@@ -17,19 +17,29 @@
 
 package io.helidon.common.reactive;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * Skip first n items, all the others are emitted.
  *
  * @param <T> item type
  */
-public class MultiSkipProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class MultiSkipProcessor<T> extends MultiFilterProcessor<T> {
 
-    private final AtomicLong counter;
+    private long counter = 0;
+    private boolean foundNotMatching = false;
 
     private MultiSkipProcessor(Long skip) {
-        counter = new AtomicLong(skip);
+        super.setPredicate(item -> {
+            try {
+                if (foundNotMatching) return true;
+                foundNotMatching = !(counter++ < skip);
+                if (foundNotMatching) return true;
+                return false;
+            } catch (Throwable t) {
+                cancel();
+                complete(t);
+            }
+            return false;
+        });
     }
 
     /**
@@ -41,15 +51,5 @@ public class MultiSkipProcessor<T> extends BaseProcessor<T, T> implements Multi<
      */
     public static <T> MultiSkipProcessor<T> create(Long skip) {
         return new MultiSkipProcessor<T>(skip);
-    }
-
-    @Override
-    protected void hookOnNext(T item) {
-        long actCounter = this.counter.getAndDecrement();
-        if (0 >= actCounter) {
-            submit(item);
-        } else {
-            request(1);
-        }
     }
 }

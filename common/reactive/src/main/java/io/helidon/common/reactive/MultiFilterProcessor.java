@@ -28,7 +28,23 @@ public class MultiFilterProcessor<T> extends BaseProcessor<T, T> implements Mult
 
     private Predicate<T> predicate;
 
+    /**
+     * Create new MultiFilterProcessor.
+     */
+    protected MultiFilterProcessor() {
+
+    }
+
     private MultiFilterProcessor(Predicate<T> predicate) {
+        this.predicate = predicate;
+    }
+
+    /**
+     * Set predicate used for filtering.
+     *
+     * @param predicate predicate used for filtering
+     */
+    protected void setPredicate(Predicate<T> predicate) {
         this.predicate = predicate;
     }
 
@@ -44,11 +60,17 @@ public class MultiFilterProcessor<T> extends BaseProcessor<T, T> implements Mult
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        if (predicate.test(item)) {
-            submit(item);
-        } else {
-            this.getSubscription().ifPresent(s -> s.request(1));
+    protected void next(T item) {
+        try {
+            if (predicate.test(item)) {
+                super.next(item);
+            } else {
+                // is called only after upstream is set up - so safe to use request(1)
+                super.request(1);
+            }
+        } catch (Throwable t) {
+            cancel();
+            complete(t);
         }
     }
 }

@@ -18,18 +18,18 @@
 package io.helidon.common.reactive;
 
 import java.util.HashSet;
-import java.util.concurrent.Flow;
 
 /**
  * Filter out all duplicate items.
  *
  * @param <T> item type
  */
-public class MultiDistinctProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
+public class MultiDistinctProcessor<T> extends MultiFilterProcessor<T> {
 
     private final HashSet<T> distinctSet = new HashSet<T>();
 
     private MultiDistinctProcessor() {
+        setPredicate(distinctSet::add);
     }
 
     /**
@@ -40,20 +40,5 @@ public class MultiDistinctProcessor<T> extends BaseProcessor<T, T> implements Mu
      */
     public static <T> MultiDistinctProcessor<T> create() {
         return new MultiDistinctProcessor<>();
-    }
-
-    @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
-    }
-
-    @Override
-    protected void hookOnNext(T item) {
-        if (!distinctSet.contains(item)) {
-            distinctSet.add(item);
-            submit(item);
-        } else {
-            this.getSubscription().ifPresent(s -> s.request(1));
-        }
     }
 }

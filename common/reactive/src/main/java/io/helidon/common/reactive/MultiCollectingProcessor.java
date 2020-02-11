@@ -33,17 +33,30 @@ final class MultiCollectingProcessor<T, U> extends BaseProcessor<T, U> implement
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        collector.collect(item);
+    protected void next(T item) {
+        try {
+            collector.collect(item);
+        } catch (Throwable t) {
+            super.setError(t);
+        }
     }
 
     @Override
-    protected void hookOnComplete() {
-        U value = collector.value();
+    public void onComplete() {
+        U value;
+        try {
+            value = collector.value();
+        } catch (Throwable t) {
+            super.complete(t);
+            return;
+        }
         if (value == null) {
-            throw new IllegalStateException("Collector returned a null container");
+            super.onError(new IllegalStateException("Collector returned a null container"));
+        } else if (getError() != null) {
+            super.complete(getError());
         } else {
-            submit(value);
+            getSubscriber().onNext(value);
+            super.complete();
         }
     }
 }

@@ -58,6 +58,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 public class EngineTest {
@@ -867,7 +868,7 @@ public class EngineTest {
     }
 
     @Test
-    void name() {
+    void resumeWith() {
         Publisher<Long> pub = ReactiveStreams.<Long>failed(new Exception("BOOM"))
                 .onErrorResumeWith(
                         t -> ReactiveStreams.fromIterable(() -> LongStream.rangeClosed(1, 5).boxed().iterator())
@@ -891,5 +892,65 @@ public class EngineTest {
                 .toList()
                 .run()
                 .toCompletableFuture().get(10, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void requestNegative() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Throwable> errorReceived = new CompletableFuture<>();
+        ReactiveStreams.of(1, 2, 3).buildRs().subscribe(new Subscriber<Integer>() {
+            @Override
+            public void onSubscribe(Subscription s) {
+                s.request(-1);
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                t.printStackTrace();
+                errorReceived.complete(t);
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        assertEquals(IllegalArgumentException.class, errorReceived.get(100, TimeUnit.MILLISECONDS).getClass());
+    }
+
+    @Test
+    void requestNegativeForeignPub() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Throwable> errorReceived = new CompletableFuture<>();
+        MockPublisher publisher = new MockPublisher();
+        ReactiveStreams.fromPublisher(publisher)
+                .map(aLong -> aLong)
+                .buildRs().subscribe(new Subscriber<>() {
+            @Override
+            public void onSubscribe(Subscription s) {
+                s.request(-1);
+            }
+
+            @Override
+            public void onNext(Long aLong) {
+
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                errorReceived.complete(t);
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        assertEquals(IllegalArgumentException.class, errorReceived.get(100, TimeUnit.MILLISECONDS).getClass());
     }
 }

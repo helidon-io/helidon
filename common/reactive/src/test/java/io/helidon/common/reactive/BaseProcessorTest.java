@@ -92,8 +92,8 @@ public class BaseProcessorTest {
     public void testDoOnNextError() {
         TestProcessor<String> processor = new TestProcessor<String>() {
             @Override
-            protected void hookOnNext(String item) throws IllegalStateException {
-                throw new IllegalStateException("foo!");
+            public void onNext(String item) throws IllegalStateException {
+                super.onError(new IllegalStateException("foo!"));
             }
         };
         new TestPublisher<>("foo").subscribe(processor);
@@ -103,23 +103,6 @@ public class BaseProcessorTest {
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
-    public void testBeforeOnCompleteError() {
-        TestProcessor<String> processor = new TestProcessor<String>() {
-            @Override
-            protected void hookOnComplete() throws IllegalStateException {
-                throw new IllegalStateException("foo!");
-            }
-        };
-        new TestPublisher<>("foo").subscribe(processor);
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        subscriber.request1();
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), hasItems("foo"));
     }
 
     @Test
@@ -246,21 +229,15 @@ public class BaseProcessorTest {
         Throwable error;
 
         @Override
-        protected void hookOnNext(T item) throws IllegalStateException {
-            super.hookOnNext(item);
-            submit(item);
-        }
-
-        @Override
-        protected void hookOnComplete() throws IllegalStateException {
+        public void onComplete() {
             complete = true;
-            super.hookOnComplete();
+            super.onComplete();
         }
 
         @Override
-        protected void hookOnError(Throwable ex) throws IllegalStateException {
+        public void onError(Throwable ex) {
             error = ex;
-            super.hookOnError(ex);
+            super.onError(ex);
         }
     }
 }

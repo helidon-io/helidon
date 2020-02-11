@@ -36,6 +36,6 @@ final class MultiFromPublisher<T> implements Multi<T> {
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        source.subscribe(subscriber);
+        source.subscribe(SequentialSubscriber.create(subscriber));
     }
 }

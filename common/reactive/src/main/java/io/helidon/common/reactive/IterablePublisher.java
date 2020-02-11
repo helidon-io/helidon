@@ -53,7 +53,8 @@ class IterablePublisher<T> implements Flow.Publisher<T> {
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super T> subscriber) {
+    public void subscribe(Flow.Subscriber<? super T> sub) {
+        Flow.Subscriber<? super T> subscriber = SequentialSubscriber.create(sub);
         final Iterator<T> iterator;
         try {
             iterator = iterable.iterator();

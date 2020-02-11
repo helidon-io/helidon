@@ -30,9 +30,9 @@ import java.util.function.Function;
  * @param <T> input item type
  * @param <X> output item type
  */
-public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<X>, StrictProcessor {
+public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<X> {
 
-    private boolean strictMode = BaseProcessor.DEFAULT_STRICT_MODE;
+    private boolean strictMode = true;
     private Function<T, Flow.Publisher<X>> mapper;
     private RequestedCounter requestCounter = new RequestedCounter(strictMode);
     private RequestedCounter requestCounterUpstream = new RequestedCounter(strictMode);
@@ -104,12 +104,6 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
      */
     public static <T, U> MultiFlatMapProcessor<T, U> fromPublisherMapper(Function<T, Flow.Publisher<U>> mapper) {
         return new MultiFlatMapProcessor<>(mapper);
-    }
-
-    @Override
-    public MultiFlatMapProcessor<T, X> strictMode(boolean strictMode) {
-        this.strictMode = strictMode;
-        return this;
     }
 
     private class FlatMapSubscription implements Flow.Subscription {

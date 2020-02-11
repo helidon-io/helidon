@@ -44,13 +44,13 @@ public class MultiPeekProcessor<T> extends BaseProcessor<T, T> implements Multi<
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        consumer.accept(item);
-        submit(item);
-    }
-
-    @Override
-    public String toString() {
-        return "PeekProcessor{" + "consumer=" + consumer + '}';
+    public void onNext(T item) {
+        try {
+            consumer.accept(item);
+            super.onNext(item);
+        } catch (Throwable t) {
+            cancel();
+            complete(t);
+        }
     }
 }

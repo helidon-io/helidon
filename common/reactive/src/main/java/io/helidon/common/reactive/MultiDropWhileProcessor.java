@@ -24,13 +24,23 @@ import java.util.function.Predicate;
  *
  * @param <T> Item type
  */
-public class MultiDropWhileProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
-    private Predicate<T> predicate;
+public class MultiDropWhileProcessor<T> extends MultiFilterProcessor<T> implements Multi<T> {
 
     private boolean foundNotMatching = false;
 
     private MultiDropWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+        super.setPredicate(item -> {
+            try {
+                if (foundNotMatching) return true;
+                foundNotMatching = !predicate.test(item);
+                if (foundNotMatching) return true;
+                return false;
+            } catch (Throwable t) {
+                cancel();
+                complete(t);
+            }
+            return false;
+        });
     }
 
     /**
@@ -42,16 +52,5 @@ public class MultiDropWhileProcessor<T> extends BaseProcessor<T, T> implements M
      */
     public static <T> MultiDropWhileProcessor<T> create(Predicate<T> predicate) {
         return new MultiDropWhileProcessor<>(predicate);
-    }
-
-    @Override
-    protected void hookOnNext(T item) {
-        if (foundNotMatching || !predicate.test(item)) {
-            foundNotMatching = true;
-            submit(item);
-        } else {
-            this.getSubscription().ifPresent(s -> s.request(1));
-        }
-
     }
 }

@@ -60,6 +60,7 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
+        Objects.requireNonNull(subscription);
         if (subscribedAlready.getAndSet(true)) {
             subscription.cancel();
             return;
@@ -95,6 +96,7 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
 
     @Override
     public void onNext(T item) {
+        Objects.requireNonNull(item);
         if (done) return;
         try {
             seqLock.lock();
@@ -115,6 +117,7 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
 
     @Override
     public void onError(Throwable throwable) {
+        Objects.requireNonNull(throwable);
         if (done) return;
         try {
             seqLock.lock();

@@ -32,6 +32,7 @@ public final class MultiMapProcessor<T, U> extends BaseProcessor<T, U> implement
     private final Mapper<T, U> mapper;
 
     private MultiMapProcessor(Mapper<T, U> mapper) {
+        super();
         this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
     }
 
@@ -48,18 +49,21 @@ public final class MultiMapProcessor<T, U> extends BaseProcessor<T, U> implement
     }
 
     @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
-    }
-
-    @Override
-    protected void hookOnNext(T item) {
-        U value = mapper.map(item);
-        if (value == null) {
-            getSubscription().ifPresent(Flow.Subscription::cancel);
-            onError(new NullPointerException("Mapper returned a null value"));
-        } else {
-            submit(value);
+    @SuppressWarnings("unchecked")
+    protected void submit(T item, Flow.Subscriber<? super U> subscriber) {
+        U value = null;
+        try {
+            value = mapper.map(item);
+        } catch (Throwable t) {
+            getSubscription().cancel();
+            onError(t);
+            return;
         }
+        if (value == null) {
+            getSubscription().cancel();
+            onError(new NullPointerException("Mapper returned a null value"));
+            return;
+        }
+        subscriber.onNext((U) value);
     }
 }
