@@ -19,6 +19,7 @@ package io.helidon.config.sources;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 import io.helidon.config.ConfigException;
@@ -63,6 +64,16 @@ public class MapConfigSource extends ConfigSourceBase implements ConfigSource.No
                 .build();
     }
 
+    @Override
+    public boolean isModified(Map<?, ?> stamp) {
+        return !theMap.equals(stamp);
+    }
+
+    @Override
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
     private ConfigNode.ObjectNode toNode(Map<?, ?> map) {
         ConfigNode.ObjectNode.Builder builder = ConfigNode.ObjectNode.builder();
         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -71,13 +82,8 @@ public class MapConfigSource extends ConfigSourceBase implements ConfigSource.No
         return builder.build();
     }
 
-    @Override
-    public boolean isModified(Map<?, ?> stamp) {
-        return !theMap.equals(stamp);
-    }
-
     public static class Builder extends ConfigSourceBuilderBase<Builder, Void>
-                    implements PollableSource.Builder<Builder> {
+            implements PollableSource.Builder<Builder> {
         private Map<?, ?> map;
 
         @Override

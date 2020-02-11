@@ -79,15 +79,7 @@ public interface ConfigSource {
         return true;
     }
 
-    default Optional<PollingStrategy> pollingStrategy() {
-        return Optional.empty();
-    }
-
     default Optional<RetryPolicy> retryPolicy() {
-        return Optional.empty();
-    }
-
-    default Optional<ChangeWatcher<?>> changeWatcher() {
         return Optional.empty();
     }
 
@@ -116,6 +108,14 @@ public interface ConfigSource {
          */
         Content.ParsableContent load() throws ConfigException;
 
+        default Optional<ConfigParser> parser() {
+            return Optional.empty();
+        }
+
+        default Optional<String> mediaType() {
+            return Optional.empty();
+        }
+
         /**
          * Closes the @{code Source}, releasing any resources it holds.
          */
@@ -124,6 +124,7 @@ public interface ConfigSource {
 
         interface Builder<T extends Builder<T>> extends ConfigSource.Builder<T> {
             T parser(ConfigParser parser);
+
             T mediaType(String mediaType);
         }
     }
@@ -192,7 +193,11 @@ public interface ConfigSource {
     interface WatchableSource<T> {
         Class<T> targetType();
 
-        interface Builder<B extends Builder<B, T>, T>  extends ConfigSource.Builder<B> {
+        default Optional<ChangeWatcher<?>> changeWatcher() {
+            return Optional.empty();
+        }
+
+        interface Builder<B extends Builder<B, T>, T> extends ConfigSource.Builder<B> {
             B changeWatcher(ChangeWatcher<T> changeWatcher);
         }
     }
@@ -209,6 +214,10 @@ public interface ConfigSource {
          * @return {@code true} if the current data of this config source differ from the loaded data
          */
         boolean isModified(S stamp);
+
+        default Optional<PollingStrategy> pollingStrategy() {
+            return Optional.empty();
+        }
 
         /**
          * As there is no multi-inheritance in java, this must be an interface.

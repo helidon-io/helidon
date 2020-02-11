@@ -24,6 +24,7 @@ import java.util.Set;
 
 import io.helidon.config.changes.FileChangeWatcher;
 import io.helidon.config.parsers.PropertiesConfigParser;
+import io.helidon.config.retries.RetryingPolicy;
 import io.helidon.config.sources.ClasspathConfigSource;
 import io.helidon.config.sources.FileConfigSource;
 import io.helidon.config.sources.MapConfigSource;
@@ -31,7 +32,6 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.Content;
-import io.helidon.config.spi.RetryPolicy;
 
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +66,7 @@ class ConfigTest {
 
         ConfigSource fileWithRetryAndWatching = FileConfigSource.builder()
                 .filePath(Paths.get("file.properties"))
-                .retryPolicy(new RetryPolicy() { })
+                .retryPolicy(RetryingPolicy.create(3))
                 .changeWatcher(FileChangeWatcher.create())
                 .build();
 

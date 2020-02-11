@@ -26,31 +26,39 @@ public abstract class ConfigSourceBuilderBase<T extends ConfigSourceBuilderBase<
     private boolean optional = false;
     private ConfigParser parser;
     private String mediaType;
+    @SuppressWarnings("unchecked")
+    private T me = (T) this;
 
     @Override
     public T retryPolicy(RetryPolicy policy) {
-        return null;
+        this.retryPolicy = policy;
+        return me;
     }
 
     @Override
     public T optional(boolean optional) {
-        return null;
+        this.optional = optional;
+        return me;
     }
 
     protected T parser(ConfigParser parser) {
-        return null;
+        this.parser = parser;
+        return me;
     }
 
     protected T mediaType(String mediaType) {
-        return null;
+        this.mediaType = mediaType;
+        return me;
     }
 
     protected T changeWatcher(ChangeWatcher<U> changeWatcher) {
-        return null;
+        this.changeWatcher = changeWatcher;
+        return me;
     }
 
     protected T pollingStrategy(PollingStrategy pollingStrategy) {
-        return null;
+        this.pollingStrategy = pollingStrategy;
+        return me;
     }
 
     Optional<PollingStrategy> pollingStrategy() {

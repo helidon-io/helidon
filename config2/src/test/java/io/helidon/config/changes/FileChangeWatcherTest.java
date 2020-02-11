@@ -74,7 +74,7 @@ class FileChangeWatcherTest {
 
         Path target = directory.resolve("test.properties");
 
-        FileChangeWatcher watcher = new FileChangeWatcher();
+        FileChangeWatcher watcher = FileChangeWatcher.create();
         watcher.start(target, listener);
 
         Files.write(target, List.of("line=value"));

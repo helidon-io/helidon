@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -84,6 +85,31 @@ class ConfigNodeImpl implements Config {
             return Optional.empty();
         }
         return directValue;
+    }
+
+    @Override
+    public Optional<Integer> asInt() {
+        return getValue().map(Integer::parseInt);
+    }
+
+    @Override
+    public Optional<Double> asDouble() {
+        return getValue().map(Double::parseDouble);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Optional<T> as(Class<T> type) {
+        Optional<String> value = getValue();
+
+        if (type.equals(Duration.class)) {
+            return value.map(it -> (T) Duration.parse(it));
+        }
+
+        if (value.isEmpty()) {
+            return Optional.empty();
+        }
+        throw new ConfigException("Cannot convert " + value.get() + " to " + type + ", not implemented");
     }
 
     @Override

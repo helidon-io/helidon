@@ -37,9 +37,9 @@ import io.helidon.config.spi.ConfigSourceBuilderBase;
 import io.helidon.config.spi.Content;
 import io.helidon.config.spi.PollingStrategy;
 
-public class FileConfigSource extends ConfigSourceBase implements ParsableSource,
-                                                                  WatchableSource<Path>,
-                                                                  PollableSource<byte[]> {
+public final class FileConfigSource extends ConfigSourceBase implements ParsableSource,
+                                                                        WatchableSource<Path>,
+                                                                        PollableSource<byte[]> {
     private static final Logger LOGGER = Logger.getLogger(FileConfigSource.class.getName());
 
     private final Path filePath;
@@ -104,6 +104,26 @@ public class FileConfigSource extends ConfigSourceBase implements ParsableSource
         MediaTypes.detectType(filePath).ifPresent(builder::mediaType);
 
         return builder.build();
+    }
+
+    @Override
+    public Optional<ChangeWatcher<?>> changeWatcher() {
+        return super.changeWatcher();
+    }
+
+    @Override
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
+    @Override
+    public Optional<String> mediaType() {
+        return super.mediaType();
+    }
+
+    @Override
+    public Optional<ConfigParser> parser() {
+        return super.parser();
     }
 
     public static class Builder

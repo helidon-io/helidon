@@ -35,14 +35,10 @@ import io.helidon.config.spi.Content;
 
 public class ClasspathConfigSource extends ConfigSourceBase implements ConfigSource.ParsableSource {
     private final URL resource;
-    private final Optional<String> configuredMediaType;
-    private final Optional<ConfigParser> configuredParser;
 
     private ClasspathConfigSource(Builder builder) {
         super(builder);
         this.resource = builder.url;
-        this.configuredParser = builder.parser();
-        this.configuredMediaType = builder.mediaType();
     }
 
     public static ClasspathConfigSource create(String resource) {
@@ -98,6 +94,16 @@ public class ClasspathConfigSource extends ConfigSourceBase implements ConfigSou
         MediaTypes.detectType(resource).ifPresent(builder::mediaType);
 
         return builder.build();
+    }
+
+    @Override
+    public Optional<String> mediaType() {
+        return super.mediaType();
+    }
+
+    @Override
+    public Optional<ConfigParser> parser() {
+        return super.parser();
     }
 
     public static class Builder extends ConfigSourceBuilderBase<Builder, Void>

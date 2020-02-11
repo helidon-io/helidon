@@ -40,6 +40,12 @@ public interface Config {
 
     Optional<String> getValue();
 
+    Optional<Integer> asInt();
+
+    Optional<Double> asDouble();
+
+    <T> Optional<T> as(Class<T> type);
+
     class Builder implements io.helidon.common.Builder<Config> {
         private List<ConfigSource> sources = new LinkedList<>();
 

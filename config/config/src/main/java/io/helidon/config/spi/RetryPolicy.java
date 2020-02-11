@@ -19,12 +19,11 @@ package io.helidon.config.spi;
 import java.util.function.Supplier;
 
 /**
- * Mechanism for controlling retry of attempts to load data by an
- * {@link AbstractSource}.
+ * Mechanism for controlling retry of attempts to load data by a {@link io.helidon.config.spi.ConfigSource}.
  * <p>
- * When an {@code AbstractSource} attempts to load the underlying data it uses a
- * {@code RetryPolicy} to govern if and how it retries the load operation in
- * case of errors.
+ * When a {@link io.helidon.config.Config} attempts to load the underlying data
+ * of a {@link io.helidon.config.spi.ConfigSource} it uses a {@code RetryPolicy} to govern if and how it
+ * retries the load operation in case of errors.
  * <p>
  * The {@link #execute(java.util.function.Supplier) } method of each policy
  * implementation must perform at least one attempt to load the data, even if it

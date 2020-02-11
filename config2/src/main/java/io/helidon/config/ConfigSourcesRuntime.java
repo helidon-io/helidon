@@ -67,7 +67,8 @@ class ConfigSourcesRuntime {
     public void init() {
         for (ConfigSourceRuntime runtime : runtimes) {
             if (runtime.isEager()) {
-                runtime.load();
+                runtime.theSource.retryPolicy()
+                        .ifPresentOrElse(it -> it.execute(runtime::load), runtime::load);
             }
         }
     }
@@ -142,9 +143,10 @@ class ConfigSourcesRuntime {
             try {
                 if (isParsable) {
                     Content.ParsableContent pContent = (Content.ParsableContent) content;
-                    ConfigParser parser = theSource.parser()
+                    ConfigSource.ParsableSource pSource = (ConfigSource.ParsableSource) theSource;
+                    ConfigParser parser = pSource.parser()
                             .or(pContent::parser)
-                            .orElseGet(() -> locateParser(theSource.mediaType()
+                            .orElseGet(() -> locateParser(pSource.mediaType()
                                                                   .or(pContent::mediaType)
                                                                   .orElseThrow(() -> new ConfigException(
                                                                           "Neither media type nor parser is defined on a "

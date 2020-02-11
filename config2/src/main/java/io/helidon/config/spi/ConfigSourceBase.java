@@ -23,19 +23,16 @@ public class ConfigSourceBase implements ConfigSource {
     private final Optional<PollingStrategy> pollingStrategy;
     private final Optional<RetryPolicy> retryPolicy;
     private final Optional<ChangeWatcher<?>> changeWatcher;
+    private final Optional<String> mediaType;
+    private final Optional<ConfigParser> parser;
 
     protected ConfigSourceBase(ConfigSourceBuilderBase<?, ?> builder) {
         this.optional = builder.optional();
         this.pollingStrategy = builder.pollingStrategy();
         this.retryPolicy = builder.retryPolicy();
         this.changeWatcher = builder.changeWatcher().map(it -> (ChangeWatcher<?>) it);
-        builder.mediaType();
-        builder.parser();
-    }
-
-    @Override
-    public Optional<PollingStrategy> pollingStrategy() {
-        return pollingStrategy;
+        mediaType = builder.mediaType();
+        parser = builder.parser();
     }
 
     @Override
@@ -44,15 +41,23 @@ public class ConfigSourceBase implements ConfigSource {
     }
 
     @Override
-    public Optional<ChangeWatcher<?>> changeWatcher() {
-        return changeWatcher;
-    }
-
     public boolean optional() {
         return optional;
     }
 
-    //media type
+    protected Optional<PollingStrategy> pollingStrategy() {
+        return pollingStrategy;
+    }
 
-    // config parser etc.
+    protected Optional<ChangeWatcher<?>> changeWatcher() {
+        return changeWatcher;
+    }
+
+    protected Optional<String> mediaType() {
+        return mediaType;
+    }
+
+    protected Optional<ConfigParser> parser() {
+        return parser;
+    }
 }
