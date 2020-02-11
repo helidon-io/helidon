@@ -91,8 +91,13 @@ public interface ConfigSource {
         return Optional.empty();
     }
 
+    default boolean optional() {
+        return false;
+    }
+
     interface Builder<T extends Builder<T>> extends io.helidon.common.Builder<ConfigSource> {
         T retryPolicy(RetryPolicy policy);
+
         T optional(boolean optional);
     }
 

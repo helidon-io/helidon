@@ -19,26 +19,38 @@ package io.helidon.config.spi;
 import java.util.Optional;
 
 public class ConfigSourceBase implements ConfigSource {
-    protected ConfigSourceBase(ConfigSourceBuilderBase<?, ?> builder) {
+    private final boolean optional;
+    private final Optional<PollingStrategy> pollingStrategy;
+    private final Optional<RetryPolicy> retryPolicy;
+    private final Optional<ChangeWatcher<?>> changeWatcher;
 
+    protected ConfigSourceBase(ConfigSourceBuilderBase<?, ?> builder) {
+        this.optional = builder.optional();
+        this.pollingStrategy = builder.pollingStrategy();
+        this.retryPolicy = builder.retryPolicy();
+        this.changeWatcher = builder.changeWatcher().map(it -> (ChangeWatcher<?>) it);
+        builder.mediaType();
+        builder.parser();
     }
 
     @Override
     public Optional<PollingStrategy> pollingStrategy() {
-        return Optional.empty();
+        return pollingStrategy;
     }
 
     @Override
     public Optional<RetryPolicy> retryPolicy() {
-        return Optional.empty();
+        return retryPolicy;
     }
 
     @Override
     public Optional<ChangeWatcher<?>> changeWatcher() {
-        return Optional.empty();
+        return changeWatcher;
     }
 
-    //optional
+    public boolean optional() {
+        return optional;
+    }
 
     //media type
 

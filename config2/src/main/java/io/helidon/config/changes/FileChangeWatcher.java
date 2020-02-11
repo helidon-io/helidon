@@ -49,7 +49,7 @@ public class FileChangeWatcher implements ChangeWatcher<Path> {
     private FileChangeWatcher() {
     }
 
-    public static ChangeWatcher<?> create() {
+    public static FileChangeWatcher create() {
         return new FileChangeWatcher();
     }
 

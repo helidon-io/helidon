@@ -31,6 +31,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.Content;
+import io.helidon.config.spi.RetryPolicy;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +42,8 @@ import static org.hamcrest.Matchers.sameInstance;
 class ConfigTest {
     @Test
     void testSourcesWithSetup() {
-        ConfigSourceSetup cpSource = ConfigSourceSetup.builder(ClasspathConfigSource.create("classpath.properties"))
+        ConfigSource cpSource = ClasspathConfigSource.builder()
+                .resource("classpath.properties")
                 .parser(new ConfigParser() {
                     @Override
                     public Set<String> supportedMediaTypes() {
@@ -57,18 +59,18 @@ class ConfigTest {
                 })
                 .build();
 
-        ConfigSourceSetup fileSource = ConfigSourceSetup
-                .builder(FileConfigSource.create(Paths.get("not-there-at-all.properties")))
+        ConfigSource fileSource = FileConfigSource.builder()
+                .filePath(Paths.get("not-there-at-all.properties"))
                 .optional(true)
                 .build();
 
-        ConfigSourceSetup fileWithRetryAndWatching = ConfigSourceSetup
-                .builder(FileConfigSource.create(Paths.get("file.properties")))
-                .retryPolicy()
+        ConfigSource fileWithRetryAndWatching = FileConfigSource.builder()
+                .filePath(Paths.get("file.properties"))
+                .retryPolicy(new RetryPolicy() { })
                 .changeWatcher(FileChangeWatcher.create())
                 .build();
 
-        Config config = Config.createFromSetup(List.of(cpSource, fileSource));
+        Config config = Config.create(List.of(cpSource, fileSource, fileWithRetryAndWatching));
 
         assertThat(config.get("value").getValue(), is(Optional.of("Parser properties")));
         assertThat(config.get("random").getValue(), is(Optional.empty()));

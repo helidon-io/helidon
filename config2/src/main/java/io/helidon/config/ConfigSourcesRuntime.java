@@ -33,9 +33,9 @@ class ConfigSourcesRuntime {
     private boolean hasMutable;
     private boolean hasLazy;
 
-    ConfigSourcesRuntime(ConfigSetup configSetup, List<ConfigSourceSetup> sources) {
+    ConfigSourcesRuntime(ConfigSetup configSetup, List<ConfigSource> sources) {
         this.configSetup = configSetup;
-        for (ConfigSourceSetup source : sources) {
+        for (ConfigSource source : sources) {
             runtimes.add(new ConfigSourceRuntime(configSetup, source));
         }
 
@@ -75,8 +75,7 @@ class ConfigSourcesRuntime {
     private static class ConfigSourceRuntime {
         private static final Logger LOGGER = Logger.getLogger(ConfigSourceRuntime.class.getName());
 
-        private ConfigSetup configSetup;
-        private final ConfigSourceSetup setup;
+        private final ConfigSetup configSetup;
         private final ConfigSource theSource;
         private final boolean isLazy;
         private final boolean isEager;
@@ -89,10 +88,9 @@ class ConfigSourcesRuntime {
 
         private final AtomicReference<ObjectNode> lastLoadedEagerNode = new AtomicReference<>();
 
-        ConfigSourceRuntime(ConfigSetup configSetup, ConfigSourceSetup sourceSetup) {
+        ConfigSourceRuntime(ConfigSetup configSetup, ConfigSource configSource) {
             this.configSetup = configSetup;
-            this.setup = sourceSetup;
-            this.theSource = sourceSetup.configSource();
+            this.theSource = configSource;
             this.isLazy = theSource instanceof ConfigSource.LazySource;
             this.isParsable = theSource instanceof ConfigSource.ParsableSource;
             this.isNode = theSource instanceof ConfigSource.NodeSource;
@@ -134,7 +132,7 @@ class ConfigSourcesRuntime {
             Content content = theSource.exists() ? loadEager() : null;
 
             if (null == content || !content.exists()) {
-                if (setup.optional()) {
+                if (theSource.optional()) {
                     return Optional.empty();
                 } else {
                     throw new ConfigException("Mandatory config source " + theSource + " is not available");
@@ -144,9 +142,9 @@ class ConfigSourcesRuntime {
             try {
                 if (isParsable) {
                     Content.ParsableContent pContent = (Content.ParsableContent) content;
-                    ConfigParser parser = setup.parser()
+                    ConfigParser parser = theSource.parser()
                             .or(pContent::parser)
-                            .orElseGet(() -> locateParser(setup.mediaType()
+                            .orElseGet(() -> locateParser(theSource.mediaType()
                                                                   .or(pContent::mediaType)
                                                                   .orElseThrow(() -> new ConfigException(
                                                                           "Neither media type nor parser is defined on a "
