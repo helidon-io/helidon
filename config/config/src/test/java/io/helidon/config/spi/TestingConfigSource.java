@@ -73,8 +73,8 @@ public class TestingConfigSource extends AbstractConfigSource<Instant> {
     }
 
     @Override
-    protected Data<ObjectNode, Instant> loadData() throws ConfigException {
-        return new Data<>(Optional.ofNullable(loadedObjectNode), Optional.of(timestamp));
+    protected Data<ObjectNode> loadData() throws ConfigException {
+        return Data.create(loadedObjectNode, timestamp);
     }
 
     @Override

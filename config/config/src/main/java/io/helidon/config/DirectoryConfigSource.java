@@ -99,7 +99,12 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
                         objectNodeRoot.addValue(path.getFileName().toString(), content);
                     });
 
-            return new Data<>(Optional.of(objectNodeRoot.build()), dataStamp());
+            Data.Builder<ConfigNode.ObjectNode> builder = Data.builder();
+
+            builder.data(objectNodeRoot.build());
+            dataStamp().ifPresent(builder::stamp);
+
+            return builder.build();
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {

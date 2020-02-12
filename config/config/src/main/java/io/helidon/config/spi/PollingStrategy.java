@@ -140,6 +140,7 @@ import io.helidon.config.PollingStrategies;
  * @see Flow.Publisher
  * @see PollingStrategies PollingStrategies - access built-in implementations.
  */
+@FunctionalInterface
 public interface PollingStrategy extends Supplier<PollingStrategy> {
 
     @Override
@@ -148,78 +149,34 @@ public interface PollingStrategy extends Supplier<PollingStrategy> {
     }
 
     /**
-     * Returns a {@link Flow.Publisher} which fires {@link PollingEvent}s.
-     * <p>
-     * Note that {@code PollingStrategy} implementations can generate
-     * {@code PollingEvent}s whether or not any subscribers have subscribed to
-     * the publisher of the events.
-     * <p>
-     * Subscribers typically invoke {@link Flow.Subscription#request(long)}
-     * asking for one event initially, and then after it has processed each
-     * event the subscriber requests one more event.
-     * <p>
-     * The subscriber might not receive every event broadcast, for example if it
-     * subscribes to the publisher after an event has been delivered to the
-     * publisher.
-     * <p>
-     * Each {@code PollingStrategy} implementation chooses which executor to use
-     * for notifying subscribers. The recommended practice is to use the same
-     * thread as the polling strategy implementation runs on.
+     * Start this polling strategy. From this point in time, the polled will receive
+     *  events on {@link Polled#poll(java.time.Instant)}.
+     * It is the responsibility of the {@link io.helidon.config.spi.PollingStrategy.Polled}
+     * to handle such requests.
+     * A {@link io.helidon.config.spi.ConfigSource} needs only support for polling stamps
+     * to support a polling strategy, the actual reloading is handled by the
+     * configuration component.
+     * There is no need to implement {@link io.helidon.config.spi.PollingStrategy.Polled} yourself,
+     * unless you want to implement a new component that supports polling.
      *
-     * @return a publisher of events
+     * @param polled a component receiving polling events.
      */
-    Flow.Publisher<PollingEvent> ticks();
-
-//    /**
-//     * Notifies a polling strategy that a configuration source has been changed since a precedent {@link PollingEvent} had been
-//     * fired.
-//     * <p>
-//     * The default implementation does not do anything, but can be overridden to change a behaviour of the polling strategy, for
-//     * example, to change delay between ticking or just to log it.
-//     *
-//     * @param changed {@code true} if source was changed since a precedent {@link PollingEvent}
-//     * @see RecurringPolicy
-//     * @see RecurringPolicy#shorten()
-//     * @see RecurringPolicy#lengthen()
-//     */
-    //default void configSourceChanged(boolean changed) { //TODO WILL BE PUBLIC API AGAIN LATER, Issue #14.
-    //}
+    void start(Polled polled);
 
     /**
-     * Event indicating that data used in constructing a given {@code Config}
-     * tree might have changed.
-     *
-     * @see PollingStrategy#ticks()
+     * A polled component. For config this interface is implemented by the config system itself.
      */
-    interface PollingEvent {
-
+    @FunctionalInterface
+    interface Polled {
         /**
-         * Returns the event timestamp.
+         * Poll for changes.
+         * The result may be used to modify behavior of the {@link io.helidon.config.spi.PollingStrategy} triggering this
+         * poll event.
          *
-         * @return event timestamp
+         * @param when instant this polling request was created
+         * @return result of the polling
          */
-        Instant timestamp();
-
-        /**
-         * Creates a new instance of {@link PollingEvent} with
-         * {@link Instant#now()} used as its timestamp.
-         *
-         * @return new instance of event
-         */
-        static PollingEvent now() {
-            Instant timestamp = Instant.now();
-            return new PollingEvent() {
-                @Override
-                public Instant timestamp() {
-                    return timestamp;
-                }
-
-                @Override
-                public String toString() {
-                    return "PollingEvent @ " + timestamp;
-                }
-            };
-        }
+        ChangeEventType poll(Instant when);
     }
 
 }

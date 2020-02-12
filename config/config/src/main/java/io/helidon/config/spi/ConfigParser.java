@@ -114,6 +114,21 @@ public interface ConfigParser {
             return new Builder();
         }
 
+        /**
+         * Create content from data, media type and a stamp.
+         * If not all are available, construct content using {@link #builder()}
+         *
+         * @param data input stream to underlying data
+         * @param mediaType content media type
+         * @param stamp stamp of the content
+         * @return content built from provided information
+         */
+        static Content create(InputStream data, String mediaType, Object stamp) {
+            return builder().data(data)
+                    .mediaType(mediaType)
+                    .stamp(stamp)
+                    .build();
+        }
 
         /**
          * Fluent API builder for {@link Content}.
@@ -159,7 +174,7 @@ public interface ConfigParser {
              * @return updated builder instance
              */
             public Builder charset(Charset charset) {
-                Objects.requireNonNull(mediaType, "Charset must be provided, or this method should not be called");
+                Objects.requireNonNull(charset, "Charset must be provided, or this method should not be called");
                 this.charset = charset;
                 return this;
             }

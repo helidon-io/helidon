@@ -56,7 +56,7 @@ class InMemoryOverrideSource extends AbstractOverrideSource<Object> {
 
     @Override
     protected Data<OverrideData> loadData() throws ConfigException {
-        return new Data<>(Optional.of(overrideData), Optional.of(this));
+        return Data.create(overrideData, this);
     }
 
     static final class Builder extends AbstractOverrideSource.Builder<InMemoryOverrideSource.Builder, Void> {

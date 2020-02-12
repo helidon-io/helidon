@@ -16,6 +16,8 @@
 
 package io.helidon.config;
 
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
@@ -55,11 +57,11 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
     public Data<OverrideData> loadData() throws ConfigException {
         return ClasspathSourceHelper.content(resource,
                                              description(),
-                                             (inputStreamReader, instant) -> {
-                                                 return new Data(
-                                                         Optional.of(OverrideData.create(inputStreamReader)),
-                                                         Optional.of(instant));
-                                             });
+                                             (inputStream, instant) -> Data.<OverrideData>builder()
+                                                     .data(OverrideData.create(new InputStreamReader(inputStream,
+                                                                                                     StandardCharsets.UTF_8)))
+                                                     .stamp(instant)
+                                                     .build());
     }
 
     /**

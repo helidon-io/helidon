@@ -24,7 +24,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.Builder;
-import io.helidon.config.internal.FilesystemWatchPollingStrategy;
+import io.helidon.config.internal.FileSystemWatcher;
 import io.helidon.config.internal.ScheduledPollingStrategy;
 import io.helidon.config.internal.ScheduledPollingStrategy.RegularRecurringPolicy;
 import io.helidon.config.spi.PollingStrategy;
@@ -185,8 +185,8 @@ public final class PollingStrategies {
          */
         @Override
         public PollingStrategy build() {
-            FilesystemWatchPollingStrategy strategy =
-                    new FilesystemWatchPollingStrategy(path, executor);
+            FileSystemWatcher strategy =
+                    new FileSystemWatcher(path, executor);
             if (modifiers != null && modifiers.length > 0) {
                 strategy.initWatchServiceModifiers(modifiers);
             }

@@ -65,8 +65,7 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
 
         OverrideData overrideData = OverrideSource.OverrideData
                 .create(new StringReader(FileSourceHelper.safeReadContent(filePath)));
-        return new Data<>(Optional.of(overrideData), digest);
-
+        return Data.create(overrideData, digest);
     }
 
     /**

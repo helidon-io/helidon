@@ -37,7 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigHelper;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.PollingStrategy;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
@@ -55,15 +55,12 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  *
  * @see WatchService
  */
-public class FilesystemWatchPollingStrategy implements PollingStrategy {
+public class FileSystemWatcher implements ChangeWatcher<Path> {
 
-    private static final Logger LOGGER = Logger.getLogger(FilesystemWatchPollingStrategy.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(FileSystemWatcher.class.getName());
 
     private static final long DEFAULT_RECURRING_INTERVAL = 5;
 
-    private final Path path;
-    private final SubmissionPublisher<PollingEvent> ticksSubmitter;
-    private final Flow.Publisher<PollingEvent> ticksPublisher;
     private final boolean customExecutor;
     private ScheduledExecutorService executor;
     private WatchService watchService;
@@ -75,11 +72,10 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
     /**
      * Creates a strategy with watched {@code path} as a parameters.
      *
-     * @param path     a watched file
      * @param executor a custom executor or the {@link io.helidon.config.internal.ConfigThreadFactory} is assigned when
      *                 parameter is {@code null}
      */
-    public FilesystemWatchPollingStrategy(Path path, ScheduledExecutorService executor) {
+    public FileSystemWatcher(ScheduledExecutorService executor) {
         if (executor == null) {
             this.customExecutor = false;
         } else {
@@ -87,15 +83,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
             this.executor = executor;
         }
 
-        this.path = path;
-
-        ticksSubmitter = new SubmissionPublisher<>(Runnable::run, //deliver events on current thread
-                                                   1); //(almost) do not buffer events
-        ticksPublisher = ConfigHelper.suspendablePublisher(ticksSubmitter,
-                                                           this::startWatchService,
-                                                           this::stopWatchService);
-
-        watchServiceModifiers = new LinkedList<>();
+        this.watchServiceModifiers = new LinkedList<>();
     }
 
     /**
@@ -185,7 +173,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
             try {
                 register();
                 if (fail) {
-                    FilesystemWatchPollingStrategy.this.fireEvent(null);
+                    FileSystemWatcher.this.fireEvent(null);
                     fail = false;
                 }
             } catch (Exception e) {
@@ -207,13 +195,13 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
                 }
                 List<WatchEvent<?>> events = key.pollEvents();
                 events.stream()
-                        .filter(e -> FilesystemWatchPollingStrategy.this.path.endsWith((Path) e.context()))
-                        .forEach(FilesystemWatchPollingStrategy.this::fireEvent);
+                        .filter(e -> FileSystemWatcher.this.path.endsWith((Path) e.context()))
+                        .forEach(FileSystemWatcher.this::fireEvent);
 
                 if (!key.reset()) {
                     fail = true;
                     LOGGER.log(Level.FINE, () -> "Directory '" + dir + "' is no more valid to be watched.");
-                    FilesystemWatchPollingStrategy.this.fireEvent(null);
+                    FileSystemWatcher.this.fireEvent(null);
                     break;
                 }
             }
@@ -261,7 +249,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
 
     @Override
     public String toString() {
-        return "FilesystemWatchPollingStrategy{"
+        return "FileSystemWatcher{"
                 + "path=" + path
                 + '}';
     }

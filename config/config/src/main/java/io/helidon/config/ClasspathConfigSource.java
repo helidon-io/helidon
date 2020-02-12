@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
@@ -102,9 +103,10 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
     protected ConfigContent content() throws ConfigException {
         return ClasspathSourceHelper.content(resource,
                                              description(),
-                                             (inputStreamReader, instant) -> {
-                                                 ConfigParser.ParsableContentBuilder builder = ConfigParser.parsableBuilder()
-                                                         .data(inputStreamReader)
+                                             (inputStream, instant) -> {
+                                                 ConfigParser.Content.Builder builder = ConfigParser.Content.builder()
+                                                         .data(inputStream)
+                                                         .charset(StandardCharsets.UTF_8)
                                                          .stamp(instant);
 
                                                  mediaType().ifPresent(builder::mediaType);

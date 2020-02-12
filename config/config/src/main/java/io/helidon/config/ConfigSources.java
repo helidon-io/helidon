@@ -743,9 +743,8 @@ public final class ConfigSources {
 
         @Override
         protected Data<ConfigNode.ObjectNode> loadData() throws ConfigException {
-            return new Data<>(Optional.of(ConfigUtils
-                                                  .mapToObjectNode(ConfigUtils.propertiesToMap(System.getProperties()), false)),
-                              Optional.of(Instant.now()));
+            return Data.create(ConfigUtils.mapToObjectNode(ConfigUtils.propertiesToMap(System.getProperties()), false),
+                               Instant.now());
         }
 
         @Override

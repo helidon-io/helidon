@@ -60,7 +60,7 @@ public class PropertiesConfigParser implements ConfigParser {
     }
 
     @Override
-    public <S> ConfigNode.ObjectNode parse(Content content) throws ConfigParserException {
+    public ConfigNode.ObjectNode parse(ConfigParser.Content content) throws ConfigParserException {
         Properties properties = new Properties();
         try {
             properties.load(content.data());

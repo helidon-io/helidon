@@ -21,8 +21,8 @@ import java.net.URL;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigContext;
+import io.helidon.config.spi.ConfigParser.Content;
 
 import com.xebialabs.restito.server.StubServer;
 import org.glassfish.grizzly.http.Method;
@@ -213,10 +213,10 @@ public class UrlConfigSourceServerMockTest {
                 .mediaType(TEST_MEDIA_TYPE)
                 .build();
 
-        ConfigContent content = configSource.content();
+        Content content = (Content) configSource.content();
 
         assertThat(content.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
-        assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
+        assertThat(TestHelper.inputStreamToString(content.data()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
                 method(Method.GET),
@@ -238,10 +238,10 @@ public class UrlConfigSourceServerMockTest {
                 .url(new URL(String.format("http://127.0.0.1:%d/application.properties", server.getPort())))
                 .build();
 
-        ConfigContent content = configSource.content();
+        Content content = (Content) configSource.content();
 
         assertThat(content.mediaType(), is(Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES)));
-        assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
+        assertThat(TestHelper.inputStreamToString(content.data()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
                 method(Method.GET),
@@ -263,10 +263,10 @@ public class UrlConfigSourceServerMockTest {
                 .url(new URL(String.format("http://127.0.0.1:%d/application.properties", server.getPort())))
                 .build();
 
-        ConfigContent content = configSource.content();
+        Content content = (Content) configSource.content();
 
         assertThat(content.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
-        assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
+        assertThat(TestHelper.inputStreamToString(content.data()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
                 method(Method.GET),
@@ -287,7 +287,7 @@ public class UrlConfigSourceServerMockTest {
                 .url(new URL(String.format("http://127.0.0.1:%d/application.unknown", server.getPort())))
                 .build();
 
-        assertThat(configSource.content().mediaType(), is(Optional.empty()));
+        assertThat(((Content) configSource.content()).mediaType(), is(Optional.empty()));
     }
 
 }

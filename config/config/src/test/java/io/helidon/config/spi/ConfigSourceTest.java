@@ -16,7 +16,6 @@
 
 package io.helidon.config.spi;
 
-import java.io.StringReader;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
@@ -33,6 +32,7 @@ import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static io.helidon.config.TestHelper.toInputStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
@@ -71,7 +71,8 @@ public class ConfigSourceTest {
     @Test
     public void testFromReadableDescription() {
         ConfigSource configSource = ConfigSources
-                .create(new StringReader("aaa=bbb"), PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                .create(toInputStream("aaa=bbb"),
+                        PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
         assertThat(configSource.description(), is("InMemoryConfig[Readable]"));
     }
@@ -82,7 +83,8 @@ public class ConfigSourceTest {
         when(context.findParser(any())).thenReturn(Optional.of(ConfigParsers.properties()));
 
         ConfigSource configSource = ConfigSources
-                .create(new StringReader("aaa=bbb"), PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                .create(toInputStream("aaa=bbb"),
+                        PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
         configSource.init(context);
         assertThat(configSource.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));

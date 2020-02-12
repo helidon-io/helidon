@@ -67,8 +67,12 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
                                                     + content.getClass().getName());
         }
 
-        return new Data<ObjectNode>(Optional.of(objectNode), content.stamp());
+        Data.Builder<ObjectNode> builder = Data.builder();
 
+        builder.data(objectNode);
+        content.stamp().ifPresent(builder::stamp);
+
+        return builder.build();
     }
 
     /**

@@ -120,8 +120,10 @@ public class AbstractOverrideSourceTest {
         }
 
         @Override
-        protected Data<OverrideData, Instant> loadData() throws ConfigException {
-            return new Data<>(null, Optional.of(Instant.MIN));
+        protected Data<OverrideData> loadData() throws ConfigException {
+            return Data.<OverrideData>builder()
+                    .stamp(Instant.MIN)
+                    .build();
         }
 
         public static class Builder extends AbstractOverrideSource.Builder<TestingOverrideSource.Builder, Void> {

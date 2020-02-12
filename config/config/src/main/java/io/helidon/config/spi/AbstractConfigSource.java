@@ -75,13 +75,16 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
 
     @Override
     protected Data<ObjectNode> processLoadedData(Data<ObjectNode> data) {
-        if (!data.data().isPresent()
-                || (mediaTypeMapping == null && parserMapping == null)) {
+        if (data.data().isEmpty()
+                || ((mediaTypeMapping == null) && (parserMapping == null))) {
             return data;
         }
-        Data<ObjectNode> result = new Data<>(Optional.of(processObject(data.stamp(), ConfigKeyImpl.of(), data.data().get())),
-                                             data.stamp());
 
+        Data.Builder<ObjectNode> builder = Data.builder();
+        builder.data(processObject(data.stamp(), ConfigKeyImpl.of(), data.data().get()));
+        data.stamp().ifPresent(builder::stamp);
+
+        Data<ObjectNode> result = builder.build();
         super.processLoadedData(result);
 
         return result;
@@ -118,15 +121,15 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
         return builder.build();
     }
 
-    // TODO: return optional?
     private ConfigNode processValue(Optional<Object> datastamp, Config.Key key, ValueNode valueNode) {
         return findParserForKey(key)
                 .map(parser -> parser.parse(toParsableContent(datastamp, valueNode.get())))
-                .orElse(null);
+                .map(ConfigNode.class::cast)
+                .orElse(valueNode);
     }
 
     private ConfigParser.Content toParsableContent(Optional<Object> datastamp, String nodeValue) {
-        ConfigParser.ParsableContentBuilder builder = ConfigParser.parsableBuilder();
+        ConfigParser.Content.Builder builder = ConfigParser.Content.builder();
 
         builder.data(new ByteArrayInputStream(nodeValue.getBytes(StandardCharsets.UTF_8)));
         datastamp.ifPresent(builder::stamp);

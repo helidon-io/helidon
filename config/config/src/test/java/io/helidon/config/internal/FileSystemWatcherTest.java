@@ -44,15 +44,15 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests {@link FilesystemWatchPollingStrategy}.
+ * Tests {@link FileSystemWatcher}.
  */
 @Disabled //TODO tests are still TOO slow to be unit tests -> refactor it to run much quicker
-public class FilesystemWatchPollingStrategyTest {
+public class FileSystemWatcherTest {
     private static final String WATCHED_FILE = "watched-file.yaml";
 
     @RegisterExtension
     static TemporaryFolderExt dir = TemporaryFolderExt.build();
-    
+
     @Test
     public void testPollingDirectoryDeleted() throws IOException, InterruptedException {
         CountDownLatch subscribeLatch = new CountDownLatch(1);
@@ -61,7 +61,7 @@ public class FilesystemWatchPollingStrategyTest {
         File watchedDir = dir.newFolder();
         Files.write(Files.createFile(new File(watchedDir, "username").toPath()), "libor".getBytes());
 
-        FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedDir.toPath(), null));
+        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedDir.toPath(), null));
         //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
 
         SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
@@ -115,7 +115,7 @@ public class FilesystemWatchPollingStrategyTest {
         SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
+        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
         //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
@@ -157,7 +157,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path subdir = dirPath.resolve("subdir");
         Path watchedPath = subdir.resolve(WATCHED_FILE);
-        FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
+        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
         //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
@@ -202,7 +202,7 @@ public class FilesystemWatchPollingStrategyTest {
         SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
+        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
 //        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
@@ -305,7 +305,7 @@ public class FilesystemWatchPollingStrategyTest {
         SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
+        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
 //        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
@@ -345,7 +345,7 @@ public class FilesystemWatchPollingStrategyTest {
     public void testWatchThreadFuture() {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
+        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
 //        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         mockPollingStrategy.startWatchService();
 
@@ -359,7 +359,7 @@ public class FilesystemWatchPollingStrategyTest {
     public void testWatchThreadFutureCanceled() {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
+        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
 //        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         mockPollingStrategy.startWatchService();
         mockPollingStrategy.stopWatchService();

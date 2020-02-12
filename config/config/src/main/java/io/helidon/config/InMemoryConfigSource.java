@@ -28,7 +28,7 @@ import io.helidon.config.spi.ConfigContent;
 class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
 
     private final String uri;
-    private final ConfigContent<Object> content;
+    private final ConfigContent content;
 
     InMemoryConfigSource(InMemoryConfigSource.Builder builder) {
         super(builder);
@@ -87,7 +87,7 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
             return uri;
         }
 
-        private ConfigContent<Object> content() {
+        private ConfigContent content() {
             return content;
         }
     }

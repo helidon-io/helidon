@@ -84,7 +84,7 @@ public class RetryPoliciesTest {
 
     private static class TestingSource extends AbstractSource<String, Instant> {
 
-        private final Supplier<Data<String, Instant>> dataSupplier;
+        private final Supplier<Data<String>> dataSupplier;
         private CountDownLatch loadLatch;
 
         TestingSource(TestingBuilder builder) {
@@ -103,7 +103,7 @@ public class RetryPoliciesTest {
         }
 
         @Override
-        protected Data<String, Instant> loadData() throws ConfigException {
+        protected Data<String> loadData() throws ConfigException {
             loadLatch.countDown();
             return dataSupplier.get();
         }
@@ -111,8 +111,7 @@ public class RetryPoliciesTest {
         private static class TestingBuilder extends Builder<TestingBuilder, Void, TestingSource> {
 
             public CountDownLatch loadLatch;
-            private Supplier<Data<String, Instant>> dataSupplier = () -> new Data<>(Optional.of("nothing"),
-                                                                                    Optional.of(Instant.now()));
+            private Supplier<Data<String>> dataSupplier = () -> Data.create("nothing", Instant.now());
 
             TestingBuilder() {
                 super(Void.class);
@@ -123,7 +122,7 @@ public class RetryPoliciesTest {
                 return this;
             }
 
-            TestingBuilder dataSupplier(Supplier<Data<String, Instant>> dataSupplier) {
+            TestingBuilder dataSupplier(Supplier<Data<String>> dataSupplier) {
                 this.dataSupplier = dataSupplier;
                 return this;
             }

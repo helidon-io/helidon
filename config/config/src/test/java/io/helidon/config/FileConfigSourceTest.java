@@ -18,10 +18,11 @@ package io.helidon.config;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -29,7 +30,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.FileConfigSource.FileBuilder;
-import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
@@ -136,17 +136,17 @@ public class FileConfigSourceTest {
         configSource.init(content -> Optional.of(new ConfigParser() {
             @Override
             public Set<String> supportedMediaTypes() {
-                return new HashSet<String>() {{
-                    add("application/hocon");
-                }};
+                return Set.of("application/hocon");
             }
 
             @Override
-            public ObjectNode parse(ConfigContent content) throws ConfigParserException {
+            public ObjectNode parse(Content content) throws ConfigParserException {
                 assertThat(content, notNullValue());
                 assertThat(content.mediaType(), is(Optional.of("application/hocon")));
                 try {
-                    assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
+                    InputStream data = content.data();
+                    char first = (char) new InputStreamReader(data).read();
+                    assertThat(first, is('#'));
                 } catch (IOException e) {
                     fail("Cannot read from source's reader");
                 }

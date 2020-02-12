@@ -16,16 +16,18 @@
 
 package io.helidon.config.internal;
 
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.TestHelper.toInputStream;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,15 +68,25 @@ public class PropertiesConfigParserTest {
     //
 
     @FunctionalInterface
-    private interface StringContent extends ConfigContent {
+    private interface StringContent extends ConfigParser.Content {
         @Override
         default Optional<String> mediaType() {
             return Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
         }
 
         @Override
-        default Reader asReadable() {
-            return new StringReader(getContent());
+        default InputStream data() {
+            return toInputStream(getContent());
+        }
+
+        @Override
+        default Charset charset() {
+            return StandardCharsets.UTF_8;
+        }
+
+        @Override
+        default boolean exists() {
+            return true;
         }
 
         String getContent();

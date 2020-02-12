@@ -28,6 +28,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.PollingStrategies;
+import io.helidon.config.spi.AbstractSource.Data;
 
 import org.junit.jupiter.api.Test;
 
@@ -78,10 +79,10 @@ public class AbstractSourceTest {
     @Test
     public void testLoadDataChangedSinceLastLoad() throws InterruptedException {
         TestingSource testingSource = TestingSource.builder()
-                .dataSupplier(() -> new AbstractSource.Data<>(Optional.of(Instant.now().toString()), Optional.of(Instant.now())))
+                .dataSupplier(() -> Data.create(Instant.now().toString(), Instant.now()))
                 .build();
 
-        Optional<AbstractSource.Data<String, Instant>> stringData = testingSource.loadDataChangedSinceLastLoad();
+        Optional<Data<String>> stringData = testingSource.loadDataChangedSinceLastLoad();
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure the timestamps will differ.
         assertThat(stringData.get().stamp(), is(not(testingSource.loadDataChangedSinceLastLoad().get().stamp())));
     }
@@ -90,7 +91,7 @@ public class AbstractSourceTest {
     public void testReload() throws InterruptedException {
         CountDownLatch eventFired = new CountDownLatch(2);
         TestingSource testingSource = TestingSource.builder()
-                .dataSupplier(() -> new AbstractSource.Data<>(Optional.of(Instant.now().toString()), Optional.of(Instant.now())))
+                .dataSupplier(() -> Data.create(Instant.now().toString(), Instant.now()))
                 .fireEventRunnable(eventFired::countDown)
                 .build();
 
@@ -105,7 +106,7 @@ public class AbstractSourceTest {
     public void testRetryPolicy() throws InterruptedException {
         CountDownLatch methodCalled = new CountDownLatch(1);
         TestingSource testingSource = TestingSource.builder()
-                .dataSupplier(() -> new AbstractSource.Data<>(Optional.of(Instant.now().toString()), Optional.of(Instant.now())))
+                .dataSupplier(() -> Data.create(Instant.now().toString(), Instant.now()))
                 .fireEventRunnable(() -> {
                 })
                 .retryPolicy(new RetryPolicy() {
@@ -159,7 +160,7 @@ public class AbstractSourceTest {
 
     private static class TestingSource extends AbstractSource<String, Instant> {
 
-        private final Supplier<Data<String, Instant>> dataSupplier;
+        private final Supplier<Data<String>> dataSupplier;
         private Runnable fireEventRunnable;
 
         TestingSource(TestingBuilder builder) {
@@ -183,20 +184,20 @@ public class AbstractSourceTest {
         }
 
         @Override
-        protected Data<String, Instant> loadData() throws ConfigException {
+        protected Data<String> loadData() throws ConfigException {
             return dataSupplier.get();
         }
 
         private static class TestingBuilder extends Builder<TestingBuilder, Void, TestingSource> {
 
-            private Supplier<Data<String, Instant>> dataSupplier;
+            private Supplier<Data<String>> dataSupplier;
             private Runnable fireEventRunnable;
 
             protected TestingBuilder() {
                 super(Void.class);
             }
 
-            TestingBuilder dataSupplier(Supplier<Data<String, Instant>> dataSupplier) {
+            TestingBuilder dataSupplier(Supplier<Data<String>> dataSupplier) {
                 this.dataSupplier = dataSupplier;
                 return this;
             }

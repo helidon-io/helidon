@@ -22,12 +22,13 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.spi.ConfigParser.Content;
 
 /**
  * Testing implementation of {@link AbstractParsableConfigSource}.
  */
 public class TestingParsableConfigSource extends AbstractParsableConfigSource<Instant> {
-    private final Supplier<ConfigContent<Instant>> contentSupplier;
+    private final Supplier<Content> contentSupplier;
     private boolean subscribePollingStrategyInvoked = false;
     private boolean cancelPollingStrategyInvoked = false;
 
@@ -44,16 +45,17 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
 
     @Override
     protected Optional<Instant> dataStamp() {
-        ConfigContent<Instant> content = contentSupplier.get();
+        Content content = contentSupplier.get();
         if (content != null) {
-            return content.stamp();
+            return content.stamp()
+                    .map(Instant.class::cast);
         }
         return Optional.empty();
     }
 
     @Override
-    protected ConfigContent<Instant> content() throws ConfigException {
-        ConfigContent<Instant> content = contentSupplier.get();
+    protected Content content() throws ConfigException {
+        Content content = contentSupplier.get();
         if (content != null) {
             return content;
         }
@@ -88,7 +90,7 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
      * Testing implementation of {@link AbstractParsableConfigSource.Builder}.
      */
     public static class TestingBuilder extends Builder<TestingBuilder, Void, TestingParsableConfigSource> {
-        private Supplier<ConfigContent<Instant>> contentSupplier;
+        private Supplier<Content> contentSupplier;
 
         private TestingBuilder() {
             super(Void.class);
@@ -101,13 +103,13 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
             return super.config(metaConfig);
         }
 
-        public TestingBuilder content(Supplier<ConfigContent<Instant>> contentSupplier) {
+        public TestingBuilder content(Supplier<Content> contentSupplier) {
             this.contentSupplier = contentSupplier;
 
             return this;
         }
 
-        public TestingBuilder content(ConfigContent<Instant> content) {
+        public TestingBuilder content(Content content) {
             this.contentSupplier = () -> content;
 
             return this;
@@ -118,7 +120,7 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
             return new TestingParsableConfigSource(this);
         }
 
-        public Supplier<ConfigContent<Instant>> getContentSupplier() {
+        public Supplier<Content> getContentSupplier() {
             return contentSupplier;
         }
     }

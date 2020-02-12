@@ -57,19 +57,19 @@ public interface ConfigContent {
      */
     interface NodeContent extends ConfigContent {
         /**
+         * A fluent API builder for {@link io.helidon.config.spi.ConfigContent.NodeContent}.
+         *
+         * @return a new builder instance
+         */
+        static NodeContentBuilder builder() {
+            return new NodeContentBuilder();
+        }
+
+        /**
          * Data of this config source.
          * @return the data of the underlying source as an object node
          */
         ConfigNode.ObjectNode data();
-    }
-
-    /**
-     * A fluent API builder for {@link io.helidon.config.spi.ConfigContent.NodeContent}.
-     *
-     * @return a new builder instance
-     */
-    static NodeContentBuilder nodeBuilder() {
-        return new NodeContentBuilder();
     }
 
     /**

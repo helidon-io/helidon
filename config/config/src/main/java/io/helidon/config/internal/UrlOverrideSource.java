@@ -94,7 +94,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
             Reader reader = new InputStreamReader(connection.getInputStream(),
                                                   ConfigUtils.getContentCharset(connection.getContentEncoding()));
 
-            return new Data<>(Optional.of(OverrideData.create(reader)), Optional.of(timestamp));
+            return Data.create(OverrideData.create(reader), timestamp);
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {

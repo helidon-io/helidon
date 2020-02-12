@@ -38,7 +38,7 @@ import io.helidon.config.internal.ConfigThreadFactory;
 /**
  * Abstract base implementation for a variety of sources.
  * <p>
- * The inner {@link Builder} class is ready-to-extend with built-in support of
+ * The inner {@link io.helidon.config.spi.AbstractSource.Builder} class is ready-to-extend with built-in support of
  * changes (polling strategy, executor, buffer size) and mandatory/optional
  * attribute.
  *
@@ -206,6 +206,9 @@ public abstract class AbstractSource<T, S> implements Source<T> {
                                              lastDatastamp));
                     return Optional.of(processLoadedData(data));
                 } else {
+                    if (lastData.isEmpty()) {
+                        return Optional.of(processLoadedData(data));
+                    }
                     LOGGER.log(Level.FINE,
                                String.format("Config data %s has not changed, last stamp was %s.", description(), lastDatastamp));
                 }
@@ -215,7 +218,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
                 if (lastData.isPresent() && lastData.get().data().isPresent()) {
                     LOGGER.log(Level.FINE,
                                String.format("Config data %s has has been removed.", description()));
-                    return Optional.of(new Data<>(Optional.empty(), Optional.empty()));
+                    return Optional.of(Data.create());
                 }
             }
         }
@@ -226,7 +229,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      * Loads new data from config source.
      *
      * @return newly loaded data with appropriate data timestamp used for future method calls
-     * @throws ConfigException in case it is not possible to load configuration data
+     * @throws io.helidon.config.ConfigException in case it is not possible to load configuration data
      */
     protected abstract Data<T> loadData() throws ConfigException;
 
@@ -303,8 +306,8 @@ public abstract class AbstractSource<T, S> implements Source<T> {
     }
 
     /**
-     * A common {@link AbstractSource} builder, suitable for concrete {@code Builder} implementations
-     * related to {@link AbstractSource} extensions to extend.
+     * A common {@link io.helidon.config.spi.AbstractSource} builder, suitable for concrete {@code Builder} implementations
+     * related to {@link io.helidon.config.spi.AbstractSource} extensions to extend.
      * <p>
      * The application can control this behavior:
      * <ul>
@@ -344,6 +347,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          *
          * @param targetType target type
          */
+        @SuppressWarnings("unchecked")
         protected Builder(Class<T> targetType) {
             this.targetType = targetType;
 
@@ -371,9 +375,11 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          * Supported configuration {@code properties}:
          * <ul>
          *  <li>{@code optional} - type {@code boolean}, see {@link #optional()}</li>
-         *  <li>{@code polling-strategy} - see {@link PollingStrategy} for details about configuration format,
-         *          see {@link #pollingStrategy(Supplier)} or {@link #pollingStrategy(Function)}</li>
-         *  <li>{@code retry-policy} - see {@link io.helidon.config.spi.RetryPolicy} for details about
+         *  <li>{@code polling-strategy} - see {@link io.helidon.config.spi.PollingStrategy} for details about configuration
+         *  format,
+         *          see {@link #pollingStrategy(java.util.function.Supplier)} or
+         *          {@link #pollingStrategy(java.util.function.Function)}</li>
+         *  <li>{@code retry-policy} - see {@link RetryPolicy} for details about
          *      configuration format</li>
          * </ul>
          *
@@ -404,7 +410,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          *
          * @param pollingStrategySupplier a polling strategy
          * @return a modified builder instance
-         * @see PollingStrategies#regular(java.time.Duration)
+         * @see io.helidon.config.PollingStrategies#regular(java.time.Duration)
          */
         public B pollingStrategy(Supplier<PollingStrategy> pollingStrategySupplier) {
             Objects.requireNonNull(pollingStrategySupplier, "pollingStrategy cannot be null");
@@ -427,7 +433,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          * @return a modified builder instance
          * @throws UnsupportedOperationException if the concrete {@code Builder}
          * implementation does not support the polling strategy
-         * @see #pollingStrategy(Supplier)
+         * @see #pollingStrategy(java.util.function.Supplier)
          * @see #target()
          */
         public final B pollingStrategy(Function<T, Supplier<PollingStrategy>> pollingStrategyProvider) {
@@ -455,7 +461,8 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
-         * Built {@link ConfigSource} will not be mandatory, i.e. it is ignored if configuration target does not exists.
+         * Built {@link io.helidon.config.spi.ConfigSource} will not be mandatory, i.e. it is ignored if configuration target
+         * does not exists.
          *
          * @return a modified builder instance
          */
@@ -466,7 +473,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
-         * Built {@link ConfigSource} will be optional ({@code true}) or mandatory ({@code false}).
+         * Built {@link io.helidon.config.spi.ConfigSource} will be optional ({@code true}) or mandatory ({@code false}).
          *
          * @param optional set to {@code true} to mark this source optional.
          * @return a modified builder instance
@@ -478,20 +485,20 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
-         * Specifies "observe-on" {@link Executor} to be used to deliver
-         * {@link ConfigSource#changes() config source changes}. The same
+         * Specifies "observe-on" {@link java.util.concurrent.Executor} to be used to deliver
+         * {@link io.helidon.config.spi.ConfigSource#changes() config source changes}. The same
          * executor is also used to reload the source, as triggered by the
-         * {@link PollingStrategy#ticks() polling strategy event}.
+         * {@link io.helidon.config.spi.PollingStrategy#ticks() polling strategy event}.
          * <p>
          * The default executor is from a dedicated thread pool which reuses
          * threads as possible.
          *
          * @param changesExecutor the executor to use for async delivery of
-         * {@link ConfigSource#changes()} events
+         * {@link io.helidon.config.spi.ConfigSource#changes()} events
          * @return a modified builder instance
          * @see #changesMaxBuffer(int)
-         * @see ConfigSource#changes()
-         * @see PollingStrategy#ticks()
+         * @see io.helidon.config.spi.ConfigSource#changes()
+         * @see io.helidon.config.spi.PollingStrategy#ticks()
          */
         public B changesExecutor(Executor changesExecutor) {
             Objects.requireNonNull(changesExecutor, "changesExecutor cannot be null");
@@ -502,16 +509,17 @@ public abstract class AbstractSource<T, S> implements Source<T> {
 
         /**
          * Specifies maximum capacity for each subscriber's buffer to be used to deliver
-         * {@link ConfigSource#changes() config source changes}.
+         * {@link io.helidon.config.spi.ConfigSource#changes() config source changes}.
          * <p>
-         * By default {@link Flow#defaultBufferSize()} is used.
+         * By default {@link java.util.concurrent.Flow#defaultBufferSize()} is used.
          * <p>
          * Note: Not consumed events will be dropped off.
          *
-         * @param changesMaxBuffer the maximum capacity for each subscriber's buffer of {@link ConfigSource#changes()} events.
+         * @param changesMaxBuffer the maximum capacity for each subscriber's buffer of
+         * {@link io.helidon.config.spi.ConfigSource#changes()} events.
          * @return a modified builder instance
-         * @see #changesExecutor(Executor)
-         * @see ConfigSource#changes()
+         * @see #changesExecutor(java.util.concurrent.Executor)
+         * @see io.helidon.config.spi.ConfigSource#changes()
          */
         public B changesMaxBuffer(int changesMaxBuffer) {
             this.changesMaxBuffer = changesMaxBuffer;
@@ -519,11 +527,13 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
-         * Sets a supplier of {@link RetryPolicy} that will be responsible for invocation of {@link AbstractSource#load()}.
+         * Sets a supplier of {@link io.helidon.config.spi.RetryPolicy} that will be responsible for invocation of
+         * {@link io.helidon.config.spi.AbstractSource#load()}.
          * <p>
-         * The default reply policy is {@link RetryPolicies#justCall()}.
+         * The default reply policy is {@link io.helidon.config.RetryPolicies#justCall()}.
          * <p>
-         * Create a custom policy or use the built-in policy constructed with a {@link RetryPolicies#repeat(int) builder}.
+         * Create a custom policy or use the built-in policy constructed with a
+         * {@link io.helidon.config.RetryPolicies#repeat(int) builder}.
          *
          * @param retryPolicySupplier a execute policy supplier
          * @return a modified builder instance
@@ -534,11 +544,13 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
-         * Set a {@link RetryPolicy} that will be responsible for invocation of {@link AbstractSource#load()}.
+         * Set a {@link io.helidon.config.spi.RetryPolicy} that will be responsible for invocation of
+         * {@link io.helidon.config.spi.AbstractSource#load()}.
          * <p>
-         * The default reply policy is {@link RetryPolicies#justCall()}.
+         * The default reply policy is {@link io.helidon.config.RetryPolicies#justCall()}.
          * <p>
-         * Create a custom policy or use the built-in policy constructed with a {@link RetryPolicies#repeat(int) builder}.
+         * Create a custom policy or use the built-in policy constructed with a
+         * {@link io.helidon.config.RetryPolicies#repeat(int) builder}.
          *
          * @param retryPolicy retry policy
          * @return a modified builder instance
@@ -612,25 +624,41 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         private final Optional<D> data;
         private final Optional<Object> stamp;
 
-        /**
-         * Initialize data object for specified timestamp and covered data.
-         */
-        public Data() {
-            this.stamp = Optional.empty();
-            this.data = Optional.empty();
+        private Data(Builder<D> builder) {
+            data = Optional.ofNullable(builder.data);
+            stamp = Optional.ofNullable(builder.stamp);
         }
 
         /**
-         * Initialize data object for specified timestamp and covered data.
+         * Fluent API builder.
          *
-         * @param data  covered object node. Can be {@code null} in case source does not exist.
-         * @param stamp data stamp
+         * @return a new instance of a builder
          */
-        public Data(Optional<D> data, Optional<? extends Object> stamp) {
-            Objects.requireNonNull(data);
-            Objects.requireNonNull(stamp);
-            this.stamp = stamp.map(Object.class::cast);
-            this.data = data;
+        public static <T> Builder<T> builder() {
+            return new Builder<>();
+        }
+
+        /**
+         * Create an instance of empty data.
+         * @param <T> type of data
+         * @return empty data
+         */
+        public static <T> Data<T> create() {
+            return Data.<T>builder().build();
+        }
+
+        /**
+         * Create data with content and a stamp.
+         * @param content the data content
+         * @param stamp the data stamp (such as digest, timestamp)
+         * @param <T> type of data
+         * @return empty data
+         */
+        public static <T> Data<T> create(T content, Object stamp) {
+            return Data.<T>builder()
+                    .data(content)
+                    .stamp(stamp)
+                    .build();
         }
 
         /**
@@ -650,11 +678,55 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         public Optional<Object> stamp() {
             return stamp;
         }
+
+        /**
+         * Fluent API builder for {@code Data}.
+         * @param <T> type of the data
+         */
+        public static final class Builder<T> {
+            private T data;
+            private Object stamp;
+
+            private Builder() {
+            }
+
+            /**
+             * Returns a {@code Data} built from the parameters previously set.
+             *
+             * @return a {@code Data} built with parameters of this {@code Data.Builder}
+             */
+            public Data<T> build() {
+                return new Data<>(this);
+            }
+
+            /**
+             * Data content.
+             *
+             * @param data data to use
+             * @return updated builder instance
+             */
+            public Builder<T> data(T data) {
+                this.data = data;
+                return this;
+            }
+
+            /**
+             * Data stamp of the content.
+             *
+             * @param stamp stamp to use
+             * @return updated builder instance
+             */
+            public Builder<T> stamp(Object stamp) {
+                this.stamp = stamp;
+                return this;
+            }
+        }
     }
 
     /**
-     * {@link Flow.Subscriber} on {@link PollingStrategy#ticks() polling strategy} to listen on {@link
-     * PollingStrategy.PollingEvent}.
+     * {@link java.util.concurrent.Flow.Subscriber} on {@link io.helidon.config.spi.PollingStrategy#ticks() polling strategy}
+     * to listen on {@link
+     * io.helidon.config.spi.PollingStrategy.PollingEvent}.
      */
     private class PollingEventSubscriber implements Flow.Subscriber<PollingStrategy.PollingEvent> {
 

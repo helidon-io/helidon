@@ -16,10 +16,6 @@
 
 package io.helidon.config;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.nio.CharBuffer;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -29,48 +25,8 @@ import java.util.logging.Logger;
  * Common Configuration utilities.
  */
 public final class ConfigHelper {
-    private static final int DEFAULT_BUFFER_CAPACITY = 1024;
-    private static final Logger LOGGER = Logger.getLogger(ConfigHelper.class.getName());
-
     private ConfigHelper() {
         throw new AssertionError("Instantiation not allowed.");
-    }
-
-    /**
-     * Creates a {@link Reader} from the given {@link Readable} object.
-     * <p>
-     * Equivalent to {@code createReader(readable, 1024)}. See
-     * {@link #createReader(Readable,int)}.
-     *
-     * @param readable a readable
-     * @return a reader
-     * @throws IOException when {@link Readable#read(CharBuffer)} encounters an error
-     */
-    public static Reader createReader(Readable readable) throws IOException {
-        return createReader(readable, DEFAULT_BUFFER_CAPACITY);
-    }
-
-    /**
-     * Creates a {@link Reader} from the given {@link Readable} object using the
-     * specified buffer size.
-     *
-     * @param readable       a readable
-     * @param bufferCapacity a new buffer capacity, in chars
-     * @return a reader
-     * @throws IOException when {@link Readable#read(CharBuffer)} encounters an error
-     */
-    static Reader createReader(Readable readable, int bufferCapacity) throws IOException {
-        if (readable instanceof Reader) {
-            return (Reader) readable;
-        }
-        CharBuffer cb = CharBuffer.allocate(bufferCapacity);
-        StringBuilder sb = new StringBuilder();
-        while (readable.read(cb) != -1) {
-            cb.flip();
-            sb.append(cb.toString());
-        }
-
-        return new StringReader(sb.toString());
     }
 
     /**

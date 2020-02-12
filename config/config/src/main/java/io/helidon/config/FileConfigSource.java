@@ -109,7 +109,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
     protected ConfigContent content() throws ConfigException {
         LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
 
-        ConfigParser.ParsableContentBuilder builder = ConfigParser.parsableBuilder();
+        ConfigParser.Content.Builder builder = ConfigParser.Content.builder();
         builder.data(new ByteArrayInputStream(FileSourceHelper.safeReadContent(filePath).getBytes(StandardCharsets.UTF_8)));
 
         dataStamp().ifPresent(builder::stamp);
