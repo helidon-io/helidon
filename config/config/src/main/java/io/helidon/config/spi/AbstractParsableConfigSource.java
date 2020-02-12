@@ -25,8 +25,8 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 /**
  * Abstract implementation of {@link ConfigSource} that uses a
  * {@link ConfigParser} to parse
- * {@link ConfigParser.Content configuration content} accessible as a
- * {@link ConfigParser.Content#asReadable() Readable}.
+ * {@link ConfigContent configuration content} accessible as a
+ * {@link io.helidon.config.spi.ConfigParser.Content#data()} InputStream}.
  * <p>
  * Typically concrete implementations will extend this class in order to
  * delegate to {@link ConfigParser} the loading of configuration content into an
@@ -54,10 +54,21 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
     }
 
     @Override
-    protected Data<ObjectNode, S> loadData() {
-        ConfigParser.Content<S> content = content();
-        ObjectNode objectNode = parse(configContext(), content);
-        return new Data<>(Optional.of(objectNode), content.stamp());
+    protected Data<ObjectNode> loadData() {
+        ConfigContent content = content();
+
+        ObjectNode objectNode;
+        if (content instanceof ConfigParser.Content) {
+            objectNode = parse(configContext(), (ConfigParser.Content) content);
+        } else if (content instanceof ConfigContent.NodeContent) {
+            objectNode = ((ConfigContent.NodeContent) content).data();
+        } else {
+            throw new IllegalStateException("Config content has to be either ParsableContent or NodeContent, but is: "
+                                                    + content.getClass().getName());
+        }
+
+        return new Data<ObjectNode>(Optional.of(objectNode), content.stamp());
+
     }
 
     /**
@@ -84,7 +95,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      * @return config source content. Never returns {@code null}.
      * @throws ConfigException in case of loading of configuration from config source failed.
      */
-    protected abstract ConfigParser.Content<S> content() throws ConfigException;
+    protected abstract ConfigContent content() throws ConfigException;
 
     /**
      * Parser config source content into internal config structure.
@@ -94,7 +105,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      * @return parsed configuration into internal structure. Never returns {@code null}.
      * @throws ConfigParserException in case of problem to parse configuration from the source
      */
-    private ObjectNode parse(ConfigContext context, ConfigParser.Content<S> content) throws ConfigParserException {
+    private ObjectNode parse(ConfigContext context, ConfigParser.Content content) throws ConfigParserException {
         return parser()
                 .or(() -> context.findParser(content.mediaType()
                                                      .orElseThrow(() -> new ConfigException("Unknown media type."))))

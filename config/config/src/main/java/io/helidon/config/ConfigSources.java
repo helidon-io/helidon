@@ -16,9 +16,11 @@
 
 package io.helidon.config;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -115,19 +117,21 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from the provided {@link Readable readable content} and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
+     * {@link Instant#now()} is the {@link io.helidon.config.spi.ConfigContent#stamp() content timestamp}.
      *
-     * @param readable  a {@code Readable} providing the configuration content
+     * @param data  a {@code InputStream} providing the configuration content
      * @param mediaType a configuration media type
-     * @param <T> dual type to mark parameter both readable and auto closeable
      * @return a config source
      */
-    public static <T extends Readable & AutoCloseable> ConfigSource create(T readable, String mediaType) {
+    public static ConfigSource create(InputStream data, String mediaType) {
         return InMemoryConfigSource.builder()
                 .mediaType(mediaType)
                 .changesExecutor(Runnable::run)
                 .changesMaxBuffer(1)
-                .content("Readable", ConfigParser.Content.create(readable, mediaType, Instant.now()))
+                .content("Readable", ConfigParser.Content.builder()
+                        .data(data)
+                        .mediaType(mediaType)
+                        .build())
                 .build();
     }
 
@@ -135,7 +139,7 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from the provided {@code String} content and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
+     * {@link Instant#now()} is the {@link io.helidon.config.spi.ConfigContent#stamp() content timestamp}.
      *
      * @param content a configuration content
      * @param mediaType a configuration media type
@@ -146,7 +150,10 @@ public final class ConfigSources {
                 .mediaType(mediaType)
                 .changesExecutor(Runnable::run)
                 .changesMaxBuffer(1)
-                .content("String", ConfigParser.Content.create(new StringReader(content), mediaType, Instant.now()))
+                .content("String", ConfigParser.Content.builder()
+                        .data(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)))
+                        .mediaType(mediaType)
+                        .build())
                 .build();
     }
 
@@ -730,12 +737,12 @@ public final class ConfigSources {
         }
 
         @Override
-        protected Data<ConfigNode.ObjectNode, Instant> processLoadedData(Data<ConfigNode.ObjectNode, Instant> data) {
+        protected Data<ConfigNode.ObjectNode> processLoadedData(Data<ConfigNode.ObjectNode> data) {
             return super.processLoadedData(data);
         }
 
         @Override
-        protected Data<ConfigNode.ObjectNode, Instant> loadData() throws ConfigException {
+        protected Data<ConfigNode.ObjectNode> loadData() throws ConfigException {
             return new Data<>(Optional.of(ConfigUtils
                                                   .mapToObjectNode(ConfigUtils.propertiesToMap(System.getProperties()), false)),
                               Optional.of(Instant.now()));

@@ -52,11 +52,11 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
     }
 
     @Override
-    public Data<OverrideData, Instant> loadData() throws ConfigException {
+    public Data<OverrideData> loadData() throws ConfigException {
         return ClasspathSourceHelper.content(resource,
                                              description(),
                                              (inputStreamReader, instant) -> {
-                                                 return new Data<>(
+                                                 return new Data(
                                                          Optional.of(OverrideData.create(inputStreamReader)),
                                                          Optional.of(instant));
                                              });

@@ -165,7 +165,7 @@ public class AbstractConfigSourceTest {
                     }
 
                     @Override
-                    public ObjectNode parse(Content content) throws ConfigParserException {
+                    public ObjectNode parse(ConfigContent content) throws ConfigParserException {
                         return ObjectNode.builder().build();
                     }
                 }));

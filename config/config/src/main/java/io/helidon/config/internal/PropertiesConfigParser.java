@@ -21,7 +21,6 @@ import java.util.Set;
 
 import javax.annotation.Priority;
 
-import io.helidon.config.ConfigHelper;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
@@ -61,13 +60,14 @@ public class PropertiesConfigParser implements ConfigParser {
     }
 
     @Override
-    public <S> ConfigNode.ObjectNode parse(Content<S> content) throws ConfigParserException {
+    public <S> ConfigNode.ObjectNode parse(Content content) throws ConfigParserException {
         Properties properties = new Properties();
-        try (AutoCloseable readable = content.asReadable()) {
-            properties.load(ConfigHelper.createReader((Readable) readable));
+        try {
+            properties.load(content.data());
         } catch (Exception e) {
             throw new ConfigParserException("Cannot read from source: " + e.getLocalizedMessage(), e);
         }
+
         return ConfigUtils.mapToObjectNode(ConfigUtils.propertiesToMap(properties), true);
     }
 

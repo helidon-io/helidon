@@ -59,7 +59,7 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
     }
 
     @Override
-    protected Data<OverrideData, byte[]> loadData() throws ConfigException {
+    protected Data<OverrideData> loadData() throws ConfigException {
         Optional<byte[]> digest = dataStamp();
         LOGGER.log(Level.FINE, String.format("Getting content from '%s'.", filePath));
 

@@ -16,6 +16,8 @@
 
 package io.helidon.config.hocon.internal;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Objects;
 import java.util.Set;
 
@@ -23,7 +25,6 @@ import javax.annotation.Priority;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigHelper;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
@@ -108,10 +109,10 @@ public class HoconConfigParser implements ConfigParser {
     }
 
     @Override
-    public <S> ObjectNode parse(Content<S> content) {
+    public ObjectNode parse(Content content) {
         Config typesafeConfig;
-        try (AutoCloseable readable = content.asReadable()) {
-            typesafeConfig = ConfigFactory.parseReader(ConfigHelper.createReader((Readable) readable));
+        try (InputStream readable = content.data()) {
+            typesafeConfig = ConfigFactory.parseReader(new InputStreamReader(content.data(), content.charset()));
             if (resolvingEnabled) {
                 typesafeConfig = typesafeConfig.resolve(resolveOptions);
             }

@@ -113,7 +113,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testMandatoryParserSetContentExistsParserRegistered() {
-        ConfigParser.Content<Instant> content = mockContent();
+        ConfigContent<Instant> content = mockContent();
         ConfigParser registeredParser = mockParser("registered");
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser(content.mediaType().get())).thenReturn(Optional.of(registeredParser));
@@ -131,7 +131,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testMandatoryParserSetContentNotExistsParserRegistered() {
-        ConfigParser.Content<Instant> content = mockContent();
+        ConfigContent<Instant> content = mockContent();
         ConfigParser registeredParser = mockParser("registered");
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser(content.mediaType().get())).thenReturn(Optional.of(registeredParser));
@@ -155,7 +155,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testMandatoryParserNotSetContentExistsParserRegistered() {
-        ConfigParser.Content<Instant> content = mockContent();
+        ConfigContent<Instant> content = mockContent();
         ConfigParser registeredParser = mockParser("registered");
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser(content.mediaType().get())).thenReturn(Optional.of(registeredParser));
@@ -170,7 +170,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testMandatoryParserNotSetContentExistsParserNotRegistered() {
-        ConfigParser.Content<Instant> content = mockContent();
+        ConfigContent<Instant> content = mockContent();
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser(content.mediaType().get())).thenReturn(Optional.empty());
 
@@ -192,7 +192,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testOptionalParserNotSetContentExistsParserNotRegistered() {
-        ConfigParser.Content<Instant> content = mockContent();
+        ConfigContent<Instant> content = mockContent();
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser(content.mediaType().get())).thenReturn(Optional.empty());
 
@@ -207,7 +207,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testOptionalParserSetContentNotExistsParserNotRegistered() {
-        ConfigParser.Content<Instant> content = mockContent();
+        ConfigContent<Instant> content = mockContent();
         ConfigContext context = mock(ConfigContext.class);
         when(context.findParser(content.mediaType().get())).thenReturn(Optional.empty());
 
@@ -252,7 +252,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testChangesFromNoContentToStillNoContent() throws InterruptedException {
-        AtomicReference<ConfigParser.Content> contentReference = new AtomicReference<>();
+        AtomicReference<ConfigContent> contentReference = new AtomicReference<>();
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -285,7 +285,7 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testChangesFromNoContentToNewOne() throws InterruptedException {
-        AtomicReference<ConfigParser.Content> contentReference = new AtomicReference<>();
+        AtomicReference<ConfigContent> contentReference = new AtomicReference<>();
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -310,9 +310,9 @@ public class AbstractParsableConfigSourceTest {
         // change content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         Instant contentTimestamp = Instant.now();
-        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
-                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                         contentTimestamp));
+        contentReference.set(ConfigContent.create(new StringReader("aaa=bbb"),
+                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                  contentTimestamp));
 
         // polling ticks event
         pollingStrategy.submitEvent();
@@ -328,12 +328,12 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testChangesFromContentToSameContent() throws InterruptedException {
-        AtomicReference<ConfigParser.Content<Instant>> contentReference = new AtomicReference<>();
+        AtomicReference<ConfigContent<Instant>> contentReference = new AtomicReference<>();
         // set content
         Instant contentTimestamp = Instant.now();
-        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
-                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                         contentTimestamp));
+        contentReference.set(ConfigContent.create(new StringReader("aaa=bbb"),
+                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                  contentTimestamp));
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -361,9 +361,9 @@ public class AbstractParsableConfigSourceTest {
         // reset content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         contentTimestamp = Instant.now();
-        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
-                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                         contentTimestamp));
+        contentReference.set(ConfigContent.create(new StringReader("aaa=bbb"),
+                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                  contentTimestamp));
 
         // polling ticks event
         pollingStrategy.submitEvent();
@@ -379,12 +379,12 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testChangesFromContentToNoContent() throws InterruptedException {
-        AtomicReference<ConfigParser.Content<Instant>> contentReference = new AtomicReference<>();
+        AtomicReference<ConfigContent<Instant>> contentReference = new AtomicReference<>();
         // set content
         Instant contentTimestamp = Instant.now();
-        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
-                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                         contentTimestamp));
+        contentReference.set(ConfigContent.create(new StringReader("aaa=bbb"),
+                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                  contentTimestamp));
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -424,12 +424,12 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testChangesFromContentToDifferentOne() throws InterruptedException {
-        AtomicReference<ConfigParser.Content> contentReference = new AtomicReference<>();
+        AtomicReference<ConfigContent> contentReference = new AtomicReference<>();
         // set content
         Instant contentTimestamp = Instant.now();
-        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
-                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                         contentTimestamp));
+        contentReference.set(ConfigContent.create(new StringReader("aaa=bbb"),
+                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                  contentTimestamp));
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -457,9 +457,9 @@ public class AbstractParsableConfigSourceTest {
         // reset content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         contentTimestamp = Instant.now();
-        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=ccc"),
-                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                         contentTimestamp));
+        contentReference.set(ConfigContent.create(new StringReader("aaa=ccc"),
+                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                  contentTimestamp));
 
         // polling ticks event
         pollingStrategy.submitEvent();
@@ -476,7 +476,7 @@ public class AbstractParsableConfigSourceTest {
     @Test
     public void testChangesTransitivePollingSubscription() throws InterruptedException {
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
-        AtomicReference<ConfigParser.Content> contentReference = new AtomicReference<>();
+        AtomicReference<ConfigContent> contentReference = new AtomicReference<>();
         TestingParsableConfigSource configSource = TestingParsableConfigSource.builder().content(contentReference::get)
                 .optional()
                 .parser(ConfigParsers.properties())
@@ -544,8 +544,8 @@ public class AbstractParsableConfigSourceTest {
         assertThat(builder.mediaType(), is(Optional.empty()));
     }
 
-    private ConfigParser.Content<Instant> mockContent() {
-        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
+    private ConfigContent<Instant> mockContent() {
+        ConfigContent<Instant> content = mock(ConfigContent.class);
         Readable readable = new StringReader(TEST_CONFIG);
         when(content.asReadable()).thenReturn(readable);
         when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));

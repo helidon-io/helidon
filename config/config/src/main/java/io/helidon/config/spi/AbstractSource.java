@@ -55,7 +55,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
     private final RetryPolicy retryPolicy;
     private final SubmissionPublisher<Optional<T>> changesSubmitter;
     private final Flow.Publisher<Optional<T>> changesPublisher;
-    private Optional<Data<T, S>> lastData;
+    private Optional<Data<T>> lastData;
     private PollingEventSubscriber pollingEventSubscriber;
 
     AbstractSource(Builder<?, ?, ?> builder) {
@@ -78,7 +78,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
 
         boolean hasChanged = false;
         // find new data
-        Optional<Data<T, S>> newData = loadDataChangedSinceLastLoad();
+        Optional<Data<T>> newData = loadDataChangedSinceLastLoad();
 
         if (newData.isPresent()) { // something has changed
             Optional<T> newObjectNode = newData.get().data();
@@ -157,7 +157,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      * @param data an input data
      * @return a post-processed data
      */
-    protected Data<T, S> processLoadedData(Data<T, S> data) {
+    protected Data<T> processLoadedData(Data<T> data) {
         return data;
     }
 
@@ -166,9 +166,9 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      *
      * @return current datastamp of data in config source
      */
-    protected abstract Optional<S> dataStamp();
+    protected abstract Optional<? extends Object> dataStamp();
 
-    Optional<Data<T, S>> lastData() {
+    Optional<Data<T>> lastData() {
         return lastData;
     }
 
@@ -179,7 +179,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      */
     @Override
     public final Optional<T> load() {
-        Optional<Data<T, S>> loadedData = loadDataChangedSinceLastLoad();
+        Optional<Data<T>> loadedData = loadDataChangedSinceLastLoad();
         if (loadedData.isPresent()) {
             lastData = loadedData;
         }
@@ -190,16 +190,16 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
     }
 
-    Optional<Data<T, S>> loadDataChangedSinceLastLoad() {
-        Optional<S> lastDatastamp = lastData.flatMap(Data::stamp);
-        Optional<S> dataStamp = dataStamp();
+    Optional<Data<T>> loadDataChangedSinceLastLoad() {
+        Optional<Object> lastDatastamp = lastData.flatMap(Data::stamp);
+        Optional<? extends Object> dataStamp = dataStamp();
 
-        if (!lastData.isPresent() || !dataStamp.equals(lastData.get().stamp())) {
+        if (lastData.isEmpty() || !dataStamp.equals(lastData.get().stamp())) {
             LOGGER.log(Level.FINE,
                        String.format("Source %s has changed to %s from %s.", description(), dataStamp,
                                      lastDatastamp));
             try {
-                Data<T, S> data = retryPolicy.execute(this::loadData);
+                Data<T> data = retryPolicy.execute(this::loadData);
                 if (!data.stamp().equals(lastDatastamp)) {
                     LOGGER.log(Level.FINE,
                                String.format("Source %s has changed to %s from %s.", description(), dataStamp,
@@ -228,7 +228,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      * @return newly loaded data with appropriate data timestamp used for future method calls
      * @throws ConfigException in case it is not possible to load configuration data
      */
-    protected abstract Data<T, S> loadData() throws ConfigException;
+    protected abstract Data<T> loadData() throws ConfigException;
 
     /**
      * An action is proceeded when an attempt to load data failed.
@@ -607,11 +607,10 @@ public abstract class AbstractSource<T, S> implements Source<T> {
      * Data loaded at appropriate time.
      *
      * @param <D> an type of loaded data
-     * @param <S> a type of data stamp
      */
-    public static final class Data<D, S> {
+    public static final class Data<D> {
         private final Optional<D> data;
-        private final Optional<S> stamp;
+        private final Optional<Object> stamp;
 
         /**
          * Initialize data object for specified timestamp and covered data.
@@ -627,10 +626,10 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          * @param data  covered object node. Can be {@code null} in case source does not exist.
          * @param stamp data stamp
          */
-        public Data(Optional<D> data, Optional<S> stamp) {
+        public Data(Optional<D> data, Optional<? extends Object> stamp) {
             Objects.requireNonNull(data);
             Objects.requireNonNull(stamp);
-            this.stamp = stamp;
+            this.stamp = stamp.map(Object.class::cast);
             this.data = data;
         }
 
@@ -648,7 +647,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          *
          * @return stamp of data.
          */
-        public Optional<S> stamp() {
+        public Optional<Object> stamp() {
             return stamp;
         }
     }

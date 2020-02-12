@@ -20,8 +20,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.Optional;
 
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
-import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.junit.jupiter.api.Test;
@@ -66,7 +66,7 @@ public class PropertiesConfigParserTest {
     //
 
     @FunctionalInterface
-    private interface StringContent extends ConfigParser.Content {
+    private interface StringContent extends ConfigContent {
         @Override
         default Optional<String> mediaType() {
             return Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);

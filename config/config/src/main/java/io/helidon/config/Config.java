@@ -1419,7 +1419,7 @@ public interface Config {
 
         /**
          * Registers a {@link ConfigParser} instance that can be used by registered {@link ConfigSource}s to
-         * parse {@link ConfigParser.Content configuration content}.
+         * parse {@link io.helidon.config.spi.ConfigContent configuration content}.
          * Parsers are tried to be used by {@link io.helidon.config.spi.ConfigContext#findParser(String)}
          * in same order as was registered by the {@link #addParser(ConfigParser)} method.
          * Programmatically registered parsers have priority over other options.

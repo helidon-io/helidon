@@ -39,7 +39,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.internal.FileSourceHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigContent;
 
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
@@ -253,7 +253,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    protected ConfigParser.Content<byte[]> content() throws ConfigException {
+    protected ConfigContent<byte[]> content() throws ConfigException {
         if (LOGGER.isLoggable(Level.FINE)) {
             Instant lastModifiedTime = lastModifiedTime(targetPath);
             LOGGER.log(Level.FINE, String.format("Getting content from '%s'. Last stamp is %s.", targetPath, lastModifiedTime));
@@ -262,7 +262,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
         String fileContent = FileSourceHelper.safeReadContent(targetPath);
         LOGGER.finest(fileContent);
 
-        ConfigParser.Content.Builder<byte[]> builder = ConfigParser.Content.builder(new StringReader(fileContent));
+        ConfigContent.Builder<byte[]> builder = ConfigContent.builder(new StringReader(fileContent));
 
         mediaType().ifPresent(builder::mediaType);
         dataStamp().ifPresent(builder::stamp);

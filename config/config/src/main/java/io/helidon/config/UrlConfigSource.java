@@ -17,13 +17,12 @@
 package io.helidon.config;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -32,7 +31,9 @@ import java.util.logging.Logger;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
 
@@ -96,7 +97,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
     }
 
     @Override
-    protected ConfigParser.Content<Instant> content() throws ConfigException {
+    protected ConfigContent content() throws ConfigException {
         // assumption about HTTP URL connection is wrong here
         try {
             URLConnection urlConnection = url.openConnection();
@@ -113,12 +114,14 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         }
     }
 
-    private ConfigParser.Content<Instant> genericContent(URLConnection urlConnection) throws IOException, URISyntaxException {
-        Reader reader = new InputStreamReader(urlConnection.getInputStream(),
-                                              StandardCharsets.UTF_8);
+    private ConfigContent genericContent(URLConnection urlConnection) throws IOException, URISyntaxException {
+        InputStream is = urlConnection.getInputStream();
 
-        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
+        Content.Builder builder = Content.builder()
+                .data(is);
+
         builder.stamp(Instant.now());
+
         mediaType()
                 .or(this::probeContentType)
                 .ifPresent(builder::mediaType);
@@ -126,7 +129,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         return builder.build();
     }
 
-    private ConfigParser.Content<Instant> httpContent(HttpURLConnection connection) throws IOException, URISyntaxException {
+    private ConfigContent httpContent(HttpURLConnection connection) throws IOException, URISyntaxException {
         connection.setRequestMethod(GET_METHOD);
 
         Optional<String> mediaType = mediaType(connection.getContentType());
@@ -139,11 +142,13 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
                                 + timestamp + "' as a content timestamp.");
         }
 
-        Reader reader = new InputStreamReader(connection.getInputStream(),
-                                              ConfigUtils.getContentCharset(connection.getContentEncoding()));
+        InputStream inputStream = connection.getInputStream();
+        Charset charset = ConfigUtils.getContentCharset(connection.getContentEncoding());
 
-        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
+        Content.Builder builder = Content.builder();
 
+        builder.data(inputStream);
+        builder.charset(charset);
         builder.stamp(timestamp);
         mediaType.ifPresent(builder::mediaType);
 
@@ -155,7 +160,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         return super.mediaType();
     }
 
-    private Optional<String> mediaType(String responseMediaType) throws URISyntaxException {
+    private Optional<String> mediaType(String responseMediaType) {
         return mediaType()
                 .or(() -> Optional.ofNullable(responseMediaType))
                 .or(() -> {

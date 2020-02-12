@@ -88,7 +88,7 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
     }
 
     @Override
-    protected Data<ConfigNode.ObjectNode, Instant> loadData() throws ConfigException {
+    protected Data<ConfigNode.ObjectNode> loadData() throws ConfigException {
         try {
             ConfigNode.ObjectNode.Builder objectNodeRoot = ConfigNode.ObjectNode.builder();
 

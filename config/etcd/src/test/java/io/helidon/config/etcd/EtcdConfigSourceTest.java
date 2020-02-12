@@ -30,7 +30,7 @@ import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.client.MockEtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigContent;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -112,7 +112,7 @@ public class EtcdConfigSourceTest {
 
         EtcdConfigSource mockedConfigSource = spy(configSource);
         when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
-        when(mockedConfigSource.content()).thenReturn(new ConfigParser.Content<Long>() {
+        when(mockedConfigSource.content()).thenReturn(new ConfigContent<Long>() {
             @Override
             public Optional<String> mediaType() {
                 return Optional.of(MEDIA_TYPE_APPLICATION_HOCON);

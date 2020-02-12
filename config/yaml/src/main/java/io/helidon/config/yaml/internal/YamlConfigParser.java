@@ -16,6 +16,8 @@
 
 package io.helidon.config.yaml.internal;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +26,6 @@ import javax.annotation.Priority;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigHelper;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
@@ -81,11 +82,11 @@ public class YamlConfigParser implements ConfigParser {
     }
 
     @Override
-    public <S> ObjectNode parse(Content<S> content) throws ConfigParserException {
+    public ObjectNode parse(Content content) throws ConfigParserException {
         Map yamlMap;
-        try (AutoCloseable readable = content.asReadable()) {
+        try (InputStream stream = content.data()) {
             Yaml yaml = new Yaml();
-            yamlMap = yaml.loadAs(ConfigHelper.createReader((Readable) readable), Map.class);
+            yamlMap = yaml.loadAs(new InputStreamReader(stream, content.charset()), Map.class);
             if (yamlMap == null) { // empty source
                 return ObjectNode.empty();
             }

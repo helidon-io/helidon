@@ -29,6 +29,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.FileConfigSource.FileBuilder;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
@@ -141,7 +142,7 @@ public class FileConfigSourceTest {
             }
 
             @Override
-            public ObjectNode parse(Content content) throws ConfigParserException {
+            public ObjectNode parse(ConfigContent content) throws ConfigParserException {
                 assertThat(content, notNullValue());
                 assertThat(content.mediaType(), is(Optional.of("application/hocon")));
                 try {

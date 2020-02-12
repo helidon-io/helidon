@@ -16,13 +16,13 @@
 
 package io.helidon.config.spi;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import io.helidon.config.Config;
@@ -32,7 +32,6 @@ import io.helidon.config.internal.ObjectNodeBuilderImpl;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
-import io.helidon.config.spi.ConfigParser.Content;
 
 /**
  * Base abstract implementation of {@link ConfigSource}, suitable for concrete
@@ -75,20 +74,20 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
     }
 
     @Override
-    protected Data<ObjectNode, S> processLoadedData(Data<ObjectNode, S> data) {
+    protected Data<ObjectNode> processLoadedData(Data<ObjectNode> data) {
         if (!data.data().isPresent()
                 || (mediaTypeMapping == null && parserMapping == null)) {
             return data;
         }
-        Data<ObjectNode, S> result = new Data<>(Optional.of(processObject(data.stamp(), ConfigKeyImpl.of(), data.data().get())),
-                                                data.stamp());
+        Data<ObjectNode> result = new Data<>(Optional.of(processObject(data.stamp(), ConfigKeyImpl.of(), data.data().get())),
+                                             data.stamp());
 
         super.processLoadedData(result);
 
         return result;
     }
 
-    private ConfigNode processNode(Optional<S> datastamp, ConfigKeyImpl key, ConfigNode node) {
+    private ConfigNode processNode(Optional<Object> datastamp, ConfigKeyImpl key, ConfigNode node) {
         switch (node.nodeType()) {
         case OBJECT:
             return processObject(datastamp, key, (ObjectNode) node);
@@ -101,7 +100,7 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
         }
     }
 
-    private ObjectNode processObject(Optional<S> datastamp, ConfigKeyImpl key, ObjectNode objectNode) {
+    private ObjectNode processObject(Optional<Object> datastamp, ConfigKeyImpl key, ObjectNode objectNode) {
         ObjectNodeBuilderImpl builder = (ObjectNodeBuilderImpl) ObjectNode.builder();
 
         objectNode.forEach((name, node) -> builder.addNode(name, processNode(datastamp, key.child(name), node)));
@@ -109,7 +108,7 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
         return builder.build();
     }
 
-    private ListNode processList(Optional<S> datastamp, ConfigKeyImpl key, ListNode listNode) {
+    private ListNode processList(Optional<Object> datastamp, ConfigKeyImpl key, ListNode listNode) {
         ListNodeBuilderImpl builder = (ListNodeBuilderImpl) ListNode.builder();
 
         for (int i = 0; i < listNode.size(); i++) {
@@ -119,13 +118,20 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
         return builder.build();
     }
 
-    private ConfigNode processValue(Optional<S> datastamp, Config.Key key, ValueNode valueNode) {
-        AtomicReference<ConfigNode> result = new AtomicReference<>(valueNode);
-        findParserForKey(key)
-                .ifPresent(parser -> result.set(parser.parse(Content.builder(new StringReader(valueNode.get()))
-                                                             .stamp(datastamp)
-                                                             .build())));
-        return result.get();
+    // TODO: return optional?
+    private ConfigNode processValue(Optional<Object> datastamp, Config.Key key, ValueNode valueNode) {
+        return findParserForKey(key)
+                .map(parser -> parser.parse(toParsableContent(datastamp, valueNode.get())))
+                .orElse(null);
+    }
+
+    private ConfigParser.Content toParsableContent(Optional<Object> datastamp, String nodeValue) {
+        ConfigParser.ParsableContentBuilder builder = ConfigParser.parsableBuilder();
+
+        builder.data(new ByteArrayInputStream(nodeValue.getBytes(StandardCharsets.UTF_8)));
+        datastamp.ifPresent(builder::stamp);
+
+        return builder.build();
     }
 
     private Optional<ConfigParser> findParserForKey(Config.Key key) {

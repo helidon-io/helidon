@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.config.internal.PropertiesConfigParser;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
@@ -75,7 +76,7 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testContextFindParserNotAvailable() {
-        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
+        ConfigContent<Instant> content = mock(ConfigContent.class);
         when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));
 
         BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(List.of(
@@ -89,7 +90,7 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testContextFindParserFindFirst() {
-        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
+        ConfigContent<Instant> content = mock(ConfigContent.class);
         when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));
 
         ConfigParser firstParser = mockParser(TEST_MEDIA_TYPE);
@@ -123,7 +124,7 @@ public class BuilderImplParsersTest {
         }
 
         @Override
-        public ObjectNode parse(Content content) throws ConfigParserException {
+        public ObjectNode parse(ConfigContent content) throws ConfigParserException {
             return ObjectNode.empty();
         }
     }

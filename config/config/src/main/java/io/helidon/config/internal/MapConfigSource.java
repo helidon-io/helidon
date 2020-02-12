@@ -109,7 +109,7 @@ public class MapConfigSource extends AbstractMpSource<Instant> {
     }
 
     @Override
-    protected Data<ObjectNode, Instant> loadData() throws ConfigException {
+    protected Data<ObjectNode> loadData() throws ConfigException {
         return new Data<>(Optional.of(ConfigUtils.mapToObjectNode(map, strict)), Optional.of(Instant.EPOCH));
     }
 

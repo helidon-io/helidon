@@ -17,10 +17,10 @@
 package io.helidon.config.tests.module.parsers1;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.Set;
 
-import io.helidon.config.ConfigHelper;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 import io.helidon.config.spi.ConfigParser;
@@ -42,7 +42,7 @@ public abstract class AbstractParsers1ConfigParser implements ConfigParser {
     public ConfigNode.ObjectNode parse(Content content) throws ConfigParserException {
         Properties properties = new Properties();
         try {
-            properties.load(ConfigHelper.createReader(content.asReadable()));
+            properties.load(new InputStreamReader(content.data(), content.charset()));
         } catch (IOException e) {
             throw new ConfigParserException("Cannot read from source.", e);
         }

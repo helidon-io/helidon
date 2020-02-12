@@ -77,7 +77,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
     }
 
     @Override
-    protected Data<OverrideData, Instant> loadData() throws ConfigException {
+    protected Data<OverrideData> loadData() throws ConfigException {
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(GET_METHOD);

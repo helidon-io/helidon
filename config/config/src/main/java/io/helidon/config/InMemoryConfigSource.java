@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.config.spi.AbstractParsableConfigSource;
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigContent;
 
 /**
  * In-memory implementation of config source.
@@ -28,7 +28,7 @@ import io.helidon.config.spi.ConfigParser;
 class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
 
     private final String uri;
-    private final ConfigParser.Content<Object> content;
+    private final ConfigContent<Object> content;
 
     InMemoryConfigSource(InMemoryConfigSource.Builder builder) {
         super(builder);
@@ -48,7 +48,7 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
     }
 
     @Override
-    protected ConfigParser.Content<Object> content() throws ConfigException {
+    protected ConfigContent content() throws ConfigException {
         return content;
     }
 
@@ -60,13 +60,13 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
             extends AbstractParsableConfigSource.Builder<InMemoryConfigSource.Builder, Void, InMemoryConfigSource> {
 
         private String uri;
-        private ConfigParser.Content<Object> content;
+        private ConfigContent content;
 
         Builder() {
             super(Void.class);
         }
 
-        Builder content(String uri, ConfigParser.Content<Object> content) {
+        Builder content(String uri, ConfigContent content) {
             Objects.requireNonNull(uri, "uri cannot be null");
             Objects.requireNonNull(content, "content cannot be null");
 
@@ -87,7 +87,7 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
             return uri;
         }
 
-        private ConfigParser.Content<Object> content() {
+        private ConfigContent<Object> content() {
             return content;
         }
     }

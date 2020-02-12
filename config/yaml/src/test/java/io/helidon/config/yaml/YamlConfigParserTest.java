@@ -21,6 +21,7 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.yaml.internal.YamlConfigParser;
@@ -106,7 +107,7 @@ public class YamlConfigParserTest {
     //
 
     @FunctionalInterface
-    private interface StringContent extends ConfigParser.Content {
+    private interface StringContent extends ConfigContent {
         @Override
         default Optional<String> mediaType() {
             return Optional.of(YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML);

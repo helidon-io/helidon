@@ -43,7 +43,7 @@ public abstract class AbstractMpSource<S> extends AbstractSource<ConfigNode.Obje
     }
 
     @Override
-    protected Data<ConfigNode.ObjectNode, S> processLoadedData(Data<ConfigNode.ObjectNode, S> data) {
+    protected Data<ConfigNode.ObjectNode> processLoadedData(Data<ConfigNode.ObjectNode> data) {
         currentValues.set(loadMap(data.data()));
         return super.processLoadedData(data);
     }

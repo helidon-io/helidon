@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -91,7 +92,7 @@ class ClasspathSourceHelper {
 
     static <T> T content(String resource,
                          String description,
-                         BiFunction<InputStreamReader, Instant, T> processor) throws ConfigException {
+                         BiFunction<Reader, Instant, T> processor) throws ConfigException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         InputStream inputStream = classLoader.getResourceAsStream(resource);

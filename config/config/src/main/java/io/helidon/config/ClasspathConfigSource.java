@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
@@ -98,14 +99,14 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
     }
 
     @Override
-    protected ConfigParser.Content<Instant> content() throws ConfigException {
+    protected ConfigContent content() throws ConfigException {
         return ClasspathSourceHelper.content(resource,
                                              description(),
                                              (inputStreamReader, instant) -> {
-                                                 ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content
-                                                         .builder(inputStreamReader);
+                                                 ConfigParser.ParsableContentBuilder builder = ConfigParser.parsableBuilder()
+                                                         .data(inputStreamReader)
+                                                         .stamp(instant);
 
-                                                 builder.stamp(instant);
                                                  mediaType().ifPresent(builder::mediaType);
 
                                                  return builder.build();

@@ -32,11 +32,11 @@ import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.hocon.internal.HoconConfigParser;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import com.typesafe.config.ConfigResolveOptions;
@@ -281,7 +281,7 @@ public class HoconConfigParserTest {
     //
 
     @FunctionalInterface
-    private interface StringContent extends Content {
+    private interface StringContent extends ConfigContent {
         @Override
         default Optional<String> mediaType() {
             return Optional.of(HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON);

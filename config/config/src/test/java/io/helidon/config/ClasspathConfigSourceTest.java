@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -109,7 +110,7 @@ public class ClasspathConfigSourceTest {
             configSource.init(mock(ConfigContext.class));
             configSource.load();
         });
-        
+
         assertThat(ex.getCause(), instanceOf(ConfigException.class));
         assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
@@ -133,7 +134,7 @@ public class ClasspathConfigSourceTest {
                 assertThat(content, notNullValue());
                 assertThat(content.mediaType(), is(Optional.of("application/hocon")));
                 try {
-                    assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
+                    assertThat((char) new InputStreamReader(content.data()).read(), is('#'));
                 } catch (IOException e) {
                     fail("Cannot read from source's reader", e);
                 }
@@ -171,7 +172,7 @@ public class ClasspathConfigSourceTest {
             assertThat(builder.pollingStrategyInternal(), is(PollingStrategies.nop()));
         });
         assertThat(ex.getMessage(), startsWith("Could not find a filesystem path for resource 'not-exists'"));
-        
+
     }
 
     @Test

@@ -30,7 +30,7 @@ import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 import io.helidon.config.spi.AbstractParsableConfigSource;
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigContent;
 
 /**
  * A config source which loads a configuration document from Etcd.
@@ -84,7 +84,7 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
     }
 
     @Override
-    protected ConfigParser.Content<Long> content() throws ConfigException {
+    protected ConfigContent<Long> content() throws ConfigException {
         String content;
         try {
             content = etcdClient().get(endpoint.key());
@@ -98,7 +98,7 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
             throw new ConfigException(String.format("Key '%s' does not contain any value", endpoint.key()));
         }
 
-        ConfigParser.Content.Builder<Long> builder = ConfigParser.Content.builder(new StringReader(content));
+        ConfigContent.Builder<Long> builder = ConfigContent.builder(new StringReader(content));
 
         mediaType().ifPresent(builder::mediaType);
         dataStamp().ifPresent(builder::stamp);

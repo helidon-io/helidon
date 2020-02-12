@@ -16,7 +16,8 @@
 
 package io.helidon.config;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -24,8 +25,8 @@ import java.util.logging.Logger;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.internal.FileSourceHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
 
@@ -105,10 +106,11 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    protected Content<byte[]> content() throws ConfigException {
+    protected ConfigContent content() throws ConfigException {
         LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
 
-        Content.Builder<byte[]> builder = Content.builder(new StringReader(FileSourceHelper.safeReadContent(filePath)));
+        ConfigParser.ParsableContentBuilder builder = ConfigParser.parsableBuilder();
+        builder.data(new ByteArrayInputStream(FileSourceHelper.safeReadContent(filePath).getBytes(StandardCharsets.UTF_8)));
 
         dataStamp().ifPresent(builder::stamp);
         mediaType().ifPresent(builder::mediaType);
