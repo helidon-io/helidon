@@ -22,6 +22,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -51,12 +52,20 @@ import io.helidon.config.ConfigException;
  *
  * @see OverrideData
  */
-public interface OverrideSource extends Source<OverrideSource.OverrideData>, Supplier<OverrideSource> {
+public interface OverrideSource extends Source, Supplier<OverrideSource> {
 
     @Override
     default OverrideSource get() {
         return this;
     }
+
+    /**
+     * Load override data from the underlying source.
+     *
+     * @return override data if present, empty otherwise
+     * @throws ConfigException in case the loading of data failed
+     */
+    Optional<ConfigContent.OverrideContent> load() throws ConfigException;
 
     /**
      * Group of config override settings.

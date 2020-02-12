@@ -20,11 +20,18 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
  * {@link Source} of configuration.
  *
+ * A mutable source may either support a change subscription mechanism (e.g. the source is capable of notifications that
+ * do not require external polling), or an explicit polling strategy that provides handling of change notifications
+ * as supported by {@link io.helidon.config.spi.PollableSource}, or a target that can be directly watched, such as
+ * supported by {@link io.helidon.config.spi.WatchableSource}.
+ * Examples of :
+ *  - a cloud service may provide notifications through its API that a node changed
+ *  - a file source can be watched using a file watch polling strategy
+ *  - a file source can be watched using a time based polling strategy
  * @see Config.Builder#sources(Supplier)
  * @see Config.Builder#sources(Supplier, Supplier)
  * @see Config.Builder#sources(Supplier, Supplier, Supplier)
@@ -33,20 +40,9 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  * @see AbstractParsableConfigSource
  * @see ConfigSources ConfigSources - access built-in implementations.
  */
-@FunctionalInterface
-public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource> {
+public interface ConfigSource extends Supplier<ConfigSource>, Source {
     @Override
     default ConfigSource get() {
         return this;
-    }
-
-    /**
-     * Initialize the config source with a {@link ConfigContext}.
-     * <p>
-     * The method is executed during {@link Config} bootstrapping by {@link Config.Builder}.
-     *
-     * @param context a config context
-     */
-    default void init(ConfigContext context) {
     }
 }

@@ -74,5 +74,33 @@ public interface ChangeWatcher<T> {
          * @return type of change
          */
         ChangeEventType type();
+
+        static <T> ChangeEvent<T> create(T target, ChangeEventType type, Instant instant) {
+            return new ChangeEvent<>() {
+                @Override
+                public Instant changeTime() {
+                    return instant;
+                }
+
+                @Override
+                public T target() {
+                    return target;
+                }
+
+                @Override
+                public ChangeEventType type() {
+                    return type;
+                }
+
+                @Override
+                public String toString() {
+                    return type + " " + target;
+                }
+            };
+        }
+
+        static <T> ChangeEvent<T> create(T target, ChangeEventType type) {
+            return create(target, type, Instant.now());
+        }
     }
 }

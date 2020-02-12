@@ -108,7 +108,7 @@ public class ClasspathConfigSourceTest {
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             configSource.init(mock(ConfigContext.class));
-            configSource.load();
+            configSource.content();
         });
 
         assertThat(ex.getCause(), instanceOf(ConfigException.class));

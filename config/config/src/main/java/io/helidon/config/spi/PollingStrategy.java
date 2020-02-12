@@ -158,6 +158,7 @@ public interface PollingStrategy extends Supplier<PollingStrategy> {
      * configuration component.
      * There is no need to implement {@link io.helidon.config.spi.PollingStrategy.Polled} yourself,
      * unless you want to implement a new component that supports polling.
+     * Possible reloads of configuration are happening within the thread that invokes this method.
      *
      * @param polled a component receiving polling events.
      */

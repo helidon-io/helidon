@@ -26,23 +26,24 @@ import java.nio.file.WatchService;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Flow;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.ConfigException;
+import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.PollingStrategy;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 /**
  * This polling strategy is backed by {@link WatchService} to fire a polling event with every change on monitored {@link Path}.
@@ -59,15 +60,11 @@ public class FileSystemWatcher implements ChangeWatcher<Path> {
 
     private static final Logger LOGGER = Logger.getLogger(FileSystemWatcher.class.getName());
 
-    private static final long DEFAULT_RECURRING_INTERVAL = 5;
-
-    private final boolean customExecutor;
     private ScheduledExecutorService executor;
-    private WatchService watchService;
     private final List<WatchEvent.Modifier> watchServiceModifiers;
 
-    private WatchKey watchKey;
-    private Future<?> watchThreadFuture;
+    // TODO: add support for closing this
+    private ScheduledFuture<?> scheduledFuture;
 
     /**
      * Creates a strategy with watched {@code path} as a parameters.
@@ -75,38 +72,46 @@ public class FileSystemWatcher implements ChangeWatcher<Path> {
      * @param executor a custom executor or the {@link io.helidon.config.internal.ConfigThreadFactory} is assigned when
      *                 parameter is {@code null}
      */
-    public FileSystemWatcher(ScheduledExecutorService executor) {
+    private FileSystemWatcher(ScheduledExecutorService executor) {
         if (executor == null) {
-            this.customExecutor = false;
+            this.executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
         } else {
-            this.customExecutor = true;
             this.executor = executor;
         }
 
         this.watchServiceModifiers = new LinkedList<>();
     }
 
-    /**
-     * Configured path.
-     *
-     * @return configured path
-     */
-    public Path path() {
-        return path;
+    @Override
+    public void start(Path target, Consumer<ChangeEvent<Path>> listener) {
+        WatchService watchService;
+        try {
+            watchService = FileSystems.getDefault().newWatchService();
+        } catch (IOException e) {
+            throw new ConfigException("Cannot obtain WatchService.", e);
+        }
+
+
+        Path watchedDirectory;
+        if (Files.isDirectory(target)) {
+            watchedDirectory = target;
+        } else {
+            watchedDirectory = target.getParent();
+        }
+
+        Monitor monitor = new Monitor(executor,
+                                      watchService,
+                                      listener,
+                                      target,
+                                      watchedDirectory,
+                                      watchServiceModifiers);
+
+        this.scheduledFuture = executor.scheduleWithFixedDelay(monitor, 1, 1, TimeUnit.SECONDS);
     }
 
     @Override
-    public Flow.Publisher<PollingEvent> ticks() {
-        return ticksPublisher;
-    }
-
-    private void fireEvent(WatchEvent<?> watchEvent) {
-        ticksSubmitter().offer(
-                PollingEvent.now(),
-                (subscriber, pollingEvent) -> {
-                    LOGGER.log(Level.FINER, String.format("Event %s has not been delivered to %s.", pollingEvent, subscriber));
-                    return false;
-                });
+    public Class<Path> type() {
+        return Path.class;
     }
 
     /**
@@ -120,137 +125,106 @@ public class FileSystemWatcher implements ChangeWatcher<Path> {
         watchServiceModifiers.addAll(Arrays.asList(modifiers));
     }
 
-    void startWatchService() {
-        if (!customExecutor) {
-            executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
-        }
-        try {
-            watchService = FileSystems.getDefault().newWatchService();
-        } catch (IOException e) {
-            throw new ConfigException("Cannot obtain WatchService.", e);
-        }
-        CountDownLatch latch = new CountDownLatch(1);
-        watchThreadFuture = executor.scheduleWithFixedDelay(new Monitor(path, latch, watchServiceModifiers),
-                                                            0,
-                                                            DEFAULT_RECURRING_INTERVAL,
-                                                            TimeUnit.SECONDS);
-        try {
-            latch.await(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new ConfigException("Thread which is supposed to register to watch service exceeded the limit 1s.", e);
-        }
-    }
-
-    void stopWatchService() {
-        if (watchKey != null) {
-            watchKey.cancel();
-        }
-        if (watchThreadFuture != null) {
-            watchThreadFuture.cancel(true);
-        }
-        if (!customExecutor) {
-            ConfigUtils.shutdownExecutor(executor);
-            executor = null;
-        }
-    }
-
-    private class Monitor implements Runnable {
-
+    private static class Monitor implements Runnable {
+        private final ScheduledExecutorService executor;
+        private WatchService watchService;
+        private final Consumer<ChangeEvent<Path>> listener;
         private final Path path;
-        private final CountDownLatch latch;
+        private final Path target;
+        private final Path watchedDirectory;
+        private final boolean watchDir;
         private final List<WatchEvent.Modifier> watchServiceModifiers;
-        private boolean fail;
+        private final AtomicBoolean failed = new AtomicBoolean(false);
 
-        private Monitor(Path path, CountDownLatch latch, List<WatchEvent.Modifier> watchServiceModifiers) {
-            this.path = path;
-            this.latch = latch;
+        private WatchKey watchKey;
+
+        private Monitor(ScheduledExecutorService executor,
+                        WatchService watchService,
+                        Consumer<ChangeEvent<Path>> listener,
+                        Path target,
+                        Path watchedDirectory,
+                        List<WatchEvent.Modifier> watchServiceModifiers) {
+            this.executor = executor;
+            this.watchService = watchService;
+            this.listener = listener;
+            this.target = target;
+            this.watchedDirectory = watchedDirectory;
             this.watchServiceModifiers = watchServiceModifiers;
+            this.path = target.equals(watchedDirectory) ? target : watchedDirectory.relativize(target);
+            this.watchDir = target.equals(watchedDirectory);
         }
 
+        private void register() {
+            try {
+                WatchKey oldWatchKey = watchKey;
+                watchKey = watchedDirectory.register(watchService,
+                                          new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE},
+                                          watchServiceModifiers.toArray(new WatchEvent.Modifier[0]));
+
+                failed.set(false);
+                if (null != oldWatchKey) {
+                    oldWatchKey.cancel();
+                }
+            } catch (IOException e) {
+                LOGGER.log(Level.FINEST, "Failed to register watch service", e);
+                failed.set(true);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            Path dir = path.getParent();
-            try {
-                register();
-                if (fail) {
-                    FileSystemWatcher.this.fireEvent(null);
-                    fail = false;
-                }
-            } catch (Exception e) {
-                fail = true;
-                LOGGER.log(Level.FINE, "Cannot register to watch service.", e);
-                return;
-            } finally {
-                latch.countDown();
-            }
-
-            while (true) {
-                WatchKey key;
+            i
+            if (!run.get()) {
+                // do not check, do not reschedule, cancel
                 try {
-                    key = watchService.take();
-                } catch (Exception ie) {
-                    fail = true;
-                    LOGGER.log(Level.FINE, ie, () -> "Watch service on '" + dir + "' directory interrupted.");
-                    break;
+                    watcher.close();
+                } catch (IOException e) {
+                    LOGGER.log(Level.FINE, "Failed to close watcher service on directory of: " + target.toAbsolutePath(), e);
                 }
-                List<WatchEvent<?>> events = key.pollEvents();
-                events.stream()
-                        .filter(e -> FileSystemWatcher.this.path.endsWith((Path) e.context()))
-                        .forEach(FileSystemWatcher.this::fireEvent);
+                return;
+            }
 
-                if (!key.reset()) {
-                    fail = true;
-                    LOGGER.log(Level.FINE, () -> "Directory '" + dir + "' is no more valid to be watched.");
-                    FileSystemWatcher.this.fireEvent(null);
-                    break;
+            WatchKey key = watcher.poll();
+            if (null == key) {
+                schedule();
+                return;
+            }
+
+            for (WatchEvent<?> watchEvent : key.pollEvents()) {
+                WatchEvent<Path> event = (WatchEvent<Path>) watchEvent;
+                Path context = event.context();
+
+                // if we watch on whole directory
+                // make sure this is the watched file
+                if (!watchDir && !context.equals(path)) {
+                    continue;
+                }
+
+                WatchEvent.Kind<Path> kind = event.kind();
+                if (kind.equals(OVERFLOW)) {
+                    continue;
+                }
+
+                if (kind == ENTRY_CREATE) {
+                    listener.accept(ChangeEvent.create(target, ChangeEventType.CREATED));
+                } else if (kind == ENTRY_DELETE) {
+                    listener.accept(ChangeEvent.create(target, ChangeEventType.DELETED));
+                } else if (kind == ENTRY_MODIFY) {
+                    listener.accept(ChangeEvent.create(target, ChangeEventType.CHANGED));
                 }
             }
-        }
 
-        private void register() throws IOException {
-            Path target = target(path);
-            Path dir = parentDir(target);
-            WatchKey oldWatchKey = watchKey;
-            watchKey = dir.register(watchService,
-                                    List.of(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
-                                            .toArray(new WatchEvent.Kind[0]),
-                                    watchServiceModifiers.toArray(new WatchEvent.Modifier[0]));
-            if (oldWatchKey != null) {
-                oldWatchKey.cancel();
+            boolean reset = key.reset();
+            if (reset) {
+                schedule();
+            } else {
+                LOGGER.info("Directory " + watchedDirectory + " is no longer valid to be watched. Watcher terminated.");
             }
         }
 
-        private Path target(Path path) throws IOException {
-            Path target = path;
-            while (Files.isSymbolicLink(target)) {
-                target = target.toRealPath();
-            }
-            return target;
+        private void schedule() {
+            executor.schedule(this, 100, TimeUnit.MILLISECONDS);
         }
-
-        private Path parentDir(Path path) {
-            Path parent = path.getParent();
-            if (parent == null) {
-                throw new ConfigException(
-                        String.format("Cannot find parent directory for '%s' to register watch service.", path.toString()));
-            }
-            return parent;
-        }
-
-    }
-
-    SubmissionPublisher<PollingEvent> ticksSubmitter() {
-        return ticksSubmitter;
-    }
-
-    Future<?> watchThreadFuture() {
-        return watchThreadFuture;
-    }
-
-    @Override
-    public String toString() {
-        return "FileSystemWatcher{"
-                + "path=" + path
-                + '}';
     }
 }

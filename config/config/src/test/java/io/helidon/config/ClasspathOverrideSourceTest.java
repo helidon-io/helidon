@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 
-import io.helidon.config.ClasspathOverrideSource.ClasspathBuilder;
+import io.helidon.config.ClasspathOverrideSource.Builder;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 
@@ -93,7 +93,7 @@ public class ClasspathOverrideSourceTest {
 
     @Test
     public void testBuilderPollingStrategyNotExistingResource() {
-        ClasspathBuilder builder = (ClasspathBuilder) OverrideSources.classpath("not-exists")
+        Builder builder = (Builder) OverrideSources.classpath("not-exists")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
@@ -104,7 +104,7 @@ public class ClasspathOverrideSourceTest {
 
     @Test
     public void testBuilderPollingStrategyExistingResource() throws URISyntaxException {
-        ClasspathBuilder builder = (ClasspathBuilder) OverrideSources.classpath("io/helidon/config/overrides.properties")
+        Builder builder = (Builder) OverrideSources.classpath("io/helidon/config/overrides.properties")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));

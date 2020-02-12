@@ -85,7 +85,7 @@ public interface ConfigParser {
     interface Content extends ConfigContent {
         /**
          * Media type of the content. This method is only called if
-         * the source {@link ConfigContent#exists()} and there is no parser configured.
+         * there is no parser configured.
          *
          * @return content media type if known, {@code empty} otherwise
          */

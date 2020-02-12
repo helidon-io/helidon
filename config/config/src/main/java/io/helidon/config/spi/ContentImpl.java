@@ -26,22 +26,15 @@ import java.util.logging.Logger;
 abstract class ContentImpl implements ConfigContent {
     private static final Logger LOGGER = Logger.getLogger(ContentImpl.class.getName());
 
-    private final boolean exists;
     private final Object stamp;
 
     ContentImpl(Builder<?> builder) {
-        this.exists = builder.exists();
         this.stamp = builder.stamp();
     }
 
     @Override
     public Optional<Object> stamp() {
         return Optional.ofNullable(stamp);
-    }
-
-    @Override
-    public boolean exists() {
-        return exists;
     }
 
     static class ParsableContentImpl extends ContentImpl implements ConfigParser.Content {
@@ -58,12 +51,10 @@ abstract class ContentImpl implements ConfigContent {
 
         @Override
         public void close() {
-            if (exists()) {
-                try {
-                    data.close();
-                } catch (IOException e) {
-                    LOGGER.log(Level.FINE, "Failed to close input stream", e);
-                }
+            try {
+                data.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.FINE, "Failed to close input stream", e);
             }
         }
 
@@ -86,13 +77,27 @@ abstract class ContentImpl implements ConfigContent {
     static class NodeContentImpl extends ContentImpl implements NodeContent {
         private final ConfigNode.ObjectNode data;
 
-        NodeContentImpl(NodeContentBuilder builder) {
+        NodeContentImpl(NodeContent.Builder builder) {
             super(builder);
-            this.data = builder.rootNode();
+            this.data = builder.node();
         }
 
         @Override
         public ConfigNode.ObjectNode data() {
+            return data;
+        }
+    }
+
+    static class OverrideContentImpl extends ContentImpl implements OverrideContent {
+        private final OverrideSource.OverrideData data;
+
+        OverrideContentImpl(OverrideContent.Builder builder) {
+            super(builder);
+            this.data = builder.data();
+        }
+
+        @Override
+        public OverrideSource.OverrideData data() {
             return data;
         }
     }

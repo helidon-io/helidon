@@ -43,13 +43,46 @@ public interface ConfigContent {
         return Optional.empty();
     }
 
-    /**
-     * Sometimes the content may disappear between the time we checked it and the time we load it.
-     * This defines whether this content exists or not. If not, other methods on this instance will not be called.
-     *
-     * @return {@code true} if this source exists and has data, {@code false} if the content is not there
-     */
-    boolean exists();
+    interface OverrideContent extends ConfigContent {
+        /**
+         * A fluent API builder for {@link io.helidon.config.spi.ConfigContent.OverrideContent}.
+         *
+         * @return a new builder instance
+         */
+        static Builder builder() {
+            return new Builder();
+        }
+        /**
+         * Data of this override source.
+         *
+         * @return the data of the underlying source as override data
+         */
+        OverrideSource.OverrideData data();
+
+        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<OverrideContent> {
+            // override data
+            private OverrideSource.OverrideData data;
+
+            /**
+             * Data of this override source.
+             * @param data the data of this source
+             * @return updated builder instance
+             */
+            public Builder data(OverrideSource.OverrideData data) {
+                this.data = data;
+                return this;
+            }
+
+            OverrideSource.OverrideData data() {
+                return data;
+            }
+
+            @Override
+            public OverrideContent build() {
+                return new ContentImpl.OverrideContentImpl(this);
+            }
+        }
+    }
 
     /**
      * Config content that provides an {@link io.helidon.config.spi.ConfigNode.ObjectNode} directly, with no need
@@ -61,8 +94,8 @@ public interface ConfigContent {
          *
          * @return a new builder instance
          */
-        static NodeContentBuilder builder() {
-            return new NodeContentBuilder();
+        static Builder builder() {
+            return new Builder();
         }
 
         /**
@@ -70,30 +103,47 @@ public interface ConfigContent {
          * @return the data of the underlying source as an object node
          */
         ConfigNode.ObjectNode data();
+
+        /**
+         * Fluent API builder for {@link io.helidon.config.spi.ConfigContent.NodeContent}.
+         */
+        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<NodeContent> {
+            // node based config source data
+            private ConfigNode.ObjectNode rootNode;
+
+            /**
+             * Node with the configuration of this content.
+             *
+             * @param rootNode the root node that links the configuration tree of this source
+             * @return updated builder instance
+             */
+            public Builder node(ConfigNode.ObjectNode rootNode) {
+                this.rootNode = rootNode;
+
+                return this;
+            }
+
+            ConfigNode.ObjectNode node() {
+                return rootNode;
+            }
+
+            @Override
+            public NodeContent build() {
+                return new ContentImpl.NodeContentImpl(this);
+            }
+        }
     }
 
     /**
      * Fluent API builder for {@link ConfigContent}, common ancestor for parsable content builder and node content builder.
      */
-    class Builder<T extends Builder<T>> {
-        private boolean exists = true;
+    class Builder<T extends Builder> {
         private Object stamp;
 
         @SuppressWarnings("unchecked")
         private final T me = (T) this;
 
         Builder() {
-        }
-
-        /**
-         * Whether the content exists or not.
-         *
-         * @param exists default is true
-         * @return updated builder instance
-         */
-        public T exists(boolean exists) {
-            this.exists = exists;
-            return me;
         }
 
         /**
@@ -107,41 +157,9 @@ public interface ConfigContent {
             return me;
         }
 
-        boolean exists() {
-            return exists;
-        }
-
         Object stamp() {
             return stamp;
         }
     }
 
-    /**
-     * Fluent API builder for {@link io.helidon.config.spi.ConfigContent.NodeContent}.
-     */
-    class NodeContentBuilder extends Builder<NodeContentBuilder> implements io.helidon.common.Builder<NodeContent> {
-        // node based config source data
-        private ConfigNode.ObjectNode rootNode;
-
-        /**
-         * Node with the configuration of this content.
-         *
-         * @param rootNode the root node that links the configuration tree of this source
-         * @return updated builder instance
-         */
-        public NodeContentBuilder node(ConfigNode.ObjectNode rootNode) {
-            this.rootNode = rootNode;
-
-            return this;
-        }
-
-        ConfigNode.ObjectNode rootNode() {
-            return rootNode;
-        }
-
-        @Override
-        public NodeContent build() {
-            return new ContentImpl.NodeContentImpl(this);
-        }
-    }
 }
