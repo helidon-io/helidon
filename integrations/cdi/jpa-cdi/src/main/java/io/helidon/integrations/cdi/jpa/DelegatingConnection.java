@@ -320,51 +320,6 @@ class DelegatingConnection implements Connection {
         return this.delegate.getNetworkTimeout();
     }
 
-    /*
-    @Override
-    public void beginRequest() throws SQLException {
-        this.delegate.beginRequest();
-    }
-    */
-
-    /*
-    @Override
-    public void endRequest() throws SQLException {
-        this.delegate.endRequest();
-    }
-    */
-
-    /*
-    @Override
-    public boolean setShardingKeyIfValid(final ShardingKey shardingKey,
-                                         final ShardingKey superShardingKey,
-                                         final int timeout)
-      throws SQLException {
-        return this.delegate.setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
-    }
-    */
-
-    /*
-    @Override
-    public boolean setShardingKeyIfValid(final ShardingKey shardingKey, final int timeout) throws SQLException {
-        return this.delegate.setShardingKeyIfValid(shardingKey, timeout);
-    }
-    */
-
-    /*
-    @Override
-    public void setShardingKey(final ShardingKey shardingKey, final ShardingKey superShardingKey) throws SQLException {
-        this.delegate.setShardingKey(shardingKey, superShardingKey);
-    }
-    */
-
-    /*
-    @Override
-    public void setShardingKey(final ShardingKey shardingKey) throws SQLException {
-        this.delegate.setShardingKey(shardingKey);
-    }
-    */
-
     @Override
     public <T> T unwrap(final Class<T> iface) throws SQLException {
         return this.delegate.unwrap(iface);
