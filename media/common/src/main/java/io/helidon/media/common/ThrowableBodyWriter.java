@@ -57,9 +57,19 @@ public final class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
     /**
      * Creates a new {@link ThrowableBodyWriter}.
      * @return a new {@link ThrowableBodyWriter}; never {@code null}
+     * @see #create(boolean)
      */
     public static ThrowableBodyWriter create() {
-        return new ThrowableBodyWriter();
+        return create(false);
+    }
+
+    /**
+     * Creates a new {@link ThrowableBodyWriter}.
+     * @param writeStackTrace whether stack traces are to be written
+     * @return a new {@link ThrowableBodyWriter}; never {@code null}
+     */
+    public static ThrowableBodyWriter create(boolean writeStackTrace) {
+        return new ThrowableBodyWriter(writeStackTrace);
     }
 
     private static final class ThrowableToChunks implements Mapper<Throwable, Publisher<DataChunk>> {
