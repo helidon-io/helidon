@@ -100,6 +100,18 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      */
     MessageBodyWriterContext writerContext();
 
+    default void send(Throwable content) {
+        Object status = status();
+        if (status == null) {
+            if (content instanceof HttpException) {
+                status(((HttpException) content).status());
+            } else {
+                status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            }
+        }
+        send((Object) content);
+    }
+
     /**
      * Send a message and close the response.
      *
