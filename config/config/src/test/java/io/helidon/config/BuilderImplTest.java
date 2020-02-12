@@ -16,10 +16,10 @@
 
 package io.helidon.config;
 
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.junit.jupiter.api.Test;
@@ -58,9 +58,9 @@ public class BuilderImplTest {
                 .build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(ConfigSources.empty()), //ConfigSource
+                                          eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
                                           eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(BuilderImpl.DEFAULT_CHANGES_EXECUTOR), //changesExecutor
                                           eq(Flow.defaultBufferSize()), //changesMaxBuffer
@@ -83,9 +83,9 @@ public class BuilderImplTest {
         spyBuilder.build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(ConfigSources.empty()), //ConfigSource
+                                          eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
                                           eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(1), //changesMaxBuffer
@@ -110,9 +110,9 @@ public class BuilderImplTest {
         spyBuilder.build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(ConfigSources.empty()), //ConfigSource
+                                          eq(BuilderImpl.ConfigSourceConfiguration.empty()), //ConfigSource
                                           eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(1), //changesMaxBuffer
@@ -123,8 +123,10 @@ public class BuilderImplTest {
 
     @Test
     public void testBuildWithDefaultStrategy() {
+        String expected = "This value should override the environment variable";
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
-        System.setProperty(TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
+        // system properties now have priority over environment variables
+        System.setProperty(TEST_ENV_VAR_NAME, expected);
 
         Config config = Config.builder()
                 .sources(CompositeConfigSourceTest.initBuilder().build())
@@ -134,8 +136,9 @@ public class BuilderImplTest {
         assertThat(config.get("prop2").asString().get(), is("source-2"));
         assertThat(config.get("prop3").asString().get(), is("source-3"));
         assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(expected));
 
+        // once we do the replacement, we hit the environment variable only (as there is no replacement for other sources)
         String envVarName = TEST_ENV_VAR_NAME.toLowerCase().replace("_", ".");
         assertThat(config.get(envVarName).asString().get(), is(TEST_ENV_VAR_VALUE));
     }

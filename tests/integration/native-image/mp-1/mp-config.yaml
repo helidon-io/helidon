@@ -1,0 +1,29 @@
+# Helidon security configuration is in this file
+# as it provides object configuration
+security:
+  providers:
+    - abac:
+    - http-basic-auth:
+        users:
+          - login: "jack"
+            password: "password"
+            roles: ["user", "admin"]
+          - login: "john"
+            password: "password"
+            roles: ["user"]
+    - mp-jwt-auth:
+      name: "MicroProfile JWT-Auth"
+    - oidc:
+        # these are not needed when redirect is disabled and we use local JWK!
+        identity-uri: "http://not-present-at-all.com"
+        client-id: "wrong"
+        client-secret: "also wrong"
+        token-endpoint-uri: "http://not-present-at-all.com"
+        authorization-endpoint-uri: "http://not-present-at-all.com"
+        # these are needed
+        redirect: false
+        cookie-use: false
+        header-use: true
+        sign-jwk-resource-path: "verify-jwk.json"
+        oidc-metadata-well-known: false
+        audience: "http://localhost:8087/jwt"

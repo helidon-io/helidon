@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.helidon.security.integration.jersey;
 
 import java.util.List;
+import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
@@ -63,7 +63,7 @@ public class BindingTestProvider extends SynchronousProvider
         return providerRequest.securityContext()
                 .user()
                 .map(user -> OutboundSecurityResponse
-                        .withHeaders(CollectionsHelper.mapOf("x-user", CollectionsHelper.listOf(user.principal().id()))))
+                        .withHeaders(Map.of("x-user", List.of(user.principal().id()))))
                 .orElse(OutboundSecurityResponse.abstain());
     }
 }

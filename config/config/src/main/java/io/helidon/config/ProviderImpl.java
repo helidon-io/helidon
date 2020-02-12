@@ -26,13 +26,13 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.internal.ConfigUtils;
@@ -53,7 +53,7 @@ class ProviderImpl implements Config.Context {
     private static final Logger LOGGER = Logger.getLogger(ConfigFactory.class.getName());
 
     private final ConfigMapperManager configMapperManager;
-    private final ConfigSource configSource;
+    private final BuilderImpl.ConfigSourceConfiguration configSource;
     private final OverrideSource overrideSource;
     private final List<Function<Config, ConfigFilter>> filterProviders;
     private final boolean cachingEnabled;
@@ -66,14 +66,14 @@ class ProviderImpl implements Config.Context {
     private ConfigSourceChangeEventSubscriber configSourceChangeEventSubscriber;
 
     private ConfigDiff lastConfigsDiff;
-    private Config lastConfig;
+    private AbstractConfigImpl lastConfig;
     private OverrideSourceChangeEventSubscriber overrideSourceChangeEventSubscriber;
     private volatile boolean overrideChangeComplete;
     private volatile boolean configChangeComplete;
 
     @SuppressWarnings("ParameterNumber")
     ProviderImpl(ConfigMapperManager configMapperManager,
-                 ConfigSource configSource,
+                 BuilderImpl.ConfigSourceConfiguration configSource,
                  OverrideSource overrideSource,
                  List<Function<Config, ConfigFilter>> filterProviders,
                  boolean cachingEnabled,
@@ -89,7 +89,7 @@ class ProviderImpl implements Config.Context {
         this.changesExecutor = changesExecutor;
 
         this.lastConfigsDiff = null;
-        this.lastConfig = Config.empty();
+        this.lastConfig = (AbstractConfigImpl) Config.empty();
 
         this.keyResolving = keyResolving;
         this.aliasGenerator = aliasGenerator;
@@ -102,14 +102,14 @@ class ProviderImpl implements Config.Context {
         configSourceChangeEventSubscriber = null;
     }
 
-    public Config newConfig() {
-        lastConfig = build(configSource.load());
+    public AbstractConfigImpl newConfig() {
+        lastConfig = build(configSource.compositeSource().load());
         return lastConfig;
     }
 
     @Override
     public Config reload() {
-        rebuild(configSource.load(), true);
+        rebuild(configSource.compositeSource().load(), true);
         return lastConfig;
     }
 
@@ -123,7 +123,7 @@ class ProviderImpl implements Config.Context {
         return lastConfig;
     }
 
-    private synchronized Config build(Optional<ObjectNode> rootNode) {
+    private synchronized AbstractConfigImpl build(Optional<ObjectNode> rootNode) {
 
         // resolve tokens
         rootNode = rootNode.map(this::resolveKeys);
@@ -140,14 +140,16 @@ class ProviderImpl implements Config.Context {
                                                   rootNode.orElseGet(ObjectNode::empty),
                                                   targetFilter,
                                                   this,
-                                                  aliasGenerator);
-        Config config = factory.config();
+                                                  aliasGenerator,
+                                                  configSource.allSources());
+        AbstractConfigImpl config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);
         // caching
         if (cachingEnabled) {
             targetFilter.enableCaching();
         }
+        config.initMp();
         return config;
     }
 
@@ -218,7 +220,7 @@ class ProviderImpl implements Config.Context {
 
     private synchronized void rebuild(Optional<ObjectNode> objectNode, boolean force) {
         // 1. build new Config
-        Config newConfig = build(objectNode);
+        AbstractConfigImpl newConfig = build(objectNode);
         // 2. for each subscriber fire event on specific node/key - see AbstractConfigImpl.FilteringConfigChangeEventSubscriber
         // 3. fire event
         ConfigDiff configsDiff = ConfigDiff.from(lastConfig, newConfig);
@@ -252,7 +254,7 @@ class ProviderImpl implements Config.Context {
         subscribeConfigSource();
         subscribeOverrideSource();
         //check if source has changed - reload
-        rebuild(configSource.load(), false);
+        rebuild(configSource.compositeSource().load(), false);
     }
 
     private void cancelSourcesSubscriptions() {
@@ -262,7 +264,7 @@ class ProviderImpl implements Config.Context {
 
     private void subscribeConfigSource() {
         configSourceChangeEventSubscriber = new ConfigSourceChangeEventSubscriber();
-        configSource.changes().subscribe(configSourceChangeEventSubscriber);
+        configSource.compositeSource().changes().subscribe(configSourceChangeEventSubscriber);
     }
 
     private void cancelConfigSource() {
@@ -401,7 +403,7 @@ class ProviderImpl implements Config.Context {
             ProviderImpl.this.changesSubmitter
                     .closeExceptionally(new ConfigException(
                             String.format("'%s' config source changes support has failed. %s",
-                                          ProviderImpl.this.configSource.description(),
+                                          ProviderImpl.this.configSource.compositeSource().description(),
                                           throwable.getLocalizedMessage()),
                             throwable));
         }
@@ -409,7 +411,7 @@ class ProviderImpl implements Config.Context {
         @Override
         public void onComplete() {
             LOGGER.fine(String.format("'%s' config source changes support has completed.",
-                                      ProviderImpl.this.configSource.description()));
+                                      ProviderImpl.this.configSource.compositeSource().description()));
 
             ProviderImpl.this.configChangeComplete = true;
 

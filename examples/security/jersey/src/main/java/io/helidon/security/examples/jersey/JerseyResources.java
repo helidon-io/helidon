@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import javax.ws.rs.core.Response;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.annotations.Authenticated;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
 
 /**
  * Resources are contained here.
@@ -59,7 +58,7 @@ final class JerseyResources {
         @GET
         @Produces(MediaType.TEXT_PLAIN)
         public String getHello(@Context SecurityContext securityContext) {
-            return "To test this example, call /jersey. If you use a user without \"user\" role, your request will be denied. "
+            return "To test this example, call /protected. If you use a user without \"user\" role, your request will be denied. "
                     + "Your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
         }
 
@@ -70,7 +69,7 @@ final class JerseyResources {
          * @return returns hello and subject.
          */
         //this is the important annotation for authentication to kick in
-        @Authenticated()
+        @Authenticated
         @RolesAllowed("user")
         @Path("/protected")
         @GET
@@ -98,11 +97,9 @@ final class JerseyResources {
         @Produces(MediaType.TEXT_PLAIN)
         public String propagateIdentity(@Context SecurityContext securityContext) {
             String response = ClientBuilder.newBuilder()
-                    .register(new ClientSecurityFeature())
                     .build()
                     .target("http://localhost:" + port + "/rest/protected")
                     .request()
-                    .property(ClientSecurityFeature.PROPERTY_CONTEXT, securityContext)
                     .get(String.class);
 
             return "Hello, your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS) + "\n"
@@ -125,7 +122,7 @@ final class JerseyResources {
         @GET
         @Produces(MediaType.TEXT_PLAIN)
         public String getHello(@Context SecurityContext securityContext) {
-            return "To test this example, call /jersey. If you use a user without \"user\" role, your request will be denied. "
+            return "To test this example, call /protected. If you use a user without \"user\" role, your request will be denied. "
                     + "Your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
         }
 

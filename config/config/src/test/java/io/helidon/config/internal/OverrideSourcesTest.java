@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package io.helidon.config.internal;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.OverrideSources;
 import io.helidon.config.spi.OverrideSource;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link OverrideSources}.
@@ -44,7 +45,7 @@ public class OverrideSourcesTest {
 
     @Test
     public void testFromWildcards() {
-        OverrideSource overrideSource = OverrideSources.create(CollectionsHelper.mapOf(WILDCARDS, "localhost"));
+        OverrideSource overrideSource = OverrideSources.create(Map.of(WILDCARDS, "localhost"));
         assertThat(overrideSource.load()
                            .get()
                            .data()

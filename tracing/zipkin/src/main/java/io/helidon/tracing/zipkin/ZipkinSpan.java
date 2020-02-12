@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import io.opentracing.tag.Tag;
 
 /**
  * The ZipkinSpan delegates to another {@link Span} while finishing the
@@ -109,5 +110,15 @@ class ZipkinSpan implements Span {
     public Span setOperationName(String operationName) {
         span.setOperationName(operationName);
         return this;
+    }
+
+    @Override
+    public <T> Span setTag(Tag<T> tag, T value) {
+        span.setTag(tag, value);
+        return this;
+    }
+
+    Span unwrap() {
+        return span;
     }
 }

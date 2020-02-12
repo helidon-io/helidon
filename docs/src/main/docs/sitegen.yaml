@@ -25,7 +25,7 @@ engine:
       helidon-version: "${project.version}"
       microprofile-openapi-version: "${version.lib.microprofile-openapi-api}"
       jandex-plugin-version: ${version.plugin.jandex}
-      mp-version: "1.2"
+      mp-version: "3.2"
       guides-dir: "${project.basedir}/../examples/guides"
 assets:
   - target: "/"
@@ -138,14 +138,6 @@ backend:
               items:
                 - includes:
                     - "health/*.adoc"
-            - title: "Guides"
-              pathprefix: "/guides"
-              glyph:
-                type: "icon"
-                value: "explore"
-              items:
-                - includes:
-                    - "guides/*.adoc"
             - title: "OpenAPI"
               pathprefix: "/openapi"
               glyph:
@@ -154,6 +146,14 @@ backend:
               items:
                 - includes:
                     - "openapi/*.adoc"
+            - title: "Guides"
+              pathprefix: "/guides"
+              glyph:
+                type: "icon"
+                value: "explore"
+              items:
+                - includes:
+                    - "guides/*.adoc"
             - title: "Javadocs"
               glyph:
                 type: "icon"
@@ -164,5 +164,5 @@ backend:
             - title: "Community"
               glyph:
                 type: "icon"
-                value: "fa-slack"
-              href: "https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE"
+                value: "fa-github"
+              href: "#/community/01_community"

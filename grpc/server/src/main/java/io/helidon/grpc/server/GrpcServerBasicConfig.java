@@ -16,8 +16,10 @@
 
 package io.helidon.grpc.server;
 
+import io.helidon.common.context.Context;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
+
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 /**
  * Configuration class for the {@link GrpcServer} implementations.
@@ -33,39 +35,41 @@ public class GrpcServerBasicConfig
 
     private final Tracer tracer;
 
-    private final TracingConfiguration tracingConfig;
+    private final GrpcTracingConfig tracingConfig;
 
     private final int workers;
 
-    private final SslConfiguration sslConfig;
+    private final GrpcTlsDescriptor tlsConfig;
+
+    private final Context context;
 
     /**
      * Construct {@link GrpcServerBasicConfig} instance.
      *
-     * @param name            the server name
-     * @param port            the port to listen on
-     * @param workers         a count of threads in a pool used to tryProcess HTTP requests
-     * @param nativeTransport {@code true} to enable native transport for
-     *                        the server
-     * @param tracer          the tracer to use
-     * @param tracingConfig   the tracing configuration
-     * @param sslConfig       the SSL configuration
+     * @param builder the {@link GrpcServerConfiguration.Builder} to use to configure
+     *                this {@link GrpcServerBasicConfig}.
      */
-    public GrpcServerBasicConfig(String name,
-                                 int port,
-                                 int workers,
-                                 boolean nativeTransport,
-                                 Tracer tracer,
-                                 TracingConfiguration tracingConfig,
-                                 SslConfiguration sslConfig) {
+    private GrpcServerBasicConfig(GrpcServerConfiguration.Builder builder) {
+        this.name = builder.name();
+        this.port = builder.port();
+        this.context = builder.context();
+        this.nativeTransport = builder.useNativeTransport();
+        this.tracer = builder.tracer();
+        this.tracingConfig = builder.tracingConfig();
+        this.workers = builder.workers();
+        this.tlsConfig = builder.tlsConfig();
+    }
 
-        this.name = name == null || name.trim().isEmpty() ? DEFAULT_NAME : name.trim();
-        this.port = port <= 0 ? 0 : port;
-        this.nativeTransport = nativeTransport;
-        this.tracer = tracer == null ? GlobalTracer.get() : tracer;
-        this.tracingConfig = tracingConfig == null ? new TracingConfiguration.Builder().build() : tracingConfig;
-        this.workers = workers > 0 ? workers : DEFAULT_WORKER_COUNT;
-        this.sslConfig = sslConfig;
+    /**
+     * Create a {@link GrpcServerBasicConfig} instance using the specified builder.
+     *
+     * @param builder the {@link GrpcServerConfiguration.Builder} to use to configure
+     *                this {@link GrpcServerBasicConfig}
+     *
+     * @return a {@link GrpcServerBasicConfig} instance
+     */
+    static GrpcServerBasicConfig create(GrpcServerConfiguration.Builder builder) {
+        return new GrpcServerBasicConfig(builder);
     }
 
     // ---- accessors ---------------------------------------------------
@@ -90,6 +94,11 @@ public class GrpcServerBasicConfig
         return port;
     }
 
+    @Override
+    public Context context() {
+        return context;
+    }
+
     /**
      * Determine whether use native transport if possible.
      * <p>
@@ -111,7 +120,7 @@ public class GrpcServerBasicConfig
     }
 
     @Override
-    public TracingConfiguration tracingConfig() {
+    public GrpcTracingConfig tracingConfig() {
         return tracingConfig;
     }
 
@@ -121,7 +130,7 @@ public class GrpcServerBasicConfig
     }
 
     @Override
-    public SslConfiguration sslConfig() {
-        return sslConfig;
+    public GrpcTlsDescriptor tlsConfig() {
+        return tlsConfig;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.TestingConfigSource;
@@ -160,8 +159,7 @@ public class ConfigChangesTest {
 
         // change config source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
-        configSource.changeLoadedObjectNode(
-                ObjectNode.builder().addValue("key-1-1.key-2-1", "NEW item 1").build());
+        configSource.changeLoadedObjectNode(ObjectNode.simple("key-1-1.key-2-1", "NEW item 1"));
 
         // wait for event1
         Config last1 = subscriber1.getLastOnNext(200, true);
@@ -288,7 +286,7 @@ public class ConfigChangesTest {
         assertThat(configSource.isCancelPollingStrategyInvoked(), is(false));
 
         List<TestingConfigChangeSubscriber> subscribers = new LinkedList<>();
-        CollectionsHelper.listOf("", "key1", "sub.key1", "", "key1").forEach(key -> {
+        List.of("", "key1", "sub.key1", "", "key1").forEach(key -> {
             TestingConfigChangeSubscriber subscriber = new TestingConfigChangeSubscriber();
             config.get(key).changes().subscribe(subscriber);
             subscribers.add(subscriber);
@@ -404,7 +402,10 @@ public class ConfigChangesTest {
                         .build()).build();
 
         // config
-        Config config = Config.builder().sources(configSource).build();
+        Config config = Config.builder(configSource)
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
 
         // key exists
         assertThat(config.get("key1").exists(), is(true));
@@ -424,7 +425,7 @@ public class ConfigChangesTest {
         Config newConfig = subscriber.getLastOnNext(1000, true);
 
         // new: key does not exist
-        assertThat(newConfig.exists(), is(false));
+        assertThat("New config should not exist", newConfig.exists(), is(false));
     }
 
     @Test

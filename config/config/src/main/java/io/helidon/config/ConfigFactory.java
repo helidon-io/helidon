@@ -20,17 +20,22 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.time.Instant;
 import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
@@ -49,9 +54,11 @@ final class ConfigFactory {
     private final ConfigFilter filter;
     private final ProviderImpl provider;
     private final Function<String, List<String>> aliasGenerator;
-    private final ConcurrentMap<PrefixedKey, Reference<Config>> configCache;
+    private final ConcurrentMap<PrefixedKey, Reference<AbstractConfigImpl>> configCache;
     private final Flow.Publisher<ConfigDiff> changesPublisher;
     private final Instant timestamp;
+    private final List<ConfigSource> configSources;
+    private final List<org.eclipse.microprofile.config.spi.ConfigSource> mpConfigSources;
 
     /**
      * Create new instance of the factory operating on specified {@link ConfigSource}.
@@ -66,7 +73,9 @@ final class ConfigFactory {
                   ObjectNode node,
                   ConfigFilter filter,
                   ProviderImpl provider,
-                  Function<String, List<String>> aliasGenerator) {
+                  Function<String, List<String>> aliasGenerator,
+                  List<ConfigSource> configSources) {
+
         Objects.requireNonNull(mapperManager, "mapperManager argument is null.");
         Objects.requireNonNull(node, "node argument is null.");
         Objects.requireNonNull(filter, "filter argument is null.");
@@ -77,10 +86,15 @@ final class ConfigFactory {
         this.filter = filter;
         this.provider = provider;
         this.aliasGenerator = aliasGenerator;
+        this.configSources = configSources;
 
         configCache = new ConcurrentHashMap<>();
         changesPublisher = new FilteringConfigChangeEventPublisher(provider.changes());
         timestamp = Instant.now();
+
+        this.mpConfigSources = configSources.stream()
+                .map(ConfigFactory::toMpSource)
+                .collect(Collectors.toList());
     }
 
     private static Map<ConfigKeyImpl, ConfigNode> createFullKeyToNodeMap(ObjectNode objectNode) {
@@ -123,7 +137,7 @@ final class ConfigFactory {
      *
      * @return root {@link Config}
      */
-    public Config config() {
+    public AbstractConfigImpl config() {
         return config(ConfigKeyImpl.of(), ConfigKeyImpl.of());
     }
 
@@ -134,9 +148,9 @@ final class ConfigFactory {
      * @param key    config key
      * @return {@code key} specific instance of {@link Config}
      */
-    public Config config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+    public AbstractConfigImpl config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         PrefixedKey prefixedKey = new PrefixedKey(prefix, key);
-        Reference<Config> reference = configCache.compute(prefixedKey, (k, v) -> {
+        Reference<AbstractConfigImpl> reference = configCache.compute(prefixedKey, (k, v) -> {
             if (v == null || v.get() == null) {
                 return new SoftReference<>(createConfig(prefix, key));
             } else {
@@ -152,7 +166,7 @@ final class ConfigFactory {
      * @param key config key
      * @return new instance of {@link Config} for specified {@code key}
      */
-    private Config createConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+    private AbstractConfigImpl createConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         ConfigNode value = findNode(prefix, key);
 
         if (null == value) {
@@ -200,6 +214,152 @@ final class ConfigFactory {
 
     ProviderImpl provider() {
         return provider;
+    }
+
+    List<ConfigSource> configSources() {
+        return configSources;
+    }
+
+    List<org.eclipse.microprofile.config.spi.ConfigSource> mpConfigSources() {
+        return mpConfigSources;
+    }
+
+    private static org.eclipse.microprofile.config.spi.ConfigSource toMpSource(ConfigSource helidonCs) {
+        if (helidonCs instanceof org.eclipse.microprofile.config.spi.ConfigSource) {
+            return (org.eclipse.microprofile.config.spi.ConfigSource) helidonCs;
+        } else {
+            // this is a non-Helidon ConfigSource
+            return new MpConfigSource(helidonCs);
+        }
+
+    }
+
+    private static final class MpConfigSource implements org.eclipse.microprofile.config.spi.ConfigSource {
+        private final AtomicReference<Map<String, String>> currentValues = new AtomicReference<>();
+        private final Object lock = new Object();
+        private final ConfigSource delegate;
+
+        private MpConfigSource(ConfigSource helidonCs) {
+            this.delegate = helidonCs;
+            delegate.changes()
+                    .subscribe(new Flow.Subscriber<Optional<ObjectNode>>() {
+                        @Override
+                        public void onSubscribe(Flow.Subscription subscription) {
+                            subscription.request(Long.MAX_VALUE);
+                        }
+
+                        @Override
+                        public void onNext(Optional<ObjectNode> item) {
+                            synchronized (lock) {
+                                currentValues.set(loadMap(item));
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable throwable) {
+                        }
+
+                        @Override
+                        public void onComplete() {
+                        }
+                    });
+        }
+
+        @Override
+        public Map<String, String> getProperties() {
+            ensureValue();
+            return currentValues.get();
+        }
+
+        @Override
+        public String getValue(String propertyName) {
+            ensureValue();
+            return currentValues.get().get(propertyName);
+        }
+
+        @Override
+        public String getName() {
+            return delegate.description();
+        }
+
+        private void ensureValue() {
+            synchronized (lock) {
+                if (null == currentValues.get()) {
+                    currentValues.set(loadMap(delegate.load()));
+                }
+            }
+        }
+
+        private static Map<String, String> loadMap(Optional<ObjectNode> item) {
+            if (item.isPresent()) {
+                ConfigNode.ObjectNode node = item.get();
+                Map<String, String> values = new TreeMap<>();
+                processNode(values, "", node);
+                return values;
+            } else {
+                return Map.of();
+            }
+        }
+
+        private static void processNode(Map<String, String> values, String keyPrefix, ConfigNode.ObjectNode node) {
+            node.forEach((key, configNode) -> {
+                switch (configNode.nodeType()) {
+                case OBJECT:
+                    processNode(values, key(keyPrefix, key), (ConfigNode.ObjectNode) configNode);
+                    break;
+                case LIST:
+                    processNode(values, key(keyPrefix, key), ((ConfigNode.ListNode) configNode));
+                    break;
+                case VALUE:
+                    values.put(key(keyPrefix, key), configNode.get());
+                    break;
+                default:
+                    throw new IllegalStateException("Config node of type: " + configNode.nodeType() + " not supported");
+                }
+
+            });
+        }
+
+        private static void processNode(Map<String, String> values, String keyPrefix, ConfigNode.ListNode node) {
+            List<String> directValue = new LinkedList<>();
+            Map<String, String> thisListValues = new HashMap<>();
+            boolean hasDirectValue = true;
+
+            for (int i = 0; i < node.size(); i++) {
+                ConfigNode configNode = node.get(i);
+                String nextKey = key(keyPrefix, String.valueOf(i));
+                switch (configNode.nodeType()) {
+                case OBJECT:
+                    processNode(thisListValues, nextKey, (ConfigNode.ObjectNode) configNode);
+                    hasDirectValue = false;
+                    break;
+                case LIST:
+                    processNode(thisListValues, nextKey, (ConfigNode.ListNode) configNode);
+                    hasDirectValue = false;
+                    break;
+                case VALUE:
+                    String value = configNode.get();
+                    directValue.add(value);
+                    thisListValues.put(nextKey, value);
+                    break;
+                default:
+                    throw new IllegalStateException("Config node of type: " + configNode.nodeType() + " not supported");
+                }
+            }
+
+            if (hasDirectValue) {
+                values.put(keyPrefix, String.join(",", directValue));
+            } else {
+                values.putAll(thisListValues);
+            }
+        }
+
+        private static String key(String keyPrefix, String key) {
+            if (keyPrefix.isEmpty()) {
+                return key;
+            }
+            return keyPrefix + "." + key;
+        }
     }
 
     /**

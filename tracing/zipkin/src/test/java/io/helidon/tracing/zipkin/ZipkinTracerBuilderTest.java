@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package io.helidon.tracing.zipkin;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -50,7 +51,7 @@ class ZipkinTracerBuilderTest {
 
         ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
 
-        assertThat(zBuilder.tags(), is(CollectionsHelper.listOf()));
+        assertThat(zBuilder.tags(), is(List.of()));
         assertThat(zBuilder.serviceName(), is("helidon-service"));
         assertThat(zBuilder.protocol(), is(ZipkinTracerBuilder.DEFAULT_PROTOCOL));
         assertThat(zBuilder.host(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_HOST));
@@ -68,8 +69,29 @@ class ZipkinTracerBuilderTest {
 
         ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
 
-        assertThat(zBuilder.tags(), is(CollectionsHelper.listOf()));
+        assertThat(zBuilder.tags(), is(List.of()));
         assertThat(zBuilder.serviceName(), is("helidon-service"));
+        assertThat(zBuilder.protocol(), is(ZipkinTracerBuilder.DEFAULT_PROTOCOL));
+        assertThat(zBuilder.host(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_HOST));
+        assertThat(zBuilder.port(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_PORT));
+        assertThat(zBuilder.path(), nullValue());
+        assertThat(zBuilder.version(), is(ZipkinTracerBuilder.DEFAULT_VERSION));
+        assertThat(zBuilder.sender(), nullValue());
+        assertThat(zBuilder.userInfo(), nullValue());
+        assertThat(zBuilder.isEnabled(), is(false));
+
+        Tracer tracer = zBuilder.build();
+        assertThat(tracer, instanceOf(NoopTracer.class));
+    }
+
+    @Test
+    void testConfigDisabledNoService() {
+        TracerBuilder<?> builder = TracerBuilder.create(config.get("tracing.zipkin-disabled-no-service"));
+
+        ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
+
+        assertThat(zBuilder.tags(), is(List.of()));
+        assertThat(zBuilder.serviceName(), nullValue());
         assertThat(zBuilder.protocol(), is(ZipkinTracerBuilder.DEFAULT_PROTOCOL));
         assertThat(zBuilder.host(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_HOST));
         assertThat(zBuilder.port(), is(ZipkinTracerBuilder.DEFAULT_ZIPKIN_PORT));
@@ -86,7 +108,7 @@ class ZipkinTracerBuilderTest {
     @Test
     void testConfigBad() {
         assertThrows(IllegalArgumentException.class, () -> TracerBuilder.create(config.get("tracing.zipkin-bad")));
-        assertThrows(NullPointerException.class, () -> TracerBuilder.create(config.get("tracing.zipkin-very-bad")).build());
+        assertThrows(IllegalArgumentException.class, () -> TracerBuilder.create(config.get("tracing.zipkin-very-bad")).build());
     }
 
     @Test

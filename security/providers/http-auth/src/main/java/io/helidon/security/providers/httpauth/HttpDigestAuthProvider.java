@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
@@ -52,9 +53,17 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String DIGEST_PREFIX = "digest ";
+    private static final int UNAUTHORIZED_STATUS_CODE = 401;
+    private static final int SALT_LENGTH = 16;
+    private static final int AES_NONCE_LENGTH = 12;
     private static final Logger LOGGER = Logger.getLogger(HttpDigestAuthProvider.class.getName());
+
+    static {
+        HelidonFeatures.register("Security", "Authentication", "Digest-Auth");
+    }
+
     private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
-    private final UserStore userStore;
+    private final SecureUserStore userStore;
     private final String realm;
     private final SubjectType subjectType;
     private final HttpDigest.Algorithm digestAlgorithm;
@@ -99,17 +108,20 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
     static String nonce(long timeInMillis, Random random, char[] serverSecret) {
         // nonce is:  encrypt(salt(random(16bytes)) + timestamp (currentTimeInMillis))
-        byte[] salt = new byte[16];
+        byte[] salt = new byte[SALT_LENGTH];
         random.nextBytes(salt);
+        byte[] aesNonce = new byte[AES_NONCE_LENGTH];
+        random.nextBytes(aesNonce);
         byte[] timestamp = HttpAuthUtil.toBytes(timeInMillis);
 
-        Cipher cipher = HttpAuthUtil.cipher(serverSecret, salt, Cipher.ENCRYPT_MODE);
+        Cipher cipher = HttpAuthUtil.cipher(serverSecret, salt, aesNonce, Cipher.ENCRYPT_MODE);
         try {
             timestamp = cipher.doFinal(timestamp);
 
-            byte[] result = new byte[salt.length + timestamp.length];
+            byte[] result = new byte[salt.length + aesNonce.length + timestamp.length];
             System.arraycopy(salt, 0, result, 0, salt.length);
-            System.arraycopy(timestamp, 0, result, salt.length, timestamp.length);
+            System.arraycopy(aesNonce, 0, result, salt.length, aesNonce.length);
+            System.arraycopy(timestamp, 0, result, aesNonce.length + salt.length, timestamp.length);
 
             return Base64.getEncoder().encodeToString(result);
         } catch (Exception e) {
@@ -157,12 +169,17 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         if (bytes.length < 17) {
             return fail("Invalid nonce length");
         }
-        byte[] salt = new byte[16];
+        byte[] salt = new byte[SALT_LENGTH];
+        byte[] aesNonce = new byte[AES_NONCE_LENGTH];
+        byte[] encryptedBytes = new byte[bytes.length - SALT_LENGTH - AES_NONCE_LENGTH];
+
         System.arraycopy(bytes, 0, salt, 0, salt.length);
-        Cipher cipher = HttpAuthUtil.cipher(digestServerSecret, salt, Cipher.DECRYPT_MODE);
+        System.arraycopy(bytes, SALT_LENGTH, aesNonce, 0, aesNonce.length);
+        System.arraycopy(bytes, SALT_LENGTH + AES_NONCE_LENGTH, encryptedBytes, 0, encryptedBytes.length);
+        Cipher cipher = HttpAuthUtil.cipher(digestServerSecret, salt, aesNonce, Cipher.DECRYPT_MODE);
 
         try {
-            byte[] timestampBytes = cipher.doFinal(bytes, salt.length, bytes.length - salt.length);
+            byte[] timestampBytes = cipher.doFinal(encryptedBytes);
             long nonceTimestamp = HttpAuthUtil.toLong(timestampBytes, 0, timestampBytes.length);
             //validate nonce
             if ((System.currentTimeMillis() - nonceTimestamp) > digestNonceTimeoutMillis) {
@@ -180,7 +197,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
         return userStore.user(token.getUsername())
                 .map(user -> {
-                    if (token.validateLogin(user.password())) {
+                    if (token.validateLogin(user)) {
                         // yay, correct user and password!!!
                         if (subjectType == SubjectType.USER) {
                             return AuthenticationResponse.success(buildSubject(user));
@@ -196,7 +213,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
     private AuthenticationResponse fail(String message) {
         return AuthenticationResponse.builder()
-                .statusCode(401)
+                .statusCode(UNAUTHORIZED_STATUS_CODE)
                 .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildChallenge())
                 .status(AuthenticationResponse.SecurityStatus.FAILURE)
                 .description(message)
@@ -227,15 +244,15 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
     }
 
     private String join(List<HttpDigest.Qop> digestQopOptions) {
-        return String.join(",", digestQopOptions.stream().map(HttpDigest.Qop::getQop).collect(Collectors.toList()));
+        return digestQopOptions.stream().map(HttpDigest.Qop::getQop).collect(Collectors.joining(","));
     }
 
-    private Subject buildSubject(UserStore.User user) {
+    private Subject buildSubject(SecureUserStore.User user) {
         Subject.Builder builder = Subject.builder()
                 .principal(Principal.builder()
                                    .name(user.login())
                                    .build())
-                .addPrivateCredential(UserStore.User.class, user);
+                .addPrivateCredential(SecureUserStore.User.class, user);
 
         user.roles()
                 .forEach(role -> builder.addGrant(Role.create(role)));
@@ -247,13 +264,13 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
      * {@link HttpDigestAuthProvider} fluent API builder.
      */
     public static final class Builder implements io.helidon.common.Builder<HttpDigestAuthProvider> {
-        private static final UserStore EMPTY_STORE = login -> Optional.empty();
+        private static final SecureUserStore EMPTY_STORE = login -> Optional.empty();
         /**
          * Default is 24 hours.
          */
         public static final long DEFAULT_DIGEST_NONCE_TIMEOUT = 24 * 60 * 60 * 1000;
         private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
-        private UserStore userStore = EMPTY_STORE;
+        private SecureUserStore userStore = EMPTY_STORE;
         private String realm = "Helidon";
         private SubjectType subjectType = SubjectType.USER;
         private HttpDigest.Algorithm digestAlgorithm = HttpDigest.Algorithm.MD5;
@@ -337,7 +354,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param store User store to use
          * @return updated builder instance
          */
-        public Builder userStore(UserStore store) {
+        public Builder userStore(SecureUserStore store) {
             this.userStore = store;
             return this;
         }

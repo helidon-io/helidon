@@ -19,110 +19,75 @@ package io.helidon.tests.apps.bookstore.se;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import io.helidon.webserver.WebServer;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
+
+;
+
 public class MainTest {
 
     private static WebServer webServer;
+    private static OkHttpClient client;
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
-
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
+    public static void startServer() throws Exception {
+        webServer = TestServer.start(false, false);
+        client = TestServer.newOkHttpClient(false);
     }
 
     @AfterAll
     public static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
-        }
+        TestServer.stop(webServer);
     }
 
     @Test
     public void testHelloWorld() throws Exception {
-        HttpURLConnection conn;
-        String json = getBookAsJson();
+        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", false);
 
-        conn = getURLConnection("GET","/books");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
-
-        conn = getURLConnection("POST","/books");
-        writeJsonContent(conn, json);
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response POST");
-
-        conn = getURLConnection("GET","/books/123456");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response GET good ISBN");
-        JsonReader jsonReader = Json.createReader(conn.getInputStream());
-        JsonObject jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("123456", jsonObject.getString("isbn"),
-                "Checking if correct ISBN");
-
-        conn = getURLConnection("GET","/books/0000");
-        Assertions.assertEquals(404, conn.getResponseCode(), "HTTP response GET bad ISBN");
-
-        conn = getURLConnection("GET","/books");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response list books");
-
-        conn = getURLConnection("DELETE","/books/123456");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response delete book");
-
-    }
-
-    private HttpURLConnection getURLConnection(String method, String path) throws Exception {
-        URL url = new URL("http://localhost:" + webServer.port() + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
-    }
-
-    private String getBookAsJson() {
-        InputStream is = getClass().getClassLoader().getResourceAsStream("book.json");
-        if (is != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+        Request getBooks = builder.build();
+        try (Response getBooksRes = client.newCall(getBooks).execute()) {
+            Assertions.assertEquals(200, getBooksRes.code());
+            Assertions.assertNotNull(getBooksRes.header("content-length"));
+            String body = getBooksRes.body().string();
+            Assertions.assertEquals(body, "[]");
         }
-        return null;
+
+        Request postBook = builder.post(
+                RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
+        try (Response postBookRes = client.newCall(postBook).execute()) {
+            Assertions.assertEquals(200, postBookRes.code());
+        }
+
+        builder = TestServer.newRequestBuilder(webServer, "/books/123456", false);
+        Request getBook = builder.build();
+        try (Response getBookRes = client.newCall(getBook).execute()) {
+            Assertions.assertEquals(200, getBookRes.code());
+            Assertions.assertNotNull(getBookRes.header("content-length"));
+            JsonReader jsonReader = Json.createReader(getBookRes.body().byteStream());
+            JsonObject jsonObject = jsonReader.readObject();
+            Assertions.assertEquals("123456", jsonObject.getString("isbn"),
+                    "Checking if correct ISBN");
+        }
+
+        Request deleteBook = builder.delete().build();
+        try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
+            Assertions.assertEquals(200, deleteBookRes.code());
+        }
+
+        Request getNoBook = builder.build();
+        try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
+            Assertions.assertEquals(getNoBookRes.code(), 404);
+        }
     }
-
-    private int writeJsonContent(HttpURLConnection conn, String json) throws IOException {
-        int jsonLength = json.getBytes().length;
-
-        conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Content-Length", Integer.toString(jsonLength));
-        conn.setFixedLengthStreamingMode(jsonLength);
-        OutputStream outputStream = conn.getOutputStream();
-        outputStream.write(json.getBytes());
-        outputStream.close();
-
-        return jsonLength;
-    }
-
 }

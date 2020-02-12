@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
@@ -150,6 +152,10 @@ public final class GrpcSecurity
     private static final String KEY_GRPC_CONFIG = "grpc-server";
 
     private static final AtomicInteger SECURITY_COUNTER = new AtomicInteger();
+
+    static {
+        HelidonFeatures.register("Security", "Integration", "gRPC Server");
+    }
 
     private final Security security;
     private final Optional<Config> config;
@@ -509,6 +515,8 @@ public final class GrpcSecurity
                     .env(env)
                     .endpointConfig(ec)
                     .build();
+
+            Contexts.context().ifPresent(ctx -> ctx.register(context));
 
             grpcContext = Context.current().withValue(SECURITY_CONTEXT, context);
         } else {

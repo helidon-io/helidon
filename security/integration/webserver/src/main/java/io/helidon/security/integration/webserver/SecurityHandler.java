@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.integration.webserver;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,24 +28,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ClassToInstanceStore;
-import io.helidon.security.Entity;
 import io.helidon.security.QueryParamMapping;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
@@ -54,6 +46,9 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityRequest;
 import io.helidon.security.SecurityRequestBuilder;
 import io.helidon.security.SecurityResponse;
+import io.helidon.security.integration.common.AtnTracing;
+import io.helidon.security.integration.common.AtzTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webserver.Handler;
@@ -62,8 +57,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
 import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
+import io.opentracing.SpanContext;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
 
@@ -282,16 +276,6 @@ public final class SecurityHandler implements Handler {
         return new Builder().configureFrom(toCopy);
     }
 
-    static void traceError(Span span, Throwable throwable) {
-        // failed
-
-        Tags.ERROR.set(span, true);
-        span.log(CollectionsHelper.mapOf("event", "error",
-                                         "error.object", throwable));
-
-        span.finish();
-    }
-
     void extractQueryParams(SecurityContext securityContext, ServerRequest req) {
         Map<String, List<String>> headers = new HashMap<>();
         queryParamHandlers.forEach(handler -> handler.extract(req, headers));
@@ -311,7 +295,7 @@ public final class SecurityHandler implements Handler {
         SecurityContext securityContext = req.context()
                 .get(SecurityContext.class)
                 .orElseThrow(() -> new SecurityException(
-                        "Security context not present. Maybe you forgot to Routing.builder().register(SecurityAdapter.from"
+                        "Security context not present. Maybe you forgot to Routing.builder().register(WebSecurity.from"
                                 + "(security))..."));
 
         if (combined) {
@@ -340,14 +324,10 @@ public final class SecurityHandler implements Handler {
 
     private void processSecurity(SecurityContext securityContext, ServerRequest req, ServerResponse res) {
         // authentication and authorization
-        Tracer tracer = securityContext.tracer();
 
-        Span securitySpan = tracer
-                .buildSpan("security")
-                .asChildOf(securityContext.tracingSpan())
-                .start();
-
-        securitySpan.log(CollectionsHelper.mapOf("securityId", securityContext.id()));
+        // start security span
+        SecurityTracing tracing = SecurityTracing.get();
+        tracing.securityContext(securityContext);
 
         // extract headers
         extractQueryParams(securityContext, req);
@@ -358,11 +338,11 @@ public final class SecurityHandler implements Handler {
                                                   .customObjects(customObjects.orElse(new ClassToInstanceStore<>()))
                                                   .build());
 
-        processAuthentication(req, res, securityContext, tracer, securitySpan)
+        processAuthentication(res, securityContext, tracing.atnTracing())
                 .thenCompose(atnResult -> {
                     if (atnResult.proceed) {
                         // authentication was OK or disabled, we should continue
-                        return processAuthorization(req, res, securityContext, tracer, securitySpan);
+                        return processAuthorization(req, res, securityContext, tracing.atzTracing());
                     } else {
                         // authentication told us to stop processing
                         return CompletableFuture.completedFuture(AtxResult.STOP);
@@ -371,18 +351,19 @@ public final class SecurityHandler implements Handler {
                 .thenAccept(atzResult -> {
                     if (atzResult.proceed) {
                         // authorization was OK, we can continue processing
-                        securitySpan.log("status: PROCEED");
-                        securitySpan.finish();
+                        tracing.logProceed();
+                        tracing.finish();
+
                         req.next();
                     } else {
-                        securitySpan.log("status: DENY");
-                        securitySpan.finish();
+                        tracing.logDeny();
+                        tracing.finish();
                     }
                 })
                 .exceptionally(throwable -> {
-                    traceError(securitySpan, throwable);
+                    tracing.error(throwable);
                     LOGGER.log(Level.SEVERE, "Unexpected exception during security processing", throwable);
-                    abortRequest(res, null, Http.Status.INTERNAL_SERVER_ERROR_500.code(), CollectionsHelper.mapOf());
+                    abortRequest(res, null, Http.Status.INTERNAL_SERVER_ERROR_500.code(), Map.of());
                     return null;
                 });
 
@@ -397,7 +378,7 @@ public final class SecurityHandler implements Handler {
             return;
         }
 
-        if (!audited.isPresent()) {
+        if (audited.isEmpty()) {
             // use defaults
             if (req.method() instanceof Http.Method) {
                 switch ((Http.Method) req.method()) {
@@ -450,24 +431,19 @@ public final class SecurityHandler implements Handler {
         securityContext.audit(auditEvent);
     }
 
-    private CompletionStage<AtxResult> processAuthentication(ServerRequest req,
-                                                             ServerResponse res,
+    private CompletionStage<AtxResult> processAuthentication(ServerResponse res,
                                                              SecurityContext securityContext,
-                                                             Tracer tracer,
-                                                             Span securitySpan) {
+                                                             AtnTracing atnTracing) {
         if (!authenticate.orElse(false)) {
             return CompletableFuture.completedFuture(AtxResult.PROCEED);
         }
 
         CompletableFuture<AtxResult> future = new CompletableFuture<>();
 
-        Span atnSpan = tracer
-                .buildSpan("security:atn")
-                .asChildOf(securitySpan)
-                .start();
-
         SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext.atnClientBuilder();
-        configureSecurityRequest(clientBuilder, req, res, atnSpan);
+        configureSecurityRequest(clientBuilder,
+                                 atnTracing.findParent().orElse(null),
+                                 atnTracing.findParentSpan().orElse(null));
 
         clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
             switch (response.status()) {
@@ -476,32 +452,32 @@ public final class SecurityHandler implements Handler {
                 break;
             case FAILURE_FINISH:
                 if (atnFinishFailure(res, future, response)) {
-                    atnSpanFinish(atnSpan, response);
+                    atnSpanFinish(atnTracing, response);
                     return;
                 }
                 break;
             case SUCCESS_FINISH:
                 atnFinish(res, future, response);
-                atnSpanFinish(atnSpan, response);
+                atnSpanFinish(atnTracing, response);
                 return;
             case ABSTAIN:
             case FAILURE:
                 if (atnAbstainFailure(res, future, response)) {
-                    atnSpanFinish(atnSpan, response);
+                    atnSpanFinish(atnTracing, response);
                     return;
                 }
                 break;
             default:
                 Exception e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
                 future.completeExceptionally(e);
-                traceError(atnSpan, e);
+                atnTracing.error(e);
                 return;
             }
 
-            atnSpanFinish(atnSpan, response);
+            atnSpanFinish(atnTracing, response);
             future.complete(new AtxResult(clientBuilder.buildRequest()));
         }).exceptionally(throwable -> {
-            traceError(atnSpan, throwable);
+            atnTracing.error(throwable);
             future.completeExceptionally(throwable);
             return null;
         });
@@ -509,17 +485,12 @@ public final class SecurityHandler implements Handler {
         return future;
     }
 
-    private void atnSpanFinish(Span atnSpan, AuthenticationResponse response) {
-        response.user()
-                .ifPresent(subject -> atnSpan
-                        .log("security.user: " + subject.principal().getName()));
+    private void atnSpanFinish(AtnTracing atnTracing, AuthenticationResponse response) {
+        response.user().ifPresent(atnTracing::logUser);
+        response.service().ifPresent(atnTracing::logService);
 
-        response.service()
-                .ifPresent(subject -> atnSpan.log("security.service: " + subject.principal().getName()));
-
-        atnSpan.log("status: " + response.status());
-
-        atnSpan.finish();
+        atnTracing.logStatus(response.status());
+        atnTracing.finish();
     }
 
     private boolean atnAbstainFailure(ServerResponse res,
@@ -533,8 +504,8 @@ public final class SecurityHandler implements Handler {
         abortRequest(res,
                      response,
                      Http.Status.UNAUTHORIZED_401.code(),
-                     CollectionsHelper.mapOf(Http.Header.WWW_AUTHENTICATE,
-                                             CollectionsHelper.listOf("Basic realm=\"Security Realm\"")));
+                     Map.of(Http.Header.WWW_AUTHENTICATE,
+                                             List.of("Basic realm=\"Security Realm\"")));
         future.complete(AtxResult.STOP);
         return true;
     }
@@ -549,7 +520,7 @@ public final class SecurityHandler implements Handler {
         } else {
             int defaultStatusCode = Http.Status.UNAUTHORIZED_401.code();
 
-            abortRequest(res, response, defaultStatusCode, CollectionsHelper.mapOf());
+            abortRequest(res, response, defaultStatusCode, Map.of());
             future.complete(AtxResult.STOP);
             return true;
         }
@@ -561,7 +532,7 @@ public final class SecurityHandler implements Handler {
 
         int defaultStatusCode = Http.Status.OK_200.code();
 
-        abortRequest(res, response, defaultStatusCode, CollectionsHelper.mapOf());
+        abortRequest(res, response, defaultStatusCode, Map.of());
         future.complete(AtxResult.STOP);
     }
 
@@ -585,90 +556,44 @@ public final class SecurityHandler implements Handler {
     }
 
     private void configureSecurityRequest(SecurityRequestBuilder<? extends SecurityRequestBuilder<?>> request,
-                                          ServerRequest req,
-                                          ServerResponse res,
+                                          SpanContext parentSpanContext,
                                           Span parentSpan) {
 
         request.optional(authenticationOptional.orElse(false))
-                .tracingSpan(parentSpan)
-                .requestMessage(toRequestMessage(req))
-                .responseMessage(toResponseMessage(res));
-    }
-
-    private Entity toResponseMessage(ServerResponse res) {
-        return filterFunction -> res.registerFilter(responseChunkPublisher -> {
-            Flow.Publisher<ByteBuffer> bytesFromBizLogic =
-                    new ResponseProcessor<DataChunk, ByteBuffer>(responseChunkPublisher) {
-                        @Override
-                        public void onNext(DataChunk item) {
-                            // chunk not released, as security provider may use it later
-                            subscriber().onNext(item.data());
-                        }
-                    };
-            Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromBizLogic);
-            return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
-                @Override
-                public void onNext(ByteBuffer item) {
-                    subscriber().onNext(DataChunk.create(true, item));
-                }
-            };
-        });
-    }
-
-    private Entity toRequestMessage(ServerRequest req) {
-        return filterFunction -> req.content().registerFilter(requestChunkPublisher -> {
-            Flow.Publisher<ByteBuffer> bytesFromExternal =
-                    new ResponseProcessor<DataChunk, ByteBuffer>(requestChunkPublisher) {
-                        @Override
-                        public void onNext(DataChunk item) {
-                            // chunk not released, as security provider may use it later
-                            subscriber().onNext(item.data());
-                        }
-                    };
-            Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromExternal);
-            return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
-                @Override
-                public void onNext(ByteBuffer item) {
-                    subscriber().onNext(DataChunk.create(item));
-                }
-            };
-        });
+                .tracingSpan(parentSpanContext)
+                .tracingSpan(parentSpan);
     }
 
     @SuppressWarnings("ThrowableNotThrown")
     private CompletionStage<AtxResult> processAuthorization(ServerRequest req,
                                                             ServerResponse res,
                                                             SecurityContext context,
-                                                            Tracer tracer,
-                                                            Span securitySpan) {
+                                                            AtzTracing atzTracing) {
         CompletableFuture<AtxResult> future = new CompletableFuture<>();
 
         if (!authorize.orElse(false)) {
             future.complete(AtxResult.PROCEED);
+            atzTracing.logStatus(SecurityResponse.SecurityStatus.ABSTAIN);
+            atzTracing.finish();
             return future;
         }
 
-        Span atzSpan = tracer
-                .buildSpan("security:atz")
-                .asChildOf(securitySpan)
-                .start();
-
-        Set<String> rolesSet = rolesAllowed.orElse(CollectionsHelper.setOf());
+        Set<String> rolesSet = rolesAllowed.orElse(Set.of());
 
         if (!rolesSet.isEmpty()) {
             // first validate roles - RBAC is supported out of the box by security, no need to invoke provider
             if (explicitAuthorizer.isPresent()) {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), CollectionsHelper.mapOf());
+                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
                     future.complete(AtxResult.STOP);
-                    atzSpan.finish();
+                    atzTracing.finish();
                     return future;
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), CollectionsHelper.mapOf());
+                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
                     future.complete(AtxResult.STOP);
-                    atzSpan.finish();
+                    atzTracing.finish();
                     return future;
                 }
             }
@@ -677,9 +602,13 @@ public final class SecurityHandler implements Handler {
         SecurityClientBuilder<AuthorizationResponse> client;
 
         client = context.atzClientBuilder();
-        configureSecurityRequest(client, req, res, atzSpan);
+        configureSecurityRequest(client,
+                                 atzTracing.findParent().orElse(null),
+                                 atzTracing.findParentSpan().orElse(null));
 
         client.explicitProvider(explicitAuthorizer.orElse(null)).submit().thenAccept(response -> {
+            atzTracing.logStatus(response.status());
+
             switch (response.status()) {
             case SUCCESS:
                 //everything is fine, we can continue with processing
@@ -690,28 +619,28 @@ public final class SecurityHandler implements Handler {
                         ? Http.Status.FORBIDDEN_403.code()
                         : Http.Status.OK_200.code();
 
-                atzSpan.finish();
-                abortRequest(res, response, defaultStatus, CollectionsHelper.mapOf());
+                atzTracing.finish();
+                abortRequest(res, response, defaultStatus, Map.of());
                 future.complete(AtxResult.STOP);
                 return;
             case ABSTAIN:
             case FAILURE:
-                atzSpan.finish();
-                abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), CollectionsHelper.mapOf());
+                atzTracing.finish();
+                abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), Map.of());
                 future.complete(AtxResult.STOP);
                 return;
             default:
                 SecurityException e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
-                traceError(atzSpan, e);
+                atzTracing.error(e);
                 future.completeExceptionally(e);
                 return;
             }
 
-            atzSpan.finish();
+            atzTracing.finish();
             // everything was OK
             future.complete(AtxResult.PROCEED);
         }).exceptionally(throwable -> {
-            traceError(atzSpan, throwable);
+            atzTracing.error(throwable);
             future.completeExceptionally(throwable);
             return null;
         });
@@ -912,74 +841,6 @@ public final class SecurityHandler implements Handler {
         }
     }
 
-    private abstract static class ResponseProcessor<T, R> implements Flow.Processor<T, R> {
-        private final CountDownLatch subscribedLatch = new CountDownLatch(1);
-        private final Flow.Publisher<T> externalPublisher;
-        private final AtomicBoolean isSubscribed = new AtomicBoolean();
-        private Flow.Subscriber<? super R> subscriber;
-        private volatile Flow.Subscription mySubscription;
-        private volatile Flow.Subscription subscribersSubscription;
-
-        ResponseProcessor(Flow.Publisher<T> externalPublisher) {
-            this.externalPublisher = externalPublisher;
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super R> subscriber) {
-            if (!isSubscribed.compareAndSet(false, true)) {
-                subscriber.onError(new IllegalStateException("This publisher only supports a single subscriber."));
-                return;
-            }
-            this.subscriber = subscriber;
-            //somebody subscribed to us!
-            this.subscribersSubscription = new Flow.Subscription() {
-                @Override
-                public void request(long n) {
-                    try {
-                        subscribedLatch.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        mySubscription.cancel();
-                        return;
-                    }
-                    mySubscription.request(n);
-                }
-
-                @Override
-                public void cancel() {
-                    try {
-                        subscribedLatch.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    mySubscription.cancel();
-                }
-            };
-            externalPublisher.subscribe(this);
-            subscriber.onSubscribe(subscribersSubscription);
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.mySubscription = subscription;
-            subscribedLatch.countDown();
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            subscriber.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            subscriber.onComplete();
-        }
-
-        Flow.Subscriber<? super R> subscriber() {
-            return subscriber;
-        }
-    }
-
     // WARNING: builder methods must not have side-effects, as they are used to build instance from configuration
     // if you want side effects, use methods on SecurityHandler
     private static final class Builder implements io.helidon.common.Builder<SecurityHandler> {
@@ -1030,7 +891,7 @@ public final class SecurityHandler implements Handler {
         }
 
         private Builder customObjects(ClassToInstanceStore<Object> store) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(myStore -> myStore.putAll(store), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putAll(store);
@@ -1119,7 +980,7 @@ public final class SecurityHandler implements Handler {
          * @return updated builder instance
          */
         Builder customObject(Object object) {
-            OptionalHelper.from(customObjects)
+            customObjects
                     .ifPresentOrElse(store -> store.putInstance(object), () -> {
                         ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
                         ctis.putInstance(object);
@@ -1173,7 +1034,7 @@ public final class SecurityHandler implements Handler {
         }
 
         Builder rolesAllowed(Collection<String> roles) {
-            OptionalHelper.from(rolesAllowed).ifPresentOrElse(strings -> strings.addAll(roles),
+            rolesAllowed.ifPresentOrElse(strings -> strings.addAll(roles),
                                                               () -> {
                                                                   Set<String> newRoles = new HashSet<>(roles);
                                                                   rolesAllowed = Optional.of(newRoles);

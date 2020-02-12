@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.Period;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -61,8 +62,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import io.helidon.common.CollectionsHelper;
 
 /**
  * Utility methods for converting configuration to Java types.
@@ -148,6 +147,7 @@ public final class ConfigMappers {
         builtIns.put(Instant.class, wrap(ConfigMappers::toInstant));
         builtIns.put(OffsetTime.class, wrap(ConfigMappers::toOffsetTime));
         builtIns.put(OffsetDateTime.class, wrap(ConfigMappers::toOffsetDateTime));
+        builtIns.put(YearMonth.class, wrap(YearMonth::parse));
         //java.io
         builtIns.put(File.class, wrap(ConfigMappers::toFile));
         //java.nio
@@ -252,7 +252,18 @@ public final class ConfigMappers {
      * @return mapped {@code stringValue} to {@code boolean}
      */
     public static Boolean toBoolean(String stringValue) {
-        return Boolean.parseBoolean(stringValue);
+        final String lower = stringValue.toLowerCase();
+        // according to microprofile config specification (section Built-in Converters)
+        switch (lower) {
+        case "true":
+        case "1":
+        case "yes":
+        case "y":
+        case "on":
+            return true;
+        default:
+            return false;
+        }
     }
 
     /**
@@ -747,7 +758,7 @@ public final class ConfigMappers {
         }
 
         StringMap(String key, String value) {
-            this(CollectionsHelper.setOf(CollectionsHelper.mapEntry(key, value)));
+            this(Set.of(Map.entry(key, value)));
         }
 
         StringMap(Map<?, ?> unknownMap) {

@@ -27,24 +27,25 @@ import io.helidon.common.context.Context;
 class ListContextualRegistry implements ContextualRegistry {
     private final Context delegate;
 
-    /**
-     * Creates new instance with defined parent.
-     *
-     * @param parent a parent context or {@code null}.
-     */
-    ListContextualRegistry(Context parent) {
-        if (parent instanceof ListContextualRegistry) {
-            this.delegate = Context.create(((ListContextualRegistry) parent).delegate);
-        } else {
-            this.delegate = Context.create(parent);
-        }
-    }
+    ListContextualRegistry(ContextualRegistry.Builder builder) {
+        String configuredId = builder.id();
+        Context parent = builder.parent();
 
-    /**
-     * Creates new instance.
-     */
-    ListContextualRegistry() {
-        this(null);
+        Context.Builder delegateBuilder = Context.builder();
+
+        if (null != parent) {
+            if (parent instanceof ListContextualRegistry) {
+                delegateBuilder.parent(((ListContextualRegistry) parent).delegate);
+            } else {
+                delegateBuilder.parent(parent);
+            }
+        }
+
+        if (null != configuredId) {
+            delegateBuilder.id(configuredId);
+        }
+
+        this.delegate = delegateBuilder.build();
     }
 
     @Override

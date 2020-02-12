@@ -34,9 +34,30 @@ import io.grpc.MethodDescriptor;
  * @param <T>  the type of value to to be marshalled
  */
 @Singleton
-@Named("java")
+@Named(JavaMarshaller.NAME)
 public class JavaMarshaller<T>
         implements MethodDescriptor.Marshaller<T> {
+
+    /**
+     * The name of this marshaller.
+     */
+    public static final String NAME = "java";
+
+    /**
+     * A singleton instance of a {@link JavaMarshaller}.
+     */
+    public static final JavaMarshaller INSTANCE = new JavaMarshaller();
+
+    /**
+     * Obtain the singleton instance of a {@link JavaMarshaller}.
+     * @param <T> the type the marshaller supports
+     * @return an instance of a {@link JavaMarshaller}
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> JavaMarshaller<T> instance() {
+        return INSTANCE;
+    }
+
 
     @Override
     public InputStream stream(T obj) {
@@ -56,6 +77,19 @@ public class JavaMarshaller<T>
             return (T) ois.readObject();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * A {@link MarshallerSupplier} implementation that supplies
+     * instances of {@link JavaMarshaller}.
+     */
+    @Named("java")
+    public static class Supplier
+            implements MarshallerSupplier {
+        @Override
+        public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
+            return new JavaMarshaller<>();
         }
     }
 }

@@ -28,8 +28,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import com.oracle.bedrock.testsupport.deferred.Eventually;
 import org.junit.jupiter.api.Test;
 
+import static com.oracle.bedrock.deferred.DeferredHelper.invoking;
+import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.completeAsync;
+import static io.helidon.grpc.core.ResponseHelper.stream;
+import static io.helidon.grpc.core.ResponseHelper.streamAsync;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -55,7 +61,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.complete(observer, "foo");
+        complete(observer, "foo");
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -71,7 +77,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.complete(observer, stage);
+        complete(observer, stage);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -90,7 +96,7 @@ public class GrpcServiceTest {
 
         future.completeExceptionally(error);
 
-        service.complete(observer, future);
+        complete(observer, future);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -105,7 +111,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, stage);
+        completeAsync(observer, stage);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -124,7 +130,7 @@ public class GrpcServiceTest {
 
         future.completeExceptionally(error);
 
-        service.completeAsync(observer, future);
+        completeAsync(observer, future);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -139,7 +145,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, stage, EXECUTOR);
+        completeAsync(observer, stage, EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -158,7 +164,7 @@ public class GrpcServiceTest {
 
         future.completeExceptionally(error);
 
-        service.completeAsync(observer, future, EXECUTOR);
+        completeAsync(observer, future, EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -173,7 +179,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.complete(observer, callable);
+        complete(observer, callable);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -190,7 +196,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.complete(observer, callable);
+        complete(observer, callable);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -205,7 +211,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, callable);
+        completeAsync(observer, callable);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -222,7 +228,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, callable);
+        completeAsync(observer, callable);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -237,7 +243,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, callable, EXECUTOR);
+        completeAsync(observer, callable, EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -254,7 +260,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, callable, EXECUTOR);
+        completeAsync(observer, callable, EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -269,7 +275,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.complete(observer, runnable, "foo");
+        complete(observer, runnable, "foo");
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -286,7 +292,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.complete(observer, runnable, "foo");
+        complete(observer, runnable, "foo");
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -301,7 +307,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, callable, "foo");
+        completeAsync(observer, callable, "foo");
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -318,7 +324,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, runnable, "foo");
+        completeAsync(observer, runnable, "foo");
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -333,7 +339,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, runnable, "foo", EXECUTOR);
+        completeAsync(observer, runnable, "foo", EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -350,7 +356,7 @@ public class GrpcServiceTest {
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
 
-        service.completeAsync(observer, runnable, "foo", EXECUTOR);
+        completeAsync(observer, runnable, "foo", EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -366,7 +372,7 @@ public class GrpcServiceTest {
         GrpcService                service  = new GrpcServiceStub();
         List<String> list     = Arrays.asList("One", "Two", "Three");
 
-        service.stream(observer, list.stream());
+        stream(observer, list.stream());
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -382,7 +388,7 @@ public class GrpcServiceTest {
         GrpcService                service  = new GrpcServiceStub();
         List<String>               list     = Arrays.asList("One", "Two", "Three");
 
-        service.streamAsync(observer, list.stream(), EXECUTOR);
+        streamAsync(observer, list.stream(), EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -398,7 +404,7 @@ public class GrpcServiceTest {
         GrpcService                service  = new GrpcServiceStub();
         List<String>               list     = Arrays.asList("One", "Two", "Three");
 
-        service.stream(observer, list::stream);
+        stream(observer, list::stream);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -414,7 +420,7 @@ public class GrpcServiceTest {
         GrpcService                service  = new GrpcServiceStub();
         List<String>               list     = Arrays.asList("One", "Two", "Three");
 
-        service.streamAsync(observer, list::stream, EXECUTOR);
+        streamAsync(observer, list::stream, EXECUTOR);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -434,7 +440,7 @@ public class GrpcServiceTest {
 
         when(supplier.get()).thenThrow(error);
 
-        service.stream(observer, supplier);
+        stream(observer, supplier);
 
         assertThat(observer.awaitTerminalEvent(), is(true));
 
@@ -448,7 +454,7 @@ public class GrpcServiceTest {
         CompletableFuture<Void>    future   = new CompletableFuture<>();
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
-        Consumer<String> consumer = service.stream(observer, future);
+        Consumer<String> consumer = stream(observer, future);
 
         consumer.accept("One");
         consumer.accept("Two");
@@ -468,13 +474,13 @@ public class GrpcServiceTest {
         CompletableFuture<Void>    future   = new CompletableFuture<>();
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
-        Consumer<String>           consumer = service.streamAsync(observer, future);
+        Consumer<String>           consumer = streamAsync(observer, future);
 
         consumer.accept("One");
         consumer.accept("Two");
         consumer.accept("Three");
 
-        observer.awaitCount(3);
+        Eventually.assertThat(invoking(this).valueCount(observer), is(3));
 
         future.complete(null);
 
@@ -492,12 +498,13 @@ public class GrpcServiceTest {
         CompletableFuture<Void>    future   = new CompletableFuture<>();
         TestStreamObserver<String> observer = new TestStreamObserver<>();
         GrpcService                service  = new GrpcServiceStub();
-        Consumer<String>           consumer = service.streamAsync(observer, future, EXECUTOR);
+        Consumer<String>           consumer = streamAsync(observer, future, EXECUTOR);
 
         consumer.accept("One");
         consumer.accept("Two");
         consumer.accept("Three");
-        observer.awaitCount(3);
+
+        Eventually.assertThat(invoking(this).valueCount(observer), is(3));
 
         future.complete(null);
 
@@ -510,6 +517,11 @@ public class GrpcServiceTest {
         assertThat(observer.values(), containsInAnyOrder("One", "Two", "Three"));
     }
 
+    // must be public - used in Eventually.assertThat
+    public int valueCount(TestStreamObserver<?> observer) {
+        List<?> values = observer.values();
+        return values == null ? 0 : values.size();
+    }
 
     private class GrpcServiceStub
             implements GrpcService {

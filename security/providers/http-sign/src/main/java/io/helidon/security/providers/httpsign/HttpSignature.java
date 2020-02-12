@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.security.SecurityEnvironment;
 
@@ -48,7 +47,7 @@ import io.helidon.security.SecurityEnvironment;
 class HttpSignature {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private static final Logger LOGGER = Logger.getLogger(HttpSignature.class.getName());
-    private static final List<String> DEFAULT_HEADERS = CollectionsHelper.listOf("date");
+    private static final List<String> DEFAULT_HEADERS = List.of("date");
     private static final byte[] EMPTY_BYTES = new byte[0];
 
     private final String keyId;
@@ -355,7 +354,7 @@ class HttpSignature {
                     // there are two headers we understand and may want to add to request
                     if ("date".equalsIgnoreCase(header)) {
                         String date = ZonedDateTime.now(ZoneId.of("GMT")).format(DATE_FORMATTER);
-                        headerValues = CollectionsHelper.listOf(date);
+                        headerValues = List.of(date);
                         newHeaders.put("date", headerValues);
 
                         LOGGER.finest(() -> "Added date header to request: " + date);
@@ -363,7 +362,7 @@ class HttpSignature {
                         URI uri = env.targetUri();
 
                         String host = uri.getHost() + ":" + uri.getPort();
-                        headerValues = CollectionsHelper.listOf(host);
+                        headerValues = List.of(host);
                         newHeaders.put("host", headerValues);
 
                         LOGGER.finest(() -> "Added host header to request: " + host);

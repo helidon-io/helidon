@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.grpc.server;
 
 import java.util.Arrays;
@@ -24,83 +23,28 @@ import java.util.Set;
 import io.opentracing.contrib.grpc.OperationNameConstructor;
 
 /**
- * The configuration for gRPC tracing.
+ * Backward compatibility only.
+ * @deprecated use {@link io.helidon.grpc.server.GrpcTracingConfig}
  */
-public class TracingConfiguration {
-    /**
-     * A flag indicating whether to log streaming.
-     */
-    private OperationNameConstructor operationNameConstructor;
-
-    /**
-     * A flag indicating verbose logging.
-     */
-    private boolean streaming;
-
-    /**
-     * A flag indicating verbose logging.
-     */
-    private boolean verbose;
-
-    /**
-     * The set of attributes to log in spans.
-     */
-    private Set<ServerRequestAttribute> tracedAttributes;
-
-    /**
-     * Private constructor called by the {@link Builder}.
-     *
-     * @param operationNameConstructor the operation name constructor
-     * @param streaming                flag indicating whether to log streaming
-     * @param verbose                  flag indicating verbose logging
-     * @param tracedAttributes         the set of attributes to log in spans
-     */
+@Deprecated
+public class TracingConfiguration extends GrpcTracingConfig {
     private TracingConfiguration(OperationNameConstructor operationNameConstructor,
                                  Set<ServerRequestAttribute> tracedAttributes,
                                  boolean streaming,
                                  boolean verbose) {
-        this.operationNameConstructor = operationNameConstructor;
-        this.tracedAttributes = tracedAttributes;
-        this.streaming = streaming;
-        this.verbose = verbose;
-    }
-
-    /**
-     * @return the configured verbose.
-     */
-    public boolean isVerbose() {
-        return verbose;
-    }
-
-    /**
-     * @return the configured streaming.
-     */
-    public boolean isStreaming() {
-        return streaming;
-    }
-
-    /**
-     * @return the set of configured tracedAttributes.
-     */
-    public Set<ServerRequestAttribute> tracedAttributes() {
-        return tracedAttributes;
-    }
-
-    /**
-     * @return the configured operationNameConstructor.
-     */
-    public OperationNameConstructor operationNameConstructor() {
-        return operationNameConstructor;
+        super(operationNameConstructor, tracedAttributes, streaming, verbose);
     }
 
     /**
      * Builds the configuration of a tracer.
+     * @deprecated use {@link GrpcTracingConfig#builder()} instead
      */
+    @Deprecated
     public static class Builder {
         /**
          * Creates a Builder with default configuration.
          */
-        public Builder() {
+        Builder() {
             operationNameConstructor = OperationNameConstructor.DEFAULT;
             streaming = false;
             verbose = false;
@@ -147,7 +91,7 @@ public class TracingConfiguration {
         }
 
         /**
-         * @return a TracingConfiguration with this Builder's configuration
+         * @return a GrpcTracingConfig with this Builder's configuration
          */
         public TracingConfiguration build() {
             return new TracingConfiguration(operationNameConstructor, tracedAttributes, streaming, verbose);

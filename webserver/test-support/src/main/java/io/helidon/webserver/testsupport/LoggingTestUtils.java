@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,7 @@ public final class LoggingTestUtils {
     public static void initializeLogging() {
         if (System.getProperty("java.util.logging.config.file") == null) {
             try (InputStream stream = LoggingTestUtils.class.getResourceAsStream("/logging-test.properties")) {
-                if (null != stream) {
-                    LogManager.getLogManager().readConfiguration(stream);
-                }
+                LogManager.getLogManager().readConfiguration(stream);
             } catch (IOException e) {
                 // ignored for now
             }

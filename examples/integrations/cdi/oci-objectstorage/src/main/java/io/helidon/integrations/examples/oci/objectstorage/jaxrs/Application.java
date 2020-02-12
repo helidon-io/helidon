@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 
 /**
- * A JAX-RS {@linkplain javax.ws.rs.core.Application application} in
- * {@linkplain ApplicationScoped application scope}.
+ * A JAX-RS {@linkplain javax.ws.rs.core.Application application} in {@linkplain ApplicationScoped application scope}.
  *
  * @see #getClasses()
  */
@@ -32,31 +31,30 @@ import javax.ws.rs.ApplicationPath;
 @ApplicationPath("/")
 public class Application extends javax.ws.rs.core.Application {
 
-  private final Set<Class<?>> classes;
+    private final Set<Class<?>> classes;
 
-  /**
-   * Creates a new {@link Application}.
-   */
-  public Application() {
-    super();
-    final Set<Class<?>> classes = new HashSet<>();
-    classes.add(HelidonLogoResource.class);
-    this.classes = Collections.unmodifiableSet(classes);
-  }
+    /**
+     * Creates a new {@link Application}.
+     */
+    public Application() {
+        super();
+        final Set<Class<?>> classes = new HashSet<>();
+        classes.add(HelidonLogoResource.class);
+        this.classes = Collections.unmodifiableSet(classes);
+    }
 
-  /**
-   * Returns a non-{@code null} {@linkplain
-   * java.util.Collections#unmodifiableSet(Set) immutable
-   * <code>Set</code>} of {@link Class}es that comprise this JAX-RS
-   * application.
-   *
-   * @return a non-{@code null} {@linkplain
-   * java.util.Collections#unmodifiableSet(Set) immutable
-   * <code>Set</code>}
-   */
-  @Override
-  public Set<Class<?>> getClasses() {
-    return this.classes;
-  }
+    /**
+     * Returns a non-{@code null} {@linkplain
+     * java.util.Collections#unmodifiableSet(Set) immutable
+     * <code>Set</code>} of {@link Class}es that comprise this JAX-RS application.
+     *
+     * @return a non-{@code null} {@linkplain
+     * java.util.Collections#unmodifiableSet(Set) immutable
+     * <code>Set</code>}
+     */
+    @Override
+    public Set<Class<?>> getClasses() {
+        return this.classes;
+    }
 
 }

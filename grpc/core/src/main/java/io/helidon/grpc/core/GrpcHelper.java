@@ -150,4 +150,42 @@ public final class GrpcHelper {
 
         return httpStatus;
     }
+
+    /**
+     * Ensure that a {@link Throwable} is either a {@link StatusRuntimeException} or
+     * a {@link StatusException}.
+     *
+     * @param thrown  the {@link Throwable} to test
+     * @param status  the {@link Status} to use if the {@link Throwable} has to be converted
+     * @return  the {@link Throwable} if it is a {@link StatusRuntimeException} or a
+     *          {@link StatusException}, or a new {@link StatusException} created from the
+     *          specified {@link Status} with the {@link Throwable} as the cause.
+     */
+    public static Throwable ensureStatusException(Throwable thrown, Status status) {
+        if (thrown instanceof StatusRuntimeException || thrown instanceof StatusException) {
+            return thrown;
+        } else {
+            return status.withCause(thrown).asException();
+        }
+    }
+
+    /**
+     * Ensure that a {@link Throwable} is a {@link StatusRuntimeException}.
+     *
+     * @param thrown  the {@link Throwable} to test
+     * @param status  the {@link Status} to use if the {@link Throwable} has to be converted
+     * @return  the {@link Throwable} if it is a {@link StatusRuntimeException} or a new
+     *          {@link StatusRuntimeException} created from the specified {@link Status}
+     *          with the {@link Throwable} as the cause.
+     */
+    public static StatusRuntimeException ensureStatusRuntimeException(Throwable thrown, Status status) {
+        if (thrown instanceof StatusRuntimeException) {
+            return (StatusRuntimeException) thrown;
+        } else if (thrown instanceof StatusException) {
+            StatusException ex = (StatusException) thrown;
+            return new StatusRuntimeException(ex.getStatus(), ex.getTrailers());
+        } else {
+            return status.withCause(thrown).asRuntimeException();
+        }
+    }
 }

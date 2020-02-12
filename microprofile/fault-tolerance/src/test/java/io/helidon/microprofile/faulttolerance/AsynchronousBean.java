@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
@@ -62,9 +63,9 @@ public class AsynchronousBean {
         throw new RuntimeException("Oops");
     }
 
-    public String onFailure() {
+    public CompletableFuture<String> onFailure() {
         FaultToleranceTest.printStatus("AsynchronousBean::onFailure", "success");
-        return "fallback";
+        return CompletableFuture.completedFuture("fallback");
     }
 
     /**
@@ -126,5 +127,21 @@ public class AsynchronousBean {
         called = true;
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFutureWithFallback", "success");
         return CompletableFuture.completedFuture("success");
+    }
+
+    /**
+     * Async call with fallback using a {@link java.util.concurrent.CompletableFuture}
+     * that fails.
+     *
+     * @return A completable future.
+     */
+    @Asynchronous
+    @Fallback(fallbackMethod = "onFailure")
+    public CompletableFuture<String> asyncCompletableFutureWithFallbackFailure() {
+        called = true;
+        FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFutureWithFallbackFailure", "failure");
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new IOException("oops"));
+        return future;
     }
 }

@@ -16,7 +16,8 @@
 
 package io.helidon.grpc.server;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
 
@@ -54,8 +55,8 @@ public class BindableServiceImplTest {
         ServerInterceptor interceptorFive = spy(new InterceptorStub());
         ServerInterceptor interceptorSix = spy(new InterceptorStub());
 
-        PriorityBag<ServerInterceptor> global = new PriorityBag<>(InterceptorPriorities.USER);
-        global.addAll(CollectionsHelper.listOf(interceptorOne, interceptorTwo, interceptorThree));
+        PriorityBag<ServerInterceptor> global = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
+        global.addAll(List.of(interceptorOne, interceptorTwo, interceptorThree));
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(new Service())
                 .intercept(interceptorTwo)
@@ -64,7 +65,7 @@ public class BindableServiceImplTest {
                 .unary("foo", this::unary, rules -> rules.intercept(interceptorThree, interceptorFour, interceptorSix))
                 .build();
 
-        BindableServiceImpl bindableService = new BindableServiceImpl(descriptor, global);
+        BindableServiceImpl bindableService = BindableServiceImpl.create(descriptor, global);
         ServerServiceDefinition definition = bindableService.bindService();
         ServerMethodDefinition<?, ?> method = definition.getMethod("Service/foo");
         ServerCallHandler<?, ?> callHandler = method.getServerCallHandler();

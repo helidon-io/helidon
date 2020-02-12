@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,9 @@
 package io.helidon.config.etcd;
 
 import java.net.URI;
-import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigMappingException;
-import io.helidon.config.MissingValueException;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClientFactory;
 import io.helidon.config.etcd.internal.client.v2.EtcdV2ClientFactory;
@@ -52,71 +49,100 @@ import io.helidon.config.spi.PollingStrategy;
  * are set, then {@code parser} has precedence.
  */
 public final class EtcdConfigSourceBuilder
-        extends AbstractParsableConfigSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint> {
+        extends AbstractParsableConfigSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint, EtcdConfigSource> {
+
+    /**
+     * Default Etcd API version ({@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi#v2}).
+     */
+    public static final EtcdApi DEFAULT_VERSION = EtcdApi.v2;
+    /**
+     * Default Etcd endpoint ({@code http://localhost:2379}).
+     */
+    public static final URI DEFAULT_URI = URI.create("http://localhost:2379");
 
     private static final String URI_KEY = "uri";
     private static final String KEY_KEY = "key";
     private static final String API_KEY = "api";
-    private final EtcdEndpoint etcdEndpoint;
 
-    private EtcdConfigSourceBuilder(URI uri, String key, EtcdApi api) {
+    private EtcdEndpoint etcdEndpoint;
+
+    private URI uri = DEFAULT_URI;
+    private String key;
+    private EtcdApi version = DEFAULT_VERSION;
+
+    EtcdConfigSourceBuilder() {
         super(EtcdEndpoint.class);
-
-        Objects.requireNonNull(uri, "uri cannot be null");
-        Objects.requireNonNull(key, "key cannot be null");
-        Objects.requireNonNull(api, "api cannot be null");
-
-        this.etcdEndpoint = new EtcdEndpoint(uri, key, api);
     }
 
     /**
-     * Create new instance of builder with specified mandatory Etcd endpoint remote descriptor.
+     * Etcd endpoint remote URI.
      *
-     * @param uri an Etcd endpoint remote URI.
-     * @param key an Etcd key with which the value containing the configuration is associated.
-     * @param api an Etcd API version.
-     * @return new instance of builder
-     * @see #create(Config)
+     * @param uri endpoint URI
+     * @return updated builder instance
      */
-    public static EtcdConfigSourceBuilder create(URI uri, String key, EtcdApi api) {
-        return new EtcdConfigSourceBuilder(uri, key, api);
+    public EtcdConfigSourceBuilder uri(URI uri) {
+        this.uri = uri;
+        return this;
     }
 
     /**
-     * Initializes config source instance from meta configuration properties,
-     * see {@link io.helidon.config.ConfigSources#load(Config)}.
-     * <p>
-     * Mandatory {@code properties}, see {@link #create(URI, String, EtcdApi)}:
+     * Etcd key with which the value containing the configuration is associated.
+     *
+     * @param key key
+     * @return updated builder instance
+     */
+    public EtcdConfigSourceBuilder key(String key) {
+        this.key = key;
+        return this;
+    }
+
+    /**
+     * Etcd API version.
+     *
+     * @param version version, defaults to {@link EtcdApi#v3}
+     * @return updated builder instance
+     */
+    public EtcdConfigSourceBuilder api(EtcdApi version) {
+        this.version = version;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
      * <ul>
-     * <li>{@code uri} - type {@link URI}</li>
-     * <li>{@code key} - type {@code String}</li>
-     * <li>{@code api} - type {@link EtcdApi}, e.g. {@code v3}</li>
+     * <li>{@code uri} - type {@link URI} - Etcd instance remote URI</li>
+     * <li>{@code key} - type {@code String} - Etcd key the configuration is associated with</li>
+     * <li>{@code api} - type {@link EtcdApi} - Etcd API version such as {@code v3}</li>
      * </ul>
-     * Optional {@code properties}: see {@link #init(Config)}.
+     * Optional {@code properties}: see {@link #config(Config)}.
      *
-     * @param metaConfig meta-configuration used to initialize returned config source builder instance from.
-     * @return new instance of config source builder described by {@code metaConfig}
-     * @throws MissingValueException  in case the configuration tree does not contain all expected sub-nodes
-     *                                required by the mapper implementation to provide instance of Java type.
-     * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
-     *                                supplied configuration node to an instance of a given Java type.
-     * @see #create(URI, String, EtcdApi)
-     * @see #init(Config)
+     * @param metaConfig meta-configuration used to update the builder instance from
+     * @return updated builder instance
+     * @see #config(Config)
      */
-    public static EtcdConfigSourceBuilder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return EtcdConfigSourceBuilder.create(metaConfig.get(URI_KEY).as(URI.class).get(),
-                                              metaConfig.get(KEY_KEY).asString().get(),
-                                              metaConfig.get(API_KEY).asString().as(EtcdApi::valueOf).get())
-                .init(metaConfig);
-    }
-
     @Override
-    protected EtcdConfigSourceBuilder init(Config metaConfig) {
-        return super.init(metaConfig);
+    public EtcdConfigSourceBuilder config(Config metaConfig) {
+        metaConfig.get(URI_KEY).as(URI.class).ifPresent(this::uri);
+        metaConfig.get(KEY_KEY).asString().ifPresent(this::key);
+        metaConfig.get(API_KEY).asString().as(EtcdApi::valueOf).ifPresent(this::api);
+
+        return super.config(metaConfig);
     }
 
     @Override
     protected EtcdEndpoint target() {
+        if (null == etcdEndpoint) {
+            if (null == uri) {
+                throw new IllegalArgumentException("etcd URI must be defined");
+            }
+            if (null == key) {
+                throw new IllegalArgumentException("etcd key must be defined");
+            }
+            if (null == version) {
+                throw new IllegalArgumentException("etcd api (version) must be defined");
+            }
+            this.etcdEndpoint = new EtcdEndpoint(uri, key, version);
+        }
         return etcdEndpoint;
     }
 
@@ -134,6 +160,9 @@ public final class EtcdConfigSourceBuilder
      */
     @Override
     public EtcdConfigSource build() {
+        // ensure endpoint is configured
+        target();
+
         return new EtcdConfigSource(this);
     }
 

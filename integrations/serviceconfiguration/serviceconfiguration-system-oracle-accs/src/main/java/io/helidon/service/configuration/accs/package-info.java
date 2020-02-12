@@ -22,5 +22,7 @@
  * @see io.helidon.service.configuration.accs.ACCSSystem
  *
  * @see io.helidon.service.configuration.api.System
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.accs;

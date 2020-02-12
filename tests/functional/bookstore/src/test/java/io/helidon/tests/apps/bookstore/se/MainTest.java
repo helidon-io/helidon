@@ -16,11 +16,6 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,11 +23,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.stream.JsonParser;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
@@ -44,8 +46,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class MainTest {
 
@@ -61,6 +63,8 @@ class MainTest {
     static void setup() throws Exception {
         System.out.println("Using port number" + port);
         healthUrl = new URL("http://localhost:" + port + "/health");
+        appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
+        appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
     }
 
     @AfterEach
@@ -105,7 +109,6 @@ class MainTest {
     void basicTestJsonMP() throws Exception {
         runJsonFunctionalTest("mp", "");
     }
-
 
     @Test
     void basicTestMetricsHealthSE() throws Exception {
@@ -234,6 +237,14 @@ class MainTest {
         jsonReader = Json.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
         assertThat("Checking health outcome", jsonObject.getString("outcome"), is("UP"));
+        assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
+
+        // Verify that built-in health checks are disabled in MP according to
+        // 'microprofile-config.properties' setting in bookstore application
+        if (edition.equals("mp")) {
+            assertThat("Checking built-in health checks disabled",
+                    jsonObject.getJsonArray("checks").size(), is(0));
+        }
     }
 
     @ParameterizedTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ public final class Main {
 
     enum Algorithm {
         aes,
+        gcm,
         rsa
     }
 
@@ -86,7 +87,7 @@ public final class Main {
             }
             String algorithm = cliArgs[0];
 
-            if ("aes".equals(algorithm)) {
+            if ("aes".equals(algorithm) || "gcm".equals(algorithm)) {
                 parseAes(cliArgs);
             } else if ("rsa".equals(algorithm)) {
                 parseRsa(cliArgs);
@@ -162,7 +163,7 @@ public final class Main {
         }
 
         String aes() {
-            return EncryptionFilter.PREFIX_AES + EncryptionUtil.encryptAes(masterPassword.toCharArray(), secret) + '}';
+            return EncryptionFilter.PREFIX_GCM + EncryptionUtil.encryptAes(masterPassword.toCharArray(), secret) + '}';
         }
 
         Algorithm getAlgorithm() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package io.helidon.tracing;
 
 import java.math.BigInteger;
 import java.util.Map;
-
-import io.helidon.common.CollectionsHelper;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -125,7 +123,7 @@ class TagTest {
 
         Map<String, Object> tags = span.tags();
 
-        assertThat(tags, is(CollectionsHelper.mapOf(theTag.key(), theTag.value())));
+        assertThat(tags, is(Map.of(theTag.key(), theTag.value())));
     }
 
     private <T> void testValue(Tag<T> theTag, String key, T value) {

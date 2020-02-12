@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.reactive.Single;
 import java.net.URI;
-
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
-import org.mockito.Mockito;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -36,7 +35,7 @@ public class RequestTestStub extends Request {
     private final Span span;
 
     RequestTestStub() {
-        this(bareRequestMock(), Mockito.mock(WebServer.class));
+        this(bareRequestMock(), mock(WebServer.class));
     }
 
     RequestTestStub(BareRequest req, WebServer webServer) {
@@ -44,18 +43,19 @@ public class RequestTestStub extends Request {
     }
 
     @Override
-    protected Tracer tracer() {
+    public Tracer tracer() {
         return GlobalTracer.get();
     }
 
     RequestTestStub(BareRequest req, WebServer webServer, Span span) {
-        super(req, webServer);
+        super(req, webServer, new HashRequestHeaders(req.headers()));
         this.span = span == null ? mock(Span.class) : span;
     }
 
     private static BareRequest bareRequestMock() {
         BareRequest bareRequestMock = mock(BareRequest.class);
         doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
+        doReturn(Single.empty()).when(bareRequestMock).bodyPublisher();
         return bareRequestMock;
     }
 

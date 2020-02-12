@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
+import io.helidon.common.context.Context;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.ServerInterceptor;
@@ -44,6 +47,13 @@ public interface GrpcServer {
      * @return Server configuration
      */
     GrpcServerConfiguration configuration();
+
+    /**
+     * Gets a {@link GrpcServer} context.
+     *
+     * @return a server context
+     */
+    Context context();
 
     /**
      * Starts the server. Has no effect if server is running.
@@ -235,6 +245,10 @@ public interface GrpcServer {
     final class Builder
             implements io.helidon.common.Builder<GrpcServer> {
 
+        static {
+            HelidonFeatures.register(HelidonFlavor.SE, "gRPC Server");
+        }
+
         private final GrpcRouting routing;
 
         private GrpcServerConfiguration configuration;
@@ -279,14 +293,14 @@ public interface GrpcServer {
          */
         @Override
         public GrpcServer build() {
-            PriorityBag<ServerInterceptor> interceptors = new PriorityBag<>();
-            GrpcServerImpl server = new GrpcServerImpl(configuration);
+            PriorityBag<ServerInterceptor> interceptors = PriorityBag.create();
+            GrpcServerImpl server = GrpcServerImpl.create(configuration);
 
-            interceptors.add(new ContextSettingServerInterceptor());
+            interceptors.add(ContextSettingServerInterceptor.create());
 
             Tracer tracer = configuration.tracer();
             if (tracer != null) {
-                interceptors.add(new GrpcTracing(tracer, configuration.tracingConfig()));
+                interceptors.add(GrpcTracing.create(tracer, configuration.tracingConfig()));
             }
 
             // add the global interceptors from the routing AFTER the tracing interceptor

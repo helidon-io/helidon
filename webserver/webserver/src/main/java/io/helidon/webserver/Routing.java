@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,15 @@ public interface Routing {
      * @see Builder
      */
     interface Rules {
+        /**
+         * Configuration of tracing for this routing.
+         * The configuration may control whether to log specific components,
+         *  spans and span logs, either globally, or for a specific path and method combinations.
+         *
+         * @param webTracingConfig WebServer tracing configuration
+         * @return Updated routing configuration
+         */
+        Rules register(WebTracingConfig webTracingConfig);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -392,6 +401,7 @@ public interface Routing {
 
         private final RouteListRoutingRules delegate = new RouteListRoutingRules();
         private final List<RequestRouting.ErrorHandlerRecord<?>> errorHandlerRecords = new ArrayList<>();
+        private boolean tracingRegistered;
 
         /**
          * Creates new instance.
@@ -400,6 +410,13 @@ public interface Routing {
         }
 
         // --------------- ROUTING API
+
+        @Override
+        public Builder register(WebTracingConfig webTracingConfig) {
+            this.tracingRegistered = true;
+            delegate.register(webTracingConfig);
+            return this;
+        }
 
         @Override
         public Builder register(Supplier<? extends Service>... serviceBuilders) {
@@ -623,6 +640,9 @@ public interface Routing {
          * @return a new instance
          */
         public Routing build() {
+            if (!tracingRegistered) {
+                register(WebTracingConfig.create());
+            }
             RouteListRoutingRules.Aggregation aggregate = delegate.aggregate();
             return new RequestRouting(aggregate.routeList(), errorHandlerRecords, aggregate.newWebServerCallbacks());
         }

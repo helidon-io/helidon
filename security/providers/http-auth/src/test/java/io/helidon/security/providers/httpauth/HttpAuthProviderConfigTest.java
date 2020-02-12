@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.jersey.SecurityFeature;
@@ -145,32 +144,32 @@ public class HttpAuthProviderConfigTest {
 
     @Test
     public void basicTestJack() {
-        testProtected(serverBase, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
+        testProtected(serverBase, "jack", "jackIsGreat", Set.of("user", "admin"), Set.of());
     }
 
     @Test
     public void basicTestJill() {
-        testProtected(serverBase, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
+        testProtected(serverBase, "jill", "password", Set.of("user"), Set.of("admin"));
     }
 
     @Test
     public void digestTestJack() {
-        testProtected(digestUri, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
+        testProtected(digestUri, "jack", "jackIsGreat", Set.of("user", "admin"), Set.of());
     }
 
     @Test
     public void digestTestJill() {
-        testProtected(digestUri, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
+        testProtected(digestUri, "jill", "password", Set.of("user"), Set.of("admin"));
     }
 
     @Test
     public void digestOldTestJack() {
-        testProtected(digestOldUri, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
+        testProtected(digestOldUri, "jack", "jackIsGreat", Set.of("user", "admin"), Set.of());
     }
 
     @Test
     public void digestOldTestJill() {
-        testProtected(digestOldUri, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
+        testProtected(digestOldUri, "jill", "password", Set.of("user"), Set.of("admin"));
     }
 
     @Test

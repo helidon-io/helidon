@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,21 @@
 package io.helidon.config.internal;
 
 import java.net.MalformedURLException;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
-import io.helidon.config.spi.ConfigContext;
-import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link MapConfigSource}.
@@ -49,14 +40,14 @@ public class MapConfigSourceTest {
 
     @Test
     public void testDescription() throws MalformedURLException {
-        ConfigSource configSource = ConfigSources.create(CollectionsHelper.mapOf()).build();
+        ConfigSource configSource = ConfigSources.create(Map.of()).build();
 
         assertThat(configSource.description(), is("MapConfig[map]"));
     }
 
     @Test
     public void testString() {
-        Map<String, String> map = CollectionsHelper.mapOf("app.name", "app-name");
+        Map<String, String> map = Map.of("app.name", "app-name");
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(map))
@@ -67,7 +58,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testInt() {
-        Map<String, String> map = CollectionsHelper.mapOf("app.port", "8080");
+        Map<String, String> map = Map.of("app.port", "8080");
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(map))
@@ -79,7 +70,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testMissingValue() {
-        Map<String, String> map = CollectionsHelper.mapOf();
+        Map<String, String> map = Map.of();
 
         assertThrows(MissingValueException.class, () -> {
             Config config = Config.builder()
@@ -92,7 +83,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testTraverse() {
-        Map<String, String> map = CollectionsHelper.mapOf(
+        Map<String, String> map = Map.of(
                 "app.name", "app-name",
                 "app.port", "8080",
                 "security", "on");
@@ -110,7 +101,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testChildren() {
-        Map<String, String> map = CollectionsHelper.mapOf(
+        Map<String, String> map = Map.of(
                 "app.name", "app-name",
                 "app.port", "8080");
 
@@ -135,7 +126,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testMapToCustomClass() {
-        Map<String, String> map = CollectionsHelper.mapOf("app.name", "app-name");
+        Map<String, String> map = Map.of("app.name", "app-name");
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(map))
@@ -146,66 +137,6 @@ public class MapConfigSourceTest {
                            .map(Name::fromString)
                            .map(Name::getName),
                    is(Optional.of("app-name")));
-    }
-
-    @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
-    public void testBuilderOverlapParentFirst() {
-        Map<String, String> map = new LinkedHashMap<>();
-        map.put("app", "app-name");
-        map.put("app.port", "8080");
-
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).lax().build();
-        mapConfigSource.init(mock(ConfigContext.class));
-        ObjectNode objectNode = mapConfigSource.load().get();
-
-        assertThat(objectNode.entrySet(), hasSize(1));
-        assertThat(objectNode.get("app"), valueNode("app-name"));
-    }
-
-    @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
-    public void testBuilderOverlapParentLast() {
-        Map<String, String> map = new LinkedHashMap<>();
-        map.put("app.port", "8080");
-        map.put("app", "app-name");
-
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).lax().build();
-        mapConfigSource.init(mock(ConfigContext.class));
-        ObjectNode objectNode = mapConfigSource.load().get();
-
-        assertThat(objectNode.entrySet(), hasSize(1));
-        assertThat(((ObjectNode) objectNode.get("app")).get("port"), valueNode("8080"));
-    }
-
-    @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
-    public void testBuilderOverlapStrictParentFirst() {
-        Map<String, String> map = new LinkedHashMap<>();
-        map.put("app", "app-name");
-        map.put("app.port", "8080");
-
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).build();
-
-        assertThrows(ConfigException.class, () -> {
-            mapConfigSource.init(mock(ConfigContext.class));
-            mapConfigSource.load();
-        });
-    }
-
-    @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
-    public void testBuilderOverlapStrictParentLast() {
-        Map<String, String> map = new LinkedHashMap<>();
-        map.put("app.port", "8080");
-        map.put("app", "app-name");
-
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).build();
-
-        assertThrows(ConfigException.class, () -> {
-            mapConfigSource.init(mock(ConfigContext.class));
-            mapConfigSource.load();
-        });
     }
 
     private static class Name {

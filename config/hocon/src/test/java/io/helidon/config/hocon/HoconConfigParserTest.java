@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
@@ -86,7 +86,7 @@ public class HoconConfigParserTest {
         });
 
         assertThat(cpe.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "Cannot read from source",
                            "substitution not resolved",
                            "${aaa}")));
@@ -112,7 +112,7 @@ public class HoconConfigParserTest {
         });
 
         assertThat(cpe.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "Cannot read from source",
                            "not resolve substitution ",
                            "${HOCON_TEST_PROPERTY}")));
@@ -283,8 +283,8 @@ public class HoconConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends Content {
         @Override
-        default String mediaType() {
-            return HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON;
+        default Optional<String> mediaType() {
+            return Optional.of(HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON);
         }
 
         @Override
@@ -300,7 +300,7 @@ public class HoconConfigParserTest {
         private static final String GREETING = "Hello";
         private static final String NAME = "Demo";
         private static final int PAGE_SIZE = 20;
-        private static final List<Integer> BASIC_RANGE = CollectionsHelper.listOf(-20, 20);
+        private static final List<Integer> BASIC_RANGE = List.of(-20, 20);
 
         static final String DEF = ""
                 + "app {\n"

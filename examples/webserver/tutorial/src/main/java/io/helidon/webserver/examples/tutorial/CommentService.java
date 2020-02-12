@@ -21,11 +21,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;

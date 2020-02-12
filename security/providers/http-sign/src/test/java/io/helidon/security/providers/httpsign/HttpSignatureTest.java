@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.security.SecurityEnvironment;
@@ -107,7 +105,7 @@ public class HttpSignatureTest {
         HttpSignature httpSignature = HttpSignature.fromHeader(invalidSignature);
         Optional<String> validate = httpSignature.validate();
 
-        OptionalHelper.from(validate).ifPresentOrElse(msg -> assertThat(msg, containsString("signature is a mandatory")),
+        validate.ifPresentOrElse(msg -> assertThat(msg, containsString("signature is a mandatory")),
                                                       () -> fail("Should have failed validation"));
     }
 
@@ -118,16 +116,16 @@ public class HttpSignatureTest {
         HttpSignature httpSignature = HttpSignature.fromHeader(invalidSignature);
         Optional<String> validate = httpSignature.validate();
 
-        OptionalHelper.from(validate).ifPresentOrElse(msg -> assertThat(msg, containsString("keyId is a mandatory")),
+        validate.ifPresentOrElse(msg -> assertThat(msg, containsString("keyId is a mandatory")),
                                                       () -> fail("Should have failed validation"));
     }
 
     @Test
     public void testSignRsa() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        headers.put("DATE", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
-        headers.put("Authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
-        headers.put("host", CollectionsHelper.listOf("example.org"));
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
 
         SecurityEnvironment env = buildSecurityEnv("/my/resource", headers);
         OutboundTargetDefinition outboundDef = OutboundTargetDefinition.builder("rsa-key-12345")
@@ -139,7 +137,7 @@ public class HttpSignatureTest {
                 .signedHeaders(SignedHeadersConfig.builder()
                                        .defaultConfig(SignedHeadersConfig
                                                               .HeadersConfig
-                                                              .create(CollectionsHelper.listOf("date",
+                                                              .create(List.of("date",
                                                                                                "host",
                                                                                                "(request-target)",
                                                                                                "authorization")))
@@ -158,9 +156,9 @@ public class HttpSignatureTest {
     @Test
     public void testSignHmac() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        headers.put("DATE", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
-        headers.put("Authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
-        headers.put("host", CollectionsHelper.listOf("example.org"));
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
         SecurityEnvironment env = buildSecurityEnv("/my/resource", headers);
 
         OutboundTargetDefinition outboundDef = OutboundTargetDefinition.builder("myServiceKeyId")
@@ -168,7 +166,7 @@ public class HttpSignatureTest {
                 .signedHeaders(SignedHeadersConfig.builder()
                                        .defaultConfig(SignedHeadersConfig
                                                               .HeadersConfig
-                                                              .create(CollectionsHelper.listOf("date",
+                                                              .create(List.of("date",
                                                                                                "host",
                                                                                                "(request-target)",
                                                                                                "authorization")))
@@ -191,7 +189,7 @@ public class HttpSignatureTest {
                 .signedHeaders(SignedHeadersConfig.builder()
                                        .defaultConfig(SignedHeadersConfig
                                                               .HeadersConfig
-                                                              .create(CollectionsHelper.listOf("date",
+                                                              .create(List.of("date",
                                                                                                "host")))
                                        .build())
                 .build();
@@ -221,9 +219,9 @@ public class HttpSignatureTest {
         signature.validate().ifPresent(Assertions::fail);
 
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        headers.put("DATE", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
-        headers.put("Authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
-        headers.put("host", CollectionsHelper.listOf("example.org"));
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
 
         InboundClientDefinition inboundClientDef = InboundClientDefinition.builder("rsa-key-12345")
                 .principalName("theService")
@@ -236,7 +234,7 @@ public class HttpSignatureTest {
 
         signature.validate(buildSecurityEnv("/my/resource", headers),
                            inboundClientDef,
-                           CollectionsHelper.listOf("date"))
+                           List.of("date"))
                 .ifPresent(Assertions::fail);
     }
 
@@ -249,9 +247,9 @@ public class HttpSignatureTest {
         signature.validate().ifPresent(Assertions::fail);
 
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        headers.put("DATE", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
-        headers.put("Authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
-        headers.put("host", CollectionsHelper.listOf("example.org"));
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
         SecurityEnvironment env = buildSecurityEnv("/my/resource", headers);
 
         InboundClientDefinition inboundClientDef = InboundClientDefinition.builder("myServiceKeyId")
@@ -261,7 +259,7 @@ public class HttpSignatureTest {
 
         signature.validate(env,
                            inboundClientDef,
-                           CollectionsHelper.listOf("date"))
+                           List.of("date"))
                 .ifPresent(Assertions::fail);
     }
 
@@ -272,7 +270,7 @@ public class HttpSignatureTest {
         assertThat(httpSignature.getKeyId(), is("rsa-key-1"));
         assertThat(httpSignature.getBase64Signature(), is("Base64(RSA-SHA256(signing string))"));
         assertThat(httpSignature.getHeaders(),
-                   equalTo(CollectionsHelper.listOf("(request-target)", "host", "date", "digest", "content-length")));
+                   equalTo(List.of("(request-target)", "host", "date", "digest", "content-length")));
     }
 
 }

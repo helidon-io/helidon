@@ -16,11 +16,7 @@
 
 package io.helidon.grpc.server;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -32,20 +28,30 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
+import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.BindableService;
 import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
+import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
@@ -63,6 +69,8 @@ import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
+import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.ThreadPerTaskExecutor;
 import org.eclipse.microprofile.health.HealthCheck;
 
 import static java.lang.String.format;
@@ -99,7 +107,7 @@ public class GrpcServerImpl implements GrpcServer {
     /**
      * The health status manager.
      */
-    private HealthServiceImpl healthService = new HealthServiceImpl();
+    private HealthServiceImpl healthService = HealthServiceImpl.create();
 
     /**
      * The {@link HandlerRegistry} to register services.
@@ -116,6 +124,8 @@ public class GrpcServerImpl implements GrpcServer {
      */
     private Map<String, ServiceDescriptor> services = new ConcurrentHashMap<>();
 
+    private final Context context;
+
     // ---- constructors ----------------------------------------------------
 
     /**
@@ -123,8 +133,20 @@ public class GrpcServerImpl implements GrpcServer {
      *
      * @param config the configuration for this server
      */
-    GrpcServerImpl(GrpcServerConfiguration config) {
+    private GrpcServerImpl(GrpcServerConfiguration config) {
         this.config = config;
+        this.context = config.context();
+
+    }
+
+    /**
+     * Create a {@link GrpcServerImpl} with the specified configuration.
+     *
+     * @param config the configuration for this server
+     * @return a {@link GrpcServerImpl} with the specified configuration
+     */
+    static GrpcServerImpl create(GrpcServerConfiguration config) {
+        return new GrpcServerImpl(config);
     }
 
     // ---- GrpcServer interface --------------------------------------------
@@ -134,20 +156,20 @@ public class GrpcServerImpl implements GrpcServer {
         String sName = config.name();
         int port = config.port();
         boolean tls = false;
-        SslConfiguration sslConfig = config.sslConfig();
+        GrpcTlsDescriptor tlsConfig = config.tlsConfig();
         SslContext sslContext = null;
 
         try {
-            if (sslConfig != null) {
-                if (sslConfig.isJdkSSL()) {
+            if (tlsConfig != null) {
+                if (tlsConfig.isJdkSSL()) {
                     SSLContext sslCtx = SSLContextBuilder.create(KeyConfig.pemBuilder()
-                                                                         .key(findResource(sslConfig.getTLSKey()))
-                                                                         .certChain(findResource(sslConfig.getTLSCerts()))
+                                                                         .key(tlsConfig.tlsKey())
+                                                                         .certChain(tlsConfig.tlsCert())
                                                                          .build()).build();
                     sslContext = new JdkSslContext(sslCtx, false, ClientAuth.NONE);
 
                 } else {
-                    sslContext = sslContextBuilder(sslConfig).build();
+                    sslContext = sslContextBuilder(tlsConfig).build();
                 }
             }
 
@@ -177,6 +199,7 @@ public class GrpcServerImpl implements GrpcServer {
             Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
             startFuture.complete(this);
         } catch (Throwable e) {
+            e.printStackTrace();
             LOGGER.log(Level.SEVERE, format("gRPC server [%s]: failed to start on port %d (TLS=%s)", sName, port, tls), e);
             startFuture.completeExceptionally(e);
         }
@@ -214,6 +237,11 @@ public class GrpcServerImpl implements GrpcServer {
     }
 
     @Override
+    public Context context() {
+        return context;
+    }
+
+    @Override
     public CompletionStage<GrpcServer> whenShutdown() {
         return shutdownFuture;
     }
@@ -240,22 +268,6 @@ public class GrpcServerImpl implements GrpcServer {
 
     // ---- helper methods --------------------------------------------------
 
-    private Resource findResource(String name) {
-        try {
-            // Try to locate the resource on the classpath
-            return Resource.create(name);
-        } catch (NullPointerException ignored) {
-            try {
-                // Not found, try File
-                File file = new File(name);
-                return Resource.create(file.toPath());
-            } catch (NullPointerException ignored2) {
-                // Not found, try URI
-                return Resource.create(URI.create(name));
-            }
-        }
-    }
-
     private NettyServerBuilder configureNetty(NettyServerBuilder builder) {
         int workersCount = config.workers();
 
@@ -270,7 +282,10 @@ public class GrpcServerImpl implements GrpcServer {
             LOGGER.log(Level.FINE, () -> "Using NIO transport");
             channelType = NioServerSocketChannel.class;
             boss = new NioEventLoopGroup(1);
-            workers = workersCount <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(workersCount);
+            Executor executor = new ThreadPerTaskExecutor(new ContextAwareThreadFactory(NioEventLoopGroup.class));
+            workers = workersCount <= 0
+                    ? new NioEventLoopGroup(0, executor)
+                    : new NioEventLoopGroup(workersCount, executor);
         }
 
         return builder
@@ -284,10 +299,13 @@ public class GrpcServerImpl implements GrpcServer {
      *
      * @param serviceDescriptor  the service to deploy
      * @param globalInterceptors the global {@link io.grpc.ServerInterceptor}s to wrap all services with
-     * @throws NullPointerException if {@code serviceDescriptor} is {@code null}
+     * @throws NullPointerException if any of the parameters is {@code null}
      */
     public void deploy(ServiceDescriptor serviceDescriptor, PriorityBag<ServerInterceptor> globalInterceptors) {
         Objects.requireNonNull(serviceDescriptor);
+        Objects.requireNonNull(globalInterceptors);
+
+        globalInterceptors.add(new ContextAwareServerInterceptor());
 
         String serverName = config.name();
         BindableService service = serviceDescriptor.bindableService(globalInterceptors);
@@ -365,46 +383,27 @@ public class GrpcServerImpl implements GrpcServer {
     /**
      * Return an instance of SslContextBuilder from the specified SslConfig.
      *
-     * @param sslConfig the ssl configuration
+     * @param tlsConfig the ssl configuration
      * @return an instance of SslContextBuilder
      */
-    protected SslContextBuilder sslContextBuilder(SslConfiguration sslConfig) {
-        String sCertFile = sslConfig.getTLSCerts();
-        String sKeyFile = sslConfig.getTLSKey();
-        String sClientCertFile = sslConfig.getTLSClientCerts();
+    protected SslContextBuilder sslContextBuilder(GrpcTlsDescriptor tlsConfig) {
+        Resource certResource = tlsConfig.tlsCert();
+        Resource keyResource = tlsConfig.tlsKey();
+        Resource caCertResource = tlsConfig.tlsCaCert();
 
-        if (sCertFile == null || sCertFile.isEmpty()) {
+        if (certResource == null) {
             throw new IllegalStateException("gRPC server is configured to use TLS but cert file is not set");
         }
 
-        if (sKeyFile == null || sKeyFile.isEmpty()) {
+        if (keyResource == null) {
             throw new IllegalStateException("gRPC server is configured to use TLS but key file is not set");
         }
 
-        File fileCerts = new File(sCertFile);
-        File fileKey = new File(sKeyFile);
         X509Certificate[] aX509Certificates;
 
-        if (!fileCerts.exists() || !fileCerts.isFile()) {
-            throw new IllegalStateException("gRPC server is configured to use TLS but certs file "
-                                                    + sCertFile + " either does not exist or is not a file");
-        }
-
-        if (!fileKey.exists() || !fileKey.isFile()) {
-            throw new IllegalStateException("gRPC server is configured to use TLS but key file "
-                                                    + sKeyFile + " either does not exist or is not a file");
-        }
-
-        if (sClientCertFile != null) {
-            File fileClientCerts = new File(sClientCertFile);
-
-            if (!fileClientCerts.exists() || !fileClientCerts.isFile()) {
-                throw new IllegalStateException("gRPC server is configured to use TLS but client cert file "
-                                                        + sClientCertFile + " either does not exist or is not a file");
-            }
-
+        if (caCertResource != null) {
             try {
-                aX509Certificates = loadX509Cert(fileClientCerts);
+                aX509Certificates = loadX509Cert(caCertResource.stream());
             } catch (Exception e) {
                 throw new IllegalStateException("gRPC server is configured to use TLS but failed to load trusted CA files");
             }
@@ -413,7 +412,7 @@ public class GrpcServerImpl implements GrpcServer {
             aX509Certificates = new X509Certificate[0];
         }
 
-        SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(fileCerts, fileKey)
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(certResource.stream(), keyResource.stream())
                 .sslProvider(SslProvider.OPENSSL);
 
         if (aX509Certificates.length > 0) {
@@ -426,17 +425,52 @@ public class GrpcServerImpl implements GrpcServer {
         return GrpcSslContexts.configure(sslContextBuilder);
     }
 
-    private static X509Certificate[] loadX509Cert(File... aFile)
-            throws CertificateException, IOException {
+    private static X509Certificate[] loadX509Cert(InputStream in)
+            throws CertificateException {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        X509Certificate[] aCerts = new X509Certificate[aFile.length];
+        X509Certificate[] certs = new X509Certificate[1];
 
-        for (int i = 0; i < aFile.length; i++) {
-            try (InputStream in = new FileInputStream(aFile[i])) {
-                aCerts[i] = (X509Certificate) cf.generateCertificate(in);
-            }
+        certs[0] = (X509Certificate) cf.generateCertificate(in);
+
+        return certs;
+    }
+
+    /**
+     * A {@link ServerInterceptor} that will set the Helidon {@link io.helidon.common.context.Context}
+     * into the gRPC {@link io.grpc.Context}.
+     */
+    @Priority(InterceptorPriorities.CONTEXT - 1)
+    private class ContextAwareServerInterceptor
+            implements ServerInterceptor {
+
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
+                                                                     Metadata headers,
+                                                                     ServerCallHandler<ReqT, RespT> next) {
+
+            Context context = Context.create(context());
+            io.grpc.Context grpcContext = io.grpc.Context.current().withValue(ContextKeys.HELIDON_CONTEXT, context);
+            return io.grpc.Contexts.interceptCall(grpcContext, call, headers, next);
+        }
+    }
+
+    /**
+     * An extension to {@link DefaultThreadFactory} that ensures threads have
+     * a {@link io.helidon.common.context.Context} set.
+     */
+    private class ContextAwareThreadFactory
+            extends DefaultThreadFactory {
+
+        private ContextAwareThreadFactory(Class<?> poolType) {
+            super(poolType);
         }
 
-        return aCerts;
+        @Override
+        public Thread newThread(Runnable runnable) {
+            return super.newThread(() -> {
+                Context context = Context.create(context());
+                Contexts.runInContext(context, runnable);
+            });
+        }
     }
 }

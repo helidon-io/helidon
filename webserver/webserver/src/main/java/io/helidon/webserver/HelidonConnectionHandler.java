@@ -37,7 +37,7 @@ import io.netty.handler.codec.http2.HttpToHttp2ConnectionHandler;
 import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapter;
 import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapterBuilder;
 
-import static io.netty.handler.logging.LogLevel.INFO;
+import static io.netty.handler.logging.LogLevel.DEBUG;
 
 /**
  * Class HelidonConnectionHandler.
@@ -156,7 +156,7 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
     static final class HelidonHttp2ConnectionHandlerBuilder extends
             AbstractHttp2ConnectionHandlerBuilder<HelidonConnectionHandler, HelidonHttp2ConnectionHandlerBuilder> {
 
-        private static final Http2FrameLogger LOGGER = new Http2FrameLogger(INFO, HelidonConnectionHandler.class);
+        private static final Http2FrameLogger LOGGER = new Http2FrameLogger(DEBUG, HelidonConnectionHandler.class);
 
         private int maxContentLength;
 

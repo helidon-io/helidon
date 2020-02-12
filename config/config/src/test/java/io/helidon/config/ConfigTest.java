@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,18 +27,17 @@ import java.util.stream.Collectors;
 import io.helidon.config.Config.Key;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
+import io.helidon.config.spi.ConfigSourceTest;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.config.Config.Type.LIST;
 import static io.helidon.config.Config.Type.OBJECT;
 import static io.helidon.config.Config.Type.VALUE;
-import static io.helidon.config.ConfigSources.create;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -62,12 +61,19 @@ public class ConfigTest {
     private static final String TEST_SYS_PROP_NAME = "this_is_my_property-ConfigTest";
     private static final String TEST_SYS_PROP_VALUE = "This Is My SYS PROPS Value.";
 
+    private static final String TEST_ENV_VAR_NAME = "FOO_BAR";
+    private static final String TEST_ENV_VAR_VALUE = "mapped-env-value";
+
+    private static final String OVERRIDE_NAME = "simple";
+    private static final String OVERRIDE_ENV_VAR_VALUE = "unmapped-env-value";
+    private static final String OVERRIDE_SYS_PROP_VALUE = "unmapped-sys-prop-value";
+
     private static final boolean LOG = false;
 
     private static final String OBJECT_VALUE_PREFIX = "object-";
     private static final String LIST_VALUE_PREFIX = "list-";
 
-    private void testKeyNotSet(Config config) {
+    private static void testKeyNotSet(Config config) {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
         assertThat(config.get(TEST_SYS_PROP_NAME).type(), is(Config.Type.MISSING));
@@ -106,19 +112,23 @@ public class ConfigTest {
     private void testKeyFromEnvVars(Config config) {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(ConfigValues.simpleValue(TEST_ENV_VAR_VALUE)));
+        assertThat(config.get(ConfigSourceTest.TEST_ENV_VAR_NAME).asString(), is(ConfigValues.simpleValue(ConfigSourceTest.TEST_ENV_VAR_VALUE)));
     }
 
     @Test
+    @Disabled
+    // this test is no long valid, as system properties have precedence over env vars
     public void testCreateKeyFromEnvVars() {
-        System.setProperty(TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
+        System.setProperty(ConfigSourceTest.TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
 
         testKeyFromEnvVars(Config.create());
     }
 
     @Test
+    @Disabled
+    // this test is no long valid, as system properties have precedence over env vars
     public void testBuilderDefaultConfigSourceKeyFromEnvVars() {
-        System.setProperty(TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
+        System.setProperty(ConfigSourceTest.TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
 
         testKeyFromEnvVars(Config.builder().build());
     }
@@ -600,7 +610,7 @@ public class ConfigTest {
     @Test
     public void testComplexNodesWithSimpleValues() {
         /*
-        This method uses variants of the methods for creating test configs and 
+        This method uses variants of the methods for creating test configs and
         objects to assign values to the complex nodes (object- and list-type)
         and make sure the values are as expected.
          */
@@ -615,6 +625,77 @@ public class ConfigTest {
         assertThat(config.get("object-1").asString(), is(ConfigValues.simpleValue(obj1Value)));
         assertThat(config.get("object-1.object-2").asString(), is(ConfigValues.simpleValue(obj1_2Value)));
         assertThat(config.get("list-1").asString(), is(ConfigValues.simpleValue(LIST_VALUE_PREFIX + valueQual + "-2")));
+    }
+
+    @Test
+    void testImplicitSysPropAndEnvVarPrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.create();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
+    }
+
+    @Test
+    void testExplicitSysPropAndEnvVarPrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.builder()
+                              .sources(ConfigSources.systemProperties(),
+                                       ConfigSources.environmentVariables())
+                              .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
+
+        config = Config.builder()
+                       .sources(ConfigSources.environmentVariables(),
+                                ConfigSources.systemProperties())
+                       .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_ENV_VAR_VALUE));
+    }
+
+    @Test
+    void testExplicitEnvVarSourceAndImplicitSysPropSourcePrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.builder()
+                              .sources(ConfigSources.environmentVariables())
+                              .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        // Implicit sources always take precedence! (??)
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
+    }
+
+    @Test
+    void testExplicitSysPropSourceAndImplicitEnvVarSourcePrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.builder()
+                              .sources(ConfigSources.systemProperties())
+                              .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        // Implicit sources always take precedence! (??)
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_ENV_VAR_VALUE));
     }
 
     private void testConfigKeyEscapeUnescapeName(String name, String escapedName) {
@@ -632,7 +713,7 @@ public class ConfigTest {
         return createTestConfigBuilder(maxLevels)
                 .build();
     }
-    
+
     public static Config createTestConfig(int maxLevels, String valueQualifier) {
         return createTestConfigBuilder(maxLevels, valueQualifier)
                 .build();
@@ -664,7 +745,7 @@ public class ConfigTest {
         return createTestObjectBuilder(level, maxLevels)
                 .build();
     }
-    
+
     private static ObjectNode createTestObject(
             int level, int maxLevels, String valueQualifier) {
         if (maxLevels < level) {
@@ -727,7 +808,7 @@ public class ConfigTest {
                 .value(LIST_VALUE_PREFIX + valueQualifier)
                 .build();
     }
-    
+
     private static ListNode.Builder createTestListBuilder(int level, int maxLevels) {
         return ListNode.builder()
                 .addValue("string value " + level)

@@ -16,12 +16,13 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
+import java.util.Collection;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import java.util.Collection;
 
 import io.helidon.tests.apps.bookstore.mp.Book;
 
@@ -42,6 +43,9 @@ class BookMapper {
      * This lets us cache the builder factory and improves performance dramatically.
      */
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(null);
+
+    private BookMapper() {
+    }
 
     /**
      *
@@ -84,16 +88,16 @@ class BookMapper {
      * @param jo JsonObject representation of book to get new values from
      * @return Updated book
      */
-    static private Book updateBook(Book book, JsonObject jo) {
-        if (!jo.isNull(ISBN)) book.setIsbn(jo.getString(ISBN));
-        if (!jo.isNull(TITLE)) book.setTitle(jo.getString(TITLE));
-        if (!jo.isNull(DESCRIPTION)) book.setDescription(jo.getString(DESCRIPTION));
-        if (!jo.isNull(SUMMARY)) book.setSummary(jo.getString(SUMMARY));
-        if (!jo.isNull(GENRE)) book.setGenre(jo.getString(GENRE));
-        if (!jo.isNull(CATEGORY)) book.setCategory(jo.getString(CATEGORY));
-        if (!jo.isNull(PUBLISHER)) book.setPublisher(jo.getString(PUBLISHER));
-        if (!jo.isNull(COPYRIGHT)) book.setCopyright(jo.getString(COPYRIGHT));
-        if (!jo.isNull(AUTHORS)) book.setAuthors(AuthorMapper.decode(jo.getJsonArray(AUTHORS)) );
+    private static Book updateBook(Book book, JsonObject jo) {
+        if (jo.containsKey(ISBN)) book.setIsbn(jo.getString(ISBN));
+        if (jo.containsKey(TITLE)) book.setTitle(jo.getString(TITLE));
+        if (jo.containsKey(DESCRIPTION)) book.setDescription(jo.getString(DESCRIPTION));
+        if (jo.containsKey(SUMMARY)) book.setSummary(jo.getString(SUMMARY));
+        if (jo.containsKey(GENRE)) book.setGenre(jo.getString(GENRE));
+        if (jo.containsKey(CATEGORY)) book.setCategory(jo.getString(CATEGORY));
+        if (jo.containsKey(PUBLISHER)) book.setPublisher(jo.getString(PUBLISHER));
+        if (jo.containsKey(COPYRIGHT)) book.setCopyright(jo.getString(COPYRIGHT));
+        if (jo.containsKey(AUTHORS)) book.setAuthors(AuthorMapper.decode(jo.getJsonArray(AUTHORS)));
         return book;
     }
 }

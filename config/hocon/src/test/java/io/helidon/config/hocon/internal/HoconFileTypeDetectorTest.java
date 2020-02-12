@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,29 @@
 
 package io.helidon.config.hocon.internal;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 
-import io.helidon.config.ConfigHelper;
+import io.helidon.common.media.type.MediaTypes;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.testing.OptionalMatcher.value;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests {@link HoconFileTypeDetector}.
+ * File type detector for hocon is now obsolete.
+ * Tests left in to make sure we detect these types as expected
  */
 public class HoconFileTypeDetectorTest {
 
     @Test
-    public void testProbeContentTypeHocon() throws IOException {
-        assertThat(ConfigHelper.detectContentType(Paths.get("config.conf")), is("application/hocon"));
+    public void testProbeContentTypeHocon() {
+        assertThat(MediaTypes.detectType(Paths.get("config.conf")), value(is("application/hocon")));
     }
 
     @Test
-    public void testProbeContentTypeHoconDirectly() throws IOException {
-        assertThat(new HoconFileTypeDetector().probeContentType(Paths.get("config.conf")), is("application/hocon"));
+    public void testProbeContentTypeJson() {
+        assertThat(MediaTypes.detectType(Paths.get("config.json")), value(is("application/json")));
     }
-
-    @Test
-    public void testProbeContentTypeJson() throws IOException {
-        assertThat(ConfigHelper.detectContentType(Paths.get("config.json")), is("application/json"));
-    }
-
-    @Test
-    public void testProbeContentTypeJsonDirectly() throws IOException {
-        assertThat(new HoconFileTypeDetector().probeContentType(Paths.get("config.json")), is("application/json"));
-    }
-
 }

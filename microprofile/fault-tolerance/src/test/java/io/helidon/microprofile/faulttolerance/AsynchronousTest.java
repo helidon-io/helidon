@@ -105,4 +105,13 @@ public class AsynchronousTest extends FaultToleranceTest {
         completableFuture.get();
         assertThat(bean.wasCalled(), is(true));
     }
+
+    @Test
+    public void testAsyncCompletableFutureWithFallbackFailure() throws Exception {
+        AsynchronousBean bean = newBean(AsynchronousBean.class);
+        assertThat(bean.wasCalled(), is(false));
+        CompletableFuture<String> completableFuture = bean.asyncCompletableFutureWithFallbackFailure();
+        assertThat(completableFuture.get(), is("fallback"));
+        assertThat(bean.wasCalled(), is(true));
+    }
 }

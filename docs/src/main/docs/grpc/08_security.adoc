@@ -113,6 +113,62 @@ security
         roles-allowed: ["admin"]
 ----
 
+=== Client security
+When using the Helidon SE gRPC client API security can be configured for a gRPC service
+or at the individual method level. The client API has a custom `CallCredentials` implementation that
+integrates with the Helidon security APIs.
+
+[source,java]
+.Example configuring client security for a service
+----
+Security security = Security.builder()  // <1>
+        .addProvider(HttpBasicAuthProvider.create(config.get("http-basic-auth")))
+        .build();
+
+GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client")) // <2>
+        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, user)
+        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+        .build();
+
+ClientServiceDescriptor descriptor = ClientServiceDescriptor // <3>
+        .builder(StringService.class)
+        .unary("Lower")
+        .callCredentials(clientSecurity)                     // <4>
+        .build();
+
+GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor); // <5>
+
+String response = client.blockingUnary("Lower", "ABCD"); // <6>
+----
+<1> Create the Helidon `Security` instance (in this case using the basic auth provider)
+<2> Create the `GrpcClientSecurity` gRPC `CallCredentials` adding the user and password
+property expected by the basic auth provider.
+<3> Create the gRPC `ClientServiceDescriptor` for the `StringService` gRPC service.
+<4> Set the `GrpcClientSecurity` instance as the call credentials for all methods of the service
+<5> Create a `GrpcServiceClient` that will allow methods to be called on the service
+<6> Call the "Lower" method which will use the configured basic auth credentials
+
+
+[source,java]
+.Example configuring client security for a specific method
+----
+GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client")) // <1>
+        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, user)
+        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+        .build();
+
+ClientServiceDescriptor descriptor = ClientServiceDescriptor // <2>
+        .builder(StringService.class)
+        .unary("Lower")
+        .unary("Upper", rules -> rules.callCredentials(clientSecurity)) // <3>
+        .build();
+----
+<1> Create the `GrpcClientSecurity` call credentials in the same way as above.
+<2> Create the `ClientServiceDescriptor`, this time with two unary methods, "Lower" and "Upper".
+<3> The "Upper" method is configured to use the `GrpcClientSecurity` call credentials, the "Lower" method
+will be called without any credentials.
+
+
 === Outbound security
 Outbound security covers three scenarios:
 

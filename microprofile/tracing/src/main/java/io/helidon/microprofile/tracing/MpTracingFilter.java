@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,11 @@
  */
 package io.helidon.microprofile.tracing;
 
+import java.net.URI;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
@@ -23,10 +27,16 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.core.Context;
 
+import io.helidon.jersey.common.InvokedResource;
 import io.helidon.tracing.jersey.AbstractTracingFilter;
 
 import io.opentracing.Tracer;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.opentracing.Traced;
 
 /**
  * Adds tracing of Jersey calls using a post-matching filter.
@@ -35,8 +45,14 @@ import io.opentracing.Tracer;
 @ConstrainedTo(RuntimeType.SERVER)
 @Priority(Integer.MIN_VALUE + 5)
 @ApplicationScoped
-public class MpTracingFilter extends AbstractTracingFilter  {
+public class MpTracingFilter extends AbstractTracingFilter {
+    private static final Pattern LOCALHOST_PATTERN = Pattern.compile("127.0.0.1", Pattern.LITERAL);
+
+    @Context
+    private ResourceInfo resourceInfo;
+
     private MpTracingHelper utils;
+    private Function<String, Boolean> skipPatternFunction;
 
     /**
      * Post construct method, initialization procedures.
@@ -44,24 +60,46 @@ public class MpTracingFilter extends AbstractTracingFilter  {
     @PostConstruct
     public void postConstruct() {
         this.utils = MpTracingHelper.create();
+        // use skip pattern first
+        Config config = ConfigProvider.getConfig();
+
+        Optional<String> skipPattern = config.getOptionalValue("mp.opentracing.server.skip-pattern", String.class);
+
+        this.skipPatternFunction = skipPattern.map(Pattern::compile)
+                .map(pattern -> (Function<String, Boolean>) path -> pattern.matcher(path).matches())
+                .orElse(path -> false);
     }
 
     @Override
     protected boolean tracingEnabled(ContainerRequestContext context) {
-        // first let us find if we should trace or not
-        // Optional<Traced> traced = findTraced(context);
-        Optional<Object> traced = Optional.empty();
-
-        if (traced.isPresent()) {
-            // this is handled by CDI extension for annotated resources
+        if (skipPatternFunction.apply(addForwardSlash(context.getUriInfo().getPath()))) {
             return false;
         }
-        return utils.tracingEnabled();
+        return InvokedResource.create(context)
+                .findAnnotation(Traced.class)
+                .map(Traced::value)
+                .orElseGet(utils::tracingEnabled);
+    }
+
+    private String addForwardSlash(String path) {
+        if (path.isEmpty()) {
+            return "/";
+        }
+
+        if (path.charAt(0) == '/') {
+            return path;
+        }
+
+        return "/" + path;
     }
 
     @Override
     protected String spanName(ContainerRequestContext context) {
-        return utils.operationName(context);
+        return InvokedResource.create(context)
+                .findAnnotation(Traced.class)
+                .map(Traced::operationName)
+                .filter(str -> !str.isEmpty())
+                .orElseGet(() -> utils.operationName(context));
     }
 
     @Override
@@ -69,8 +107,34 @@ public class MpTracingFilter extends AbstractTracingFilter  {
 
     }
 
-//    private Optional<Traced> findTraced(ContainerRequestContext requestContext) {
-//        // TODO all annotated by "Traced" must be handled by CDI extension
-//        return Optional.empty();
-//    }
+    @Override
+    protected String url(ContainerRequestContext requestContext) {
+        String hostHeader = requestContext.getHeaderString("host");
+        URI requestUri = requestContext.getUriInfo().getRequestUri();
+
+        if (null != hostHeader) {
+            String query = requestUri.getQuery();
+            if (null == query) {
+                query = "";
+            } else {
+                if (!query.isEmpty()) {
+                    query = "?" + query;
+                }
+            }
+
+            if (hostHeader.contains("127.0.0.1")) {
+                // TODO this is a bug in TCK tests, that expect localhost even though IP is sent
+                hostHeader = LOCALHOST_PATTERN.matcher(hostHeader).replaceAll(Matcher.quoteReplacement("localhost"));
+            }
+
+            // let us use host header instead of local interface
+            return requestUri.getScheme()
+                    + "://"
+                    + hostHeader
+                    + requestUri.getPath()
+                    + query;
+        }
+
+        return requestUri.toString();
+    }
 }

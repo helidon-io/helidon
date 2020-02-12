@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -41,6 +42,7 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
+import io.helidon.security.integration.common.RoleMapTracing;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.providers.oidc.common.OidcConfig;
@@ -77,6 +79,13 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * Json key for token to be retrieved from IDCS response when requesting application token.
      */
     protected static final String ACCESS_TOKEN_KEY = "access_token";
+    /**
+     * Property sent with JAX-RS requests to override parent span context in outbound calls.
+     * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
+     */
+    protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
+
+    private static final int STATUS_NOT_AUTHENTICATED = 401;
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
@@ -181,7 +190,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * @return list of grants obtained from the IDCS response
      */
     protected Optional<List<? extends Grant>> processServerResponse(Response groupResponse, String subjectName) {
-        if (groupResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+        Response.StatusType statusInfo = groupResponse.getStatusInfo();
+        if (statusInfo.getFamily() == Response.Status.Family.SUCCESSFUL) {
             JsonObject jsonObject = groupResponse.readEntity(JsonObject.class);
             JsonArray groups = jsonObject.getJsonArray("groups");
             JsonArray appRoles = jsonObject.getJsonArray("appRoles");
@@ -215,12 +225,25 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
             return Optional.of(result);
         } else {
-            LOGGER.warning("Cannot read groups for user \""
-                                   + subjectName
-                                   + "\". Response code: "
-                                   + groupResponse.getStatus()
-                                   + ", entity: "
-                                   + groupResponse.readEntity(String.class));
+            if (statusInfo.getStatusCode() == STATUS_NOT_AUTHENTICATED) {
+                // most likely not allowed to do this
+                LOGGER.warning("Cannot read groups for user \""
+                                       + subjectName
+                                       + "\". Response code: "
+                                       + groupResponse.getStatus()
+                                       + ", make sure your IDCS client has role \"Authenticator Client\" added on the client"
+                                       + " configuration page"
+                                       + ", entity: "
+                                       + groupResponse.readEntity(String.class));
+            } else {
+                LOGGER.warning("Cannot read groups for user \""
+                                       + subjectName
+                                       + "\". Response code: "
+                                       + groupResponse.getStatus()
+                                       + ", entity: "
+                                       + groupResponse.readEntity(String.class));
+            }
+
             return Optional.empty();
         }
     }
@@ -279,8 +302,9 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @return updated builder instance
          */
         public B config(Config config) {
-            config.get("oidc-config").as(OidcConfig.class).ifPresent(this::oidcConfig);
-            config.get("subject-types").asList(SubjectType.class).ifPresent(list -> list.forEach(this::addSubjectType));
+            config.get("oidc-config").as(OidcConfig::create).ifPresent(this::oidcConfig);
+            config.get("subject-types").asList(cfg -> cfg.asString().map(SubjectType::valueOf).get())
+                    .ifPresent(list -> list.forEach(this::addSubjectType));
             config.get("default-idcs-subject-type").asString().ifPresent(this::defaultIdcsSubjectType);
             return me;
         }
@@ -367,26 +391,31 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
         /**
          * Get the token to use for requests to IDCS.
+         * @param tracing tracing to use when requesting a new token from server
          * @return token content or empty if it could not be obtained
          */
-        protected synchronized Optional<String> getToken() {
+        protected synchronized Optional<String> getToken(RoleMapTracing tracing) {
             if (null == appJwt) {
-                fromServer();
+                fromServer(tracing);
             } else {
                 if (!appJwt.validate(Jwt.defaultTimeValidators()).isValid()) {
-                    fromServer();
+                    fromServer(tracing);
                 }
             }
             return tokenContent;
         }
 
-        private void fromServer() {
+        private void fromServer(RoleMapTracing tracing) {
             MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
             formData.putSingle("grant_type", "client_credentials");
             formData.putSingle("scope", "urn:opc:idm:__myscopes__");
 
-            Response tokenResponse = tokenEndpoint
-                    .request()
+            Invocation.Builder reqBuilder = tokenEndpoint.request();
+
+            tracing.findParent()
+                    .ifPresent(spanContext -> reqBuilder.property(PARENT_CONTEXT_CLIENT_PROPERTY, spanContext));
+
+            Response tokenResponse = reqBuilder
                     .accept(MediaType.APPLICATION_JSON_TYPE)
                     .post(Entity.form(formData));
 

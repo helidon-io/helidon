@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.security.spi.AuditProvider;
 
@@ -99,14 +98,19 @@ final class DefaultAuditProvider implements AuditProvider {
 
         String finalMsg = msg;
 
-        OptionalHelper.from(event.throwable())
+        event.throwable()
                 .ifPresentOrElse(throwable -> auditLogger.log(level,
                                                               finalMsg,
                                                               throwable), () -> auditLogger.log(level, finalMsg));
     }
 
-    private String formatMessage(AuditEvent event) {
-        return String.format(event.messageFormat(), toObjectParams(event.params()));
+    String formatMessage(AuditEvent event) {
+        try {
+            return String.format(event.messageFormat(), toObjectParams(event.params()));
+        } catch (Exception e) {
+            // problem with the format
+            return "Formatting failed for format: " + event.messageFormat() + ", parameters: " + event.params();
+        }
     }
 
     private Object[] toObjectParams(List<AuditEvent.AuditParam> parameters) {
@@ -115,7 +119,7 @@ final class DefaultAuditProvider implements AuditProvider {
 
         for (AuditEvent.AuditParam param : parameters) {
             if (param.isSensitive()) {
-                result.add(param.name() + " (sensitive)");
+                result.add("(sensitive)");
             } else {
                 result.add(param.value().orElse("null"));
             }

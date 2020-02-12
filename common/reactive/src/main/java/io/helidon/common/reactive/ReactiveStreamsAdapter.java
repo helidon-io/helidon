@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.common.reactive;
 
+import java.util.concurrent.Flow;
+
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -23,13 +25,17 @@ import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
 
 /**
- * Static utility methods for converting between Helidon reactive API {@link
- *  Flow} and <a href="http://www.reactive-streams.org/">
- * reactive-streams</a>.
+ * Static utility methods for converting between Helidon reactive API {@link Flow} and
+ * <a href="http://www.reactive-streams.org/">reactive-streams</a>.
+ *
+ * @deprecated This class will be removed in the next major release.
  */
+@Deprecated
 public final class ReactiveStreamsAdapter {
 
-    private ReactiveStreamsAdapter() {} // uninstantiable
+    // uninstantiable
+    private ReactiveStreamsAdapter() {
+    }
 
     /**
      * Return a {@link Flow.Publisher} from a {@link

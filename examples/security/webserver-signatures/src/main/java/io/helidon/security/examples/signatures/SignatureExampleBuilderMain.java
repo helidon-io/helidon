@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.pki.KeyConfig;
@@ -53,9 +52,9 @@ public class SignatureExampleBuilderMain {
     private static WebServer service2Server;
 
     static {
-        addUser("jack", "password", CollectionsHelper.listOf("user", "admin"));
-        addUser("jill", "password", CollectionsHelper.listOf("user"));
-        addUser("john", "password", CollectionsHelper.listOf());
+        addUser("jack", "password", List.of("user", "admin"));
+        addUser("jill", "password", List.of("user"));
+        addUser("john", "password", List.of());
     }
 
     private SignatureExampleBuilderMain() {
@@ -98,8 +97,8 @@ public class SignatureExampleBuilderMain {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 
         // start service 2 first, as it is required by service 1
-        service2Server = SignatureExampleUtil.startServer(routing2());
-        service1Server = SignatureExampleUtil.startServer(routing1());
+        service2Server = SignatureExampleUtil.startServer(routing2(), 9080);
+        service1Server = SignatureExampleUtil.startServer(routing1(), 8080);
 
         System.out.println("Signature example: from builder");
         System.out.println();

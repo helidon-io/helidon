@@ -1,20 +1,15 @@
-
 # Helidon MP Hello World Implicit Example
 
 This examples shows a simple application written using Helidon MP.
 It is implicit because in this example you don't write the
 `main` class, instead you rely on the Microprofile Server main class.
 
-## Build
+## Build and run
 
-```
+With JDK8+
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-microprofile-hello-world-implicit.jar
 ```
 
 Then try the endpoints:

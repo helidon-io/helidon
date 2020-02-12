@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -27,16 +26,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
+
+import io.helidon.microprofile.cdi.HelidonContainer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Class FaultToleranceTest.
@@ -51,9 +48,7 @@ public abstract class FaultToleranceTest {
 
     @BeforeAll
     public static void startCdiContainer() {
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertThat(initializer, is(notNullValue()));
-        cdiContainer = initializer.initialize();
+        cdiContainer = HelidonContainer.instance().start();
     }
 
     @AfterAll
@@ -63,8 +58,12 @@ public abstract class FaultToleranceTest {
         }
     }
 
-    protected <T> T newBean(Class<T> beanClass) {
+    protected static <T> T newBean(Class<T> beanClass) {
         return CDI.current().select(beanClass).get();
+    }
+
+    protected static <T> T newNamedBean(Class<T> beanClass) {
+        return CDI.current().select(beanClass, NamedLiteral.of(beanClass.getSimpleName())).get();
     }
 
     public static void printStatus(String message, String status) {

@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class BookResourceTest {
 
@@ -60,6 +61,7 @@ class BookResourceTest {
                 .request()
                 .get();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        assertNotNull(res.getHeaderString("content-length"));
 
         assertBookStoreSize(1);
 

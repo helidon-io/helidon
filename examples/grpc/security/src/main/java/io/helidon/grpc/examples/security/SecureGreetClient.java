@@ -18,6 +18,8 @@ package io.helidon.grpc.examples.security;
 
 
 import io.helidon.config.Config;
+import io.helidon.grpc.client.ClientServiceDescriptor;
+import io.helidon.grpc.client.GrpcServiceClient;
 import io.helidon.grpc.examples.common.Greet;
 import io.helidon.grpc.examples.common.GreetServiceGrpc;
 import io.helidon.security.Security;
@@ -49,8 +51,8 @@ public class SecureGreetClient {
                 .build();
 
         // Obtain the user name and password from the program arguments
-        String user = args.length >= 2 ? args[0] : null;
-        String password = args.length >= 2 ? args[1] : null;
+        String user = args.length >= 2 ? args[0] : "Ted";
+        String password = args.length >= 2 ? args[1] : "secret";
 
         Config config = Config.create();
 
@@ -66,19 +68,24 @@ public class SecureGreetClient {
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
                 .build();
 
-        // create the GreetService client stub and use the GrpcClientSecurity call credentials
-        GreetServiceGrpc.GreetServiceBlockingStub greetSvc = GreetServiceGrpc.newBlockingStub(channel)
-                .withCallCredentials(clientSecurity);
+        // Create the client service descriptor and add the call credentials
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor
+                .builder(GreetServiceGrpc.getServiceDescriptor())
+                .callCredentials(clientSecurity)
+                .build();
 
-        greet(greetSvc);
-        setGreeting(greetSvc);
-        greet(greetSvc);
+        // create the client for the service
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
+
+        greet(client);
+        setGreeting(client);
+        greet(client);
     }
 
-    private static void greet(GreetServiceGrpc.GreetServiceBlockingStub greetSvc) {
+    private static void greet(GrpcServiceClient client) {
         try {
             Greet.GreetRequest request = Greet.GreetRequest.newBuilder().setName("Aleks").build();
-            Greet.GreetResponse response = greetSvc.greet(request);
+            Greet.GreetResponse response = client.blockingUnary("Greet", request);
 
             System.out.println(response);
         } catch (Exception e) {
@@ -86,10 +93,10 @@ public class SecureGreetClient {
         }
     }
 
-    private static void setGreeting(GreetServiceGrpc.GreetServiceBlockingStub greetSvc) {
+    private static void setGreeting(GrpcServiceClient client) {
         try {
             Greet.SetGreetingRequest setRequest = Greet.SetGreetingRequest.newBuilder().setGreeting("Hey").build();
-            Greet.SetGreetingResponse setResponse = greetSvc.setGreeting(setRequest);
+            Greet.SetGreetingResponse setResponse = client.blockingUnary("SetGreeting", setRequest);
 
             System.out.println(setResponse);
         } catch (Exception e) {

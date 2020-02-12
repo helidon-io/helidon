@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,11 @@ import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.OidcSupport;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.jersey.JerseySupport;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -52,10 +51,9 @@ public final class IdcsMain {
      * Start the example.
      *
      * @param args ignored
-     * @throws InterruptedException if server startup is interrupted.
      * @throws IOException if logging configuration fails
      */
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws IOException {
         // load logging configuration
         LogManager.getLogManager().readConfiguration(IdcsMain.class.getResourceAsStream("/logging.properties"));
 
@@ -64,15 +62,9 @@ public final class IdcsMain {
         Security security = Security.create(config.get("security"));
 
         Routing.Builder routing = Routing.builder()
-                // helper method to load both security and web server security from configuration
-                .register(WebSecurity.create(security, config))
+                .register(WebSecurity.create(security, config.get("security")))
                 // IDCS requires a web resource for redirects
                 .register(OidcSupport.create(config))
-                // and a Jersey resource, also protected
-                .register("/jersey", JerseySupport.builder()
-                        .register(SecurityFeature.builder(security).build())
-                        .register(JerseyResource.class)
-                        .build())
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
                 .get("/rest/profile", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
@@ -83,7 +75,10 @@ public final class IdcsMain {
                             .orElse("Security context is null"));
                 });
 
-        theServer = IdcsUtil.startIt(routing);
+        theServer = WebServer.create(ServerConfiguration.create(config.get("server")),
+                                     routing);
+
+        IdcsUtil.start(theServer);
     }
 
     private static Config buildConfig() {

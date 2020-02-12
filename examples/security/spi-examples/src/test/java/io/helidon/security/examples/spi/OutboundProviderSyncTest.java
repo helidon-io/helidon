@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.security.examples.spi;
 
+import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
@@ -76,6 +76,6 @@ public class OutboundProviderSyncTest {
         OutboundSecurityResponse response = ops.syncOutbound(request, SecurityEnvironment.create(), EndpointConfig.create());
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.requestHeaders().get("X-AUTH-USER"), is(CollectionsHelper.listOf(username)));
+        assertThat(response.requestHeaders().get("X-AUTH-USER"), is(List.of(username)));
     }
 }

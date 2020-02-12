@@ -19,13 +19,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -34,67 +29,92 @@ import java.util.regex.Pattern;
 import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.CreationException;
 import javax.enterprise.inject.spi.Annotated;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.WithAnnotations;
+import javax.enterprise.inject.spi.configurator.BeanConfigurator;
 import javax.inject.Named;
 import javax.sql.DataSource;
+
+import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * An {@link Extension} that arranges for named {@link DataSource}
  * injection points to be satisfied.
  */
-public class HikariCPBackedDataSourceExtension implements Extension {
+public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtension {
 
     private static final Pattern DATASOURCE_NAME_PATTERN =
         Pattern.compile("^(?:javax\\.sql\\.|com\\.zaxxer\\.hikari\\.Hikari)DataSource\\.([^.]+)\\.(.*)$");
-
-    private final Map<String, Properties> masterProperties;
-
-    private final Config config;
 
     /**
      * Creates a new {@link HikariCPBackedDataSourceExtension}.
      */
     public HikariCPBackedDataSourceExtension() {
         super();
-        this.masterProperties = new HashMap<>();
-        this.config = ConfigProvider.getConfig();
     }
 
-    private void beforeBeanDiscovery(@Observes final BeforeBeanDiscovery event) {
-        final Set<? extends String> allPropertyNames = this.getPropertyNames();
-        if (allPropertyNames != null && !allPropertyNames.isEmpty()) {
-            for (final String propertyName : allPropertyNames) {
-                final Optional<String> propertyValue = this.config.getOptionalValue(propertyName, String.class);
-                if (propertyValue != null && propertyValue.isPresent()) {
-                    final Matcher matcher = DATASOURCE_NAME_PATTERN.matcher(propertyName);
-                    assert matcher != null;
-                    if (matcher.matches()) {
-                        final String dataSourceName = matcher.group(1);
-                        Properties properties = this.masterProperties.get(dataSourceName);
-                        if (properties == null) {
-                            properties = new Properties();
-                            this.masterProperties.put(dataSourceName, properties);
-                        }
-                        final String dataSourcePropertyName = matcher.group(2);
-                        properties.setProperty(dataSourcePropertyName, propertyValue.get());
-                    }
-                }
-            }
+    @Override
+    protected final Matcher getDataSourcePropertyPatternMatcher(final String configPropertyName) {
+        final Matcher returnValue;
+        if (configPropertyName == null) {
+            returnValue = null;
+        } else {
+            returnValue = DATASOURCE_NAME_PATTERN.matcher(configPropertyName);
         }
+        return returnValue;
+    }
+
+    @Override
+    protected final String getDataSourceName(final Matcher dataSourcePropertyPatternMatcher) {
+        final String returnValue;
+        if (dataSourcePropertyPatternMatcher == null) {
+            returnValue = null;
+        } else {
+            returnValue = dataSourcePropertyPatternMatcher.group(1);
+        }
+        return returnValue;
+    }
+
+    @Override
+    protected final String getDataSourcePropertyName(final Matcher dataSourcePropertyPatternMatcher) {
+        final String returnValue;
+        if (dataSourcePropertyPatternMatcher == null) {
+            returnValue = null;
+        } else {
+            returnValue = dataSourcePropertyPatternMatcher.group(2);
+        }
+        return returnValue;
+    }
+
+    @Override
+    protected final void addBean(final BeanConfigurator<DataSource> beanConfigurator,
+                                 final Named dataSourceName,
+                                 final Properties dataSourceProperties) {
+        beanConfigurator.addQualifier(dataSourceName)
+            .addTransitiveTypeClosure(HikariDataSource.class)
+            .beanClass(HikariDataSource.class)
+            .scope(ApplicationScoped.class)
+            .createWith(ignored -> new HikariDataSource(new HikariConfig(dataSourceProperties)))
+            .destroyWith((dataSource, ignored) -> {
+                    if (dataSource instanceof AutoCloseable) {
+                        try {
+                            ((AutoCloseable) dataSource).close();
+                        } catch (final RuntimeException runtimeException) {
+                            throw runtimeException;
+                        } catch (final Exception exception) {
+                            throw new CreationException(exception.getMessage(), exception);
+                        }
+                    }
+                });
     }
 
     private void processAnnotatedType(@Observes
@@ -108,11 +128,13 @@ public class HikariCPBackedDataSourceExtension implements Extension {
                 if (dataSourceDefinitions != null && !dataSourceDefinitions.isEmpty()) {
                     for (final DataSourceDefinition dsd : dataSourceDefinitions) {
                         assert dsd != null;
-                        final Entry<? extends String, ? extends Properties> entry = toProperties(dsd);
-                        if (entry != null) {
-                            final String dataSourceName = entry.getKey();
-                            if (dataSourceName != null && !this.masterProperties.containsKey(dataSourceName)) {
-                                this.masterProperties.put(dataSourceName, entry.getValue());
+                        final Set<String> knownDataSourceNames = this.getDataSourceNames();
+                        assert knownDataSourceNames != null;
+                        final String dataSourceName = dsd.name();
+                        if (!knownDataSourceNames.contains(dataSourceName)) {
+                            final Entry<? extends String, ? extends Properties> entry = toProperties(dsd);
+                            if (entry != null) {
+                                this.putDataSourceProperties(dataSourceName, entry.getValue());
                             }
                         }
                     }
@@ -128,99 +150,37 @@ public class HikariCPBackedDataSourceExtension implements Extension {
                 final Type type = injectionPoint.getType();
                 if (type instanceof Class && DataSource.class.isAssignableFrom((Class<?>) type)) {
                     final Set<? extends Annotation> qualifiers = injectionPoint.getQualifiers();
-                    for (final Annotation qualifier : qualifiers) {
-                        if (qualifier instanceof Named) {
-                            final String dataSourceName = ((Named) qualifier).value();
-                            if (dataSourceName != null && !dataSourceName.isEmpty()) {
-                                // The injection point might reference
-                                // a data source name that wasn't
-                                // present in a MicroProfile
-                                // ConfigSource initially.  Some
-                                // ConfigSources that Helidon provides
-                                // can automatically synthesize
-                                // configuration property values upon
-                                // first lookup.  So we give those
-                                // ConfigSources a chance to bootstrap
-                                // here by issuing a request for a
-                                // commonly present data source
-                                // property value.
-                                this.config.getOptionalValue("javax.sql.DataSource."
-                                                             + dataSourceName
-                                                             + ".dataSourceClassName",
-                                                             String.class);
+                    if (qualifiers != null && !qualifiers.isEmpty()) {
+                        final Config config = this.getConfig();
+                        assert config != null;
+                        for (final Annotation qualifier : qualifiers) {
+                            if (qualifier instanceof Named) {
+                                final String dataSourceName = ((Named) qualifier).value();
+                                if (dataSourceName != null && !dataSourceName.isEmpty()) {
+                                    // The injection point might
+                                    // reference a data source name
+                                    // that wasn't present in a
+                                    // MicroProfile ConfigSource
+                                    // initially.  Some ConfigSources
+                                    // that Helidon provides can
+                                    // automatically synthesize
+                                    // configuration property values
+                                    // upon first lookup.  So we give
+                                    // those ConfigSources a chance to
+                                    // bootstrap here by issuing a
+                                    // request for a commonly present
+                                    // data source property value.
+                                    config.getOptionalValue("javax.sql.DataSource."
+                                                            + dataSourceName
+                                                            + ".dataSourceClassName",
+                                                            String.class);
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
-        if (event != null) {
-            final Set<? extends Entry<? extends String, ? extends Properties>> masterPropertiesEntries =
-                this.masterProperties.entrySet();
-            if (masterPropertiesEntries != null && !masterPropertiesEntries.isEmpty()) {
-                for (final Entry<? extends String, ? extends Properties> entry : masterPropertiesEntries) {
-                    if (entry != null) {
-                        event.<HikariDataSource>addBean()
-                            .addQualifier(NamedLiteral.of(entry.getKey())) // ...and Default and Any?
-                            .addTransitiveTypeClosure(HikariDataSource.class)
-                            .beanClass(HikariDataSource.class)
-                            .scope(ApplicationScoped.class)
-                            .createWith(ignored -> new HikariDataSource(new HikariConfig(entry.getValue())))
-                            .destroyWith((dataSource, ignored) -> dataSource.close());
-                    }
-                }
-            }
-        }
-        this.masterProperties.clear();
-    }
-
-    private Set<String> getPropertyNames() {
-        // The MicroProfile Config specification does not say whether
-        // property names must be cached or must not be cached
-        // (https://github.com/eclipse/microprofile-config/issues/370).
-        // It is implied in the MicroProfile Google group
-        // (https://groups.google.com/d/msg/microprofile/tvjgSR9qL2Q/M2TNUQrOAQAJ),
-        // but not in the specification, that ConfigSources can be
-        // mutable and dynamic.  Consequently one would expect their
-        // property names to come and go.  Because of this we have to
-        // make sure to get all property names from all ConfigSources
-        // "by hand".
-        //
-        // (The MicroProfile Config specification also does not say
-        // whether a ConfigSource is thread-safe
-        // (https://github.com/eclipse/microprofile-config/issues/369),
-        // so iteration over its coming-and-going dynamic property
-        // names may be problematic, but there's nothing we can do.)
-        //
-        // As of this writing, the Helidon MicroProfile Config
-        // implementation caches all property names up front, which
-        // may not be correct, but is also not forbidden.
-        final Set<String> returnValue;
-        final Set<String> propertyNames = getPropertyNames(this.config.getConfigSources());
-        if (propertyNames == null || propertyNames.isEmpty()) {
-            returnValue = Collections.emptySet();
-        } else {
-            returnValue = Collections.unmodifiableSet(propertyNames);
-        }
-        return returnValue;
-    }
-
-    private static Set<String> getPropertyNames(final Iterable<? extends ConfigSource> configSources) {
-        final Set<String> returnValue = new HashSet<>();
-        if (configSources != null) {
-            for (final ConfigSource configSource : configSources) {
-                if (configSource != null) {
-                    final Set<String> configSourcePropertyNames = configSource.getPropertyNames();
-                    if (configSourcePropertyNames != null && !configSourcePropertyNames.isEmpty()) {
-                        returnValue.addAll(configSourcePropertyNames);
-                    }
-                }
-            }
-        }
-        return Collections.unmodifiableSet(returnValue);
     }
 
     private static Entry<String, Properties> toProperties(final DataSourceDefinition dsd) {

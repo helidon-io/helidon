@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,9 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getGauge;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
@@ -141,6 +143,18 @@ public class MetricsBean {
             FaultToleranceTest.printStatus("MetricsBean::exerciseGauges()", "failure");
             throw new RuntimeException("Oops");
         }
+    }
+
+    static class TestException extends Exception {
+    }
+
+    @CircuitBreaker(requestVolumeThreshold = 2,
+            failureRatio = 1.0D,
+            delay = 1000,
+            successThreshold = 2,
+            failOn = {TestException.class})
+    public void exerciseBreakerException(boolean runtime) throws Exception {
+        throw runtime ? new RuntimeException("oops") : new TestException();
     }
 
     @Fallback(fallbackMethod = "onFailure")

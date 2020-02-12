@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.config.internal.ClasspathOverrideSource;
 import io.helidon.config.internal.FileOverrideSource;
 import io.helidon.config.internal.UrlOverrideSource;
 import io.helidon.config.spi.AbstractOverrideSource;
@@ -75,7 +74,7 @@ public final class OverrideSources {
      */
     public static AbstractOverrideSource.Builder
             <? extends AbstractOverrideSource.Builder<?, Path>, Path> classpath(String resourceName) {
-        return new ClasspathOverrideSource.ClasspathBuilder(resourceName);
+        return ClasspathOverrideSource.builder().resource(resourceName);
     }
 
     /**
@@ -86,7 +85,7 @@ public final class OverrideSources {
      */
     public static AbstractOverrideSource.Builder
             <? extends AbstractOverrideSource.Builder<?, Path>, Path> file(String file) {
-        return new FileOverrideSource.FileBuilder(Paths.get(file));
+        return FileOverrideSource.builder().path(Paths.get(file));
     }
 
     /**
@@ -97,7 +96,7 @@ public final class OverrideSources {
      */
     public static AbstractOverrideSource.Builder
             <? extends AbstractOverrideSource.Builder<?, URL>, URL> url(URL url) {
-        return new UrlOverrideSource.UrlBuilder(url);
+        return UrlOverrideSource.builder().url(url);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -40,8 +41,10 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
@@ -69,14 +72,15 @@ import io.opentracing.Tracer;
  * @see #builder()
  * @see #create(Config)
  */
-public final class Security {
+// class cannot be final, so CDI can create a proxy for it
+public class Security {
     /**
      * Integration should add a special header to each request. The value will contain the original
      * URI as was issued - for HTTP this is the relative URI including query parameters.
      */
     public static final String HEADER_ORIG_URI = "X_ORIG_URI_HEADER";
 
-    private static final Set<String> RESERVED_PROVIDER_KEYS = CollectionsHelper.setOf(
+    private static final Set<String> RESERVED_PROVIDER_KEYS = Set.of(
             "name",
             "class",
             "is-authentication-provider",
@@ -84,13 +88,17 @@ public final class Security {
             "is-client-security-provider",
             "is-audit-provider");
 
-    private static final Set<String> CONFIG_INTERNAL_PREFIXES = CollectionsHelper.setOf(
+    private static final Set<String> CONFIG_INTERNAL_PREFIXES = Set.of(
             "provider-policy",
             "providers",
             "environment"
     );
 
     private static final Logger LOGGER = Logger.getLogger(Security.class.getName());
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Security");
+    }
 
     private final Collection<Class<? extends Annotation>> annotations = new LinkedList<>();
     private final List<Consumer<AuditProvider.TracedAuditEvent>> auditors = new LinkedList<>();
@@ -343,8 +351,8 @@ public final class Security {
 
     List<? extends OutboundSecurityProvider> resolveOutboundProvider(String providerName) {
         if (null != providerName) {
-            return resolveProvider(OutboundSecurityProvider.class, providerName).map(CollectionsHelper::listOf)
-                    .orElse(CollectionsHelper.listOf());
+            return resolveProvider(OutboundSecurityProvider.class, providerName).map(List::of)
+                    .orElse(List.of());
         }
         return providerSelectionPolicy.selectOutboundProviders();
     }
@@ -405,6 +413,8 @@ public final class Security {
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
         private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
+
+        private Set<String> providerNames = new HashSet<>();
 
         private Builder() {
         }
@@ -625,6 +635,9 @@ public final class Security {
             }
             this.atnProviders.add(namedProvider);
             this.allProviders.put(provider, true);
+            if (null != name) {
+                this.providerNames.add(name);
+            }
             return this;
         }
 
@@ -678,6 +691,9 @@ public final class Security {
             }
             this.atzProviders.add(namedProvider);
             this.allProviders.put(provider, true);
+            if (null != name) {
+                this.providerNames.add(name);
+            }
             return this;
         }
 
@@ -745,6 +761,7 @@ public final class Security {
 
             this.outboundProviders.add(new NamedProvider<>(name, provider));
             this.allProviders.put(provider, true);
+            this.providerNames.add(name);
 
             return this;
         }
@@ -811,7 +828,7 @@ public final class Security {
             }
 
             if (auditProviders.isEmpty()) {
-                DefaultAuditProvider provider = config.as(DefaultAuditProvider::create).get();
+                DefaultAuditProvider provider = DefaultAuditProvider.create(config);
                 addAuditProvider(provider);
             }
 
@@ -821,8 +838,7 @@ public final class Security {
             }
 
             if (atzProviders.isEmpty()) {
-                addAuthorizationProvider(context -> CompletableFuture
-                        .completedFuture(AuthorizationResponse.permit()), "default");
+                addAuthorizationProvider(new DefaultAtzProvider(), "default");
             }
 
             return new Security(this);
@@ -840,70 +856,11 @@ public final class Security {
 
             config.get("tracing.enabled").as(Boolean.class).ifPresent(this::tracingEnabled);
             //iterate through all providers and find them
-            config.get("providers").asList(Config.class).get().forEach(pConf -> {
-                AtomicReference<SecurityProviderService> service = new AtomicReference<>();
-                AtomicReference<Config> providerSpecific = new AtomicReference<>();
-
-                // if we have name and class, use them
-                String className = pConf.get("class").asString().orElse(null);
-
-                if (null == className) {
-                    findProviderService(configKeyToService, knownKeys, pConf, service, providerSpecific);
-                } else {
-                    // explicit class name - the most detailed configuration possible
-                    SecurityProviderService providerService = classNameToService.get(className);
-                    if (null == providerService) {
-                        findProviderSpecificConfig(pConf, providerSpecific);
-                    } else {
-                        service.set(providerService);
-                        providerSpecific.set(pConf.get(providerService.providerConfigKey()));
-                    }
-                }
-
-                Config providerSpecificConfig = providerSpecific.get();
-                SecurityProviderService providerService = service.get();
-
-                if ((null == className) && (null == providerService)) {
-                    throw new SecurityException(
-                            "Each configured provider MUST have a \"class\" configuration property defined or a custom "
-                                    + "configuration section mapped to that provider, supported keys: " + knownKeys);
-                }
-
-                String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
-                boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().orElse(true);
-                boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().orElse(true);
-                boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().orElse(true);
-                boolean isAudit = pConf.get("is-audit-provider").asBoolean().orElse(true);
-                boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean().orElse(true);
-
-                SecurityProvider provider;
-                if (null == providerService) {
-                    provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
-                } else {
-                    provider = providerService.providerInstance(providerSpecificConfig);
-                }
-
-                if (isAuthn && (provider instanceof AuthenticationProvider)) {
-                    addAuthenticationProvider((AuthenticationProvider) provider, name);
-                }
-                if (isAuthz && (provider instanceof AuthorizationProvider)) {
-                    addAuthorizationProvider((AuthorizationProvider) provider, name);
-                }
-                if (isClientSec && (provider instanceof OutboundSecurityProvider)) {
-                    addOutboundSecurityProvider((OutboundSecurityProvider) provider, name);
-                }
-                if (isAudit && (provider instanceof AuditProvider)) {
-                    addAuditProvider((AuditProvider) provider);
-                }
-                if (isSubjectMapper && (provider instanceof SubjectMappingProvider)) {
-                    subjectMappingProvider((SubjectMappingProvider) provider);
-                }
-            });
-
-            if (allProviders.isEmpty()) {
-                throw new SecurityException(
-                        "Security is not configured. At least one security provider MUST be present.");
-            }
+            config.get("providers")
+                    .asList(Config.class)
+                    .ifPresent(confList -> {
+                        confList.forEach(pConf -> providerFromConfig(configKeyToService, classNameToService, knownKeys, pConf));
+                    });
 
             String defaultAtnProvider = config.get("default-authentication-provider").asString().orElse(null);
             if (null != defaultAtnProvider) {
@@ -950,6 +907,67 @@ public final class Security {
                 break;
             default:
                 throw new IllegalStateException("Invalid enum option: " + pType + ", probably version mis-match");
+            }
+        }
+
+        private void providerFromConfig(Map<String, SecurityProviderService> configKeyToService,
+                                        Map<String, SecurityProviderService> classNameToService, String knownKeys, Config pConf) {
+            AtomicReference<SecurityProviderService> service = new AtomicReference<>();
+            AtomicReference<Config> providerSpecific = new AtomicReference<>();
+
+            // if we have name and class, use them
+            String className = pConf.get("class").asString().orElse(null);
+
+            if (null == className) {
+                findProviderService(configKeyToService, knownKeys, pConf, service, providerSpecific);
+            } else {
+                // explicit class name - the most detailed configuration possible
+                SecurityProviderService providerService = classNameToService.get(className);
+                if (null == providerService) {
+                    findProviderSpecificConfig(pConf, providerSpecific);
+                } else {
+                    service.set(providerService);
+                    providerSpecific.set(pConf.get(providerService.providerConfigKey()));
+                }
+            }
+
+            Config providerSpecificConfig = providerSpecific.get();
+            SecurityProviderService providerService = service.get();
+
+            if ((null == className) && (null == providerService)) {
+                throw new SecurityException(
+                        "Each configured provider MUST have a \"class\" configuration property defined or a custom "
+                                + "configuration section mapped to that provider, supported keys: " + knownKeys);
+            }
+
+            String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
+            boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().orElse(true);
+            boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().orElse(true);
+            boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().orElse(true);
+            boolean isAudit = pConf.get("is-audit-provider").asBoolean().orElse(true);
+            boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean().orElse(true);
+
+            SecurityProvider provider;
+            if (null == providerService) {
+                provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
+            } else {
+                provider = providerService.providerInstance(providerSpecificConfig);
+            }
+
+            if (isAuthn && (provider instanceof AuthenticationProvider)) {
+                addAuthenticationProvider((AuthenticationProvider) provider, name);
+            }
+            if (isAuthz && (provider instanceof AuthorizationProvider)) {
+                addAuthorizationProvider((AuthorizationProvider) provider, name);
+            }
+            if (isClientSec && (provider instanceof OutboundSecurityProvider)) {
+                addOutboundSecurityProvider((OutboundSecurityProvider) provider, name);
+            }
+            if (isAudit && (provider instanceof AuditProvider)) {
+                addAuditProvider((AuditProvider) provider);
+            }
+            if (isSubjectMapper && (provider instanceof SubjectMappingProvider)) {
+                subjectMappingProvider((SubjectMappingProvider) provider);
             }
         }
 
@@ -1019,7 +1037,9 @@ public final class Security {
                                             Map<String, SecurityProviderService> classNameToService) {
 
             Set<String> configKeys = new HashSet<>();
-            ServiceLoader<SecurityProviderService> loader = ServiceLoader.load(SecurityProviderService.class);
+            HelidonServiceLoader<SecurityProviderService> loader =
+                    HelidonServiceLoader.create(ServiceLoader.load(SecurityProviderService.class));
+
             loader.forEach(service -> {
                 String configKey = service.providerConfigKey();
                 if (null != configKey) {
@@ -1092,6 +1112,51 @@ public final class Security {
                         .getName() + " as provider selection policy class, yet it is missing public constructor with Providers "
                                                     + "or Providers and Config as parameters.",
                                             e);
+            }
+        }
+
+        /**
+         * Check whether any provider is configured.
+         * @param providerClass type of provider of interest (can be {@link io.helidon.security.spi.AuthenticationProvider} and
+         *                      other interfaces implementing {@link io.helidon.security.spi.SecurityProvider})
+         * @return {@code true} if no provider is configured, {@code false} if there is at least one provider configured
+         */
+        public boolean noProvider(Class<? extends SecurityProvider> providerClass) {
+            if (providerClass.equals(AuthenticationProvider.class)) {
+                return atnProviders.isEmpty();
+            }
+            if (providerClass.equals(AuthorizationProvider.class)) {
+                return atzProviders.isEmpty();
+            }
+            if (providerClass.equals(OutboundSecurityProvider.class)) {
+                return outboundProviders.isEmpty();
+            }
+            if (providerClass.equals(AuditProvider.class)) {
+                return auditProviders.isEmpty();
+            }
+            if (providerClass.equals(SubjectMappingProvider.class)) {
+                return subjectMappingProvider == null;
+            }
+
+            return allProviders.isEmpty();
+        }
+
+        /**
+         * Check whether a provider with the name is configured.
+         * @param name name of a provider
+         * @return true if such a provider is configured
+         */
+        public boolean hasProvider(String name) {
+            return providerNames
+                    .stream()
+                    .anyMatch(name::equals);
+        }
+
+        private static class DefaultAtzProvider implements AuthorizationProvider {
+            @Override
+            public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
+                return CompletableFuture
+                        .completedFuture(AuthorizationResponse.permit());
             }
         }
     }

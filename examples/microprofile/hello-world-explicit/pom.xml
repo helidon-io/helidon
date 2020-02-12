@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,15 +22,16 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.examples.microprofile</groupId>
-        <artifactId>helidon-examples-microprofile-project</artifactId>
-        <version>1.1.2-SNAPSHOT</version>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-mp</artifactId>
+        <version>2.0.0-SNAPSHOT</version>
+        <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-examples-microprofile-hello-world-explicit</artifactId>
     <name>Helidon Microprofile Examples Explicit Hello World</name>
 
     <description>
-        Microprofile 1.1 example with explicit bootstrapping (Server.create(Application.class).start())
+        Microprofile example with explicit bootstrapping (Server.create(Application.class).start())
     </description>
 
     <properties>
@@ -40,32 +41,38 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-1.2</artifactId>
-            <version>${project.version}</version>
+            <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
-            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>make-index</id>
-                        <goals>
-                            <goal>jandex</goal>
-                        </goals>
-                        <phase>process-classes</phase>
                     </execution>
                 </executions>
             </plugin>

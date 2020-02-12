@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,8 @@ import java.util.concurrent.CompletionStage;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.UriInfo;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
@@ -36,6 +32,7 @@ import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.integration.common.SecurityTracing;
 
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -44,7 +41,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -64,8 +60,7 @@ class OptionalSecurityTest {
     private static Security security;
     private static FeatureConfig featureConfig;
     private static ResourceConfig serverConfig;
-    private static ResourceInfo resourceInfo;
-    private static UriInfo uriInfo;
+    private static SecurityTracing tracing;
 
     @BeforeAll
     static void init() {
@@ -80,14 +75,6 @@ class OptionalSecurityTest {
 
         serverConfig = ResourceConfig.forApplication(getApplication());
 
-        resourceInfo = mock(ResourceInfo.class);
-        doReturn(TheResource.class).when(resourceInfo).getResourceClass();
-
-        uriInfo = mock(UriInfo.class);
-        when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
-
-
-
         AuthenticationResponse atr = AuthenticationResponse.builder()
                 .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                 .statusCode(301)
@@ -95,6 +82,8 @@ class OptionalSecurityTest {
 
         clientBuilder = mock(SecurityClientBuilder.class);
         when(clientBuilder.buildAndGet()).thenReturn(atr);
+
+        tracing = SecurityTracing.get();
     }
 
     @Test
@@ -111,14 +100,12 @@ class OptionalSecurityTest {
         secuFilter = new SecurityFilter(featureConfig,
                                         security,
                                         serverConfig,
-                                        resourceInfo,
-                                        uriInfo,
                                         secuContext);
 
         /*
          * The actual tested method
          */
-        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
+        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, tracing.atnTracing());
 
         assertThat(filterContext.isShouldFinish(), is(false));
         assertThat(secuContext.user(), is(Optional.empty()));
@@ -138,13 +125,11 @@ class OptionalSecurityTest {
         secuFilter = new SecurityFilter(featureConfig,
                                         security,
                                         serverConfig,
-                                        resourceInfo,
-                                        uriInfo,
                                         secuContext);
         /*
          * The actual tested method
          */
-        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
+        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, tracing.atnTracing());
 
         assertThat(filterContext.isShouldFinish(), is(true));
         assertThat(secuContext.user(), is(Optional.empty()));
@@ -154,7 +139,7 @@ class OptionalSecurityTest {
         return new Application() {
             @Override
             public Set<Class<?>> getClasses() {
-                return CollectionsHelper.setOf(TheResource.class);
+                return Set.of(TheResource.class);
             }
         };
     }

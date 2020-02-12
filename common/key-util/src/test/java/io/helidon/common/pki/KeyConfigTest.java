@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.helidon.common.pki;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 
@@ -175,6 +175,6 @@ class KeyConfigTest {
 
         assertThat(conf.publicKey(), is(Optional.empty()));
         assertThat(conf.publicCert(), is(Optional.empty()));
-        assertThat("Cert chain must be empty", conf.certChain(), is(CollectionsHelper.listOf()));
+        assertThat("Cert chain must be empty", conf.certChain(), is(List.of()));
     }
 }

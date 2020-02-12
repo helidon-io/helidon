@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
+import io.helidon.security.integration.common.OutboundTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.webserver.ServerRequest;
 
 import io.grpc.CallCredentials;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
-import io.opentracing.Span;
-import io.opentracing.tag.Tags;
 
 import static io.helidon.security.integration.grpc.GrpcSecurity.ABAC_ATTRIBUTE_METHOD;
 
@@ -43,7 +44,7 @@ import static io.helidon.security.integration.grpc.GrpcSecurity.ABAC_ATTRIBUTE_M
  * <p>
  * Only works as part of integration with the Helidon Security component.
  */
-public class GrpcClientSecurity
+public final class GrpcClientSecurity
         extends CallCredentials {
 
     /**
@@ -51,6 +52,10 @@ public class GrpcClientSecurity
      * {@link GrpcClientSecurity.Builder#property(String, Object)}.
      */
     public static final String PROPERTY_PROVIDER = "io.helidon.security.integration.grpc.GrpcClientSecurity.explicitProvider";
+
+    static {
+        HelidonFeatures.register("Security", "Integration", "gRPC Client");
+    }
 
     private final SecurityContext context;
 
@@ -63,10 +68,7 @@ public class GrpcClientSecurity
 
     @Override
     public void applyRequestMetadata(RequestInfo requestInfo, Executor appExecutor, MetadataApplier applier) {
-        Span span = context.tracer()
-                .buildSpan("security:outbound")
-                .asChildOf(context.tracingSpan())
-                .start();
+        OutboundTracing tracing = SecurityTracing.get().outboundTracing();
 
         String explicitProvider = (String) properties.get(PROPERTY_PROVIDER);
 
@@ -87,17 +89,21 @@ public class GrpcClientSecurity
 
             OutboundSecurityClientBuilder clientBuilder = context.outboundClientBuilder()
                     .outboundEnvironment(outboundEnv)
+                    .tracingSpan(tracing.findParent().orElse(null))
+                    .tracingSpan(tracing.findParentSpan().orElse(null))
                     .outboundEndpointConfig(outboundEp)
                     .explicitProvider(explicitProvider);
 
             OutboundSecurityResponse providerResponse = clientBuilder.buildAndGet();
+            SecurityResponse.SecurityStatus status = providerResponse.status();
+            tracing.logStatus(status);
 
-            switch (providerResponse.status()) {
+            switch (status) {
             case FAILURE:
             case FAILURE_FINISH:
-                traceError(span,
-                           providerResponse.throwable().orElse(null),
-                           providerResponse.description().orElse(providerResponse.status().toString()));
+                providerResponse.throwable()
+                        .ifPresentOrElse(tracing::error,
+                                         () -> tracing.error(providerResponse.description().orElse("Failed")));
                 break;
             case ABSTAIN:
             case SUCCESS:
@@ -105,9 +111,6 @@ public class GrpcClientSecurity
             default:
                 break;
             }
-
-            // TODO check response status - maybe entity was updated?
-            // see MIC-6785
 
             Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
@@ -121,12 +124,12 @@ public class GrpcClientSecurity
 
             applier.apply(metadata);
 
-            span.finish();
+            tracing.finish();
         } catch (SecurityException e) {
-            traceError(span, e, null);
+            tracing.error(e);
             applier.fail(Status.UNAUTHENTICATED.withDescription("Security principal propagation error").withCause(e));
         } catch (Exception e) {
-            traceError(span, e, null);
+            tracing.error(e);
             applier.fail(Status.UNAUTHENTICATED.withDescription("Unknown error").withCause(e));
         }
     }
@@ -184,25 +187,10 @@ public class GrpcClientSecurity
                 .orElseThrow(() -> new RuntimeException("Failed to get security context from request, security not configured"));
     }
 
-    private static void traceError(Span span, Throwable throwable, String description) {
-        // failed
-        if (null != throwable) {
-            Tags.ERROR.set(span, true);
-            span.log(CollectionsHelper.mapOf("event", "error",
-                                             "error.object", throwable));
-        } else {
-            Tags.ERROR.set(span, true);
-            span.log(CollectionsHelper.mapOf("event", "error",
-                                             "message", description,
-                                             "error.kind", "SecurityException"));
-        }
-        span.finish();
-    }
-
     /**
      * A builder of {@link GrpcClientSecurity} instances.
      */
-    public static class Builder
+    public static final class Builder
             implements io.helidon.common.Builder<GrpcClientSecurity> {
 
         private final SecurityContext securityContext;

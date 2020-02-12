@@ -93,6 +93,7 @@ class TracerBuilderTest {
                 .addTracerTag("key2", 49)
                 .addTracerTag("key3", true)
                 .enabled(true)
+                .registerGlobal(true)
                 // make sure we do not lose the builder type
                 .first("first")
                 .second("second")
@@ -119,6 +120,7 @@ class TracerBuilderTest {
         private String path;
         private Config config;
         private boolean enabled;
+        private boolean global;
         private Tracer tracer;
 
         @Override
@@ -178,6 +180,12 @@ class TracerBuilderTest {
         @Override
         public MyTracerBuilder enabled(boolean enabled) {
             this.enabled = enabled;
+            return this;
+        }
+
+        @Override
+        public MyTracerBuilder registerGlobal(boolean global) {
+            this.global = global;
             return this;
         }
 

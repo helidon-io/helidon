@@ -15,9 +15,12 @@
  */
 package io.helidon.grpc.server;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -56,6 +59,12 @@ public interface GrpcServerConfiguration {
     int port();
 
     /**
+     * The top level {@link io.helidon.common.context.Context} to be used by the server.
+     * @return a context instance with registered application scoped instances
+     */
+    Context context();
+
+    /**
      * Determine whether use native transport if possible.
      * <p>
      * If native transport support is enabled, gRPC server will use epoll on
@@ -78,7 +87,7 @@ public interface GrpcServerConfiguration {
      *
      * @return a tracing configuration.
      */
-    TracingConfiguration tracingConfig();
+    GrpcTracingConfig tracingConfig();
 
     /**
      * Returns a count of threads in s pool used to tryProcess gRPC requests.
@@ -93,9 +102,9 @@ public interface GrpcServerConfiguration {
      * Returns a SslConfiguration to use with the server socket. If not {@code null} then
      * the server enforces an SSL communication.
      *
-     * @return a SSL context to use
+     * @return a TLS configuration to use
      */
-    SslConfiguration sslConfig();
+    GrpcTlsDescriptor tlsConfig();
 
     /**
      * Creates new instance with default values for all configuration properties.
@@ -139,6 +148,8 @@ public interface GrpcServerConfiguration {
      * A {@link GrpcServerConfiguration} builder.
      */
     final class Builder implements io.helidon.common.Builder<GrpcServerConfiguration> {
+        private static final AtomicInteger GRPC_SERVER_COUNTER = new AtomicInteger(1);
+
         private String name = DEFAULT_NAME;
 
         private int port = DEFAULT_PORT;
@@ -147,11 +158,13 @@ public interface GrpcServerConfiguration {
 
         private Tracer tracer;
 
-        private TracingConfiguration tracingConfig;
+        private GrpcTracingConfig tracingConfig;
 
         private int workers;
 
-        private SslConfiguration sslConfig = null;
+        private GrpcTlsDescriptor tlsConfig = null;
+
+        private Context context;
 
         private Builder() {
         }
@@ -179,7 +192,7 @@ public interface GrpcServerConfiguration {
          * @return an updated builder
          */
         public Builder name(String name) {
-            this.name = name;
+            this.name = name == null ? null : name.trim();
             return this;
         }
 
@@ -193,6 +206,16 @@ public interface GrpcServerConfiguration {
          */
         public Builder port(int port) {
             this.port = port < 0 ? 0 : port;
+            return this;
+        }
+
+        /**
+         * Configure the application scoped context to be used as a parent for webserver request contexts.
+         * @param context top level context
+         * @return an updated builder
+         */
+        public Builder context(Context context) {
+            this.context = context;
             return this;
         }
 
@@ -224,7 +247,7 @@ public interface GrpcServerConfiguration {
          * @param tracingConfig the tracing configuration to set
          * @return an updated builder
          */
-        public Builder tracingConfig(TracingConfiguration tracingConfig) {
+        public Builder tracingConfig(GrpcTracingConfig tracingConfig) {
             this.tracingConfig = tracingConfig;
             return this;
         }
@@ -244,26 +267,82 @@ public interface GrpcServerConfiguration {
         }
 
         /**
-         * Configures SslConfiguration to use with the server socket. If not {@code null} then
-         * the server enforces an SSL communication.
+         * Configures TLS configuration to use with the server socket. If not {@code null} then
+         * the server enforces an TLS communication.
          *
-         * @param sslConfig a SSL context to use
+         * @param tlsConfig a TLS configuration to use
          * @return this builder
          */
-        public Builder sslConfig(SslConfiguration sslConfig) {
-            this.sslConfig = sslConfig;
+        public Builder tlsConfig(GrpcTlsDescriptor tlsConfig) {
+            this.tlsConfig = tlsConfig;
             return this;
+        }
+
+        String name() {
+            return name;
+        }
+
+        int port() {
+            return port;
+        }
+
+        public Context context() {
+            return context;
+        }
+
+        Tracer tracer() {
+            return tracer;
+        }
+
+        GrpcTracingConfig tracingConfig() {
+            return tracingConfig;
+        }
+
+        GrpcTlsDescriptor tlsConfig() {
+            return tlsConfig;
+        }
+
+        boolean useNativeTransport() {
+            return useNativeTransport;
+        }
+
+        int workers() {
+            return workers;
         }
 
         @Override
         public GrpcServerConfiguration build() {
-            return new GrpcServerBasicConfig(name,
-                                             port,
-                                             workers,
-                                             useNativeTransport,
-                                             tracer,
-                                             tracingConfig,
-                                             sslConfig);
+            if (name == null || name.isEmpty()) {
+                name = DEFAULT_NAME;
+            }
+
+            if (port < 0) {
+                port = 0;
+            }
+
+            if (context == null) {
+                context = Context.builder()
+                        .id("grpc-" + GRPC_SERVER_COUNTER.getAndIncrement())
+                        .build();
+            }
+
+            if (tracer == null) {
+                tracer = GlobalTracer.get();
+            }
+
+            if (tracingConfig == null) {
+                tracingConfig = GrpcTracingConfig.create();
+            }
+
+            if (!context.get(Tracer.class).isPresent()) {
+                context.register(tracer);
+            }
+
+            if (workers <= 0) {
+                workers = DEFAULT_WORKER_COUNT;
+            }
+
+            return GrpcServerBasicConfig.create(this);
         }
     }
 }

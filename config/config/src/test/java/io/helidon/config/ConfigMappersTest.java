@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,23 +45,21 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Properties;
-import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import io.helidon.common.CollectionsHelper;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
@@ -78,17 +76,27 @@ public class ConfigMappersTest {
      */
     @Test
     public void testAllToTypeStaticMethodsAreRegistered() {
-        Set<Class<?>> methods = Arrays.asList(ConfigMappers.class.getMethods()).stream()
+
+        Class[] methodArray = Arrays.stream(ConfigMappers.class.getMethods())
                 .filter(method -> Modifier.isPublic(method.getModifiers())) //public
                 .filter(method -> Modifier.isStatic(method.getModifiers())) //static
                 .filter(method -> method.getName().startsWith("to")) //to*
                 .filter(method -> method.getParameterCount() == 1) //single parameter
-                .filter(method -> String.class.equals(method.getParameterTypes()[0]) || //String or Config parameter
-                        Config.class.equals(method.getParameterTypes()[0]))
+                .filter(this::expectedMapperParamType)
                 .map(Method::getReturnType)
-                .collect(Collectors.toSet());
+                .distinct()
+                .toArray(Class[]::new);
 
-        assertThat(ConfigMappers.BUILT_IN_MAPPERS.keySet(), is(methods));
+        assertThat(ConfigMappers.BUILT_IN_MAPPERS.keySet(), hasItems(methodArray));
+    }
+
+    private boolean expectedMapperParamType(Method method) {
+        Class<?> type = method.getParameterTypes()[0];
+
+        //String, CharSequence or Config parameter
+        return String.class.equals(type)
+                || Config.class.equals(type)
+                || CharSequence.class.equals(type);
     }
 
     @Test
@@ -97,7 +105,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "text-text", "string value",
                         "int-p", "2147483647",
                         "long-p", "9223372036854775807",
@@ -116,7 +124,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf("key", stringValue)))
+                .sources(ConfigSources.create(Map.of("key", stringValue)))
                 .build();
 
         assertThat(manager.map(config.get("key"), type), is(expectedValue));
@@ -204,7 +212,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
+                .sources(ConfigSources.create(Map.of("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
                 .build();
 
         assertThat(manager.map(config.get("key"), Pattern.class).toString(),
@@ -241,7 +249,7 @@ public class ConfigMappersTest {
 
     private Config createConfig() {
         return Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "key1", "value1",
                         "key2.key21", "value21",
                         "key2.key22", "value22",

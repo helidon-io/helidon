@@ -1,20 +1,12 @@
-
 # Helidon MP Hello World Explicit Example
 
 This examples shows a simple application written using Helidon MP.
 It is explicit because in this example you write the `main` class
 and explicitly start the microprofile server.
 
-## Build
-
-```
+```bash
 mvn package
-```
-
-## Run
-
-```
-mvn exec:java
+java -jar target/helidon-examples-microprofile-hello-world-explicit.jar
 ```
 
 Then try the endpoints:

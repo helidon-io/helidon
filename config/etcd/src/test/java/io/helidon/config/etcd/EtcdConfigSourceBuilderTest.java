@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,21 @@
 package io.helidon.config.etcd;
 
 import java.net.URI;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Flow;
+import java.util.function.Function;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.MissingValueException;
+import io.helidon.config.MetaConfig;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.PollingStrategyProvider;
 
 import org.junit.jupiter.api.Test;
 
@@ -45,8 +48,10 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testBuilderSuccessful() {
-        EtcdConfigSource etcdConfigSource = EtcdConfigSourceBuilder
-                .create(URI.create("http://localhost:2379"), "/registry", EtcdApi.v2)
+        EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                .uri(URI.create("http://localhost:2379"))
+                .key("/registry")
+                .api(EtcdApi.v2)
                 .mediaType("my/media/type")
                 .build();
 
@@ -55,40 +60,49 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testBuilderWithoutUri() {
-        assertThrows(NullPointerException.class, () -> {
-        EtcdConfigSourceBuilder
-                .create(null, "/registry", EtcdApi.v2)
-                .mediaType("my/media/type")
-                .parser(ConfigParsers.properties())
-                .build();
+        assertThrows(IllegalArgumentException.class, () -> {
+            EtcdConfigSource.builder()
+                    .uri(null)
+                    .key("/registry")
+                    .api(EtcdApi.v2)
+                    .mediaType("my/media/type")
+                    .parser(ConfigParsers.properties())
+                    .build();
         });
     }
 
-    @Test    public void testBuilderWithoutKey() {
-        assertThrows(NullPointerException.class, () -> {
-        EtcdConfigSourceBuilder
-                .create(URI.create("http://localhost:2379"), null, EtcdApi.v2)
-                .mediaType("my/media/type")
-                .parser(ConfigParsers.properties())
-                .build();
+    @Test
+    public void testBuilderWithoutKey() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            EtcdConfigSource.builder()
+                    .uri(URI.create("http://localhost:2379"))
+                    .key(null)
+                    .api(EtcdApi.v2)
+                    .mediaType("my/media/type")
+                    .parser(ConfigParsers.properties())
+                    .build();
         });
     }
 
     @Test
     public void testBuilderWithoutVersion() {
-        assertThrows(NullPointerException.class, () -> {
-        EtcdConfigSourceBuilder
-                .create(URI.create("http://localhost:2379"), "/registry", null)
-                .mediaType("my/media/type")
-                .parser(ConfigParsers.properties())
-                .build();
+        assertThrows(IllegalArgumentException.class, () -> {
+            EtcdConfigSource.builder()
+                    .uri(URI.create("http://localhost:2379"))
+                    .key("/registry")
+                    .api(null)
+                    .mediaType("my/media/type")
+                    .parser(ConfigParsers.properties())
+                    .build();
         });
     }
 
     @Test
     public void testEtcdConfigSourceDescription() {
-        assertThat(EtcdConfigSourceBuilder
-                           .create(URI.create("http://localhost:2379"), "/registry", EtcdApi.v2)
+        assertThat(EtcdConfigSource.builder()
+                           .uri(URI.create("http://localhost:2379"))
+                           .key("/registry")
+                           .api(EtcdApi.v2)
                            .mediaType("my/media/type")
                            .parser(ConfigParsers.properties())
                            .build().description(),
@@ -98,8 +112,10 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testPollingStrategy() {
         URI uri = URI.create("http://localhost:2379");
-        EtcdConfigSourceBuilder builder = EtcdConfigSourceBuilder
-                .create(uri, "/registry", EtcdApi.v2)
+        EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
+                .uri(uri)
+                .key("/registry")
+                .api(EtcdApi.v2)
                 .pollingStrategy(TestingEtcdEndpointPollingStrategy::new);
 
         assertThat(builder.pollingStrategyInternal(), is(instanceOf(TestingEtcdEndpointPollingStrategy.class)));
@@ -113,17 +129,18 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testFromConfigNothing() {
-        assertThrows(MissingValueException.class, () -> {
-            EtcdConfigSourceBuilder.create(Config.empty());
+        assertThrows(IllegalArgumentException.class, () -> {
+            EtcdConfigSource.create(Config.empty());
         });
     }
 
     @Test
     public void testFromConfigAll() {
-        EtcdConfigSourceBuilder builder = EtcdConfigSourceBuilder.create(Config.create(ConfigSources.create(CollectionsHelper.mapOf(
-                "uri", "http://localhost:2379",
-                "key", "/registry",
-                "api", "v3"))));
+        EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
+                .config(Config.create(ConfigSources.create(Map.of(
+                        "uri", "http://localhost:2379",
+                        "key", "/registry",
+                        "api", "v3"))));
 
         assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
         assertThat(builder.target().key(), is("/registry"));
@@ -132,11 +149,12 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testFromConfigWithCustomPollingStrategy() {
-        EtcdConfigSourceBuilder builder = EtcdConfigSourceBuilder.create(Config.create(ConfigSources.create(CollectionsHelper.mapOf(
-                "uri", "http://localhost:2379",
-                "key", "/registry",
-                "api", "v3",
-                "polling-strategy.class", TestingEtcdEndpointPollingStrategy.class.getName()))));
+        EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
+                .config(Config.create(ConfigSources.create(Map.of(
+                        "uri", "http://localhost:2379",
+                        "key", "/registry",
+                        "api", "v3",
+                        "polling-strategy.type", TestingEtcdPollingStrategyProvider.TYPE))));
 
         assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
         assertThat(builder.target().key(), is("/registry"));
@@ -153,11 +171,12 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testFromConfigEtcdWatchPollingStrategy() {
-        EtcdConfigSourceBuilder builder = EtcdConfigSourceBuilder.create(Config.create(ConfigSources.create(CollectionsHelper.mapOf(
-                "uri", "http://localhost:2379",
-                "key", "/registry",
-                "api", "v3",
-                "polling-strategy.class", EtcdWatchPollingStrategy.class.getName()))));
+        EtcdConfigSourceBuilder builder = EtcdConfigSource.builder()
+                .config(Config.create(ConfigSources.create(Map.of(
+                        "uri", "http://localhost:2379",
+                        "key", "/registry",
+                        "api", "v3",
+                        "polling-strategy.type", EtcdPollingStrategyProvider.TYPE))));
 
         assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
         assertThat(builder.target().key(), is("/registry"));
@@ -175,15 +194,15 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testSourceFromConfigByClass() {
         Config metaConfig = Config.create(ConfigSources.create(ObjectNode.builder()
-                                                                   .addValue("class", EtcdConfigSource.class.getName())
-                                                                   .addObject("properties", ObjectNode.builder()
-                                                                           .addValue("uri", "http://localhost:2379")
-                                                                           .addValue("key", "/registry")
-                                                                           .addValue("api", "v3")
-                                                                           .build())
-                                                                   .build()));
+                                                                       .addValue("type", "etcd")
+                                                                       .addObject("properties", ObjectNode.builder()
+                                                                               .addValue("uri", "http://localhost:2379")
+                                                                               .addValue("key", "/registry")
+                                                                               .addValue("api", "v3")
+                                                                               .build())
+                                                                       .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = MetaConfig.configSource(metaConfig);
 
         assertThat(source, is(instanceOf(EtcdConfigSource.class)));
 
@@ -196,15 +215,15 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testSourceFromConfigByType() {
         Config metaConfig = Config.create(ConfigSources.create(ObjectNode.builder()
-                                                                   .addValue("type", "etcd")
-                                                                   .addObject("properties", ObjectNode.builder()
-                                                                           .addValue("uri", "http://localhost:2379")
-                                                                           .addValue("key", "/registry")
-                                                                           .addValue("api", "v3")
-                                                                           .build())
-                                                                   .build()));
+                                                                       .addValue("type", "etcd")
+                                                                       .addObject("properties", ObjectNode.builder()
+                                                                               .addValue("uri", "http://localhost:2379")
+                                                                               .addValue("key", "/registry")
+                                                                               .addValue("api", "v3")
+                                                                               .build())
+                                                                       .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::create).get();
+        ConfigSource source = MetaConfig.configSource(metaConfig);
 
         assertThat(source.get(), is(instanceOf(EtcdConfigSource.class)));
 
@@ -212,6 +231,34 @@ public class EtcdConfigSourceBuilderTest {
         assertThat(etcdSource.etcdEndpoint().uri(), is(URI.create("http://localhost:2379")));
         assertThat(etcdSource.etcdEndpoint().key(), is("/registry"));
         assertThat(etcdSource.etcdEndpoint().api(), is(EtcdApi.v3));
+    }
+
+    public static class TestingEtcdPollingStrategyProvider implements PollingStrategyProvider {
+        private static final String TYPE = "etcd-testing";
+
+        @Override
+        public boolean supports(String type) {
+            return TYPE.equals(type);
+        }
+
+        @Override
+        public Function<Object, PollingStrategy> create(String type, Config metaConfig) {
+            return object -> {
+                if (!(object instanceof EtcdEndpoint)) {
+                    throw new IllegalArgumentException("This polling strategy expects "
+                                                               + EtcdEndpoint.class.getName()
+                                                               + " as parameter, but got: "
+                                                               + (null == object ? "null" : object.getClass().getName()));
+                }
+
+                return new TestingEtcdEndpointPollingStrategy((EtcdEndpoint) object);
+            };
+        }
+
+        @Override
+        public Set<String> supported() {
+            return Set.of(TYPE);
+        }
     }
 
     public static class TestingEtcdEndpointPollingStrategy implements PollingStrategy {

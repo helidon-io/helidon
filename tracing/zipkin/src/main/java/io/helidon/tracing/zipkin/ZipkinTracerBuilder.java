@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -33,6 +33,7 @@ import brave.Tracing;
 import brave.opentracing.BraveTracer;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracerFactory;
+import io.opentracing.util.GlobalTracer;
 import zipkin2.Span;
 import zipkin2.codec.BytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
@@ -48,7 +49,7 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  * use {@link TracerBuilder#create(String)} or {@link TracerBuilder#create(Config)} that is abstracted.</b>
  * <p>
  * The following table lists zipkin specific defaults and configuration options.
- * <table>
+ * <table class="config">
  *     <caption>Tracer Configuration Options</caption>
  *     <tr>
  *         <th>option</th>
@@ -105,13 +106,17 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
+public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(ZipkinTracerBuilder.class.getName());
     static final String DEFAULT_PROTOCOL = "http";
     static final int DEFAULT_ZIPKIN_PORT = 9411;
     static final String DEFAULT_ZIPKIN_HOST = "127.0.0.1";
     static final Version DEFAULT_VERSION = Version.V2;
     static final boolean DEFAULT_ENABLED = true;
+
+    static {
+        HelidonFeatures.register("Tracing", "Zipkin");
+    }
 
     private final List<Tag<?>> tags = new LinkedList<>();
     private String serviceName;
@@ -123,8 +128,12 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
     private Sender sender;
     private String userInfo;
     private boolean enabled = DEFAULT_ENABLED;
+    private boolean global = true;
 
-    private ZipkinTracerBuilder() {
+    /**
+     * Default constructor, does not modify state.
+     */
+    protected ZipkinTracerBuilder() {
     }
 
     /**
@@ -147,12 +156,7 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
      * @see ZipkinTracerBuilder#config(Config)
      */
     public static ZipkinTracerBuilder create(Config config) {
-        String serviceName = config.get("service")
-                .asString()
-                .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
-
-        return ZipkinTracerBuilder.forService(serviceName)
-                .config(config);
+        return create().config(config);
     }
 
     static TracerBuilder<ZipkinTracerBuilder> create() {
@@ -234,18 +238,24 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
     }
 
     @Override
+    public ZipkinTracerBuilder registerGlobal(boolean global) {
+        this.global = global;
+        return this;
+    }
+
+    @Override
     public ZipkinTracerBuilder config(Config config) {
+        config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("api-version").asString().ifPresent(this::configApiVersion);
-        config.get("enabled").asBoolean().ifPresent(this::enabled);
 
         config.get("tags").detach()
                 .asMap()
-                .orElseGet(CollectionsHelper::mapOf)
+                .orElseGet(Map::of)
                 .forEach(this::addTracerTag);
 
         config.get("boolean-tags")
@@ -264,6 +274,8 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
                     });
                 });
 
+        config.get("global").asBoolean().ifPresent(this::registerGlobal);
+
         return this;
     }
 
@@ -274,35 +286,56 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
      */
     @Override
     public Tracer build() {
-        Objects.requireNonNull(serviceName,
-                               "Service name must be defined, either programmatically or in "
-                                       + "configuration using key \"service\"");
+        Tracer result;
 
-        if (!enabled) {
-            LOGGER.info("Zipkin Tracer is explicitly disabled.");
-            return NoopTracerFactory.create();
-        }
+        if (enabled) {
+            if (null == serviceName) {
+                throw new IllegalArgumentException(
+                        "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
+            }
 
-        Sender buildSender = (this.sender == null) ? createSender() : this.sender;
+            Sender buildSender = (this.sender == null) ? createSender() : this.sender;
 
-        Reporter<Span> reporter = AsyncReporter.builder(buildSender)
-                .build(version.encoder());
+            Reporter<Span> reporter = AsyncReporter.builder(buildSender)
+                    .build(version.encoder());
 
-        // Now, create a Brave tracing component with the service name you want to see in Zipkin.
-        //   (the dependency is io.zipkin.brave:brave)
-        Tracing braveTracing = Tracing.newBuilder()
-                .localServiceName(serviceName)
-                .spanReporter(reporter)
-                .build();
+            // Now, create a Brave tracing component with the service name you want to see in Zipkin.
+            //   (the dependency is io.zipkin.brave:brave)
+            Tracing braveTracing = Tracing.newBuilder()
+                    .localServiceName(serviceName)
+                    .spanReporter(reporter)
+                    .build();
 
-        if (null == sender) {
-            LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: " + createEndpoint());
+            if (null == sender) {
+                LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: " + createEndpoint());
+            } else {
+                LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' with explicit sender: " + sender);
+            }
+
+            // use this to create an OpenTracing Tracer
+            result = new ZipkinTracer(BraveTracer.create(braveTracing), new LinkedList<>(tags));
         } else {
-            LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' with explicit sender: " + sender);
+            LOGGER.info("Zipkin Tracer is explicitly disabled.");
+            result = NoopTracerFactory.create();
         }
 
-        // use this to create an OpenTracing Tracer
-        return new ZipkinTracer(BraveTracer.create(braveTracing), new LinkedList<>(tags));
+        if (global) {
+            GlobalTracer.registerIfAbsent(result);
+        }
+
+        return result;
+    }
+
+    @Override
+    public Tracer buildAndRegister() {
+        if (global) {
+            return build();
+        }
+
+        Tracer result = build();
+        GlobalTracer.register(result);
+
+        return result;
     }
 
     /**

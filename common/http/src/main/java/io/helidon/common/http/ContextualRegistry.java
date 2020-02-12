@@ -45,16 +45,21 @@ import io.helidon.common.context.Context;
  * AuthenticatedInternalIdentity auth = registry.get(securityFrameworkInternalInstance, AuthenticatedInternalIdentity.class);
  * }</pre></li>
  * </ol>
+ *
+ * @deprecated This class will be replaced with {@link io.helidon.common.context.Context} in future Helidon versions
  */
+@Deprecated
 public interface ContextualRegistry extends Context {
 
     /**
      * Creates a new empty instance.
      *
      * @return new instance
+     * @deprecated use {@link io.helidon.common.context.Context#create()}
      */
+    @Deprecated
     static ContextualRegistry create() {
-        return new ListContextualRegistry();
+        return builder().build();
     }
 
     /**
@@ -64,8 +69,64 @@ public interface ContextualRegistry extends Context {
      *
      * @param parent a parent registry
      * @return new instance
+     * @deprecated use {@link io.helidon.common.context.Context#create(io.helidon.common.context.Context)}
      */
+    @Deprecated
     static ContextualRegistry create(Context parent) {
-        return new ListContextualRegistry(parent);
+        return builder().parent(parent).build();
+    }
+
+    /**
+     * Fluent API builder for advanced configuration.
+     *
+     * @return a new builder
+     * @deprecated used for backward compatibility only
+     */
+    @Deprecated
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Fluent API builder for {@link io.helidon.common.http.ContextualRegistry}.
+     */
+    class Builder implements io.helidon.common.Builder<ContextualRegistry> {
+        private Context parent;
+        private String id;
+
+        @Override
+        public ContextualRegistry build() {
+            return new ListContextualRegistry(this);
+        }
+
+        /**
+         * Parent of the new context.
+         * @param parent parent context
+         *
+         * @return updated builder instance
+         */
+        public Builder parent(Context parent) {
+            this.parent = parent;
+            return this;
+        }
+
+        /**
+         * Identification of the new context, should be unique within this runtime.
+         *
+         * @param id context identification
+         * @return updated builder instance
+         */
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        Context parent() {
+            return parent;
+        }
+
+        String id() {
+            return id;
+        }
     }
 }

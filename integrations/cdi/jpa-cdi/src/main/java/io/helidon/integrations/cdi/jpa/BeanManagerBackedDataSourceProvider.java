@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,12 @@ import javax.sql.DataSource;
  * that uses a {@link BeanManager} to look up relevant {@link
  * DataSource}s.
  *
+ * <p>This class should be used only when JTA transactions are not
+ * supported.</p>
+ *
  * @see PersistenceUnitInfoBean.DataSourceProvider
+ *
+ * @see JtaDataSourceProvider
  */
 @ApplicationScoped
 class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
@@ -77,7 +82,7 @@ class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.Dat
      * Creates a new {@link BeanManagerBackedDataSourceProvider}.
      *
      * @param beanManager the {@link BeanManager} to use; may be
-     * {@code null}, but shouldn't, and if so the {@link
+     * {@code null}, but shouldn't be, and if so the {@link
      * #getDataSource(boolean, boolean, String)} method will throw an
      * {@link IllegalStateException}
      */

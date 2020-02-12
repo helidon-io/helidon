@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.config.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigException;
 import io.helidon.config.OverrideSources;
 import io.helidon.config.internal.FileOverrideSource.FileBuilder;
@@ -104,8 +103,9 @@ public class FileOverrideSourceTest {
     @Test
     public void testDataTimestamp() throws IOException {
         final String filename = "new-file";
-        File file = folder.newFile(filename);
-        FileOverrideSource fcs = new FileOverrideSource(new FileBuilder(Paths.get(filename)), file.toPath());
+        FileOverrideSource fcs = FileOverrideSource.builder()
+                .path(Paths.get(filename))
+                .build();
         assertThat(fcs.dataStamp(), is(not(Instant.now())));
     }
 

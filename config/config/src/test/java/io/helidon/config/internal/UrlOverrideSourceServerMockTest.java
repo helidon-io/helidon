@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.AbstractMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.PollingStrategies;
@@ -43,7 +43,6 @@ import static com.xebialabs.restito.semantics.Action.status;
 import static com.xebialabs.restito.semantics.Action.stringContent;
 import static com.xebialabs.restito.semantics.Condition.method;
 import static com.xebialabs.restito.semantics.Condition.uri;
-import static io.helidon.config.ConfigSources.create;
 import static io.helidon.config.ConfigTest.waitForAssert;
 import static io.helidon.config.OverrideSources.url;
 import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
@@ -103,7 +102,7 @@ public class UrlOverrideSourceServerMockTest {
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "aaa.bbb.url", "URL0"
                         )))
                 .overrides(url(getUrl("/override", server.getPort())))
@@ -135,7 +134,7 @@ public class UrlOverrideSourceServerMockTest {
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "aaa.bbb.url", "URL0"
                         )))
                 .overrides(url(getUrl("/override", server.getPort())))
@@ -167,7 +166,7 @@ public class UrlOverrideSourceServerMockTest {
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 "aaa.bbb.url", "URL0"
                         )))
                 .overrides(url(getUrl("/override", server.getPort())))
@@ -293,7 +292,7 @@ public class UrlOverrideSourceServerMockTest {
                                  .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
                 .overrides(url(getUrl("/override", server.getPort()))
                                    .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
-                //                .addFilter(new OverrideConfigFilter(CollectionsHelper.mapOf(Pattern.compile("\\w+\\.\\w+\\.url"), "URL1")))
+                //                .addFilter(new OverrideConfigFilter(Map.of(Pattern.compile("\\w+\\.\\w+\\.url"), "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -336,7 +335,7 @@ public class UrlOverrideSourceServerMockTest {
                                  .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
                 .overrides(url(getUrl("/override", server.getPort())))
                 .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
-                        CollectionsHelper.mapOf("*.*.url", "URL1")
+                        Map.of("*.*.url", "URL1")
                                 .entrySet()
                                 .stream()
                                 .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue()))

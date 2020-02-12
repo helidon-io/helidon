@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 
 import org.junit.jupiter.api.AfterAll;
@@ -72,8 +71,7 @@ class ServerImplTest {
 
             assertThat(first, startsWith("test1: helidon-"));
             assertThat(second, startsWith("test2: custom-2-"));
-        }
-        finally {
+        } finally {
             server.stop();
         }
     }
@@ -90,7 +88,7 @@ class ServerImplTest {
     void testTwoApps() {
         Server server = Server.builder()
                 .addApplication("/app1", new TestApplication1())
-                .addApplication("/app2", new TestApplication2())
+                .addApplication("/app2/", new TestApplication2())       // trailing slash ignored
                 .build();
 
         server.start();
@@ -103,8 +101,7 @@ class ServerImplTest {
 
             assertThat(first, startsWith("test1: helidon-"));
             assertThat(second, startsWith("test2: helidon-"));
-        }
-        finally {
+        } finally {
             server.stop();
         }
     }
@@ -112,14 +109,14 @@ class ServerImplTest {
     private final class TestApplication1 extends Application {
         @Override
         public Set<Object> getSingletons() {
-            return CollectionsHelper.setOf(new TestResource1());
+            return Set.of(new TestResource1());
         }
     }
 
     private final class TestApplication2 extends Application {
         @Override
         public Set<Object> getSingletons() {
-            return CollectionsHelper.setOf(new TestResource2());
+            return Set.of(new TestResource2());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class GenericType<T> implements Type {
      * deriving the class.
      *
      * @param genericType the generic type
-     * @param <N>         generic type of the returned GenericType
+     * @param <N> generic type of the returned GenericType
      * @return new type wrapping the provided type
      * @throws IllegalArgumentException if genericType is {@code null} or not an instance of
      *                                  {@code Class} or {@link ParameterizedType} whose raw
@@ -80,6 +80,28 @@ public class GenericType<T> implements Type {
         Objects.requireNonNull(genericType);
 
         return new GenericType<>(genericType, GenericTypeUtil.rawClass(genericType));
+    }
+
+    /**
+     * Constructs a new generic type instance representing the given class.
+     * @param <N> generic type of the returned GenericType
+     * @param clazz the class to represent
+     * @return new type wrapping the provided class
+     */
+    public static <N> GenericType<N> create(Class<N> clazz) {
+        return new GenericType<>(clazz, clazz);
+    }
+
+    /**
+     * Constructs a new generic type instance representing the class of the
+     * given object.
+     *
+     * @param <N> generic type of the returned GenericType
+     * @param object the object to derive the class of
+     * @return new type wrapping the class of the provided object
+     */
+    public static <N> GenericType<N> create(N object) {
+        return GenericType.<N>create(object.getClass());
     }
 
     private GenericType(Type type, Class<?> rawType) {
@@ -164,11 +186,14 @@ public class GenericType<T> implements Type {
         if (this == obj) {
             return true;
         }
-
         if (obj instanceof GenericType) {
             return ((GenericType<?>) obj).type.equals(this.type);
         }
-
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return type.toString();
     }
 }

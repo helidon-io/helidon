@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.internal.ListNodeBuilderImpl;
 import io.helidon.config.internal.ObjectNodeBuilderImpl;
@@ -173,6 +172,19 @@ public interface ConfigNode extends Supplier<String> {
          */
         static ObjectNode empty() {
             return ConfigUtils.EmptyObjectNodeHolder.EMPTY;
+        }
+
+        /**
+         * Returns an object node containing a single simple value.
+         *
+         * @param key key of the value
+         * @param value value
+         * @return a new object node
+         */
+        static ObjectNode simple(String key, String value) {
+            return ObjectNode.builder()
+                    .addValue(key, value)
+                    .build();
         }
 
         /**

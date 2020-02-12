@@ -24,8 +24,8 @@ import io.helidon.grpc.examples.common.StringService;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
+import io.helidon.grpc.server.GrpcTracingConfig;
 import io.helidon.grpc.server.ServerRequestAttribute;
-import io.helidon.grpc.server.TracingConfiguration;
 import io.helidon.tracing.TracerBuilder;
 
 import io.opentracing.Tracer;
@@ -54,7 +54,7 @@ public class ZipkinExampleMain {
 
         Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
 
-        TracingConfiguration tracingConfig = new TracingConfiguration.Builder()
+        GrpcTracingConfig tracingConfig = GrpcTracingConfig.builder()
                 .withStreaming()
                 .withVerbosity()
                 .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES,

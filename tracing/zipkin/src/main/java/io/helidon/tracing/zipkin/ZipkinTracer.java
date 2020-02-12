@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import io.helidon.tracing.Tag;
 
 import brave.opentracing.BraveTracer;
+import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -70,11 +71,21 @@ public class ZipkinTracer implements Tracer {
 
     @Override
     public ScopeManager scopeManager() {
-        return tracer.scopeManager();
+        return new ZipkinScopeManager(tracer.scopeManager());
     }
 
     @Override
     public Span activeSpan() {
         return tracer.activeSpan();
+    }
+
+    @Override
+    public void close() {
+        tracer.close();
+    }
+
+    @Override
+    public Scope activateSpan(Span span) {
+        return tracer.activateSpan(span);
     }
 }

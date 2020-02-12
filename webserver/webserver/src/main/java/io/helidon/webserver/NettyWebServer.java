@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.Version;
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
+import io.helidon.common.context.Context;
+import io.helidon.media.common.MediaSupport;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -45,6 +47,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
@@ -53,9 +57,13 @@ import io.netty.util.concurrent.Future;
 /**
  * The Netty based WebServer implementation.
  */
+@SuppressWarnings("deprecation")
 class NettyWebServer implements WebServer {
+    static final String TRACING_COMPONENT = "web-server";
 
     private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
+    private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
+    private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
 
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -66,9 +74,10 @@ class NettyWebServer implements WebServer {
     private final CompletableFuture<WebServer> channelsUpFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> channelsCloseFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> threadGroupsShutdownFuture = new CompletableFuture<>();
-    private final ContextualRegistry contextualRegistry;
+    private final io.helidon.common.http.ContextualRegistry contextualRegistry;
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
     private final List<HttpInitializer> initializers = new LinkedList<>();
+    private final MediaSupport mediaSupport;
 
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
@@ -84,14 +93,23 @@ class NettyWebServer implements WebServer {
      */
     NettyWebServer(ServerConfiguration config,
                    Routing routing,
-                   Map<String, Routing> namedRoutings) {
+                   Map<String, Routing> namedRoutings,
+                   MediaSupport mediaSupport) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
-        LOGGER.info(() -> "Version: " + Version.VERSION);
+        HelidonFeatures.print(HelidonFlavor.SE, config.printFeatureDetails());
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
-        this.contextualRegistry = ContextualRegistry.create(config.context());
+        // the contextual registry needs to be created as a different type is expected. Once we remove ContextualRegistry
+        // we can simply use the one from config
+        Context context = config.context();
+        if (context instanceof io.helidon.common.http.ContextualRegistry) {
+            this.contextualRegistry = (io.helidon.common.http.ContextualRegistry) context;
+        } else {
+            this.contextualRegistry = io.helidon.common.http.ContextualRegistry.create(config.context());
+        }
         this.configuration = config;
+        this.mediaSupport = mediaSupport;
 
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
             String name = entry.getKey();
@@ -108,9 +126,22 @@ class NettyWebServer implements WebServer {
                 } else {
                     protocols = soConfig.enabledSslProtocols().toArray(new String[0]);
                 }
+
+                // Enable ALPN for application protocol negotiation with HTTP/2
+                // Needs JDK >= 9 or Jetty’s ALPN boot library
+                ApplicationProtocolConfig appProtocolConfig = null;
+                if (configuration.isHttp2Enabled()) {
+                    appProtocolConfig = new ApplicationProtocolConfig(
+                            ApplicationProtocolConfig.Protocol.ALPN,
+                            ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                            ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                            ApplicationProtocolNames.HTTP_2,
+                            ApplicationProtocolNames.HTTP_1_1);
+                }
+
                 sslContext = new JdkSslContext(
                         soConfig.ssl(), false, null,
-                        IdentityCipherSuiteFilter.INSTANCE, null,
+                        IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
                         ClientAuth.NONE, protocols, false);
             }
 
@@ -141,10 +172,15 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
+    public MediaSupport mediaSupport() {
+        return mediaSupport;
+    }
+
+    @Override
     public synchronized CompletionStage<WebServer> start() {
         if (!started) {
 
-            channelsUpFuture.thenAccept(startFuture::complete)
+            channelsUpFuture.thenAccept(this::started)
                             .exceptionally(throwable -> {
                                 if (channels.isEmpty()) {
                                     startFailureHandler(throwable);
@@ -234,6 +270,15 @@ class NettyWebServer implements WebServer {
             LOGGER.fine(() -> "All channels startup routine initiated: " + bootstrapsSize);
         }
         return startFuture;
+    }
+
+    private void started(WebServer server) {
+        if (EXIT_ON_STARTED) {
+            LOGGER.info(String.format("Exiting, -D%s set.",  EXIT_ON_STARTED_KEY));
+            System.exit(0);
+        } else {
+            startFuture.complete(server);
+        }
     }
 
     private WebServer startFailureHandler(Throwable throwable) {
@@ -326,7 +371,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public ContextualRegistry context() {
+    public io.helidon.common.http.ContextualRegistry context() {
         return contextualRegistry;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.config.Config.Type.OBJECT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
@@ -231,7 +230,7 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
 
     @Override
     protected ObjectConfigBean[] expectedObjectConfigBeans() {
-        return listOf(
+        return List.of(
                 new ObjectConfigBean("fromConfig", "key:double-" + level() + "@VALUE"),
                 new ObjectConfigBean("fromConfig", "key:bool-" + level() + "@VALUE"),
                 new ObjectConfigBean("fromConfig", "key:object-" + level() + "@OBJECT"),

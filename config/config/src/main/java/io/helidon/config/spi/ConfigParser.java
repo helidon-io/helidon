@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config.spi;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -102,9 +103,9 @@ public interface ConfigParser {
         /**
          * Returns configuration content media type.
          *
-         * @return content media type
+         * @return content media type if known, {@code empty} otherwise
          */
-        String mediaType();
+        Optional<String> mediaType();
 
         /**
          * Returns a {@link Readable} that is use to read configuration content from.
@@ -115,47 +116,108 @@ public interface ConfigParser {
         <T extends Readable & AutoCloseable> T asReadable();
 
         /**
+         * Create a fluent API builder for content.
+         *
+         * @param readable readable to base this content builder on
+         * @param <S> type of the stamp to use
+         * @param <T> dual type of readable and autocloseable parameter
+         * @return a new fluent API builder for content
+         */
+        static <S, T extends Readable & AutoCloseable> Builder<S> builder(T readable) {
+            Objects.requireNonNull(readable, "Readable must not be null when creating content");
+            return new Builder<>(readable);
+        }
+
+        /**
          * Creates {@link Content} from given {@link Readable readable content} and
          * with specified {@code mediaType} of configuration format.
          *
          * @param readable  a readable providing configuration.
-         *                  If it implements {@link AutoCloseable} it is automatically closed whenever parsed.
          * @param mediaType a configuration mediaType
          * @param stamp     content stamp
          * @param <S>       a type of data stamp
+         * @param <T>       dual type of readable and autocloseable parameter
          * @return a config content
          */
-        static <S> Content<S> create(Readable readable, String mediaType, Optional<S> stamp) {
-            return new Content<S>() {
-                @Override
-                public void close() throws ConfigException {
-                    if (readable instanceof AutoCloseable) {
+        static <S, T extends Readable & AutoCloseable> Content<S> create(T readable, String mediaType, S stamp) {
+            Objects.requireNonNull(mediaType, "Media type must not be null when creating content using Content.create()");
+            Objects.requireNonNull(stamp, "Stamp must not be null when creating content using Content.create()");
+
+            Builder<S> builder = builder(readable);
+
+            return builder
+                    .mediaType(mediaType)
+                    .stamp(stamp)
+                    .build();
+        }
+
+        /**
+         * Fluent API builder for {@link io.helidon.config.spi.ConfigParser.Content}.
+         *
+         * @param <S> type of the stamp of the built content
+         */
+        class Builder<S> implements io.helidon.common.Builder<Content<S>> {
+            private final AutoCloseable readable;
+            private String mediaType;
+            private S stamp;
+
+            private <T extends Readable & AutoCloseable> Builder(T readable) {
+                this.readable = readable;
+            }
+
+            @Override
+            public Content<S> build() {
+                final Optional<String> mediaType = Optional.ofNullable(this.mediaType);
+                final Optional<S> stamp = Optional.ofNullable(this.stamp);
+
+                return new Content<>() {
+                    @Override
+                    public Optional<String> mediaType() {
+                        return mediaType;
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public <T extends Readable & AutoCloseable> T asReadable() {
+                        return (T) readable;
+                    }
+
+                    @Override
+                    public void close() throws ConfigException {
                         try {
-                            ((AutoCloseable) readable).close();
+                            readable.close();
                         } catch (ConfigException ex) {
                             throw ex;
                         } catch (Exception ex) {
                             throw new ConfigException("Error while closing readable [" + readable + "].", ex);
                         }
                     }
-                }
 
-                @Override
-                public <T extends Readable & AutoCloseable> T asReadable() {
-                    return (T) readable;
-                }
+                    @Override
+                    public Optional<S> stamp() {
+                        return stamp;
+                    }
+                };
+            }
 
-                @Override
-                public String mediaType() {
-                    return mediaType;
-                }
+            /**
+             * Content media type.
+             * @param mediaType type of the content
+             */
+            public Builder<S> mediaType(String mediaType) {
+                this.mediaType = mediaType;
+                return this;
+            }
 
-                @Override
-                public Optional<S> stamp() {
-                    return stamp;
-                }
-            };
-
+            /**
+             * Content stamp.
+             *
+             * @param stamp stamp of the content
+             */
+            public Builder<S> stamp(S stamp) {
+                this.stamp = stamp;
+                return this;
+            }
         }
     }
 }

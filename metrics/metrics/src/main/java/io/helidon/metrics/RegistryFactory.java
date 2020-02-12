@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,10 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  *     new instance of a registry factory (in case multiple instances are desired), independent on the singleton instance
  *     and on other instances provided by these methods.</li>
  * </ol>
- * <p>
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
-public final class RegistryFactory {
+public final class RegistryFactory implements io.helidon.common.metrics.InternalBridge.MetricRegistry.RegistryFactory {
     private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
@@ -57,7 +56,7 @@ public final class RegistryFactory {
 
         registry = Registry.create(Type.VENDOR);
         registries.put(Type.VENDOR, registry);
-        publicRegistries.put(Type.VENDOR, FinalRegistry.create(registry));
+        publicRegistries.put(Type.VENDOR, registry);
 
         this.config = new AtomicReference<>(config);
     }
@@ -144,17 +143,22 @@ public final class RegistryFactory {
 
     /**
      * Get a registry based on its type.
-     * For {@link Type#APPLICATION} returns a modifiable registry, for other types
-     * returns a final registry (cannot register new metrics).
+     * For {@link Type#APPLICATION} and {@link Type#VENDOR} returns a modifiable registry,
+     * for {@link Type#BASE} returns a final registry (cannot register new metrics).
      *
      * @param type type of registry
-     * @return Registry for the type defined.
+     * @return MetricRegistry for the type defined.
      */
     public MetricRegistry getRegistry(Type type) {
         if (type == Type.BASE) {
             ensureBase();
         }
         return publicRegistries.get(type);
+    }
+
+    @Override
+    public io.helidon.common.metrics.InternalBridge.MetricRegistry getBridgeRegistry(Type type) {
+        return io.helidon.common.metrics.InternalBridge.MetricRegistry.class.cast(getRegistry(type));
     }
 
     private void update(Config config) {

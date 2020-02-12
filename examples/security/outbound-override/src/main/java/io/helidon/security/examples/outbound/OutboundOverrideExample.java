@@ -16,24 +16,22 @@
 package io.helidon.security.examples.outbound;
 
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.WebServer;
+
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.createConfig;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.getSecurityContext;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.sendError;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.startServer;
+import static io.helidon.security.examples.outbound.OutboundOverrideUtil.webTarget;
 
 /**
  * Creates two services. First service invokes the second with outbound security. There are two endpoints - one that
@@ -44,7 +42,6 @@ import io.helidon.webserver.WebServer;
 public final class OutboundOverrideExample {
     private static volatile int clientPort;
     private static volatile int servingPort;
-    private static Client client;
 
     private OutboundOverrideExample() {
     }
@@ -61,10 +58,6 @@ public final class OutboundOverrideExample {
         first.toCompletableFuture().join();
         second.toCompletableFuture().join();
 
-        client = ClientBuilder.newBuilder()
-                .register(new ClientSecurityFeature())
-                .build();
-
         System.out.println("Started services. Main endpoints:");
         System.out.println("http://localhost:" + clientPort + "/propagate");
         System.out.println("http://localhost:" + clientPort + "/override");
@@ -76,67 +69,49 @@ public final class OutboundOverrideExample {
     private static CompletionStage<Void> startServingService() {
         Config config = createConfig("serving-service");
 
-        return startServer(Routing
-                                   .builder()
-                                   .register(WebSecurity.create(config.get("security")))
-                                   .get("/hello", (req, res) -> {
-                                       res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
-                                               Subject::principal).map(Principal::getName).orElse("Anonymous"));
-                                   }),
-                           server -> servingPort = server.port());
+        Routing routing = Routing.builder()
+                .register(WebSecurity.create(config.get("security")))
+                .get("/hello", (req, res) -> {
+                    res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
+                            Subject::principal).map(Principal::getName).orElse("Anonymous"));
+                }).build();
+        return startServer(routing, 9080, server -> servingPort = server.port());
     }
 
     private static CompletionStage<Void> startClientService() {
         Config config = createConfig("client-service");
 
-        return startServer(Routing
-                                   .builder()
-                                   .register(WebSecurity.create(config.get("security")))
-                                   .get("/override", OutboundOverrideExample::override)
-                                   .get("/propagate", OutboundOverrideExample::propagate),
-                           server -> clientPort = server.port());
-
+        Routing routing = Routing.builder()
+                .register(WebSecurity.create(config.get("security")))
+                .get("/override", OutboundOverrideExample::override)
+                .get("/propagate", OutboundOverrideExample::propagate)
+                .build();
+        return startServer(routing, 8080, server -> clientPort = server.port());
     }
 
     private static void override(ServerRequest req, ServerResponse res) {
-        SecurityContext context = getContext(req);
+        SecurityContext context = getSecurityContext(req);
 
-        String result = webTarget().request()
+        webTarget(servingPort)
+                .request()
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "anotherPassword")
-                .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
-                .get(String.class);
-
-        res.send("You are: " + context.userName() + ", backend service returned: " + result);
+                .rx()
+                .get(String.class)
+                .thenAccept(result -> {
+                    res.send("You are: " + context.userName() + ", backend service returned: " + result + "\n");
+                })
+                .exceptionally(throwable -> sendError(throwable, res));
     }
 
     private static void propagate(ServerRequest req, ServerResponse res) {
-        SecurityContext context = getContext(req);
-        String result = webTarget().request()
-                .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
-                .get(String.class);
+        SecurityContext context = getSecurityContext(req);
 
-        res.send("You are: " + context.userName() + ", backend service returned: " + result);
-    }
-
-    private static WebTarget webTarget() {
-        return client.target("http://localhost:" + servingPort + "/hello");
-    }
-
-    private static SecurityContext getContext(ServerRequest req) {
-        return req.context().get(SecurityContext.class)
-                .orElseThrow(() -> new RuntimeException("Failed to get security context from request, security not configured"));
-    }
-
-    private static CompletionStage<Void> startServer(Routing.Builder builder, Consumer<WebServer> callback) {
-        return WebServer.create(builder)
-                .start()
-                .thenAccept(callback);
-    }
-
-    private static Config createConfig(String fileName) {
-        return Config.builder()
-                .sources(ConfigSources.classpath(fileName + ".yaml"))
-                .build();
+        webTarget(servingPort)
+                .request()
+                .rx()
+                .get(String.class)
+                .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result + "\n"))
+                .exceptionally(throwable -> sendError(throwable, res));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 /**
- * Interface used to mark changeable source.
+ * A changeable component is a component that may identify a change
+ *  at an arbitrary point in time and that can notify listeners of such a change.
  *
  * @param <T> a type of source
  */
 public interface Changeable<T> { //TODO later to be extended just by selected sources
-
     /**
      * Returns a {@code Flow.Publisher} to which the caller can subscribe in
      * order to receive change notifications.

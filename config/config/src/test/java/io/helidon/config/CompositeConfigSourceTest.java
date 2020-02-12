@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,13 @@ import java.net.MalformedURLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -34,15 +35,14 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.TestingParsableConfigSource;
 
-import static io.helidon.config.ValueNodeMatcher.valueNode;
-import java.util.concurrent.TimeUnit;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.ValueNodeMatcher.valueNode;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -69,7 +69,7 @@ public class CompositeConfigSourceTest {
         ConfigSource configSource = ConfigSources.create()
                 .add(ConfigSources.classpath("application.conf"))
                 .add(ConfigSources.create(ObjectNode.builder().addValue("prop1", "1").build()))
-                .add(ConfigSources.create(CollectionsHelper.mapOf()))
+                .add(ConfigSources.create(Map.of()))
                 .add(ConfigSources.create(ObjectNode.builder().addValue("prop1", "2").build()))
                 .build();
 
@@ -132,7 +132,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceAAA = new AtomicReference<>();
         contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -142,7 +142,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceBBB = new AtomicReference<>();
         contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
@@ -253,7 +253,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceAAA = new AtomicReference<>();
         contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -263,7 +263,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceBBB = new AtomicReference<>();
         contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
@@ -295,7 +295,7 @@ public class CompositeConfigSourceTest {
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS);
         contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=22\nppp=9"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
 
         // NO ticks event -> NO change yet
         assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
@@ -465,7 +465,7 @@ public class CompositeConfigSourceTest {
                         .content(ConfigParser.Content
                                          .create(new StringReader("ooo=1\nrrr=5"),
                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                 Optional.of(Instant.now())))
+                                                 Instant.now()))
                         .parser(ConfigParsers.properties())
                         .build())
                 .build();

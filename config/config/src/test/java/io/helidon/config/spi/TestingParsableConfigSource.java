@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
     /**
      * Testing implementation of {@link AbstractParsableConfigSource.Builder}.
      */
-    public static class TestingBuilder extends Builder<TestingBuilder, Void> {
+    public static class TestingBuilder extends Builder<TestingBuilder, Void, TestingParsableConfigSource> {
         private Supplier<ConfigParser.Content<Instant>> contentSupplier;
 
         private TestingBuilder() {
@@ -97,8 +97,8 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
         }
 
         @Override
-        protected TestingBuilder init(Config metaConfig) {
-            return super.init(metaConfig);
+        public TestingBuilder config(Config metaConfig) {
+            return super.config(metaConfig);
         }
 
         public TestingBuilder content(Supplier<ConfigParser.Content<Instant>> contentSupplier) {

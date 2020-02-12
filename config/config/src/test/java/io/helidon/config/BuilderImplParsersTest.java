@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,22 @@
 
 package io.helidon.config;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,14 +44,14 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testServicesDisabled() {
-        List<ConfigParser> parsers = BuilderImpl.buildParsers(false, CollectionsHelper.listOf());
+        List<ConfigParser> parsers = BuilderImpl.buildParsers(false, List.of());
 
         assertThat(parsers, hasSize(0));
     }
 
     @Test
     public void testBuiltInParserLoaded() {
-        List<ConfigParser> parsers = BuilderImpl.buildParsers(true, CollectionsHelper.listOf());
+        List<ConfigParser> parsers = BuilderImpl.buildParsers(true, List.of());
 
         assertThat(parsers, hasSize(1));
         assertThat(parsers.get(0), instanceOf(PropertiesConfigParser.class));
@@ -58,7 +59,7 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testUserDefinedHasPrecedence() {
-        List<ConfigParser> parsers = BuilderImpl.buildParsers(true, CollectionsHelper.listOf(new MyConfigParser()));
+        List<ConfigParser> parsers = BuilderImpl.buildParsers(true, List.of(new MyConfigParser()));
 
         assertThat(parsers, hasSize(2));
         assertThat(parsers.get(0), instanceOf(MyConfigParser.class));
@@ -67,45 +68,45 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testContextFindParserEmpty() {
-        BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(CollectionsHelper.listOf());
+        BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(List.of());
 
         assertThat(context.findParser("_WHATEVER_"), is(Optional.empty()));
     }
 
     @Test
     public void testContextFindParserNotAvailable() {
-        ConfigParser.Content content = mock(ConfigParser.Content.class);
-        when(content.mediaType()).thenReturn(TEST_MEDIA_TYPE);
+        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
+        when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));
 
-        BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(CollectionsHelper.listOf(
+        BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(List.of(
                 mockParser("application/hocon", "application/json"),
                 mockParser(),
                 mockParser("application/x-yaml")
         ));
 
-        assertThat(context.findParser(content.mediaType()), is(Optional.empty()));
+        assertThat(context.findParser(content.mediaType().get()), is(Optional.empty()));
     }
 
     @Test
     public void testContextFindParserFindFirst() {
-        ConfigParser.Content content = mock(ConfigParser.Content.class);
-        when(content.mediaType()).thenReturn(TEST_MEDIA_TYPE);
+        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
+        when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));
 
         ConfigParser firstParser = mockParser(TEST_MEDIA_TYPE);
 
-        BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(CollectionsHelper.listOf(
+        BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(List.of(
                 mockParser("application/hocon", "application/json"),
                 firstParser,
                 mockParser(TEST_MEDIA_TYPE),
                 mockParser("application/x-yaml")
         ));
 
-        assertThat(context.findParser(content.mediaType()).get(), is(firstParser));
+        assertThat(context.findParser(content.mediaType().get()).get(), is(firstParser));
     }
 
     private ConfigParser mockParser(String... supportedMediaTypes) {
         ConfigParser parser = mock(ConfigParser.class);
-        when(parser.supportedMediaTypes()).thenReturn(CollectionsHelper.setOf(supportedMediaTypes));
+        when(parser.supportedMediaTypes()).thenReturn(Set.of(supportedMediaTypes));
 
         return parser;
     }
@@ -118,7 +119,7 @@ public class BuilderImplParsersTest {
 
         @Override
         public Set<String> supportedMediaTypes() {
-            return CollectionsHelper.setOf();
+            return Set.of();
         }
 
         @Override

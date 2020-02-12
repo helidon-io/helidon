@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.metrics;
 
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.StringReader;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -60,39 +71,67 @@ class HelidonHistogramTest {
             850, 870, 870, 880, 880, 880, 890, 890, 890, 890, 900, 910, 920, 920, 920, 930, 940, 950, 950, 950, 960,
             960, 960, 960, 970, 970, 970, 970, 980, 980, 980, 990, 990};
 
-    private static final String EXPECTED_PROMETHEUS_OUTPUT = "# TYPE application:file_sizes_mean_bytes gauge\n"
-            + "application:file_sizes_mean_bytes 50634.99999999998\n"
-            + "# TYPE application:file_sizes_max_bytes gauge\n"
-            + "application:file_sizes_max_bytes 99000\n"
-            + "# TYPE application:file_sizes_min_bytes gauge\n"
-            + "application:file_sizes_min_bytes 0\n"
-            + "# TYPE application:file_sizes_stddev_bytes gauge\n"
-            + "application:file_sizes_stddev_bytes 29438.949964290514\n"
-            + "# TYPE application:file_sizes_bytes summary\n"
-            + "# HELP application:file_sizes_bytes Users file size\n"
-            + "application:file_sizes_bytes_count 200\n"
-            + "application:file_sizes_bytes{quantile=\"0.5\"} 48000\n"
-            + "application:file_sizes_bytes{quantile=\"0.75\"} 75000\n"
-            + "application:file_sizes_bytes{quantile=\"0.95\"} 96000\n"
-            + "application:file_sizes_bytes{quantile=\"0.98\"} 98000\n"
-            + "application:file_sizes_bytes{quantile=\"0.99\"} 98000\n"
-            + "application:file_sizes_bytes{quantile=\"0.999\"} 99000\n";
+    private static final String EXPECTED_PROMETHEUS_OUTPUT = "# TYPE application_file_sizes_mean_bytes gauge\n"
+            + "application_file_sizes_mean_bytes 50634.99999999998\n"
+            + "# TYPE application_file_sizes_max_bytes gauge\n"
+            + "application_file_sizes_max_bytes 99000\n"
+            + "# TYPE application_file_sizes_min_bytes gauge\n"
+            + "application_file_sizes_min_bytes 0\n"
+            + "# TYPE application_file_sizes_stddev_bytes gauge\n"
+            + "application_file_sizes_stddev_bytes 29438.949964290514\n"
+            + "# TYPE application_file_sizes_bytes summary\n"
+            + "# HELP application_file_sizes_bytes Users file size\n"
+            + "application_file_sizes_bytes_count 200\n"
+            + "application_file_sizes_bytes{quantile=\"0.5\"} 48000\n"
+            + "application_file_sizes_bytes{quantile=\"0.75\"} 75000\n"
+            + "application_file_sizes_bytes{quantile=\"0.95\"} 96000\n"
+            + "application_file_sizes_bytes{quantile=\"0.98\"} 98000\n"
+            + "application_file_sizes_bytes{quantile=\"0.99\"} 98000\n"
+            + "application_file_sizes_bytes{quantile=\"0.999\"} 99000\n";
+
+    /**
+     * Parses a {@code Stream| of text lines (presumably in Prometheus/OpenMetrics format) into a {@code Stream}
+     * of {@code Map.Entry}, with the key the value name and the value a {@code Number}
+     * representing the converted value.
+     *
+     * @param lines Prometheus-format text as a stream of lines
+     * @return stream of name/value pairs
+     */
+    private static Stream<Map.Entry<String, Number>> parsePrometheusText(Stream<String> lines) {
+        return lines
+                .filter(line -> !line.startsWith("#") && line.length() > 0)
+                .map(line -> {
+                    final int space = line.indexOf(" ");
+                    return new AbstractMap.SimpleImmutableEntry<String, Number>(
+                            line.substring(0, space),
+                            parseNumber(line.substring(space + 1)));
+                });
+    }
+
+    private static Stream<Map.Entry<String, Number>> parsePrometheusText(String promText) {
+        return parsePrometheusText(Arrays.stream(promText.split("\n")));
+    }
+
+    private static Map<String, Number> EXPECTED_PROMETHEUS_RESULTS;
 
     private static Metadata meta;
     private static HelidonHistogram histoInt;
+    private static MetricID histoIntID;
     private static HelidonHistogram delegatingHistoInt;
     private static HelidonHistogram histoLong;
     private static HelidonHistogram delegatingHistoLong;
+    private static final NumberFormat NUMBER_FORMATTER = DecimalFormat.getNumberInstance();
 
     @BeforeAll
     static void initClass() {
-        meta = new Metadata("file_sizes",
+        meta = new HelidonMetadata("file_sizes",
                             "theDisplayName",
                             "Users file size",
                             MetricType.HISTOGRAM,
                             MetricUnits.KILOBYTES);
 
         histoInt = HelidonHistogram.create("application", meta);
+        histoIntID = new MetricID("file_sizes");
         delegatingHistoInt = HelidonHistogram.create("application", meta, HelidonHistogram.create("ignored", meta));
         histoLong = HelidonHistogram.create("application", meta);
         delegatingHistoLong = HelidonHistogram.create("application", meta, HelidonHistogram.create("ignored", meta));
@@ -107,6 +146,19 @@ class HelidonHistogramTest {
         for (long dato : SAMPLE_LONG_DATA) {
             histoLong.getDelegate().update(dato, now);
             delegatingHistoLong.getDelegate().update(dato, now);
+        }
+
+        EXPECTED_PROMETHEUS_RESULTS = parsePrometheusText(EXPECTED_PROMETHEUS_OUTPUT)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    // Deals with the exception so this is usable from inside a stream.
+    private static Number parseNumber(String value) {
+        try {
+            return NUMBER_FORMATTER.parse(value);
+        } catch (ParseException ex) {
+            fail("Unable to parse value as Number", ex);
+            return null; // never executed - the preceding fail will see to that
         }
     }
 
@@ -136,7 +188,7 @@ class HelidonHistogramTest {
     @Test
     void testJson() {
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        histoInt.jsonData(builder);
+        histoInt.jsonData(builder, new MetricID("file_sizes"));
 
         JsonObject result = builder.build();
 
@@ -156,8 +208,13 @@ class HelidonHistogramTest {
     }
 
     @Test
-    void testPrometheus() {
-        assertThat(histoInt.prometheusData(), is(EXPECTED_PROMETHEUS_OUTPUT));
+    void testPrometheus() throws IOException, ParseException {
+        final StringBuilder sb = new StringBuilder();
+        histoInt.prometheusData(sb, histoIntID);
+        parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
+                .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
+                                    EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),
+                                    is(withinTolerance(entry.getValue()))));
     }
 
     @Test
@@ -185,11 +242,6 @@ class HelidonHistogramTest {
     }
 
     private void withTolerance(String field, double actual, double expectedValue) {
-        double min = expectedValue * 0.999;
-        double max = expectedValue * 1.001;
-
-        if ((actual < min) || (actual > max)) {
-            fail(field + ": expected: <" + expectedValue + ">, but actual value was: <" + actual + ">");
-        }
+        assertThat(field, expectedValue, is(withinTolerance(actual)));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.Security;
@@ -49,15 +49,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link HttpBasicAuthProvider} and {@link HttpDigestAuthProvider}.
  */
 public class HttpAuthProviderBuilderTest {
+    private static final AtomicInteger COUNTER = new AtomicInteger();
     private static final String QUOTE = "\"";
+
     private static Security security;
-    private volatile static int counter = 0;
+
     private final Random random = new Random();
     private SecurityContext context;
 
     @BeforeAll
     public static void initClass() {
-        UserStore us = userStore();
+        SecureUserStore us = userStore();
 
         security = Security.builder()
                 .addAuthenticationProvider(basicAuthProvider(us), "basic")
@@ -66,56 +68,30 @@ public class HttpAuthProviderBuilderTest {
                 .build();
     }
 
-    private static UserStore userStore() {
+    private static SecureUserStore userStore() {
         return login -> {
-            if (login.equals("jack")) {
-                return Optional.of(new UserStore.User() {
-                    @Override
-                    public String login() {
-                        return "jack";
-                    }
-
-                    @Override
-                    public char[] password() {
-                        return "jackIsGreat".toCharArray();
-                    }
-
-                    @Override
-                    public Set<String> roles() {
-                        return CollectionsHelper.setOf("user", "admin");
-                    }
-                });
+            if ("jack".equals(login)) {
+                return Optional.of(new TestUser("jack",
+                                                "jackIsGreat".toCharArray(),
+                                                Set.of("user", "admin")));
             }
-            if (login.equals("jill")) {
-                return Optional.of(new UserStore.User() {
-                    @Override
-                    public String login() {
-                        return "jill";
-                    }
-
-                    @Override
-                    public char[] password() {
-                        return "password".toCharArray();
-                    }
-
-                    @Override
-                    public Set<String> roles() {
-                        return CollectionsHelper.setOf("user");
-                    }
-                });
+            if ("jill".equals(login)) {
+                return Optional.of(new TestUser("jill",
+                                                "password".toCharArray(),
+                                                Set.of("user")));
             }
 
             return Optional.empty();
         };
     }
 
-    private static Builder<? extends AuthenticationProvider> basicAuthProvider(UserStore us) {
+    private static Builder<? extends AuthenticationProvider> basicAuthProvider(SecureUserStore us) {
         return HttpBasicAuthProvider.builder()
                 .realm("mic")
                 .userStore(us);
     }
 
-    private static Builder<? extends AuthenticationProvider> digestAuthProvider(boolean old, UserStore us) {
+    private static Builder<? extends AuthenticationProvider> digestAuthProvider(boolean old, SecureUserStore us) {
         HttpDigestAuthProvider.Builder builder = HttpDigestAuthProvider.builder()
                 .realm("mic")
                 .digestServerSecret("pwd".toCharArray())
@@ -130,7 +106,7 @@ public class HttpAuthProviderBuilderTest {
 
     @BeforeEach
     public void init() {
-        context = security.contextBuilder(String.valueOf(counter++))
+        context = security.contextBuilder(String.valueOf(COUNTER.getAndIncrement()))
                 .build();
     }
 
@@ -161,9 +137,9 @@ public class HttpAuthProviderBuilderTest {
 
     private void setHeader(SecurityContext context, String name, String value) {
         context.env(context.env()
-                               .derive()
-                               .header(name, value)
-                               .build());
+                            .derive()
+                            .header(name, value)
+                            .build());
     }
 
     @Test

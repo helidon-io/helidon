@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.security.integration.webserver;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Parameters;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
@@ -56,8 +56,8 @@ public class WebSecurityQueryParamTest {
         ServerRequest req = Mockito.mock(ServerRequest.class);
 
         Parameters params = Mockito.mock(Parameters.class);
-        when(params.all("jwt")).thenReturn(CollectionsHelper.listOf("bearer jwt_content"));
-        when(params.all("name")).thenReturn(CollectionsHelper.listOf("name_content"));
+        when(params.all("jwt")).thenReturn(List.of("bearer jwt_content"));
+        when(params.all("name")).thenReturn(List.of("name_content"));
         when(req.queryParams()).thenReturn(params);
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
@@ -71,7 +71,7 @@ public class WebSecurityQueryParamTest {
         verify(context).env(newHeaders.capture());
         // now validate the value we were called with
         env = newHeaders.getValue();
-        assertThat(env.headers().get("BEARER_TOKEN"), is(CollectionsHelper.listOf("jwt_content")));
-        assertThat(env.headers().get("NAME_FROM_REQUEST"), is(CollectionsHelper.listOf("name_content")));
+        assertThat(env.headers().get("BEARER_TOKEN"), is(List.of("jwt_content")));
+        assertThat(env.headers().get("NAME_FROM_REQUEST"), is(List.of("name_content")));
     }
 }

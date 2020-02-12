@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,14 @@
 
 package io.helidon.microprofile.example.helloworld.explicit;
 
-import java.util.logging.Logger;
-
-import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 /**
  * Explicit example.
  */
 public class Main {
-    private static final Logger LOGGER = Logger.getLogger("io.helidon.microprofile.startup");
-
     private Main() {
     }
 
@@ -40,17 +33,12 @@ public class Main {
      * @param args command line arguments (ignored)
      */
     public static void main(String[] args) {
-        LOGGER.finest("Main method");
-        Weld weld = new Weld();
-        LOGGER.finest("Weld instance");
-        WeldContainer cdiContainer = weld.initialize();
-        LOGGER.finest("Weld initialized");
-
         Server server = Server.builder()
                 .addApplication(HelloWorldApplication.class)
-                .cdiContainer(cdiContainer)
                 // using a customized helidon config instance (in this case the default...)
-                .config(MpConfig.builder().config(Config.create()).build())
+                .config(ConfigProviderResolver.instance()
+                                .getBuilder()
+                                .build())
                 .host("localhost")
                 // use a random free port
                 .port(0)

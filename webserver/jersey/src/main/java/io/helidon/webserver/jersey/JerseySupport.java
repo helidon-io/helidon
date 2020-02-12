@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,11 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.HttpException;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -50,6 +53,7 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
@@ -133,7 +137,9 @@ public class JerseySupport implements Service {
 
     private static ExecutorService getDefaultThreadPool() {
         if (DEFAULT_THREAD_POOL.get() == null) {
-            Config executorConfig = Config.create().get("server.executor-service");
+            Config executorConfig = ((Config) ConfigProvider.getConfig())
+                    .get("server.executor-service");
+
             DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
                                             .name("server")
                                             .config(executorConfig)
@@ -164,23 +170,23 @@ public class JerseySupport implements Service {
             }
             return new URI(sb.toString());
         } catch (URISyntaxException | MalformedURLException e) {
-            throw new IllegalStateException("Unable to create a request URI from the request info.", e);
+            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
         }
     }
 
     private static URI baseUri(ServerRequest req) {
         try {
             return new URI(req.isSecure() ? "https" : "http", null, req.localAddress(),
-                           req.localPort(), basePath(req), null, null);
+                           req.localPort(), basePath(req.path()), null, null);
         } catch (URISyntaxException e) {
-            throw new IllegalStateException("Unable to create a base URI from the request info.", e);
+            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
         }
     }
 
-    private static String basePath(ServerRequest req) {
-        String reqPath = req.path().toString();
-        String absPath = req.path().absolute().toString();
-        String basePath = absPath.substring(0, absPath.length() - reqPath.length());
+    static String basePath(HttpRequest.Path path) {
+        String reqPath = path.toString();
+        String absPath = path.absolute().toString();
+        String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);
 
         if (absPath.isEmpty() || basePath.isEmpty()) {
             return "/";

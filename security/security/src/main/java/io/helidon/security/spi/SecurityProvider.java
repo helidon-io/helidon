@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.security.spi;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.SecurityContext;
 
@@ -40,7 +40,7 @@ public interface SecurityProvider {
      * @see EndpointConfig#combineAnnotations(Class, EndpointConfig.AnnotationScope...)
      */
     default Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     /**
@@ -53,7 +53,7 @@ public interface SecurityProvider {
      * @see EndpointConfig#config(String)
      */
     default Collection<String> supportedConfigKeys() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     /**
@@ -66,7 +66,7 @@ public interface SecurityProvider {
      * @see EndpointConfig#instance(Class)
      */
     default Collection<Class<? extends ProviderConfig>> supportedCustomObjects() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     /**
@@ -77,7 +77,7 @@ public interface SecurityProvider {
      * @see EndpointConfig#abacAttribute(String)
      */
     default Collection<String> supportedAttributes() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
 }

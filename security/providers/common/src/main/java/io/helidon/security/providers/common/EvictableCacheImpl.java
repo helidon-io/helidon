@@ -45,7 +45,9 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
 
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, getClass().getSimpleName() + "-cachePurge_" + counter.getAndIncrement());
+                Thread newThread = new Thread(r, getClass().getSimpleName() + "-cachePurge_" + counter.getAndIncrement());
+                newThread.setDaemon(true);
+                return newThread;
             }
         };
         EXECUTOR = new ScheduledThreadPoolExecutor(EVICT_THREAD_COUNT, jf);

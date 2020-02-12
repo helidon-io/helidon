@@ -19,5 +19,7 @@
  * a <a href="https://kubernetes.io/">Kubernetes</a> system.
  *
  * @see io.helidon.service.configuration.kubernetes.KubernetesSystem
+ *
+ * @deprecated This package is slated for removal.
  */
 package io.helidon.service.configuration.kubernetes;

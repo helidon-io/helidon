@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -96,6 +96,7 @@ for ((i=0;i<${#ARGS[@]};i++))
 
 if [ -z "${COMMAND}" ] ; then
   echo "ERROR: no command provided"
+  usage
   exit 1
 fi
 
@@ -110,14 +111,14 @@ fi
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 # Hooks for version substitution work
-readonly PREPARE_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/set-version.sh )
+readonly PREPARE_HOOKS=( )
 
 # Hooks for deployment work
 readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-if [ "${WERCKER}" = "true" ] ; then
+if [ "${WERCKER}" = "true" -o "${GITLAB}" = "true" ] ; then
   apt-get update && apt-get -y install graphviz
 fi
 
@@ -166,11 +167,29 @@ printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 
 update_version(){
   # Update version
-  mvn -f ${WS_DIR}/pom.xml versions:set versions:set-property \
+  mvn -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
     -DgenerateBackupPoms=false \
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
     -DprocessAllModules=true
+
+  # Hack to update helidon.version
+  for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
+  do
+      cat ${pom} | \
+          sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
+          > ${pom}.tmp
+      mv ${pom}.tmp ${pom}
+  done
+
+  # Hack to update helidon.version in build.gradle files
+  for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
+  do
+      cat ${bfile} | \
+          sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
+          > ${bfile}.tmp
+      mv ${bfile}.tmp ${bfile}
+  done
 
   # Invoke prepare hook
   if [ -n "${PREPARE_HOOKS}" ]; then
@@ -192,6 +211,12 @@ release_build(){
     # Invoke update_version
     update_version
 
+    # Update scm/tag entry in the parent pom
+    cat parent/pom.xml | \
+        sed -e s@'<tag>HEAD</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
+        > parent/pom.xml.tmp
+    mv parent/pom.xml.tmp parent/pom.xml
+
     # Git user info
     git config user.email || git config --global user.email "info@helidon.io"
     git config user.name || git config --global user.name "Helidon Robot"
@@ -204,13 +229,14 @@ release_build(){
     mvn nexus-staging:rc-open \
       -DstagingProfileId=6026dab46eed94 \
       -DstagingDescription="${STAGING_DESC}"
+
     export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
-      egrep "^\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-      awk '{print $2}' | head -1)
+      egrep "\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+      sed -E s@'.*(iohelidon-[0-9]*).*'@'\1'@g | head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
-    mvn -B clean deploy -Prelease,integrations,ossrh-releases -DskipTests \
+    mvn -B clean deploy -Prelease,archetypes -DskipTests \
       -Dgpg.passphrase="${GPG_PASSPHRASE}" \
       -DstagingRepositoryId=${STAGING_REPO_ID} \
       -DretryFailedDeploymentCount=10

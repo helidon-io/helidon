@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -139,23 +138,23 @@ public class WebSecurityBuilderGateDefaultsTest {
         testProtected(serverBaseUri + "/noRoles",
                       username,
                       password,
-                      CollectionsHelper.setOf("user", "admin"),
-                      CollectionsHelper.setOf());
+                      Set.of("user", "admin"),
+                      Set.of());
         testProtected(serverBaseUri + "/user",
                       username,
                       password,
-                      CollectionsHelper.setOf("user", "admin"),
-                      CollectionsHelper.setOf());
+                      Set.of("user", "admin"),
+                      Set.of());
         testProtected(serverBaseUri + "/admin",
                       username,
                       password,
-                      CollectionsHelper.setOf("user", "admin"),
-                      CollectionsHelper.setOf());
+                      Set.of("user", "admin"),
+                      Set.of());
         testProtected(serverBaseUri + "/deny",
                       username,
                       password,
-                      CollectionsHelper.setOf("user", "admin"),
-                      CollectionsHelper.setOf());
+                      Set.of("user", "admin"),
+                      Set.of());
     }
 
     @Test
@@ -167,8 +166,8 @@ public class WebSecurityBuilderGateDefaultsTest {
         testProtected(serverBaseUri + "/user",
                       username,
                       password,
-                      CollectionsHelper.setOf("user"),
-                      CollectionsHelper.setOf("admin"));
+                      Set.of("user"),
+                      Set.of("admin"));
         testForbidden(serverBaseUri + "/admin", username, password);
         testForbidden(serverBaseUri + "/deny", username, password);
     }

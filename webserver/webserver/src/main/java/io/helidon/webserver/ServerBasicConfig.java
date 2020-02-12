@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.http.ContextualRegistry;
 
 import io.opentracing.Tracer;
 
@@ -32,15 +33,13 @@ import io.opentracing.Tracer;
  * Basic implementation of the {@link ServerConfiguration}.
  */
 class ServerBasicConfig implements ServerConfiguration {
-
-    static final ServerConfiguration DEFAULT_CONFIGURATION = ServerConfiguration.builder().build();
-
     private final SocketConfiguration socketConfig;
     private final int workers;
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
     private final ExperimentalConfiguration experimental;
-    private final Context context;
+    private final ContextualRegistry context;
+    private final boolean printFeatureDetails;
 
     /**
      * Creates new instance.
@@ -53,6 +52,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.tracer = builder.tracer();
         this.experimental = builder.experimental();
         this.context = builder.context();
+        this.printFeatureDetails = builder.printFeatureDetails();
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(ServerConfiguration.DEFAULT_SOCKET_NAME, this.socketConfig);
@@ -117,6 +117,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public Context context() {
         return context;
+    }
+
+    @Override
+    public boolean printFeatureDetails() {
+        return printFeatureDetails;
     }
 
     static class SocketConfig implements SocketConfiguration {

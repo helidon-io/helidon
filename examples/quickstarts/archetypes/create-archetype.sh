@@ -274,6 +274,7 @@ processProjectPom(){
         -e s@"<artifactId>${ARTIFACTID}</artifactId>"@'<artifactId>${artifactId}</artifactId>'@g \
         -e s@"^    <version>${VERSION}</version>"@'    <version>${version}</version>'@g \
         -e s@"<name>${NAME}</name>"@'<name>${project.artifactId}</name>'@g \
+        -e s@'<relativePath>.*</relativePath>'@'<relativePath/>'@g \
         > ${outputfile}
 }
 
@@ -370,5 +371,5 @@ echo "DONE!"
 echo ""
 
 if [ ! -z "${MAVEN_ARGS}" ] ; then
-    mvn -f ${ARCHETYPE_DIR}/pom.xml ${MAVEN_ARGS}
+    mvn -B -f ${ARCHETYPE_DIR}/pom.xml ${MAVEN_ARGS}
 fi

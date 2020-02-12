@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,15 @@ public interface Http2Configuration {
     int maxContentLength();
 
     /**
+     * Create a new fluent API builder.
+     *
+     * @return a new builder instance.
+     */
+    static Http2Configuration.Builder builder() {
+        return new Http2Configuration.Builder();
+    }
+
+    /**
      * Builder for {@link Http2Configuration}.
      */
     final class Builder implements io.helidon.common.Builder<Http2Configuration> {
@@ -53,7 +62,7 @@ public interface Http2Configuration {
          * Sets value to enable HTTP/2 support.
          *
          * @param enableHttp2 New value.
-         * @return
+         * @return an updated builder
          */
         public Builder enable(boolean enableHttp2) {
             this.enableHttp2 = enableHttp2;
@@ -64,7 +73,7 @@ public interface Http2Configuration {
          * Sets max content length for HTTP/2.
          *
          * @param http2MaxContentLength New value for max content length.
-         * @return
+         * @return an updated builder
          */
         public Builder maxContentLength(int http2MaxContentLength) {
             this.http2MaxContentLength = http2MaxContentLength;

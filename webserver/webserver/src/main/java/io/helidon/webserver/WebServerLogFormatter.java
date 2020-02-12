@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 /**
  * The WebServerLogFormatter provides a way to customize logging messages.
  */
+@Deprecated
 public class WebServerLogFormatter extends SimpleFormatter {
 
     private static final Pattern THREAD_PATTERN = Pattern.compile("!thread!");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.ClassToInstanceStore;
 
@@ -96,11 +95,11 @@ public final class OutboundTarget {
 
         builder.config(c);
         builder.name(c.get(CONFIG_NAME).asString().get());
-        c.get(CONFIG_TRANSPORTS).asList(String.class).orElse(CollectionsHelper.listOf())
+        c.get(CONFIG_TRANSPORTS).asList(String.class).orElse(List.of())
                 .forEach(builder::addTransport);
-        c.get(CONFIG_HOSTS).asList(String.class).orElse(CollectionsHelper.listOf())
+        c.get(CONFIG_HOSTS).asList(String.class).orElse(List.of())
                 .forEach(builder::addHost);
-        c.get(CONFIG_PATHS).asList(String.class).orElse(CollectionsHelper.listOf())
+        c.get(CONFIG_PATHS).asList(String.class).orElse(List.of())
                 .forEach(builder::addPath);
 
         return builder.build();

@@ -29,8 +29,10 @@ import io.helidon.grpc.server.ServiceDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
+
 /**
- * An implementation of the GreetService.
+ * A plain Java implementation of the GreetService.
  */
 public class GreetService implements GrpcService {
     /**

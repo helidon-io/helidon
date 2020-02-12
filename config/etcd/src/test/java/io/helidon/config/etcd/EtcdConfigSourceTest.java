@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,9 @@ public class EtcdConfigSourceTest {
 
     @Test
     public void testConfigSourceBuilder() {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .create(DEFAULT_URI, "key", EtcdApi.v2)
+        EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                .key("key")
+                .api(EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 
@@ -73,8 +74,10 @@ public class EtcdConfigSourceTest {
     @Test
     public void testBadUri() {
         assertThrows(ConfigException.class, () -> {
-            EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                    .create(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
+            EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                    .uri(URI.create("http://localhost:1111"))
+                    .key("configuration")
+                    .api(EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
@@ -85,8 +88,10 @@ public class EtcdConfigSourceTest {
     @Test
     public void testBadKey() {
         assertThrows(ConfigException.class, () -> {
-            EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                    .create(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
+            EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                    .uri(DEFAULT_URI)
+                    .key("non-existing-key-23323423424234")
+                    .api(EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
@@ -98,8 +103,10 @@ public class EtcdConfigSourceTest {
     public void testConfig() {
         final AtomicLong revision = new AtomicLong(0);
 
-        EtcdConfigSource configSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .create(DEFAULT_URI, "configuration", EtcdApi.v2)
+        EtcdConfigSource configSource = EtcdConfigSource.builder()
+                .uri(DEFAULT_URI)
+                .key("configuration")
+                .api(EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 
@@ -107,8 +114,8 @@ public class EtcdConfigSourceTest {
         when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
         when(mockedConfigSource.content()).thenReturn(new ConfigParser.Content<Long>() {
             @Override
-            public String mediaType() {
-                return MEDIA_TYPE_APPLICATION_HOCON;
+            public Optional<String> mediaType() {
+                return Optional.of(MEDIA_TYPE_APPLICATION_HOCON);
             }
 
             @Override
@@ -135,7 +142,7 @@ public class EtcdConfigSourceTest {
     }
 
     private void putConfiguration(String resourcePath) throws Exception {
-        File file = new File(EtcdConfigSourceTest.class.getResource(resourcePath).getFile());
+        File file = new File(EtcdConfigSourceTest.class.getResource(resourcePath).toURI());
         etcdClient.put("configuration",
                        String.join("\n", Files.readAllLines(file.toPath(), Charset.defaultCharset())));
     }

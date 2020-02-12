@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.examples.jersey;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
@@ -52,6 +53,9 @@ public final class JerseyProgrammaticMain {
                 .register(new ExceptionMapper<Exception>() {
                     @Override
                     public Response toResponse(Exception exception) {
+                        if (exception instanceof WebApplicationException) {
+                            return ((WebApplicationException) exception).getResponse();
+                        }
                         exception.printStackTrace();
                         return Response.serverError().build();
                     }
@@ -72,7 +76,7 @@ public final class JerseyProgrammaticMain {
         Routing.Builder routing = Routing.builder()
                 .register("/rest", buildJersey());
 
-        server = JerseyUtil.startIt(routing);
+        server = JerseyUtil.startIt(routing, 8080);
 
         JerseyResources.setPort(server.port());
     }

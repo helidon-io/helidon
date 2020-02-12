@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,15 @@ package io.helidon.config.spi;
 import java.io.IOException;
 import java.io.StringReader;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
@@ -66,8 +68,8 @@ public class AbstractParsableConfigSourceTest {
         TestingParsableConfigSource source = TestingParsableConfigSource.builder().build();
 
         assertThat(source.isMandatory(), is(true));
-        assertThat(source.mediaType(), is(nullValue()));
-        assertThat(source.parser(), is(nullValue()));
+        assertThat(source.mediaType(), is(Optional.empty()));
+        assertThat(source.parser(), is(Optional.empty()));
     }
 
     @Test
@@ -77,9 +79,9 @@ public class AbstractParsableConfigSourceTest {
                 .build();
 
         assertThat(source.isMandatory(), is(true));
-        assertThat(source.mediaType(), is(nullValue()));
-        assertThat(source.parser(), is(nullValue()));
-        assertThat(source.content().mediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(source.mediaType(), is(Optional.empty()));
+        assertThat(source.parser(), is(Optional.empty()));
+        assertThat(source.content().mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
         assertThat(readerToString(source.content().asReadable()), is(TEST_CONFIG));
     }
 
@@ -89,9 +91,9 @@ public class AbstractParsableConfigSourceTest {
                 .create(new StringReader(TEST_CONFIG), TEST_MEDIA_TYPE);
 
         assertThat(source.isMandatory(), is(true));
-        assertThat(source.mediaType(), is(TEST_MEDIA_TYPE));
-        assertThat(source.parser(), is(nullValue()));
-        assertThat(source.content().mediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(source.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
+        assertThat(source.parser(), is(Optional.empty()));
+        assertThat(source.content().mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
         assertThat(readerToString(source.content().asReadable()), is(TEST_CONFIG));
     }
 
@@ -105,16 +107,16 @@ public class AbstractParsableConfigSourceTest {
                 .build();
 
         assertThat(source.isMandatory(), is(false));
-        assertThat(source.mediaType(), is(TEST_MEDIA_TYPE));
-        assertThat(source.parser(), is(parser));
+        assertThat(source.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
+        assertThat(source.parser(), is(Optional.of(parser)));
     }
 
     @Test
     public void testMandatoryParserSetContentExistsParserRegistered() {
-        ConfigParser.Content content = mockContent();
+        ConfigParser.Content<Instant> content = mockContent();
         ConfigParser registeredParser = mockParser("registered");
         ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser(content.mediaType())).thenReturn(Optional.of(registeredParser));
+        when(context.findParser(content.mediaType().get())).thenReturn(Optional.of(registeredParser));
 
         ConfigParser setParser = mockParser("set");
 
@@ -129,10 +131,10 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testMandatoryParserSetContentNotExistsParserRegistered() {
-        ConfigParser.Content content = mockContent();
+        ConfigParser.Content<Instant> content = mockContent();
         ConfigParser registeredParser = mockParser("registered");
         ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser(content.mediaType())).thenReturn(Optional.of(registeredParser));
+        when(context.findParser(content.mediaType().get())).thenReturn(Optional.of(registeredParser));
 
         ConfigParser setParser = mockParser("set");
 
@@ -144,7 +146,7 @@ public class AbstractParsableConfigSourceTest {
             source.init(context);
             source.load();
         });
-        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+        assertThat(ex.getMessage(), stringContainsInOrder(List.of(
                 "Cannot load data from mandatory source",
                 "TestingParsableConfig[parsable-test]")));
         assertThat(ex.getCause(),
@@ -153,10 +155,10 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testMandatoryParserNotSetContentExistsParserRegistered() {
-        ConfigParser.Content content = mockContent();
+        ConfigParser.Content<Instant> content = mockContent();
         ConfigParser registeredParser = mockParser("registered");
         ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser(content.mediaType())).thenReturn(Optional.of(registeredParser));
+        when(context.findParser(content.mediaType().get())).thenReturn(Optional.of(registeredParser));
 
         TestingParsableConfigSource source = TestingParsableConfigSource.builder()
                 .content(content)
@@ -168,9 +170,9 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testMandatoryParserNotSetContentExistsParserNotRegistered() {
-        ConfigParser.Content content = mockContent();
+        ConfigParser.Content<Instant> content = mockContent();
         ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser(content.mediaType())).thenReturn(Optional.empty());
+        when(context.findParser(content.mediaType().get())).thenReturn(Optional.empty());
 
         TestingParsableConfigSource source = TestingParsableConfigSource.builder()
                 .content(content)
@@ -180,7 +182,7 @@ public class AbstractParsableConfigSourceTest {
             source.init(context);
             source.load();
         });
-        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+        assertThat(ex.getMessage(), stringContainsInOrder(List.of(
                 "Cannot load data from mandatory source",
                 "TestingParsableConfig[parsable-test]")));
         assertThat(ex.getCause(),
@@ -190,9 +192,9 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testOptionalParserNotSetContentExistsParserNotRegistered() {
-        ConfigParser.Content content = mockContent();
+        ConfigParser.Content<Instant> content = mockContent();
         ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser(content.mediaType())).thenReturn(Optional.empty());
+        when(context.findParser(content.mediaType().get())).thenReturn(Optional.empty());
 
         TestingParsableConfigSource source = TestingParsableConfigSource.builder()
                 .content(content)
@@ -205,9 +207,9 @@ public class AbstractParsableConfigSourceTest {
 
     @Test
     public void testOptionalParserSetContentNotExistsParserNotRegistered() {
-        ConfigParser.Content content = mockContent();
+        ConfigParser.Content<Instant> content = mockContent();
         ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser(content.mediaType())).thenReturn(Optional.empty());
+        when(context.findParser(content.mediaType().get())).thenReturn(Optional.empty());
 
         ConfigParser setParser = mockParser("set");
 
@@ -307,7 +309,7 @@ public class AbstractParsableConfigSourceTest {
 
         // change content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
-        Optional<Instant> contentTimestamp = Optional.of(Instant.now());
+        Instant contentTimestamp = Instant.now();
         contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
                                                          contentTimestamp));
@@ -321,14 +323,14 @@ public class AbstractParsableConfigSourceTest {
         // objectNode
         assertThat(configSource.lastData().get().data().get().get("aaa"), valueNode("bbb"));
         // content timestamp
-        assertThat(configSource.lastData().get().stamp(), is(contentTimestamp));
+        assertThat(configSource.lastData().get().stamp().get(), is(contentTimestamp));
     }
 
     @Test
     public void testChangesFromContentToSameContent() throws InterruptedException {
         AtomicReference<ConfigParser.Content<Instant>> contentReference = new AtomicReference<>();
         // set content
-        Optional<Instant> contentTimestamp = Optional.of(Instant.now());
+        Instant contentTimestamp = Instant.now();
         contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
                                                          contentTimestamp));
@@ -349,7 +351,7 @@ public class AbstractParsableConfigSourceTest {
         // objectNode
         assertThat(configSource.lastData().get().data().get().get("aaa"), valueNode("bbb"));
         // content timestamp
-        assertThat(configSource.lastData().get().stamp(), is(contentTimestamp));
+        assertThat(configSource.lastData().get().stamp().get(), is(contentTimestamp));
 
         // listen on changes
         TestingConfigSourceChangeSubscriber subscriber = new TestingConfigSourceChangeSubscriber();
@@ -358,7 +360,7 @@ public class AbstractParsableConfigSourceTest {
 
         // reset content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
-        contentTimestamp = Optional.of(Instant.now());
+        contentTimestamp = Instant.now();
         contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
                                                          contentTimestamp));
@@ -372,14 +374,14 @@ public class AbstractParsableConfigSourceTest {
         // objectNode still null
         assertThat(configSource.lastData().get().data().get(), is(lastObjectNode));
         // timestamp has not changed
-        assertThat(configSource.lastData().get().stamp(), is(contentTimestamp));
+        assertThat(configSource.lastData().get().stamp().get(), is(contentTimestamp));
     }
 
     @Test
     public void testChangesFromContentToNoContent() throws InterruptedException {
         AtomicReference<ConfigParser.Content<Instant>> contentReference = new AtomicReference<>();
         // set content
-        Optional<Instant> contentTimestamp = Optional.of(Instant.now());
+        Instant contentTimestamp = Instant.now();
         contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
                                                          contentTimestamp));
@@ -399,7 +401,7 @@ public class AbstractParsableConfigSourceTest {
         // objectNode
         assertThat(configSource.lastData().get().data().get().get("aaa"), valueNode("bbb"));
         // content timestamp
-        assertThat(configSource.lastData().get().stamp(), is(contentTimestamp));
+        assertThat(configSource.lastData().get().stamp().get(), is(contentTimestamp));
 
         // listen on changes
         TestingConfigSourceChangeSubscriber subscriber = new TestingConfigSourceChangeSubscriber();
@@ -424,7 +426,7 @@ public class AbstractParsableConfigSourceTest {
     public void testChangesFromContentToDifferentOne() throws InterruptedException {
         AtomicReference<ConfigParser.Content> contentReference = new AtomicReference<>();
         // set content
-        Optional<Instant> contentTimestamp = Optional.of(Instant.now());
+        Instant contentTimestamp = Instant.now();
         contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
                                                          contentTimestamp));
@@ -445,7 +447,7 @@ public class AbstractParsableConfigSourceTest {
         // objectNode
         assertThat(configSource.lastData().get().data().get().get("aaa"), valueNode("bbb"));
         // content timestamp
-        assertThat(configSource.lastData().get().stamp(), is(contentTimestamp));
+        assertThat(configSource.lastData().get().stamp().get(), is(contentTimestamp));
 
         // listen on changes
         TestingConfigSourceChangeSubscriber subscriber = new TestingConfigSourceChangeSubscriber();
@@ -454,7 +456,7 @@ public class AbstractParsableConfigSourceTest {
 
         // reset content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
-        contentTimestamp = Optional.of(Instant.now());
+        contentTimestamp = Instant.now();
         contentReference.set(ConfigParser.Content.create(new StringReader("aaa=ccc"),
                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
                                                          contentTimestamp));
@@ -468,7 +470,7 @@ public class AbstractParsableConfigSourceTest {
         // objectNode
         assertThat(configSource.lastData().get().data().get().get("aaa"), valueNode("ccc"));
         // content timestamp
-        assertThat(configSource.lastData().get().stamp(), is(contentTimestamp));
+        assertThat(configSource.lastData().get().stamp().get(), is(contentTimestamp));
     }
 
     @Test
@@ -528,32 +530,32 @@ public class AbstractParsableConfigSourceTest {
     @Test
     public void testInitAll() {
         TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder()
-                .init(Config.create(ConfigSources.create(CollectionsHelper.mapOf("media-type", "application/x-yaml"))));
+                .config(Config.create(ConfigSources.create(Map.of("media-type", "application/x-yaml"))));
 
         //media-type
-        assertThat(builder.mediaType(), is("application/x-yaml"));
+        assertThat(builder.mediaType(), is(Optional.of("application/x-yaml")));
     }
 
     @Test
     public void testInitNothing() {
-        TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder().init((Config.empty()));
+        TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder().config((Config.empty()));
 
         //media-type
-        assertThat(builder.mediaType(), is(nullValue()));
+        assertThat(builder.mediaType(), is(Optional.empty()));
     }
 
-    private ConfigParser.Content mockContent() {
-        ConfigParser.Content content = mock(ConfigParser.Content.class);
+    private ConfigParser.Content<Instant> mockContent() {
+        ConfigParser.Content<Instant> content = mock(ConfigParser.Content.class);
         Readable readable = new StringReader(TEST_CONFIG);
         when(content.asReadable()).thenReturn(readable);
-        when(content.mediaType()).thenReturn(TEST_MEDIA_TYPE);
+        when(content.mediaType()).thenReturn(Optional.of(TEST_MEDIA_TYPE));
         when(content.stamp()).thenReturn(Optional.of(Instant.EPOCH));
         return content;
     }
 
     private ConfigParser mockParser(String value) {
         ConfigParser parser = mock(ConfigParser.class);
-        when(parser.supportedMediaTypes()).thenReturn(CollectionsHelper.setOf(TEST_MEDIA_TYPE));
+        when(parser.supportedMediaTypes()).thenReturn(Set.of(TEST_MEDIA_TYPE));
         when(parser.parse(any())).thenReturn(ObjectNode.builder().addValue(TEST_KEY, ValueNode.create(value)).build());
 
         return parser;

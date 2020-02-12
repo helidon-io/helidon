@@ -122,6 +122,10 @@ public final class SecurityFeature implements Feature {
         return true;
     }
 
+    FeatureConfig featureConfig() {
+        return featureConfig;
+    }
+
     /**
      * {@link SecurityFeature} fluent API builder.
      */
@@ -133,6 +137,7 @@ public final class SecurityFeature implements Feature {
         private boolean debug = FeatureConfig.DEFAULT_DEBUG;
         private boolean prematchingAuthorization = FeatureConfig.DEFAULT_PREMATCHING_ATZ;
         private boolean prematchingAuthentication = FeatureConfig.DEFAULT_PREMATCHING_ATN;
+        private boolean useAbortWith = FeatureConfig.DEFAULT_USE_ABORT_WITH;
 
         private Builder(Security security) {
             this.security = security;
@@ -230,6 +235,22 @@ public final class SecurityFeature implements Feature {
         }
 
         /**
+         * When set to {@code true} (which is the default behavior, the security filter
+         * would use {@link org.glassfish.jersey.server.ContainerRequest#abortWith(javax.ws.rs.core.Response)} to
+         * abort request and configure a security response.
+         * <p>
+         * When set to {@code false}, the security filter would throw an {@link javax.ws.rs.WebApplicationException} instead.
+         * Such an exception can be handled by a custom error handler.
+         *
+         * @param useAbortWith set to {@code false} to use exceptions, by default uses abortWith on request
+         * @return updated builder instance
+         */
+        public Builder useAbortWith(boolean useAbortWith) {
+            this.useAbortWith = useAbortWith;
+            return this;
+        }
+
+        /**
          * Update this builder from configuration.
          * Expects:
          * <ul>
@@ -259,11 +280,14 @@ public final class SecurityFeature implements Feature {
         public Builder config(Config config) {
             config.get("prematching-authentication").asBoolean().ifPresent(this::usePrematchingAuthentication);
             config.get("prematching-authorization").asBoolean().ifPresent(this::usePrematchingAuthorization);
+            config.get("use-abort-with").asBoolean().ifPresent(this::useAbortWith);
+
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asBoolean().ifPresent(this::authorizeAnnotatedOnly);
             myConfig.get("authenticate-annotated-only").asBoolean().ifPresent(this::authenticateAnnotatedOnly);
             myConfig.get("query-params").asList(QueryParamHandler.class).ifPresent(this::addQueryParamHandlers);
             myConfig.get("debug").asBoolean().filter(bool -> bool).ifPresent(bool -> this.debug());
+
             return this;
         }
 
@@ -303,6 +327,10 @@ public final class SecurityFeature implements Feature {
 
         boolean isPrematchingAuthentication() {
             return prematchingAuthentication;
+        }
+
+        boolean useAbortWith() {
+            return useAbortWith;
         }
     }
 

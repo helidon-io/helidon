@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Flow;
 
 import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Flow;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
@@ -44,6 +44,7 @@ class BareRequestImpl implements BareRequest {
     private final ChannelHandlerContext ctx;
     private final SSLEngine sslEngine;
     private final long requestId;
+    private final URI uri;
 
     BareRequestImpl(HttpRequest request,
                     Flow.Publisher<DataChunk> publisher,
@@ -57,6 +58,7 @@ class BareRequestImpl implements BareRequest {
         this.ctx = ctx;
         this.sslEngine = sslEngine;
         this.requestId = requestId;
+        this.uri = URI.create(nettyRequest.uri());
     }
 
     @Override
@@ -76,7 +78,7 @@ class BareRequestImpl implements BareRequest {
 
     @Override
     public URI uri() {
-        return URI.create(nettyRequest.uri());
+        return uri;
     }
 
     @Override

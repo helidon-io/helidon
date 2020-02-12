@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -119,7 +118,7 @@ public class TokenHandlerTest {
 
         List<String> authorization = headers.get("Authorization");
         assertThat(authorization.size(), is(2));
-        assertThat(authorization, is(CollectionsHelper.listOf("firstToken", "secondToken")));
+        assertThat(authorization, is(List.of("firstToken", "secondToken")));
 
         assertThat(tp.tokenHeader(), is("Authorization"));
     }

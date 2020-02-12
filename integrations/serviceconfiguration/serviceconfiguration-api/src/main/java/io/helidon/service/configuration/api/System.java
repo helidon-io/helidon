@@ -15,7 +15,7 @@
  */
 package io.helidon.service.configuration.api;
 
-import java.util.Collection; // for javadoc only
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -54,7 +54,10 @@ import java.util.Set;
  * @see #getProperties()
  *
  * @see #isAuthoritative()
+ *
+ * @deprecated This class is slated for removal.
  */
+@Deprecated
 public abstract class System {
 
 

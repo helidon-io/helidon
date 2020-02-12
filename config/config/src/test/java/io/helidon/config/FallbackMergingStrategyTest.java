@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.helidon.config;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -43,7 +43,7 @@ public class FallbackMergingStrategyTest {
     private ObjectNode mergeLoads(ConfigSource... configSources) {
         FallbackMergingStrategy strategy = new FallbackMergingStrategy();
         ConfigContext context = mock(ConfigContext.class);
-        return strategy.merge(CollectionsHelper.listOf(configSources).stream()
+        return strategy.merge(List.of(configSources).stream()
                                       .peek(source -> source.init(context))
                                       .map(ConfigSource::load)
                                       .filter(Optional::isPresent)
@@ -97,7 +97,7 @@ public class FallbackMergingStrategyTest {
                             .addValue("2").build()).build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "LIST")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "LIST")));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class FallbackMergingStrategyTest {
                     ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub", "2").build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "OBJECT")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "OBJECT")));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class FallbackMergingStrategyTest {
                     ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "2").build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "VALUE")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "OBJECT", "VALUE")));
     }
 
     @Test
@@ -133,7 +133,7 @@ public class FallbackMergingStrategyTest {
                             .addValue("2").build()).build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "[sub1]", "LIST")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "OBJECT", "[sub1]", "LIST")));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class FallbackMergingStrategyTest {
                                                  .build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "[1]", "LIST")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "OBJECT", "[1]", "LIST")));
     }
 
     @Test
@@ -187,7 +187,7 @@ public class FallbackMergingStrategyTest {
                     ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "2").build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "VALUE")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "VALUE")));
     }
 
     @Test
@@ -220,7 +220,7 @@ public class FallbackMergingStrategyTest {
                     ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub1", "2").build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "OBJECT")));
     }
 
     @Test
@@ -234,7 +234,7 @@ public class FallbackMergingStrategyTest {
                     ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.0", "2").build()));
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")));
+                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "OBJECT")));
     }
 
     @Test

@@ -39,7 +39,7 @@ import io.opentracing.Tracer;
 import io.opentracing.contrib.grpc.OpenTracingContextKey;
 import io.opentracing.contrib.grpc.OperationNameConstructor;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 
 /**
  * A {@link ServerInterceptor} that adds tracing to gRPC service calls.
@@ -47,18 +47,25 @@ import io.opentracing.propagation.TextMapExtractAdapter;
 @Priority(InterceptorPriorities.TRACING)
 public class GrpcTracing
         implements ServerInterceptor {
-    /**
-     * public constructor.
-     *
-     * @param tracer        the Open Tracing {@link Tracer}
-     * @param tracingConfig the tracing configuration
-     */
-    public GrpcTracing(Tracer tracer, TracingConfiguration tracingConfig) {
+
+    private GrpcTracing(Tracer tracer, GrpcTracingConfig tracingConfig) {
         this.tracer = tracer;
         operationNameConstructor = tracingConfig.operationNameConstructor();
         streaming = tracingConfig.isStreaming();
         verbose = tracingConfig.isVerbose();
         tracedAttributes = tracingConfig.tracedAttributes();
+    }
+
+    /**
+     * Create a {@link GrpcTracing} interceptor.
+     *
+     * @param tracer the Open Tracing {@link Tracer}
+     * @param config the tracing configuration
+     *
+     * @return a {@link GrpcTracing} interceptor instance
+     */
+    static GrpcTracing create(Tracer tracer, GrpcTracingConfig config) {
+        return new GrpcTracing(tracer, config);
     }
 
     @Override
@@ -103,10 +110,25 @@ public class GrpcTracing
             }
         }
 
-        Context ctxWithSpan = Context.current().withValue(OpenTracingContextKey.getKey(), span);
+        Context grpcContext = Context.current();
+
+        updateContext(ContextKeys.HELIDON_CONTEXT.get(grpcContext), span);
+        io.helidon.common.context.Contexts.context().ifPresent(ctx -> updateContext(ctx, span));
+
+        Context ctxWithSpan = grpcContext.withValue(OpenTracingContextKey.getKey(), span);
         ServerCall.Listener<ReqT> listenerWithContext = Contexts.interceptCall(ctxWithSpan, call, headers, next);
 
         return new TracingListener<>(listenerWithContext, span);
+    }
+
+    private void updateContext(io.helidon.common.context.Context context, Span span) {
+        if (context != null) {
+            if (!context.get(Tracer.class).isPresent()) {
+                context.register(tracer);
+            }
+
+            context.register(span.context());
+        }
     }
 
     private void addMetadata(Metadata headers, Span span) {
@@ -125,7 +147,7 @@ public class GrpcTracing
 
         try {
             SpanContext parentSpanCtx = tracer.extract(Format.Builtin.HTTP_HEADERS,
-                                                       new TextMapExtractAdapter(headers));
+                                                       new TextMapAdapter(headers));
             if (parentSpanCtx == null) {
                 span = tracer.buildSpan(operationName)
                         .start();

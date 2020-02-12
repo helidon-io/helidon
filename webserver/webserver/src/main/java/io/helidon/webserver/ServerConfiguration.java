@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
+import io.helidon.common.http.ContextualRegistry;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
@@ -51,9 +52,9 @@ public interface ServerConfiguration extends SocketConfiguration {
     String DEFAULT_SOCKET_NAME = "@default";
 
     /**
-     * Returns a count of threads in s pool used to tryProcess HTTP requests.
+     * Returns the count of threads in the pool used to process HTTP requests.
      * <p>
-     * Default value is {@code CPU_COUNT * 2}.
+     * Default value is {@link Runtime#availableProcessors()}.
      *
      * @return a workers count
      */
@@ -181,6 +182,23 @@ public interface ServerConfiguration extends SocketConfiguration {
     ExperimentalConfiguration experimental();
 
     /**
+     * Whether to print details of {@link io.helidon.common.HelidonFeatures}.
+     *
+     * @return whether to print details
+     */
+    boolean printFeatureDetails();
+
+    /**
+     * Checks if HTTP/2 is enabled in config.
+     *
+     * @return Outcome of test.
+     */
+    default boolean isHttp2Enabled() {
+        ExperimentalConfiguration experimental = experimental();
+        return experimental != null && experimental.http2() != null && experimental.http2().enable();
+    }
+
+    /**
      * Creates new instance with defaults from external configuration source.
      *
      * @param config the externalized configuration
@@ -213,13 +231,14 @@ public interface ServerConfiguration extends SocketConfiguration {
      * A {@link ServerConfiguration} builder.
      */
     final class Builder implements io.helidon.common.Builder<ServerConfiguration> {
-
+        private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
         private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();
         private final Map<String, SocketConfiguration> sockets = new HashMap<>();
         private int workers;
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
-        private Context context;
+        private ContextualRegistry context;
+        private boolean printFeatureDetails;
 
         private Builder() {
         }
@@ -398,8 +417,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return updated builder
          */
         public Builder tracer(Supplier<? extends Tracer> tracerBuilder) {
-            this.tracer = tracerBuilder != null ? tracerBuilder.get() : null;
-            return this;
+            return tracer(tracerBuilder.get());
         }
 
         /**
@@ -435,12 +453,29 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * Set to {@code true} to print detailed feature information on startup.
+         *
+         * @param print whether to print details or not
+         * @return updated builder instance
+         * @see io.helidon.common.HelidonFeatures
+         */
+        public Builder printFeatureDetails(boolean print) {
+            this.printFeatureDetails = print;
+            return this;
+        }
+
+        /**
          * Configure the application scoped context to be used as a parent for webserver request contexts.
          * @param context top level context
          * @return an updated builder
          */
         public Builder context(Context context) {
-            this.context = context;
+            // backward compatibility only - in 2.0 we should use the context given to us
+            this.context = ContextualRegistry.builder()
+                    .id(context.id() + ":web-" + WEBSERVER_COUNTER.getAndIncrement())
+                    .parent(context)
+                    .build();
+
             return this;
         }
 
@@ -470,11 +505,12 @@ public interface ServerConfiguration extends SocketConfiguration {
             configureSocket(config, defaultSocketBuilder);
 
             config.get("workers").asInt().ifPresent(this::workersCount);
+            config.get("features.print-details").asBoolean().ifPresent(this::printFeatureDetails);
 
             // sockets
             Config socketsConfig = config.get("sockets");
             if (socketsConfig.exists()) {
-                for (Config socketConfig : socketsConfig.asNodeList().orElse(CollectionsHelper.listOf())) {
+                for (Config socketConfig : socketsConfig.asNodeList().orElse(List.of())) {
                     String socketName = socketConfig.name();
                     sockets.put(socketName, configureSocket(socketConfig, SocketConfiguration.builder()).build());
                 }
@@ -529,26 +565,32 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         @Override
         public ServerConfiguration build() {
-            if (null == tracer) {
-                tracer = GlobalTracer.get();
-            }
-
             if (null == context) {
-                context = Context.create();
+                // I do not expect "unlimited" number of webservers
+                // in case somebody spins a huge number up, the counter will cycle to negative numbers once
+                // Integer.MAX_VALUE is reached.
+                context = ContextualRegistry.builder()
+                        .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .build();
             }
 
-            if (!context.get(Tracer.class).isPresent()) {
-                context.register(tracer);
+            Optional<Tracer> maybeTracer = context.get(Tracer.class);
+
+            if (null == this.tracer) {
+                this.tracer = maybeTracer.orElseGet(GlobalTracer::get);
+            }
+
+            if (!maybeTracer.isPresent()) {
+                context.register(this.tracer);
             }
 
             if (workers <= 0) {
-                workers = Runtime.getRuntime().availableProcessors() * 2;
+                workers = Runtime.getRuntime().availableProcessors();
             }
 
             if (null == experimental) {
                 experimental = ExperimentalConfiguration.builder().build();
             }
-
 
             return new ServerBasicConfig(this);
         }
@@ -573,8 +615,12 @@ public interface ServerConfiguration extends SocketConfiguration {
             return experimental;
         }
 
-        Context context() {
+        ContextualRegistry context() {
             return context;
+        }
+
+        boolean printFeatureDetails() {
+            return printFeatureDetails;
         }
     }
 }

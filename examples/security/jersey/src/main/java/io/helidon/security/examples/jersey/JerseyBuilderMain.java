@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.Optional;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.Security;
 import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
@@ -43,9 +42,9 @@ public final class JerseyBuilderMain {
     private static volatile WebServer server;
 
     static {
-        addUser("jack", "password", CollectionsHelper.listOf("user", "admin"));
-        addUser("jill", "password", CollectionsHelper.listOf("user"));
-        addUser("john", "password", CollectionsHelper.listOf());
+        addUser("jack", "password", List.of("user", "admin"));
+        addUser("jill", "password", List.of("user"));
+        addUser("john", "password", List.of());
     }
 
     private JerseyBuilderMain() {
@@ -117,7 +116,7 @@ public final class JerseyBuilderMain {
         Routing.Builder routing = Routing.builder()
                 .register("/rest", buildJersey());
 
-        server = JerseyUtil.startIt(routing);
+        server = JerseyUtil.startIt(routing, 8080);
 
         JerseyResources.setPort(server.port());
     }

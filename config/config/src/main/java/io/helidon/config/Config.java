@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.GenericType;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -52,7 +51,8 @@ import io.helidon.config.spi.OverrideSource;
  * implementing interfaces defined in the SPI, by explicitly constructing the
  * {@link Builder} which assembles the {@code Config}, and by using other
  * classes provided by the config system that influence loading.
- * <table summary="Some Config SPI Interfaces">
+ * <table class="config">
+ * <caption><b>Some Config SPI Interfaces</b></caption>
  * <tr>
  * <th>Class.Method</th>
  * <th>Application-implemented Interface</th>
@@ -80,7 +80,7 @@ import io.helidon.config.spi.OverrideSource;
  * sources.</td>
  * </tr>
  * <tr>
- * <td>{@link OverrideSources} methods</td>
+ * <td>{@link OverrideSources}</td>
  * <td></td>
  * <td>Replaces config {@code String} values during loading based on their keys.
  * Programs provide overrides in Java property file format on the classpath, at
@@ -231,7 +231,7 @@ import io.helidon.config.spi.OverrideSource;
  * that can handle classes that fulfill some requirements (see documentation), such as a public constructor,
  * static "create(Config)" method etc.
  *
- * <h2><a name="multipleSources">Handling Multiple Configuration
+ * <h2><a id="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
  * A {@code Config} instance, including the default {@code Config} returned by
  * {@link #create}, might be associated with multiple {@link ConfigSource}s. The
@@ -267,30 +267,6 @@ public interface Config {
     static Config empty() {
         return BuilderImpl.EmptyConfigHolder.EMPTY;
     }
-
-    /**
-     * Create an empty configuration with mappers copied from another config.
-     *
-     * @param config config to get mappers from
-     * @return an empty config instance (empty Object)
-     */
-    static Config empty(Config config) {
-
-        return new BuilderImpl()
-                .sources(ConfigSources.empty())
-                .overrides(OverrideSources.empty())
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableMapperServices()
-                .disableParserServices()
-                .disableFilterServices()
-                .mappersFrom(config)
-                .build();
-    }
-
-    //
-    // tree (config nodes) method
-    //
 
     /**
      * Returns a new default {@link Config} loaded using one of the
@@ -352,10 +328,9 @@ public interface Config {
      * {@code Config} instance as desired.
      *
      * @return new instance of {@link Config}
-     * @see #loadSourcesFrom(Supplier[])
      */
     static Config create() {
-        return builder().build();
+        return builder().metaConfig().build();
     }
 
     /**
@@ -374,9 +349,7 @@ public interface Config {
      *
      * @param configSources ordered list of configuration sources
      * @return new instance of {@link Config}
-     * @see #loadSourcesFrom(Supplier[])
      * @see #builder(Supplier[])
-     * @see #builderLoadSourcesFrom(Supplier[])
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
@@ -385,27 +358,8 @@ public interface Config {
      * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
-    static Config create(Supplier<ConfigSource>... configSources) {
+    static Config create(Supplier<? extends ConfigSource>... configSources) {
         return builder(configSources).build();
-    }
-
-    /**
-     * Creates a new {@link Config} loaded from the specified
-     * {@link ConfigSource}s representing meta-configurations.
-     * <p>
-     * See {@link ConfigSource#create(Config)} for more information about the
-     * format of meta-configuration.
-     *
-     * @param metaSources ordered list of meta sources
-     * @return new instance of {@link Config}
-     * @see #create(Supplier[])
-     * @see #builder(Supplier[])
-     * @see #builderLoadSourcesFrom(Supplier[])
-     * @see ConfigSources#load(Supplier[])
-     */
-    @SafeVarargs
-    static Config loadSourcesFrom(Supplier<ConfigSource>... metaSources) {
-        return builderLoadSourcesFrom(metaSources).build();
     }
 
     /**
@@ -426,8 +380,6 @@ public interface Config {
      * @return new initialized Builder instance
      * @see #builder()
      * @see #create(Supplier[])
-     * @see #loadSourcesFrom(Supplier[])
-     * @see #builderLoadSourcesFrom(Supplier[])
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
@@ -436,30 +388,8 @@ public interface Config {
      * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
-    static Builder builder(Supplier<ConfigSource>... configSources) {
-        return builder().sources(CollectionsHelper.listOf(configSources));
-    }
-
-    /**
-     * Provides a {@link Builder} for creating a {@link Config} based on the
-     * specified {@link ConfigSource}s representing meta-configurations.
-     * <p>
-     * Each meta-configuration source should set the {@code sources} property to
-     * be an array of config sources. See {@link ConfigSource#create(Config)} for
-     * more information about the format of meta-configuration.
-     *
-     * @param metaSources ordered list of meta sources
-     * @return new initialized Builder instance
-     * @see #builder()
-     * @see #builder(Supplier[])
-     * @see ConfigSources#load(Supplier[])
-     * @see #loadSourcesFrom(Supplier[])
-     */
-    @SafeVarargs
-    static Builder builderLoadSourcesFrom(Supplier<ConfigSource>... metaSources) {
-        return builder(ConfigSources.load(metaSources))
-                .disableSystemPropertiesSource()
-                .disableEnvironmentVariablesSource();
+    static Builder builder(Supplier<? extends ConfigSource>... configSources) {
+        return builder().sources(List.of(configSources));
     }
 
     /**
@@ -1280,6 +1210,13 @@ public interface Config {
      * @see ConfigFilter
      */
     interface Builder {
+        /**
+         * Disable loading of config sources from Java service loader.
+         * This disables loading of MicroProfile Config sources.
+         *
+         * @return updated builder instance
+         */
+        Builder disableSourceServices();
 
         /**
          * Sets ordered list of {@link ConfigSource} instance to be used as single source of configuration
@@ -1316,7 +1253,19 @@ public interface Config {
          * @see ConfigSources.CompositeBuilder
          * @see ConfigSources.MergingStrategy
          */
-        Builder sources(List<Supplier<ConfigSource>> configSources);
+        Builder sources(List<Supplier<? extends ConfigSource>> configSources);
+
+        /**
+         * Add a config source to the list of sources.
+         *
+         * @param source to add
+         * @return updated builder instance
+         */
+        Builder addSource(ConfigSource source);
+
+        default Builder addSource(Supplier<? extends ConfigSource> source) {
+            return addSource(source.get());
+        }
 
         /**
          * Sets a {@link ConfigSource} instance to be used as a source of configuration to be wrapped into {@link Config} API.
@@ -1337,8 +1286,8 @@ public interface Config {
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
          */
-        default Builder sources(Supplier<ConfigSource> configSource) {
-            sources(CollectionsHelper.listOf(configSource));
+        default Builder sources(Supplier<? extends ConfigSource> configSource) {
+            sources(List.of(configSource));
             return this;
         }
 
@@ -1363,9 +1312,9 @@ public interface Config {
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
          */
-        default Builder sources(Supplier<ConfigSource> configSource,
-                                Supplier<ConfigSource> configSource2) {
-            sources(CollectionsHelper.listOf(configSource, configSource2));
+        default Builder sources(Supplier<? extends ConfigSource> configSource,
+                                Supplier<? extends ConfigSource> configSource2) {
+            sources(List.of(configSource, configSource2));
             return this;
         }
 
@@ -1391,10 +1340,10 @@ public interface Config {
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
          */
-        default Builder sources(Supplier<ConfigSource> configSource,
-                                Supplier<ConfigSource> configSource2,
-                                Supplier<ConfigSource> configSource3) {
-            sources(CollectionsHelper.listOf(configSource, configSource2, configSource3));
+        default Builder sources(Supplier<? extends ConfigSource> configSource,
+                                Supplier<? extends ConfigSource> configSource2,
+                                Supplier<? extends ConfigSource> configSource3) {
+            sources(List.of(configSource, configSource2, configSource3));
             return this;
         }
 
@@ -1696,12 +1645,143 @@ public interface Config {
         Config build();
 
         /**
-         * Add mappers from another config instance.
-         * This may be useful if we need the same conversion behavior.
+         * Check if meta configuration is present and if so, update this builder using
+         * the meta configuration.
          *
-         * @param config config to extract mappers from
          * @return updated builder instance
+         * @see #config(Config)
          */
-        Builder mappersFrom(Config config);
+        default Builder metaConfig() {
+            MetaConfig.metaConfig()
+                    .ifPresent(this::config);
+
+            return this;
+        }
+
+        /**
+         * Configure this config builder from meta configuration.
+         * <p>
+         * The following configuration options are supported in a meta configuration file:
+         *
+         * <table class="config">
+         * <caption>Meta configuration</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         *     <th>reference</th>
+         * </tr>
+         * <tr>
+         *     <td>caching.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable caching of results of filters.</td>
+         *     <td>{@link #disableCaching()}</td>
+         * </tr>
+         * <tr>
+         *     <td>key-resolving.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable resolving of placeholders in keys.</td>
+         *     <td>{@link #disableKeyResolving()}</td>
+         * </tr>
+         * <tr>
+         *     <td>value-resolving.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable resolving of placeholders in values.</td>
+         *     <td>{@link #disableValueResolving()}</td>
+         * </tr>
+         * <tr>
+         *     <td>parsers.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable parser services.</td>
+         *     <td>{@link #disableParserServices()}</td>
+         * </tr>
+         * <tr>
+         *     <td>mappers.enabled</td>
+         *     <td>{@code true}</td>
+         *     <td>Enable or disable mapper services.</td>
+         *     <td>{@link #disableMapperServices()}</td>
+         * </tr>
+         * <tr>
+         *     <td>override-source</td>
+         *     <td>none</td>
+         *     <td>Configure an override source. Same as config source configuration (see below)</td>
+         *     <td>{@link #overrides(java.util.function.Supplier)}</td>
+         * </tr>
+         * <tr>
+         *     <td>sources</td>
+         *     <td>Default config sources are prefixed {@code application}, and suffix is the first available of
+         *          {@code yaml, conf, json, properties}</td>
+         *     <td>Configure config sources to be used by the application. This node contains the array of objects defining
+         *          config sources</td>
+         *     <td>{@link #addSource(io.helidon.config.spi.ConfigSource)}</td>
+         * </tr>
+         * </table>
+         *
+         * Config source configuration options:
+         * <table class="config">
+         * <caption>Config source</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         *     <th>reference</th>
+         * </tr>
+         * <tr>
+         *     <td>type</td>
+         *     <td>&nbsp;</td>
+         *     <td>Type of a config source - a string supported by a provider.</td>
+         *     <td>{@link io.helidon.config.spi.ConfigSourceProvider#create(String, Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties</td>
+         *     <td>&nbsp;</td>
+         *     <td>Configuration options to configure the config source (meta configuration of a source)</td>
+         *     <td>{@link io.helidon.config.spi.ConfigSourceProvider#create(String, Config)},
+         *      {@link MetaConfig#configSource(Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties.optional</td>
+         *     <td>false</td>
+         *     <td>Most config sources can be configured to be optional</td>
+         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#optional(boolean)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties.polling-strategy</td>
+         *     <td>&nbsp;</td>
+         *     <td>Some config sources can have a polling strategy defined</td>
+         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#pollingStrategy(java.util.function.Function)},
+         *          {@link MetaConfig#pollingStrategy(Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>properties.retry-policy</td>
+         *     <td>&nbsp;</td>
+         *     <td>Some config sources can have a retry policy defined</td>
+         *     <td>{@link io.helidon.config.spi.AbstractSource.Builder#retryPolicy(io.helidon.config.spi.RetryPolicy)},
+         *          {@link MetaConfig#retryPolicy(Config)}</td>
+         * </tr>
+         * </table>
+         *
+         * Full meta configuration example:
+         * <pre>
+         * sources:
+         *   - type: "system-properties"
+         *   - type: "environment-variables"
+         *   - type: "file"
+         *     properties:
+         *       optional: true
+         *       path: "conf/dev-application.yaml"
+         *       polling-strategy:
+         *         type: "watch"
+         *       retry-policy:
+         *         type: "repeat"
+         *         properties:
+         *           retries: 5
+         *    - type: "classpath"
+         *      properties:
+         *        optional: true
+         *        resource: "application.yaml"
+         * </pre>
+         */
+        Builder config(Config metaConfig);
     }
 }

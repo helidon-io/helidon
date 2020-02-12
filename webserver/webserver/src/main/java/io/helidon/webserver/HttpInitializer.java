@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -50,7 +51,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private final SslContext sslContext;
     private final NettyWebServer webServer;
     private final Routing routing;
-    private final Queue<ReferenceHoldingQueue<ByteBufRequestChunk>> queues = new ConcurrentLinkedQueue<>();
+    private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
 
     HttpInitializer(SslContext sslContext, Routing routing, NettyWebServer webServer) {
         this.routing = routing;
@@ -81,15 +82,17 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Set up HTTP/2 pipeline if feature is enabled
-        ExperimentalConfiguration experimental = webServer.configuration().experimental();
-        if (experimental != null && experimental.http2() != null && experimental.http2().enable()) {
+        ServerConfiguration serverConfig = webServer.configuration();
+        if (serverConfig.isHttp2Enabled()) {
+            ExperimentalConfiguration experimental = serverConfig.experimental();
             Http2Configuration http2Config = experimental.http2();
             HttpServerCodec sourceCodec = new HttpServerCodec();
             HelidonConnectionHandler helidonHandler = new HelidonHttp2ConnectionHandlerBuilder()
                     .maxContentLength(http2Config.maxContentLength()).build();
             HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec,
                     protocol -> AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)
-                            ? new Http2ServerUpgradeCodec(helidonHandler) : null);
+                            ? new Http2ServerUpgradeCodec(helidonHandler) : null,
+                    http2Config.maxContentLength());
 
             CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
                     new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler, helidonHandler);
@@ -115,7 +118,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            LOGGER.info("Event Triggered: " + evt);
+            LOGGER.finer(() -> "Event Triggered: " + evt);
             ctx.fireUserEventTriggered(evt);
         }
     }

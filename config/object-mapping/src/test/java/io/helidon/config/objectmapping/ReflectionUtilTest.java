@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import io.helidon.config.ConfigException;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -91,7 +90,7 @@ public class ReflectionUtilTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             isMethodTransient("setValueClash", String.class);
         });
-        assertThat(ex.getMessage(), stringContainsInOrder(listOf("@Value", "@Transient", "setValueClash")));
+        assertThat(ex.getMessage(), stringContainsInOrder(List.of("@Value", "@Transient", "setValueClash")));
     }
 
     private boolean isMethodTransient(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
@@ -129,7 +128,7 @@ public class ReflectionUtilTest {
         });
 
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(listOf("@Value", "@Transient", "field", "valueClash")));
+                   stringContainsInOrder(List.of("@Value", "@Transient", "field", "valueClash")));
     }
 
     private boolean isFieldTransient(String fieldName) throws NoSuchFieldException {
@@ -215,7 +214,7 @@ public class ReflectionUtilTest {
                    equalTo(List.class));
 
         propertyAccessors.get("list").handle()
-                .invoke(bean, listOf(23L, 42L));
+                .invoke(bean, List.of(23L, 42L));
         assertThat(bean.getList(), contains(23L, 42L));
     }
 
@@ -231,7 +230,7 @@ public class ReflectionUtilTest {
                    equalTo(List.class));
 
         propertyAccessors.get("listField").handle()
-                .invoke(bean, listOf(23L, 42L));
+                .invoke(bean, List.of(23L, 42L));
         assertThat(bean.listField, contains(23L, 42L));
     }
 
@@ -241,7 +240,7 @@ public class ReflectionUtilTest {
             ReflectionUtil.getPropertyAccessors(MethodTransientFieldClashBean.class);
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(listOf("@Value", "method", "@Transient", "prop1")));
+                   stringContainsInOrder(List.of("@Value", "method", "@Transient", "prop1")));
     }
 
     @Test
@@ -250,7 +249,7 @@ public class ReflectionUtilTest {
             ReflectionUtil.getPropertyAccessors(FieldTransientMethodClashBean.class);
         });
         assertThat(ex.getMessage(),
-                   stringContainsInOrder(listOf("@Value", "@Transient", "method", "prop1", "property")));
+                   stringContainsInOrder(List.of("@Value", "@Transient", "method", "prop1", "property")));
     }
 
     public static class TestBean {

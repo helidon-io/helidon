@@ -17,15 +17,33 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.security.EndpointConfig;
+import io.helidon.security.OutboundSecurityResponse;
+import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.Subject;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test for {@link OidcSupport}.
@@ -55,6 +73,17 @@ class OidcSupportTest {
 
     private final OidcSupport oidcSupport = OidcSupport.create(oidcConfig);
     private final OidcSupport oidcSupportCustomParam = OidcSupport.create(oidcConfigCustomParam);
+    private final OidcProvider provider = OidcProvider.builder()
+            .oidcConfig(oidcConfig)
+            .outboundConfig(OutboundConfig.builder()
+                                    .addTarget(OutboundTarget.builder("disabled")
+                                                       .addHost("www.example.com")
+                                                       .config(Config.create(ConfigSources.create(Map.of(
+                                                               "propagate",
+                                                               "false"))))
+                                                       .build())
+                                    .build())
+            .build();
 
     @Test
     void testRedirectAttemptNoParams() {
@@ -126,5 +155,65 @@ class OidcSupportTest {
 
         assertThat(state, not(newState));
         assertThat(newState, endsWith(PARAM_NAME + "=12&b=second"));
+    }
+
+    @Test
+    void testOutbound() {
+        String tokenContent = "huhahihohyhe";
+        TokenCredential tokenCredential = TokenCredential.builder()
+                .token(tokenContent)
+                .build();
+
+        Subject subject = Subject.builder()
+                .addPublicCredential(TokenCredential.class, tokenCredential)
+                .build();
+
+        ProviderRequest providerRequest = Mockito.mock(ProviderRequest.class);
+        SecurityContext ctx = Mockito.mock(SecurityContext.class);
+
+        when(ctx.user()).thenReturn(Optional.of(subject));
+        when(providerRequest.securityContext()).thenReturn(ctx);
+
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://localhost:7777"))
+                .path("/test")
+                .build();
+        EndpointConfig endpointConfig = EndpointConfig.builder().build();
+
+        OutboundSecurityResponse response = provider.syncOutbound(providerRequest, outboundEnv, endpointConfig);
+
+        List<String> authorization = response.requestHeaders().get("Authorization");
+        assertThat("Authorization header", authorization, hasItem("bearer " + tokenContent));
+    }
+
+    @Test
+    void testOutboundFull() {
+        String tokenContent = "huhahihohyhe";
+        TokenCredential tokenCredential = TokenCredential.builder()
+                .token(tokenContent)
+                .build();
+
+        Subject subject = Subject.builder()
+                .addPublicCredential(TokenCredential.class, tokenCredential)
+                .build();
+
+        ProviderRequest providerRequest = Mockito.mock(ProviderRequest.class);
+        SecurityContext ctx = Mockito.mock(SecurityContext.class);
+
+        when(ctx.user()).thenReturn(Optional.of(subject));
+        when(providerRequest.securityContext()).thenReturn(ctx);
+
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://www.example.com:7777"))
+                .path("/test")
+                .build();
+        EndpointConfig endpointConfig = EndpointConfig.builder().build();
+
+        boolean outboundSupported = provider.isOutboundSupported(providerRequest, outboundEnv, endpointConfig);
+        assertThat("Outbound should not be supported by default", outboundSupported, is(false));
+
+        OutboundSecurityResponse response = provider.syncOutbound(providerRequest, outboundEnv, endpointConfig);
+
+        assertThat("Disabled target should have empty headers", response.requestHeaders().size(), is(0));
     }
 }

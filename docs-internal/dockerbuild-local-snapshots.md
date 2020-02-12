@@ -91,15 +91,13 @@ Update the `Dockerfile` and add the following lines:
 # A build time argument that can be used to configure an extra Maven repository.
 # E.g. --build-arg X_REPO=my-repo-url
 ARG X_REPO
-ADD settings.xml /
+ADD settings.xml /usr/share/maven/conf/
 ```
-
-Then add `-s /settings.xml` to all Maven commands.
 
 ## Build your image
 
 Replace `DOCKER_HOST` with a host name or IP address that can be used to reach
- the nexus server from inside a container. (E.g. docker.for.mac.localhost).
+ the nexus server from inside a container. (E.g. `docker.for.mac.localhost`).
 
 ```bash
 docker build \

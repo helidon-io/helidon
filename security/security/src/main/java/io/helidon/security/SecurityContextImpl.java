@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -25,7 +26,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.context.Contexts;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuthorizationProvider;
 
@@ -147,7 +148,7 @@ final class SecurityContextImpl implements SecurityContext {
 
         return authorizationProvider.map(provider -> provider.isUserInRole(currentSubject, role))
                 .orElseGet(() -> user().map(Security::getRoles)
-                        .orElse(CollectionsHelper.setOf())
+                        .orElse(Set.of())
                         .stream()
                         .anyMatch(role::equals));
     }
@@ -232,6 +233,7 @@ final class SecurityContextImpl implements SecurityContext {
     void setUser(Subject subject) {
         Objects.requireNonNull(subject);
         this.currentSubject = subject;
+        Contexts.context().ifPresent(ctx -> ctx.register(currentSubject.principal()));
     }
 
     @Override

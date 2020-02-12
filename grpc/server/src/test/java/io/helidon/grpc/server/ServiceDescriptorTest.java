@@ -462,7 +462,7 @@ public class ServiceDescriptorTest {
                 .unary("bar", this::dummyUnary)
                 .build();
 
-        io.grpc.MethodDescriptor<?, ?> methodDescriptor = descriptor.bindableService(new PriorityBag<>())
+        io.grpc.MethodDescriptor<?, ?> methodDescriptor = descriptor.bindableService(PriorityBag.create())
                 .bindService()
                 .getMethod("foo/bar")
                 .getMethodDescriptor();
@@ -481,7 +481,7 @@ public class ServiceDescriptorTest {
 
         assertThat(descriptor.name(), is(grpcDescriptor.getName()));
 
-        BindableService bindableService = descriptor.bindableService(new PriorityBag<>());
+        BindableService bindableService = descriptor.bindableService(PriorityBag.create());
         assertThat(bindableService, is(notNullValue()));
 
         ServerServiceDefinition ssd = bindableService.bindService();
@@ -512,7 +512,7 @@ public class ServiceDescriptorTest {
 
         assertThat(descriptor.name(), is("Foo"));
 
-        BindableService bindableService = descriptor.bindableService(new PriorityBag<>());
+        BindableService bindableService = descriptor.bindableService(PriorityBag.create());
         assertThat(bindableService, is(notNullValue()));
 
         ServerServiceDefinition ssd = bindableService.bindService();
@@ -544,7 +544,7 @@ public class ServiceDescriptorTest {
 
         assertThat(descriptor.name(), is("EchoService"));
 
-        BindableService bindableService = descriptor.bindableService(new PriorityBag<>());
+        BindableService bindableService = descriptor.bindableService(PriorityBag.create());
         assertThat(bindableService, is(notNullValue()));
 
         ServerServiceDefinition ssd = bindableService.bindService();

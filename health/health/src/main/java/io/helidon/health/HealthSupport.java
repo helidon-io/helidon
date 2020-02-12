@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,10 +36,14 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -58,33 +63,86 @@ public final class HealthSupport implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Health");
+    }
+
+    private final boolean enabled;
     private final String webContext;
-    private final List<HealthCheck> healthChecks;
+    private final List<HealthCheck> allChecks = new LinkedList<>();
+    private final List<HealthCheck> livenessChecks = new LinkedList<>();
+    private final List<HealthCheck> readinessChecks = new LinkedList<>();
     private final boolean includeAll;
     private final Set<String> includedHealthChecks;
     private final Set<String> excludedHealthChecks;
+    private final boolean backwardCompatible;
 
     private HealthSupport(Builder builder) {
+        this.enabled = builder.enabled;
         this.webContext = builder.webContext;
-        this.healthChecks = new LinkedList<>(builder.healthChecks);
-        this.includedHealthChecks = new HashSet<>(builder.includedHealthChecks);
-        this.excludedHealthChecks = new HashSet<>(builder.excludedHealthChecks);
+        this.backwardCompatible = builder.backwardCompatible;
 
-        includeAll = includedHealthChecks.isEmpty();
+        if (enabled) {
+            builder.allChecks
+                    .stream()
+                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
+                    .forEach(allChecks::add);
+
+            builder.readinessChecks
+                    .stream()
+                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
+                    .forEach(readinessChecks::add);
+
+            builder.livenessChecks
+                    .stream()
+                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
+                    .forEach(livenessChecks::add);
+
+            this.includedHealthChecks = new HashSet<>(builder.includedHealthChecks);
+            this.excludedHealthChecks = new HashSet<>(builder.excludedHealthChecks);
+
+            includeAll = includedHealthChecks.isEmpty();
+        } else {
+            this.includeAll = true;
+            this.includedHealthChecks = Collections.emptySet();
+            this.excludedHealthChecks = Collections.emptySet();
+        }
     }
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get(webContext, JsonSupport.create())
-                .get(webContext, (req, res) -> {
-                    HealthResponse hres = callHealthChecks();
-
-                    res.status(hres.status());
-                    res.send(hres.json);
-                });
+        if (!enabled) {
+            // do not register anything if health check is disabled
+            return;
+        }
+        rules.get(webContext + "[/{*}]", JsonSupport.create())
+                .get(webContext, this::callAll)
+                .get(webContext + "/live", this::callLiveness)
+                .get(webContext + "/ready", this::callReadiness);
     }
 
-    HealthResponse callHealthChecks() {
+    private void callAll(ServerRequest req, ServerResponse res) {
+        HealthResponse hres = callHealthChecks(allChecks);
+
+        res.status(hres.status());
+        res.send(hres.json);
+    }
+
+    private void callLiveness(ServerRequest req, ServerResponse res) {
+        HealthResponse hres = callHealthChecks(livenessChecks);
+
+        res.status(hres.status());
+        res.send(hres.json);
+    }
+
+    private void callReadiness(ServerRequest req, ServerResponse res) {
+        HealthResponse hres = callHealthChecks(readinessChecks);
+
+        res.status(hres.status());
+        res.send(hres.json);
+    }
+
+    HealthResponse callHealthChecks(List<HealthCheck> healthChecks) {
         List<HcResponse> responses = healthChecks.stream()
                 .map(this::callHealthChecks)
                 .filter(this::notExcluded)
@@ -109,8 +167,11 @@ public final class HealthSupport implements Service {
     }
 
     private JsonObject toJson(State state, List<HcResponse> responses) {
-        final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder()
-                .add("outcome", state.toString());
+        final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder();
+        if (backwardCompatible) {
+            jsonBuilder.add("outcome", state.toString());
+        }
+        jsonBuilder.add("status", state.toString());
 
         final JsonArrayBuilder checkArrayBuilder = JSON.createArrayBuilder();
 
@@ -118,6 +179,7 @@ public final class HealthSupport implements Service {
             JsonObjectBuilder checkBuilder = JSON.createObjectBuilder();
             checkBuilder.add("name", r.name());
             checkBuilder.add("state", r.state().toString());
+            checkBuilder.add("status", r.state().toString());
             Optional<Map<String, Object>> data = r.data();
             data.ifPresent(m -> checkBuilder.add("data", JSON.createObjectBuilder(m)));
 
@@ -188,10 +250,16 @@ public final class HealthSupport implements Service {
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<HealthSupport> {
-        private final List<HealthCheck> healthChecks = new LinkedList<>();
+        private final Set<HealthCheck> allChecks = new LinkedHashSet<>();
+        private final Set<HealthCheck> livenessChecks = new LinkedHashSet<>();
+        private final Set<HealthCheck> readinessChecks = new LinkedHashSet<>();
+
+        private final Set<Class<?>> excludedClasses = new HashSet<>();
         private final Set<String> includedHealthChecks = new HashSet<>();
         private final Set<String> excludedHealthChecks = new HashSet<>();
         private String webContext = DEFAULT_WEB_CONTEXT;
+        private boolean enabled = true;
+        private boolean backwardCompatible = true;
 
         private Builder() {
         }
@@ -223,9 +291,12 @@ public final class HealthSupport implements Service {
          *
          * @param healthChecks health check(s) to add
          * @return updated builder instance
+         * @deprecated use {@link #addReadiness(org.eclipse.microprofile.health.HealthCheck...)} or
+         *  {@link #addLiveness(org.eclipse.microprofile.health.HealthCheck...)} instead
          */
+        @Deprecated
         public Builder add(HealthCheck... healthChecks) {
-            this.healthChecks.addAll(Arrays.asList(healthChecks));
+            this.allChecks.addAll(Arrays.asList(healthChecks));
             return this;
         }
 
@@ -236,9 +307,12 @@ public final class HealthSupport implements Service {
          *
          * @param healthChecks health checks to add
          * @return updated builder instance
+         * @deprecated use {@link #addReadiness(org.eclipse.microprofile.health.HealthCheck...)} or
+         * {@link #addLiveness(org.eclipse.microprofile.health.HealthCheck...)} instead
          */
+        @Deprecated
         public Builder add(Collection<HealthCheck> healthChecks) {
-            this.healthChecks.addAll(healthChecks);
+            this.allChecks.addAll(healthChecks);
             return this;
         }
 
@@ -303,6 +377,7 @@ public final class HealthSupport implements Service {
          * @return updated builder instance
          */
         public Builder config(Config config) {
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("web-context").asString().ifPresent(this::webContext);
             config.get("include").asList(String.class).ifPresent(list -> {
                 list.forEach(this::addIncluded);
@@ -310,6 +385,75 @@ public final class HealthSupport implements Service {
             config.get("exclude").asList(String.class).ifPresent(list -> {
                 list.forEach(this::addExcluded);
             });
+            config.get("exclude-classes").asList(Class.class).ifPresent(list -> {
+                list.forEach(this::addExcludedClass);
+            });
+            config.get("backward-compatible").asBoolean().ifPresent(this::backwardCompatible);
+            return this;
+        }
+
+        /**
+         * A class may be excluded from invoking health checks on it.
+         * This allows configurable approach to disabling broken health-checks.
+         *
+         * @param aClass class to ignore (any health check instance of this class will be ignored)
+         * @return updated builder instance
+         */
+        public Builder addExcludedClass(Class<?> aClass) {
+            this.excludedClasses.add(aClass);
+            return this;
+        }
+
+        /**
+         * Add liveness health check(s).
+         *
+         * @param healthCheck a health check to add
+         * @return updated builder instance
+         */
+        public Builder addLiveness(HealthCheck... healthCheck) {
+            for (HealthCheck check : healthCheck) {
+                this.allChecks.add(check);
+                this.livenessChecks.add(check);
+            }
+
+            return this;
+        }
+
+        /**
+         * Add readiness health check(s).
+         *
+         * @param healthCheck a health check to add
+         * @return updated builder instance
+         */
+        public Builder addReadiness(HealthCheck... healthCheck) {
+            for (HealthCheck check : healthCheck) {
+                this.allChecks.add(check);
+                this.readinessChecks.add(check);
+            }
+
+            return this;
+        }
+
+        /**
+         * HealthSupport can be disabled by invoking this method.
+         *
+         * @param enabled whether to enable the health support (defaults to {@code true})
+         * @return updated builder instance
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        /**
+         * Backward compatibility flag to produce Health 1.X compatible JSON output
+         * (including "outcome" property).
+         *
+         * @param enabled whether to enable backward compatible mode (defaults to {@code true})
+         * @return updated builder instance
+         */
+        public Builder backwardCompatible(boolean enabled) {
+            this.backwardCompatible = enabled;
             return this;
         }
     }

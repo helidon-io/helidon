@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.lang.invoke.MethodHandle;
 import java.util.Collection;
 import java.util.function.Function;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
@@ -29,6 +30,11 @@ import io.helidon.config.objectmapping.ReflectionUtil.PropertyAccessor;
  * Various mappers used in {@link ObjectConfigMapperProvider}.
  */
 class ObjectConfigMappers {
+
+    static {
+        HelidonFeatures.register("Config", "Object Mapping");
+    }
+
     abstract static class MethodHandleConfigMapper<T, P> implements Function<Config, T> {
         private final Class<T> type;
         private final String methodName;

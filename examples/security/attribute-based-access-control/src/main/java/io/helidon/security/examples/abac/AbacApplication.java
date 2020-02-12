@@ -21,8 +21,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * Application class of this MP application.
  */
@@ -31,6 +29,6 @@ import io.helidon.common.CollectionsHelper;
 public class AbacApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(AbacResource.class, AbacExplicitResource.class);
+        return Set.of(AbacResource.class, AbacExplicitResource.class);
     }
 }

@@ -56,7 +56,8 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
         return new Builder();
     }
 
-    static final class Builder extends AbstractParsableConfigSource.Builder<InMemoryConfigSource.Builder, Void> {
+    static final class Builder
+            extends AbstractParsableConfigSource.Builder<InMemoryConfigSource.Builder, Void, InMemoryConfigSource> {
 
         private String uri;
         private ConfigParser.Content<Object> content;

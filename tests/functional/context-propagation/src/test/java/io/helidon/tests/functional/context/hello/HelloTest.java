@@ -16,14 +16,16 @@
 
 package io.helidon.tests.functional.context.hello;
 
+import java.io.IOException;
+import java.util.logging.LogManager;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.logging.LogManager;
 
 import io.helidon.microprofile.server.Server;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

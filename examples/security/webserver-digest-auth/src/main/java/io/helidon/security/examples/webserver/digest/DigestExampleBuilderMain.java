@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.LogManager;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -34,7 +33,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 /**
- * Example of HTTP digest authentication with RX Web Server fully configured programmatically.
+ * Example of HTTP digest authentication with WebServer fully configured programmatically.
  */
 public final class DigestExampleBuilderMain {
     // used from unit tests
@@ -43,9 +42,9 @@ public final class DigestExampleBuilderMain {
     private static Map<String, MyUser> users = new HashMap<>();
 
     static {
-        users.put("jack", new MyUser("jack", "password".toCharArray(), CollectionsHelper.setOf("user", "admin")));
-        users.put("jill", new MyUser("jill", "password".toCharArray(), CollectionsHelper.setOf("user")));
-        users.put("john", new MyUser("john", "password".toCharArray(), CollectionsHelper.setOf()));
+        users.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user", "admin")));
+        users.put("jill", new MyUser("jill", "password".toCharArray(), Set.of("user")));
+        users.put("john", new MyUser("john", "password".toCharArray(), Set.of()));
     }
 
     private DigestExampleBuilderMain() {

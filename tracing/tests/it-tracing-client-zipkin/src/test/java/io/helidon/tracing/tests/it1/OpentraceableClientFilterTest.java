@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
-import io.helidon.webserver.RequestHeaders;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.WebServer;
 
 import brave.internal.HexCodec;
 import brave.opentracing.BraveSpanContext;
@@ -52,7 +48,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class OpentraceableClientFilterTest {
 
-    private final Tracer tracer = TracerBuilder.create("test-service").build();
+    private final Tracer tracer = TracerBuilder.create("test-service").registerGlobal(false).build();
     private final ClientTracingFilter filter = new ClientTracingFilter();
     private final MultivaluedHashMap<Object, Object> map = new MultivaluedHashMap<>();
     private final Configuration configurationMock = Mockito.mock(Configuration.class);

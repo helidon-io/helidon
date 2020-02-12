@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.List;
 
 import io.helidon.tracing.Tag;
 
-import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -99,12 +98,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     }
 
     @Override
-    public Scope startActive(boolean finishSpanOnClose) {
-        return spanBuilder.startActive(finishSpanOnClose);
-    }
-
-    @Override
-    public Span startManual() {
-        return null;
+    public <T> Tracer.SpanBuilder withTag(io.opentracing.tag.Tag<T> tag, T value) {
+        return spanBuilder.withTag(tag, value);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,12 +50,12 @@ public class MainTest {
 
         assertAll(
                 () -> assertThat("Encrypted string should contain aes prefix: " + encrypted,
-                                 encrypted.startsWith(EncryptionFilter.PREFIX_AES)),
+                                 encrypted.startsWith(EncryptionFilter.PREFIX_GCM)),
                 () -> assertThat("Encrypted string should contain suffix \"}\": " + encrypted, encrypted.endsWith("}"))
         );
 
         String orig = EncryptionUtil.decryptAes(ecp.getMasterPassword().toCharArray(),
-                                                encrypted.substring(EncryptionFilter.PREFIX_AES.length(), encrypted.length() - 1));
+                                                encrypted.substring(EncryptionFilter.PREFIX_GCM.length(), encrypted.length() - 1));
 
         assertEquals(secret, orig);
 

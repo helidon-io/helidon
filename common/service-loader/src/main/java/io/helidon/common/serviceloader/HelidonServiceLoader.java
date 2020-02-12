@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import javax.annotation.Priority;
 
 import io.helidon.common.Prioritized;
 
@@ -147,6 +145,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
         private boolean useSysPropExclude = true;
         private boolean useSystemServiceLoader = true;
         private boolean replaceImplementations = true;
+        private int defaultPriority = Prioritized.DEFAULT_PRIORITY;
 
         private Builder(ServiceLoader<T> serviceLoader) {
             this.serviceLoader = serviceLoader;
@@ -168,10 +167,10 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
                 serviceLoader.forEach(service -> {
                     if (replaceImplementations) {
                         if (!uniqueImplementations.contains(service.getClass().getName())) {
-                            services.add(new ServiceWithPriority<>(service));
+                            services.add(ServiceWithPriority.createFindPriority(service, defaultPriority));
                         }
                     } else {
-                        services.add(new ServiceWithPriority<>(service));
+                        services.add(ServiceWithPriority.createFindPriority(service, defaultPriority));
                     }
                 });
             }
@@ -239,7 +238,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
          * @return updated builder instance
          */
         public Builder<T> addService(T service) {
-            this.customServices.add(new ServiceWithPriority<>(service));
+            this.customServices.add(ServiceWithPriority.createFindPriority(service, defaultPriority));
             return this;
         }
 
@@ -251,7 +250,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
          * @return updated builder instance
          */
         public Builder<T> addService(T service, int priority) {
-            this.customServices.add(new ServiceWithPriority<>(service, priority));
+            this.customServices.add(ServiceWithPriority.create(service, priority));
             return this;
         }
 
@@ -276,6 +275,17 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
          */
         public Builder<T> addExcludedClassName(String excludeName) {
             excludedServiceClasses.add(excludeName);
+            return this;
+        }
+
+        /**
+         * Configure default priority for services that do not have any.
+         *
+         * @param defaultPriority default priority to use, defaults to {@link io.helidon.common.Prioritized#DEFAULT_PRIORITY}
+         * @return updated builder instance
+         */
+        public Builder<T> defaultPriority(int defaultPriority) {
+            this.defaultPriority = defaultPriority;
             return this;
         }
 
@@ -337,8 +347,12 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
                 }
             }
 
-            private ServiceWithPriority(T service) {
-                this(service, findPriority(service));
+            private static <T> ServiceWithPriority<T> create(T instance, int priority) {
+                return new ServiceWithPriority<>(instance, priority);
+            }
+
+            private static <T> ServiceWithPriority<T> createFindPriority(T instance, int defaultPriority) {
+                return new ServiceWithPriority<>(instance, Priorities.find(instance, defaultPriority));
             }
 
             private int priority() {
@@ -351,17 +365,6 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
 
             private String instanceClassName() {
                 return instance.getClass().getName();
-            }
-
-            private static int findPriority(Object o) {
-                if (o instanceof Prioritized) {
-                    return ((Prioritized) o).priority();
-                }
-                Priority prio = o.getClass().getAnnotation(Priority.class);
-                if (null == prio) {
-                    return Prioritized.DEFAULT_PRIORITY;
-                }
-                return prio.value();
             }
 
             @Override

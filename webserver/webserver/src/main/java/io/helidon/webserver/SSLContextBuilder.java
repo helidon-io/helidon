@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
@@ -187,7 +186,7 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         List<X509Certificate> certs;
 
         if (trustConfig == null) {
-            certs = CollectionsHelper.listOf();
+            certs = List.of();
         } else {
             certs = trustConfig.certs();
         }

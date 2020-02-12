@@ -29,11 +29,12 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.helidon.health.HealthCheckException;
+import io.helidon.health.common.BuiltInHealthCheck;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
 
 /**
  * A health check that verifies whether the server is running out of disk space. This health check will
@@ -54,8 +55,9 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
  * This health check can be referred to in properties as "diskSpace". So for example, to exclude this
  * health check from being exposed, use "helidon.health.exclude: diskSpace".
  */
-@Health
+@Liveness
 @ApplicationScoped // this will be ignored if not within CDI
+@BuiltInHealthCheck
 public final class DiskSpaceHealthCheck implements HealthCheck {
     /**
      * Default path on the file system the health check will be executed for.

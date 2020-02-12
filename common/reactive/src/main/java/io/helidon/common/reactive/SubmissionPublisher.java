@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -30,13 +31,18 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * A {@link Flow.Publisher} that asynchronously issues submitted
- * (non-null) items to current subscribers until it is closed.
+ * A {@link Flow.Publisher} that asynchronously issues submitted (non-null) items to current subscribers until it is closed.
  *
  * @param <T> the published item type
+ * @deprecated This class will be removed in the next major release.
  */
-public class SubmissionPublisher<T> implements Flow.Publisher<T>,
-                                               AutoCloseable {
+@Deprecated
+public class SubmissionPublisher<T> implements Flow.Publisher<T>, AutoCloseable {
+
+    static {
+        // prevent reactor from using "console" logging
+        System.setProperty("reactor.logging.fallback", "JDK");
+    }
 
     private final Flux<T> flux;
     private final FluxSink<T> sink;

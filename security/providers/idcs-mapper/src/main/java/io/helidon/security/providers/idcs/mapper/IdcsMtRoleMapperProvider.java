@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,16 +29,19 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityException;
 import io.helidon.security.Subject;
+import io.helidon.security.integration.common.RoleMapTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
@@ -63,6 +66,10 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     private static final Logger LOGGER = Logger
             .getLogger(IdcsMtRoleMapperProvider.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    static {
+        HelidonFeatures.register("Security", "Role-Mapper", "IDCS-Multitenant");
+    }
 
     private final TokenHandler idcsTenantTokenHandler;
     private final TokenHandler idcsAppNameTokenHandler;
@@ -127,32 +134,31 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                               ProviderRequest request,
                               AuthenticationResponse previousResponse) {
 
-        Optional<String> maybeIdcsTenantId = idcsTenantTokenHandler.extractToken(request.env().headers());
-        Optional<String> maybeIdcsAppName = idcsAppNameTokenHandler.extractToken(request.env().headers());
+        Optional<IdcsMtContext> maybeIdcsMtContext = extractIdcsMtContext(subject, request);
 
-        if (!maybeIdcsAppName.isPresent() || !maybeIdcsTenantId.isPresent()) {
-            LOGGER.finest(() -> "Missing multitenant information TENANT: "
-                    + maybeIdcsTenantId
-                    + ", APP_NAME: "
-                    + maybeIdcsAppName
+        if (!maybeIdcsMtContext.isPresent()) {
+            LOGGER.finest(() -> "Missing multitenant information IDCS CONTEXT: "
+                    + maybeIdcsMtContext
                     + ", subject: "
                     + subject);
             return subject;
         }
 
-        String idcsAppName = maybeIdcsAppName.get();
-        String idcsTenantId = maybeIdcsTenantId.get();
+        IdcsMtContext idcsMtContext = maybeIdcsMtContext.get();
         String name = subject.principal().getName();
-        MtCacheKey cacheKey = new MtCacheKey(idcsTenantId, idcsAppName, name);
+        MtCacheKey cacheKey = new MtCacheKey(idcsMtContext, name);
 
         // double cache
-        List<Grant> serverGrants = cache.computeValue(cacheKey, () -> computeGrants(idcsTenantId, idcsAppName, subject))
-                .orElseGet(CollectionsHelper::listOf);
+        List<Grant> serverGrants = cache.computeValue(cacheKey,
+                                                      () -> computeGrants(idcsMtContext.tenantId(),
+                                                                          idcsMtContext.appId(),
+                                                                          subject))
+                .orElseGet(List::of);
 
         List<Grant> grants = new LinkedList<>(serverGrants);
 
         // additional grants may not be cached (leave this decision to overriding class)
-        addAdditionalGrants(idcsTenantId, idcsAppName, subject)
+        addAdditionalGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject)
                 .map(grants::addAll);
 
         return buildSubject(subject, grants);
@@ -162,6 +168,22 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         return getGrantsFromServer(idcsTenantId, idcsAppName, subject)
                 .map(grants -> Collections.unmodifiableList(new LinkedList<>(grants)));
 
+    }
+
+    /**
+     * Extract IDCS multitenancy context form the the request.
+     *
+     * <p>By default, the context is extracted from the headers using token handlers for
+     * {@link Builder#idcsTenantTokenHandler(TokenHandler) tenant} and
+     * {@link Builder#idcsAppNameTokenHandler(TokenHandler) app}.
+     * @param subject Subject that is being mapped
+     * @param request ProviderRequest context that is being mapped.
+     * @return Optional with the context, empty if the context is not present in the request.
+     */
+    protected Optional<IdcsMtContext> extractIdcsMtContext(Subject subject, ProviderRequest request) {
+        return idcsTenantTokenHandler.extractToken(request.env().headers())
+                .flatMap(tenant -> idcsAppNameTokenHandler.extractToken(request.env().headers())
+                        .map(app -> new IdcsMtContext(tenant, app)));
     }
 
     /**
@@ -188,7 +210,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 
-        return getAppToken(idcsTenantId).flatMap(appToken -> {
+        RoleMapTracing tracing = SecurityTracing.get().roleMapTracing("idcs");
+
+        return getAppToken(idcsTenantId, tracing).flatMap(appToken -> {
             JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
                     .add("mappingAttributeValue", subjectName)
                     .add("subjectType", subjectType)
@@ -199,8 +223,12 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
             arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
             requestBuilder.add("schemas", arrayBuilder);
 
-            Response groupResponse = multitenantEndpoints.assertEndpoint(idcsTenantId)
-                    .request()
+            Invocation.Builder reqBuilder = multitenantEndpoints.assertEndpoint(idcsTenantId).request();
+
+            tracing.findParent()
+                    .ifPresent(spanContext -> reqBuilder.property(PARENT_CONTEXT_CLIENT_PROPERTY, spanContext));
+
+            Response groupResponse = reqBuilder
                     .header("Authorization", "Bearer " + appToken)
                     .post(Entity.json(requestBuilder.build()));
 
@@ -212,12 +240,13 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * Gets token from cache or from server.
      *
      * @param idcsTenantId id of tenant
+     * @param tracing Role mapping tracing instance to correctly trace outbound calls
      * @return the token to be used to authenticate this service
      */
-    protected Optional<String> getAppToken(String idcsTenantId) {
+    protected Optional<String> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
         return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppToken(multitenantEndpoints.tokenEndpoint(idcsTenantId)))
-                .getToken();
+                .getToken(tracing);
     }
 
     /**
@@ -430,24 +459,34 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * Suitable for use in maps and sets.
      */
     public static class MtCacheKey {
-        private final String idcsTenantId;
-        private final String idcsAppName;
+        private final IdcsMtContext idcsMtContext;
         private final String username;
 
         /**
          * New (immutable) cache key.
          *
-         * @param idcsTenantId IDCS stenant ID
+         * @param idcsTenantId IDCS tenant ID
          * @param idcsAppName  IDCS application name
          * @param username     username
          */
         protected MtCacheKey(String idcsTenantId, String idcsAppName, String username) {
-            Objects.requireNonNull(idcsTenantId, "IDCS Tenant id is mandatory");
-            Objects.requireNonNull(idcsAppName, "IDCS App id is mandatory");
+            this(new IdcsMtContext(
+                         Objects.requireNonNull(idcsTenantId, "IDCS Tenant id is mandatory"),
+                         Objects.requireNonNull(idcsAppName, "IDCS App id is mandatory")),
+                 username);
+        }
+
+        /**
+         * New (immutable) cache key.
+         *
+         * @param idcsMtContext IDCS multitenancy context
+         * @param username     username
+         */
+        protected MtCacheKey(IdcsMtContext idcsMtContext, String username) {
+            Objects.requireNonNull(idcsMtContext, "IDCS Multitenancy Context is mandatory");
             Objects.requireNonNull(username, "username is mandatory");
 
-            this.idcsTenantId = idcsTenantId;
-            this.idcsAppName = idcsAppName;
+            this.idcsMtContext = idcsMtContext;
             this.username = username;
         }
 
@@ -457,7 +496,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * @return tenant id of the cache record
          */
         protected String idcsTenantId() {
-            return idcsTenantId;
+            return idcsMtContext.tenantId();
         }
 
         /**
@@ -475,7 +514,16 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * @return application id of the cache record
          */
         protected String idcsAppName() {
-            return idcsAppName;
+            return idcsMtContext.appId();
+        }
+
+        /**
+         * IDCS Multitenancy context.
+         *
+         * @return IDCS multitenancy context of the cache record
+         */
+        protected IdcsMtContext idcsMtContext() {
+            return idcsMtContext;
         }
 
         @Override
@@ -487,14 +535,13 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                 return false;
             }
             MtCacheKey cacheKey = (MtCacheKey) o;
-            return idcsTenantId.equals(cacheKey.idcsTenantId)
-                    && idcsAppName.equals(cacheKey.idcsAppName)
+            return idcsMtContext.equals(cacheKey.idcsMtContext)
                     && username.equals(cacheKey.username);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(idcsTenantId, idcsAppName, username);
+            return Objects.hash(idcsMtContext, username);
         }
     }
 }

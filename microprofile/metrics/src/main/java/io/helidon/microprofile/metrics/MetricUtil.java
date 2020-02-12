@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,37 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
+
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Class MetricUtil.
  */
-final class MetricUtil {
+public final class MetricUtil {
+    private static final Logger LOGGER = Logger.getLogger(MetricUtil.class.getName());
 
     private MetricUtil() {
     }
 
+    /**
+     * DO NOT USE THIS METHOD please.
+     *
+     * @param element element
+     * @param annotClass annotation class
+     * @param clazz class
+     * @param <E> element type
+     * @param <A> annotation type
+     * @return lookup result
+     * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
+     */
     @SuppressWarnings("unchecked")
-    static <E extends Member & AnnotatedElement, A extends Annotation>
+    @Deprecated
+    public static <E extends Member & AnnotatedElement, A extends Annotation>
     LookupResult<A> lookupAnnotation(E element, Class<? extends Annotation> annotClass, Class<?> clazz) {
         // First check annotation on element
         A annotation = (A) element.getAnnotation(annotClass);
@@ -49,6 +67,24 @@ final class MetricUtil {
     }
 
     static <E extends Member & AnnotatedElement>
+    MetricID getMetricID(E element, Class<?> clazz, MatchingType matchingType, String explicitName, String[] tags,
+                         boolean absolute) {
+        return new MetricID(getMetricName(element, clazz, matchingType, explicitName, absolute), tags(tags));
+    }
+
+    /**
+     * This method is intended only for other Helidon components.
+     *
+     * @param element such as method
+     * @param clazz class
+     * @param matchingType type to match
+     * @param explicitName name
+     * @param absolute if absolute
+     * @param <E> type of element
+     *
+     * @return name of the metric
+     */
+    public static <E extends Member & AnnotatedElement>
     String getMetricName(E element, Class<?> clazz, MatchingType matchingType, String explicitName, boolean absolute) {
         String result;
         if (matchingType == MatchingType.METHOD) {
@@ -73,7 +109,10 @@ final class MetricUtil {
                     result = clazz.getName() + "." + result;
                 }
             } else {
-                // absolute?
+                // Absolute must be false at class level, issue warning here
+                if (absolute) {
+                    LOGGER.warning(() -> "Attribute 'absolute=true' in metric annotation ignored at class level");
+                }
                 result = clazz.getPackage().getName() + "." + explicitName
                         + "." + getElementName(element, clazz);
             }
@@ -88,11 +127,44 @@ final class MetricUtil {
         return element instanceof Constructor ? clazz.getSimpleName() : element.getName();
     }
 
-    enum MatchingType {
-        METHOD, CLASS
+    static Tag[] tags(String[] tagStrings) {
+        final List<Tag> result = new ArrayList<>();
+        for (int i = 0; i < tagStrings.length; i++) {
+            final int eq = tagStrings[i].indexOf("=");
+            if (eq > 0) {
+                final String tagName = tagStrings[i].substring(0, eq);
+                final String tagValue = tagStrings[i].substring(eq + 1);
+                result.add(new Tag(tagName, tagValue));
+            }
+        }
+        return result.toArray(new Tag[result.size()]);
     }
 
-    static class LookupResult<A extends Annotation> {
+    /**
+     * DO NOT USE THIS CLASS please.
+     *
+     * Types of possible matching.
+     * @deprecated This class is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
+     */
+    @Deprecated
+    public enum MatchingType {
+        /**
+         * Method.
+         */
+        METHOD,
+        /**
+         * Class.
+         */
+        CLASS
+    }
+
+    /**
+     * DO NOT USE THIS CLASS please.
+     * @param <A> type of annotation
+     * @deprecated This class is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
+     */
+    @Deprecated
+    public static class LookupResult<A extends Annotation> {
 
         private final MatchingType type;
 

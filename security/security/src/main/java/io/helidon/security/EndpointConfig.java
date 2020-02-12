@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.AbacSupport;
@@ -182,7 +181,7 @@ public class EndpointConfig implements AbacSupport {
     public <T extends Annotation> List<T> combineAnnotations(Class<T> annotationClass, AnnotationScope... scopes) {
         List<T> result = new LinkedList<>();
 
-        result.addAll((Collection<? extends T>) annotations(scopes).getOrDefault(annotationClass, CollectionsHelper.listOf()));
+        result.addAll((Collection<? extends T>) annotations(scopes).getOrDefault(annotationClass, List.of()));
 
         return result;
     }

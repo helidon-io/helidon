@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.security.examples.spi;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+import java.util.Map;
+
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
@@ -41,7 +43,7 @@ public class OutboundProviderSync extends SynchronousProvider implements Outboun
                 .map(Subject::principal)
                 .map(Principal::getName)
                 .map(name -> OutboundSecurityResponse
-                        .withHeaders(CollectionsHelper.mapOf("X-AUTH-USER", CollectionsHelper.listOf(name))))
+                        .withHeaders(Map.of("X-AUTH-USER", List.of(name))))
                 .orElse(OutboundSecurityResponse.abstain());
     }
 }

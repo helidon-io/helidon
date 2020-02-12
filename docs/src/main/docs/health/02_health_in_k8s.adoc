@@ -130,11 +130,11 @@ Routing healthRouting = Routing.builder()
         .register(JsonSupport.create())
         .register(HealthSupport.builder()
                 .webContext("/live") // <1>
-                .add(HealthChecks.healthChecks()) // <2>
+                .addLiveness(HealthChecks.healthChecks()) // <2>
                 .build())
         .register(HealthSupport.builder()
                 .webContext("/ready") // <3>
-                .add(() -> HealthCheckResponse.named("database").up().build()) // <4>
+                .addReadiness(() -> HealthCheckResponse.named("database").up().build()) // <4>
                 .build())
         .build();
 

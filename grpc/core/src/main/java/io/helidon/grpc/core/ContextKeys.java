@@ -16,17 +16,33 @@
 
 package io.helidon.grpc.core;
 
+import java.lang.reflect.Method;
+
+import io.grpc.Context;
 import io.grpc.Metadata;
 
 /**
- * A collection of common gRPC {@link io.grpc.Context.Key} instances.
+ * A collection of common gRPC {@link Context.Key} and
+ * {@link Metadata.Key} instances.
  */
 public final class ContextKeys {
     /**
-     * The authorization gRPC metadata header key.
+     * The {@link Metadata.Key} to use to obtain the authorization data.
      */
     public static final Metadata.Key<String> AUTHORIZATION =
             Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
+
+    /**
+     * The gRPC context key to use to obtain the Helidon {@link io.helidon.common.context.Context}
+     * from the gRPC {@link Context}.
+     */
+    public static final Context.Key<io.helidon.common.context.Context> HELIDON_CONTEXT =
+            Context.key(io.helidon.common.context.Context.class.getCanonicalName());
+
+    /**
+     * The {@link Context.Key} to use to obtain the actual underlying rpc {@link Method}.
+     */
+    public static final Context.Key<Method> SERVICE_METHOD = Context.key(Method.class.getName());
 
     /**
      * Private constructor for utility class.

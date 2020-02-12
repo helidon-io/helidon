@@ -17,7 +17,7 @@ package io.helidon.service.configuration.api;
 
 import java.util.Objects;
 import java.util.Properties;
-import java.util.ServiceConfigurationError; // for javadoc only
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -40,7 +40,10 @@ import java.util.Set;
  * @see #getInstance(String)
  *
  * @see ServiceConfigurationProvider
+ *
+ * @deprecated This class is slated for removal.
  */
+@Deprecated
 public abstract class ServiceConfiguration {
 
 

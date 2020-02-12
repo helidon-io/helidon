@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
 # limitations under the License.
 #
 
+server:
+  port: 7987
+
 security:
   config.require-encryption: false
   properties:
@@ -26,6 +29,7 @@ security:
     proxy-host: ""
   providers:
   - abac:
+    # Adds ABAC Provider - it does not require any configuration
   - oidc:
       client-id: "${ALIAS=security.properties.idcs-client-id}"
       client-secret: "${ALIAS=security.properties.idcs-client-secret}"
@@ -35,6 +39,7 @@ security:
       proxy-host: "${ALIAS=security.properties.proxy-host}"
       frontend-uri: "${ALIAS=security.properties.frontend-uri}"
   - idcs-role-mapper:
+      multitenant: false
       oidc-config:
         # we must repeat IDCS configuration, as in this case
         # IDCS serves both as open ID connect authenticator and
@@ -42,11 +47,13 @@ security:
         client-id: "${ALIAS=security.properties.idcs-client-id}"
         client-secret: "${ALIAS=security.properties.idcs-client-secret}"
         identity-uri: "${ALIAS=security.properties.idcs-uri}"
-      cache-config:
-        cache-timeout-millis: 100000
   web-server:
     # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
     paths:
-    - path: "/rest/profile"
-      methods: ["get"]
-      authenticate: true
+      - path: "/rest/profile"
+        methods: ["get"]
+        authenticate: true
+        roles-allowed: ["my_admins"]
+        abac:
+          scopes: ["first_scope", "second_scope"]
+

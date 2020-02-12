@@ -18,6 +18,7 @@ package io.helidon.webserver.jersey;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -27,20 +28,21 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
-import io.helidon.common.InputStreamHelper;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
 import io.opentracing.SpanContext;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The JerseyExampleResource.
@@ -144,7 +146,7 @@ public class JerseyExampleResource {
     @Path("stream")
     public Response checkSequenceStream(InputStream inputStream, @QueryParam("length") int length) throws IOException {
 
-        String content = new String(InputStreamHelper.readAllBytes(inputStream));
+        String content = new String(inputStream.readAllBytes());
 
         try {
             assertEquals(JerseySupportTest.longData(length).toString(), content);
@@ -212,4 +214,20 @@ public class JerseyExampleResource {
     	throw new WebApplicationException(Response.status(404).entity("Not Found").build());
     }
 
+    @GET
+    @Path("/streamingOutput")
+    @Produces("application/stream+json")
+    public StreamingOutput getHelloOutputStream() {
+        return out -> {
+                try {
+                    out.write(("{ value: \"first\" }\n").getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                    Thread.sleep(500);     // wait before sending next chunk
+                    out.write(("{ value: \"second\" }\n").getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+        };
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.helidon.config.spi;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
 
@@ -55,11 +55,11 @@ import io.helidon.config.PollingStrategies;
  * {@link AbstractParsableConfigSource} can use a different
  * {@code PollingStrategy}.
  * <p>
- * As described with {@link ConfigSource#create(Config)}, the config system can
+ * As described with {@link io.helidon.config.MetaConfig#configSource(io.helidon.config.Config)}, the config system can
  * load {@code ConfigSource}s using meta-configuration, which supports
  * specifying polling strategies. All {@link PollingStrategies built-in polling
  * strategies} and custom ones are supported. (The support is tightly connected
- * with {@link AbstractSource.Builder#init(Config) AbstractSource extensions}
+ * with {@link AbstractSource.Builder#config(Config) AbstractSource extensions}
  * and will not be automatically provided by any another config source
  * implementations.)
  * <p>
@@ -67,7 +67,7 @@ import io.helidon.config.PollingStrategies;
  * {@code polling-strategy} using the following nested {@code properties}:
  * <ul>
  * <li>{@code type} - name of the polling strategy implementation.
- * <table>
+ * <table class="config">
  * <caption>Built-in Polling Strategies</caption>
  * <tr>
  * <th>Name</th>

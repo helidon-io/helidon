@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,15 @@
 package io.helidon.config.etcd;
 
 import java.io.StringReader;
-import java.nio.file.Paths;
+import java.net.URI;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.OptionalHelper;
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigHelper;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
@@ -43,6 +43,10 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdConfigSource.class.getName());
 
+    static {
+        HelidonFeatures.register("Config", "etcd");
+    }
+
     private final EtcdEndpoint endpoint;
     private final EtcdClient client;
 
@@ -56,15 +60,13 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
     }
 
     @Override
-    protected String mediaType() {
-        return OptionalHelper.from(Optional.ofNullable(super.mediaType()))
-                .or(this::probeContentType)
-                .asOptional()
-                .orElse(null);
+    protected Optional<String> mediaType() {
+        return super.mediaType()
+                .or(this::probeContentType);
     }
 
     private Optional<String> probeContentType() {
-        return Optional.ofNullable(ConfigHelper.detectContentType(Paths.get(endpoint.key())));
+        return MediaTypes.detectType(endpoint.key());
     }
 
     @Override
@@ -83,18 +85,25 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
 
     @Override
     protected ConfigParser.Content<Long> content() throws ConfigException {
-        String content = null;
+        String content;
         try {
             content = etcdClient().get(endpoint.key());
         } catch (EtcdClientException e) {
             LOGGER.log(Level.FINEST, "Get operation threw an exception.", e);
+            throw new ConfigException(String.format("Could not get data for key '%s'", endpoint.key()), e);
         }
 
         // a KV pair does not exist
         if (content == null) {
             throw new ConfigException(String.format("Key '%s' does not contain any value", endpoint.key()));
         }
-        return ConfigParser.Content.create(new StringReader(content), mediaType(), dataStamp());
+
+        ConfigParser.Content.Builder<Long> builder = ConfigParser.Content.builder(new StringReader(content));
+
+        mediaType().ifPresent(builder::mediaType);
+        dataStamp().ifPresent(builder::stamp);
+
+        return builder.build();
     }
 
     EtcdEndpoint etcdEndpoint() {
@@ -106,14 +115,39 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
     }
 
     /**
+     * Create a configured instance with the provided options.
+     *
+     * @param uri Remote etcd URI
+     * @param key key the configuration is associated with
+     * @param api api version
+     * @return a new etcd config source
+     */
+    public static EtcdConfigSource create(URI uri, String key, EtcdConfigSourceBuilder.EtcdApi api) {
+        return builder()
+                .uri(uri)
+                .key(key)
+                .api(api)
+                .build();
+    }
+
+    /**
      * Create a new instance from configuration.
      *
-     * @param config configuration to load from
+     * @param metaConfig meta configuration to load config source from
      * @return configured source instance
      */
-    public static EtcdConfigSource create(Config config) {
-        return EtcdConfigSourceBuilder
-                .create(config)
+    public static EtcdConfigSource create(Config metaConfig) {
+        return builder()
+                .config(metaConfig)
                 .build();
+    }
+
+    /**
+     * Create a new fluent API builder for etcd.
+     *
+     * @return a new builder
+     */
+    public static EtcdConfigSourceBuilder builder() {
+        return new EtcdConfigSourceBuilder();
     }
 }
