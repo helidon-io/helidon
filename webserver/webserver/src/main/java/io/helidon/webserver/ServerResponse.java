@@ -100,6 +100,14 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      */
     MessageBodyWriterContext writerContext();
 
+    /**
+     * Send a {@link Throwable} and close the response.
+     *
+     * @param content the {@link Throwable} to send
+     * @throws IllegalArgumentException if there is no registered writer for a given type
+     * @throws IllegalStateException if any {@code send(...)} method was already called
+     * @see #send(Object)
+     */
     default void send(Throwable content) {
         Object status = status();
         if (status == null) {
