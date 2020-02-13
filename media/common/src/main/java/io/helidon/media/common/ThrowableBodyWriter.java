@@ -75,7 +75,6 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
         private final Charset charset;
 
         private ThrowableToChunks(Charset charset) {
-            super();
             this.charset = charset;
         }
 
