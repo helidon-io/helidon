@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,8 @@ final class PathPattern {
     /**
      * A utility class. Cannot be constructed.
      */
-    private PathPattern() {}
+    private PathPattern() {
+    }
 
     /**
      * Compiles a standard {@link PathMatcher} pattern.

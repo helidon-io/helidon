@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ class MediaTypeTest {
     @Test
     void jsonPredicate() {
         assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/json")), is(true));
-        assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/javascript")), is(true));
+        assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/javascript")), is(false));
         assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/manifest+json")), is(true));
         assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/manifest")), is(false));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.webserver;
 
 import java.net.URI;
 import java.util.Map;
+
+import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 
@@ -78,8 +80,9 @@ public class RequestTest {
     public void queryEncodingTest() throws Exception {
         BareRequest mock = mock(BareRequest.class);
         when(mock.uri()).thenReturn(new URI("http://localhost:123/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment"));
-
-        Request request = new RequestTestStub(mock, mock(WebServer.class));
+        when(mock.bodyPublisher()).thenReturn(Single.empty());
+        WebServer webServer = mock(WebServer.class);
+        Request request = new RequestTestStub(mock, webServer);
 
         assertThat("The query string must remain encoded otherwise no-one could tell whether a '&' was really a '&' or '%26'",
                           request.query(),

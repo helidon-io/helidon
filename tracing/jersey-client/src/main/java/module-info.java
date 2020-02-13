@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,14 @@ module io.helidon.tracing.jersey.client {
     requires io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.webclient.jaxrs;
+    requires io.helidon.common.serviceloader;
 
     exports io.helidon.tracing.jersey.client;
 
     // needed to propagate tracing context from server to client
-    opens io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey,io.helidon.microprofile.tracing;
-    exports io.helidon.tracing.jersey.client.internal;
+    exports io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey,io.helidon.microprofile.tracing;
+
+    uses io.helidon.tracing.spi.TracerProvider;
 
     provides AutoDiscoverable with io.helidon.tracing.jersey.client.ClientTracingAutoDiscoverable;
 }

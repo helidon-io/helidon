@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.media.common.MediaSupport;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -57,6 +57,7 @@ import io.netty.util.concurrent.Future;
 /**
  * The Netty based WebServer implementation.
  */
+@SuppressWarnings("deprecation")
 class NettyWebServer implements WebServer {
     static final String TRACING_COMPONENT = "web-server";
 
@@ -73,9 +74,10 @@ class NettyWebServer implements WebServer {
     private final CompletableFuture<WebServer> channelsUpFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> channelsCloseFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> threadGroupsShutdownFuture = new CompletableFuture<>();
-    private final ContextualRegistry contextualRegistry;
+    private final io.helidon.common.http.ContextualRegistry contextualRegistry;
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
     private final List<HttpInitializer> initializers = new LinkedList<>();
+    private final MediaSupport mediaSupport;
 
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
@@ -91,7 +93,8 @@ class NettyWebServer implements WebServer {
      */
     NettyWebServer(ServerConfiguration config,
                    Routing routing,
-                   Map<String, Routing> namedRoutings) {
+                   Map<String, Routing> namedRoutings,
+                   MediaSupport mediaSupport) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
         HelidonFeatures.print(HelidonFlavor.SE, config.printFeatureDetails());
@@ -100,12 +103,13 @@ class NettyWebServer implements WebServer {
         // the contextual registry needs to be created as a different type is expected. Once we remove ContextualRegistry
         // we can simply use the one from config
         Context context = config.context();
-        if (context instanceof ContextualRegistry) {
-            this.contextualRegistry = (ContextualRegistry) context;
+        if (context instanceof io.helidon.common.http.ContextualRegistry) {
+            this.contextualRegistry = (io.helidon.common.http.ContextualRegistry) context;
         } else {
-            this.contextualRegistry = ContextualRegistry.create(config.context());
+            this.contextualRegistry = io.helidon.common.http.ContextualRegistry.create(config.context());
         }
         this.configuration = config;
+        this.mediaSupport = mediaSupport;
 
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
             String name = entry.getKey();
@@ -165,6 +169,11 @@ class NettyWebServer implements WebServer {
     @Override
     public ServerConfiguration configuration() {
         return configuration;
+    }
+
+    @Override
+    public MediaSupport mediaSupport() {
+        return mediaSupport;
     }
 
     @Override
@@ -362,7 +371,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public ContextualRegistry context() {
+    public io.helidon.common.http.ContextualRegistry context() {
         return contextualRegistry;
     }
 

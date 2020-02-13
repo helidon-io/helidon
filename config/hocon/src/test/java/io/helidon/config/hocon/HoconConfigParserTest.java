@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -282,8 +283,8 @@ public class HoconConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends Content {
         @Override
-        default String mediaType() {
-            return HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON;
+        default Optional<String> mediaType() {
+            return Optional.of(HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON);
         }
 
         @Override

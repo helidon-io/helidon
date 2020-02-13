@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.helidon.config;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.internal.FileSourceHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
@@ -90,14 +90,13 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    protected String mediaType() {
-        return Optional.ofNullable(super.mediaType())
-                .or(this::probeContentType)
-                .orElse(null);
+    protected Optional<String> mediaType() {
+        return super.mediaType()
+                .or(this::probeContentType);
     }
 
     private Optional<String> probeContentType() {
-        return Optional.ofNullable(ConfigHelper.detectContentType(filePath));
+        return MediaTypes.detectType(filePath);
     }
 
     @Override
@@ -107,12 +106,14 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     @Override
     protected Content<byte[]> content() throws ConfigException {
-        Optional<byte[]> stamp = dataStamp();
-        LOGGER.log(Level.FINE, String.format("Getting content from '%s'", filePath));
+        LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
 
-        return Content.create(new StringReader(FileSourceHelper.safeReadContent(filePath)),
-                              mediaType(),
-                              stamp);
+        Content.Builder<byte[]> builder = Content.builder(new StringReader(FileSourceHelper.safeReadContent(filePath)));
+
+        dataStamp().ifPresent(builder::stamp);
+        mediaType().ifPresent(builder::mediaType);
+
+        return builder.build();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public final class ConfigUtils {
      * @return stream of items.
      */
     public static <S> Stream<S> asStream(Iterable<? extends S> items) {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(items.iterator(), Spliterator.ORDERED), false);
+        return asStream(items.iterator());
     }
 
     /**
@@ -70,8 +70,8 @@ public final class ConfigUtils {
      * @param iterator iterator over the items
      * @return stream of the items
      */
-    public static <S> Stream<S> asStream(Iterator<S> iterator) {
-        return asStream(() -> iterator);
+    public static <S> Stream<S> asStream(Iterator<? extends S> iterator) {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
     }
 
     /**

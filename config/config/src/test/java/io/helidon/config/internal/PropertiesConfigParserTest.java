@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config.internal;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Optional;
 
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
@@ -67,8 +68,8 @@ public class PropertiesConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends ConfigParser.Content {
         @Override
-        default String mediaType() {
-            return MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
+        default Optional<String> mediaType() {
+            return Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
         }
 
         @Override

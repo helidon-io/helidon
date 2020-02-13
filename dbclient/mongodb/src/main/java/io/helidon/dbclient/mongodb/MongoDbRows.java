@@ -106,7 +106,7 @@ public final class MongoDbRows<T> implements DbRows<T> {
 
             if (null == localCurrentType) {
                 theMapper = value -> dbStatement.mapperManager().map(value,
-                                                       GenericType.create(value.getClass()),
+                                                       GenericType.<T>create(value.getClass()),
                                                        type);
             } else if (localCurrentType.equals(DbMapperManager.TYPE_DB_ROW)) {
                 // maybe we want the same type
@@ -121,7 +121,7 @@ public final class MongoDbRows<T> implements DbRows<T> {
                     } catch (MapperException originalException) {
                         // not found in db mappers, use generic mappers
                         try {
-                            return dbStatement.mapperManager().map(value,
+                            return dbStatement.mapperManager().map((DbRow) value,
                                                      DbMapperManager.TYPE_DB_ROW,
                                                      type);
                         } catch (MapperException ignored) {

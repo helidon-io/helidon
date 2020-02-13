@@ -11,8 +11,18 @@ reviewing changes done by others.
 1. Use unchecked Throwables - descendants of RuntimeException in API
     1. Never use RuntimeException directly - always create a descendant appropriate for your module, or
         use an existing exception declared in the module
-    1. Our APIs should never throw a checked exception unless enforced by implemented/extended interface - e.g. when
+    2. Our APIs should never throw a checked exception unless enforced by implemented/extended interface - e.g. when
         we implement a java.io.Closeable, we must declare the checked exception. 
+1. Usage of `null` is discouraged and should not exist in any public APIs of Helidon
+    1. If a method accepts a `null`, refactor it to a different approach
+        - a setter: create a method to remove the field value rather than setting a `null` value 
+            (such as `host(String)` to set a host, and `unsetHost()` to revert to default value)
+        - other methods:
+            - if there is a low number of combinations (up to 2), create another method without the parameter
+            - otherwise create a parameter object that uses a builder to configure optional parameters
+        - never use `java.util.Optional` as a parameter type
+    2. If a method would return `null`, return `java.util.Optional` instead
+
 
 # Package and module structure
 1. We use flat package structure

@@ -31,7 +31,7 @@ public interface DbMapperManager {
     /**
      * Generic type for the {@link io.helidon.dbclient.DbRow} class.
      */
-    GenericType<Object> TYPE_DB_ROW = GenericType.create(DbRow.class);
+    GenericType<DbRow> TYPE_DB_ROW = GenericType.create(DbRow.class);
     /**
      * Generic type for the {@link Map} of String to value pairs for named parameters.
      */

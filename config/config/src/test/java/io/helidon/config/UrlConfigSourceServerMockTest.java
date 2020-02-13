@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_
 import static org.glassfish.grizzly.http.Method.HEAD;
 import static org.glassfish.grizzly.http.util.HttpStatus.OK_200;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -216,7 +215,7 @@ public class UrlConfigSourceServerMockTest {
 
         ConfigParser.Content content = configSource.content();
 
-        assertThat(content.mediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(content.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
         assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
@@ -241,7 +240,7 @@ public class UrlConfigSourceServerMockTest {
 
         ConfigParser.Content content = configSource.content();
 
-        assertThat(content.mediaType(), is(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
+        assertThat(content.mediaType(), is(Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES)));
         assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
@@ -266,7 +265,7 @@ public class UrlConfigSourceServerMockTest {
 
         ConfigParser.Content content = configSource.content();
 
-        assertThat(content.mediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(content.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
         assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
@@ -288,7 +287,7 @@ public class UrlConfigSourceServerMockTest {
                 .url(new URL(String.format("http://127.0.0.1:%d/application.unknown", server.getPort())))
                 .build();
 
-        assertThat(configSource.content().mediaType(), is(nullValue()));
+        assertThat(configSource.content().mediaType(), is(Optional.empty()));
     }
 
 }

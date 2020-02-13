@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ An easy way to start with the link:{javadoc-base-url-api}/Config.html[Config] AP
 is to follow these four steps:
 
 1. <<maven-coords,add config-related dependencies to your `pom.xml`>>
-2. <<update-module-info, revise your `module-info.java` to refer to config (if you are using Java 9)>>
+2. <<update-module-info, revise your `module-info.java` to refer to config (if you are using Java 11)>>
 3. <<create-simple-config-props, create a simple config properties file>>
 4. <<Config-Basics-DefaultConfig, retrieve and use the default `Config` from your app>>
 
@@ -102,7 +102,7 @@ is to follow these four steps:
 ----
 
 ==== Update `module-info.java` [[update-module-info]]
-If you are using Java 9 then create or update the `module-info.java` file for your application:
+If you are using Java 11 then create or update the `module-info.java` file for your application:
 [source,java]
 .Config Dependency in `module-info.java`
 ----
