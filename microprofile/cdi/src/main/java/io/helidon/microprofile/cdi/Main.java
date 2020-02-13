@@ -29,7 +29,7 @@ package io.helidon.microprofile.cdi;
  *      <li>If there are any MicroProfile config sources, these will be added</li>
  *      <li>If there are any {@code META-INF/microprofile-config.properties} files on the classpath, these will be added</li>
  * </ul>
- * <h2>Logging</h2>>
+ * <h2>Logging</h2>
  * Helidon uses Java Util Logging. You can configure logging using:
  * <ul>
  *     <li>A system property {@code java.util.logging.config.class}</li>

@@ -1712,6 +1712,10 @@ public interface Config {
          *        optional: true
          *        resource: "application.yaml"
          * </pre>
+         *
+         * @param metaConfig Meta configuration
+         * @return New builder
+         *
          */
         Builder config(Config metaConfig);
     }

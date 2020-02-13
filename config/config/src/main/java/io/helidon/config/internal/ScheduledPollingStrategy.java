@@ -336,7 +336,6 @@ public class ScheduledPollingStrategy implements PollingStrategy {
         /**
          * Creates a builder of {@link RecurringPolicy} with an ability to change the behaviour, with a boundaries and
          * the possibility to react to feedback given by {@link #shorten()} or {@link #lengthen()}.
-         * <p>
          */
         //* See {@link ScheduledPollingStrategy#adaptive(Duration)} for detailed documentation.
         final class AdaptiveBuilder {

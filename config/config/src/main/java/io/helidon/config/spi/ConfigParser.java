@@ -203,6 +203,7 @@ public interface ConfigParser {
             /**
              * Content media type.
              * @param mediaType type of the content
+             * @return builder
              */
             public Builder<S> mediaType(String mediaType) {
                 this.mediaType = mediaType;
@@ -213,6 +214,7 @@ public interface ConfigParser {
              * Content stamp.
              *
              * @param stamp stamp of the content
+             * @return builder
              */
             public Builder<S> stamp(S stamp) {
                 this.stamp = stamp;

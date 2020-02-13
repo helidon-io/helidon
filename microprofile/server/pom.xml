@@ -130,6 +130,7 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-testing</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
