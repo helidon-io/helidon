@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ class BareResponseImpl implements BareResponse {
     private volatile DataChunk firstChunk;
     private volatile DefaultHttpResponse response;
     private volatile boolean lengthOptimization;
+    private volatile boolean isWebSocketUpgrade = false;
 
     /**
      * @param ctx the channel handler context
@@ -143,17 +144,24 @@ class BareResponseImpl implements BareResponse {
                 .filter(header -> header.startsWith(HTTP_2_HEADER_PREFIX))
                 .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
-        // Set chunked if length not set, may switch to length later
-        boolean lengthSet = HttpUtil.isContentLengthSet(response);
-        if (!lengthSet) {
-            lengthOptimization = status.code() == Http.Status.OK_200.code()
-                    && !HttpUtil.isTransferEncodingChunked(response);
-            HttpUtil.setTransferEncodingChunked(response, true);
+        // Check if WebSocket upgrade
+        boolean isUpgrade = isWebSocketUpgrade(status, headers);
+        if (isUpgrade) {
+            isWebSocketUpgrade = true;
+        } else {
+            // Set chunked if length not set, may switch to length later
+            boolean lengthSet = HttpUtil.isContentLengthSet(response);
+            if (!lengthSet) {
+                lengthOptimization = status.code() == Http.Status.OK_200.code()
+                        && !HttpUtil.isTransferEncodingChunked(response);
+                HttpUtil.setTransferEncodingChunked(response, true);
+            }
         }
 
         // Add keep alive header as per:
         // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-        if (keepAlive) {
+        // If already set (e.g. WebSocket upgrade), do not override
+        if (keepAlive && !headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         }
 
@@ -162,6 +170,21 @@ class BareResponseImpl implements BareResponse {
             LOGGER.finest(() -> log("Writing headers: " + status));
             initWriteResponse();
         }
+    }
+
+    private boolean isWebSocketUpgrade(Http.ResponseStatus status, Map<String, List<String>> headers) {
+        return status.code() == 101 && headers.containsKey("Upgrade")
+                && headers.get("Upgrade").contains("websocket");
+    }
+
+    /**
+     * Determines if response is a WebSockets upgrade.
+     *
+     * @return Outcome of test.
+     * @throws IllegalStateException If headers not written yet.
+     */
+    boolean isWebSocketUpgrade() {
+        return isWebSocketUpgrade;
     }
 
     /**
@@ -318,6 +341,14 @@ class BareResponseImpl implements BareResponse {
 
             return channelFuture
                     .addListener(future -> {
+                        data.writeFuture().ifPresent(writeFuture -> {
+                            // Complete write future based con channel future
+                            if (future.isSuccess()) {
+                                writeFuture.complete(data);
+                            } else {
+                                writeFuture.completeExceptionally(future.cause());
+                            }
+                        });
                         data.release();
                         LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
                     })

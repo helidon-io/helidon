@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,9 @@ public class OutputStreamPublisherTest {
         printer.close();
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems().size(),is(equalTo(1)));
+        // Filter out any OutputStreamPublisher#FLUSH_BUFFER
+        long size = subscriber.getItems().stream().filter(b -> b.capacity() > 0).count();
+        assertThat(size, is(equalTo(1L)));
         ByteBuffer bb = subscriber.getItems().get(0);
         assertThat(new String(bb.array()), is(equalTo("foo")));
     }

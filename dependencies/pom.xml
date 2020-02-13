@@ -46,6 +46,7 @@
         <version.lib.el-api>3.0.0</version.lib.el-api>
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.17.0</version.lib.etcd4j>
+        <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>1.30.5</version.lib.google-api-client>
         <version.lib.graalvm>19.2.0</version.lib.graalvm>
         <version.lib.grpc>1.25.0</version.lib.grpc>
@@ -54,6 +55,7 @@
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate>5.4.4.Final</version.lib.hibernate>
         <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
+        <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1</version.lib.inject>
         <version.lib.interceptor-api>1.2.2</version.lib.interceptor-api>
         <version.lib.jackson>2.10.0</version.lib.jackson>
@@ -97,12 +99,13 @@
         <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
         <version.lib.transaction-api>1.2</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
+        <version.lib.tyrus>1.15</version.lib.tyrus>
         <version.lib.ucp>19.3.0.0</version.lib.ucp>
         <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
-        <version.lib.zipkin>2.12.0</version.lib.zipkin>
-        <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.failsafe>2.3.1</version.lib.failsafe>
+        <version.lib.websockets-api>1.1.2</version.lib.websockets-api>
+        <version.lib.weld>3.1.1.Final</version.lib.weld>
         <version.lib.yasson>1.0.6</version.lib.yasson>
+        <version.lib.zipkin>2.12.0</version.lib.zipkin>
     </properties>
 
     <dependencyManagement>
@@ -345,6 +348,26 @@
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams</artifactId>
                 <version>${version.lib.reactivestreams}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.websocket</groupId>
+                <artifactId>jakarta.websocket-api</artifactId>
+                <version>${version.lib.websockets-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.tyrus</groupId>
+                <artifactId>tyrus-core</artifactId>
+                <version>${version.lib.tyrus}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.tyrus</groupId>
+                <artifactId>tyrus-client</artifactId>
+                <version>${version.lib.tyrus}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.tyrus</groupId>
+                <artifactId>tyrus-server</artifactId>
+                <version>${version.lib.tyrus}</version>
             </dependency>
 
             <!-- Security related -->
