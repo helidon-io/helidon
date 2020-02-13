@@ -28,10 +28,14 @@
     <artifactId>helidon-graal-native-image-extension</artifactId>
     <name>Helidon Integrations Graal Native Image Extension</name>
 
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>

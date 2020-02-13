@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
     /**
      * Create a new URL override source from meta configuration.
      *
-     * @param metaConfig meta configuration containing at least the {@key url} key
+     * @param metaConfig meta configuration containing at least the {@code url} key
      * @return a new URL override source
      */
     public static UrlOverrideSource create(Config metaConfig) {

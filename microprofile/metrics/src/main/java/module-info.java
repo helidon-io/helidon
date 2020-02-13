@@ -27,6 +27,7 @@ module io.helidon.microprofile.metrics {
     requires static java.activation;
 
     requires io.helidon.microprofile.server;
+    requires io.helidon.microprofile.config;
     requires transitive io.helidon.metrics;
     requires io.helidon.common.metrics;
 

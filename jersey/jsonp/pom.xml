@@ -28,6 +28,10 @@
     <artifactId>helidon-jersey-media-jsonp</artifactId>
     <name>Helidon Jersey Media JSON-P</name>
 
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <!-- Jersey support for JSON-P -->

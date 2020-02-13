@@ -210,12 +210,13 @@
                     <configuration>
                         <source>11</source>
                         <release>11</release>
-                        <failOnError>false</failOnError>
+                        <failOnError>true</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <!--<verbose>true</verbose>-->
                         <isOffline>true</isOffline>
                         <offlineLinks>
+                        <!--
                             <offlineLink>
                                 <url>${javadoc.link.jackson-annotations}</url>
                                 <location>${javadoc.packagelist.dir}/jackson-annotations</location>
@@ -324,6 +325,7 @@
                                 <url>${javadoc.link.eclipselink}</url>
                                 <location>${javadoc.packagelist.dir}/eclipselink</location>
                             </offlineLink>
+                        -->
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>

@@ -23,6 +23,7 @@ module io.helidon.microprofile.config {
     requires javax.inject;
     requires io.helidon.common;
     requires io.helidon.config;
+    requires io.helidon.config.objectmapping;
     requires io.helidon.microprofile.cdi;
     requires microprofile.config.api;
 

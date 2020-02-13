@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -336,7 +336,6 @@ public class ScheduledPollingStrategy implements PollingStrategy {
         /**
          * Creates a builder of {@link RecurringPolicy} with an ability to change the behaviour, with a boundaries and
          * the possibility to react to feedback given by {@link #shorten()} or {@link #lengthen()}.
-         * <p>
          */
         //* See {@link ScheduledPollingStrategy#adaptive(Duration)} for detailed documentation.
         final class AdaptiveBuilder {

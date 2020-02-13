@@ -29,7 +29,7 @@ import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
 
 /**
- * Implementation of {@link WriteableContent}.
+ * Implementation of {@code WriteableContent}.
  */
 public final class MessageBodyWriteableContent implements MessageBodyContent, MessageBodyWriters, MessageBodyFilters {
 

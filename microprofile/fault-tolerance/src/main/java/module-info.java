@@ -28,6 +28,7 @@ module io.helidon.microprofile.faulttolerance {
     requires io.helidon.common.metrics;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
+    requires io.helidon.microprofile.metrics;
 
     requires cdi.api;
     requires hystrix.core;
