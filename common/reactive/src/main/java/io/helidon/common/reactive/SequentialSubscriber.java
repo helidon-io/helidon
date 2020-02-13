@@ -17,6 +17,7 @@
 
 package io.helidon.common.reactive;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.concurrent.Flow;
@@ -35,12 +36,16 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
 
     private Flow.Subscriber<T> subscriber;
     private ReentrantLock seqLock = new ReentrantLock();
-    private SignalQueue queue = new SignalQueue();
+    private LinkedList<Runnable> queue = new LinkedList<>();
     private volatile boolean done;
     private boolean draining;
 
-
-    private SequentialSubscriber(Flow.Subscriber<T> subscriber) {
+    /**
+     * Provides protection from untrusted publishers, enforces rule 1.3 by serializing all parallel calls.
+     *
+     * @param subscriber to be protected
+     */
+    protected SequentialSubscriber(Flow.Subscriber<T> subscriber) {
         this.subscriber = subscriber;
     }
 
@@ -72,7 +77,6 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
                 if (done) {
                     cancel = true;
                 } else {
-                    queue.onSubscribeInProgress();
                     if (draining) {
                         queue.addFirst(() -> subscriber.onSubscribe(subscription));
                         return;
@@ -101,8 +105,6 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
         try {
             seqLock.lock();
             if (done) return;
-            // In case publisher is sending onNext signal directly from onSubscribe
-            queue.unblockQueueOnSameThead();
             if (draining) {
                 queue.add(() -> submit(item));
                 return;
@@ -124,7 +126,7 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
             if (done) return;
             done = true;
             if (draining) {
-                queue = new ReadOnlySignalQueue(() -> subscriber.onError(throwable));
+                queue = new ReadOnlySignalQueue(queue, () -> subscriber.onError(throwable));
                 return;
             }
             draining = true;
@@ -142,7 +144,7 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
             if (done) return;
             done = true;
             if (draining) {
-                queue = new ReadOnlySignalQueue(() -> subscriber.onComplete());
+                queue = new ReadOnlySignalQueue(queue, () -> subscriber.onComplete());
                 return;
             }
             draining = true;
@@ -178,10 +180,11 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
         }
     }
 
-    private class ReadOnlySignalQueue extends SignalQueue {
+    private class ReadOnlySignalQueue extends LinkedList<Runnable> {
 
-        ReadOnlySignalQueue(Runnable single) {
+        ReadOnlySignalQueue(Collection<Runnable> unfinishedQueue, Runnable single) {
             super();
+            super.addAll(unfinishedQueue);
             super.add(single);
         }
 
@@ -190,23 +193,5 @@ public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
             return false;
         }
     }
-
-    private class SignalQueue extends LinkedList<Runnable> {
-        private volatile Thread onSubscribingThread;
-
-        public boolean onSubscribeInProgress() {
-            if (onSubscribingThread != null) return true;
-            onSubscribingThread = Thread.currentThread();
-            return false;
-        }
-
-        public void unblockQueueOnSameThead() {
-            if (onSubscribingThread != null
-                    && Objects.equals(onSubscribingThread, Thread.currentThread())) {
-                draining = false;
-            }
-        }
-    }
-
 
 }

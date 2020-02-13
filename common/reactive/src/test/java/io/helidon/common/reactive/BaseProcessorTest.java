@@ -106,23 +106,6 @@ public class BaseProcessorTest {
     }
 
     @Test
-    public void testSubmitError() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        new TestPublisher<>("foo").subscribe(processor);
-        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
-            @Override
-            public void onNext(String item) {
-                throw new IllegalStateException("foo!");
-            }
-        };
-        processor.subscribe(subscriber);
-        subscriber.request1();
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
     public void testCanceledSubscription() {
         TestSubscriber<Object> subscriber = new TestSubscriber<Object>() {
             @Override
@@ -227,6 +210,11 @@ public class BaseProcessorTest {
 
         boolean complete;
         Throwable error;
+
+        @Override
+        protected void submit(T item) {
+            getSubscriber().onNext(item);
+        }
 
         @Override
         public void onComplete() {

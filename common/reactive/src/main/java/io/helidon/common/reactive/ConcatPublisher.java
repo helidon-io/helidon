@@ -18,6 +18,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -34,6 +35,8 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     private Flow.Publisher<T> secondPublisher;
     private RequestedCounter requested = new RequestedCounter(true);
     private ReentrantLock firstPublisherCompleteLock = new ReentrantLock();
+    private CompletableFuture<Void> firstSubscriberCompleted = new CompletableFuture<>();
+    private CompletableFuture<Flow.Subscriber<T>> downstreamReady = new CompletableFuture<>();
 
     private ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
         this.firstPublisher = firstPublisher;
@@ -84,6 +87,7 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
                 secondSubscriber.subscription.cancel();
             }
         });
+        downstreamReady.complete(this.subscriber);
     }
 
     private class FirstSubscriber implements Flow.Subscriber<T> {
@@ -114,6 +118,7 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
         @Override
         public void onComplete() {
+            firstSubscriberCompleted.complete(null);
             firstCompleteLock(() -> complete = true);
             try {
                 requested.lock();
@@ -151,7 +156,9 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
         @Override
         public void onComplete() {
-            ConcatPublisher.this.subscriber.onComplete();
+            downstreamReady.whenComplete((downStreamSubscriber, th) -> {
+                firstSubscriberCompleted.whenComplete((aVoid, t) -> ConcatPublisher.this.subscriber.onComplete());
+            });
         }
     }
 

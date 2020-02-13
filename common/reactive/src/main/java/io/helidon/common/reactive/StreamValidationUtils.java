@@ -41,14 +41,21 @@ public class StreamValidationUtils {
      * @return true if requested parameter is valid
      * @see <a href="https://github.com/reactive-streams/reactive-streams-jvm#3.9">reactive-streams/reactive-streams-jvm#3.9</a>
      */
-    public static boolean checkRequestParam(long requestParam, Consumer<? super IllegalArgumentException> onExceeded) {
+    static boolean checkRequestParam(long requestParam, Consumer<? super IllegalArgumentException> onExceeded) {
         if (requestParam <= 0) {
             if (Objects.nonNull(onExceeded)) {
-                onExceeded.accept(new IllegalArgumentException(String
-                        .format("Non-positive subscription request %d, rule 3.9", requestParam)));
+                onExceeded.accept(createNonPositiveRequestException(requestParam));
             }
             return false;
         }
         return true;
+    }
+
+    static IllegalArgumentException createNonPositiveRequestException(long n) {
+        return new IllegalArgumentException(String.format("Non-positive subscription request %d, rule 3.9", n));
+    }
+
+    static RuntimeException createOnlyOneSubscriberAllowedException() {
+        return new IllegalStateException("This Publisher supports only one Subscriber");
     }
 }

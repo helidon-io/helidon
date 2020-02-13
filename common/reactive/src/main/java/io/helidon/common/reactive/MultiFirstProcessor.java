@@ -30,6 +30,11 @@ final class MultiFirstProcessor<T> extends BaseProcessor<T, T> implements Single
     }
 
     @Override
+    protected void submit(T item) {
+        getSubscriber().onNext(item);
+    }
+
+    @Override
     protected void next(T item) {
         super.next(item);
         super.complete();

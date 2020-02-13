@@ -59,8 +59,6 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
     private volatile boolean cancelled;
     private Throwable error;
     private Subscriber<? super U> subscriber;
-    private Thread nexting;
-    private long request;
     private volatile Subscription subscription;
     private final ReentrantLock subscriptionLock = new ReentrantLock();
 
@@ -110,30 +108,15 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      * @param item to be sent to down stream
      */
     protected void next(T item) {
-        nexting = Thread.currentThread();
-        request = 0;
-
-        submit(item, subscriber);
-
-        if (request > 0) {
-            long req = request;
-            request = 0;
-            // in a chain of BaseProcessors this will be just one stack frame
-            subscription.request(req);
-        }
-        nexting = null;
+        submit(item);
     }
 
     /**
      * Invoke actual onNext signal to down stream.
      *
      * @param item       to be sent down stream
-     * @param subscriber subscriber to sent onNext signal to
      */
-    @SuppressWarnings("unchecked")
-    protected void submit(T item, Subscriber<? super U> subscriber) {
-        subscriber.onNext((U) item);
-    }
+    protected abstract void submit(T item);
 
     @Override
     public void subscribe(Subscriber<? super U> s) {
@@ -142,14 +125,9 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
 
             if (subscriber != null) {
                 subscriber.onSubscribe(EmptySubscription.INSTANCE);
-                subscriber.onError(new IllegalStateException("This Publisher accepts only one Subscriber"));
+                subscriber.onError(StreamValidationUtils.createOnlyOneSubscriberAllowedException());
             }
-            if (s instanceof Subscribable) {
-                subscriber = s;
-            } else {
-                // Protection for foreign subscribers
-                subscriber = SequentialSubscriber.create(s);
-            }
+            subscriber = s;
             if (subscription != null) {
                 downstreamSubscribe();
             }
@@ -235,51 +213,33 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
      */
     @Override
     public void request(long n) {
-        StreamValidationUtils.checkRequestParam(n, this::onError);
         if (cancelled) {
             return;
         }
-        // this is not required to be in sync with any changes to complete,
-        // so the call to request and the test of complete do not need to
-        // be transactional
-
-        // one case to take care of:
-        // if request() is called by the same thread that's doing onNext,
-        // then postpone requesting until after next(...) - this will tame the recursion
-        // (otherwise it will be 2x the chain of Processors - 1x for the chain of onNext,
-        // another 1x for the chain of request())
-        if (nexting != null && nexting == Thread.currentThread()) {
-            if (Long.MAX_VALUE - request > n) {
-                request += n;
-            } else {
-                request = Long.MAX_VALUE;
-            }
-            return;
-        }
-
+        StreamValidationUtils.checkRequestParam(n, this::onError);
         subscription.request(n);
     }
 
     @Override
     public void cancel() {
-        cancelled = true;
         complete = true;
+        cancelled = true;
         subscription.cancel();
     }
 
-    Subscriber<? super U> getSubscriber() {
+    protected Subscriber<? super U> getSubscriber() {
         return subscriber;
     }
 
-    Subscription getSubscription() {
+    protected Subscription getSubscription() {
         return subscription;
     }
 
-    Throwable getError() {
+    protected Throwable getError() {
         return error;
     }
 
-    void setError(Throwable error) {
+    protected void setError(Throwable error) {
         this.error = error;
     }
 }

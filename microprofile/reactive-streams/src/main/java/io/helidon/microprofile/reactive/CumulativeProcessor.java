@@ -49,6 +49,7 @@ class CumulativeProcessor implements Processor<Object, Object> {
                 .whenSubscribe(SequentialSubscriber::create)
         ));
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
+        if (precedingProcessorList.isEmpty()) return;
         this.processorList.add(HybridProcessor.from(MultiTappedProcessor.create()
                 .whenSubscribe(SequentialSubscriber::create)
         ));

@@ -16,7 +16,6 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.mapper.Mapper;
@@ -50,7 +49,7 @@ public final class MultiMapProcessor<T, U> extends BaseProcessor<T, U> implement
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void submit(T item, Flow.Subscriber<? super U> subscriber) {
+    protected void submit(T item) {
         U value = null;
         try {
             value = mapper.map(item);
@@ -64,6 +63,6 @@ public final class MultiMapProcessor<T, U> extends BaseProcessor<T, U> implement
             onError(new NullPointerException("Mapper returned a null value"));
             return;
         }
-        subscriber.onNext((U) value);
+        getSubscriber().onNext((U) value);
     }
 }

@@ -46,8 +46,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<R> {
 
-    private SequentialSubscriber<T> passedInSubscriber;
-    private SequentialSubscriber<? super R> outletSubscriber;
+    private Flow.Subscriber<T> passedInSubscriber;
+    private Flow.Subscriber<? super R> outletSubscriber;
     private Flow.Publisher<R> passedInPublisher;
     private ExecutorService executorService;
     private Flow.Subscriber<? super T> inletSubscriber;
@@ -55,23 +55,25 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private Flow.Subscription passedInPublisherSubscription;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private AtomicBoolean done = new AtomicBoolean(false);
+    private AtomicBoolean downStreamCompleted = new AtomicBoolean(false);
+    private AtomicBoolean passedInSubscriberCompleted = new AtomicBoolean(false);
     private CompletableFuture<Void> readyToSignalPassedInSubscriber = new CompletableFuture<>();
     private CompletableFuture<Void> readyToSignalOutletSubscriber = new CompletableFuture<>();
 
 
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher,
                                   ExecutorService executorService) {
-        this.passedInSubscriber = SequentialSubscriber.create(passedInSubscriber);
+        this.passedInSubscriber = passedInSubscriber;
         this.passedInPublisher = passedInPublisher;
         this.executorService = executorService;
         this.inletSubscriber = this;
     }
 
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
-        this.passedInSubscriber = SequentialSubscriber.create(passedInSubscriber);
+        this.passedInSubscriber = passedInSubscriber;
         this.passedInPublisher = passedInPublisher;
         this.inletSubscriber = this;
-        this.executorService = Executors.newFixedThreadPool(1);
+        this.executorService = null;
     }
 
     /**
@@ -106,7 +108,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
 
     @Override
     public void subscribe(Flow.Subscriber<? super R> outletSubscriber) {
-        this.outletSubscriber = SequentialSubscriber.create(outletSubscriber);
+        this.outletSubscriber = outletSubscriber;
         passedInPublisher.subscribe(new Flow.Subscriber<R>() {
 
             @Override
@@ -137,12 +139,16 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 done.set(true);
                 Objects.requireNonNull(t);
                 readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
-                    outletSubscriber.onError(t);
+                    if (!downStreamCompleted.getAndSet(true)) {
+                        outletSubscriber.onError(t);
+                    }
                 });
                 readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
                     //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
                     forbiddenSignal(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
-                    passedInSubscriber.onError(t);
+                    if (!passedInSubscriberCompleted.getAndSet(true)) {
+                        passedInSubscriber.onError(t);
+                    }
                 });
                 inletSubscriber.onError(t);
             }
@@ -153,10 +159,14 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 done.set(true);
                 readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
                     forbiddenSignal(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
-                    passedInSubscriber.onComplete();
+                    if (!passedInSubscriberCompleted.getAndSet(true)) {
+                        passedInSubscriber.onComplete();
+                    }
                 });
                 readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
-                    outletSubscriber.onComplete();
+                    if (!downStreamCompleted.getAndSet(true)) {
+                        outletSubscriber.onComplete();
+                    }
                 });
             }
         });
@@ -172,7 +182,9 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void cancel() {
                 // Cancel from outlet subscriber
-                passedInSubscriber.onComplete();
+                if (!passedInSubscriberCompleted.getAndSet(true)) {
+                    passedInSubscriber.onComplete();
+                }
                 Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
                 Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel);
             }
@@ -202,8 +214,14 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                     return;
                 }
                 inletSubscription.cancel();
-                outletSubscriber.onComplete();
-                passedInPublisherSubscription.cancel();
+                readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+                    if (!downStreamCompleted.getAndSet(true)) {
+                        outletSubscriber.onComplete();
+                    }
+                });
+                readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+                    passedInPublisherSubscription.cancel();
+                });
             }
         });
 
@@ -223,10 +241,14 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         done.set(true);
         Objects.requireNonNull(t);
         readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
-            passedInSubscriber.onError(t);
+            if (!passedInSubscriberCompleted.getAndSet(true)) {
+                passedInSubscriber.onError(t);
+            }
         });
         readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
-            outletSubscriber.onError(t);
+            if (!downStreamCompleted.getAndSet(true)) {
+                outletSubscriber.onError(t);
+            }
         });
         forbiddenSignal(() -> Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel));
     }
@@ -236,10 +258,14 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         // Inlet/upstream publisher completed
         done.set(true);
         readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
-            passedInSubscriber.onComplete();
+            if (!passedInSubscriberCompleted.getAndSet(true)) {
+                passedInSubscriber.onComplete();
+            }
         });
         readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
-            outletSubscriber.onComplete();
+            if (!downStreamCompleted.getAndSet(true)) {
+                outletSubscriber.onComplete();
+            }
         });
         Executors.newFixedThreadPool(1).execute(() -> passedInPublisherSubscription.cancel());
     }
@@ -251,6 +277,12 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
      * @param runnable forbidden signal to be signalled by another thread
      */
     private void forbiddenSignal(Runnable runnable) {
-        executorService.execute(runnable);
+        if (Objects.isNull(executorService)) {
+            ExecutorService oneTimeExecutorService = Executors.newFixedThreadPool(1);
+            oneTimeExecutorService.execute(runnable);
+            oneTimeExecutorService.shutdown();
+        } else {
+            executorService.execute(runnable);
+        }
     }
 }

@@ -43,6 +43,11 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
     protected MultiTappedProcessor() {
     }
 
+    @Override
+    protected void submit(R item) {
+        getSubscriber().onNext(item);
+    }
+
     /**
      * Create new processor with no functions to execute when signals are intercepted.
      *

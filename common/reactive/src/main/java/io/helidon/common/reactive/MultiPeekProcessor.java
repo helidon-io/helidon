@@ -44,6 +44,11 @@ public class MultiPeekProcessor<T> extends BaseProcessor<T, T> implements Multi<
     }
 
     @Override
+    protected void submit(T item) {
+        getSubscriber().onNext(item);
+    }
+
+    @Override
     public void onNext(T item) {
         try {
             consumer.accept(item);

@@ -37,6 +37,11 @@ final class SingleExactlyOneProcessor<T> extends BaseProcessor<T, T> implements 
     }
 
     @Override
+    protected void submit(T item) {
+        getSubscriber().onNext(item);
+    }
+
+    @Override
     protected void complete() {
         super.next(item);
         super.complete();

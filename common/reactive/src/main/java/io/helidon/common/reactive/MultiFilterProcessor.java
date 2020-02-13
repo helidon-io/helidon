@@ -60,6 +60,11 @@ public class MultiFilterProcessor<T> extends BaseProcessor<T, T> implements Mult
     }
 
     @Override
+    protected void submit(T item) {
+        getSubscriber().onNext(item);
+    }
+
+    @Override
     protected void next(T item) {
         try {
             if (predicate.test(item)) {

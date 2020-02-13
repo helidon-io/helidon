@@ -42,6 +42,12 @@ final class MultiCollectingProcessor<T, U> extends BaseProcessor<T, U> implement
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    protected void submit(T item) {
+        getSubscriber().onNext((U) item);
+    }
+
+    @Override
     public void onComplete() {
         U value;
         try {

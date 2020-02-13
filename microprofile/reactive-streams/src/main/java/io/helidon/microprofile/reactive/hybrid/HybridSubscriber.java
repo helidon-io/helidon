@@ -18,7 +18,6 @@
 package io.helidon.microprofile.reactive.hybrid;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Flow;
 
 import org.reactivestreams.Subscriber;
@@ -31,18 +30,8 @@ import org.reactivestreams.Subscription;
  *
  * @param <T> type of items
  */
-public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
+public interface HybridSubscriber<T> extends Flow.Subscriber<T>, Subscriber<T> {
 
-    private Optional<Flow.Subscriber<T>> flowSubscriber = Optional.empty();
-    private Optional<Subscriber<T>> reactiveSubscriber = Optional.empty();
-
-    private HybridSubscriber(Flow.Subscriber<T> subscriber) {
-        this.flowSubscriber = Optional.of(subscriber);
-    }
-
-    private HybridSubscriber(Subscriber<T> subscriber) {
-        this.reactiveSubscriber = Optional.of(subscriber);
-    }
 
     /**
      * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
@@ -54,60 +43,144 @@ public class HybridSubscriber<T> implements Flow.Subscriber<T>, Subscriber<T> {
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    public static <T> HybridSubscriber<T> from(Flow.Subscriber<T> subscriber) {
-        Objects.requireNonNull(subscriber);
-        return new HybridSubscriber<T>(subscriber);
+    static <T> HybridSubscriber<T> from(Flow.Subscriber<T> subscriber) {
+        return new HybridSubscriber<T>() {
+
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscriber.onSubscribe(HybridSubscription.from(subscription));
+            }
+
+            @Override
+            public void onNext(T item) {
+                subscriber.onNext(item);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                subscriber.onError(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                subscriber.onComplete();
+            }
+        };
     }
 
     /**
      * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
      * from {@link org.reactivestreams.Subscriber}.
      *
-     * @param subscriber {@link org.reactivestreams.Subscriber} to wrap
-     * @param <T>        type of items
+     * @param s   {@link org.reactivestreams.Subscriber} to wrap
+     * @param <T> type of items
      * @return {@link io.helidon.microprofile.reactive.hybrid.HybridSubscriber}
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    public static <T> HybridSubscriber<T> from(Subscriber<T> subscriber) {
-        Objects.requireNonNull(subscriber);
-        return new HybridSubscriber<T>(subscriber);
+    static <T> HybridSubscriber<T> from(Subscriber<T> s) {
+        final SubscriberReference<T> subscriberReference = new SubscriberReference<>(Objects.requireNonNull(s));
+        return new HybridSubscriber<T>() {
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                subscriberReference
+                        .onSubscribe(HybridSubscription.from(subscription)
+                                .onCancel(subscriberReference::release)
+                        );
+            }
+
+            @Override
+            public void onNext(T item) {
+                subscriberReference.onNext(item);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                subscriberReference.onError(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                subscriberReference.onComplete();
+            }
+        };
     }
 
     @Override
-    public void onSubscribe(Flow.Subscription subscription) {
-        flowSubscriber.ifPresent(s -> s.onSubscribe(HybridSubscription.from(subscription).onCancel(this::releaseReferences)));
-        reactiveSubscriber.ifPresent(s -> s.onSubscribe(HybridSubscription.from(subscription).onCancel(this::releaseReferences)));
+    default void onSubscribe(Flow.Subscription subscription) {
+        onSubscribe((Subscription) HybridSubscription.from(subscription));
     }
 
     @Override
-    public void onSubscribe(Subscription subscription) {
-        Objects.requireNonNull(subscription);
-        flowSubscriber.ifPresent(s -> s.onSubscribe(HybridSubscription.from(subscription)));
-        reactiveSubscriber.ifPresent(s -> s.onSubscribe(subscription));
+    default void onSubscribe(Subscription subscription) {
+        onSubscribe((Flow.Subscription) HybridSubscription.from(subscription));
     }
 
-    @Override
-    public void onNext(T item) {
-        flowSubscriber.ifPresent(s -> s.onNext(item));
-        reactiveSubscriber.ifPresent(s -> s.onNext(item));
+    /**
+     * Simple releasable subscriber reference.
+     * https://github.com/reactive-streams/reactive-streams-jvm#3.13
+     *
+     * @param <T> type of the item
+     */
+    class SubscriberReference<T> implements Subscriber<T> {
+        private Subscriber<T> subscriber;
+
+        SubscriberReference(Subscriber<T> subscriber) {
+            this.subscriber = subscriber;
+        }
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            subscriber.onSubscribe(subscription);
+        }
+
+        @Override
+        public void onNext(T item) {
+            subscriber.onNext(item);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            subscriber.onError(throwable);
+        }
+
+        @Override
+        public void onComplete() {
+            subscriber.onComplete();
+        }
+
+        void release() {
+            subscriber = new DummySubscriber<T>();
+        }
     }
 
-    @Override
-    public void onError(Throwable t) {
-        flowSubscriber.ifPresent(s -> s.onError(t));
-        reactiveSubscriber.ifPresent(s -> s.onError(t));
-    }
+    /**
+     * Simple releasable subscriber reference.
+     * https://github.com/reactive-streams/reactive-streams-jvm#3.13
+     *
+     * @param <T> type of the item
+     */
+    class DummySubscriber<T> implements Subscriber<T> {
 
-    @Override
-    public void onComplete() {
-        flowSubscriber.ifPresent(Flow.Subscriber::onComplete);
-        reactiveSubscriber.ifPresent(Subscriber::onComplete);
-    }
+        @Override
+        public void onSubscribe(Subscription s) {
+            s.cancel();
+        }
 
-    void releaseReferences() {
-        flowSubscriber = Optional.empty();
-        reactiveSubscriber = Optional.empty();
-    }
+        @Override
+        public void onNext(T t) {
 
+        }
+
+        @Override
+        public void onError(Throwable t) {
+
+        }
+
+        @Override
+        public void onComplete() {
+
+        }
+    }
 }

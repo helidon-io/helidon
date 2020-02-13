@@ -137,7 +137,12 @@ final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer<Stage>
             Subscriber<Object> subscriber = GraphBuilder.create()
                     .from(stage.getSubscriber()).getSubscriberWithCompletionStage().getSubscriber();
             Publisher<Object> publisher = GraphBuilder.create().from(stage.getPublisher()).getPublisher();
-            addProcessor(MultiCoupledProcessor.create(HybridSubscriber.from(subscriber), HybridPublisher.from(publisher)));
+            addProcessor(
+                    MultiCoupledProcessor.create(
+                            HybridSubscriber.from(subscriber),
+                            HybridPublisher.from(publisher)
+                    )
+            );
         });
         registerStage(Stage.OnTerminate.class, stage -> {
             addProcessor(MultiTappedProcessor.create()

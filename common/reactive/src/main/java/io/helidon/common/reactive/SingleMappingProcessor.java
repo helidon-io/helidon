@@ -16,7 +16,6 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.concurrent.Flow;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -36,12 +35,12 @@ final class SingleMappingProcessor<T, U> extends BaseProcessor<T, U> implements 
     }
 
     @Override
-    protected void submit(T item, Flow.Subscriber<? super U> subscriber) {
+    protected void submit(T item) {
         U value = mapper.map(item);
         if (value == null) {
             onError(new IllegalStateException("Mapper returned a null value"));
             return;
         }
-        subscriber.onNext((U) value);
+        getSubscriber().onNext((U) value);
     }
 }
