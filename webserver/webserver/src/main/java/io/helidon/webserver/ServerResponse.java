@@ -109,17 +109,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @throws IllegalStateException if any {@code send(...)} method was already called
      * @see #send(Object)
      */
-    default Void send(Throwable content) {
-        if (status() == null) {
-            if (content instanceof HttpException) {
-                status(((HttpException) content).status());
-            } else {
-                status(Http.Status.INTERNAL_SERVER_ERROR_500);
-            }
-        }
-        send((Object) content);
-        return null;
-    }
+    Void send(Throwable content);
 
     /**
      * Send a message and close the response.
