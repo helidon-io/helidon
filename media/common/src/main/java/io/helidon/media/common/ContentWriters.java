@@ -88,13 +88,10 @@ public final class ContentWriters {
      * {@link Throwable} / {@link Charset} and return a {@link Single}.
      *
      * @param throwable the {@link Throwable}
-     * @param context a {@link MessageBodyWriterContext}
-     * @param setContentLength whether {@link MessageBodyWriterContext#contentLength(long)} should be called
+     * @param charset the charset to use to encode the stack trace
      * @return Single
      */
-    public static Single<DataChunk> writeStackTrace(Throwable throwable,
-                                                    MessageBodyWriterContext context,
-                                                    boolean setContentLength) {
+    public static Single<DataChunk> writeStackTrace(Throwable throwable, Charset charset) {
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter printWriter = new PrintWriter(stringWriter);
         String stackTraceString = null;
@@ -104,18 +101,10 @@ public final class ContentWriters {
         } finally {
             printWriter.close();
         }
-        assert stackTraceString != null;
         final Single<DataChunk> returnValue;
         if (stackTraceString.isEmpty()) {
-            if (setContentLength) {
-                context.contentLength(0);
-            }
             returnValue = Single.<DataChunk>empty();
         } else {
-            final Charset charset = context.charset();
-            if (setContentLength) {
-                context.contentLength(stackTraceString.getBytes(charset).length);
-            }
             returnValue = writeCharSequence(stackTraceString, charset);
         }
         return returnValue;

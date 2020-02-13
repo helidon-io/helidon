@@ -86,7 +86,7 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
                 context.contentLength(0);
                 returnValue = Single.<DataChunk>empty();
             } else {
-              returnValue = ContentWriters.writeStackTrace(throwable, context, true);
+              returnValue = ContentWriters.writeStackTrace(throwable, context.charset());
             }
             return returnValue;
         }
