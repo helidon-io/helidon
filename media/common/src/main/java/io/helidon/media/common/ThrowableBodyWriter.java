@@ -81,14 +81,7 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
         @Override
         public Publisher<DataChunk> map(Throwable throwable) {
             context.contentType(MediaType.TEXT_PLAIN);
-            final Publisher<DataChunk> returnValue;
-            if (throwable == null) {
-                context.contentLength(0);
-                returnValue = Single.<DataChunk>empty();
-            } else {
-                returnValue = ContentWriters.writeStackTrace(throwable, context.charset());
-            }
-            return returnValue;
+            return ContentWriters.writeStackTrace(throwable, context.charset());
         }
     }
 
