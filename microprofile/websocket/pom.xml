@@ -25,9 +25,9 @@
         <version>2.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.microprofile.tyrus</groupId>
-    <artifactId>helidon-microprofile-tyrus</artifactId>
-    <name>Helidon MicroProfile Tyrus</name>
+    <groupId>io.helidon.microprofile.websocket</groupId>
+    <artifactId>helidon-microprofile-websocket</artifactId>
+    <name>Helidon MicroProfile WebSocket</name>
 
     <description>Helidon MP integration with Tyrus</description>
 

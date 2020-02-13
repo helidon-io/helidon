@@ -427,8 +427,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.tyrus</groupId>
-                <artifactId>helidon-microprofile-tyrus</artifactId>
+                <groupId>io.helidon.microprofile.websocket</groupId>
+                <artifactId>helidon-microprofile-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- metrics -->

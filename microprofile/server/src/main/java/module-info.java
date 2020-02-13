@@ -26,8 +26,8 @@ module io.helidon.microprofile.server {
 
     requires transitive io.helidon.microprofile.cdi;
 
-    requires cdi.api;
-    requires java.ws.rs;
+    requires transitive cdi.api;
+    requires transitive java.ws.rs;
     requires javax.interceptor.api;
 
     requires java.logging;

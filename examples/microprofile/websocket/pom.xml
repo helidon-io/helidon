@@ -41,8 +41,8 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.tyrus</groupId>
-            <artifactId>helidon-microprofile-tyrus</artifactId>
+            <groupId>io.helidon.microprofile.websocket</groupId>
+            <artifactId>helidon-microprofile-websocket</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
