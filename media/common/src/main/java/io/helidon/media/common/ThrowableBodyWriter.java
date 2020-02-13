@@ -15,6 +15,7 @@
  */
 package io.helidon.media.common;
 
+import java.nio.charset.Charset;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
@@ -35,7 +36,6 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
     }
 
     protected ThrowableBodyWriter(boolean writeStackTrace) {
-        super();
         this.writeStackTrace = writeStackTrace;
     }
 
@@ -48,7 +48,8 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
     public Publisher<DataChunk> write(Single<Throwable> content,
                                       GenericType<? extends Throwable> type,
                                       MessageBodyWriterContext context) {
-        return content.mapMany(new ThrowableToChunks(context));
+        context.contentType(MediaType.TEXT_PLAIN);
+        return content.mapMany(new ThrowableToChunks(context.charset()));
     }
 
     /**
@@ -71,17 +72,16 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
 
     private static final class ThrowableToChunks implements Mapper<Throwable, Publisher<DataChunk>> {
 
-        private final MessageBodyWriterContext context;
+        private final Charset charset;
 
-        private ThrowableToChunks(MessageBodyWriterContext context) {
+        private ThrowableToChunks(Charset charset) {
             super();
-            this.context = context;
+            this.charset = charset;
         }
 
         @Override
         public Publisher<DataChunk> map(Throwable throwable) {
-            context.contentType(MediaType.TEXT_PLAIN);
-            return ContentWriters.writeStackTrace(throwable, context.charset());
+          return ContentWriters.writeStackTrace(throwable, charset);
         }
     }
 
