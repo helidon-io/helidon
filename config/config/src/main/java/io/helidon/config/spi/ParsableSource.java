@@ -42,9 +42,7 @@ public interface ParsableSource extends Source {
      *
      * @return content parser if one is configured on this source
      */
-    default Optional<ConfigParser> parser() {
-        return Optional.empty();
-    }
+    Optional<ConfigParser> parser();
 
     /**
      * If media type is configured on this source, or can be guessed from the underlying origin, return it.
@@ -53,9 +51,7 @@ public interface ParsableSource extends Source {
      *
      * @return media type if configured or detected from content
      */
-    default Optional<String> mediaType() {
-        return Optional.empty();
-    }
+    Optional<String> mediaType();
 
     /**
      * A builder for a parsable source.

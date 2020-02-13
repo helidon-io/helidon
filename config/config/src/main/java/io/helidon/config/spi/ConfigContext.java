@@ -18,6 +18,8 @@ package io.helidon.config.spi;
 
 import java.util.Optional;
 
+import io.helidon.config.ConfigSourceRuntime;
+
 /**
  * Context created by a {@link io.helidon.config.Config.Builder} as it constructs a
  * {@link io.helidon.config.Config}.
@@ -47,4 +49,11 @@ public interface ConfigContext {
      */
     Optional<ConfigParser> findParser(String mediaType);
 
+    /**
+     * Create a runtime for a config source.
+     *
+     * @param source source to create runtime for
+     * @return a source runtime
+     */
+    ConfigSourceRuntime sourceRuntime(ConfigSource source);
 }

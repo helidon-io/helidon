@@ -29,6 +29,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.config.FileSystemWatcher;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
@@ -44,7 +45,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests {@link FileSystemWatcher}.
+ * Tests {@link io.helidon.config.FileSystemWatcher}.
  */
 @Disabled //TODO tests are still TOO slow to be unit tests -> refactor it to run much quicker
 public class FileSystemWatcherTest {

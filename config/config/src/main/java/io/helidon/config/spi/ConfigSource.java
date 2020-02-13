@@ -45,4 +45,7 @@ public interface ConfigSource extends Supplier<ConfigSource>, Source {
     default ConfigSource get() {
         return this;
     }
+
+    default void init(ConfigContext context) {
+    }
 }

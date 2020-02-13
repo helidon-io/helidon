@@ -23,6 +23,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.config.ScheduledPollingStrategy;
 import io.helidon.config.spi.PollingStrategy.PollingEvent;
 
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests {@link ScheduledPollingStrategy}.
+ * Tests {@link io.helidon.config.ScheduledPollingStrategy}.
  */
 public class ScheduledPollingStrategyTest {
     

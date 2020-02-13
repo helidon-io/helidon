@@ -53,7 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link UrlOverrideSource} with mocked source.
+ * Tests {@link io.helidon.config.UrlOverrideSource} with mocked source.
  */
 public class UrlOverrideSourceServerMockTest {
 

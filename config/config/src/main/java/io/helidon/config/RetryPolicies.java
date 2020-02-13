@@ -22,7 +22,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.config.internal.ConfigThreadFactory;
-import io.helidon.config.internal.RetryPolicyImpl;
 import io.helidon.config.spi.RetryPolicy;
 
 /**
@@ -215,7 +214,7 @@ public class RetryPolicies {
          * @return the new instance
          */
         public RetryPolicy build() {
-            return new RetryPolicyImpl(retries, delay, delayFactor, callTimeout, overallTimeout, executorService);
+            return new SimpleRetryPolicy(retries, delay, delayFactor, callTimeout, overallTimeout, executorService);
         }
 
         @Override

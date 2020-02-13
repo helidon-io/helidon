@@ -27,9 +27,6 @@ import java.util.function.Function;
 import javax.annotation.Priority;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
-import io.helidon.config.internal.FileOverrideSource;
-import io.helidon.config.internal.PrefixedConfigSource;
-import io.helidon.config.internal.UrlOverrideSource;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ConfigSourceProvider;
 import io.helidon.config.spi.OverrideSource;

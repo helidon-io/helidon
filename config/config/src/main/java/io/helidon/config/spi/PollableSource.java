@@ -41,9 +41,7 @@ public interface PollableSource<S> {
      *
      * @return polling strategy if one is configured on this source
      */
-    default Optional<PollingStrategy> pollingStrategy() {
-        return Optional.empty();
-    }
+    Optional<PollingStrategy> pollingStrategy();
 
     /**
      * A builder for pollable source.

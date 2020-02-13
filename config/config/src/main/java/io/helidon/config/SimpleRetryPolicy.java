@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
@@ -24,7 +24,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import io.helidon.config.ConfigException;
 import io.helidon.config.spi.RetryPolicy;
 
 import static java.lang.Math.min;
@@ -42,9 +41,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <li>an executor service</li>
  * </ul>
  */
-public class RetryPolicyImpl implements RetryPolicy {
+public final class SimpleRetryPolicy implements RetryPolicy {
 
-    private static final Logger LOGGER = Logger.getLogger(RetryPolicyImpl.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SimpleRetryPolicy.class.getName());
 
     private final int retries;
     private final Duration delay;
@@ -54,28 +53,13 @@ public class RetryPolicyImpl implements RetryPolicy {
     private final ScheduledExecutorService executorService;
     private volatile ScheduledFuture<?> future;
 
-    /**
-     * Initialize retry policy.
-     *
-     * @param retries         number of retries (excluding the first invocation)
-     * @param delay           delay between the invocations
-     * @param delayFactor     a delay multiplication factor
-     * @param callTimeout     a timeout for the individual invocation
-     * @param overallTimeout  an overall timeout
-     * @param executorService an executor service
-     */
-    public RetryPolicyImpl(int retries,
-                           Duration delay,
-                           double delayFactor,
-                           Duration callTimeout,
-                           Duration overallTimeout,
-                           ScheduledExecutorService executorService) {
-        this.retries = retries;
-        this.delay = delay;
-        this.delayFactor = delayFactor;
-        this.callTimeout = callTimeout;
-        this.overallTimeout = overallTimeout;
-        this.executorService = executorService;
+    private SimpleRetryPolicy(Builder builder) {
+        this.retries = builder.retries;
+        this.delay = builder.delay;
+        this.delayFactor = builder.delayFactor;
+        this.callTimeout = builder.callTimeout;
+        this.overallTimeout = builder.overallTimeout;
+        this.executorService = builder.executorService;
     }
 
     @Override
@@ -169,5 +153,85 @@ public class RetryPolicyImpl implements RetryPolicy {
      */
     public Duration overallTimeout() {
         return overallTimeout;
+    }
+
+    public static final class Builder implements io.helidon.common.Builder<SimpleRetryPolicy> {
+        private int retries;
+        private Duration delay;
+        private double delayFactor;
+        private Duration callTimeout;
+        private Duration overallTimeout;
+        private ScheduledExecutorService executorService;
+
+        @Override
+        public SimpleRetryPolicy build() {
+            return new SimpleRetryPolicy(this);
+        }
+
+        /**
+         * Number of retries (excluding the first invocation).
+         *
+         * @param retries how many times to retry
+         * @return updated builder instance
+         */
+        public Builder retries(int retries) {
+            this.retries = retries;
+            return this;
+        }
+
+        /**
+         * Delay between the invocations.
+         *
+         * @param delay delay between the invocations
+         * @return updated builder instance
+         */
+        public Builder delay(Duration delay) {
+            this.delay = delay;
+            return this;
+        }
+
+        /**
+         * A delay multiplication factor.
+         *
+         * @param delayFactor a delay multiplication factor
+         * @return updated builder instance
+         */
+        public Builder delayFactor(double delayFactor) {
+            this.delayFactor = delayFactor;
+            return this;
+        }
+
+        /**
+         * Timeout for the individual invocation.
+         *
+         * @param callTimeout a timeout for the individual invocation
+         * @return updated builder instance
+         */
+        public Builder callTimeout(Duration callTimeout) {
+            this.callTimeout = callTimeout;
+            return this;
+        }
+
+        /**
+         * Overall timeout.
+         *
+         * @param overallTimeout an overall timeout
+         * @return updated builder instance
+         */
+        public Builder overallTimeout(Duration overallTimeout) {
+            this.overallTimeout = overallTimeout;
+            return this;
+        }
+
+        /**
+         * An executor service to schedule retries and run timed operations on.
+         *
+         * @param executorService service
+         * @return updated builder instance
+         */
+        public Builder executorService(ScheduledExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
     }
 }

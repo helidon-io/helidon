@@ -37,7 +37,7 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.internal.FileSourceHelper;
+import io.helidon.config.FileSourceHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigContent;
 

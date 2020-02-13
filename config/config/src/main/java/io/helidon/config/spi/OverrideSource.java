@@ -146,8 +146,8 @@ public interface OverrideSource extends Source, Supplier<OverrideSource> {
          */
         public static OverrideData create(Reader reader) {
             OrderedProperties properties = new OrderedProperties();
-            try (Reader autocloseableReader = reader) {
-                properties.load(autocloseableReader);
+            try (Reader autoCloseableReader = reader) {
+                properties.load(autoCloseableReader);
             } catch (IOException e) {
                 throw new ConfigException("Cannot load data from reader.", e);
             }

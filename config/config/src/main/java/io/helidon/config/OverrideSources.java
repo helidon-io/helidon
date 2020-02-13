@@ -22,8 +22,6 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.config.internal.FileOverrideSource;
-import io.helidon.config.internal.UrlOverrideSource;
 import io.helidon.config.spi.AbstractOverrideSource;
 import io.helidon.config.spi.OverrideSource;
 

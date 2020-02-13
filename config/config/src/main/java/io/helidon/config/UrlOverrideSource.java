@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
@@ -24,34 +23,38 @@ import java.net.URL;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
-import io.helidon.config.OverrideSources;
+import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.AbstractOverrideSource;
+import io.helidon.config.spi.BaseSource;
+import io.helidon.config.spi.BaseSourceBuilder;
+import io.helidon.config.spi.ChangeWatcher;
+import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.OverrideSource;
+import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.WatchableSource;
 
 /**
- * {@link io.helidon.config.spi.OverrideSource} implementation that loads configuration override content from specified endpoint URL.
+ * {@link io.helidon.config.spi.OverrideSource} implementation that loads configuration override content from specified
+ * endpoint URL.
  *
  * @see AbstractOverrideSource.Builder
  * @see OverrideSources
  */
-public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
+public class UrlOverrideSource extends BaseSource
+        implements OverrideSource, PollableSource<Instant>, WatchableSource<URL> {
 
     private static final Logger LOGGER = Logger.getLogger(UrlOverrideSource.class.getName());
 
     private static final String GET_METHOD = "GET";
-    private static final String HEAD_METHOD = "HEAD";
     private static final String URL_KEY = "url";
 
     private final URL url;
 
-    UrlOverrideSource(UrlBuilder builder) {
+    UrlOverrideSource(Builder builder) {
         super(builder);
 
         this.url = builder.url;
@@ -60,7 +63,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
     /**
      * Create a new URL override source from meta configuration.
      *
-     * @param metaConfig meta configuration containing at least the {@key url} key
+     * @param metaConfig meta configuration containing at least the {@code url} key
      * @return a new URL override source
      */
     public static UrlOverrideSource create(Config metaConfig) {
@@ -72,29 +75,61 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
      *
      * @return a new builder
      */
-    public static UrlBuilder builder() {
-        return new UrlBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
-    protected Data<OverrideData> loadData() throws ConfigException {
+    public boolean isModified(Instant stamp) {
+        return UrlHelper.isModified(url, stamp);
+    }
+
+    @Override
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
+    @Override
+    public URL target() {
+        return url;
+    }
+
+    @Override
+    public Class<URL> targetType() {
+        return URL.class;
+    }
+
+    @Override
+    public Optional<ChangeWatcher<?>> changeWatcher() {
+        return super.changeWatcher();
+    }
+
+    @Override
+    public Optional<OverrideContent> load() throws ConfigException {
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(GET_METHOD);
 
+            if (UrlHelper.STATUS_NOT_FOUND == connection.getResponseCode()) {
+                return Optional.empty();
+            }
             Instant timestamp;
-            if (connection.getLastModified() != 0) {
-                timestamp = Instant.ofEpochMilli(connection.getLastModified());
-            } else {
+            if (connection.getLastModified() == 0) {
                 timestamp = Instant.now();
                 LOGGER.fine("Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
                                     + timestamp + "' as a content timestamp.");
+            } else {
+                timestamp = Instant.ofEpochMilli(connection.getLastModified());
             }
 
             Reader reader = new InputStreamReader(connection.getInputStream(),
                                                   ConfigUtils.getContentCharset(connection.getContentEncoding()));
 
-            return Data.create(OverrideData.create(reader), timestamp);
+            OverrideContent.Builder builder = OverrideContent.builder()
+                    .data(OverrideData.create(reader))
+                    .stamp(timestamp);
+
+            return Optional.of(builder.build());
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -108,24 +143,6 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
         return url.toString();
     }
 
-    @Override
-    protected Optional<Instant> dataStamp() {
-        try {
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod(HEAD_METHOD);
-
-            if (connection.getLastModified() != 0) {
-                return Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
-            }
-        } catch (IOException ex) {
-            LOGGER.log(Level.FINE, ex, () -> "Configuration at url '" + url + "' HEAD is not accessible.");
-        }
-        Optional<Instant> timestamp = Optional.of(Instant.MAX);
-        LOGGER.finer("Missing HEAD '" + url + "' response header 'Last-Modified'. Used time '"
-                             + timestamp + "' as a content timestamp.");
-        return timestamp;
-    }
-
     /**
      * Url Override Source Builder.
      * <p>
@@ -137,42 +154,19 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
      * <li>{@code parser} - or directly set {@link ConfigParser} instance to be used to parse the source;</li>
      * </ul>
      * <p>
-     * If the Url ConfigSource is {@code mandatory} and a {@code url} endpoint does not exist
-     * then {@link ConfigSource#load} throws {@link ConfigException}.
-     * <p>
      * If {@code media-type} not set it uses HTTP response header {@code content-type}.
      * If {@code media-type} not returned it tries to guess it from url suffix.
      */
-    public static final class UrlBuilder extends AbstractOverrideSource.Builder<UrlBuilder, URL> {
+    public static final class Builder extends BaseSourceBuilder<Builder, URL>
+            implements PollableSource.Builder<Builder>,
+                       WatchableSource.Builder<Builder, URL>,
+                       io.helidon.common.Builder<UrlOverrideSource> {
         private URL url;
 
         /**
          * Initialize builder.
          */
-        private UrlBuilder() {
-            super(URL.class);
-        }
-
-        /**
-         * Configure the URL that is source of this overrides.
-         *
-         * @param url url of the resource to load
-         * @return updated builder instance
-         */
-        public UrlBuilder url(URL url) {
-            this.url = url;
-            return this;
-        }
-
-        @Override
-        public UrlBuilder config(Config metaConfig) {
-            metaConfig.get(URL_KEY).as(URL.class).ifPresent(this::url);
-            return super.config(metaConfig);
-        }
-
-        @Override
-        protected URL target() {
-            return url;
+        private Builder() {
         }
 
         /**
@@ -188,9 +182,31 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
             return new UrlOverrideSource(this);
         }
 
-        PollingStrategy pollingStrategyInternal() { //just for testing purposes
-            return super.pollingStrategy();
+        @Override
+        public Builder config(Config metaConfig) {
+            metaConfig.get(URL_KEY).as(URL.class).ifPresent(this::url);
+            return super.config(metaConfig);
+        }
+
+        /**
+         * Configure the URL that is source of this overrides.
+         *
+         * @param url url of the resource to load
+         * @return updated builder instance
+         */
+        public Builder url(URL url) {
+            this.url = url;
+            return this;
+        }
+
+        @Override
+        public Builder changeWatcher(ChangeWatcher<URL> changeWatcher) {
+            return super.changeWatcher(changeWatcher);
+        }
+
+        @Override
+        public Builder pollingStrategy(PollingStrategy pollingStrategy) {
+            return super.pollingStrategy(pollingStrategy);
         }
     }
-
 }

@@ -34,7 +34,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests {@link MapConfigSource}.
+ * Tests {@link io.helidon.config.MapConfigSource}.
  */
 public class MapConfigSourceTest {
 

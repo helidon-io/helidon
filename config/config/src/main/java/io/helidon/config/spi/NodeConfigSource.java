@@ -16,6 +16,8 @@
 
 package io.helidon.config.spi;
 
+import java.util.Optional;
+
 import io.helidon.config.ConfigException;
 
 /**
@@ -30,5 +32,5 @@ public interface NodeConfigSource extends ConfigSource {
      * @return An instance of {@code T} as read from the underlying origin of the data (if it exists)
      * @throws io.helidon.config.ConfigException in case of errors loading from the underlying origin
      */
-    ConfigContent.NodeContent load() throws ConfigException;
+    Optional<ConfigContent.NodeContent> load() throws ConfigException;
 }

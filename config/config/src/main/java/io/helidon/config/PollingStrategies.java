@@ -24,9 +24,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.Builder;
-import io.helidon.config.internal.FileSystemWatcher;
-import io.helidon.config.internal.ScheduledPollingStrategy;
-import io.helidon.config.internal.ScheduledPollingStrategy.RegularRecurringPolicy;
+import io.helidon.config.ScheduledPollingStrategy.RegularRecurringPolicy;
 import io.helidon.config.spi.PollingStrategy;
 
 /**

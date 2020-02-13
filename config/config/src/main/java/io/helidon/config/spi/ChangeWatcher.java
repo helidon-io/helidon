@@ -28,13 +28,19 @@ import java.util.function.Consumer;
  */
 public interface ChangeWatcher<T> {
     /**
-     * Start watching the target for changes.
+     * Start watching a target for changes.
      * If a change happens, notify the listener.
      *
      * @param target target of this watcher, such as {@link java.nio.file.Path}
      * @param listener listener that handles reloading of the resource being watched
      */
     void start(T target, Consumer<ChangeEvent<T>> listener);
+
+    /**
+     * Stop watching all targets for changes.
+     */
+    default void stop() {
+    }
 
     /**
      * Target supported by this change watcher.

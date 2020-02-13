@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 

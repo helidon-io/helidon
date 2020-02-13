@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.config.internal.FileSourceHelper;
 import io.helidon.config.spi.AbstractConfigSource;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;

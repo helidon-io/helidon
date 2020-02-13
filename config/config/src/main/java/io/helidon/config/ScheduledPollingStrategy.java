@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,38 +14,54 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.time.Duration;
-import java.util.Objects;
+import java.time.Instant;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.ConfigHelper;
+import io.helidon.config.internal.ConfigThreadFactory;
+import io.helidon.config.internal.ConfigUtils;
+import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
 
 /**
- * A strategy which allows the user to schedule periodically fired a polling event.
+ * A strategy which allows the user to schedule periodically fired polling event.
  */
-public class ScheduledPollingStrategy implements PollingStrategy {
+/*
+ * This class will trigger checks in a periodic manner.
+ * The actual check if the source has changed is done elsewhere, this is just responsible for telling us
+ * "check now".
+ * The feedback is an information whether the change happened or not.
+ */
+public final class ScheduledPollingStrategy implements PollingStrategy {
 
     private static final Logger LOGGER = Logger.getLogger(ScheduledPollingStrategy.class.getName());
 
     private final RecurringPolicy recurringPolicy;
-    private final SubmissionPublisher<PollingStrategy.PollingEvent> ticksSubmitter;
-    private final Flow.Publisher<PollingStrategy.PollingEvent> ticksPublisher;
+    private final boolean defaultExecutor;
+    private final ScheduledExecutorService executor;
 
-    private final boolean customExecutor;
     private ScheduledFuture<?> scheduledFuture;
-    private ScheduledExecutorService executor;
+    private Polled polled;
+
+    private ScheduledPollingStrategy(Builder builder) {
+        this.recurringPolicy = builder.recurringPolicy;
+        ScheduledExecutorService executor = builder.executor;
+        if (executor == null) {
+            this.executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
+            this.defaultExecutor = true;
+        } else {
+            this.executor = executor;
+            this.defaultExecutor = false;
+        }
+    }
 
     /**
      * Creates a polling strategy with an interval of the polling as a parameter.
@@ -57,104 +73,28 @@ public class ScheduledPollingStrategy implements PollingStrategy {
      * @return configured strategy
      */
     public static ScheduledPollingStrategy create(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
-        return new ScheduledPollingStrategy(recurringPolicy, executor);
+        return builder()
+                .recurringPolicy(recurringPolicy)
+                .executor(executor)
+                .build();
     }
 
-    private ScheduledPollingStrategy(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
-        Objects.requireNonNull(recurringPolicy, "recurringPolicy cannot be null");
-
-        this.recurringPolicy = recurringPolicy;
-        if (executor == null) {
-            this.customExecutor = false;
-        } else {
-            this.customExecutor = true;
-            this.executor = executor;
-        }
-
-        ticksSubmitter = new SubmissionPublisher<>(Runnable::run, //deliver events on current thread
-                                                   1); //(almost) do not buffer events
-        ticksPublisher = ConfigHelper.suspendablePublisher(ticksSubmitter,
-                                                           this::startScheduling,
-                                                           this::stopScheduling);
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
-    public Flow.Publisher<PollingEvent> ticks() {
-        return ticksPublisher;
+    public void start(Polled polled) {
+        this.polled = polled;
+        scheduleNext();
     }
 
-    //@Override //TODO WILL BE PUBLIC API AGAIN LATER, Issue #14.
-    /*public*/ void configSourceChanged(boolean changed) {
-        if (changed) {
-            recurringPolicy.shorten();
-        } else {
-            recurringPolicy.lengthen();
-        }
+    @Override
+    public void stop() {
+        scheduledFuture.cancel(true);
     }
 
-    /**
-     * Returns recurring policy.
-     *
-     * @return recurring policy
-     */
-    public RecurringPolicy recurringPolicy() {
-        return recurringPolicy;
-    }
-
-    /*
-     * NOTE: TEMPORARILY MOVED FROM POLLING_STRATEGY, WILL BE PUBLIC API AGAIN LATER, Issue #14.
-     * <p>
-     * Creates a new scheduled polling strategy with an adaptive interval.
-     * <p>
-     * The minimal interval will not drop bellow {@code initialInterval / 10} and the maximal interval will not exceed {@code
-     * initialInterval * 5}.
-     * <p>
-     * The function that decreases the current interval is defined as a function {@code (currentDuration, changesFactor) ->
-     * currentDuration.dividedBy(2)} (half the current), whilst the function that increases the current interval is
-     * defined as {@code (currentDuration, changesFactor) -> currentDuration.multiplyBy(2)} (doubled the current),
-     * where {@code currentDuration} is the currently valid duration and {@code
-     * changesFactor} is a number of consecutive reloading configuration that brings the change or not ({@link
-     * RecurringPolicy#lengthen()} or {@link RecurringPolicy#shorten()} is called by {@link PollingStrategy} from {@link
-     * ScheduledPollingStrategy#configSourceChanged(boolean)}). The {@code changeFactor} might be positive (changes proceeded) or
-     * negative (changes did not proceed). In other words, more consecutive reloads with a change mean higher {@code changeFactor}
-     * and more consecutive reloads without any change mean lower {@code changeFactor}. When {@code changeFactor} is
-     * negative and on last fired event change has proceeded then {@code changeFactor} will be {@code +1}, and,
-     * conversely, positive number, regardless how high, is changed to {@code -1} when load was fired for nothing.
-     * Note that the default implementations do not take {@code changeFactor} into account and {@link
-     * RecurringPolicy.AdaptiveBuilder#shortenFunction} just halves the current interval and {@link
-     * RecurringPolicy.AdaptiveBuilder#lengthenFunction} doubles it.
-     * <p>
-     * If you need to adjust some of the parameters of the adaptive recurring policy, try {@link
-     * RecurringPolicy#adaptiveBuilder(Duration)} or make your own {@link RecurringPolicy} and create the  scheduled polling
-     * strategy by calling {@link #recurringPolicyBuilder(RecurringPolicy)}.
-     *
-     * @param initialInterval an initial interval
-     * @return a polling strategy
-     * @see RecurringPolicy
-     */
-    /*
-    static PollingStrategy adaptive(Duration initialInterval) {
-        return new PollingStrategies.ScheduledBuilder(RecurringPolicy.adaptiveBuilder(initialInterval).build()).build();
-    }
-    */
-
-    /*
-     * NOTE: TEMPORARILY MOVED FROM POLLING_STRATEGY, WILL BE PUBLIC API AGAIN LATER, Issue #14.
-     * <p>
-     * Creates a scheduling polling strategy builder which allows users to add their own scheduler executor service.
-     *
-     * @param recurringPolicy a recurring policy
-     * @return a new builder
-     */
-    /*
-    static PollingStrategies.ScheduledBuilder recurringPolicyBuilder(RecurringPolicy recurringPolicy) {
-        return new PollingStrategies.ScheduledBuilder(recurringPolicy);
-    }
-    */
     synchronized void startScheduling() {
-        if (!customExecutor) {
-            this.executor = Executors.newScheduledThreadPool(1, new ConfigThreadFactory("scheduled-polling"));
-        }
         scheduleNext();
     }
 
@@ -165,12 +105,19 @@ public class ScheduledPollingStrategy implements PollingStrategy {
     }
 
     private void fireEvent() {
-        ticksSubmitter.offer(
-                PollingEvent.now(),
-                (subscriber, pollingEvent) -> {
-                    LOGGER.log(Level.FINER, String.format("Event %s has not been delivered to %s.", pollingEvent, subscriber));
-                    return false;
-                });
+        ChangeEventType event = polled.poll(Instant.now());
+        switch (event) {
+        case CHANGED:
+        case DELETED:
+            recurringPolicy.shorten();
+            break;
+        case UNCHANGED:
+            recurringPolicy.lengthen();
+            break;
+        case CREATED:
+        default:
+            break;
+        }
         scheduleNext();
     }
 
@@ -178,9 +125,8 @@ public class ScheduledPollingStrategy implements PollingStrategy {
         if (scheduledFuture != null) {
             scheduledFuture.cancel(true);
         }
-        if (!customExecutor) {
+        if (defaultExecutor) {
             ConfigUtils.shutdownExecutor(executor);
-            executor = null;
         }
     }
 
@@ -197,6 +143,29 @@ public class ScheduledPollingStrategy implements PollingStrategy {
         return "ScheduledPollingStrategy{"
                 + "recurringPolicy=" + recurringPolicy
                 + '}';
+    }
+
+    public static final class Builder implements io.helidon.common.Builder<ScheduledPollingStrategy> {
+        private RecurringPolicy recurringPolicy;
+        private ScheduledExecutorService executor;
+
+        private Builder() {
+        }
+
+        @Override
+        public ScheduledPollingStrategy build() {
+            return new ScheduledPollingStrategy(this);
+        }
+
+        public Builder recurringPolicy(RecurringPolicy recurringPolicy) {
+            this.recurringPolicy = recurringPolicy;
+            return this;
+        }
+
+        public Builder executor(ScheduledExecutorService executor) {
+            this.executor = executor;
+            return this;
+        }
     }
 
     /**

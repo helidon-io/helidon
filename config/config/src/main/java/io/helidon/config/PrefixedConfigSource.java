@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,37 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
-import io.helidon.config.MetaConfig;
+import io.helidon.config.internal.ObjectNodeBuilderImpl;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.EventSource;
+import io.helidon.config.spi.NodeConfigSource;
+import io.helidon.config.spi.RetryPolicy;
 
 /**
  * {@link ConfigSource} implementation wraps another config source and add key prefix to original one.
+ * Only supports "eager" config sources, such as {@link io.helidon.config.spi.ParsableSource}
+ *  and {@link io.helidon.config.spi.NodeConfigSource}.
  *
  * @see io.helidon.config.ConfigSources#prefixed(String, java.util.function.Supplier)
  */
-public class PrefixedConfigSource implements ConfigSource {
+public final class PrefixedConfigSource implements ConfigSource,
+                                                   NodeConfigSource,
+                                                   EventSource {
     private static final String KEY_KEY = "key";
 
     private final String key;
     private final ConfigSource source;
+    private BiConsumer<Config.Key, ConfigNode> listener;
+    private ConfigSourceRuntime sourceRuntime;
 
     private PrefixedConfigSource(String key, ConfigSource source) {
         Objects.requireNonNull(key, "key cannot be null");
@@ -72,20 +81,42 @@ public class PrefixedConfigSource implements ConfigSource {
     }
 
     @Override
+    public void init(ConfigContext context) {
+        this.sourceRuntime = context.sourceRuntime(source);
+    }
+
+    @Override
     public String description() {
         return String.format("prefixed[%s]:%s", key, source.description());
     }
 
     @Override
-    public Optional<ConfigNode.ObjectNode> load() throws ConfigException {
-        return source.load()
-                .map(originRoot -> new ObjectNodeBuilderImpl().addObject(key, originRoot).build())
-                .or(Optional::empty);
+    public Optional<ConfigContent.NodeContent> load() throws ConfigException {
+        sourceRuntime.onChange((key, config) -> listener.accept(key, config));
+
+        return sourceRuntime.load()
+                .map(originRoot -> ConfigContent.NodeContent.builder()
+                        .node(new ObjectNodeBuilderImpl().addObject(key, originRoot).build())
+                        .build());
     }
 
     @Override
-    public void init(ConfigContext context) {
-        source.init(context);
+    public void onChange(BiConsumer<Config.Key, ConfigNode> changedNode) {
+        this.listener = changedNode;
     }
 
+    @Override
+    public boolean exists() {
+        return source.exists();
+    }
+
+    @Override
+    public Optional<RetryPolicy> retryPolicy() {
+        return source.retryPolicy();
+    }
+
+    @Override
+    public boolean optional() {
+        return source.optional();
+    }
 }

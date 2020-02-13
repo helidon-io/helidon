@@ -165,6 +165,12 @@ public interface PollingStrategy extends Supplier<PollingStrategy> {
     void start(Polled polled);
 
     /**
+     * Stop polling and release all resources.
+     */
+    default void stop() {
+    }
+
+    /**
      * A polled component. For config this interface is implemented by the config system itself.
      */
     @FunctionalInterface

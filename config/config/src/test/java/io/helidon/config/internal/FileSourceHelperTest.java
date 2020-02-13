@@ -19,6 +19,7 @@ package io.helidon.config.internal;
 import java.io.File;
 import java.nio.file.Files;
 
+import io.helidon.config.FileSourceHelper;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 
 /**
- * Tests {@link FileSourceHelper}.
+ * Tests {@link io.helidon.config.FileSourceHelper}.
  */
 public class FileSourceHelperTest {
 

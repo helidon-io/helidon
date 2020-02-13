@@ -22,7 +22,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 
-import io.helidon.config.UrlConfigSource.UrlBuilder;
+import io.helidon.config.UrlConfigSource.Builder;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
@@ -137,7 +137,7 @@ public class UrlConfigSourceTest {
     @Test
     public void testBuilderPollingStrategy() throws MalformedURLException {
         URL url = new URL("http://config-service/application.unknown");
-        UrlBuilder builder = (UrlBuilder) ConfigSources.url(url)
+        Builder builder = (Builder) ConfigSources.url(url)
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));

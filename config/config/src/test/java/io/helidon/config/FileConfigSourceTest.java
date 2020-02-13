@@ -29,7 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.config.FileConfigSource.FileBuilder;
+import io.helidon.config.FileConfigSource.Builder;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
@@ -206,7 +206,7 @@ public class FileConfigSourceTest {
 
     @Test
     public void testBuilderPollingStrategy() {
-        FileBuilder builder = (FileBuilder) ConfigSources.file("application.conf")
+        Builder builder = (Builder) ConfigSources.file("application.conf")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));

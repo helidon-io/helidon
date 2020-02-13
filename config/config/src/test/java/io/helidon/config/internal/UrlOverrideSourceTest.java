@@ -22,6 +22,7 @@ import java.util.concurrent.Flow;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.OverrideSources;
+import io.helidon.config.UrlOverrideSource;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 
@@ -35,7 +36,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests {@link UrlOverrideSource}.
+ * Tests {@link io.helidon.config.UrlOverrideSource}.
  */
 public class UrlOverrideSourceTest {
 
@@ -71,7 +72,7 @@ public class UrlOverrideSourceTest {
     @Test
     public void testBuilderPollingStrategy() throws MalformedURLException {
         URL url = new URL("http://config-service/application.unknown");
-        UrlOverrideSource.UrlBuilder builder = (UrlOverrideSource.UrlBuilder) OverrideSources.url(url)
+        UrlOverrideSource.Builder builder = (UrlOverrideSource.Builder) OverrideSources.url(url)
                 .pollingStrategy(UrlOverrideSourceTest.TestingPathPollingStrategy::new);
 
         assertThat(builder.pollingStrategyInternal(), instanceOf(UrlOverrideSourceTest.TestingPathPollingStrategy.class));

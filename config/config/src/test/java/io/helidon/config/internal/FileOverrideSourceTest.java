@@ -24,8 +24,9 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 
 import io.helidon.config.ConfigException;
+import io.helidon.config.FileOverrideSource;
+import io.helidon.config.FileOverrideSource.Builder;
 import io.helidon.config.OverrideSources;
-import io.helidon.config.internal.FileOverrideSource.FileBuilder;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
@@ -42,7 +43,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests {@link FileOverrideSource}.
+ * Tests {@link io.helidon.config.FileOverrideSource}.
  */
 public class FileOverrideSourceTest {
 
@@ -111,7 +112,7 @@ public class FileOverrideSourceTest {
 
     @Test
     public void testBuilderPollingStrategy() {
-        FileBuilder builder = (FileBuilder) OverrideSources.file("overrides.properties")
+        Builder builder = (Builder) OverrideSources.file("overrides.properties")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));

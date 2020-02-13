@@ -18,13 +18,15 @@ package io.helidon.config.internal;
 
 import java.time.Duration;
 
+import io.helidon.config.ScheduledPollingStrategy;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
- * Tests {@link ScheduledPollingStrategy.AdaptiveRecurringPolicy}
+ * Tests {@link io.helidon.config.ScheduledPollingStrategy.AdaptiveRecurringPolicy}
  */
 public class AdaptiveRecurringPolicyTest {
 

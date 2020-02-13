@@ -123,11 +123,11 @@ public final class ConfigUtils {
      * @param strict In strict mode, properties overlapping causes failure during loading into internal structure.
      * @return built object node from map source.
      */
-    public static ConfigNode.ObjectNode mapToObjectNode(Map<String, String> map, boolean strict) {
+    public static ConfigNode.ObjectNode mapToObjectNode(Map<?, ?> map, boolean strict) {
         ConfigNode.ObjectNode.Builder builder = ConfigNode.ObjectNode.builder();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
             try {
-                builder.addValue(entry.getKey(), entry.getValue());
+                builder.addValue(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
             } catch (ConfigException ex) {
                 if (strict) {
                     throw ex;

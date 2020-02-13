@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,11 +31,11 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import io.helidon.config.ConfigException;
 
 /**
  * Utilities for file-related source classes.
@@ -108,28 +109,118 @@ public class FileSourceHelper {
 
     /**
      * Returns an MD5 digest of the specified file or null if the file cannot be read.
+     * <p>
+     * The file is locked before the reading and the lock is released immediately after the reading.
      *
      * @param path a path to the file
      * @return an MD5 digest of the file or null if the file cannot be read
      */
-    public static byte[] digest(Path path) {
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new ConfigException("Cannot get MD5 algorithm.", e);
+    public static Optional<byte[]> digest(Path path) {
+        MessageDigest digest = digest();
+
+        try (InputStream fis = Files.newInputStream(path)) {
+            DigestInputStream dis = new DigestInputStream(fis, digest);
+            byte[] buffer = new byte[4096];
+            while (dis.read(buffer) != -1) {
+                // just discard - we are only interested in the digest information
+            }
+            return Optional.of(digest.digest());
+        } catch (FileNotFoundException e) {
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new ConfigException("Failed to calculate digest for file: " + path, e);
         }
-        try {
-            try (InputStream is = Files.newInputStream(path);
-                    DigestInputStream dis = new DigestInputStream(is, md)) {
+    }
+
+    public static boolean isModified(Path filePath, byte[] stamp) {
+        return !digest(filePath)
+                .map(newStamp -> Arrays.equals(stamp, newStamp))
+                // if new stamp is not present, it means the file was deleted
+                .orElse(false);
+    }
+
+    /**
+     * Read data and its digest in the same go.
+     *
+     * @param filePath path to load data from
+     * @return data and its digest, or empty if file does not exist
+     */
+    public static Optional<DataAndDigest> readDataAndDigest(Path filePath) {
+        // lock the file, so somebody does not remove it or update it while we process it
+        ByteArrayOutputStream baos = createByteArrayOutput(filePath);
+        MessageDigest md = digest();
+
+        // we want to digest and read at the same time
+        try (FileInputStream fis = new FileInputStream(filePath.toFile())) {
+            FileLock lock = lockFile(filePath, fis);
+
+            try {
+                DigestInputStream dis = new DigestInputStream(fis, md);
                 byte[] buffer = new byte[4096];
-                while (dis.read(buffer) != -1) {
+                int len;
+                while ((len = dis.read(buffer)) != -1) {
+                    baos.write(buffer, 0, len);
+                }
+            } finally {
+                if (lock != null) {
+                    lock.release();
                 }
             }
+        } catch (FileNotFoundException e) {
+            // race condition - the file disappeared between call to exists and load
+            return Optional.empty();
         } catch (IOException e) {
-            LOGGER.log(Level.FINEST, "Cannot get a digest for path: " + path.toAbsolutePath(), e);
+            throw new ConfigException(String.format("Cannot handle file '%s'.", filePath), e);
+        }
+
+        return Optional.of(new DataAndDigest(baos.toByteArray(), md.digest()));
+    }
+
+    private static ByteArrayOutputStream createByteArrayOutput(Path filePath) {
+        try {
+            return new ByteArrayOutputStream((int) Files.size(filePath));
+        } catch (IOException e) {
+            return new ByteArrayOutputStream(4096);
+        }
+    }
+
+    private static FileLock lockFile(Path filePath, FileInputStream fis) throws IOException {
+        try {
+            FileLock lock = fis.getChannel().tryLock(0L, Long.MAX_VALUE, false);
+            if (null == lock) {
+                throw new ConfigException("Failed to acquire a lock on configuration file " + filePath + ", cannot safely "
+                                                  + "read it");
+            }
+            return lock;
+        } catch (NonWritableChannelException e) {
+            // non writable channel means that we do not need to lock it
             return null;
         }
-        return md.digest();
+    }
+
+    private static MessageDigest digest() {
+        try {
+            return MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new ConfigException("Cannot get MD5 digest algorithm.", e);
+        }
+    }
+
+    public static class DataAndDigest {
+        private byte[] data;
+        private byte[] digest;
+
+        private DataAndDigest(byte[] data, byte[] digest) {
+            this.data = data;
+            this.digest = digest;
+        }
+
+        byte[] data() {
+            return data;
+        }
+
+        byte[] digest() {
+            return digest;
+        }
     }
 }

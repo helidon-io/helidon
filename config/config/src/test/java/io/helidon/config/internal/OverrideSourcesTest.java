@@ -22,6 +22,7 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.OverrideSources;
+import io.helidon.config.UrlOverrideSource;
 import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ public class OverrideSourcesTest {
 
     @Test
     public void testUrlBuilder() throws MalformedURLException {
-        UrlOverrideSource.UrlBuilder builder = (UrlOverrideSource.UrlBuilder) OverrideSources.url(new URL("http://localhost"));
+        UrlOverrideSource.Builder builder = (UrlOverrideSource.Builder) OverrideSources.url(new URL("http://localhost"));
         assertThat(builder.build(), instanceOf(UrlOverrideSource.class));
     }
 

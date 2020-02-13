@@ -39,10 +39,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.MapConfigSource;
-import io.helidon.config.internal.PrefixedConfigSource;
 import io.helidon.config.spi.AbstractMpSource;
 import io.helidon.config.spi.AbstractSource;
 import io.helidon.config.spi.ConfigContext;
@@ -260,9 +257,9 @@ public final class ConfigSources {
      * @param resource resource to look for
      * @return a list of classpath config source builders
      */
-    public static List<UrlConfigSource.UrlBuilder> classpathAll(String resource) {
+    public static List<UrlConfigSource.Builder> classpathAll(String resource) {
 
-        List<UrlConfigSource.UrlBuilder> result = new LinkedList<>();
+        List<UrlConfigSource.Builder> result = new LinkedList<>();
         try {
             Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(resource);
             while (resources.hasMoreElements()) {
@@ -283,7 +280,7 @@ public final class ConfigSources {
      * @param path a file path
      * @return builder for the file-based {@code ConfigSource}
      */
-    public static FileConfigSource.FileBuilder file(String path) {
+    public static FileConfigSource.Builder file(String path) {
         return FileConfigSource.builder().path(Paths.get(path));
     }
 
@@ -294,7 +291,7 @@ public final class ConfigSources {
      * @param path a file path
      * @return builder for the file-based {@code ConfigSource}
      */
-    public static FileConfigSource.FileBuilder file(Path path) {
+    public static FileConfigSource.Builder file(Path path) {
         return FileConfigSource.builder().path(path);
     }
 
@@ -317,7 +314,7 @@ public final class ConfigSources {
      * @return new Builder instance
      * @see #url(URL)
      */
-    public static UrlConfigSource.UrlBuilder url(URL url) {
+    public static UrlConfigSource.Builder url(URL url) {
         return UrlConfigSource.builder().url(url);
     }
 
@@ -401,7 +398,7 @@ public final class ConfigSources {
      * <strong>not</strong> support
      * {@link ConfigSource#changes() ConfigSource mutability}.
      */
-    public static final class MapBuilder implements Builder<ConfigSource> {
+    public static final class MapBuilder implements io.helidon.common.Builder {
         private Map<String, String> map;
         private boolean strict;
         private String mapSourceName;
@@ -497,7 +494,7 @@ public final class ConfigSources {
      * @see MergingStrategy
      * @see MergingStrategy#fallback() default merging strategy
      */
-    public static class CompositeBuilder implements Builder<ConfigSource> {
+    public static class CompositeBuilder implements io.helidon.common.Builder {
 
         private static final long DEFAULT_CHANGES_DEBOUNCE_TIMEOUT = 100;
 

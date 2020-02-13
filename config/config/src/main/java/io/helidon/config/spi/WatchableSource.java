@@ -49,9 +49,7 @@ public interface WatchableSource<T> {
      *
      * @return change watcher if one is configured on this source
      */
-    default Optional<ChangeWatcher<?>> changeWatcher() {
-        return Optional.empty();
-    }
+    Optional<ChangeWatcher<?>> changeWatcher();
 
     /**
      * A builder for a watchable source.
