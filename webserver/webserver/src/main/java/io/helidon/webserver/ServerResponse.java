@@ -104,13 +104,13 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * Send a {@link Throwable} and close the response.
      *
      * @param content the {@link Throwable} to send
+     * @return {@code null} when invoked
      * @throws IllegalArgumentException if there is no registered writer for a given type
      * @throws IllegalStateException if any {@code send(...)} method was already called
      * @see #send(Object)
      */
-    default void send(Throwable content) {
-        Object status = status();
-        if (status == null) {
+    default Void send(Throwable content) {
+        if (status() == null) {
             if (content instanceof HttpException) {
                 status(((HttpException) content).status());
             } else {
@@ -118,6 +118,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
             }
         }
         send((Object) content);
+        return null;
     }
 
     /**

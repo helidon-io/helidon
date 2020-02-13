@@ -15,9 +15,6 @@
  */
 package io.helidon.media.common;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
@@ -29,7 +26,7 @@ import io.helidon.common.reactive.Single;
 /**
  * Message body writer for {@link Throwable}.
  */
-public final class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
+public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
 
     private final boolean writeStackTrace;
 
@@ -37,14 +34,14 @@ public final class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
         this(false);
     }
 
-    private ThrowableBodyWriter(boolean writeStackTrace) {
+    protected ThrowableBodyWriter(boolean writeStackTrace) {
         super();
         this.writeStackTrace = writeStackTrace;
     }
 
     @Override
     public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return false;
+        return Throwable.class.isAssignableFrom(type.rawType());
     }
 
     @Override
@@ -76,7 +73,7 @@ public final class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
 
         private final MessageBodyWriterContext context;
 
-        ThrowableToChunks(MessageBodyWriterContext context) {
+        private ThrowableToChunks(MessageBodyWriterContext context) {
             super();
             this.context = context;
         }
@@ -89,24 +86,7 @@ public final class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
                 context.contentLength(0);
                 returnValue = Single.<DataChunk>empty();
             } else {
-                final StringWriter stringWriter = new StringWriter();
-                final PrintWriter printWriter = new PrintWriter(stringWriter);
-                String stackTraceString = null;
-                try {
-                    throwable.printStackTrace(printWriter);
-                    stackTraceString = stringWriter.toString();
-                } finally {
-                    printWriter.close();
-                }
-                assert stackTraceString != null;
-                if (stackTraceString.isEmpty()) {
-                    context.contentLength(0);
-                    returnValue = Single.<DataChunk>empty();
-                } else {
-                    final Charset charset = context.charset();
-                    context.contentLength(stackTraceString.getBytes(charset).length);
-                    returnValue = ContentWriters.writeCharSequence(stackTraceString, charset);
-                }
+              returnValue = ContentWriters.writeStackTrace(throwable, context, true);
             }
             return returnValue;
         }
