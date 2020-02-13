@@ -188,17 +188,4 @@ public final class ContentWriters {
         return byteChannelWriter(null);
     }
 
-    /**
-     * Returns a writer function for a {@link Throwable}'s stack trace.
-     *
-     * @param context a {@link MessageBodyWriterContext}
-     * @param setContentLength whether {@link MessageBodyWriterContext#contentLength(long)} should be called
-     * @return a {@link Throwable} writer
-     * @see #writeStackTrace(Throwable, MessageBodyWriterContext, boolean)
-     */
-    public static Function<Throwable, Publisher<DataChunk>> stackTraceWriter(MessageBodyWriterContext context,
-                                                                             boolean setContentLength) {
-        return throwable -> writeStackTrace(throwable, context, setContentLength);
-    }
-
 }
