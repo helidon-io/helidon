@@ -16,8 +16,6 @@
 
 package io.helidon.examples.quickstart.mp;
 
-import java.util.Set;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
@@ -29,8 +27,7 @@ import javax.ws.rs.core.Application;
 @ApplicationPath("/")
 public class GreetApplication extends Application {
 
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(GreetResource.class);
-    }
+    /*
+     * If you implement the getClasses method, then you will disable autodiscovery of resources.
+     */
 }
