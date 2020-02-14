@@ -193,7 +193,7 @@ public interface ConfigParser {
 
             @Override
             public Content build() {
-                if (exists() && null == data) {
+                if (null == data) {
                     throw new ConfigException("Parsable content exists, yet input stream was not configured.");
                 }
                 return new ContentImpl.ParsableContentImpl(this);

@@ -31,9 +31,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.config.internal.ConfigThreadFactory;
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.ObjectNodeImpl;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;

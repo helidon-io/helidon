@@ -56,8 +56,8 @@ public interface WatchableSource<T> {
      *
      * @param <B> type of the builder, used when extending this builder ({@code MyBuilder implements Builder<MyBuilder, Path>}
      * @param <T> type of the target of the source
-     * @see BaseConfigSourceBuilder
-     * @see BaseConfigSource
+     * @see io.helidon.config.BaseConfigSourceBuilder
+     * @see io.helidon.config.BaseConfigSource
      */
     interface Builder<B extends Builder<B, T>, T> {
         /**

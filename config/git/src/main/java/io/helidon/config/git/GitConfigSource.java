@@ -35,11 +35,15 @@ import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.BaseConfigSource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.FileSourceHelper;
-import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigContent;
+import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
+import io.helidon.config.spi.PollingStrategy;
 
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
@@ -58,7 +62,8 @@ import static java.util.Collections.singleton;
  * <p>
  * Config source is initialized by {@link GitConfigSourceBuilder}.
  */
-public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
+public class GitConfigSource extends BaseConfigSource
+        implements ParsableSource, PollableSource<byte[]>, ParsableSource {
 
     private static final Logger LOGGER = Logger.getLogger(GitConfigSource.class.getName());
 
@@ -78,37 +83,6 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     private boolean isTempDirectory = false;
     private boolean isClosed = false;
     private final List<Git> gits = Collections.synchronizedList(new ArrayList<>());
-
-    /**
-     * Create an instance from meta configuration.
-     *
-     * @param metaConfig meta configuration of this source
-     * @return config source configured from the meta configuration
-     */
-    public static GitConfigSource create(Config metaConfig) {
-        return builder().config(metaConfig).build();
-    }
-
-    /**
-     * Create a fluent API builder for GIT config source.
-     *
-     * @return a new builder instance
-     */
-    public static GitConfigSourceBuilder builder() {
-        return new GitConfigSourceBuilder();
-    }
-
-    /**
-     * Create a fluent API builder for GIT config source for a file.
-     *
-     * @param path path of the configuration file
-     * @return a new builder instance
-     * @deprecated use {@link #builder(String)} instead
-     */
-    @Deprecated
-    public static GitConfigSourceBuilder builder(String path) {
-        return new GitConfigSourceBuilder().path(path);
-    }
 
     /**
      * Initializes config source from builder.
@@ -136,6 +110,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
         }
 
         try {
+            // TODO: this is worn - should not leak into other methods in constructor
             init();
             targetPath = directory.resolve(endpoint.path());
         } catch (IOException | GitAPIException | JGitInternalException e) {
@@ -145,6 +120,70 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
                                       e);
         }
 
+    }
+
+    /**
+     * Create an instance from meta configuration.
+     *
+     * @param metaConfig meta configuration of this source
+     * @return config source configured from the meta configuration
+     */
+    public static GitConfigSource create(Config metaConfig) {
+        return builder().config(metaConfig).build();
+    }
+
+    /**
+     * Create a fluent API builder for GIT config source.
+     *
+     * @return a new builder instance
+     */
+    public static GitConfigSourceBuilder builder() {
+        return new GitConfigSourceBuilder();
+    }
+
+    @Override
+    protected String uid() {
+        StringBuilder sb = new StringBuilder();
+        if (endpoint.directory() != null) {
+            sb.append(endpoint.directory());
+        }
+        if (endpoint.uri() != null && endpoint.directory() != null) {
+            sb.append('|');
+        }
+        if (endpoint.uri() != null) {
+            sb.append(endpoint.uri().toASCIIString());
+        }
+        sb.append('#');
+        sb.append(endpoint.path());
+        return sb.toString();
+    }
+
+    @Override
+    public Optional<ConfigParser> parser() {
+        return super.parser();
+    }
+
+    @Override
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
+    @Override
+    public boolean isModified(byte[] stamp) {
+        try {
+            pull();
+        } catch (GitAPIException e) {
+            LOGGER.log(Level.WARNING, "Pull failed.", e);
+        }
+        return FileSourceHelper.isModified(targetPath, stamp);
+    }
+
+    @Override
+    public Optional<ConfigParser.Content> content() throws ConfigException {
+        pull();
+        if (!Files.exists(targetPath)) {
+            return Optional.empty();
+        }
     }
 
     private void init() throws IOException, GitAPIException {
@@ -211,49 +250,14 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
         LOGGER.finest(() -> "git fetch result: " + result.getFetchResult().getMessages());
     }
 
-    @Override
-    protected String uid() {
-        StringBuilder sb = new StringBuilder();
-        if (endpoint.directory() != null) {
-            sb.append(endpoint.directory());
-        }
-        if (endpoint.uri() != null && endpoint.directory() != null) {
-            sb.append('|');
-        }
-        if (endpoint.uri() != null) {
-            sb.append(endpoint.uri().toASCIIString());
-        }
-        sb.append('#');
-        sb.append(endpoint.path());
-        return sb.toString();
-    }
-
-    @Override
-    protected Optional<String> mediaType() {
-        return super.mediaType()
-                .or(this::probeContentType);
-    }
-
-    private Optional<String> probeContentType() {
-        return MediaTypes.detectType(targetPath);
-    }
-
-    @Override
-    protected Optional<byte[]> dataStamp() {
-        try {
-            pull();
-        } catch (GitAPIException e) {
-            LOGGER.log(Level.WARNING, "Pull failed.", e);
-        }
-        return Optional.ofNullable(FileSourceHelper.digest(targetPath));
-    }
 
     private Instant lastModifiedTime(Path path) {
         return FileSourceHelper.lastModifiedTime(path);
     }
 
     @Override
-    protected ConfigContent<byte[]> content() throws ConfigException {
+    protected ConfigContent<byte[]> contendt() throws ConfigException {
+
         if (LOGGER.isLoggable(Level.FINE)) {
             Instant lastModifiedTime = lastModifiedTime(targetPath);
             LOGGER.log(Level.FINE, String.format("Getting content from '%s'. Last stamp is %s.", targetPath, lastModifiedTime));
@@ -264,8 +268,8 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
 
         ConfigContent.Builder<byte[]> builder = ConfigContent.builder(new StringReader(fileContent));
 
-        mediaType().ifPresent(builder::mediaType);
-        dataStamp().ifPresent(builder::stamp);
+        MediaTypes.detectType(targetPath).ifPresent(builder::mediaType);
+        FileSourceHelper.digest(targetPath).ifPresent(builder::stamp);
 
         return builder.build();
     }

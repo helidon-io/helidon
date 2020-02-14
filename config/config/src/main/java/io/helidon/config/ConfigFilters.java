@@ -19,7 +19,6 @@ package io.helidon.config;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.config.internal.ValueResolvingFilter;
 import io.helidon.config.spi.ConfigFilter;
 
 /**

@@ -27,7 +27,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser.Content;

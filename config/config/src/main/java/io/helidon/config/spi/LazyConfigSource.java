@@ -31,7 +31,7 @@ import io.helidon.config.Config;
  *     <li>{@link io.helidon.config.Config#traverse()}</li>
  * </ul>
  */
-public interface LazySource {
+public interface LazyConfigSource {
     /**
      * Provide a value for the node on the requested key.
      *

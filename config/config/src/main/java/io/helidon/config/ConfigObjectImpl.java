@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 

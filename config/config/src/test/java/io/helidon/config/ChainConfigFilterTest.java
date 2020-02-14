@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.config.ProviderImpl.ChainConfigFilter;
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 
 import org.junit.jupiter.api.Test;

@@ -35,8 +35,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.internal.ConfigThreadFactory;
-import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ChangeWatcher;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.config.spi;
 
+import java.util.function.BiConsumer;
+
+import io.helidon.config.Config;
+
 /**
- * Java service loader service to create a polling strategy factory based on meta configuration.
+ * A source that supports notifications when changed.
  */
-public interface PollingStrategyProvider extends MetaConfigurableProvider<PollingStrategy> {
+public interface EventConfigSource {
+    /**
+     * Register a change listener.
+     *
+     * @param changedNode the key and node of the configuration that changed. This may be the whole config tree, or a specific
+     *                    node depending on how fine grained the detection mechanism is
+     */
+    void onChange(BiConsumer<Config.Key, ConfigNode> changedNode);
 }

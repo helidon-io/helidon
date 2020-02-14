@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.config.etcd.EtcdPollingStrategyProvider
+io.helidon.config.etcd.EtcdWatcherProvider

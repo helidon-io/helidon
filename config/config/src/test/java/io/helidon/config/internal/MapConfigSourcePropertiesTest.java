@@ -24,6 +24,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
+import io.helidon.config.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;

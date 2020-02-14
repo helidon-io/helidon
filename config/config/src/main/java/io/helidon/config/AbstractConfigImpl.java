@@ -34,8 +34,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.internal.ConfigKeyImpl;
-
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**

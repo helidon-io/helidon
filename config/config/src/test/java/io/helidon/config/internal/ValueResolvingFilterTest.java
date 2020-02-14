@@ -27,6 +27,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigFilters;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
+import io.helidon.config.ValueResolvingFilter;
 
 import org.junit.jupiter.api.Test;
 

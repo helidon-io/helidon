@@ -34,23 +34,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
- * Tests {@link EtcdWatchPollingStrategy}.
+ * Tests {@link EtcdWatcher}.
  */
-public class EtcdWatchPollingStrategyTest {
+public class EtcdWatcherTest {
 
     private static final URI DEFAULT_URI = URI.create("http://localhost:2379");
 
     @Test
     public void testBasics() throws EtcdClientException, InterruptedException {
         MockEtcdClient etcdClient = new MockEtcdClient(DEFAULT_URI);
-        EtcdWatchPollingStrategy etcdWatchPollingStrategy = new MockEtcdWatchPollingStrategy(
+        EtcdWatcher etcdWatcher = new MockEtcdWatcher(
                 new EtcdEndpoint(DEFAULT_URI, "key", EtcdApi.v2),
                 etcdClient);
 
         CountDownLatch initLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(3);
 
-        etcdWatchPollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
+        etcdWatcher.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
                 subscription.request(Long.MAX_VALUE);
@@ -83,7 +83,7 @@ public class EtcdWatchPollingStrategyTest {
     @Test
     public void testSubscribeOnce() throws InterruptedException {
         MockEtcdClient etcdClient = new MockEtcdClient(DEFAULT_URI);
-        EtcdWatchPollingStrategy etcdWatchPollingStrategy = new MockEtcdWatchPollingStrategy(
+        EtcdWatcher etcdWatcher = new MockEtcdWatcher(
                 new EtcdEndpoint(DEFAULT_URI, "key", EtcdApi.v2),
                 etcdClient);
 
@@ -91,7 +91,7 @@ public class EtcdWatchPollingStrategyTest {
         CountDownLatch initLatch = new CountDownLatch(5);
 
         for (int i = 0; i < count; i++) {
-            etcdWatchPollingStrategy.ticks()
+            etcdWatcher.ticks()
                     .subscribe(new Flow.Subscriber<PollingEvent>() {
                         @Override
                         public void onSubscribe(Flow.Subscription subscription) {
@@ -118,11 +118,11 @@ public class EtcdWatchPollingStrategyTest {
         assertThat(etcdClient.watchPublisher("key").getNumberOfSubscribers(), is(1));
     }
 
-    private static class MockEtcdWatchPollingStrategy extends EtcdWatchPollingStrategy {
+    private static class MockEtcdWatcher extends EtcdWatcher {
 
         private final MockEtcdClient etcdClient;
 
-        MockEtcdWatchPollingStrategy(EtcdEndpoint etcdEndpoint, MockEtcdClient etcdClient) {
+        MockEtcdWatcher(EtcdEndpoint etcdEndpoint, MockEtcdClient etcdClient) {
             super(etcdEndpoint);
 
             this.etcdClient = etcdClient;

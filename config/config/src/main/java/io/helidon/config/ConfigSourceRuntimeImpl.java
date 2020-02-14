@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.config.spi;
+package io.helidon.config;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -21,78 +21,56 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import io.helidon.config.spi.ConfigContext;
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigParserException;
+import io.helidon.config.spi.ConfigSource;
 
 /**
- * MP Config source basis. Just extend this class to be both Helidon config source and an MP config source.
- * @param <S> Type of the stamp of this config source
+ * The runtime of a config source. For a single {@link io.helidon.config.Config}, there is one source runtime for each configured
+ * config source.
  */
-public abstract class AbstractMpSource<S> extends AbstractSource<ConfigNode.ObjectNode, S> implements ConfigSource, io.helidon.config.spi.ConfigSource {
+public class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
     private final AtomicReference<Map<String, String>> currentValues = new AtomicReference<>();
+    private final ConfigSource configSource;
 
-    /**
-     * Initializes config source from builder.
-     *
-     * @param builder builder to be initialized from
+    @Override
+    public void onChange(BiConsumer<Config.Key, ConfigNode> change) {
+
+    }
+
+    @Override
+    public Optional<ConfigNode.ObjectNode> load() {
+        return Optional.empty();
+    }
+
+    /*
+     * MP Config related methods
      */
-    protected AbstractMpSource(Builder<?, ?, ?> builder) {
-        super(builder);
-    }
-
-    @Override
-    protected Data<ConfigNode.ObjectNode> processLoadedData(Data<ConfigNode.ObjectNode> data) {
-        currentValues.set(loadMap(data.data()));
-        return super.processLoadedData(data);
-    }
-
-    @Override
-    public void init(ConfigContext context) {
-        this.changes().subscribe(new Flow.Subscriber<>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-            }
-
-            @Override
-            public void onNext(Optional<ConfigNode.ObjectNode> item) {
-                currentValues.set(loadMap(item));
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        });
-    }
 
     @Override
     public Map<String, String> getProperties() {
-        if (null == currentValues.get()) {
-            currentValues.set(loadMap(load()));
-        }
-
         return currentValues.get();
     }
 
     @Override
     public String getValue(String propertyName) {
-        if (null == currentValues.get()) {
-            currentValues.set(loadMap(load()));
-        }
         return currentValues.get().get(propertyName);
     }
 
     @Override
     public String getName() {
-        return description();
+        return configSource.description();
+    }
+
+    private synchronized void ensureCurrentValue() {
+        if (null == currentValues.get()) {
+            currentValues.set(loadMap(load()));
+        }
     }
 
     private static Map<String, String> loadMap(Optional<ConfigNode.ObjectNode> item) {
@@ -167,5 +145,26 @@ public abstract class AbstractMpSource<S> extends AbstractSource<ConfigNode.Obje
             return key;
         }
         return keyPrefix + "." + key;
+    }
+
+
+    /*
+     * Config source related methods
+     */
+    /**
+     * Parser config source content into internal config structure.
+     *
+     * @param context config context built by {@link io.helidon.config.Config.Builder}
+     * @param content content to be parsed
+     * @return parsed configuration into internal structure. Never returns {@code null}.
+     * @throws io.helidon.config.spi.ConfigParserException in case of problem to parse configuration from the source
+     */
+    private ConfigNode.ObjectNode parse(ConfigContext context, ConfigParser.Content content) throws ConfigParserException {
+        return parser()
+                .or(() -> context.findParser(content.mediaType()
+                                                     .orElseThrow(() -> new ConfigException("Unknown media type."))))
+                .map(parser -> parser.parse(content))
+                .orElseThrow(() -> new ConfigException("Cannot find suitable parser for '"
+                                                               + content.mediaType().orElse(null) + "' media type."));
     }
 }

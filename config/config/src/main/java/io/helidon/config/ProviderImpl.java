@@ -34,11 +34,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.config.internal.ConfigKeyImpl;
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.ObjectNodeBuilderImpl;
-import io.helidon.config.internal.OverrideConfigFilter;
-import io.helidon.config.internal.ValueNodeImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;

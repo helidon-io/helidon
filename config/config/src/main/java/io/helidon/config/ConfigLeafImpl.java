@@ -26,7 +26,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 

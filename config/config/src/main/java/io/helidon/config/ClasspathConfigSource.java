@@ -28,8 +28,6 @@ import java.util.Optional;
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.AbstractParsableConfigSource;
-import io.helidon.config.spi.BaseConfigSource;
-import io.helidon.config.spi.BaseConfigSourceBuilder;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;

@@ -25,7 +25,7 @@ import java.util.Optional;
  *
  * @see io.helidon.config.spi.ParsableSource
  * @see io.helidon.config.spi.NodeConfigSource
- * @see io.helidon.config.spi.LazySource
+ * @see LazyConfigSource
  */
 public interface Source {
     /**

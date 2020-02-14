@@ -20,10 +20,13 @@ import java.util.function.BiConsumer;
 
 import io.helidon.config.spi.ConfigNode;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
 /**
- * TODO javadoc.
+ * The runtime of a config source. For a single {@link Config}, there is one source runtime for each configured
+ * config source.
  */
-public interface ConfigSourceRuntime {
+public interface ConfigSourceRuntime extends ConfigSource {
     void onChange(BiConsumer<Config.Key, ConfigNode> change);
 
     Optional<ConfigNode.ObjectNode> load();

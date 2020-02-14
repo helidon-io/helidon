@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.config.etcd.EtcdWatcherProvider;
+
 /**
  * Etcd config source implementation.
  */
@@ -33,5 +35,5 @@ module io.helidon.config.etcd {
     exports io.helidon.config.etcd;
 
     provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.config.etcd.EtcdConfigSourceProvider;
-    provides io.helidon.config.spi.PollingStrategyProvider with io.helidon.config.etcd.EtcdPollingStrategyProvider;
+    provides io.helidon.config.spi.PollingStrategyProvider with EtcdWatcherProvider;
 }

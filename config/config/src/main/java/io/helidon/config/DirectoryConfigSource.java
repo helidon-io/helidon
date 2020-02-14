@@ -21,10 +21,16 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.config.spi.AbstractConfigSource;
+import io.helidon.config.spi.ChangeWatcher;
+import io.helidon.config.spi.ConfigContent.NodeContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.NodeConfigSource;
+import io.helidon.config.spi.PollableSource;
+import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.WatchableSource;
 
+import static io.helidon.config.FileSourceHelper.lastModifiedTime;
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 
 /**
@@ -32,16 +38,19 @@ import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
  *
  * @see io.helidon.config.spi.AbstractSource.Builder
  */
-public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
+public class DirectoryConfigSource extends BaseConfigSource
+        implements PollableSource<Instant>,
+                   WatchableSource<Path>,
+                   NodeConfigSource {
 
     private static final String PATH_KEY = "path";
 
     private final Path directoryPath;
 
-    DirectoryConfigSource(DirectoryBuilder builder, Path directoryPath) {
+    DirectoryConfigSource(Builder builder) {
         super(builder);
 
-        this.directoryPath = directoryPath;
+        this.directoryPath = builder.path;
     }
 
     /**
@@ -72,8 +81,8 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
      *
      * @return a new builder instance
      */
-    public static DirectoryBuilder builder() {
-        return new DirectoryBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -82,12 +91,40 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
     }
 
     @Override
-    protected Optional<Instant> dataStamp() {
-        return Optional.ofNullable(FileSourceHelper.lastModifiedTime(directoryPath));
+    public boolean isModified(Instant stamp) {
+        return FileSourceHelper.isModified(directoryPath, stamp);
     }
 
     @Override
-    protected Data<ConfigNode.ObjectNode> loadData() throws ConfigException {
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
+    @Override
+    public Optional<ChangeWatcher<?>> changeWatcher() {
+        return super.changeWatcher();
+    }
+
+    @Override
+    public Path target() {
+        return directoryPath;
+    }
+
+    @Override
+    public boolean exists() {
+        return Files.exists(directoryPath);
+    }
+
+    @Override
+    public Class<Path> targetType() {
+        return Path.class;
+    }
+
+    @Override
+    public Optional<NodeContent> load() throws ConfigException {
+        if (!Files.exists(directoryPath)) {
+            return Optional.empty();
+        }
         try {
             ConfigNode.ObjectNode.Builder objectNodeRoot = ConfigNode.ObjectNode.builder();
 
@@ -98,12 +135,13 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
                         objectNodeRoot.addValue(path.getFileName().toString(), content);
                     });
 
-            Data.Builder<ConfigNode.ObjectNode> builder = Data.builder();
 
-            builder.data(objectNodeRoot.build());
-            dataStamp().ifPresent(builder::stamp);
+            NodeContent.Builder builder = NodeContent.builder()
+                    .node(objectNodeRoot.build());
 
-            return builder.build();
+            lastModifiedTime(directoryPath).ifPresent(builder::stamp);
+
+            return Optional.of(builder.build());
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -114,47 +152,17 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
     /**
      * {@inheritDoc}
      * <p>
-     * If the Directory ConfigSource is {@code mandatory} and a {@code directory} does not exist
-     * then {@link ConfigSource#load} throws {@link ConfigException}.
      */
-    public static final class DirectoryBuilder extends Builder<DirectoryBuilder, Path, DirectoryConfigSource> {
+    public static final class Builder extends BaseConfigSourceBuilder<Builder, Path>
+                implements PollableSource.Builder<Builder>,
+                           WatchableSource.Builder<Builder, Path>,
+                           io.helidon.common.Builder<DirectoryConfigSource> {
         private Path path;
 
         /**
          * Initialize builder.
          */
-        private DirectoryBuilder() {
-            super(Path.class);
-        }
-
-        /**
-         * Configuration directory path.
-         *
-         * @param path directory
-         * @return updated builder instance
-         */
-        public DirectoryBuilder path(Path path) {
-            this.path = path;
-            return this;
-        }
-
-        /**
-         * {@inheritDoc}
-         * <ul>
-         *     <li>{@code path} - directory path</li>
-         * </ul>
-         * @param metaConfig configuration properties used to configure a builder instance.
-         * @return updated builder instance
-         */
-        @Override
-        public DirectoryBuilder config(Config metaConfig) {
-            metaConfig.get(PATH_KEY).as(Path.class).ifPresent(this::path);
-            return super.config(metaConfig);
-        }
-
-        @Override
-        protected Path target() {
-            return path;
+        private Builder() {
         }
 
         /**
@@ -167,7 +175,42 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
             if (null == path) {
                 throw new IllegalArgumentException("path must be defined");
             }
-            return new DirectoryConfigSource(this, path);
+            return new DirectoryConfigSource(this);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <ul>
+         *     <li>{@code path} - directory path</li>
+         * </ul>
+         * @param metaConfig configuration properties used to configure a builder instance.
+         * @return updated builder instance
+         */
+        @Override
+        public Builder config(Config metaConfig) {
+            metaConfig.get(PATH_KEY).as(Path.class).ifPresent(this::path);
+            return super.config(metaConfig);
+        }
+
+        /**
+         * Configuration directory path.
+         *
+         * @param path directory
+         * @return updated builder instance
+         */
+        public Builder path(Path path) {
+            this.path = path;
+            return this;
+        }
+
+        @Override
+        public Builder changeWatcher(ChangeWatcher<Path> changeWatcher) {
+            return super.changeWatcher(changeWatcher);
+        }
+
+        @Override
+        public Builder pollingStrategy(PollingStrategy pollingStrategy) {
+            return super.pollingStrategy(pollingStrategy);
         }
     }
 }

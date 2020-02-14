@@ -20,10 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.ListNodeBuilderImpl;
-import io.helidon.config.internal.ObjectNodeBuilderImpl;
-import io.helidon.config.internal.ValueNodeImpl;
+import io.helidon.config.ListNodeBuilderImpl;
+import io.helidon.config.ObjectNodeBuilderImpl;
+import io.helidon.config.ValueNodeImpl;
 
 /**
  * Marker interface identifying a config node implementation.
@@ -171,7 +170,7 @@ public interface ConfigNode extends Supplier<String> {
          * @return empty object node.
          */
         static ObjectNode empty() {
-            return ConfigUtils.EmptyObjectNodeHolder.EMPTY;
+            return SpiHelper.EmptyObjectNodeHolder.EMPTY;
         }
 
         /**

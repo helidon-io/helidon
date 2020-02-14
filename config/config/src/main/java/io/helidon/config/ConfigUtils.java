@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -38,13 +38,12 @@ import java.util.stream.StreamSupport;
 
 import javax.annotation.Priority;
 
-import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode;
 
 /**
  * Internal config utilities.
  */
-public final class ConfigUtils {
+final class ConfigUtils {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigUtils.class.getName());
 
@@ -59,7 +58,7 @@ public final class ConfigUtils {
      * @param <S>   expected streamed item type.
      * @return stream of items.
      */
-    public static <S> Stream<S> asStream(Iterable<? extends S> items) {
+    static <S> Stream<S> asStream(Iterable<? extends S> items) {
         return asStream(items.iterator());
     }
 
@@ -70,7 +69,7 @@ public final class ConfigUtils {
      * @param iterator iterator over the items
      * @return stream of the items
      */
-    public static <S> Stream<S> asStream(Iterator<? extends S> iterator) {
+    static <S> Stream<S> asStream(Iterator<? extends S> iterator) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
     }
 
@@ -88,7 +87,7 @@ public final class ConfigUtils {
      * @param <S>             item type.
      * @return prioritized stream of items.
      */
-    public static <S> Stream<? extends S> asPrioritizedStream(Iterable<? extends S> items, int defaultPriority) {
+    static <S> Stream<? extends S> asPrioritizedStream(Iterable<? extends S> items, int defaultPriority) {
         return asStream(items).sorted(priorityComparator(defaultPriority));
     }
 
@@ -102,7 +101,7 @@ public final class ConfigUtils {
      * lack the {@code Priority} annotation
      * @return comparator
      */
-    public static <S> Comparator<S> priorityComparator(int defaultPriority) {
+    static <S> Comparator<S> priorityComparator(int defaultPriority) {
         return (service1, service2) -> {
             int service1Priority = Optional.ofNullable(service1.getClass().getAnnotation(Priority.class))
                     .map(Priority::value)
@@ -123,7 +122,7 @@ public final class ConfigUtils {
      * @param strict In strict mode, properties overlapping causes failure during loading into internal structure.
      * @return built object node from map source.
      */
-    public static ConfigNode.ObjectNode mapToObjectNode(Map<?, ?> map, boolean strict) {
+    static ConfigNode.ObjectNode mapToObjectNode(Map<?, ?> map, boolean strict) {
         ConfigNode.ObjectNode.Builder builder = ConfigNode.ObjectNode.builder();
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             try {
@@ -151,7 +150,7 @@ public final class ConfigUtils {
      * @param properties properties to be transformed to map
      * @return transformed map
      */
-    public static Map<String, String> propertiesToMap(Properties properties) {
+    static Map<String, String> propertiesToMap(Properties properties) {
         return properties.stringPropertyNames().stream()
                 .collect(Collectors.toMap(k -> k, properties::getProperty));
     }
@@ -161,7 +160,7 @@ public final class ConfigUtils {
      *
      * @param executor executor to be shutdown.
      */
-    public static void shutdownExecutor(ScheduledExecutorService executor) {
+    static void shutdownExecutor(ScheduledExecutorService executor) {
         executor.shutdown();
         try {
             executor.awaitTermination(100, TimeUnit.MILLISECONDS);
@@ -179,7 +178,7 @@ public final class ConfigUtils {
      * or {@code UTF-8} in case a {@code contentEncoding} is {@code null}
      * @throws ConfigException in case of unsupported charset name
      */
-    public static Charset getContentCharset(String contentEncoding) throws ConfigException {
+    static Charset getContentCharset(String contentEncoding) throws ConfigException {
         try {
             return Optional.ofNullable(contentEncoding)
                     .map(Charset::forName)
@@ -237,23 +236,6 @@ public final class ConfigUtils {
             }
             return result;
         }
-    }
-
-    /**
-     * Holder of singleton instance of {@link ConfigNode.ObjectNode}.
-     *
-     * @see ConfigNode.ObjectNode#empty()
-     */
-    public static final class EmptyObjectNodeHolder {
-
-        private EmptyObjectNodeHolder() {
-            throw new AssertionError("Instantiation not allowed.");
-        }
-
-        /**
-         * EMPTY singleton instance.
-         */
-        public static final ConfigNode.ObjectNode EMPTY = ConfigNode.ObjectNode.builder().build();
     }
 
 }

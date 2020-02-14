@@ -176,14 +176,14 @@ public class EtcdConfigSourceBuilderTest {
                         "uri", "http://localhost:2379",
                         "key", "/registry",
                         "api", "v3",
-                        "polling-strategy.type", EtcdPollingStrategyProvider.TYPE))));
+                        "polling-strategy.type", EtcdWatcherProvider.TYPE))));
 
         assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
         assertThat(builder.target().key(), is("/registry"));
         assertThat(builder.target().api(), is(EtcdApi.v3));
 
-        assertThat(builder.pollingStrategyInternal(), is(instanceOf(EtcdWatchPollingStrategy.class)));
-        EtcdEndpoint strategyEndpoint = ((EtcdWatchPollingStrategy) builder.pollingStrategyInternal())
+        assertThat(builder.pollingStrategyInternal(), is(instanceOf(EtcdWatcher.class)));
+        EtcdEndpoint strategyEndpoint = ((EtcdWatcher) builder.pollingStrategyInternal())
                 .etcdEndpoint();
 
         assertThat(strategyEndpoint.uri(), is(URI.create("http://localhost:2379")));

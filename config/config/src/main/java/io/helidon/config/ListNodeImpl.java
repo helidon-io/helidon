@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.util.AbstractList;
 import java.util.HashSet;
@@ -22,11 +22,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 
-import static io.helidon.config.internal.AbstractNodeBuilderImpl.formatFrom;
+import static io.helidon.config.AbstractNodeBuilderImpl.formatFrom;
 
 /**
  * Implements {@link ListNode}.

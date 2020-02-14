@@ -22,11 +22,16 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Objects;
 
+import io.helidon.common.Builder;
+import io.helidon.config.BaseConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.WatchableSource;
 
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -63,8 +68,12 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
  * are set, then {@code parser} has precedence.
  */
 public final class GitConfigSourceBuilder
-        extends
-        AbstractParsableConfigSource.Builder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint, GitConfigSource> {
+        extends BaseConfigSourceBuilder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint>
+        implements Builder<GitConfigSource>,
+                   PollableSource.Builder<GitConfigSourceBuilder>,
+                   ParsableSource.Builder<GitConfigSourceBuilder>,
+                   WatchableSource.Builder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint> {
+
 
     private static final String PATH_KEY = "path";
     private static final String URI_KEY = "uri";
@@ -79,8 +88,6 @@ public final class GitConfigSourceBuilder
     private CredentialsProvider credentialsProvider;
 
     GitConfigSourceBuilder() {
-        super(GitEndpoint.class);
-
         this.credentialsProvider = CredentialsProvider.getDefault();
     }
 
@@ -93,6 +100,16 @@ public final class GitConfigSourceBuilder
     public GitConfigSourceBuilder path(String path) {
         this.path = path;
         return this;
+    }
+
+
+    @Override
+    public GitConfigSource build() {
+        if (null == path) {
+            throw new IllegalArgumentException("git path must be defined");
+        }
+
+        return new GitConfigSource(this, target());
     }
 
     /**
@@ -130,7 +147,26 @@ public final class GitConfigSourceBuilder
     }
 
     @Override
-    protected GitEndpoint target() {
+    public GitConfigSourceBuilder parser(ConfigParser parser) {
+        return super.parser(parser);
+    }
+
+    @Override
+    public GitConfigSourceBuilder mediaType(String mediaType) {
+        return super.mediaType(mediaType);
+    }
+
+    @Override
+    public GitConfigSourceBuilder pollingStrategy(PollingStrategy pollingStrategy) {
+        return super.pollingStrategy(pollingStrategy);
+    }
+
+    @Override
+    public GitConfigSourceBuilder changeWatcher(ChangeWatcher<GitEndpoint> changeWatcher) {
+        return super.changeWatcher(changeWatcher);
+    }
+
+    GitEndpoint target() {
         return new GitEndpoint(uri, branch, directory, path, credentialsProvider);
     }
 
@@ -189,19 +225,6 @@ public final class GitConfigSourceBuilder
     public GitConfigSourceBuilder credentialsProvider(CredentialsProvider credentialsProvider) {
         this.credentialsProvider = credentialsProvider;
         return this;
-    }
-
-    PollingStrategy pollingStrategyInternal() { //just for testing purposes
-        return super.pollingStrategy();
-    }
-
-    @Override
-    public GitConfigSource build() {
-        if (null == path) {
-            throw new IllegalArgumentException("git path must be defined");
-        }
-
-        return new GitConfigSource(this, target());
     }
 
     /**

@@ -21,15 +21,16 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import io.helidon.config.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static io.helidon.config.TestHelper.toInputStream;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
-import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;

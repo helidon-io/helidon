@@ -134,12 +134,10 @@ final class MetaProviders {
     @Priority(Integer.MAX_VALUE)
     private static final class BuiltInPollingStrategyProvider implements PollingStrategyProvider {
         private static final String REGULAR_TYPE = "regular";
-        private static final String WATCH_TYPE = "watch";
 
-        private static final Map<String, Function<Config, Function<Object, PollingStrategy>>> BUILT_IN =
+        private static final Map<String, Function<Config, PollingStrategy>> BUILT_IN =
                 Map.of(
-                        REGULAR_TYPE, config -> target -> PollingStrategies.ScheduledBuilder.create(config).build(),
-                        WATCH_TYPE, config -> BuiltInPollingStrategyProvider::watchStrategy
+                        REGULAR_TYPE, config -> PollingStrategies.ScheduledBuilder.create(config).build()
                 );
 
         private static PollingStrategy watchStrategy(Object target) {
@@ -158,7 +156,7 @@ final class MetaProviders {
         }
 
         @Override
-        public Function<Object, PollingStrategy> create(String type, Config metaConfig) {
+        public PollingStrategy create(String type, Config metaConfig) {
             return BUILT_IN.get(type).apply(metaConfig);
         }
 

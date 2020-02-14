@@ -27,7 +27,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 
-import io.helidon.config.internal.ConfigUtils.ScheduledTask;
+import io.helidon.config.ConfigUtils;
+import io.helidon.config.ConfigUtils.ScheduledTask;
 
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsInstanceOf;
@@ -38,7 +39,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link ConfigUtils}.
+ * Tests {@link io.helidon.config.ConfigUtils}.
  */
 public class ConfigUtilsTest {
 

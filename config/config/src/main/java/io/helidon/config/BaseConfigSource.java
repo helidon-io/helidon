@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.config.spi;
+package io.helidon.config;
 
 import java.util.Optional;
+
+import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigSource;
 
 /**
  * A base implementation for config sources, that combines configuration from any type of a config source.

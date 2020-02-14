@@ -16,19 +16,24 @@
 
 package io.helidon.config.spi;
 
-import java.util.function.BiConsumer;
+final class SpiHelper {
+    private SpiHelper() {
+    }
 
-import io.helidon.config.Config;
-
-/**
- * A source that supports notifications when changed.
- */
-public interface EventSource {
     /**
-     * Register a change listener.
+     * Holder of singleton instance of {@link io.helidon.config.spi.ConfigNode.ObjectNode}.
      *
-     * @param changedNode the key and node of the configuration that changed. This may be the whole config tree, or a specific
-     *                    node depending on how fine grained the detection mechanism is
+     * @see io.helidon.config.spi.ConfigNode.ObjectNode#empty()
      */
-    void onChange(BiConsumer<Config.Key, ConfigNode> changedNode);
+    public static final class EmptyObjectNodeHolder {
+
+        private EmptyObjectNodeHolder() {
+            throw new AssertionError("Instantiation not allowed.");
+        }
+
+        /**
+         * EMPTY singleton instance.
+         */
+        public static final ConfigNode.ObjectNode EMPTY = ConfigNode.ObjectNode.builder().build();
+    }
 }

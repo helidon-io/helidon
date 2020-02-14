@@ -58,15 +58,17 @@ public class FileSourceHelper {
      * @param path a file or directory
      * @return the last modified time
      */
-    public static Instant lastModifiedTime(Path path) {
+    public static Optional<Instant> lastModifiedTime(Path path) {
         try {
-            return Files.getLastModifiedTime(path.toRealPath()).toInstant();
+            return Optional.of(Files.getLastModifiedTime(path.toRealPath()).toInstant());
+        } catch (FileNotFoundException e) {
+            return Optional.empty();
         } catch (IOException e) {
             LOGGER.log(Level.FINE, e, () -> "Cannot obtain the last modified time of '" + path + "'.");
         }
-        Instant timestamp = Instant.MAX;
+        Instant timestamp = Instant.MIN;
         LOGGER.finer("Cannot obtain the last modified time. Used time '" + timestamp + "' as a content timestamp.");
-        return timestamp;
+        return Optional.of(timestamp);
     }
 
     /**
@@ -136,6 +138,12 @@ public class FileSourceHelper {
         return !digest(filePath)
                 .map(newStamp -> Arrays.equals(stamp, newStamp))
                 // if new stamp is not present, it means the file was deleted
+                .orElse(false);
+    }
+
+    public static boolean isModified(Path filePath, Instant stamp) {
+        return lastModifiedTime(filePath)
+                .map(newStamp -> newStamp.isAfter(stamp))
                 .orElse(false);
     }
 

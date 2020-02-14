@@ -24,7 +24,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.config.internal.ConfigKeyImpl;
 
 /**
  * Implementation of {@link Config} that represents {@link Config.Type#MISSING missing} node.

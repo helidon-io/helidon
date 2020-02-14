@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.config.PropertiesConfigParser;
+
 /**
  * config module.
  */
@@ -46,7 +48,7 @@ module io.helidon.config {
     uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
     uses org.eclipse.microprofile.config.spi.Converter;
 
-    provides io.helidon.config.spi.ConfigParser with io.helidon.config.internal.PropertiesConfigParser;
+    provides io.helidon.config.spi.ConfigParser with PropertiesConfigParser;
     provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.config.MpConfigProviderResolver;
 
 }

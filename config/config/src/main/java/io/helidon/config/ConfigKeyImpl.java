@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,12 +23,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.config.Config;
-
 /**
  * Implementation of {@link Config.Key Config Key}.
  */
-public class ConfigKeyImpl implements Config.Key {
+class ConfigKeyImpl implements Config.Key {
     private final String name;
     private final ConfigKeyImpl parent;
     private final List<String> path;
@@ -78,7 +76,7 @@ public class ConfigKeyImpl implements Config.Key {
      *
      * @return new instance of ConfigKeyImpl.
      */
-    public static ConfigKeyImpl of() {
+    static ConfigKeyImpl of() {
         return new ConfigKeyImpl(null, "");
     }
 
@@ -88,7 +86,7 @@ public class ConfigKeyImpl implements Config.Key {
      * @param key key
      * @return new instance of ConfigKeyImpl.
      */
-    public static ConfigKeyImpl of(String key) {
+    static ConfigKeyImpl of(String key) {
         return of().child(key);
     }
 
@@ -98,7 +96,7 @@ public class ConfigKeyImpl implements Config.Key {
      * @param key sub-key
      * @return new child instance of ConfigKeyImpl.
      */
-    public ConfigKeyImpl child(String key) {
+    ConfigKeyImpl child(String key) {
         return child(Arrays.asList(key.split("\\.")));
     }
 

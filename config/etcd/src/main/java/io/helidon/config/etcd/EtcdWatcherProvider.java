@@ -25,7 +25,7 @@ import io.helidon.config.spi.PollingStrategyProvider;
 /**
  * Service loader service for ETCD config source.
  */
-public class EtcdPollingStrategyProvider implements PollingStrategyProvider {
+public class EtcdWatcherProvider implements PollingStrategyProvider {
     static final String TYPE = "etcd";
 
     @Override
@@ -37,7 +37,7 @@ public class EtcdPollingStrategyProvider implements PollingStrategyProvider {
     public Function<Object, PollingStrategy> create(String type, Config metaConfig) {
         return object -> {
             if (object instanceof EtcdConfigSourceBuilder.EtcdEndpoint) {
-                return EtcdWatchPollingStrategy.create((EtcdConfigSourceBuilder.EtcdEndpoint) object);
+                return EtcdWatcher.create((EtcdConfigSourceBuilder.EtcdEndpoint) object);
             }
 
             throw new IllegalArgumentException("EtcdWatchPollingStrategy expects "

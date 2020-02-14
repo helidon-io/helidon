@@ -24,17 +24,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.config.spi.AbstractOverrideSource;
+import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
 
 /**
  * In-memory implementation of override source.
  */
-class InMemoryOverrideSource extends AbstractOverrideSource<Object> {
+public class InMemoryOverrideSource implements OverrideSource {
 
     private final OverrideData overrideData;
 
     private InMemoryOverrideSource(Builder builder) {
-        super(builder);
         this.overrideData = builder.overrideData;
     }
 
@@ -45,21 +45,17 @@ class InMemoryOverrideSource extends AbstractOverrideSource<Object> {
                                    .collect(Collectors.toList()));
     }
 
-    static Builder builder(List<Map.Entry<String, String>> overrideValues) {
-        return new Builder(overrideValues);
-    }
-
     @Override
-    protected Optional<Object> dataStamp() {
-        return Optional.of(this);
+    public Optional<OverrideContent> load() throws ConfigException {
+        return Optional.of(OverrideContent.builder()
+                                   .data(overrideData)
+                                   .build());
     }
 
-    @Override
-    protected Data<OverrideData> loadData() throws ConfigException {
-        return Data.create(overrideData, this);
-    }
-
-    static final class Builder extends AbstractOverrideSource.Builder<InMemoryOverrideSource.Builder, Void> {
+    /**
+     * Fluent API builder for {@link io.helidon.config.InMemoryOverrideSource}.
+     */
+    public static final class Builder extends AbstractOverrideSource.Builder<InMemoryOverrideSource.Builder, Void> {
 
         private OverrideData overrideData;
         private List<Map.Entry<String, String>> overrideWildcards;

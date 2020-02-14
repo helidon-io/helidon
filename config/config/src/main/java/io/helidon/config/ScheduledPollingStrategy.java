@@ -26,8 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
-import io.helidon.config.internal.ConfigThreadFactory;
-import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
 

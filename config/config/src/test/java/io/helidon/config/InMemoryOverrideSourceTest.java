@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.config.internal.OverrideConfigFilter;
 import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;

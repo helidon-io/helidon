@@ -16,8 +16,6 @@
 
 package io.helidon.config;
 
-import io.helidon.config.internal.PropertiesConfigParser;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

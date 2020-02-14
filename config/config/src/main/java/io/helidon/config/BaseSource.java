@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.config.spi;
+package io.helidon.config;
 
 import java.util.Optional;
+
+import io.helidon.config.spi.ChangeWatcher;
+import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.RetryPolicy;
+import io.helidon.config.spi.Source;
 
 public class BaseSource implements Source {
     private final boolean optional;

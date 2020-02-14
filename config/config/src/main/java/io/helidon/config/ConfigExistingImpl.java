@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
 

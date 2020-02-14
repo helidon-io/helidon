@@ -26,4 +26,4 @@ io.helidon.config.internal.AutoLoadedConfigHighPriority
 io.helidon.config.internal.AutoLoadedConfigLowPriority
 
 # The following is for testing auto-loaded ValueResolvingFilter
-io.helidon.config.internal.ValueResolvingFilter
+io.helidon.config.ValueResolvingFilter

@@ -28,10 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.AbstractParsableConfigSource;
-import io.helidon.config.spi.BaseConfigSource;
-import io.helidon.config.spi.BaseConfigSourceBuilder;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;

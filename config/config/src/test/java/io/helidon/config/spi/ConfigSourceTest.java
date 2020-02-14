@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.PropertiesConfigParser;
 import io.helidon.config.ValueNodeMatcher;
-import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 

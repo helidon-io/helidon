@@ -21,7 +21,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
-import io.helidon.config.internal.ConfigThreadFactory;
 import io.helidon.config.spi.RetryPolicy;
 
 /**

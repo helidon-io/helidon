@@ -17,6 +17,7 @@
 package io.helidon.config.internal;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigKeyImpl;
 
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Assertions;
@@ -29,7 +30,7 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 
 /**
- * Tests {@link ConfigKeyImpl}.
+ * Tests {@link io.helidon.config.ConfigKeyImpl}.
  */
 public class ConfigKeyImplTest {
     private static final ConfigKeyImpl ROOT = ConfigKeyImpl.of();

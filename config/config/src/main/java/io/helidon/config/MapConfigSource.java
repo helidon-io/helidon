@@ -21,9 +21,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.spi.BaseConfigSource;
-import io.helidon.config.spi.BaseConfigSourceBuilder;
 import io.helidon.config.spi.ConfigContent.NodeContent;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.NodeConfigSource;

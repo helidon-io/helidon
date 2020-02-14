@@ -25,10 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.AbstractOverrideSource;
-import io.helidon.config.spi.BaseSource;
-import io.helidon.config.spi.BaseSourceBuilder;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.ConfigParser;

@@ -29,8 +29,8 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
-import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static io.helidon.config.spi.AbstractSource.Builder.DEFAULT_CHANGES_EXECUTOR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

@@ -20,12 +20,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import io.helidon.config.internal.ObjectNodeBuilderImpl;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.spi.EventSource;
+import io.helidon.config.spi.EventConfigSource;
 import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.spi.RetryPolicy;
 
@@ -38,7 +37,7 @@ import io.helidon.config.spi.RetryPolicy;
  */
 public final class PrefixedConfigSource implements ConfigSource,
                                                    NodeConfigSource,
-                                                   EventSource {
+                                                   EventConfigSource {
     private static final String KEY_KEY = "key";
 
     private final String key;

@@ -26,8 +26,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.spi.BaseSource;
-import io.helidon.config.spi.BaseSourceBuilder;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.OverrideSource;

@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package io.helidon.config.spi;
+package io.helidon.config;
 
 import java.util.Optional;
 
-import io.helidon.config.Config;
+import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.Source;
 
 public abstract class BaseConfigSourceBuilder<B extends BaseConfigSourceBuilder<B, U>, U>
         extends BaseSourceBuilder<B, U>
-        implements ConfigSource.Builder<B> {
+        implements Source.Builder<B> {
 
     private ConfigParser parser;
     private String mediaType;

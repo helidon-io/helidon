@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;

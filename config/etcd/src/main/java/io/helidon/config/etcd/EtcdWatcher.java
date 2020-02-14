@@ -18,28 +18,24 @@ package io.helidon.config.etcd;
 
 import java.time.Instant;
 import java.util.concurrent.Flow;
-import java.util.concurrent.SubmissionPublisher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigHelper;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.ChangeWatcher;
 
 /**
  * Etcd watch strategy is based on etcd watch operation.
  */
-public class EtcdWatchPollingStrategy implements PollingStrategy {
+public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
 
-    private static final Logger LOGGER = Logger.getLogger(EtcdWatchPollingStrategy.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(EtcdWatcher.class.getName());
 
     private final EtcdEndpoint endpoint;
     private final EtcdClient etcdClient;
-    private final SubmissionPublisher<PollingEvent> ticksSubmitter;
-    private final Flow.Publisher<PollingEvent> ticksPublisher;
 
     private EtcdWatchSubscriber etcdWatchSubscriber;
 
@@ -49,8 +45,8 @@ public class EtcdWatchPollingStrategy implements PollingStrategy {
      * @param endpoint etcd remote descriptor
      * @return configured polling strategy
      */
-    public static EtcdWatchPollingStrategy create(EtcdEndpoint endpoint) {
-        return new EtcdWatchPollingStrategy(endpoint);
+    public static EtcdWatcher create(EtcdEndpoint endpoint) {
+        return new EtcdWatcher(endpoint);
     }
 
     /**
@@ -58,18 +54,11 @@ public class EtcdWatchPollingStrategy implements PollingStrategy {
      *
      * @param endpoint etcd remote descriptor
      */
-    // this has to be public, as it is used by meta-configuration
-    public EtcdWatchPollingStrategy(EtcdEndpoint endpoint) {
+    EtcdWatcher(EtcdEndpoint endpoint) {
         this.endpoint = endpoint;
         etcdClient = endpoint.api()
                 .clientFactory()
                 .createClient(endpoint.uri());
-
-        ticksSubmitter = new SubmissionPublisher<>(Runnable::run, //deliver events on current thread
-                                                   1); //(almost) do not buffer events
-        ticksPublisher = ConfigHelper.suspendablePublisher(ticksSubmitter,
-                                                           this::subscribePollingStrategy,
-                                                           this::cancelPollingStrategy);
     }
 
     EtcdClient etcdClient() {
@@ -86,8 +75,8 @@ public class EtcdWatchPollingStrategy implements PollingStrategy {
                     new ConfigException(
                             String.format("Subscription on watching on '%s' key has failed. "
                                                   + "Watching by '%s' polling strategy will not start.",
-                                          EtcdWatchPollingStrategy.this.endpoint.key(),
-                                          EtcdWatchPollingStrategy.this),
+                                          EtcdWatcher.this.endpoint.key(),
+                                          EtcdWatcher.this),
                             ex));
         }
     }
@@ -165,17 +154,17 @@ public class EtcdWatchPollingStrategy implements PollingStrategy {
 
         @Override
         public void onNext(Long item) {
-            EtcdWatchPollingStrategy.this.fireEvent(item);
+            EtcdWatcher.this.fireEvent(item);
         }
 
         @Override
         public void onError(Throwable throwable) {
-            EtcdWatchPollingStrategy.this.ticksSubmitter
+            EtcdWatcher.this.ticksSubmitter
                     .closeExceptionally(new ConfigException(
                             String.format(
                                     "Watching on '%s' key has failed. Watching by '%s' polling strategy will not continue. %s",
-                                    EtcdWatchPollingStrategy.this.endpoint.key(),
-                                    EtcdWatchPollingStrategy.this,
+                                    EtcdWatcher.this.endpoint.key(),
+                                    EtcdWatcher.this,
                                     throwable.getLocalizedMessage()),
                             throwable));
         }
@@ -183,10 +172,10 @@ public class EtcdWatchPollingStrategy implements PollingStrategy {
         @Override
         public void onComplete() {
             LOGGER.fine(String.format("Watching on '%s' key has completed. Watching by '%s' polling strategy will not continue.",
-                                      EtcdWatchPollingStrategy.this.endpoint.key(),
-                                      EtcdWatchPollingStrategy.this));
+                                      EtcdWatcher.this.endpoint.key(),
+                                      EtcdWatcher.this));
 
-            EtcdWatchPollingStrategy.this.ticksSubmitter.close();
+            EtcdWatcher.this.ticksSubmitter.close();
         }
 
         private void cancelSubscription() {

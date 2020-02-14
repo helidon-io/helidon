@@ -16,7 +16,6 @@
 
 package io.helidon.config;
 
-import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigParser;
 
 /**
@@ -32,7 +31,7 @@ public final class ConfigParsers {
 
     /**
      * Returns a {@link ConfigParser} implementation that parses Java Properties content
-     * (the media type {@value io.helidon.config.internal.PropertiesConfigParser#MEDIA_TYPE_TEXT_JAVA_PROPERTIES}).
+     * (the media type {@value PropertiesConfigParser#MEDIA_TYPE_TEXT_JAVA_PROPERTIES}).
      * <p>
      * @return {@code ConfigParser} that parses Java Properties content
      */

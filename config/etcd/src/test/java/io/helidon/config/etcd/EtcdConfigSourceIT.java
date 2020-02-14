@@ -70,7 +70,7 @@ public class EtcdConfigSourceIT {
                                  .key("configuration")
                                  .api(version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                                 .pollingStrategy(EtcdWatchPollingStrategy::create)
+                                 .pollingStrategy(EtcdWatcher::create)
                                  .build())
                 .addParser(new HoconConfigParser())
                 .build();

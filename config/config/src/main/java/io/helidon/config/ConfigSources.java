@@ -39,7 +39,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
-import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.AbstractMpSource;
 import io.helidon.config.spi.AbstractSource;
 import io.helidon.config.spi.ConfigContext;
@@ -302,7 +301,7 @@ public final class ConfigSources {
      * @param path a directory path
      * @return new Builder instance
      */
-    public static DirectoryConfigSource.DirectoryBuilder directory(String path) {
+    public static DirectoryConfigSource.Builder directory(String path) {
         return DirectoryConfigSource.builder().path(Paths.get(path));
     }
 

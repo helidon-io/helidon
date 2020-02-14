@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;

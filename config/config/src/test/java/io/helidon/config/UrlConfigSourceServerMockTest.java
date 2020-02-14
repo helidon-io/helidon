@@ -39,7 +39,7 @@ import static com.xebialabs.restito.semantics.Action.stringContent;
 import static com.xebialabs.restito.semantics.Condition.get;
 import static com.xebialabs.restito.semantics.Condition.method;
 import static com.xebialabs.restito.semantics.Condition.uri;
-import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
+import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static org.glassfish.grizzly.http.Method.HEAD;
 import static org.glassfish.grizzly.http.util.HttpStatus.OK_200;
 import static org.hamcrest.MatcherAssert.assertThat;

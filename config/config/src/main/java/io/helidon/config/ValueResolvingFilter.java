@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -24,10 +24,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigFilters;
-import io.helidon.config.MissingValueException;
 import io.helidon.config.spi.ConfigFilter;
 
 /**
@@ -61,7 +57,7 @@ import io.helidon.config.spi.ConfigFilter;
  * {@code io.helidon.config.ConfigFilter} on the application's runtime classpath
  * to contain this line:
  * <pre>
- * {@code io.helidon.config.internal.ValueResolvingFilter}</pre>
+ * {@code io.helidon.config.ValueResolvingFilter}</pre>
  * The config system will then use the Java service loader mechanism to create and add this filter to
  * every {@code Config.Builder} automatically.
  * </li>

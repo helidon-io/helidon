@@ -24,7 +24,7 @@
 
     <Match>
         <!-- False positive. See https://github.com/spotbugs/spotbugs/issues/756 -->
-        <Class name="io.helidon.config.internal.PropertiesConfigParser"/>
+        <Class name="io.helidon.config.PropertiesConfigParser"/>
         <Method name="parse"/>
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>

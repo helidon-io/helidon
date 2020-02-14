@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Config internal {@link ThreadFactory} implementation to customize thread name.
  */
-public class ConfigThreadFactory implements ThreadFactory {
+class ConfigThreadFactory implements ThreadFactory {
 
     private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
     private final ThreadGroup group;
@@ -36,7 +36,7 @@ public class ConfigThreadFactory implements ThreadFactory {
      *
      * @param type name of type of thread factory used just to customize thread name
      */
-    public ConfigThreadFactory(String type) {
+    ConfigThreadFactory(String type) {
         SecurityManager s = System.getSecurityManager();
         group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
         namePrefix = "config-" + POOL_NUMBER.getAndIncrement() + ":" + type + "-";
@@ -55,5 +55,4 @@ public class ConfigThreadFactory implements ThreadFactory {
 
         return t;
     }
-
 }

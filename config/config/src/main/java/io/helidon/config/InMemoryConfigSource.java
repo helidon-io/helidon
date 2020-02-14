@@ -19,76 +19,83 @@ package io.helidon.config;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.config.spi.AbstractParsableConfigSource;
-import io.helidon.config.spi.ConfigContent;
+import io.helidon.config.spi.ConfigContent.NodeContent;
+import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.NodeConfigSource;
+import io.helidon.config.spi.ParsableSource;
 
 /**
  * In-memory implementation of config source.
  */
-class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
+class InMemoryConfigSource {
+    static ConfigSource create(String uri, NodeContent content) {
+        Objects.requireNonNull(uri, "uri cannot be null");
+        Objects.requireNonNull(content, "content cannot be null");
 
-    private final String uri;
-    private final ConfigContent content;
+        return new NodeInMemory(uri, content);
+    }
+    static ConfigSource create(String uri, ConfigParser.Content content, String mediaType) {
+        Objects.requireNonNull(uri, "uri cannot be null");
+        Objects.requireNonNull(content, "content cannot be null");
+        Objects.requireNonNull(mediaType, "media type cannot be null");
 
-    InMemoryConfigSource(InMemoryConfigSource.Builder builder) {
-        super(builder);
-
-        uri = builder.uri();
-        content = builder.content();
+        return new ParsableInMemory(uri, content, mediaType);
     }
 
-    @Override
-    protected String uid() {
-        return uri;
-    }
+    private static class InMemory implements ConfigSource {
+        private final String uid;
 
-    @Override
-    protected Optional<Object> dataStamp() {
-        return Optional.of(this);
-    }
-
-    @Override
-    protected ConfigContent content() throws ConfigException {
-        return content;
-    }
-
-    static Builder builder() {
-        return new Builder();
-    }
-
-    static final class Builder
-            extends AbstractParsableConfigSource.Builder<InMemoryConfigSource.Builder, Void, InMemoryConfigSource> {
-
-        private String uri;
-        private ConfigContent content;
-
-        Builder() {
-            super(Void.class);
-        }
-
-        Builder content(String uri, ConfigContent content) {
-            Objects.requireNonNull(uri, "uri cannot be null");
-            Objects.requireNonNull(content, "content cannot be null");
-
-            this.uri = uri;
-            this.content = content;
-            return this;
+        protected InMemory(String uid) {
+            this.uid = uid;
         }
 
         @Override
-        public InMemoryConfigSource build() {
-            Objects.requireNonNull(uri, "uri cannot be null");
-            Objects.requireNonNull(content, "content cannot be null");
+        public String description() {
+            return ConfigSource.super.description()
+                    + "[" + uid + "]";
+        }
+    }
 
-            return new InMemoryConfigSource(this);
+    private static final class NodeInMemory extends InMemory implements NodeConfigSource {
+        private final NodeContent content;
+
+        private NodeInMemory(String uid,  NodeContent nodeContent) {
+            super(uid);
+            this.content = nodeContent;
         }
 
-        private String uri() {
-            return uri;
+        @Override
+        public Optional<NodeContent> load() throws ConfigException {
+            return Optional.of(content);
+        }
+    }
+
+    private static final class ParsableInMemory extends InMemory implements ParsableSource {
+        private final ConfigParser.Content content;
+        private final String mediaType;
+
+        protected ParsableInMemory(String uid, ConfigParser.Content content, String mediaType) {
+            super(uid);
+            this.content = content;
+            this.mediaType = mediaType;
         }
 
-        private ConfigContent content() {
-            return content;
+        @Override
+        public Optional<ConfigParser.Content> content() throws ConfigException {
+            return Optional.of(content);
+        }
+
+        @Override
+        public Optional<ConfigParser> parser() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<String> mediaType() {
+            return Optional.of(mediaType);
         }
     }
 }
+
+

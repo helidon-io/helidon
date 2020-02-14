@@ -19,6 +19,8 @@ package io.helidon.config.internal;
 import java.util.List;
 
 import io.helidon.config.ConfigException;
+import io.helidon.config.ListNodeBuilderImpl;
+import io.helidon.config.ObjectNodeBuilderImpl;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;

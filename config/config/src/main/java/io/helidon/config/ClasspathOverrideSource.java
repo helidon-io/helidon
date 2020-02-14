@@ -23,8 +23,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import io.helidon.config.spi.BaseSource;
-import io.helidon.config.spi.BaseSourceBuilder;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
 

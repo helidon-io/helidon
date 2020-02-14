@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
