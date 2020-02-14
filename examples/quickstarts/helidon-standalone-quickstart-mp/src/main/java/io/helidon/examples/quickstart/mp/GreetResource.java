@@ -117,9 +117,7 @@ public class GreetResource {
             content = @Content(mediaType = "application/json",
                     schema = @Schema(type = SchemaType.STRING, example = "{\"greeting\" : \"Hola\"}")))
     @APIResponses({
-            @APIResponse(name = "normal", responseCode = "204", description =
-                    "Greeting " +
-                    "updated"),
+            @APIResponse(name = "normal", responseCode = "204", description = "Greeting updated"),
             @APIResponse(name = "missing 'greeting'", responseCode = "400",
                     description = "JSON did not contain setting for 'greeting'")})
     public Response updateGreeting(JsonObject jsonObject) {
