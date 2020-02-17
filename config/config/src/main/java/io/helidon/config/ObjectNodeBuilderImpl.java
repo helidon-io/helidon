@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.config.spi.ConfigNode;
@@ -89,6 +90,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @param node new node
      * @return modified builder
      */
+    @Override
     public ObjectNodeBuilderImpl addNode(String name, ConfigNode node) {
         members.put(tokenResolver().apply(name), wrap(node, tokenResolver()));
         return this;
@@ -136,6 +138,13 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
     @Override
     public ObjectNodeBuilderImpl value(String value) {
         this.value = value;
+        return this;
+    }
+
+    // this is a shortcut method to keep current fluent code
+    // even though value is now optional
+    ObjectNodeBuilderImpl value(Optional<String> value) {
+        value.ifPresent(this::value);
         return this;
     }
 

@@ -35,12 +35,11 @@ class InMemoryConfigSource {
 
         return new NodeInMemory(uri, content);
     }
-    static ConfigSource create(String uri, ConfigParser.Content content, String mediaType) {
+    static ConfigSource create(String uri, ConfigParser.Content content) {
         Objects.requireNonNull(uri, "uri cannot be null");
         Objects.requireNonNull(content, "content cannot be null");
-        Objects.requireNonNull(mediaType, "media type cannot be null");
 
-        return new ParsableInMemory(uri, content, mediaType);
+        return new ParsableInMemory(uri, content);
     }
 
     private static class InMemory implements ConfigSource {
@@ -73,12 +72,10 @@ class InMemoryConfigSource {
 
     private static final class ParsableInMemory extends InMemory implements ParsableSource {
         private final ConfigParser.Content content;
-        private final String mediaType;
 
-        protected ParsableInMemory(String uid, ConfigParser.Content content, String mediaType) {
+        protected ParsableInMemory(String uid, ConfigParser.Content content) {
             super(uid);
             this.content = content;
-            this.mediaType = mediaType;
         }
 
         @Override
@@ -93,7 +90,7 @@ class InMemoryConfigSource {
 
         @Override
         public Optional<String> mediaType() {
-            return Optional.of(mediaType);
+            return Optional.empty();
         }
     }
 }

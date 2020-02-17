@@ -17,12 +17,10 @@
 package io.helidon.config;
 
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.config.spi.AbstractOverrideSource;
 import io.helidon.config.spi.OverrideSource;
 
 /**
@@ -70,8 +68,7 @@ public final class OverrideSources {
      * @param resourceName a name of the resource
      * @return new Builder instance
      */
-    public static AbstractOverrideSource.Builder
-            <? extends AbstractOverrideSource.Builder<?, Path>, Path> classpath(String resourceName) {
+    public static ClasspathOverrideSource.Builder classpath(String resourceName) {
         return ClasspathOverrideSource.builder().resource(resourceName);
     }
 
@@ -81,8 +78,7 @@ public final class OverrideSources {
      * @param file a file with an override value map
      * @return an instance of builder
      */
-    public static AbstractOverrideSource.Builder
-            <? extends AbstractOverrideSource.Builder<?, Path>, Path> file(String file) {
+    public static FileOverrideSource.Builder file(String file) {
         return FileOverrideSource.builder().path(Paths.get(file));
     }
 
@@ -92,8 +88,7 @@ public final class OverrideSources {
      * @param url an URL with an override value map
      * @return an instance of builder
      */
-    public static AbstractOverrideSource.Builder
-            <? extends AbstractOverrideSource.Builder<?, URL>, URL> url(URL url) {
+    public static UrlOverrideSource.Builder url(URL url) {
         return UrlOverrideSource.builder().url(url);
     }
 

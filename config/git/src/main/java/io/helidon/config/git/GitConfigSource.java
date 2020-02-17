@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.BaseConfigSource;
+import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.FileSourceHelper;
@@ -62,7 +62,7 @@ import static java.util.Collections.singleton;
  * <p>
  * Config source is initialized by {@link GitConfigSourceBuilder}.
  */
-public class GitConfigSource extends BaseConfigSource
+public class GitConfigSource extends AbstractConfigSource
         implements ParsableSource, PollableSource<byte[]>, ParsableSource {
 
     private static final Logger LOGGER = Logger.getLogger(GitConfigSource.class.getName());

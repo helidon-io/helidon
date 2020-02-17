@@ -25,13 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -49,14 +43,10 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
     private final ConfigKeyImpl realKey;
     private final ConfigFactory factory;
     private final Type type;
-    private final Flow.Publisher<Config> changesPublisher;
     private final Context context;
     private final ConfigMapperManager mapperManager;
-    private volatile Flow.Subscriber<ConfigDiff> subscriber;
-    private final ReentrantReadWriteLock subscriberLock = new ReentrantReadWriteLock();
-    private final AtomicReference<Config> latestConfig = new AtomicReference<>();
-    private boolean useSystemProperties;
-    private boolean useEnvironmentVariables;
+    private final boolean useSystemProperties;
+    private final boolean useEnvironmentVariables;
 
     /**
      * Initializes Config implementation.
@@ -82,8 +72,27 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
         this.factory = factory;
         this.type = type;
 
-        changesPublisher = new FilteringConfigChangeEventPublisher(factory.changes());
         context = new NodeContextImpl();
+
+        boolean sysProps = false;
+        boolean envVars = false;
+        int index = 0;
+        for (ConfigSourceRuntimeBase configSource : factory.configSources()) {
+            if (index == 0 && configSource.isSystemProperties()) {
+                sysProps = true;
+            }
+            if (configSource.isEnvironmentVariables()) {
+                envVars = true;
+            }
+
+            if (sysProps && envVars) {
+                break;
+            }
+            index++;
+        }
+
+        this.useEnvironmentVariables = envVars;
+        this.useSystemProperties = sysProps;
     }
 
     /**
@@ -155,35 +164,12 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
         return asList(Config.class);
     }
 
-    void subscribe() {
-        try {
-            subscriberLock.readLock().lock();
-            if (subscriber == null) {
-                subscriberLock.readLock().unlock();
-                subscriberLock.writeLock().lock();
-                try {
-                    try {
-                        if (subscriber == null) {
-                            waitForSubscription(1, TimeUnit.SECONDS);
-                        }
-                    } finally {
-                        subscriberLock.readLock().lock();
-                    }
-                } finally {
-                    subscriberLock.writeLock().unlock();
-                }
-            }
-        } finally {
-            subscriberLock.readLock().unlock();
-        }
-    }
-
     /*
      * MicroProfile Config methods
      */
     @Override
     public <T> T getValue(String propertyName, Class<T> propertyType) {
-        Config config = latestConfig.get();
+        Config config = factory.context().last();
         try {
             return mpFindValue(config, propertyName, propertyType);
         } catch (MissingValueException e) {
@@ -206,7 +192,7 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
 
     @Override
     public Iterable<String> getPropertyNames() {
-        Set<String> keys = new HashSet<>(latestConfig.get()
+        Set<String> keys = new HashSet<>(factory.context().last()
                                                  .asMap()
                                                  .orElseGet(Collections::emptyMap)
                                                  .keySet());
@@ -220,7 +206,7 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
 
     @Override
     public Iterable<ConfigSource> getConfigSources() {
-        Config config = latestConfig.get();
+        Config config = factory.context().last();
         if (null == config) {
             // maybe we are in progress of initializing this config (e.g. filter processing)
             config = this;
@@ -289,41 +275,6 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
         return null;
     }
 
-    /**
-     * We should wait for a subscription, otherwise, we might miss some changes.
-     */
-    private void waitForSubscription(long timeout, TimeUnit unit) {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
-        subscriber = new Flow.Subscriber<>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-                subscribeLatch.countDown();
-            }
-
-            @Override
-            public void onNext(ConfigDiff item) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                LOGGER.log(Level.CONFIG, "Error while subscribing a supplier to the changes.", throwable);
-            }
-
-            @Override
-            public void onComplete() {
-                LOGGER.log(Level.CONFIG, "The config suppliers will no longer receive any change.");
-            }
-        };
-        factory.provider().changes().subscribe(subscriber);
-        try {
-            subscribeLatch.await(timeout, unit);
-        } catch (InterruptedException e) {
-            LOGGER.log(Level.CONFIG, "Waiting for a supplier subscription has been interrupted.", e);
-            Thread.currentThread().interrupt();
-        }
-    }
-
     private Config contextConfig(Config rootConfig) {
         return rootConfig
                 .get(AbstractConfigImpl.this.prefix)
@@ -333,127 +284,13 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
 
     @Override
     public void onChange(Consumer<Config> onChangeConsumer) {
-        changesPublisher.subscribe(new Flow.Subscriber<>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                // I want all
-                subscription.request(Long.MAX_VALUE);
-            }
-
-            @Override
-            public void onNext(Config item) {
-                onChangeConsumer.accept(item);
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-    }
-
-    void initMp() {
-        this.latestConfig.set(this);
-
-        List<io.helidon.config.spi.ConfigSource> configSources = factory.configSources();
-        if (configSources.isEmpty()) {
-            // if no config sources, then no changes
-            return;
-        }
-        if (configSources.size() == 1) {
-            if (configSources.get(0) == ConfigSources.EmptyConfigSourceHolder.EMPTY) {
-                // if the only config source is the empty one, then no changes
-                return;
-            }
-        }
-
-        io.helidon.config.spi.ConfigSource first = configSources.get(0);
-        if (first instanceof BuilderImpl.HelidonSourceWrapper) {
-            first = ((BuilderImpl.HelidonSourceWrapper) first).unwrap();
-        }
-
-        if (first instanceof ConfigSources.SystemPropertiesConfigSource) {
-            this.useSystemProperties = true;
-        }
-
-        for (io.helidon.config.spi.ConfigSource configSource : configSources) {
-            io.helidon.config.spi.ConfigSource it = configSource;
-            if (it instanceof BuilderImpl.HelidonSourceWrapper) {
-                it = ((BuilderImpl.HelidonSourceWrapper) it).unwrap();
-            }
-
-            if (it instanceof ConfigSources.EnvironmentVariablesConfigSource) {
-                // there is an env var config source
-                this.useEnvironmentVariables = true;
-                break;
-            }
-        }
-
-        onChange(latestConfig::set);
-    }
-
-    /**
-     * {@link Flow.Publisher} implementation that filters general {@link ConfigFactory#changes()} events to be wrapped by
-     * {@link FilteringConfigChangeEventSubscriber} for appropriate Config key and subscribers on the config node.
-     */
-    private class FilteringConfigChangeEventPublisher implements Flow.Publisher<Config> {
-
-        private Flow.Publisher<ConfigDiff> delegate;
-
-        private FilteringConfigChangeEventPublisher(Flow.Publisher<ConfigDiff> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super Config> subscriber) {
-            delegate.subscribe(new FilteringConfigChangeEventSubscriber(subscriber));
-        }
-
-    }
-
-    /**
-     * {@link Flow.Subscriber} wrapper implementation that filters general {@link ConfigFactory#changes()} events
-     * for appropriate Config key and subscribers on the config node.
-     *
-     * @see FilteringConfigChangeEventPublisher
-     */
-    private class FilteringConfigChangeEventSubscriber implements Flow.Subscriber<ConfigDiff> {
-
-        private final Flow.Subscriber<? super Config> delegate;
-        private Flow.Subscription subscription;
-
-        private FilteringConfigChangeEventSubscriber(Flow.Subscriber<? super Config> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
-            delegate.onSubscribe(subscription);
-        }
-
-        @Override
-        public void onNext(ConfigDiff event) {
-            //(3. fire just on case the sub-node has changed)
-            if (event.changedKeys().contains(AbstractConfigImpl.this.realKey)) {
-                delegate.onNext(AbstractConfigImpl.this.contextConfig(event.config()));
-            } else {
-                subscription.request(1);
-            }
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            delegate.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            delegate.onComplete();
-        }
+        factory.provider()
+                .onChange(event -> {
+                    // check if change contains this node
+                    if (event.changedKeys().contains(realKey)) {
+                        onChangeConsumer.accept(contextConfig(event.config()));
+                    }
+                });
     }
 
     /**
@@ -468,9 +305,6 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
 
         @Override
         public Config last() {
-            //the 'last config' behaviour is based on switched-on changes support
-            subscribe();
-
             return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.context().last());
         }
 

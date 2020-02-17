@@ -18,10 +18,6 @@ package io.helidon.config;
 
 import java.util.Map;
 
-import io.helidon.config.internal.AutoLoadedConfigFilter;
-import io.helidon.config.internal.AutoLoadedConfigHighPriority;
-import io.helidon.config.internal.AutoLoadedConfigPriority;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

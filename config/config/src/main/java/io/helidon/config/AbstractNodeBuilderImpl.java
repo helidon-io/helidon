@@ -36,6 +36,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     private final B thisBuilder;
     private Function<String, String> tokenResolver;
 
+    @SuppressWarnings("unchecked")
     AbstractNodeBuilderImpl(Function<String, String> tokenResolver) {
         this.tokenResolver = tokenResolver;
         thisBuilder = (B) this;
@@ -154,10 +155,10 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     }
 
     private void mergeValueMember(ValueNode member, MergingKey key, MergeableNode node, ID id) {
-        ObjectNode on = ObjectNodeBuilderImpl.create(Map.of(), tokenResolver).value(member.get()).build();
+        ObjectNode on = ObjectNodeBuilderImpl.create(Map.of(), tokenResolver).value(member.value()).build();
         ConfigNode merged = ObjectNodeBuilderImpl
                 .create(on, tokenResolver) // make copy of member
-                .value(on.get())
+                .value(on.value())
                 .deepMerge(key.rest(), node) // merge it with specified node
                 .build();
 
@@ -168,7 +169,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
         try {
             // deep merge of list with specified node
             ConfigNode merged = ListNodeBuilderImpl.from(member, tokenResolver) // make copy of member
-                    .value(member.get())
+                    .value(member.value())
                     .deepMerge(key.rest(), node) // merge it with specified node
                     .build();
             // updates/replaces original member associated by id with new merged value
@@ -183,7 +184,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
             // deep merge of object with specified node
             ConfigNode merged = ObjectNodeBuilderImpl
                     .create(member, tokenResolver) // make copy of member
-                    .value(member.get())
+                    .value(member.value())
                     .deepMerge(key.rest(), node) // merge it with specified node
                     .build();
             // updates/replaces original member associated by id with new merged value

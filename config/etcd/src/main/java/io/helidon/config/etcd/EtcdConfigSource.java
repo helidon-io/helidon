@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.BaseConfigSource;
+import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
@@ -47,7 +47,7 @@ import io.helidon.config.spi.WatchableSource;
  *
  * @see EtcdConfigSourceBuilder
  */
-public class EtcdConfigSource extends BaseConfigSource
+public class EtcdConfigSource extends AbstractConfigSource
         implements PollableSource<Long>, WatchableSource<EtcdEndpoint>, ParsableSource {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdConfigSource.class.getName());

@@ -38,7 +38,7 @@ import io.helidon.config.spi.WatchableSource;
  *
  * @see FileOverrideSource.Builder
  */
-public final class FileOverrideSource extends BaseSource
+public final class FileOverrideSource extends AbstractSource
         implements OverrideSource, PollableSource<byte[]>, WatchableSource<Path> {
 
     private static final Logger LOGGER = Logger.getLogger(FileOverrideSource.class.getName());
@@ -89,7 +89,7 @@ public final class FileOverrideSource extends BaseSource
     }
 
     @Override
-    public Optional<ChangeWatcher<?>> changeWatcher() {
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
         return super.changeWatcher();
     }
 
@@ -126,7 +126,7 @@ public final class FileOverrideSource extends BaseSource
      * <li>{@code mandatory} - is existence of configuration resource mandatory (by default) or is {@code optional}?</li>
      * </ul>
      */
-    public static final class Builder extends BaseSourceBuilder<Builder, Path>
+    public static final class Builder extends AbstractSourceBuilder<Builder, Path>
             implements PollableSource.Builder<Builder>,
                        WatchableSource.Builder<Builder, Path>,
                        io.helidon.common.Builder<FileOverrideSource> {

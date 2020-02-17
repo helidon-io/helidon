@@ -100,6 +100,23 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
         this.timeUnit = builder.timeUnit;
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.config.FileSystemWatcher}.
+     * @return a new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Create a new file watcher with default configuration.
+     *
+     * @return a new file watcher
+     */
+    public static FileSystemWatcher create() {
+        return builder().build();
+    }
+
     @Override
     public void start(Path target, Consumer<ChangeEvent<Path>> listener) {
         Monitor monitor = new Monitor(

@@ -49,8 +49,8 @@ public class ConfigMappersFailingTest {
     @ParameterizedTest
     @MethodSource("builtInMapperTypes")
     public void testMappingFails(Class<?> type) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                ConfigMapperManager.MapperProviders.create());
 
         String key = "config.key.with.wrong.format";
         Config config = Config.builder()

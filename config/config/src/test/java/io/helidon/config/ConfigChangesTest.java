@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.TestingConfigSource;
 
 import org.junit.jupiter.api.Test;
 

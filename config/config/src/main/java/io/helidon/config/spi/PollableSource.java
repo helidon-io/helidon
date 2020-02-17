@@ -47,8 +47,8 @@ public interface PollableSource<S> {
      * A builder for pollable source.
      *
      * @param <T> type of the builder, used when extending this builder
-     * @see io.helidon.config.BaseConfigSourceBuilder
-     * @see io.helidon.config.BaseConfigSource
+     * @see io.helidon.config.AbstractConfigSourceBuilder
+     * @see io.helidon.config.AbstractConfigSource
      */
     interface Builder<T extends Builder<T>> {
         T pollingStrategy(PollingStrategy pollingStrategy);

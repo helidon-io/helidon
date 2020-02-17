@@ -19,7 +19,7 @@ package io.helidon.config.etcd;
 import java.net.URI;
 
 import io.helidon.common.Builder;
-import io.helidon.config.BaseConfigSourceBuilder;
+import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClientFactory;
@@ -48,7 +48,7 @@ import io.helidon.config.spi.WatchableSource;
  * One of {@code media-type} and {@code parser} properties must be set to be clear how to parse the content. If both of them
  * are set, then {@code parser} has precedence.
  */
-public final class EtcdConfigSourceBuilder extends BaseConfigSourceBuilder<EtcdConfigSourceBuilder, EtcdEndpoint>
+public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<EtcdConfigSourceBuilder, EtcdEndpoint>
         implements PollableSource.Builder<EtcdConfigSourceBuilder>,
                    WatchableSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint>,
                    ParsableSource.Builder<EtcdConfigSourceBuilder>,

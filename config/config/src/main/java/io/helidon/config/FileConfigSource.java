@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.FileSourceHelper.DataAndDigest;
-import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -39,7 +38,7 @@ import io.helidon.config.spi.WatchableSource;
  *
  * @see io.helidon.config.FileConfigSource.Builder
  */
-public class FileConfigSource extends BaseConfigSource
+public class FileConfigSource extends AbstractConfigSource
         implements WatchableSource<Path>, ParsableSource, PollableSource<byte[]> {
 
     private static final Logger LOGGER = Logger.getLogger(FileConfigSource.class.getName());
@@ -65,7 +64,7 @@ public class FileConfigSource extends BaseConfigSource
      * <ul>
      * <li>{@code path} - type {@link Path}</li>
      * </ul>
-     * Optional {@code properties}: see {@link AbstractParsableConfigSource.Builder#config(Config)}.
+     * Optional {@code properties}: see {@link AbstractConfigSourceBuilder#config(Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -74,7 +73,7 @@ public class FileConfigSource extends BaseConfigSource
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#file(String)
-     * @see AbstractParsableConfigSource.Builder#config(Config)
+     * @see AbstractConfigSourceBuilder#config(Config)
      */
     public static FileConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return FileConfigSource.builder()
@@ -147,7 +146,7 @@ public class FileConfigSource extends BaseConfigSource
     }
 
     @Override
-    public Optional<ChangeWatcher<?>> changeWatcher() {
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
         return super.changeWatcher();
     }
 
@@ -169,7 +168,7 @@ public class FileConfigSource extends BaseConfigSource
      * <p>
      * If {@code media-type} not set it tries to guess it from file extension.
      */
-    public static final class Builder extends BaseConfigSourceBuilder<Builder, Path>
+    public static final class Builder extends AbstractConfigSourceBuilder<Builder, Path>
             implements PollableSource.Builder<Builder>,
                        WatchableSource.Builder<Builder, Path>,
                        ParsableSource.Builder<Builder>,

@@ -23,7 +23,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.util.Objects;
 
 import io.helidon.common.Builder;
-import io.helidon.config.BaseConfigSourceBuilder;
+import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
@@ -68,7 +68,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
  * are set, then {@code parser} has precedence.
  */
 public final class GitConfigSourceBuilder
-        extends BaseConfigSourceBuilder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint>
+        extends AbstractConfigSourceBuilder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint>
         implements Builder<GitConfigSource>,
                    PollableSource.Builder<GitConfigSourceBuilder>,
                    ParsableSource.Builder<GitConfigSourceBuilder>,

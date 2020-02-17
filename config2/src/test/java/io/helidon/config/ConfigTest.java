@@ -92,10 +92,8 @@ class ConfigTest {
     private ConfigSource lazySource(Map<String, String> properties) {
         return new ConfigSource.LazySource() {
             @Override
-            public Optional<ConfigNode> node(Key key) {
-                String keyString = key.toString();
-
-                return Optional.ofNullable(properties.get(keyString))
+            public Optional<ConfigNode> node(String key) {
+                return Optional.ofNullable(properties.get(key))
                         .map(ValueNodeImpl::create);
             }
         };

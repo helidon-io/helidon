@@ -157,7 +157,7 @@ public interface ConfigSource {
      */
     @FunctionalInterface
     interface LazySource extends ConfigSource {
-        Optional<ConfigNode> node(Key key);
+        Optional<ConfigNode> node(String key);
     }
 
     /**

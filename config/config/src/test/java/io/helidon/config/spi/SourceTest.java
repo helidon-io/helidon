@@ -16,10 +16,6 @@
 
 package io.helidon.config.spi;
 
-import java.util.Optional;
-
-import io.helidon.config.ConfigException;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -38,16 +34,12 @@ public class SourceTest {
     }
 
     @Test
-    public void testDescriptionLambda() {
-        Source source = Optional::empty;
+    public void testDescriptionAnonymous() {
+        Source source = new Source() {};
 
         assertThat(source.description(), is(source.getClass().getSimpleName()));
     }
 
-    private class TestSource implements Source {
-        @Override
-        public Optional load() throws ConfigException {
-            return Optional.empty();
-        }
+    private static class TestSource implements Source {
     }
 }

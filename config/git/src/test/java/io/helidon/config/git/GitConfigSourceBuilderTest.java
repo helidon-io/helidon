@@ -486,7 +486,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 return;
             }
             System.out.println(item);
-            if (((ConfigNode.ValueNode) item.get().get("greeting")).get().equals("hi")) {
+            if (((ConfigNode.ValueNode) item.get().get("greeting")).value().equals("hi")) {
                 changeLatch.countDown();
             }
         }

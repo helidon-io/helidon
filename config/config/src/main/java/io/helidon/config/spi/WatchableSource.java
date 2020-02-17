@@ -49,15 +49,15 @@ public interface WatchableSource<T> {
      *
      * @return change watcher if one is configured on this source
      */
-    Optional<ChangeWatcher<?>> changeWatcher();
+    Optional<ChangeWatcher<Object>> changeWatcher();
 
     /**
      * A builder for a watchable source.
      *
      * @param <B> type of the builder, used when extending this builder ({@code MyBuilder implements Builder<MyBuilder, Path>}
      * @param <T> type of the target of the source
-     * @see io.helidon.config.BaseConfigSourceBuilder
-     * @see io.helidon.config.BaseConfigSource
+     * @see io.helidon.config.AbstractConfigSourceBuilder
+     * @see io.helidon.config.AbstractConfigSource
      */
     interface Builder<B extends Builder<B, T>, T> {
         /**

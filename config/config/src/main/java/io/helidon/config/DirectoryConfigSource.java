@@ -35,10 +35,8 @@ import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 
 /**
  * {@link ConfigSource} implementation that loads configuration content from a directory on a filesystem.
- *
- * @see io.helidon.config.spi.AbstractSource.Builder
  */
-public class DirectoryConfigSource extends BaseConfigSource
+public class DirectoryConfigSource extends AbstractConfigSource
         implements PollableSource<Instant>,
                    WatchableSource<Path>,
                    NodeConfigSource {
@@ -61,7 +59,7 @@ public class DirectoryConfigSource extends BaseConfigSource
      * <li>{@code path} - type {@link Path}</li>
      * </ul>
      * Optional {@code properties}: see
-     * {@link io.helidon.config.spi.AbstractParsableConfigSource.Builder#config(Config)}.
+     * {@link AbstractConfigSourceBuilder#config(Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -70,7 +68,7 @@ public class DirectoryConfigSource extends BaseConfigSource
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#directory(String)
-     * @see io.helidon.config.spi.AbstractParsableConfigSource.Builder#config(Config)
+     * @see AbstractConfigSourceBuilder#config(Config)
      */
     public static DirectoryConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return builder().config(metaConfig).build();
@@ -101,7 +99,7 @@ public class DirectoryConfigSource extends BaseConfigSource
     }
 
     @Override
-    public Optional<ChangeWatcher<?>> changeWatcher() {
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
         return super.changeWatcher();
     }
 
@@ -153,7 +151,7 @@ public class DirectoryConfigSource extends BaseConfigSource
      * {@inheritDoc}
      * <p>
      */
-    public static final class Builder extends BaseConfigSourceBuilder<Builder, Path>
+    public static final class Builder extends AbstractConfigSourceBuilder<Builder, Path>
                 implements PollableSource.Builder<Builder>,
                            WatchableSource.Builder<Builder, Path>,
                            io.helidon.common.Builder<DirectoryConfigSource> {

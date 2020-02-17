@@ -41,8 +41,8 @@ public class BuilderImplMappersTest {
     public void testUserDefinedHasPrecedenceInteger() {
         MapperProviders providers = MapperProviders.create();
         providers.add(() -> Map.of(Integer.class, config -> 42));
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               providers);
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                providers);
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .build();
@@ -55,8 +55,8 @@ public class BuilderImplMappersTest {
     public void testUserDefinedHasPrecedenceOptionalInt() {
         MapperProviders providers = MapperProviders.create();
         providers.add(() -> Map.of(OptionalInt.class, config -> OptionalInt.of(42)));
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               providers);
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                providers);
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .build();

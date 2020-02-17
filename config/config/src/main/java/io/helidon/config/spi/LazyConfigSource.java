@@ -18,8 +18,6 @@ package io.helidon.config.spi;
 
 import java.util.Optional;
 
-import io.helidon.config.Config;
-
 /**
  * A source that is not capable of loading all keys at once.
  * Even though such a source can be used in Helidon Config, there are limitations to its use.
@@ -38,5 +36,5 @@ public interface LazyConfigSource {
      * @param key config key to obtain
      * @return value of the node if available in the source
      */
-    Optional<ConfigNode> node(Config.Key key);
+    Optional<ConfigNode> node(String key);
 }

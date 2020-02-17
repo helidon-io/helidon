@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.TestingConfigSource;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

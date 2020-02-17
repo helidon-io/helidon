@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -66,7 +67,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
      */
     public static ObjectNodeImpl wrap(ObjectNode objectNode, Function<String, String> resolveTokenFunction) {
         return ObjectNodeBuilderImpl.create(objectNode, resolveTokenFunction)
-                .value(objectNode.get())
+                .value(objectNode.value())
                 .build();
     }
 
@@ -110,7 +111,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
 
     private MergeableNode mergeWithValueNode(ValueNodeImpl node) {
         ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(members, resolveTokenFunction);
-        builder.value(node.get());
+        builder.value(node.value());
 
         return builder.build();
     }
@@ -163,7 +164,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
     }
 
     @Override
-    public String get() {
-        return value;
+    public Optional<String> value() {
+        return Optional.of(value);
     }
 }

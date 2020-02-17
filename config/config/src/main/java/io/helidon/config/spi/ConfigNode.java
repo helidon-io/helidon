@@ -18,7 +18,7 @@ package io.helidon.config.spi;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.Optional;
 
 import io.helidon.config.ListNodeBuilderImpl;
 import io.helidon.config.ObjectNodeBuilderImpl;
@@ -27,13 +27,20 @@ import io.helidon.config.ValueNodeImpl;
 /**
  * Marker interface identifying a config node implementation.
  */
-public interface ConfigNode extends Supplier<String> {
+public interface ConfigNode {
     /**
      * Get the type of this node.
      *
      * @return NodeType this node represents
      */
     NodeType nodeType();
+
+    /**
+     * Get the direct value of this config node. Any node type can have a direct value.
+     *
+     * @return a value if present, {@code empty} otherwise
+     */
+    Optional<String> value();
 
     /**
      * Base types of config nodes.
@@ -63,6 +70,12 @@ public interface ConfigNode extends Supplier<String> {
         default NodeType nodeType() {
             return NodeType.VALUE;
         }
+
+        /**
+         * Get the value of this value node.
+         * @return string with the node value
+         */
+        String get();
 
         /**
          * Create new instance of the {@link ValueNode} from specified String {@code value}.
@@ -253,6 +266,15 @@ public interface ConfigNode extends Supplier<String> {
              */
             ObjectNode build();
 
+            /**
+             * Add a config node.
+             * The method will determine the type of the node and add it to builder.
+             *
+             * @param key key of the node
+             * @param node node to be added
+             * @return modified builder
+             */
+            Builder addNode(String key, ConfigNode node);
         }
     }
 

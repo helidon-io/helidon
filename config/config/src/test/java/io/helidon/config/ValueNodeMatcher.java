@@ -41,7 +41,7 @@ public class ValueNodeMatcher extends BaseMatcher<ConfigNode> {
     @Override
     public boolean matches(Object actualValue) {
         if (actualValue instanceof ConfigNode.ValueNode) {
-            return expectedValue.equals(((ConfigNode.ValueNode) actualValue).get());
+            return expectedValue.equals(((ConfigNode.ValueNode) actualValue).value());
         }
         return false;
     }

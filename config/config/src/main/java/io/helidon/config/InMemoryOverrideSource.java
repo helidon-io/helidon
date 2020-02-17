@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.config.spi.AbstractOverrideSource;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
 
@@ -55,14 +54,12 @@ public class InMemoryOverrideSource implements OverrideSource {
     /**
      * Fluent API builder for {@link io.helidon.config.InMemoryOverrideSource}.
      */
-    public static final class Builder extends AbstractOverrideSource.Builder<InMemoryOverrideSource.Builder, Void> {
+    public static final class Builder implements io.helidon.common.Builder<InMemoryOverrideSource> {
 
         private OverrideData overrideData;
         private List<Map.Entry<String, String>> overrideWildcards;
 
         Builder(List<Map.Entry<String, String>> overrideWildcards) {
-            super(Void.class);
-
             Objects.requireNonNull(overrideWildcards, "overrideValues cannot be null");
 
             this.overrideWildcards = overrideWildcards;

@@ -101,8 +101,8 @@ public class ConfigMappersTest {
 
     @Test
     public void testEssentialMappers() {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of(
@@ -120,8 +120,8 @@ public class ConfigMappersTest {
     }
 
     private <T> void assertMapper(String stringValue, Class<T> type, T expectedValue) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of("key", stringValue)))
@@ -208,8 +208,8 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersPattern() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
@@ -221,8 +221,8 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersRootProperties() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                ConfigMapperManager.MapperProviders.create());
         Config config = createConfig();
 
         Properties rootProperties = manager.map(config, Properties.class);
@@ -236,8 +236,8 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersSubNodeProperties() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(
+                ConfigMapperManager.MapperProviders.create());
         Config config = createConfig().get("key2");
 
         Properties key2Properties = manager.map(config, Properties.class);

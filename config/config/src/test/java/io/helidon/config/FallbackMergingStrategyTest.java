@@ -24,6 +24,7 @@ import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.FallbackMergingStrategy;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
- * Tests {@link FallbackMergingStrategy}.
+ * Tests {@link io.helidon.config.spi.FallbackMergingStrategy}.
  */
 public class FallbackMergingStrategyTest {
 

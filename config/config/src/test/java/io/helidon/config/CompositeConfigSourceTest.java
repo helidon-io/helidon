@@ -26,12 +26,13 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.spi.TestingParsableConfigSource;
+import io.helidon.config.spi.MergingStrategy;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +41,6 @@ import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -566,8 +566,8 @@ public class CompositeConfigSourceTest {
     // helpers
     //
 
-    public static ConfigSources.CompositeBuilder initBuilder() {
-        return ConfigSources.create(
+    public static List<Supplier<? extends ConfigSource>> sources() {
+        return List.of(
                 ConfigSources.create(ObjectNode.builder()
                                              .addValue("prop1", "source-1")
                                              .build()),
@@ -581,7 +581,7 @@ public class CompositeConfigSourceTest {
                                              .build()));
     }
 
-    private static class UseTheLastObjectNodeMergingStrategy implements ConfigSources.MergingStrategy {
+    private static class UseTheLastObjectNodeMergingStrategy implements MergingStrategy {
         @Override
         public ObjectNode merge(List<ObjectNode> rootNodes) {
             return rootNodes.get(rootNodes.size() - 1);

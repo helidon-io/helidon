@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
@@ -83,9 +84,18 @@ public final class MetaConfig {
      * @param metaConfig meta configuration of a polling strategy
      * @return a function that creates a polling strategy instance for an instance of target type
      */
-    public static Function<Object, PollingStrategy> pollingStrategy(Config metaConfig) {
+    public static PollingStrategy pollingStrategy(Config metaConfig) {
         return MetaProviders.pollingStrategy(metaConfig.get("type").asString().get(),
                                              metaConfig.get("properties"));
+    }
+
+    public static ChangeWatcher<?> changeWatcher(Config metaConfig) {
+        String type = metaConfig.get("type").asString().get();
+        ChangeWatcher<?> changeWatcher = MetaProviders.changeWatcher(type, metaConfig.get("properties"));
+
+        LOGGER.fine(() -> "Loaded change watcher of type \"" + type + "\", class: " + changeWatcher.getClass().getName());
+
+        return changeWatcher;
     }
 
     /**
@@ -96,8 +106,7 @@ public final class MetaConfig {
      */
     public static RetryPolicy retryPolicy(Config metaConfig) {
         String type = metaConfig.get("type").asString().get();
-        RetryPolicy retryPolicy = MetaProviders.retryPolicy(type,
-                                                            metaConfig.get("properties"));
+        RetryPolicy retryPolicy = MetaProviders.retryPolicy(type, metaConfig.get("properties"));
 
         LOGGER.fine(() -> "Loaded retry policy of type \"" + type + "\", class: " + retryPolicy.getClass().getName());
 
@@ -105,21 +114,33 @@ public final class MetaConfig {
     }
 
     /**
-     * Load a config source based on its meta configuration.
+     * Load a config source (or config sources) based on its meta configuration.
      * The metaConfig must contain a key {@code type} that defines the type of the source to be found via providers, and
      *   a key {@code properties} with configuration of the config sources
      * @param sourceMetaConfig meta configuration of a config source
      * @return config source instance
      * @see Config.Builder#config(Config)
      */
-    public static ConfigSource configSource(Config sourceMetaConfig) {
+    public static List<ConfigSource> configSource(Config sourceMetaConfig) {
         String type = sourceMetaConfig.get("type").asString().get();
-        ConfigSource source = MetaProviders.configSource(type,
-                                                         sourceMetaConfig.get("properties"));
+        boolean multiSource = sourceMetaConfig.get("multi-source").asBoolean().orElse(false);
 
-        LOGGER.fine(() -> "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
+        Config sourceProperties = sourceMetaConfig.get("properties");
 
-        return source;
+        if (multiSource) {
+            List<ConfigSource> sources = MetaProviders.configSources(type, sourceProperties);
+
+            LOGGER.fine(() -> "Loaded sources of type \"" + type + "\", values: " + sources);
+
+            return sources;
+        } else {
+            ConfigSource source = MetaProviders.configSource(type, sourceProperties);
+
+            LOGGER.fine(() -> "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
+
+            return List.of(source);
+        }
+
     }
 
     // override config source
@@ -138,7 +159,7 @@ public final class MetaConfig {
 
         metaConfig.get("sources")
                 .asNodeList()
-                .ifPresent(list -> list.forEach(it -> configSources.add(MetaConfig.configSource(it))));
+                .ifPresent(list -> list.forEach(it -> configSources.addAll(MetaConfig.configSource(it))));
 
         return configSources;
     }

@@ -58,8 +58,8 @@ public class HybridNodeTest {
         ConfigNode.ObjectNode objectNode = mapConfigSource.load().get();
 
         assertThat(objectNode.entrySet(), hasSize(1));
-        assertThat(((ConfigNode.ObjectNode) objectNode.get("app")).get("port").get(), is("8080"));
-        assertThat(objectNode.get("app").get(), is("app-name"));
+        assertThat(((ConfigNode.ObjectNode) objectNode.get("app")).get("port").value(), is("8080"));
+        assertThat(objectNode.get("app").value(), is("app-name"));
     }
 
     @Test

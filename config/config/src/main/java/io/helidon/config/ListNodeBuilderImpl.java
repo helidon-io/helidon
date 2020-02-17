@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.config.spi.ConfigNode;
@@ -93,6 +94,13 @@ public class ListNodeBuilderImpl extends AbstractNodeBuilderImpl<Integer, ListNo
     @Override
     public ListNodeBuilderImpl value(String value) {
         this.value = value;
+        return this;
+    }
+
+    // this is a shortcut method to keep current fluent code
+    // even though value is now optional
+    ListNodeBuilderImpl value(Optional<String> value) {
+        value.ifPresent(this::value);
         return this;
     }
 

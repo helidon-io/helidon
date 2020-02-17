@@ -42,7 +42,7 @@ public final class PrefixedConfigSource implements ConfigSource,
 
     private final String key;
     private final ConfigSource source;
-    private BiConsumer<Config.Key, ConfigNode> listener;
+    private BiConsumer<String, ConfigNode> listener;
     private ConfigSourceRuntime sourceRuntime;
 
     private PrefixedConfigSource(String key, ConfigSource source) {
@@ -63,7 +63,7 @@ public final class PrefixedConfigSource implements ConfigSource,
      */
     public static PrefixedConfigSource create(Config metaConfig) {
         String prefix = metaConfig.get(KEY_KEY).asString().orElse("");
-        ConfigSource configSource = MetaConfig.configSource(metaConfig);
+        ConfigSource configSource = MetaConfig.configSource(metaConfig).get(0);
 
         return create(prefix, configSource);
     }
@@ -100,7 +100,7 @@ public final class PrefixedConfigSource implements ConfigSource,
     }
 
     @Override
-    public void onChange(BiConsumer<Config.Key, ConfigNode> changedNode) {
+    public void onChange(BiConsumer<String, ConfigNode> changedNode) {
         this.listener = changedNode;
     }
 

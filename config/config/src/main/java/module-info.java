@@ -34,8 +34,6 @@ module io.helidon.config {
     exports io.helidon.config;
     exports io.helidon.config.spi;
 
-    exports io.helidon.config.internal to io.helidon.config.git;
-
     uses io.helidon.config.spi.ConfigMapperProvider;
     uses io.helidon.config.spi.ConfigParser;
     uses io.helidon.config.spi.ConfigFilter;
@@ -47,6 +45,7 @@ module io.helidon.config {
     uses org.eclipse.microprofile.config.spi.ConfigSource;
     uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
     uses org.eclipse.microprofile.config.spi.Converter;
+    uses io.helidon.config.spi.ChangeWatcherProvider;
 
     provides io.helidon.config.spi.ConfigParser with PropertiesConfigParser;
     provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.config.MpConfigProviderResolver;

@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import io.helidon.config.spi.AbstractOverrideSource;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.ConfigParser;
@@ -38,10 +37,10 @@ import io.helidon.config.spi.WatchableSource;
  * {@link io.helidon.config.spi.OverrideSource} implementation that loads configuration override content from specified
  * endpoint URL.
  *
- * @see AbstractOverrideSource.Builder
+ * @see AbstractSource
  * @see OverrideSources
  */
-public class UrlOverrideSource extends BaseSource
+public class UrlOverrideSource extends AbstractSource
         implements OverrideSource, PollableSource<Instant>, WatchableSource<URL> {
 
     private static final Logger LOGGER = Logger.getLogger(UrlOverrideSource.class.getName());
@@ -97,7 +96,7 @@ public class UrlOverrideSource extends BaseSource
     }
 
     @Override
-    public Optional<ChangeWatcher<?>> changeWatcher() {
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
         return super.changeWatcher();
     }
 
@@ -154,7 +153,7 @@ public class UrlOverrideSource extends BaseSource
      * If {@code media-type} not set it uses HTTP response header {@code content-type}.
      * If {@code media-type} not returned it tries to guess it from url suffix.
      */
-    public static final class Builder extends BaseSourceBuilder<Builder, URL>
+    public static final class Builder extends AbstractSourceBuilder<Builder, URL>
             implements PollableSource.Builder<Builder>,
                        WatchableSource.Builder<Builder, URL>,
                        io.helidon.common.Builder<UrlOverrideSource> {

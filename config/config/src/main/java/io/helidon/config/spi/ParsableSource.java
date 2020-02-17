@@ -57,8 +57,8 @@ public interface ParsableSource extends Source {
      * A builder for a parsable source.
      *
      * @param <B> type of the builder, used when extending this builder ({@code MyBuilder implements Builder<MyBuilder>}
-     * @see io.helidon.config.BaseConfigSourceBuilder
-     * @see io.helidon.config.BaseConfigSource
+     * @see io.helidon.config.AbstractConfigSourceBuilder
+     * @see io.helidon.config.AbstractConfigSource
      */
     interface Builder<B extends Builder<B>> extends ConfigSource.Builder<B> {
         /**

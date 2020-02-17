@@ -18,8 +18,6 @@ package io.helidon.config.spi;
 
 import java.util.function.BiConsumer;
 
-import io.helidon.config.Config;
-
 /**
  * A source that supports notifications when changed.
  */
@@ -28,7 +26,8 @@ public interface EventConfigSource {
      * Register a change listener.
      *
      * @param changedNode the key and node of the configuration that changed. This may be the whole config tree, or a specific
-     *                    node depending on how fine grained the detection mechanism is
+     *                    node depending on how fine grained the detection mechanism is. To notify of a whole node being changed,
+     *                    use empty string as a key
      */
-    void onChange(BiConsumer<Config.Key, ConfigNode> changedNode);
+    void onChange(BiConsumer<String, ConfigNode> changedNode);
 }

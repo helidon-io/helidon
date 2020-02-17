@@ -79,9 +79,9 @@ public interface Source {
     /**
      * Configurable options of a {@link io.helidon.config.spi.Source}.
      *
-     * @param <T> type implementation class of this interface
+     * @param <B> type implementation class of this interface
      */
-    interface Builder<T extends Builder<T>> {
+    interface Builder<B extends Builder<B>> {
         /**
          * Configure a retry policy to be used with this source.
          * If none is configured, the source is invoked directly with no retries.
@@ -89,15 +89,26 @@ public interface Source {
          * @param policy retry policy to use
          * @return  updated builder instance
          */
-        T retryPolicy(RetryPolicy policy);
+        B retryPolicy(RetryPolicy policy);
 
         /**
          * Whether the source is optional or not.
          * When configured to be optional, missing underlying data do not cause an exception to be raised.
          *
          * @param optional {@code true} when this source should be optional
-         * @return updated builder instace
+         * @return updated builder instance
          */
-        T optional(boolean optional);
+        B optional(boolean optional);
+
+        /**
+         * Configure this source to be optional.
+         * <p>
+         * Same as calling {@link #optional(boolean) optional(true)}.
+         *
+         * @return updated buidler instance
+         */
+        default B optional() {
+            return optional(true);
+        }
     }
 }

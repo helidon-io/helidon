@@ -31,7 +31,7 @@ import io.helidon.config.spi.OverrideSource;
  *
  * @see io.helidon.config.spi.Source.Builder
  */
-public class ClasspathOverrideSource extends BaseSource implements OverrideSource {
+public class ClasspathOverrideSource extends AbstractSource implements OverrideSource {
     private final String resource;
     private final URL resourceUrl;
 
@@ -96,7 +96,7 @@ public class ClasspathOverrideSource extends BaseSource implements OverrideSourc
      * If the {@code OverrideSource} is {@code mandatory} and the {@code resource} does not exist
      * then {@link OverrideSource#load} throws {@link ConfigException}.
      */
-    public static final class Builder extends BaseSourceBuilder<Builder, Void>
+    public static final class Builder extends AbstractSourceBuilder<Builder, Void>
             implements io.helidon.common.Builder<ClasspathOverrideSource> {
 
         private URL url;

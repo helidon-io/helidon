@@ -27,7 +27,6 @@ import java.util.Optional;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;
@@ -37,8 +36,8 @@ import io.helidon.config.spi.ParsableSource;
  * {@link ConfigSource} implementation that loads configuration content from a resource on a classpath.
  * Classpath config source does not support changes (neither through polling nor through change notifications).
  */
-public class ClasspathConfigSource extends BaseConfigSource implements ConfigSource,
-                                                                       ParsableSource {
+public class ClasspathConfigSource extends AbstractConfigSource implements ConfigSource,
+                                                                           ParsableSource {
     private final String resource;
     private final URL resourceUrl;
     private final LazyValue<Optional<String>> mediaType;
@@ -49,7 +48,7 @@ public class ClasspathConfigSource extends BaseConfigSource implements ConfigSou
         this.resource = builder.resource;
         this.resourceUrl = builder.url;
 
-         mediaType = LazyValue.create(() -> {
+        mediaType = LazyValue.create(() -> {
             if (null == resourceUrl) {
                 return MediaTypes.detectType(resource);
             } else {
@@ -65,7 +64,7 @@ public class ClasspathConfigSource extends BaseConfigSource implements ConfigSou
      * <ul>
      * <li>{@code resource} - type {@code String}</li>
      * </ul>
-     * Optional {@code properties}: see {@link AbstractParsableConfigSource.Builder#config(io.helidon.config.Config)}.
+     * Optional {@code properties}: see {@link AbstractConfigSourceBuilder#config(io.helidon.config.Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -74,7 +73,7 @@ public class ClasspathConfigSource extends BaseConfigSource implements ConfigSou
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#classpath(String)
-     * @see AbstractParsableConfigSource.Builder#config(Config)
+     * @see AbstractConfigSourceBuilder#config(Config)
      */
     public static ClasspathConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return builder()
@@ -96,30 +95,52 @@ public class ClasspathConfigSource extends BaseConfigSource implements ConfigSou
      * Create config source for each resource on the classpath.
      *
      * @param resource resource to find
-     * @return a collection of sources for each resource present on the classpath
+     * @return a collection of sources for each resource present on the classpath, always at least one
      */
     public static Collection<? super ClasspathConfigSource> createAll(String resource) {
-        String cleaned = resource.startsWith("/") ? resource.substring(1) : resource;
 
-        try {
-            Enumeration<URL> resources = Thread.currentThread()
-                    .getContextClassLoader()
-                    .getResources(cleaned);
+        Enumeration<URL> resources = findAllResources(resource);
 
-            if (resources.hasMoreElements()) {
-                List<? super ClasspathConfigSource> sources = new LinkedList<>();
-                while (resources.hasMoreElements()) {
-                    URL url = resources.nextElement();
-                    sources.add(builder().url(url).build());
-                }
-                return sources;
-            } else {
-                // there is none - let the default source handle it, to manage optional vs. mandatory
-                // with configuration and not an empty list
-                return List.of(create(resource));
+        if (resources.hasMoreElements()) {
+            List<? super ClasspathConfigSource> sources = new LinkedList<>();
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                sources.add(builder().url(url).build());
             }
-        } catch (IOException e) {
-            throw new ConfigException("Could not access config resource " + resource, e);
+            return sources;
+        } else {
+            // there is none - let the default source handle it, to manage optional vs. mandatory
+            // with configuration and not an empty list
+            return List.of(create(resource));
+        }
+    }
+
+    /**
+     * Create config source for each resource on the classpath.
+     *
+     * @param metaConfig meta configuration of the config source
+     * @return a collection of sources for each resource present on the classpath
+     */
+    public static List<ConfigSource> createAll(Config metaConfig) {
+        // this must fail if the resource is not defined
+        String resource = metaConfig.get("resource").asString().get();
+        Enumeration<URL> resources = findAllResources(resource);
+
+        if (resources.hasMoreElements()) {
+            List<ConfigSource> sources = new LinkedList<>();
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                sources.add(builder()
+                                    .config(metaConfig)
+                                    // url must be configured after meta config, to override the default
+                                    .url(url)
+                                    .build());
+            }
+            return sources;
+        } else {
+            // there is none - let the default source handle it, to manage optional vs. mandatory
+            // with configuration and not an empty list
+            return List.of(create(metaConfig));
         }
     }
 
@@ -173,6 +194,17 @@ public class ClasspathConfigSource extends BaseConfigSource implements ConfigSou
         return super.parser();
     }
 
+    private static Enumeration<URL> findAllResources(String resource) {
+        String cleaned = resource.startsWith("/") ? resource.substring(1) : resource;
+        try {
+            return Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResources(cleaned);
+        } catch (IOException e) {
+            throw new ConfigException("Could not access config resource " + resource, e);
+        }
+    }
+
     /**
      * Classpath ConfigSource Builder.
      * <p>
@@ -189,7 +221,7 @@ public class ClasspathConfigSource extends BaseConfigSource implements ConfigSou
      * <p>
      * If {@code media-type} not set it tries to guess it from resource extension.
      */
-    public static final class Builder extends BaseConfigSourceBuilder<Builder, Void>
+    public static final class Builder extends AbstractConfigSourceBuilder<Builder, Void>
             implements ParsableSource.Builder<Builder>, io.helidon.common.Builder<ClasspathConfigSource> {
 
         private URL url;

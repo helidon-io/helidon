@@ -16,8 +16,6 @@
 
 package io.helidon.config.spi;
 
-import java.util.Optional;
-
 import io.helidon.config.ConfigSourceRuntime;
 
 /**
@@ -28,29 +26,8 @@ import io.helidon.config.ConfigSourceRuntime;
  * interfaces to share common information.
  */
 public interface ConfigContext {
-
     /**
-     * Returns the first appropriate {@link ConfigParser} instance that supports
-     * the specified
-     * {@link ConfigContent#mediaType() content media type}.
-     * <p>
-     * Note that the application can explicitly register parsers with a builder
-     * by invoking the
-     * {@link io.helidon.config.Config.Builder#addParser(ConfigParser)} method. The
-     * config system also loads parsers using the Java
-     * {@link java.util.ServiceLoader} mechanism and automatically registers
-     * such loaded parsers with each {@code Builder} unless the application has
-     * invoked the {@link io.helidon.config.Config.Builder#disableParserServices()}
-     * method.
-     *
-     * @param mediaType a media type for which a parser is needed
-     * @return {@code Optional<ConfigParser>} ({@link Optional#empty()} if no
-     * appropriate parser exists)
-     */
-    Optional<ConfigParser> findParser(String mediaType);
-
-    /**
-     * Create a runtime for a config source.
+     * Create or find a runtime for a config source.
      *
      * @param source source to create runtime for
      * @return a source runtime

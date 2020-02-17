@@ -48,10 +48,10 @@ import io.helidon.config.ConfigSources;
  * </ul>
  *
  * Each of the interfaces mentioned above also has an inner class with a builder interface, if any configuration is needed.
- * The {@link io.helidon.config.BaseConfigSource} implements a super set of all the configuration methods from all interfaces
+ * The {@link io.helidon.config.AbstractConfigSource} implements a super set of all the configuration methods from all interfaces
  * as {@code protected}, so you can use them in your implementation.
  * <p>
- * {@link io.helidon.config.BaseConfigSourceBuilder} implements the configuration methods, so you can simply extend it with
+ * {@link io.helidon.config.AbstractConfigSourceBuilder} implements the configuration methods, so you can simply extend it with
  * your builder and implement all the builders that make sense for your config source type.
  *
  *
@@ -59,7 +59,7 @@ import io.helidon.config.ConfigSources;
  * @see Config.Builder#sources(Supplier, Supplier)
  * @see Config.Builder#sources(Supplier, Supplier, Supplier)
  * @see Config.Builder#sources(java.util.List)
- * @see io.helidon.config.BaseConfigSource
+ * @see io.helidon.config.AbstractConfigSource
  * @see ConfigSources ConfigSources - access built-in implementations.
  */
 public interface ConfigSource extends Supplier<ConfigSource>, Source {

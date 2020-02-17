@@ -28,7 +28,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
@@ -41,9 +40,9 @@ import io.helidon.config.spi.WatchableSource;
 /**
  * {@link ConfigSource} implementation that loads configuration content from specified endpoint URL.
  *
- * @see AbstractParsableConfigSource.Builder
+ * @see AbstractConfigSourceBuilder
  */
-public final class UrlConfigSource extends BaseConfigSource
+public final class UrlConfigSource extends AbstractConfigSource
         implements WatchableSource<URL>, ParsableSource, PollableSource<Instant> {
 
     private static final Logger LOGGER = Logger.getLogger(UrlConfigSource.class.getName());
@@ -67,7 +66,7 @@ public final class UrlConfigSource extends BaseConfigSource
      * <ul>
      * <li>{@code url} - type {@link URL}</li>
      * </ul>
-     * Optional {@code properties}: see {@link AbstractParsableConfigSource.Builder#config(Config)}.
+     * Optional {@code properties}: see {@link AbstractConfigSourceBuilder#config(Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -76,7 +75,7 @@ public final class UrlConfigSource extends BaseConfigSource
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#url(URL)
-     * @see AbstractParsableConfigSource.Builder#config(Config)
+     * @see AbstractConfigSourceBuilder#config(Config)
      */
     public static UrlConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return builder()
@@ -124,7 +123,7 @@ public final class UrlConfigSource extends BaseConfigSource
     }
 
     @Override
-    public Optional<ChangeWatcher<?>> changeWatcher() {
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
         return super.changeWatcher();
     }
 
@@ -224,7 +223,7 @@ public final class UrlConfigSource extends BaseConfigSource
      * If {@code media-type} not set it uses HTTP response header {@code content-type}.
      * If {@code media-type} not returned it tries to guess it from url suffix.
      */
-    public static final class Builder extends BaseConfigSourceBuilder<Builder, URL>
+    public static final class Builder extends AbstractConfigSourceBuilder<Builder, URL>
             implements PollableSource.Builder<Builder>,
                        WatchableSource.Builder<Builder, URL>,
                        ParsableSource.Builder<Builder>,

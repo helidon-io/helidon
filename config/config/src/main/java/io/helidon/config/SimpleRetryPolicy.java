@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
@@ -60,6 +61,42 @@ public final class SimpleRetryPolicy implements RetryPolicy {
         this.callTimeout = builder.callTimeout;
         this.overallTimeout = builder.overallTimeout;
         this.executorService = builder.executorService;
+    }
+
+    /**
+     * Fluent API builder for {@link io.helidon.config.SimpleRetryPolicy}.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Initializes retry policy instance from configuration properties.
+     * <p>
+     * Mandatory {@code properties}, see {@link RetryPolicies#repeat(int)}:
+     * <ul>
+     * <li>{@code retries} - type {@code int}</li>
+     * </ul>
+     * Optional {@code properties}:
+     * <ul>
+     * <li>{@code delay} - type {@link Duration}, see {@link Builder#delay(Duration)}</li>
+     * <li>{@code delay-factor} - type {@code double}, see {@link Builder#delayFactor(double)}</li>
+     * <li>{@code call-timeout} - type {@link Duration}, see {@link Builder#callTimeout(Duration)}</li>
+     * <li>{@code overall-timeout} - type {@link Duration}, see {@link Builder#overallTimeout(Duration)}</li>
+     * </ul>
+     *
+     * @param metaConfig meta-configuration used to initialize returned polling strategy builder instance from.
+     * @return new instance of polling strategy builder described by {@code metaConfig}
+     * @throws MissingValueException  in case the configuration tree does not contain all expected sub-nodes
+     *                                required by the mapper implementation to provide instance of Java type.
+     * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
+     *                                supplied configuration node to an instance of a given Java type.
+     * @see PollingStrategies#regular(Duration)
+     */
+    public static SimpleRetryPolicy create(Config metaConfig) {
+        return builder().config(metaConfig).build();
     }
 
     @Override
@@ -156,16 +193,56 @@ public final class SimpleRetryPolicy implements RetryPolicy {
     }
 
     public static final class Builder implements io.helidon.common.Builder<SimpleRetryPolicy> {
-        private int retries;
-        private Duration delay;
-        private double delayFactor;
-        private Duration callTimeout;
-        private Duration overallTimeout;
+        private int retries = 3;
+        private Duration delay = Duration.ofMillis(200);
+        private double delayFactor = 2;
+        private Duration callTimeout = Duration.ofMillis(500);
+        private Duration overallTimeout = Duration.ofSeconds(2);
         private ScheduledExecutorService executorService;
 
         @Override
         public SimpleRetryPolicy build() {
+            if (null == executorService) {
+                this.executorService = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("retry-policy"));
+            }
             return new SimpleRetryPolicy(this);
+        }
+
+        /**
+         * Update this builder from meta configuration.
+         * <p>
+         * Mandatory {@code properties}, see {@link RetryPolicies#repeat(int)}:
+         * <ul>
+         * <li>{@code retries} - type {@code int}</li>
+         * </ul>
+         * Optional {@code properties}:
+         * <ul>
+         * <li>{@code delay} - type {@link Duration}, see {@link #delay(Duration)}</li>
+         * <li>{@code delay-factor} - type {@code double}, see {@link #delayFactor(double)}</li>
+         * <li>{@code call-timeout} - type {@link Duration}, see {@link #callTimeout(Duration)}</li>
+         * <li>{@code overall-timeout} - type {@link Duration}, see {@link #overallTimeout(Duration)}</li>
+         * </ul>
+         *
+         * @param metaConfig meta configuration used to update this builder
+         * @return updated builder instance
+         */
+        public Builder config(Config metaConfig) {
+            // retries
+            metaConfig.get("retries").asInt().ifPresent(this::retries);
+            // delay
+            metaConfig.get("delay").as(Duration.class)
+                    .ifPresent(this::delay);
+            // delay-factor
+            metaConfig.get("delay-factor").asDouble()
+                    .ifPresent(this::delayFactor);
+            // call-timeout
+            metaConfig.get("call-timeout").as(Duration.class)
+                    .ifPresent(this::callTimeout);
+            // overall-timeout
+            metaConfig.get("overall-timeout").as(Duration.class)
+                    .ifPresent(this::overallTimeout);
+
+            return this;
         }
 
         /**

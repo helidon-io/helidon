@@ -32,21 +32,21 @@ import io.helidon.config.spi.PollingStrategy;
  * <p>
  * Map key format must conform to {@link Config#key() Config key} format.
  *
- * @see io.helidon.config.ConfigSources.MapBuilder
+ * @see io.helidon.config.MapConfigSource.Builder
  */
-public final class MapConfigSource extends BaseConfigSource implements ConfigSource,
-                                                                       NodeConfigSource,
-                                                                       PollableSource<Map<?, ?>> {
+public class MapConfigSource extends AbstractConfigSource implements ConfigSource,
+                                                                     NodeConfigSource,
+                                                                     PollableSource<Map<?, ?>> {
 
     private final Map<?, ?> map;
     private final String mapSourceName;
 
-    private MapConfigSource(Builder builder) {
+    MapConfigSource(MapBuilder builder) {
         super(builder);
 
         // we intentionally keep the original instance, so we can watch for changes
-        this.map = builder.map;
-        this.mapSourceName = builder.sourceName;
+        this.map = builder.map();
+        this.mapSourceName = builder.sourceName();
     }
 
     /**
@@ -101,22 +101,29 @@ public final class MapConfigSource extends BaseConfigSource implements ConfigSou
         return mapSourceName.isEmpty() ? "" : mapSourceName;
     }
 
-    /**
-     * A fluent API builder for {@link MapConfigSource}.
-     */
-    public static final class Builder extends BaseConfigSourceBuilder<Builder, Void>
-            implements io.helidon.common.Builder<MapConfigSource>,
-                       PollableSource.Builder<Builder> {
-
-        private Map<?, ?> map;
-        private String sourceName = "";
-
+    public static final class Builder extends MapBuilder<Builder> {
         private Builder() {
         }
 
         @Override
         public MapConfigSource build() {
             return new MapConfigSource(this);
+        }
+    }
+
+    /**
+     * A fluent API builder for {@link MapConfigSource}.
+     */
+    public static abstract class MapBuilder<T extends MapBuilder<T>> extends AbstractConfigSourceBuilder<T, Void>
+            implements io.helidon.common.Builder<MapConfigSource>,
+                       PollableSource.Builder<T> {
+
+        private Map<?, ?> map;
+        private String sourceName = "";
+        @SuppressWarnings("unchecked")
+        private final T me = (T) this;
+
+        protected MapBuilder() {
         }
 
         /**
@@ -126,9 +133,9 @@ public final class MapConfigSource extends BaseConfigSource implements ConfigSou
          * @param map map to use
          * @return updated builder instance
          */
-        public Builder map(Map<String, String> map) {
+        public T map(Map<String, String> map) {
             this.map = map;
-            return this;
+            return me;
         }
 
         /**
@@ -138,9 +145,9 @@ public final class MapConfigSource extends BaseConfigSource implements ConfigSou
          * @param properties properties to use
          * @return updated builder instance
          */
-        public Builder properties(Properties properties) {
+        public T properties(Properties properties) {
             this.map = properties;
-            return this;
+            return me;
         }
 
         /**
@@ -148,21 +155,33 @@ public final class MapConfigSource extends BaseConfigSource implements ConfigSou
          * The following names are reserved (you can still use them, but you will impact
          *  config functionality):
          * <ul>
-         *     <li>{@code system-properties} - used by System properties config source
-         *     <li>{@code environment-variables} - used by Environment variables config source
+         *     <li>{@value #SYSTEM_PROPERTIES} - used by System properties config source
+         *     <li>{@value #ENVIRONMENT_VARIABLES} - used by Environment variables config source
          * </ul>
          *
          * @param sourceName name of this source
          * @return updated builder instance
          */
-        public Builder sourceName(String sourceName) {
+        public T name(String sourceName) {
             this.sourceName = Objects.requireNonNull(sourceName);
-            return this;
+            return me;
         }
 
         @Override
-        public Builder pollingStrategy(PollingStrategy pollingStrategy) {
+        public T pollingStrategy(PollingStrategy pollingStrategy) {
             return super.pollingStrategy(pollingStrategy);
+        }
+
+        protected Map<?, ?> map() {
+            return map;
+        }
+
+        protected String sourceName() {
+            return sourceName;
+        }
+
+        protected T me() {
+            return me;
         }
     }
 }

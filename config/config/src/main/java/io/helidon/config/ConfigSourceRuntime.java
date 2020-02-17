@@ -26,8 +26,47 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * The runtime of a config source. For a single {@link Config}, there is one source runtime for each configured
  * config source.
  */
-public interface ConfigSourceRuntime extends ConfigSource {
-    void onChange(BiConsumer<Config.Key, ConfigNode> change);
+public interface ConfigSourceRuntime {
+    void onChange(BiConsumer<String, ConfigNode> change);
 
+    /**
+     * Load the config source if it is eager (such as {@link io.helidon.config.spi.ParsableSource} or
+     *  {@link io.helidon.config.spi.NodeConfigSource}.
+     * <p>
+     * For {@link io.helidon.config.spi.LazyConfigSource}, this
+     * method may return an empty optional (if no key was yet requested), or a node with currently known keys and values.
+     *
+     * @return loaded data
+     */
     Optional<ConfigNode.ObjectNode> load();
+
+    /**
+     * Get a single config node based on the key.
+     * Use this method if you are interested in a specific key, as it works both for eager and lazy config sources.
+     *
+     * @param key key of the node to retrieve
+     * @return value on the key, or empty if not present
+     */
+    Optional<ConfigNode> node(String key);
+
+    /**
+     * Get the underlying config source as a MicroProfile {@link org.eclipse.microprofile.config.spi.ConfigSource}.
+     *
+     * @return MP Config source
+     */
+    ConfigSource asMpSource();
+
+    /**
+     * Description of the underlying config source.
+     * @return description of the source
+     */
+    String description();
+
+    /**
+     * If a config source is lazy, its {@link #load()} method always returns empty and you must use
+     * {@link #node(String)} methods to retrieve its values.
+     *
+     * @return {@code true} if the underlying config source cannot load whole configuration tree
+     */
+    boolean isLazy();
 }

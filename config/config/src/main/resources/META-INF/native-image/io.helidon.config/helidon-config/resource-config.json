@@ -1,10 +1,10 @@
 {
     "resources": [
         {
-            "pattern": "application.yaml"
+            "pattern": "application.properties"
         },
         {
-            "pattern": "meta-config.yaml"
+            "pattern": "meta-config.properties"
         }
     ]
 }

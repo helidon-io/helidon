@@ -16,10 +16,17 @@
 
 package io.helidon.config;
 
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import io.helidon.config.spi.ConfigNode;
 
 /**
  * Common Configuration utilities.
@@ -82,6 +89,37 @@ public final class ConfigHelper {
                 onLastSubscriptionCancel.run();
             }
         };
+    }
+
+    static Map<ConfigKeyImpl, ConfigNode> createFullKeyToNodeMap(ConfigNode.ObjectNode objectNode) {
+        Map<ConfigKeyImpl, ConfigNode> result;
+
+        Stream<Map.Entry<ConfigKeyImpl, ConfigNode>> flattenNodes = objectNode.entrySet()
+                .stream()
+                .map(node -> flattenNodes(ConfigKeyImpl.of(node.getKey()), node.getValue()))
+                .reduce(Stream.empty(), Stream::concat);
+        result = flattenNodes.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        result.put(ConfigKeyImpl.of(), objectNode);
+
+        return result;
+    }
+
+    static Stream<Map.Entry<ConfigKeyImpl, ConfigNode>> flattenNodes(ConfigKeyImpl key, ConfigNode node) {
+        switch (node.nodeType()) {
+        case OBJECT:
+            return ((ConfigNode.ObjectNode) node).entrySet().stream()
+                    .map(e -> flattenNodes(key.child(e.getKey()), e.getValue()))
+                    .reduce(Stream.of(new AbstractMap.SimpleEntry<>(key, node)), Stream::concat);
+        case LIST:
+            return IntStream.range(0, ((ConfigNode.ListNode) node).size())
+                    .boxed()
+                    .map(i -> flattenNodes(key.child(Integer.toString(i)), ((ConfigNode.ListNode) node).get(i)))
+                    .reduce(Stream.of(new AbstractMap.SimpleEntry<>(key, node)), Stream::concat);
+        case VALUE:
+            return Stream.of(new AbstractMap.SimpleEntry<>(key, node));
+        default:
+            throw new IllegalArgumentException("Invalid node type.");
+        }
     }
 
     /**
