@@ -21,6 +21,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.OverrideSource;
 
 /**
@@ -102,12 +103,22 @@ public final class OverrideSources {
         /**
          * EMPTY singleton instance.
          */
-        private static final OverrideSource EMPTY = Optional::empty;
+        private static final OverrideSource EMPTY = new EmptyOverrideSource();
 
         private OverridingSourceHolder() {
             throw new AssertionError("Instantiation not allowed.");
         }
-
     }
 
+    private static final class EmptyOverrideSource implements OverrideSource {
+        @Override
+        public Optional<ConfigContent.OverrideContent> load() throws ConfigException {
+            return Optional.empty();
+        }
+
+        @Override
+        public String toString() {
+            return "EmptyOverrideSource";
+        }
+    }
 }

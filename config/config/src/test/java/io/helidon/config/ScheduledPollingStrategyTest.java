@@ -19,26 +19,22 @@ package io.helidon.config;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Flow;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.config.spi.PollingStrategy.PollingEvent;
+import io.helidon.config.spi.ChangeEventType;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests {@link io.helidon.config.ScheduledPollingStrategy}.
  */
 public class ScheduledPollingStrategyTest {
-    
+
     private static final int DELAY_AFTER_START_SCHEDULING_BEFORE_STOP_SCHEDULING = 1;
 
     /*
@@ -47,369 +43,120 @@ public class ScheduledPollingStrategyTest {
     expect the ScheduledFuture to have been canceled, not complete normally.
      */
     private static final int POLLING_STRATEGY_MILLIS = 100;
-    private static final Duration POLLING_STRATEGY_DURATION = 
+    private static final Duration POLLING_STRATEGY_DURATION =
             Duration.ofMillis(POLLING_STRATEGY_MILLIS);
     private static final int NEXT_LATCH_WAIT_MILLIS = POLLING_STRATEGY_MILLIS * 5;
 
     @Test
     public void testNotStartedYet() {
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.builder()
+                .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
+                .build();
 
-        assertThat(pollingStrategy.executor(), is(nullValue()));
+        assertThat(pollingStrategy.executor(), is(notNullValue()));
     }
 
     @Test
     public void testStartPolling() throws InterruptedException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(3);
 
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.builder()
+                .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
+                .build();
 
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
+        pollingStrategy.start(when -> {
+            nextLatch.countDown();
+            return ChangeEventType.UNCHANGED;
         });
 
-        assertThat(subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
         assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
     }
 
     @Test
     public void testStopPolling() throws InterruptedException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(1);
 
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.builder()
+                .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
+                .build();
 
-        AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-                subscriptionRef.set(subscription);
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail("Reached onError", throwable);
-            }
-
-            @Override
-            public void onComplete() {
-                fail("Reached onComplete`");
-            }
+        pollingStrategy.start(when -> {
+            nextLatch.countDown();
+            return ChangeEventType.UNCHANGED;
         });
-        assertThat(subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
+
         assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
-        assertThat(pollingStrategy.executor(), not(nullValue()));
+        assertThat("Executor should be running", pollingStrategy.executor().isShutdown(), is(false));
 
         //cancel subscription
-        subscriptionRef.get().cancel();
+        pollingStrategy.stop();
 
-        assertThat(pollingStrategy.executor(), is(nullValue()));
+        assertThat(pollingStrategy.executor().isShutdown(), is(true));
     }
 
     @Test
     public void testRestartPollingWithCustomExecutor() throws InterruptedException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
-        CountDownLatch nextLatch = new CountDownLatch(1);
+        CountDownLatch firstLatch = new CountDownLatch(1);
 
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
-                                                                                Executors.newScheduledThreadPool(1));
+                                                                                   executor);
 
-        AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
-
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-                subscriptionRef.set(subscription);
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail("Reached onError", throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
+        pollingStrategy.start(when -> {
+            firstLatch.countDown();
+            return ChangeEventType.UNCHANGED;
         });
 
-        assertThat(subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
-        assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+        assertThat(firstLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
 
         //cancel subscription
-        subscriptionRef.get().cancel();
-        assertThat(pollingStrategy.executor(), not(nullValue()));
+        pollingStrategy.stop();
+        assertThat("Custom executor should not get shut down",
+                   pollingStrategy.executor().isShutdown(),
+                   is(false));
+
+        CountDownLatch secondLatch = new CountDownLatch(1);
 
         //subscribe again
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-                subscriptionRef.set(subscription);
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail("Reached onError", throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
+        pollingStrategy.start(when -> {
+            secondLatch.countDown();
+            return ChangeEventType.UNCHANGED;
         });
 
-        assertThat(subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
-        assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+        assertThat(secondLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+
+        executor.shutdown();
     }
 
     @Test
     public void testRestartPollingWithDefaultExecutor() throws InterruptedException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
-        CountDownLatch nextLatch = new CountDownLatch(1);
+        CountDownLatch firstLatch = new CountDownLatch(1);
 
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.builder()
+                .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
+                .build();
 
-        AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
-
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-                subscriptionRef.set(subscription);
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail("Reached onError", throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
+        pollingStrategy.start(when -> {
+            firstLatch.countDown();
+            return ChangeEventType.UNCHANGED;
         });
 
-        assertThat(subscribeLatch.await(200, TimeUnit.MILLISECONDS), is(true));
-        assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+        assertThat(firstLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
 
         //cancel subscription
-        subscriptionRef.get().cancel();
-        assertThat(pollingStrategy.executor(), is(nullValue()));
+        pollingStrategy.stop();
+        assertThat("Default executor should get shut down",
+                   pollingStrategy.executor().isShutdown(),
+                   is(true));
+
+        CountDownLatch secondLatch = new CountDownLatch(1);
 
         //subscribe again
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-                subscriptionRef.set(subscription);
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail("Reached onError", throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
+        pollingStrategy.start(when -> {
+            secondLatch.countDown();
+            return ChangeEventType.UNCHANGED;
         });
 
-        assertThat(subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
-        assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+        assertThat(secondLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
     }
-
-    /* NOTE: TEMPORARILY MOVED FROM POLLING_STRATEGY, WILL BE PUBLIC API AGAIN LATER, Issue #14.
-    @Test
-    public void testScheduledPollingStrategyWithAdaptiveFromHelper() throws InterruptedException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
-        CountDownLatch nextLatch = new CountDownLatch(3);
-
-        PollingStrategy pollingStrategy = ScheduledPollingStrategy.adaptive(Duration.ofMillis(1));
-
-        pollingStrategy.ticks().subscribe(new Flow.Subscriber<>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail();
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-
-        assertThat(subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
-        assertThat(nextLatch.await(100, TimeUnit.MILLISECONDS), is(true));
-    }
-    */
-
-    @Test
-    public void testScheduledFuture() {
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
-                                                                                Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.scheduledFuture(), nullValue());
-
-        pollingStrategy.startScheduling();
-
-        assertThat(pollingStrategy.scheduledFuture(), notNullValue());
-        assertThat(pollingStrategy.scheduledFuture().isCancelled(), is(false));
-    }
-
-    @Test
-    public void testScheduledFutureCleaning() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
-                                                                                Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.scheduledFuture(), nullValue());
-
-        pollingStrategy.startScheduling();
-        TimeUnit.SECONDS.sleep(DELAY_AFTER_START_SCHEDULING_BEFORE_STOP_SCHEDULING);
-        pollingStrategy.stopScheduling();
-
-        assertThat(pollingStrategy.scheduledFuture(), notNullValue());
-        assertThat(pollingStrategy.scheduledFuture().isCancelled(), is(true));
-    }
-
-    @Test
-    public void testExecutor() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
-                                                                                null);
-        assertThat(pollingStrategy.executor(), nullValue());
-
-        pollingStrategy.startScheduling();
-
-        assertThat(pollingStrategy.executor(), notNullValue());
-        assertThat(pollingStrategy.executor().awaitTermination(1, TimeUnit.SECONDS), is(false));
-    }
-
-    @Test
-    public void testCustomExecutor() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
-                                                                                Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.executor(), notNullValue());
-
-        pollingStrategy.startScheduling();
-
-        assertThat(pollingStrategy.executor(), notNullValue());
-        assertThat(pollingStrategy.executor().awaitTermination(1, TimeUnit.SECONDS), is(false));
-    }
-
-    @Test
-    public void testExecutorCleaning() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
-                                                                                null);
-        assertThat(pollingStrategy.executor(), nullValue());
-
-        pollingStrategy.startScheduling();
-        TimeUnit.SECONDS.sleep(DELAY_AFTER_START_SCHEDULING_BEFORE_STOP_SCHEDULING);
-        pollingStrategy.stopScheduling();
-
-        assertThat(pollingStrategy.executor(), nullValue());
-    }
-
-    @Test
-    public void testCustomExecutorCleaning() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
-                                                                                Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.executor(), notNullValue());
-
-        pollingStrategy.startScheduling();
-        TimeUnit.SECONDS.sleep(DELAY_AFTER_START_SCHEDULING_BEFORE_STOP_SCHEDULING);
-        pollingStrategy.stopScheduling();
-
-        assertThat(pollingStrategy.executor(), notNullValue());
-        assertThat(pollingStrategy.executor().awaitTermination(1, TimeUnit.SECONDS), is(false));
-    }
-
-    /* NOTE: TEMPORARILY MOVED FROM POLLING_STRATEGY, WILL BE PUBLIC API AGAIN LATER, Issue #14.
-    @Test
-    public void testApi() {
-        PollingStrategies.regular(Duration.ofSeconds(60));
-
-        ScheduledPollingStrategy.adaptive(Duration.ofSeconds(60));
-
-        PollingStrategies.watch(Paths.get("/tmp/app.conf"));
-
-        PollingStrategy configuredAdaptiveScheduledStrategy = ScheduledPollingStrategy.recurringPolicyBuilder(
-                ScheduledPollingStrategy.RecurringPolicy.adaptiveBuilder(Duration.ofMinutes(4))
-                        .min(Duration.ofMinutes(1))
-                        .max(Duration.ofHours(1))
-                        .shorten((current, count) -> current.dividedBy(count))
-                        .build())
-                .executor(Executors.newScheduledThreadPool(1))
-                .build();
-
-        PollingStrategy withCustomBackoff = ScheduledPollingStrategy.recurringPolicyBuilder(
-                new ScheduledPollingStrategy.RecurringPolicy() {
-                    @Override
-                    public Duration interval() {
-                        return Duration.ofHours(1);
-                    }
-
-                    @Override
-                    public void shorten() {
-
-                    }
-                })
-                .build();
-    }
-    */
 }

@@ -133,7 +133,7 @@ public final class UrlConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public Optional<Content> content() throws ConfigException {
+    public Optional<Content> load() throws ConfigException {
         try {
             URLConnection urlConnection = url.openConnection();
 

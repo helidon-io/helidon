@@ -101,7 +101,7 @@ public class UrlOverrideSourceServerMockTest {
                         Map.of(
                                 "aaa.bbb.url", "URL0"
                         )))
-                .overrides(url(getUrl("/override", server.getPort())))
+                .overrides(url(getUrl("/override", server.getPort())).build())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -133,7 +133,7 @@ public class UrlOverrideSourceServerMockTest {
                         Map.of(
                                 "aaa.bbb.url", "URL0"
                         )))
-                .overrides(url(getUrl("/override", server.getPort())))
+                .overrides(url(getUrl("/override", server.getPort())).build())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -165,7 +165,7 @@ public class UrlOverrideSourceServerMockTest {
                         Map.of(
                                 "aaa.bbb.url", "URL0"
                         )))
-                .overrides(url(getUrl("/override", server.getPort())))
+                .overrides(url(getUrl("/override", server.getPort())).build())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -196,7 +196,7 @@ public class UrlOverrideSourceServerMockTest {
         Config config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort())))
                 .overrides(url(getUrl("/override", server.getPort()))
-                                   .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(50))))
+                                   .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(50)).build()).build())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -246,7 +246,8 @@ public class UrlOverrideSourceServerMockTest {
         Config config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort())))
                 .overrides(url(getUrl("/override", server.getPort()))
-                                   .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
+                                   .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10)).build())
+                                   .build())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -286,9 +287,10 @@ public class UrlOverrideSourceServerMockTest {
 
         Config config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort()))
-                                 .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
+                                 .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10)).build()))
                 .overrides(url(getUrl("/override", server.getPort()))
-                                   .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
+                                   .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10)).build())
+                                   .build())
                 //                .addFilter(new OverrideConfigFilter(Map.of(Pattern.compile("\\w+\\.\\w+\\.url"), "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -329,8 +331,8 @@ public class UrlOverrideSourceServerMockTest {
 
         Config config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort()))
-                                 .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
-                .overrides(url(getUrl("/override", server.getPort())))
+                                 .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10)).build()))
+                .overrides(url(getUrl("/override", server.getPort())).build())
                 .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
                         Map.of("*.*.url", "URL1")
                                 .entrySet()

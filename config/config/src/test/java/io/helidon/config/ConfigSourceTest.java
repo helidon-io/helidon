@@ -50,7 +50,7 @@ public class ConfigSourceTest {
     public void testFromObjectNodeDescription() {
         ConfigSource configSource = ConfigSources.create(ObjectNode.empty());
 
-        assertThat(configSource.description(), is("InMemoryConfig[ObjectNode]"));
+        assertThat(configSource.description(), is("NodeInMemory[ObjectNode]"));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class ConfigSourceTest {
                 .create(toInputStream("aaa=bbb"),
                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
-        assertThat(configSource.description(), is("InMemoryConfig[Readable]"));
+        assertThat(configSource.description(), is("ParsableInMemory[Readable]"));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class ConfigSourceTest {
     public void testFromTextDescription() {
         ConfigSource configSource = ConfigSources.create("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
-        assertThat(configSource.description(), is("InMemoryConfig[String]"));
+        assertThat(configSource.description(), is("ParsableInMemory[String]"));
     }
 
     @Test
@@ -103,13 +103,6 @@ public class ConfigSourceTest {
 
         ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
         assertThat(runtime.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));
-    }
-
-    @Test
-    public void testFromSystemPropertiesDescription() {
-        ConfigSource configSource = ConfigSources.systemProperties().build();
-
-        assertThat(configSource.description(), is("SystemPropertiesConfig[]*"));
     }
 
     @Test

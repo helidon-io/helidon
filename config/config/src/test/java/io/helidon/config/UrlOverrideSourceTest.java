@@ -18,15 +18,12 @@ package io.helidon.config;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.Flow;
 
 import io.helidon.config.spi.OverrideSource;
-import io.helidon.config.spi.PollingStrategy;
 
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -57,43 +54,10 @@ public class UrlOverrideSourceTest {
     public void testLoadNotExists() throws MalformedURLException {
         UrlOverrideSource overrideSource = (UrlOverrideSource) OverrideSources
                 .url(new URL("http://config-service/application.unknown"))
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
         assertThat(ex.getCause(), instanceOf(ConfigException.class));
         assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
-
-    @Test
-    public void testBuilderPollingStrategy() throws MalformedURLException {
-        URL url = new URL("http://config-service/application.unknown");
-        UrlOverrideSource.Builder builder = (UrlOverrideSource.Builder) OverrideSources.url(url)
-                .pollingStrategy(UrlOverrideSourceTest.TestingPathPollingStrategy::new);
-
-        assertThat(builder.pollingStrategyInternal(), instanceOf(UrlOverrideSourceTest.TestingPathPollingStrategy.class));
-        assertThat(((UrlOverrideSourceTest.TestingPathPollingStrategy) builder.pollingStrategyInternal()).getUrl(),
-                   Is.is(url));
-    }
-
-    private static class TestingPathPollingStrategy implements PollingStrategy {
-        private final URL url;
-
-        public TestingPathPollingStrategy(URL url) {
-            this.url = url;
-
-            assertThat(url, notNullValue());
-        }
-
-        @Override
-        public Flow.Publisher<PollingEvent> ticks() {
-            return Flow.Subscriber::onComplete;
-        }
-
-        public URL getUrl() {
-            return url;
-        }
-    }
-
 }

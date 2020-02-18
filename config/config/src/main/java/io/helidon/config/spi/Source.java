@@ -17,6 +17,7 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Source of data.
@@ -87,9 +88,9 @@ public interface Source {
          * If none is configured, the source is invoked directly with no retries.
          *
          * @param policy retry policy to use
-         * @return  updated builder instance
+         * @return updated builder instance
          */
-        B retryPolicy(RetryPolicy policy);
+        B retryPolicy(Supplier<? extends RetryPolicy> policy);
 
         /**
          * Whether the source is optional or not.

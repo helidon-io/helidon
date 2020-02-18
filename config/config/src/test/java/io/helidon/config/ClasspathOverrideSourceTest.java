@@ -24,11 +24,8 @@ import io.helidon.config.spi.OverrideSource;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link io.helidon.config.ClasspathOverrideSource}.
@@ -53,9 +50,7 @@ public class ClasspathOverrideSourceTest {
     public void testLoadNotExists() {
         ClasspathOverrideSource overrideSource = OverrideSources.classpath("application.unknown")
                 .build();
-        ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
+        assertThat(overrideSource.load(), is(Optional.empty()));
     }
 
     @Test

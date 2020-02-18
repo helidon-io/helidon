@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -188,10 +189,34 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
         return changesSupported;
     }
 
+    @Override
+    public String toString() {
+        return "Runtime for " + configSource;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(configSource);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if ((o == null) || (getClass() != o.getClass())) {
+            return false;
+        }
+        ConfigSourceRuntimeImpl that = (ConfigSourceRuntimeImpl) o;
+        return configSource.equals(that.configSource);
+    }
+
     private synchronized void initialLoad() {
         if (dataLoaded) {
             return;
         }
+
+        configSource.init(configContext);
 
         Optional<ObjectNode> loadedData = configSource.retryPolicy()
                 .map(policy -> policy.execute(reloader))
@@ -472,7 +497,7 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
 
         @Override
         public Optional<ObjectNode> get() {
-            return configSource.content()
+            return configSource.load()
                     .map(content -> {
                         lastStamp.set(content.stamp().orElse(null));
                         Optional<ConfigParser> parser = configSource.parser();

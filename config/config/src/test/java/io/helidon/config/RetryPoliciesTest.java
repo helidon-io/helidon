@@ -17,14 +17,19 @@
 package io.helidon.config;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import org.junit.jupiter.api.Test;
+import io.helidon.config.spi.ConfigContent.NodeContent;
+import io.helidon.config.spi.ConfigNode.ObjectNode;
+import io.helidon.config.spi.NodeConfigSource;
 
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,7 +42,7 @@ public class RetryPoliciesTest {
     @Test
     public void repeat() throws Exception {
         CountDownLatch loadLatch = new CountDownLatch(3);
-        AbstractSource source = TestingSource.builder()
+        NodeConfigSource source = TestingSource.builder()
                 .retryPolicy(RetryPolicies.repeat(2)
                                      .delay(Duration.ZERO))
                 .loadLatch(loadLatch)
@@ -46,22 +51,25 @@ public class RetryPoliciesTest {
                 })
                 .build();
 
-        assertThrows(ConfigException.class, () -> {
-            source.reload();
-        });
+        BuilderImpl.ConfigContextImpl context = Mockito.mock(BuilderImpl.ConfigContextImpl.class);
+
+        ConfigSourceRuntimeImpl csr = new ConfigSourceRuntimeImpl(context, source);
+        assertThrows(ConfigException.class, csr::load);
 
         assertThat(loadLatch.await(50, TimeUnit.MILLISECONDS), is(true));
-
     }
 
     @Test
     public void testDefaultRetryPolicy() throws Exception {
         CountDownLatch loadLatch = new CountDownLatch(1);
-        AbstractSource source = TestingSource.builder()
+        NodeConfigSource source = TestingSource.builder()
                 .loadLatch(loadLatch)
                 .build();
 
-        source.reload();
+        BuilderImpl.ConfigContextImpl context = Mockito.mock(BuilderImpl.ConfigContextImpl.class);
+        ConfigSourceRuntimeImpl csr = new ConfigSourceRuntimeImpl(context, source);
+        Optional<ObjectNode> load = csr.load();
+        assertThat(load, not(Optional.empty()));
 
         assertThat(loadLatch.await(50, TimeUnit.MILLISECONDS), is(true));
     }
@@ -69,20 +77,24 @@ public class RetryPoliciesTest {
     @Test
     public void testJustCallRetryPolicy() throws Exception {
         CountDownLatch loadLatch = new CountDownLatch(1);
-        AbstractSource source = TestingSource.builder()
+        NodeConfigSource source = TestingSource.builder()
                 .retryPolicy(RetryPolicies.justCall())
                 .loadLatch(loadLatch)
                 .build();
 
-        source.reload();
+        BuilderImpl.ConfigContextImpl context = Mockito.mock(BuilderImpl.ConfigContextImpl.class);
+        ConfigSourceRuntimeImpl csr = new ConfigSourceRuntimeImpl(context, source);
+        Optional<ObjectNode> load = csr.load();
+        assertThat(load, not(Optional.empty()));
 
         assertThat(loadLatch.await(50, TimeUnit.MILLISECONDS), is(true));
     }
 
-    private static class TestingSource extends AbstractSource<String, Instant> {
+    private static class TestingSource extends AbstractConfigSource
+            implements NodeConfigSource {
 
-        private final Supplier<Data<String>> dataSupplier;
-        private CountDownLatch loadLatch;
+        private final Supplier<NodeContent> dataSupplier;
+        private final CountDownLatch loadLatch;
 
         TestingSource(TestingBuilder builder) {
             super(builder);
@@ -95,23 +107,20 @@ public class RetryPoliciesTest {
         }
 
         @Override
-        protected Optional<Instant> dataStamp() {
-            return Optional.empty();
-        }
-
-        @Override
-        protected Data<String> loadData() throws ConfigException {
+        public Optional<NodeContent> load() throws ConfigException {
             loadLatch.countDown();
-            return dataSupplier.get();
+            return Optional.of(dataSupplier.get());
         }
 
-        private static class TestingBuilder extends Builder<TestingBuilder, Void, TestingSource> {
+        private static class TestingBuilder extends AbstractConfigSourceBuilder<TestingBuilder, Void>
+                implements io.helidon.common.Builder<TestingSource> {
 
             public CountDownLatch loadLatch;
-            private Supplier<Data<String>> dataSupplier = () -> Data.create("nothing", Instant.now());
+            private Supplier<NodeContent> dataSupplier = () -> NodeContent.builder()
+                    .node(ObjectNode.empty())
+                    .get();
 
             TestingBuilder() {
-                super(Void.class);
             }
 
             TestingBuilder loadLatch(CountDownLatch loadLatch) {
@@ -119,7 +128,7 @@ public class RetryPoliciesTest {
                 return this;
             }
 
-            TestingBuilder dataSupplier(Supplier<Data<String>> dataSupplier) {
+            TestingBuilder dataSupplier(Supplier<NodeContent> dataSupplier) {
                 this.dataSupplier = dataSupplier;
                 return this;
             }

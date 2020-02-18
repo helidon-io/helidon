@@ -78,7 +78,7 @@ class BuilderImpl implements Config.Builder {
     private final List<ConfigSource> sources = new LinkedList<>();
     private boolean configSourceServicesEnabled;
     // to use when more than one source is configured
-    private MergingStrategy mergingStrategy;
+    private MergingStrategy mergingStrategy = MergingStrategy.fallback();
     private boolean hasSystemPropertiesSource;
     private boolean hasEnvVarSource;
     /*
@@ -603,7 +603,6 @@ class BuilderImpl implements Config.Builder {
         }
 
         // targetSources now contain runtimes correctly ordered for each config source
-
         return new ConfigSourcesRuntime(targetSources, mergingStrategy);
     }
 

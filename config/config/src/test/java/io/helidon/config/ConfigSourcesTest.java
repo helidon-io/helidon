@@ -150,7 +150,7 @@ public class ConfigSourcesTest {
     public void testSystemPropertiesSourceType() {
         ConfigSource source = ConfigSources.systemProperties().build();
         assertThat(source, is(instanceOf(ConfigSources.SystemPropertiesConfigSource.class)));
-        assertThat(source.description(), is("SystemPropertiesConfig[]*"));
+        assertThat(source.description(), is("SystemPropertiesConfig[]"));
     }
 
     @Test

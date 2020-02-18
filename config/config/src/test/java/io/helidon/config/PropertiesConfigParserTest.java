@@ -16,19 +16,16 @@
 
 package io.helidon.config;
 
-import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 import io.helidon.config.spi.ConfigNode;
-import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
-import static io.helidon.config.TestHelper.toInputStream;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -49,7 +46,7 @@ public class PropertiesConfigParserTest {
     @Test
     public void testParse() {
         PropertiesConfigParser parser = new PropertiesConfigParser();
-        ConfigNode.ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb");
+        ConfigNode.ObjectNode node = parser.parse(createContent("aaa = bbb"));
 
         assertThat(node.entrySet(), hasSize(1));
         assertThat(node.get("aaa"), valueNode("bbb"));
@@ -58,38 +55,19 @@ public class PropertiesConfigParserTest {
     @Test
     public void testParseThrowsConfigParserException() {
         assertThrows(ConfigParserException.class, () -> {
-                PropertiesConfigParser parser = new PropertiesConfigParser();
-            parser.parse((StringContent) () -> null);
+            PropertiesConfigParser parser = new PropertiesConfigParser();
+            parser.parse(createContent(null));
         });
     }
 
-    //
-    // helper
-    //
-
-    @FunctionalInterface
-    private interface StringContent extends ConfigParser.Content {
-        @Override
-        default Optional<String> mediaType() {
-            return Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+    private Content createContent(String content) {
+        if (null == content) {
+            return Content.builder().build();
         }
 
-        @Override
-        default InputStream data() {
-            return toInputStream(getContent());
-        }
-
-        @Override
-        default Charset charset() {
-            return StandardCharsets.UTF_8;
-        }
-
-        @Override
-        default boolean exists() {
-            return true;
-        }
-
-        String getContent();
+        return Content.builder()
+                .data(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)))
+                .charset(StandardCharsets.UTF_8)
+                .build();
     }
-
 }

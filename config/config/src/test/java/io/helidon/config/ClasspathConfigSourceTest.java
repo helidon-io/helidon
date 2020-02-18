@@ -18,18 +18,13 @@ package io.helidon.config;
 
 import java.util.Optional;
 
-import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigSource;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link io.helidon.config.ClasspathConfigSource}.
@@ -64,11 +59,11 @@ public class ClasspathConfigSourceTest {
 
     @Test
     public void testGetMediaTypeGuessed() {
-        ClasspathConfigSource configSource = ConfigSources.classpath("application.properties")
+        ClasspathConfigSource configSource = ConfigSources.classpath("logging.properties")
                 .optional()
                 .build();
 
-        assertThat(configSource.mediaType(), is(Optional.of("text/x-java-properties")));
+        assertThat(configSource.load().get().mediaType(), is(Optional.of("text/x-java-properties")));
     }
 
     @Test
@@ -85,13 +80,7 @@ public class ClasspathConfigSourceTest {
         ClasspathConfigSource configSource = (ClasspathConfigSource) ConfigSources.classpath("application.unknown")
                 .build();
 
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            configSource.init(mock(ConfigContext.class));
-            configSource.content();
-        });
-
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
+        assertThat(configSource.load(), is(Optional.empty()));
     }
 
     @Test

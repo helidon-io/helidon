@@ -80,7 +80,7 @@ class InMemoryConfigSource {
         }
 
         @Override
-        public Optional<ConfigParser.Content> content() throws ConfigException {
+        public Optional<ConfigParser.Content> load() throws ConfigException {
             return Optional.of(content);
         }
 

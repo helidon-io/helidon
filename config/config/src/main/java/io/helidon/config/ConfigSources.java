@@ -317,6 +317,11 @@ public final class ConfigSources {
             public Optional<ConfigContent.NodeContent> load() throws ConfigException {
                 return Optional.empty();
             }
+
+            @Override
+            public String toString() {
+                return "EmptyConfigSource";
+            }
         };
     }
 
@@ -328,7 +333,7 @@ public final class ConfigSources {
          * Constructor.
          */
         EnvironmentVariablesConfigSource() {
-            super(MapConfigSource.builder().map(EnvironmentVariables.expand()).name("environment-variables"));
+            super(MapConfigSource.builder().map(EnvironmentVariables.expand()).name(""));
         }
     }
 
@@ -346,7 +351,7 @@ public final class ConfigSources {
 
             @Override
             public MapConfigSource build() {
-                super.name("system-properties");
+                super.name("");
                 return new SystemPropertiesConfigSource(this);
             }
 

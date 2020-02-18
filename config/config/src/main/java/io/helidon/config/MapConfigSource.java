@@ -152,12 +152,6 @@ public class MapConfigSource extends AbstractConfigSource implements ConfigSourc
 
         /**
          * Name of this source.
-         * The following names are reserved (you can still use them, but you will impact
-         *  config functionality):
-         * <ul>
-         *     <li>{@value #SYSTEM_PROPERTIES} - used by System properties config source
-         *     <li>{@value #ENVIRONMENT_VARIABLES} - used by Environment variables config source
-         * </ul>
          *
          * @param sourceName name of this source
          * @return updated builder instance

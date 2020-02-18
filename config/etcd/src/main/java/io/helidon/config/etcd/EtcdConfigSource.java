@@ -111,7 +111,7 @@ public class EtcdConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public Optional<Content> content() throws ConfigException {
+    public Optional<Content> load() throws ConfigException {
         String content;
         try {
             content = etcdClient().get(endpoint.key());

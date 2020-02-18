@@ -30,9 +30,9 @@ import io.helidon.config.test.infra.TemporaryFolderExt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -75,11 +75,11 @@ public class FileConfigSourceTest {
 
     @Test
     public void testGetMediaTypeGuessed() {
-        FileConfigSource configSource = ConfigSources.file("application.properties")
+        FileConfigSource configSource = ConfigSources.file("logging.properties")
                 .optional()
                 .build();
 
-        assertThat(configSource.mediaType(), is(Optional.of("text/x-java-properties")));
+        assertThat(configSource.load().get().mediaType(), is(Optional.of("text/x-java-properties")));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class FileConfigSourceTest {
         FileConfigSource configSource = ConfigSources.file("application.unknown")
                 .build();
 
-        assertThat(configSource.content(), is(Optional.empty()));
+        assertThat(configSource.load(), is(Optional.empty()));
     }
 
     @Test
@@ -108,10 +108,10 @@ public class FileConfigSourceTest {
 
         assertThat(configSource.mediaType(), is(Optional.of("application/hocon")));
         assertThat(configSource.target(), is(path));
-        assertThat(configSource.targetType(), sameInstance(Path.class));
+        assertThat(configSource.targetType(), is(equalTo(Path.class)));
         assertThat(configSource.exists(), is(true));
 
-        Optional<ConfigParser.Content> maybeContent = configSource.content();
+        Optional<ConfigParser.Content> maybeContent = configSource.load();
         assertThat(maybeContent, not(Optional.empty()));
         ConfigParser.Content content = maybeContent.get();
 

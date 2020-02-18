@@ -105,7 +105,7 @@ public class FileConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public Optional<ConfigParser.Content> content() throws ConfigException {
+    public Optional<ConfigParser.Content> load() throws ConfigException {
         LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
 
         // now we need to create all the necessary steps in one go, to make sure the digest matches the file

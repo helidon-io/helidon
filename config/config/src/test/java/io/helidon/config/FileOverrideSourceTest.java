@@ -27,11 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link io.helidon.config.FileOverrideSource}.
@@ -41,10 +38,10 @@ public class FileOverrideSourceTest {
     private static final String RELATIVE_PATH_TO_RESOURCE = "/src/test/resources/";
 
     @RegisterExtension
-    static TemporaryFolderExt folder = TemporaryFolderExt.build();;
+    static TemporaryFolderExt folder = TemporaryFolderExt.build();
 
     private static String getDir() {
-        return Paths.get("").toAbsolutePath().toString() + RELATIVE_PATH_TO_RESOURCE;
+        return Paths.get("").toAbsolutePath() + RELATIVE_PATH_TO_RESOURCE;
     }
 
     @Test
@@ -63,12 +60,10 @@ public class FileOverrideSourceTest {
 
     @Test
     public void testLoadNotExists() {
-        FileOverrideSource overrideSource = (FileOverrideSource) OverrideSources.file("overrides.properties")
+        FileOverrideSource overrideSource = OverrideSources.file("overrides.properties")
                 .build();
 
-        ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
+        assertThat(overrideSource.load(), is(Optional.empty()));
     }
 
     @Test

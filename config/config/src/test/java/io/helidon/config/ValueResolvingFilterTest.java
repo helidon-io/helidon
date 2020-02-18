@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -105,7 +106,7 @@ public class ValueResolvingFilterTest {
                 .addFilter(ConfigFilters.valueResolving())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
-                .disableFilterServices()
+                .disableValueResolving()
                 .build();
 
         assertThat(config.get("message").asString().get(), is("Hallo ${name}!"));
@@ -295,11 +296,7 @@ public class ValueResolvingFilterTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            config.get("wrong").asString().get();
-        });
-        assertThat(ex.getMessage(), startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
-        assertThat(ex.getCause(), instanceOf(MissingValueException.class));
+        assertThat(config.get("wrong").asString().asOptional(), is(Optional.of("${missing}")));
     }
 
     @Test

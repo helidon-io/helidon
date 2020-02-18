@@ -81,7 +81,7 @@ public class EtcdConfigSourceTest {
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
-            etcdConfigSource.content();
+            etcdConfigSource.load();
         });
     }
 
@@ -95,7 +95,7 @@ public class EtcdConfigSourceTest {
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
-            etcdConfigSource.content();
+            etcdConfigSource.load();
         });
     }
 
@@ -112,7 +112,7 @@ public class EtcdConfigSourceTest {
 
         EtcdConfigSource mockedConfigSource = spy(configSource);
         when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
-        when(mockedConfigSource.content()).thenReturn(new ConfigContent<Long>() {
+        when(mockedConfigSource.load()).thenReturn(new ConfigContent<Long>() {
             @Override
             public Optional<String> mediaType() {
                 return Optional.of(MEDIA_TYPE_APPLICATION_HOCON);

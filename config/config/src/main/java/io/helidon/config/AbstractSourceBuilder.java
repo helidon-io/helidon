@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.PollableSource;
@@ -54,12 +55,10 @@ public abstract class AbstractSourceBuilder<B extends AbstractSourceBuilder<B, U
     }
 
     @Override
-    public B retryPolicy(RetryPolicy policy) {
-        this.retryPolicy = policy;
+    public B retryPolicy(Supplier<? extends RetryPolicy> policy) {
+        this.retryPolicy = policy.get();
         return me;
     }
-
-
 
     @Override
     public B optional(boolean optional) {

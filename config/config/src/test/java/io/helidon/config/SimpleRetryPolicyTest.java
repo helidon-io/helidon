@@ -19,9 +19,12 @@ package io.helidon.config;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.Thread.sleep;
@@ -44,15 +47,28 @@ public class SimpleRetryPolicyTest {
 
     private static final Duration RETRY_TIMEOUT = ofMillis(250);
     private static final Duration OVERALL_TIMEOUT = ofMillis(250 * 10);
+    private static ScheduledExecutorService executor;
+
+    @BeforeAll
+    static void initClass() {
+        executor = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    @AfterAll
+    static void destroyClass() {
+        executor.shutdown();
+    }
 
     @Test
-    public void testCallOnce() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(0,
-                                                              ofMillis(10),
-                                                              1,
-                                                              RETRY_TIMEOUT,
-                                                              OVERALL_TIMEOUT,
-                                                              Executors.newSingleThreadScheduledExecutor());
+    public void testCallOnce() {
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(0)
+                .delay(ofMillis(10))
+                .delayFactor(1)
+                .callTimeout(RETRY_TIMEOUT)
+                .overallTimeout(OVERALL_TIMEOUT)
+                .executorService(executor)
+                .build();
 
         SuccessSupplier sup = spy(new SuccessSupplier());
         retryPolicy.execute(sup::get);
@@ -62,12 +78,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryTwiceButFirstCallSucceeded() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(2,
-                                                              ofMillis(10),
-                                                              1,
-                                                              RETRY_TIMEOUT,
-                                                              OVERALL_TIMEOUT,
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(2)
+                .delay(ofMillis(10))
+                .delayFactor(1)
+                .callTimeout(RETRY_TIMEOUT)
+                .overallTimeout(OVERALL_TIMEOUT)
+                .executorService(executor)
+                .build();
 
         SuccessSupplier sup = spy(new SuccessSupplier());
         retryPolicy.execute(sup::get);
@@ -77,12 +95,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryTwiceCheckException() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(2,
-                                                              ofMillis(10),
-                                                              1,
-                                                              RETRY_TIMEOUT,
-                                                              OVERALL_TIMEOUT,
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(2)
+                .delay(ofMillis(10))
+                .delayFactor(1)
+                .callTimeout(RETRY_TIMEOUT)
+                .overallTimeout(OVERALL_TIMEOUT)
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = spy(new UniversalSupplier(2, false, 0));
 
@@ -95,12 +115,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryTwiceCheckRetries() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(2,
-                                                              ZERO,
-                                                              1,
-                                                              RETRY_TIMEOUT,
-                                                              OVERALL_TIMEOUT,
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(2)
+                .delay(ZERO)
+                .delayFactor(1)
+                .callTimeout(RETRY_TIMEOUT)
+                .overallTimeout(OVERALL_TIMEOUT)
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = spy(new UniversalSupplier(2, false, 0));
 
@@ -115,12 +137,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryTwicePolledTwice() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(2,
-                                                              ofMillis(10),
-                                                              1,
-                                                              RETRY_TIMEOUT,
-                                                              OVERALL_TIMEOUT,
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(2)
+                .delay(ofMillis(10))
+                .delayFactor(1)
+                .callTimeout(RETRY_TIMEOUT)
+                .overallTimeout(OVERALL_TIMEOUT)
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = spy(new UniversalSupplier(2, false, 0));
 
@@ -141,12 +165,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryThirdAttemptSucceed() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(2,
-                                                              ZERO,
-                                                              1,
-                                                              RETRY_TIMEOUT,
-                                                              OVERALL_TIMEOUT,
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(2)
+                .delay(ZERO)
+                .delayFactor(1)
+                .callTimeout(RETRY_TIMEOUT)
+                .overallTimeout(OVERALL_TIMEOUT)
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = spy(new UniversalSupplier(2, true, 0));
 
@@ -157,12 +183,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryCannotScheduleNextCall() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(2,
-                                                              ofMillis(50),
-                                                              1,
-                                                              ofMillis(60),
-                                                              ofMillis(100),
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(2)
+                .delay(ofMillis(50))
+                .delayFactor(1)
+                .callTimeout(ofMillis(60))
+                .overallTimeout(ofMillis(100))
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = new UniversalSupplier(1, false, 50);
 
@@ -175,12 +203,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryOverallTimeoutReached() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(0,
-                                                              ofMillis(1),
-                                                              1,
-                                                              ofMillis(110),
-                                                              ofMillis(100),
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(0)
+                .delay(ofMillis(1))
+                .delayFactor(1)
+                .callTimeout(ofMillis(110))
+                .overallTimeout(ofMillis(100))
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = new UniversalSupplier(0, true, 300);
 
@@ -192,13 +222,15 @@ public class SimpleRetryPolicyTest {
     }
 
     @Test
-    public void testRetryCallTimeoutReached() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(0,
-                                                              ZERO,
-                                                              1,
-                                                              ofMillis(10),
-                                                              ofMillis(100),
-                                                              Executors.newSingleThreadScheduledExecutor());
+    public void testRetryCallTimeoutReached() {
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(0)
+                .delay(ZERO)
+                .delayFactor(1)
+                .callTimeout(ofMillis(10))
+                .overallTimeout(ofMillis(100))
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = new UniversalSupplier(0, true, 100);
 
@@ -212,12 +244,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testRetryCancel() throws Exception {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(0,
-                                                              ZERO,
-                                                              1,
-                                                              ofMillis(500),
-                                                              ofMillis(550),
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(0)
+                .delay(ZERO)
+                .delayFactor(1)
+                .callTimeout(ofMillis(500))
+                .overallTimeout(ofMillis(550))
+                .executorService(executor)
+                .build();
 
         UniversalSupplier sup = new UniversalSupplier(0, true, 500);
 
@@ -240,12 +274,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testDelayFactor1Delay0() {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(0,
-                                                              ZERO,
-                                                              1,
-                                                              ofMillis(500),
-                                                              ofMillis(550),
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(0)
+                .delay(ZERO)
+                .delayFactor(1)
+                .callTimeout(ofMillis(500))
+                .overallTimeout(ofMillis(550))
+                .executorService(executor)
+                .build();
 
         assertThat(retryPolicy.nextDelay(0, ZERO), is(ofMillis(0)));
         assertThat(retryPolicy.nextDelay(1, ZERO), is(ofMillis(0)));
@@ -253,12 +289,14 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testDelayFactor1Delay1s() {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(0,
-                                                              ofSeconds(1),
-                                                              1,
-                                                              ofMillis(500),
-                                                              ofMillis(550),
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(0)
+                .delay(ofSeconds(1))
+                .delayFactor(1)
+                .callTimeout(ofMillis(500))
+                .overallTimeout(ofMillis(550))
+                .executorService(executor)
+                .build();
 
         assertThat(retryPolicy.nextDelay(0, ZERO), is(ofSeconds(1)));
         assertThat(retryPolicy.nextDelay(1, ofSeconds(1)), is(ofSeconds(1)));
@@ -266,24 +304,26 @@ public class SimpleRetryPolicyTest {
 
     @Test
     public void testDelayFactor15Delay1s() {
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(0,
-                                                              ofSeconds(1),
-                                                              1.5,
-                                                              ofMillis(500),
-                                                              ofMillis(550),
-                                                              Executors.newSingleThreadScheduledExecutor());
+        SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
+                .retries(0)
+                .delay(ofSeconds(1))
+                .delayFactor(1.5)
+                .callTimeout(ofMillis(500))
+                .overallTimeout(ofMillis(550))
+                .executorService(executor)
+                .build();
 
         assertThat(retryPolicy.nextDelay(0, ZERO), is(ofMillis(1000)));
         assertThat(retryPolicy.nextDelay(1, ofSeconds(1)), is(ofMillis(1500)));
     }
 
-    private class SuccessSupplier extends UniversalSupplier {
+    private static class SuccessSupplier extends UniversalSupplier {
         SuccessSupplier() {
             super(0, true, 0);
         }
     }
 
-    private class UniversalSupplier {
+    private static class UniversalSupplier {
 
         private final int retries;
         private final boolean lastSucceed;

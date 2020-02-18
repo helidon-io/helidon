@@ -34,7 +34,7 @@ public interface ParsableSource extends Source {
      * @return An instance of {@code T} as read from the underlying origin of the data (if it exists)
      * @throws io.helidon.config.ConfigException in case of errors loading from the underlying origin
      */
-    Optional<ConfigParser.Content> content() throws ConfigException;
+    Optional<ConfigParser.Content> load() throws ConfigException;
 
     /**
      * If a parser is configured with this source, return it.

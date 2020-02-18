@@ -49,7 +49,8 @@ final class ConfigSourcesRuntime {
 
     // for the purpose of tests
     static ConfigSourcesRuntime empty() {
-        return new ConfigSourcesRuntime(List.of(), MergingStrategy.fallback());
+        return new ConfigSourcesRuntime(List.of(new ConfigSourceRuntimeImpl(null, ConfigSources.empty())),
+                                        MergingStrategy.fallback());
     }
 
     List<ConfigSourceRuntimeBase> allSources() {
@@ -71,6 +72,11 @@ final class ConfigSourcesRuntime {
     @Override
     public int hashCode() {
         return Objects.hash(allSources);
+    }
+
+    @Override
+    public String toString() {
+        return allSources.toString();
     }
 
     void changeListener(Consumer<Optional<ObjectNode>> changeListener) {

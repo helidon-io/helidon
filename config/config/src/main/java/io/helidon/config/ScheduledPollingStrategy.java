@@ -44,8 +44,8 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
 
     private final RecurringPolicy recurringPolicy;
     private final boolean defaultExecutor;
-    private final ScheduledExecutorService executor;
 
+    private ScheduledExecutorService executor;
     private ScheduledFuture<?> scheduledFuture;
     private Polled polled;
 
@@ -82,14 +82,27 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
     }
 
     @Override
-    public void start(Polled polled) {
+    public synchronized void start(Polled polled) {
+        if (defaultExecutor && executor.isShutdown()) {
+            executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
+        }
+
+        if (executor.isShutdown()) {
+            throw new ConfigException("Cannot start a scheduled polling strategy, as the executor service is shutdown");
+        }
+
         this.polled = polled;
         scheduleNext();
     }
 
     @Override
-    public void stop() {
-        scheduledFuture.cancel(true);
+    public synchronized void stop() {
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(true);
+        }
+        if (defaultExecutor) {
+            ConfigUtils.shutdownExecutor(executor);
+        }
     }
 
     synchronized void startScheduling() {
@@ -117,15 +130,6 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
             break;
         }
         scheduleNext();
-    }
-
-    synchronized void stopScheduling() {
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(true);
-        }
-        if (defaultExecutor) {
-            ConfigUtils.shutdownExecutor(executor);
-        }
     }
 
     ScheduledFuture<?> scheduledFuture() {

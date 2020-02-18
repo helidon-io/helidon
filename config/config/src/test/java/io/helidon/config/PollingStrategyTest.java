@@ -16,19 +16,18 @@
 
 package io.helidon.config;
 
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
-import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests {@link io.helidon.config.spi.PollingStrategy}.
@@ -38,59 +37,38 @@ public class PollingStrategyTest {
     @Test
     public void testPollingStrategy() throws InterruptedException {
         final int EXPECTED_UPDATE_EVENTS_DELIVERED = 3;
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(EXPECTED_UPDATE_EVENTS_DELIVERED);
 
         MyPollingStrategy myPollingStrategy = new MyPollingStrategy(3);
 
-        myPollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(3);
-            }
-
-            @Override
-            public void onNext(PollingStrategy.PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
+        myPollingStrategy.start(when -> {
+            nextLatch.countDown();
+            return ChangeEventType.UNCHANGED;
         });
 
-        // Make sure subscription occurs before firing events.
-        assertThat("Subscriber did not register within expected time", 
-                subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
         myPollingStrategy.fireEvents();
 
         assertThat("Subscriber was notified of " + (EXPECTED_UPDATE_EVENTS_DELIVERED - nextLatch.getCount() + 1) +
-                        " events, not the expected number, within the expected time",
-                nextLatch.await(100, TimeUnit.MILLISECONDS), is(true));
+                           " events, not the expected number, within the expected time",
+                   nextLatch.await(100, TimeUnit.MILLISECONDS), is(true));
     }
 
-    private class MyPollingStrategy implements PollingStrategy {
+    private static final class MyPollingStrategy implements PollingStrategy {
 
         private final int events;
-        private final SubmissionPublisher<PollingEvent> publisher = new SubmissionPublisher<>();
+        private Polled polled;
 
         MyPollingStrategy(int events) {
             this.events = events;
         }
 
         @Override
-        public Flow.Publisher<PollingEvent> ticks() {
-            return publisher;
+        public void start(Polled polled) {
+            this.polled = polled;
         }
 
-        void fireEvents() {
-            IntStream.range(0, events).forEach((i) -> publisher.submit(PollingEvent.now()));
+        public void fireEvents() {
+            IntStream.range(0, events).forEach(i -> polled.poll(Instant.now()));
         }
     }
 }

@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
@@ -58,7 +59,7 @@ public class HybridNodeTest {
         ConfigNode.ObjectNode objectNode = mapConfigSource.load().get().data();
 
         assertThat(objectNode.entrySet(), hasSize(1));
-        assertThat(((ConfigNode.ObjectNode) objectNode.get("app")).get("port").value(), is("8080"));
+        assertThat(((ConfigNode.ObjectNode) objectNode.get("app")).get("port").value(), is(Optional.of("8080")));
         assertThat(objectNode.get("app").value(), is("app-name"));
     }
 

@@ -165,6 +165,6 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
 
     @Override
     public Optional<String> value() {
-        return Optional.of(value);
+        return Optional.ofNullable(value);
     }
 }

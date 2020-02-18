@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * chooses not to retry in case of errors.
  */
 @FunctionalInterface
-public interface RetryPolicy {
+public interface RetryPolicy extends Supplier<RetryPolicy> {
     /**
      * Invokes the provided {@code Supplier} to read the source data and returns
      * that data.
@@ -64,5 +64,10 @@ public interface RetryPolicy {
      */
     default boolean cancel(boolean mayInterruptIfRunning) {
         return false;
+    }
+
+    @Override
+    default RetryPolicy get() {
+        return this;
     }
 }

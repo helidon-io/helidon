@@ -159,7 +159,7 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
     }
 
     @Override
-    public Optional<Content> content() throws ConfigException {
+    public Optional<Content> load() throws ConfigException {
         if (null == resourceUrl) {
             return Optional.empty();
         }
@@ -217,7 +217,7 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
      * </ul>
      * <p>
      * If the ConfigSource is {@code mandatory} and a {@code resource} does not exist
-     * then {@link io.helidon.config.spi.ParsableSource#content} throws {@link ConfigException}.
+     * then {@link io.helidon.config.spi.ParsableSource#load} throws {@link ConfigException}.
      * <p>
      * If {@code media-type} not set it tries to guess it from resource extension.
      */

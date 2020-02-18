@@ -25,7 +25,8 @@ import org.hamcrest.Description;
  * Hamcrest {@link org.hamcrest.Matcher} implementation that matches {@link ConfigNode.ValueNode} value.
  */
 public class ValueNodeMatcher extends BaseMatcher<ConfigNode> {
-    //??? There is io.helidon.config.testing module that provides this matcher too BUT it depends on io.helidon.config module! Cycle!!! :(
+    //??? There is io.helidon.config.testing module that provides this matcher too BUT it depends on io.helidon.config module!
+    // Cycle!!! :(
 
     private String expectedValue;
 
@@ -41,7 +42,7 @@ public class ValueNodeMatcher extends BaseMatcher<ConfigNode> {
     @Override
     public boolean matches(Object actualValue) {
         if (actualValue instanceof ConfigNode.ValueNode) {
-            return expectedValue.equals(((ConfigNode.ValueNode) actualValue).value());
+            return expectedValue.equals(((ConfigNode.ValueNode) actualValue).get());
         }
         return false;
     }

@@ -57,6 +57,7 @@ public class BuilderImplTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
+                .disableValueResolving()
                 .build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
@@ -75,6 +76,7 @@ public class BuilderImplTest {
         Executor myExecutor = Runnable::run;
         Config.Builder builder = Config.builder()
                 .sources(ConfigSources.empty())
+                .disableValueResolving()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
