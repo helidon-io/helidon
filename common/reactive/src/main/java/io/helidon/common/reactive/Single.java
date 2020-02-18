@@ -60,9 +60,7 @@ public interface Single<T> extends Subscribable<T> {
      */
     @Deprecated
     default <U> Multi<U> mapMany(Mapper<T, Publisher<U>> mapper) {
-        var processor = SingleMultiMappingProcessor.<T, U>create().mapper(mapper::map);
-        this.subscribe(processor);
-        return processor;
+        return flatMap(mapper::map);
     }
 
     /**
@@ -74,8 +72,8 @@ public interface Single<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> flatMap(Function<T, Publisher<U>> mapper) {
-        var processor = SingleMultiMappingProcessor.<T, U>create().mapper(mapper);
-        this.subscribe(processor);
+        var processor = MultiFlatMapProcessor.fromPublisherMapper(mapper);
+        map(item -> item).subscribe(processor);
         return processor;
     }
 
