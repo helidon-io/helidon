@@ -60,7 +60,7 @@ public class HybridNodeTest {
 
         assertThat(objectNode.entrySet(), hasSize(1));
         assertThat(((ConfigNode.ObjectNode) objectNode.get("app")).get("port").value(), is(Optional.of("8080")));
-        assertThat(objectNode.get("app").value(), is("app-name"));
+        assertThat(objectNode.get("app").value(), is(Optional.of("app-name")));
     }
 
     @Test

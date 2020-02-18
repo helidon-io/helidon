@@ -58,7 +58,11 @@ public class ConfigContextTest {
             oldValue = "oldVal_" + i + "_" + j;
             newValue = "newVal_" + i + "_" + j;
 
-            configSource = TestingConfigSource.builder().objectNode(createSource("old")).build();
+            configSource = TestingConfigSource.builder()
+                    .objectNode(createSource("old"))
+                    .testingPollingStrategy()
+                    .build();
+
             Config cfg = Config.builder()
                     .sources(configSource)
                     .disableEnvironmentVariablesSource()
@@ -236,7 +240,7 @@ public class ConfigContextTest {
         c.changeSource("new");
 
         //wait for a new configuration is loaded
-        waitForAssert(() -> c.config.context().last().get(PROP1).asString(), is(ConfigValues.simpleValue(c.newValue)));
+        waitForAssert(() -> c.config.context().last().get(PROP1).asString().asOptional(), is(ConfigValues.simpleValue(c.newValue).asOptional()));
 
         Config last1 = c.config.context().last();
 

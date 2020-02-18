@@ -43,7 +43,7 @@ public class FileSourceHelperTest {
         Files.write(file1.toPath(), "test file".getBytes());
         Files.write(file2.toPath(), "test file".getBytes());
 
-        assertThat(FileSourceHelper.digest(file1.toPath()), equalTo(FileSourceHelper.digest(file2.toPath())));
+        assertThat(FileSourceHelper.digest(file1.toPath()).get(), equalTo(FileSourceHelper.digest(file2.toPath()).get()));
     }
 
     @Test

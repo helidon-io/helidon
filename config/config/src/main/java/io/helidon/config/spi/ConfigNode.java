@@ -205,7 +205,7 @@ public interface ConfigNode {
          * @return new instance of {@link Builder}.
          */
         static Builder builder() {
-            return new ObjectNodeBuilderImpl();
+            return ObjectNodeBuilderImpl.create();
         }
 
         /**

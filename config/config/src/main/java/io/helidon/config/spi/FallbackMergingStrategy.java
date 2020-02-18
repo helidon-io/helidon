@@ -16,6 +16,7 @@
 
 package io.helidon.config.spi;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -37,7 +38,9 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
 final class FallbackMergingStrategy implements MergingStrategy {
 
     @Override
-    public ObjectNode merge(List<ObjectNode> rootNodes) {
+    public ObjectNode merge(List<ObjectNode> rootNodesParam) {
+        // we may get an immutable list
+        List<ObjectNode> rootNodes = new ArrayList<>(rootNodesParam);
         Collections.reverse(rootNodes);
 
         ObjectNode.Builder builder = ObjectNode.builder();

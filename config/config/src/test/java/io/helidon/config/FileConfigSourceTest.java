@@ -30,10 +30,10 @@ import io.helidon.config.test.infra.TemporaryFolderExt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.typeCompatibleWith;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -74,15 +74,6 @@ public class FileConfigSourceTest {
     }
 
     @Test
-    public void testGetMediaTypeGuessed() {
-        FileConfigSource configSource = ConfigSources.file("logging.properties")
-                .optional()
-                .build();
-
-        assertThat(configSource.load().get().mediaType(), is(Optional.of("text/x-java-properties")));
-    }
-
-    @Test
     public void testGetMediaTypeUnknown() {
         FileConfigSource configSource = ConfigSources.file("application.unknown")
                 .optional()
@@ -108,7 +99,7 @@ public class FileConfigSourceTest {
 
         assertThat(configSource.mediaType(), is(Optional.of("application/hocon")));
         assertThat(configSource.target(), is(path));
-        assertThat(configSource.targetType(), is(equalTo(Path.class)));
+        assertThat(configSource.targetType(), is(typeCompatibleWith(Path.class)));
         assertThat(configSource.exists(), is(true));
 
         Optional<ConfigParser.Content> maybeContent = configSource.load();

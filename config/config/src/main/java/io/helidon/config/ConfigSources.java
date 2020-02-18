@@ -322,6 +322,11 @@ public final class ConfigSources {
             public String toString() {
                 return "EmptyConfigSource";
             }
+
+            @Override
+            public boolean optional() {
+                return true;
+            }
         };
     }
 

@@ -18,13 +18,14 @@ package io.helidon.config;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 import io.helidon.config.spi.OverrideSource;
 
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,12 +53,12 @@ public class UrlOverrideSourceTest {
 
     @Test
     public void testLoadNotExists() throws MalformedURLException {
-        UrlOverrideSource overrideSource = (UrlOverrideSource) OverrideSources
+        UrlOverrideSource overrideSource = OverrideSources
                 .url(new URL("http://config-service/application.unknown"))
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
+        assertThat(ex.getCause(), instanceOf(UnknownHostException.class));
+        assertThat(ex.getMessage(), containsString("config-service"));
     }
 }

@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
@@ -194,7 +193,7 @@ public interface ConfigParser {
             @Override
             public Content build() {
                 if (null == data) {
-                    throw new ConfigException("Parsable content exists, yet input stream was not configured.");
+                    throw new ConfigParserException("Parsable content exists, yet input stream was not configured.");
                 }
                 return new ContentImpl.ParsableContentImpl(this);
             }

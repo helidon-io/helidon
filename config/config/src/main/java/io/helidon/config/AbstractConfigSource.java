@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 
@@ -69,9 +70,9 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return parser;
     }
 
-    ConfigNode.ObjectNode processNodeMapping(Function<String, Optional<ConfigParser>> mediaToParser,
+    ObjectNode processNodeMapping(Function<String, Optional<ConfigParser>> mediaToParser,
                                              ConfigKeyImpl configKey,
-                                             ConfigNode.ObjectNode loaded) {
+                                             ObjectNode loaded) {
 
         if (!mediaMappingSupported) {
             return loaded;
@@ -80,10 +81,10 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return processObject(mediaToParser, configKey, loaded);
     }
 
-    private ConfigNode.ObjectNode processObject(Function<String, Optional<ConfigParser>> mediaToParser,
+    private ObjectNode processObject(Function<String, Optional<ConfigParser>> mediaToParser,
                                                 ConfigKeyImpl key,
-                                                ConfigNode.ObjectNode objectNode) {
-        ObjectNodeBuilderImpl builder = (ObjectNodeBuilderImpl) ConfigNode.ObjectNode.builder();
+                                                ObjectNode objectNode) {
+        ObjectNode.Builder builder = ObjectNode.builder();
 
         objectNode.forEach((name, node) -> builder.addNode(name, processNode(mediaToParser, key.child(name), node)));
 
@@ -95,7 +96,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
                                    ConfigNode node) {
         switch (node.nodeType()) {
         case OBJECT:
-            return processObject(mediaToParser, key, (ConfigNode.ObjectNode) node);
+            return processObject(mediaToParser, key, (ObjectNode) node);
         case LIST:
             return processList(mediaToParser, key, (ConfigNode.ListNode) node);
         case VALUE:

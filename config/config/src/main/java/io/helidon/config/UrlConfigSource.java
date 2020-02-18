@@ -164,7 +164,13 @@ public final class UrlConfigSource extends AbstractConfigSource
     private Optional<Content> httpContent(HttpURLConnection connection) throws IOException {
         connection.setRequestMethod(GET_METHOD);
 
-        connection.connect();
+        try {
+            connection.connect();
+        } catch (IOException e) {
+            // considering this to be unavailable
+            LOGGER.log(Level.FINEST, "Failed to connect to " + url + ", considering this source to be missing", e);
+            return Optional.empty();
+        }
 
         if (STATUS_NOT_FOUND == connection.getResponseCode()) {
             return Optional.empty();

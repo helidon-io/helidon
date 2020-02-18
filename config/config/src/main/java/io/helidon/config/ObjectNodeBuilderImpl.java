@@ -37,7 +37,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
     /**
      * Initialize object builder.
      */
-    public ObjectNodeBuilderImpl() {
+    ObjectNodeBuilderImpl() {
         this(Function.identity());
     }
 
@@ -49,6 +49,10 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
     public ObjectNodeBuilderImpl(Function<String, String> tokenResolver) {
         super(tokenResolver);
         this.members = new HashMap<>();
+    }
+
+    public static ObjectNodeBuilderImpl create() {
+        return new ObjectNodeBuilderImpl();
     }
 
     /**

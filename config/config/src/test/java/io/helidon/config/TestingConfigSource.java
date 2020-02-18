@@ -25,6 +25,9 @@ import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * Testing implementation of {@link io.helidon.config.spi.ConfigSource}.
  */
@@ -69,6 +72,11 @@ public class TestingConfigSource extends AbstractConfigSource
     public void changeLoadedObjectNode(ObjectNode newObjectNode) {
         timestamp = Instant.now();
         loadedObjectNode = newObjectNode;
+        pollingStrategy().ifPresent(ps -> {
+            if (ps instanceof TestingPollingStrategy) {
+                ((TestingPollingStrategy) ps).changed();
+            }
+        });
     }
 
     public static Builder builder() {
@@ -111,6 +119,10 @@ public class TestingConfigSource extends AbstractConfigSource
             return objectNode;
         }
 
+        public Builder testingPollingStrategy() {
+            return pollingStrategy(new TestingPollingStrategy());
+        }
+
         @Override
         public Builder pollingStrategy(PollingStrategy pollingStrategy) {
             return super.pollingStrategy(pollingStrategy);
@@ -119,6 +131,20 @@ public class TestingConfigSource extends AbstractConfigSource
         public Builder uid(String uid) {
             this.uid = uid;
             return this;
+        }
+    }
+
+    private static class TestingPollingStrategy implements PollingStrategy {
+        private Polled polled;
+
+        @Override
+        public void start(Polled polled) {
+            this.polled = polled;
+        }
+
+        void changed() {
+            assertThat("Polling strategy should have been started", polled, notNullValue());
+            polled.poll(Instant.now());
         }
     }
 }

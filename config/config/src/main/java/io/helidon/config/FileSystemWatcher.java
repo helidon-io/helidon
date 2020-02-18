@@ -188,7 +188,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
          * Runtime handling
          */
         // we have failed - retry registration on next trigger
-        private volatile boolean failed = false;
+        private volatile boolean failed = true;
         // maybe we were stopped, do not do anything (the scheduled future will be cancelled shortly)
         private volatile boolean shouldStop = false;
         // last file information
@@ -234,8 +234,17 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
                 return;
             }
 
+            List<WatchEvent<?>> watchEvents = key.pollEvents();
+            if (watchEvents.isEmpty()) {
+                // something happened, cannot get details
+                key.cancel();
+                listener.accept(ChangeEvent.create(target, ChangeEventType.CHANGED));
+                failed = true;
+                return;
+            }
+
             // we actually have some changes
-            for (WatchEvent<?> watchEvent : key.pollEvents()) {
+            for (WatchEvent<?> watchEvent : watchEvents) {
                 WatchEvent<Path> event = (WatchEvent<Path>) watchEvent;
                 Path eventPath = event.context();
 

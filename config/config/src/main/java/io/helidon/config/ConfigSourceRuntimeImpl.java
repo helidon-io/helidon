@@ -118,7 +118,6 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
             Optional<ChangeWatcher<Object>> changeWatcher = watchable.changeWatcher();
 
             if (changeWatcher.isPresent()) {
-                changesStarted = true;
                 changesSupported = true;
                 changesRunnable = new WatchableChangesStarter(configContext,
                                                               listeners,
@@ -134,7 +133,6 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
             Optional<PollingStrategy> pollingStrategy = pollable.pollingStrategy();
 
             if (pollingStrategy.isPresent()) {
-                changesStarted = true;
                 changesSupported = true;
                 changesRunnable = new PollingStrategyStarter(configContext,
                                                              listeners,
@@ -148,7 +146,6 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
 
         if (!changesSupported && (configSource instanceof EventConfigSource)) {
             EventConfigSource event = (EventConfigSource) source;
-            changesStarted = true;
             changesSupported = true;
             changesRunnable = () -> event.onChange((key, config) -> listeners.forEach(it -> it.accept(key, config)));
         }
@@ -221,6 +218,10 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
         Optional<ObjectNode> loadedData = configSource.retryPolicy()
                 .map(policy -> policy.execute(reloader))
                 .orElseGet(reloader);
+
+        if (loadedData.isEmpty() && !configSource.optional()) {
+            throw new ConfigException("Cannot load data from mandatory source: " + configSource);
+        }
 
         // we may have media type mapping per node configured as well
         if (configSource instanceof AbstractConfigSource) {
@@ -326,6 +327,10 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
                     }
                 });
 
+    }
+
+    ConfigSource unwrap() {
+        return configSource;
     }
 
     private static final class PollingStrategyStarter implements Runnable {

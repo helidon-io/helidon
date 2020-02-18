@@ -259,7 +259,7 @@ public final class ConfigValues {
 
         @Override
         public String toString() {
-            return key() + ": " + asOptional();
+            return key() + ": " + asOptional().map(String::valueOf).orElse("");
         }
     }
 

@@ -94,15 +94,36 @@ final class ConfigSourcesRuntime {
     }
 
     private Optional<ObjectNode> processChange(Optional<ObjectNode> oldData, String changedKey, ConfigNode changeNode) {
-        ObjectNode newObjectNode = ObjectNode.builder()
-                .addNode(changedKey, changeNode)
-                .build();
+        ConfigKeyImpl key = ConfigKeyImpl.of(changedKey);
+        ObjectNode changeObjectNode = toObjectNode(changeNode);
 
-        if (oldData.isEmpty()) {
-            return Optional.of(newObjectNode);
+        if (key.isRoot()) {
+            // we have a root, no merging with original data, just return it
+            return Optional.of(changeObjectNode);
         }
 
-        return Optional.of(mergingStrategy.merge(List.of(newObjectNode, oldData.get())));
+        ObjectNode newRootNode = ObjectNode.builder().addObject(changedKey, changeObjectNode).build();
+
+        // old data was empty, this is the only data we have
+        if (oldData.isEmpty()) {
+            return Optional.of(newRootNode);
+        }
+
+        // we had data, now we have new data (not on root), let's merge
+        return Optional.of(mergingStrategy.merge(List.of(newRootNode, oldData.get())));
+    }
+
+    private ObjectNode toObjectNode(ConfigNode changeNode) {
+        switch (changeNode.nodeType()) {
+        case OBJECT:
+            return (ObjectNode) changeNode;
+        case LIST:
+            return ObjectNode.builder().addList("", (ConfigNode.ListNode) changeNode).build();
+        case VALUE:
+            return ObjectNode.builder().value(((ConfigNode.ValueNode) changeNode).get()).build();
+        default:
+            throw new IllegalArgumentException("Unsupported node type: " + changeNode.nodeType());
+        }
     }
 
     synchronized Optional<ObjectNode> latest() {

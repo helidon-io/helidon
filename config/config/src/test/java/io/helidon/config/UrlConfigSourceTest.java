@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -96,9 +95,7 @@ public class UrlConfigSourceTest {
         ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
 
         ConfigException ex = assertThrows(ConfigException.class, runtime::load);
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
-        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
-
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source: "));
     }
 
     @Test
@@ -115,7 +112,6 @@ public class UrlConfigSourceTest {
         ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
 
         ConfigException ex = assertThrows(ConfigException.class, runtime::load);
-        assertThat(ex.getCause(), instanceOf(ConfigException.class));
         assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 }

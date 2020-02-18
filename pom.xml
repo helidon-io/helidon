@@ -173,7 +173,6 @@
         <module>webclient</module>
         <module>integrations</module>
         <module>dbclient</module>
-        <module>config2</module>
     </modules>
 
     <build>

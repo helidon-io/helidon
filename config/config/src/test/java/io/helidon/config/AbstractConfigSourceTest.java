@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -55,7 +56,7 @@ public class AbstractConfigSourceTest {
     public void testBuilderDefault() {
         TestingConfigSource.Builder builder = TestingConfigSource.builder();
 
-        assertThat(builder.optional(), is(false));
+        assertThat(builder.isOptional(), is(false));
         assertThat(builder.mediaTypeMapping(), is(Optional.empty()));
         assertThat(builder.parserMapping(), is(Optional.empty()));
         assertThat(builder.pollingStrategy(), is(Optional.empty()));
@@ -70,7 +71,7 @@ public class AbstractConfigSourceTest {
                 .optional()
                 .build();
 
-        assertThat(configSource.description(), is("TestingConfig[test]?*"));
+        assertThat(configSource.description(), is("TestingConfig[test]?"));
     }
 
     @Test
@@ -87,7 +88,7 @@ public class AbstractConfigSourceTest {
                 .optional()
                 .build();
 
-        assertThat(configSource.description(), is("TestingConfig[PA,RAMS]?*"));
+        assertThat(configSource.description(), is("TestingConfig[PA,RAMS]?"));
     }
 
     @Test
@@ -96,7 +97,7 @@ public class AbstractConfigSourceTest {
                 .uid("")
                 .build();
 
-        assertThat(configSource.description(), is("TestingConfig[]*"));
+        assertThat(configSource.description(), is("TestingConfig[]"));
     }
 
     @Test
@@ -105,7 +106,7 @@ public class AbstractConfigSourceTest {
                 .uid("PA,RAMS")
                 .build();
 
-        assertThat(configSource.description(), is("TestingConfig[PA,RAMS]*"));
+        assertThat(configSource.description(), is("TestingConfig[PA,RAMS]"));
     }
 
     @Test
@@ -137,9 +138,13 @@ public class AbstractConfigSourceTest {
                         : Optional.empty())
                 .build();
 
-        configSource.init(context);
-        ObjectNode objectNode = configSource.load().get().data();
-        assertThat(((ObjectNode) objectNode.get("key1")).get("aaa"), valueNode("bbb"));
+        ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
+
+        ObjectNode objectNode = runtime.load().get();
+
+        ConfigNode mappedNode = objectNode.get("key1");
+        assertThat(mappedNode, instanceOf(ObjectNode.class));
+        assertThat(((ObjectNode) mappedNode).get("aaa"), valueNode("bbb"));
         assertThat(objectNode.get("key2"), valueNode("ooo=ppp"));
     }
 
@@ -157,8 +162,8 @@ public class AbstractConfigSourceTest {
                 .parserMapping(key -> key.name().equals("key1") ? Optional.of(ConfigParsers.properties()) : Optional.empty())
                 .build();
 
-        configSource.init(context);
-        ObjectNode objectNode = configSource.load().get().data();
+        ObjectNode objectNode = new ConfigSourceRuntimeImpl(context, configSource).load().get();
+
         assertThat(((ObjectNode) objectNode.get("key1")).get("aaa"), valueNode("bbb"));
         assertThat(objectNode.get("key2"), valueNode("ooo=ppp"));
     }
@@ -191,8 +196,7 @@ public class AbstractConfigSourceTest {
                 .parserMapping(key -> key.name().equals("key1") ? Optional.of(ConfigParsers.properties()) : Optional.empty())
                 .build();
 
-        configSource.init(context);
-        ObjectNode objectNode = configSource.load().get().data();
+        ObjectNode objectNode = new ConfigSourceRuntimeImpl(context, configSource).load().get();
         assertThat(((ObjectNode) objectNode.get("key1")).get("aaa"), valueNode("bbb"));
         assertThat(objectNode.get("key2"), valueNode("ooo=ppp"));
     }

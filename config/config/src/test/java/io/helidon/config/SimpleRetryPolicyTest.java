@@ -23,8 +23,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.Thread.sleep;
@@ -47,15 +47,15 @@ public class SimpleRetryPolicyTest {
 
     private static final Duration RETRY_TIMEOUT = ofMillis(250);
     private static final Duration OVERALL_TIMEOUT = ofMillis(250 * 10);
-    private static ScheduledExecutorService executor;
+    private ScheduledExecutorService executor;
 
-    @BeforeAll
-    static void initClass() {
+    @BeforeEach
+    void init() {
         executor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    @AfterAll
-    static void destroyClass() {
+    @AfterEach
+    void destroy() {
         executor.shutdown();
     }
 
@@ -94,7 +94,7 @@ public class SimpleRetryPolicyTest {
     }
 
     @Test
-    public void testRetryTwiceCheckException() throws Exception {
+    public void testRetryTwiceCheckException() {
         SimpleRetryPolicy retryPolicy = SimpleRetryPolicy.builder()
                 .retries(2)
                 .delay(ofMillis(10))
@@ -104,7 +104,7 @@ public class SimpleRetryPolicyTest {
                 .executorService(executor)
                 .build();
 
-        UniversalSupplier sup = spy(new UniversalSupplier(2, false, 0));
+        UniversalSupplier sup = new UniversalSupplier(2, false, 0);
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             retryPolicy.execute(sup::get);
