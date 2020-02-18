@@ -15,6 +15,8 @@
  */
 package io.helidon.media.common;
 
+import io.helidon.config.Config;
+
 /**
  * Media support.
  */
@@ -62,6 +64,17 @@ public final class MediaSupport {
     }
 
     /**
+     * Create a new instance with the default readers and writers registered on
+     * the contexts.
+     * @param config a {@link Config} that will be passed to {@link
+     * Builder#registerDefaults(Config)}
+     * @return MediaSupport
+     */
+    public static MediaSupport createWithDefaults(Config config) {
+        return builder().registerDefaults(config).build();
+    }
+
+    /**
      * Create a new {@link Builder} instance.
      * @return Builder
      */
@@ -101,11 +114,57 @@ public final class MediaSupport {
          * {@code Path.class}</li>
          * <li>{@link FileBodyWriter} - generates payload from
          * {@code File.class}</li>
+         * <li>{@link ThrowableBodyWriter} - generates payload from
+         * {@link Throwable Throwable.class}</li>
          * </ul>
          *
          * @return this builder instance
+         *
+         * @see #registerDefaults(Config)
          */
         public Builder registerDefaults() {
+            return registerDefaults(null);
+        }
+
+        /**
+         * Register the default readers and writers.
+         * <h3>Default readers</h3>
+         * <ul>
+         * <li>{@link StringBodyReader} - converts payload into
+         * {@code String.class}</li>
+         * <li>{@link InputStreamBodyReader} - converts payload into
+         * {@code InputStream.class}</li>
+         * </ul>
+         * <h3>Default writers</h3>
+         * <ul>
+         * <li>{@link CharSequenceBodyWriter} - generates payload from
+         * {@code CharSequence.class}</li>
+         * <li>{@link ByteChannelBodyWriter} - generates payload from
+         * {@code ReadableByteChannel.class}</li>
+         * <li>{@link PathBodyWriter} - generates payload from
+         * {@code Path.class}</li>
+         * <li>{@link FileBodyWriter} - generates payload from
+         * {@code File.class}</li>
+         * <li>{@link ThrowableBodyWriter} - generates payload from
+         * {@link Throwable Throwable.class}</li>
+         * </ul>
+         *
+         * @param config a {@link Config} whose {@code
+         * serverErrorsIncludeStackTraces} key will be sought as a
+         * {@code boolean} value indicating whether the default {@link
+         * ThrowableBodyWriter} will include {@link Throwable}
+         * {@linkplain Throwable#printStackTrace() stack traces} as
+         * part of web application errors
+         * @return this builder instance
+         */
+        public Builder registerDefaults(Config config) {
+            final boolean serverErrorsIncludeStackTraces;
+            if (config == null) {
+                serverErrorsIncludeStackTraces = false;
+            } else {
+                serverErrorsIncludeStackTraces = config.get("serverErrorsIncludeStackTraces").as(Boolean.TYPE).orElse(false);
+            }
+
             // default readers
             readerContext
                     .registerReader(StringBodyReader.create())
@@ -117,7 +176,7 @@ public final class MediaSupport {
                     .registerWriter(ByteChannelBodyWriter.create())
                     .registerWriter(PathBodyWriter.create())
                     .registerWriter(FileBodyWriter.create())
-                    .registerWriter(ThrowableBodyWriter.create(false));
+                    .registerWriter(ThrowableBodyWriter.create(serverErrorsIncludeStackTraces));
             return this;
         }
 
