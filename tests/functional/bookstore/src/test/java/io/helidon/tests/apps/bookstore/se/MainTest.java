@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.stream.Collectors;
 
 import javax.json.Json;
@@ -38,7 +39,9 @@ import javax.json.stream.JsonParser;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
+import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
 import com.oracle.bedrock.runtime.options.Arguments;
+import com.oracle.bedrock.runtime.options.Console;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,7 +60,7 @@ class MainTest {
     private static Application application;
     private static LocalPlatform localPlatform = LocalPlatform.get();
     private static int port = localPlatform.getAvailablePorts().next();
-    private static URL  healthUrl;
+    private static URL healthUrl;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -72,22 +75,45 @@ class MainTest {
         if (application != null) {
             application.close();
         }
-        application=null;
+        application = null;
         waitForApplicationDown();
     }
 
     void startTheApplication(String appJarPath, List<String> javaArgs) throws Exception {
-        if (application != null) {
-            Assertions.fail("Can't start the application, it is already running");
-        }
-
-        List<String> startArgs = new ArrayList<>(javaArgs);
-        startArgs.add("-Dserver.port=" + port);
-        startArgs.add("-jar");
-        startArgs.add(appJarPath);
-
-        application = localPlatform.launch("java", Arguments.of(startArgs));
+        Arguments args = toArguments(appJarPath, javaArgs);
+        application = localPlatform.launch("java", args);
         waitForApplicationUp();
+    }
+
+    @Test
+    void exitOnStartedSe() throws Exception {
+        runExitOnStartedTest("se");
+    }
+
+    @Test
+    void exitOnStartedMp() throws Exception {
+        runExitOnStartedTest("mp");
+    }
+
+    private void runExitOnStartedTest(String edition) throws Exception {
+        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"));
+        CapturingApplicationConsole console = new CapturingApplicationConsole();
+        application = localPlatform.launch("java", args, Console.of(console));
+        Queue<String> stdOut = console.getCapturedOutputLines();
+        long maxTime = System.currentTimeMillis() + (10 * 1000);
+        do {
+            if (stdOut.stream().anyMatch(line -> line.contains("exit.on.started"))) {
+                return;
+            }
+            Thread.sleep(500);
+        } while (System.currentTimeMillis() < maxTime);
+
+        String eol = System.getProperty("line.separator");
+        Assertions.fail("quickstart " + edition + " did not exit as expected." + eol
+                        + eol
+                        + "stdOut: " + stdOut + eol
+                        + eol
+                        + " stdErr: " + console.getCapturedErrorLines());
     }
 
     @Test
@@ -153,7 +179,7 @@ class MainTest {
 
         startTheApplication(editionToJarPath(edition), systemPropertyArgs);
 
-        conn = getURLConnection("GET","/books");
+        conn = getURLConnection("GET", "/books");
         assertThat("HTTP response GET books", conn.getResponseCode(), is(200));
 
         JsonParser parser = Json.createParser(conn.getInputStream());
@@ -161,23 +187,23 @@ class MainTest {
         JsonArray bookArray = parser.getArray();
         assertThat("Number of books", bookArray.size(), is(numberOfBooks));
 
-        conn = getURLConnection("POST","/books");
+        conn = getURLConnection("POST", "/books");
         writeJsonContent(conn, json);
         assertThat("HTTP response POST", conn.getResponseCode(), is(200));
 
-        conn = getURLConnection("GET","/books/123456");
+        conn = getURLConnection("GET", "/books/123456");
         assertThat("HTTP response GET good ISBN", conn.getResponseCode(), is(200));
         JsonReader jsonReader = Json.createReader(conn.getInputStream());
         JsonObject jsonObject = jsonReader.readObject();
         assertThat("Checking if correct ISBN", jsonObject.getString("isbn"), is("123456"));
 
-        conn = getURLConnection("GET","/books/0000");
+        conn = getURLConnection("GET", "/books/0000");
         assertThat("HTTP response GET bad ISBN", conn.getResponseCode(), is(404));
 
-        conn = getURLConnection("GET","/books");
+        conn = getURLConnection("GET", "/books");
         assertThat("HTTP response list books", conn.getResponseCode(), is(200));
 
-        conn = getURLConnection("DELETE","/books/123456");
+        conn = getURLConnection("DELETE", "/books/123456");
         assertThat("HTTP response delete book", conn.getResponseCode(), is(200));
     }
 
@@ -203,7 +229,7 @@ class MainTest {
         HttpURLConnection conn;
 
         // Get Prometheus style metrics
-        conn = getURLConnection("GET","/metrics");
+        conn = getURLConnection("GET", "/metrics");
         conn.setRequestProperty("Accept", "*/*");
         assertThat("Checking Prometheus Metrics response\"", conn.getResponseCode(), is(200));
         String s = readAllAsString(conn.getInputStream());
@@ -212,17 +238,17 @@ class MainTest {
         assertThat("Making sure we got Prometheus format", s.startsWith("# TYPE"));
 
         // Get JSON encoded metrics
-        conn = getURLConnection("GET","/metrics");
+        conn = getURLConnection("GET", "/metrics");
         assertThat("Checking JSON Metrics response\"", conn.getResponseCode(), is(200));
 
         // Makes sure we got JSON metrics
         JsonReader jsonReader = Json.createReader(conn.getInputStream());
         JsonObject jsonObject = jsonReader.readObject();
         assertThat("Checking request count",
-                jsonObject.getJsonObject("vendor").getInt("requests.count") > 0);
+                   jsonObject.getJsonObject("vendor").getInt("requests.count") > 0);
 
         // Get JSON encoded metrics/base
-        conn = getURLConnection("GET","/metrics/base");
+        conn = getURLConnection("GET", "/metrics/base");
         assertThat("Checking JSON Base Metrics response", conn.getResponseCode(), is(200));
 
         // Makes sure we got JSON metrics
@@ -231,7 +257,7 @@ class MainTest {
         assertThat("Checking thread count", jsonObject.getInt("thread.count") > 0);
 
         // Get JSON encoded health check
-        conn = getURLConnection("GET","/health");
+        conn = getURLConnection("GET", "/health");
         assertThat("Checking health response", conn.getResponseCode(), is(200));
 
         jsonReader = Json.createReader(conn.getInputStream());
@@ -243,18 +269,18 @@ class MainTest {
         // 'microprofile-config.properties' setting in bookstore application
         if (edition.equals("mp")) {
             assertThat("Checking built-in health checks disabled",
-                    jsonObject.getJsonArray("checks").size(), is(0));
+                       jsonObject.getJsonArray("checks").size(), is(0));
         }
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"se", "mp" })
+    @ValueSource(strings = {"se", "mp"})
     void routing(String edition) throws Exception {
 
         startTheApplication(editionToJarPath(edition), Collections.emptyList());
         HttpURLConnection conn;
 
-        conn = getURLConnection("GET","/boo%6bs");
+        conn = getURLConnection("GET", "/boo%6bs");
 
         if ("se".equals(edition)) {
             assertThat("Checking encode URL response SE", conn.getResponseCode(), is(200));
@@ -263,7 +289,7 @@ class MainTest {
             assertThat("Checking encode URL response MP", conn.getResponseCode(), is(404));
         }
 
-        conn = getURLConnection("GET","/badurl");
+        conn = getURLConnection("GET", "/badurl");
         assertThat("Checking encode URL response", conn.getResponseCode(), is(404));
     }
 
@@ -304,7 +330,7 @@ class MainTest {
     }
 
     private void waitForApplicationUp() throws Exception {
-        waitForApplication(healthUrl , true);
+        waitForApplication(healthUrl, true);
     }
 
     private void waitForApplicationDown() throws Exception {
@@ -332,13 +358,25 @@ class MainTest {
             }
             Thread.sleep(500);
             try {
-                conn = (HttpURLConnection)url.openConnection();
+                conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(100);
                 responseCode = conn.getResponseCode();
             } catch (Exception ex) {
                 responseCode = -1;
             }
-        } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1 ));
+        } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
+    }
+
+    private static Arguments toArguments(String appJarPath, List<String> javaArgs) {
+        if (application != null) {
+            Assertions.fail("Can't start the application, it is already running");
+        }
+
+        List<String> startArgs = new ArrayList<>(javaArgs);
+        startArgs.add("-Dserver.port=" + port);
+        startArgs.add("-jar");
+        startArgs.add(appJarPath);
+        return Arguments.of(startArgs);
     }
 
     private static String editionToJarPath(String edition) {
