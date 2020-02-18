@@ -116,7 +116,8 @@ public final class MediaSupport {
                     .registerWriter(CharSequenceBodyWriter.create())
                     .registerWriter(ByteChannelBodyWriter.create())
                     .registerWriter(PathBodyWriter.create())
-                    .registerWriter(FileBodyWriter.create());
+                    .registerWriter(FileBodyWriter.create())
+                    .registerWriter(ThrowableBodyWriter.create(false));
             return this;
         }
 
