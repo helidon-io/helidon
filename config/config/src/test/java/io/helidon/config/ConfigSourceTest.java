@@ -17,16 +17,12 @@
 package io.helidon.config;
 
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.config.spi.ConfigContext;
+import io.helidon.config.BuilderImpl.ConfigContextImpl;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -34,7 +30,6 @@ import static io.helidon.config.TestHelper.toInputStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -62,8 +57,9 @@ public class ConfigSourceTest {
     public void testFromObjectNodeLoad() {
         ConfigSource configSource = ConfigSources.create(ObjectNode.empty());
 
-        ConfigSourceRuntimeImpl impl = new ConfigSourceRuntimeImpl(mock(BuilderImpl.ConfigContextImpl.class), configSource);
-        assertThat(configSource.load().get().entrySet(), is(empty()));
+        ConfigContextImpl context = mock(ConfigContextImpl.class);
+        ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
+        assertThat(runtime.load().get().entrySet(), is(empty()));
     }
 
     @Test
@@ -77,15 +73,15 @@ public class ConfigSourceTest {
 
     @Test
     public void testFromReadableLoad() {
-        ConfigContext context = mock(ConfigContext.class);
-        when(context.findParser(any())).thenReturn(Optional.of(ConfigParsers.properties()));
-
         ConfigSource configSource = ConfigSources
                 .create(toInputStream("aaa=bbb"),
                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
-        configSource.init(context);
-        assertThat(configSource.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));
+        ConfigContextImpl context = mock(ConfigContextImpl.class);
+        when(context.findParser(any())).thenReturn(Optional.of(ConfigParsers.properties()));
+        ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
+
+        assertThat(runtime.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));
     }
 
     @ExtendWith(RestoreSystemPropertiesExt.class)
@@ -98,20 +94,20 @@ public class ConfigSourceTest {
 
     @Test
     public void testFromTextLoad() {
-        ConfigContext context = mock(ConfigContext.class);
+        ConfigContextImpl context = mock(ConfigContextImpl.class);
         when(context.findParser(
                 argThat(PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES::equals)))
                 .thenReturn(Optional.of(ConfigParsers.properties()));
 
         ConfigSource configSource = ConfigSources.create("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
-        configSource.init(context);
-        assertThat(configSource.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));
+        ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
+        assertThat(runtime.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));
     }
 
     @Test
     public void testFromSystemPropertiesDescription() {
-        ConfigSource configSource = ConfigSources.systemProperties();
+        ConfigSource configSource = ConfigSources.systemProperties().build();
 
         assertThat(configSource.description(), is("SystemPropertiesConfig[]*"));
     }
@@ -120,10 +116,12 @@ public class ConfigSourceTest {
     public void testFromSystemProperties() {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
-        ConfigSource configSource = ConfigSources.systemProperties();
+        ConfigSource configSource = ConfigSources.systemProperties().build();
 
-        configSource.init(mock(ConfigContext.class));
-        assertThat(configSource.load().get().get(TEST_SYS_PROP_NAME),
+        ConfigContextImpl context = mock(ConfigContextImpl.class);
+        ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
+
+        assertThat(runtime.load().get().get(TEST_SYS_PROP_NAME),
                    ValueNodeMatcher.valueNode(TEST_SYS_PROP_VALUE));
     }
 
@@ -138,38 +136,10 @@ public class ConfigSourceTest {
     public void testFromEnvironmentVariables() {
         ConfigSource configSource = ConfigSources.environmentVariables();
 
-        configSource.init(mock(ConfigContext.class));
-        assertThat(configSource.load().get().get(TEST_ENV_VAR_NAME),
+        ConfigContextImpl context = mock(ConfigContextImpl.class);
+        ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
+
+        assertThat(runtime.load().get().get(TEST_ENV_VAR_NAME),
                    ValueNodeMatcher.valueNode(TEST_ENV_VAR_VALUE));
     }
-
-    @Test
-    public void testChangesDefault() throws InterruptedException {
-        ConfigSource configSource = Optional::empty;
-
-        CountDownLatch onComplete = new CountDownLatch(1);
-        configSource.changes().subscribe(new Flow.Subscriber<Optional<ObjectNode>>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-            }
-
-            @Override
-            public void onNext(Optional<ObjectNode> item) {
-                fail("onNext should not be invoked");
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail("onError should not be invoked");
-            }
-
-            @Override
-            public void onComplete() {
-                onComplete.countDown();
-            }
-        });
-        assertThat(onComplete.await(10, TimeUnit.MILLISECONDS), Is.is(true));
-    }
-
 }

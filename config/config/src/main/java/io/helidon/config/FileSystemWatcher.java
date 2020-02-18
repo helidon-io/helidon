@@ -72,7 +72,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
      * Configurable options through builder.
      */
     private final List<WatchEvent.Modifier> watchServiceModifiers = new LinkedList<>();
-    private final ScheduledExecutorService executor;
+    private ScheduledExecutorService executor;
     private final boolean defaultExecutor;
     private final long initialDelay;
     private final long delay;
@@ -118,7 +118,14 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
     }
 
     @Override
-    public void start(Path target, Consumer<ChangeEvent<Path>> listener) {
+    public synchronized void start(Path target, Consumer<ChangeEvent<Path>> listener) {
+        if (defaultExecutor && executor.isShutdown()) {
+            executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
+        }
+        if (executor.isShutdown()) {
+            throw new ConfigException("Cannot start a watcher for path " + target + ", as the executor service is shutdown");
+        }
+
         Monitor monitor = new Monitor(
                 listener,
                 target,

@@ -48,9 +48,9 @@ public class MapConfigSourcePropertiesTest {
         Properties props = new Properties();
         props.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
-        ConfigSource configSource = ConfigSources.create(props).build();
+        MapConfigSource configSource = ConfigSources.create(props).build();
 
-        ConfigNode.ObjectNode objectNode = configSource.load().get();
+        ConfigNode.ObjectNode objectNode = configSource.load().get().data();
         assertThat(objectNode.get(TEST_SYS_PROP_NAME), valueNode(TEST_SYS_PROP_VALUE));
     }
 

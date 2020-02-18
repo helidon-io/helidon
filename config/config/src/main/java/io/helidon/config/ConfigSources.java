@@ -84,7 +84,7 @@ public final class ConfigSources {
      * @see ConfigNode.ObjectNode.Builder
      * @see ConfigNode.ListNode.Builder
      */
-    public static ConfigSource create(ConfigNode.ObjectNode objectNode) {
+    public static NodeConfigSource create(ConfigNode.ObjectNode objectNode) {
         return InMemoryConfigSource.create("ObjectNode", ConfigContent.NodeContent.builder()
                 .node(objectNode)
                 .build());
@@ -186,7 +186,7 @@ public final class ConfigSources {
      * @param sourceSupplier a config source supplier
      * @return new @{code ConfigSource} for the newly-prefixed content
      */
-    public static ConfigSource prefixed(String key, Supplier<ConfigSource> sourceSupplier) {
+    public static ConfigSource prefixed(String key, Supplier<? extends ConfigSource> sourceSupplier) {
         return PrefixedConfigSource.create(key, sourceSupplier.get());
     }
 
@@ -336,7 +336,7 @@ public final class ConfigSources {
      * System properties config source.
      */
     public static final class SystemPropertiesConfigSource extends MapConfigSource {
-        public SystemPropertiesConfigSource(Builder builder) {
+        private SystemPropertiesConfigSource(Builder builder) {
             super(builder);
         }
 

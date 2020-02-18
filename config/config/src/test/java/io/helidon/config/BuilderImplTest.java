@@ -18,7 +18,10 @@ package io.helidon.config;
 
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.junit.jupiter.api.Test;
@@ -123,7 +126,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_ENV_VAR_NAME, expected);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.sources())
+                .sources(sources())
                 .build();
 
         assertThat(config.get("prop1").asString().get(), is("source-1"));
@@ -142,7 +145,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.sources())
+                .sources(sources())
                 .disableEnvironmentVariablesSource()
                 .build();
 
@@ -158,7 +161,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.sources())
+                .sources(sources())
                 .disableSystemPropertiesSource()
                 .build();
 
@@ -174,7 +177,7 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.sources())
+                .sources(sources())
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
@@ -186,4 +189,18 @@ public class BuilderImplTest {
         assertThat(config.get(TEST_ENV_VAR_NAME).type(), is(Config.Type.MISSING));
     }
 
+    static List<Supplier<? extends ConfigSource>> sources() {
+        return List.of(
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-1")
+                                             .build()),
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-2")
+                                             .addValue("prop2", "source-2")
+                                             .build()),
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-3")
+                                             .addValue("prop3", "source-3")
+                                             .build()));
+    }
 }

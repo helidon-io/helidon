@@ -16,22 +16,16 @@
 
 package io.helidon.config;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.Flow;
 
-import io.helidon.config.FileOverrideSource.Builder;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.OverrideSource;
-import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.Matchers.instanceOf;
@@ -45,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class FileOverrideSourceTest {
 
     private static final String RELATIVE_PATH_TO_RESOURCE = "/src/test/resources/";
-
 
     @RegisterExtension
     static TemporaryFolderExt folder = TemporaryFolderExt.build();;
@@ -71,8 +64,6 @@ public class FileOverrideSourceTest {
     @Test
     public void testLoadNotExists() {
         FileOverrideSource overrideSource = (FileOverrideSource) OverrideSources.file("overrides.properties")
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
@@ -85,7 +76,8 @@ public class FileOverrideSourceTest {
         OverrideSource overrideSource = OverrideSources.file(getDir() + "io/helidon/config/overrides.properties")
                 .build();
 
-        Optional<OverrideSource.OverrideData> configNode = overrideSource.load();
+        Optional<OverrideSource.OverrideData> configNode = overrideSource.load()
+                .map(ConfigContent.OverrideContent::data);
 
         assertThat(configNode, notNullValue());
         assertThat(configNode.isPresent(), is(true));
@@ -97,44 +89,4 @@ public class FileOverrideSourceTest {
 
         assertThat(overrideSource, notNullValue());
     }
-
-    @Test
-    public void testDataTimestamp() throws IOException {
-        final String filename = "new-file";
-        FileOverrideSource fcs = FileOverrideSource.builder()
-                .path(Paths.get(filename))
-                .build();
-        assertThat(fcs.dataStamp(), is(not(Instant.now())));
-    }
-
-    @Test
-    public void testBuilderPollingStrategy() {
-        Builder builder = (Builder) OverrideSources.file("overrides.properties")
-                .pollingStrategy(TestingPathPollingStrategy::new);
-
-        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
-                   is(Paths.get("overrides.properties")));
-    }
-
-    private static class TestingPathPollingStrategy implements PollingStrategy {
-
-        private final Path path;
-
-        public TestingPathPollingStrategy(Path path) {
-            this.path = path;
-
-            assertThat(path, notNullValue());
-        }
-
-        @Override
-        public Flow.Publisher<PollingEvent> ticks() {
-            return Flow.Subscriber::onComplete;
-        }
-
-        public Path getPath() {
-            return path;
-        }
-    }
-
 }

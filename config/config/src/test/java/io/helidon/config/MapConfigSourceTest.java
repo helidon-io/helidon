@@ -16,7 +16,6 @@
 
 package io.helidon.config;
 
-import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class MapConfigSourceTest {
 
     @Test
-    public void testDescription() throws MalformedURLException {
+    public void testDescription() {
         ConfigSource configSource = ConfigSources.create(Map.of()).build();
 
         assertThat(configSource.description(), is("MapConfig[map]"));

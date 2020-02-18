@@ -41,21 +41,20 @@ public class ConfigContextTest {
     private static final String PROP1 = "prop1";
     private static final int TEST_DELAY_MS = 1;
 
-    private class TestContext {
-        
+    private static class TestContext {
+
         private final Config config;
         private final String key;
         private final String oldValue;
         private final String newValue;
         private final TestingConfigSource configSource;
 
-        
-        private TestContext(Map.Entry<String,String> entry) {
+        private TestContext(Map.Entry<String, String> entry) {
             String detachKey = entry.getKey();
             key = entry.getValue();
 
-            int i = detachKey == null || detachKey.length() == 0 ? 1 : 2;
-            int j = key.length() == 0 ? 1 : 2;
+            int i = ((detachKey == null) || detachKey.isEmpty()) ? 1 : 2;
+            int j = key.isEmpty() ? 1 : 2;
             oldValue = "oldVal_" + i + "_" + j;
             newValue = "newVal_" + i + "_" + j;
 
@@ -71,10 +70,10 @@ public class ConfigContextTest {
             }
             config = cfg.get(key);
         }
-        
-        private void changeSource(boolean submitChange, String valuePrefix) throws InterruptedException {
+
+        private void changeSource(String valuePrefix) throws InterruptedException {
             TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp will change.
-            configSource.changeLoadedObjectNode(createSource(valuePrefix), submitChange);
+            configSource.changeLoadedObjectNode(createSource(valuePrefix));
         }
     }
     
@@ -105,18 +104,10 @@ public class ConfigContextTest {
     }
 
     private static String concatKeys(String prefix, String suffix) {
-        if (prefix.length() == 0) {
-            if (suffix.length() == 0) {
-                return "";
-            } else {
-                return suffix;
-            }
+        if (prefix.isEmpty()) {
+            return suffix;
         } else {
-            if (suffix.length() == 0) {
-                return prefix;
-            } else {
-                return prefix + "." + suffix;
-            }
+            return suffix.isEmpty() ? prefix : (prefix + "." + suffix);
         }
     }
 
@@ -164,7 +155,7 @@ public class ConfigContextTest {
         assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
 
         // CHANGE source
-        c.changeSource(false, "new");
+        c.changeSource("new");
 
         // RELOAD config
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure the timestamp changes.
@@ -197,7 +188,7 @@ public class ConfigContextTest {
 
         // CHANGE source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
-        c.changeSource(true, "old");
+        c.changeSource("old");
 
         // no other events
         assertThat(listener.get(500, false), is(nullValue()));
@@ -218,7 +209,7 @@ public class ConfigContextTest {
 
         // CHANGE source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure time changes to trigger notification.
-        c.changeSource(true, "new");
+        c.changeSource("new");
 
         // change event
         Config last1 = listener.get(500, true);
@@ -242,7 +233,7 @@ public class ConfigContextTest {
 
         // CHANGE source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure time changes to trigger notification.
-        c.changeSource(true, "new");
+        c.changeSource("new");
 
         //wait for a new configuration is loaded
         waitForAssert(() -> c.config.context().last().get(PROP1).asString(), is(ConfigValues.simpleValue(c.newValue)));

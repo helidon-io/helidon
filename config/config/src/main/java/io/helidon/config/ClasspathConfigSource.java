@@ -222,7 +222,8 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
      * If {@code media-type} not set it tries to guess it from resource extension.
      */
     public static final class Builder extends AbstractConfigSourceBuilder<Builder, Void>
-            implements ParsableSource.Builder<Builder>, io.helidon.common.Builder<ClasspathConfigSource> {
+            implements ParsableSource.Builder<Builder>,
+                       io.helidon.common.Builder<ClasspathConfigSource> {
 
         private URL url;
         private String resource;

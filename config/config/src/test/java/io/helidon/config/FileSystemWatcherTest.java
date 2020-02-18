@@ -25,11 +25,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
-import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import org.junit.jupiter.api.Disabled;
@@ -37,11 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link io.helidon.config.FileSystemWatcher}.
@@ -54,43 +48,15 @@ public class FileSystemWatcherTest {
     static TemporaryFolderExt dir = TemporaryFolderExt.build();
 
     @Test
-    public void testPollingDirectoryDeleted() throws IOException, InterruptedException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
+    public void testWatchedDirectoryDeleted() throws IOException, InterruptedException {
         CountDownLatch watchedDirLatch = new CountDownLatch(1);
 
         File watchedDir = dir.newFolder();
         Files.write(Files.createFile(new File(watchedDir, "username").toPath()), "libor".getBytes());
 
-        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedDir.toPath(), null));
-        //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
+        FileSystemWatcher watcher = FileSystemWatcher.create();
 
-        SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
-        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
-
-        publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(1);
-            }
-
-            @Override
-            public void onNext(PollingStrategy.PollingEvent item) {
-                watchedDirLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-        mockPollingStrategy.startWatchService();
-
-        assertThat(subscribeLatch.await(10, TimeUnit.MILLISECONDS), is(true));
+        watcher.start(watchedDir.toPath(), changeEvent -> watchedDirLatch.countDown());
 
         deleteDir(watchedDir);
 
@@ -108,41 +74,14 @@ public class FileSystemWatcherTest {
     }
 
     @Test
-    public void testPolling() throws InterruptedException, IOException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
+    public void testFileWatching() throws InterruptedException, IOException {
         CountDownLatch watchedFileLatch = new CountDownLatch(1);
 
-        SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
-        //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
-        publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(1);
-            }
-
-            @Override
-            public void onNext(PollingStrategy.PollingEvent item) {
-                watchedFileLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-        mockPollingStrategy.startWatchService();
-
-        assertThat(subscribeLatch.await(10, TimeUnit.MILLISECONDS), is(true));
+        FileSystemWatcher watcher = FileSystemWatcher.create();
+        watcher.start(watchedPath, changeEvent -> watchedFileLatch.countDown());
 
         dir.newFile(WATCHED_FILE);
         assertThat(watchedFileLatch.await(40, TimeUnit.SECONDS), is(true));
@@ -150,103 +89,47 @@ public class FileSystemWatcherTest {
 
     @Test
     public void testPollingNotYetExisting() throws InterruptedException, IOException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch watchedFileLatch = new CountDownLatch(1);
 
-        SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path subdir = dirPath.resolve("subdir");
         Path watchedPath = subdir.resolve(WATCHED_FILE);
-        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
-        //mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
-        publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(1);
-            }
-
-            @Override
-            public void onNext(PollingStrategy.PollingEvent item) {
-                watchedFileLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-        mockPollingStrategy.startWatchService();
-
-        assertThat(subscribeLatch.await(10, TimeUnit.MILLISECONDS), is(true));
+        FileSystemWatcher watcher = FileSystemWatcher.create();
+        watcher.start(watchedPath, changeEvent -> watchedFileLatch.countDown());
 
         dir.newFolder("subdir");
         dir.newFile("subdir/" + WATCHED_FILE);
-        assertThat(watchedFileLatch.await(40, TimeUnit.SECONDS), is(true));
 
+        assertThat(watchedFileLatch.await(40, TimeUnit.SECONDS), is(true));
     }
 
     @Test
     public void testPollingSymLink() throws InterruptedException, IOException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch firstEventLatch = new CountDownLatch(1);
         CountDownLatch secondEventLatch = new CountDownLatch(1);
         CountDownLatch thirdEventLatch = new CountDownLatch(1);
 
-        SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
-//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
-        publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(Long.MAX_VALUE);
-            }
-
-            @Override
-            public void onNext(PollingStrategy.PollingEvent item) {
-                System.out.println("on next");
-                if (firstEventLatch.getCount() > 0) {
-                    firstEventLatch.countDown();
-                    System.out.println("first event received");
-                } else if (secondEventLatch.getCount() > 0) {
-                    secondEventLatch.countDown();
-                    System.out.println("second event received");
-                } else {
-                    thirdEventLatch.countDown();
-                    System.out.println("third event received");
-                }
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail(throwable);
-            }
-
-            @Override
-            public void onComplete() {
+        FileSystemWatcher watcher = FileSystemWatcher.create();
+        watcher.start(watchedPath, changeEvent -> {
+            if (firstEventLatch.getCount() > 0) {
+                firstEventLatch.countDown();
+            } else if (secondEventLatch.getCount() > 0) {
+                secondEventLatch.countDown();
+            } else {
+                thirdEventLatch.countDown();
             }
         });
 
-        assertThat(subscribeLatch.await(10, TimeUnit.MILLISECONDS), is(true));
-
-        Path targetDir = createFile(WATCHED_FILE, List.of("a: a"));
+        Path targetDir = createFile(List.of("a: a"));
         Path symlinkToDir = Files.createSymbolicLink(Paths.get(dir.getRoot().toString(), "symlink-to-target-dir"), targetDir);
         Path symlink = Files.createSymbolicLink(Paths.get(dir.getRoot().toString(), WATCHED_FILE),
                                                 Paths.get(symlinkToDir.toString(), WATCHED_FILE));
-        mockPollingStrategy.startWatchService();
 
-        Path newTarget = createFile(WATCHED_FILE, List.of("a: b"));
+        Path newTarget = createFile(List.of("a: b"));
         Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
         Files.delete(targetDir);
         Files.delete(symlinkToDir);
@@ -257,7 +140,7 @@ public class FileSystemWatcherTest {
         assertThat(firstEventLatch.await(30, TimeUnit.SECONDS), is(true));
 
         targetDir = newTarget;
-        newTarget = createFile(WATCHED_FILE, List.of("a: c"));
+        newTarget = createFile(List.of("a: c"));
         Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
         Files.delete(targetDir);
         Files.delete(symlinkToDir);
@@ -268,11 +151,11 @@ public class FileSystemWatcherTest {
         assertThat(secondEventLatch.await(40, TimeUnit.SECONDS), is(true));
 
         targetDir = newTarget;
-        newTarget = createFile(WATCHED_FILE, List.of("a: d"));
+        newTarget = createFile(List.of("a: d"));
         Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
         Files.delete(targetDir);
         Files.delete(symlinkToDir);
-        symlinkToDir = Files.createSymbolicLink(Paths.get(dir.getRoot().toString(), "symlink-to-target-dir"), newTarget);
+        Files.createSymbolicLink(Paths.get(dir.getRoot().toString(), "symlink-to-target-dir"), newTarget);
 
         printDir();
 
@@ -290,82 +173,35 @@ public class FileSystemWatcherTest {
         });
     }
 
-    private Path createFile(String s, Iterable<String> content) throws IOException {
+    private Path createFile(Iterable<String> content) throws IOException {
         File folder = dir.newFolder("symlink-folder-" + UUID.randomUUID());
-        Path target = Files.createFile(Paths.get(folder.toString(), WATCHED_FILE));
+        Path target = Files.createFile(Paths.get(folder.toString(), FileSystemWatcherTest.WATCHED_FILE));
         Files.write(target, content);
         return folder.toPath();
     }
 
     @Test
     public void testPollingAfterRestartWatchService() throws InterruptedException, IOException {
-        CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch watchedFileLatch = new CountDownLatch(1);
+        AtomicInteger count = new AtomicInteger();
 
-        SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
-//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
-        publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscribeLatch.countDown();
-                subscription.request(1);
-            }
-
-            @Override
-            public void onNext(PollingStrategy.PollingEvent item) {
-                watchedFileLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                fail(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-            }
+        FileSystemWatcher watcher = FileSystemWatcher.create();
+        watcher.start(watchedPath, changeEvent -> {
+            watchedFileLatch.countDown();
+            count.incrementAndGet();
         });
-        mockPollingStrategy.startWatchService();
-        mockPollingStrategy.stopWatchService();
-        mockPollingStrategy.startWatchService();
 
-        assertThat(subscribeLatch.await(10, TimeUnit.MILLISECONDS), is(true));
+        watcher.stop();
+        watcher.start(watchedPath, changeEvent -> {
+            watchedFileLatch.countDown();
+            count.incrementAndGet();
+        });
 
         dir.newFile(WATCHED_FILE);
         assertThat(watchedFileLatch.await(40, TimeUnit.SECONDS), is(true));
-
+        assertThat("This should only be called once", count.get(), is(1));
     }
-
-    @Test
-    public void testWatchThreadFuture() {
-        Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
-        Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
-//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        mockPollingStrategy.startWatchService();
-
-        assertThat(mockPollingStrategy.watchThreadFuture(), notNullValue());
-        assertThat(mockPollingStrategy.watchThreadFuture().isCancelled(), is(false));
-
-        mockPollingStrategy.startWatchService();
-    }
-
-    @Test
-    public void testWatchThreadFutureCanceled() {
-        Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
-        Path watchedPath = dirPath.resolve(WATCHED_FILE);
-        FileSystemWatcher mockPollingStrategy = spy(new FileSystemWatcher(watchedPath, null));
-//        mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        mockPollingStrategy.startWatchService();
-        mockPollingStrategy.stopWatchService();
-
-        assertThat(mockPollingStrategy.watchThreadFuture(), notNullValue());
-        assertThat(mockPollingStrategy.watchThreadFuture().isCancelled(), is(true));
-    }
-
 }

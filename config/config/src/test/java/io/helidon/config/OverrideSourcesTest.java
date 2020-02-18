@@ -44,8 +44,10 @@ public class OverrideSourcesTest {
     @Test
     public void testFromWildcards() {
         OverrideSource overrideSource = OverrideSources.create(Map.of(WILDCARDS, "localhost"));
+
         assertThat(overrideSource.load()
                            .get()
+                           .data()
                            .data()
                            .stream()
                            .findFirst()
@@ -56,7 +58,7 @@ public class OverrideSourcesTest {
 
     @Test
     public void testUrlBuilder() throws MalformedURLException {
-        UrlOverrideSource.Builder builder = (UrlOverrideSource.Builder) OverrideSources.url(new URL("http://localhost"));
+        UrlOverrideSource.Builder builder = OverrideSources.url(new URL("http://localhost"));
         assertThat(builder.build(), instanceOf(UrlOverrideSource.class));
     }
 
