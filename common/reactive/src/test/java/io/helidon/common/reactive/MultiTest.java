@@ -214,6 +214,16 @@ public class MultiTest {
     }
 
     @Test
+    void collectEmptyList() throws ExecutionException, InterruptedException, TimeoutException {
+        List<Object> result = Multi.empty()
+                .collectList()
+                .toStage()
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        assertThat(result, is(equalTo(List.of())));
+    }
+
+    @Test
     public void testNeverMap() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<String>() {
             @Override

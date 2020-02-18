@@ -48,7 +48,7 @@ final class MultiCollectingProcessor<T, U> extends BaseProcessor<T, U> implement
     }
 
     @Override
-    public void onComplete() {
+    public void complete() {
         U value;
         try {
             value = collector.value();
@@ -57,7 +57,7 @@ final class MultiCollectingProcessor<T, U> extends BaseProcessor<T, U> implement
             return;
         }
         if (value == null) {
-            super.onError(new IllegalStateException("Collector returned a null container"));
+            super.complete(new IllegalStateException("Collector returned a null container"));
         } else if (getError() != null) {
             super.complete(getError());
         } else {
