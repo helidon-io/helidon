@@ -15,6 +15,7 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
@@ -54,7 +55,7 @@ final class SingleMultiMappingProcessor<T, U> extends MultiFlatMapProcessor<T, U
     @Override
     public void onComplete() {
         subscriberFuture.whenComplete((s, t) -> {
-            if (error().isEmpty()) {
+            if (Objects.isNull(getError())) {
                 s.onComplete();
             }
         });
