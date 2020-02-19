@@ -65,13 +65,14 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
         @Override
         public void onNext(T item) {
             // in case the upstream doesn't stop immediately after a failed mapping
-            if (upstream != null) {
+            Flow.Subscription s = upstream;
+            if (s != null) {
                 R result;
 
                 try {
                     result = Objects.requireNonNull(mapper.map(item), "The mapper returned a null value.");
                 } catch (Throwable ex) {
-                    upstream.cancel();
+                    s.cancel();
                     onError(ex);
                     return;
                 }
