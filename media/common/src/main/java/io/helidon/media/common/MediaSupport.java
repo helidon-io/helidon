@@ -138,11 +138,20 @@ public final class MediaSupport {
          * @return this {@link Builder}
          */
         public Builder config(Config config) {
-            if (config == null) {
-                serverErrorsIncludeStackTraces = false;
-            } else {
-                serverErrorsIncludeStackTraces = config.get("serverErrorsIncludeStackTraces").as(Boolean.TYPE).orElse(false);
-            }
+            config.get("server-errors-include-stack-traces").asBoolean().ifPresent(this::serverErrorsIncludeStackTraces);
+            return this;
+        }
+
+        /**
+         * Ensures that {@link MediaSupport} instances {@linkplain
+         * #build() built} by this {@link Builder} will include stack
+         * trace information when server errors are returned.
+         * @param serverErrorsIncludeStackTraces whether stack trace
+         * information should be included
+         * @return this {@link Builder}
+         */
+        public Builder serverErrorsIncludeStackTraces(boolean serverErrorsIncludeStackTraces) {
+            this.serverErrorsIncludeStackTraces = serverErrorsIncludeStackTraces;
             return this;
         }
 
