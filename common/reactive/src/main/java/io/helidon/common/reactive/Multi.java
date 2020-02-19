@@ -17,6 +17,7 @@ package io.helidon.common.reactive;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
@@ -42,9 +43,8 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> map(Mapper<T, U> mapper) {
-        MultiMapProcessor<T, U> processor = MultiMapProcessor.create(mapper);
-        this.subscribe(processor);
-        return processor;
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new MultiMapperPublisher<>(this, mapper);
     }
 
     /**
