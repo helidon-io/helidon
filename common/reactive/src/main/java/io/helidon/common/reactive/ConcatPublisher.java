@@ -21,19 +21,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Concat streams to one.
  *
  * @param <T> item type
  */
-public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
-    private FirstProcessor firstProcessor;
-    private SecondProcessor secondProcessor;
-    private Flow.Subscriber<T> subscriber;
-    private Flow.Publisher<T> firstPublisher;
-    private Flow.Publisher<T> secondPublisher;
-    private AtomicLong requested = new AtomicLong();
+public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
+    private final Flow.Publisher<T> firstPublisher;
+    private final Flow.Publisher<T> secondPublisher;
 
     private ConcatPublisher(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher) {
         this.firstPublisher = firstPublisher;
@@ -53,106 +50,93 @@ public class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
-        this.subscriber = (Flow.Subscriber<T>) subscriber;
-
-        this.firstProcessor = new FirstProcessor();
-        this.secondProcessor = new SecondProcessor();
-
-        firstPublisher.subscribe(firstProcessor);
-
-        subscriber.onSubscribe(new Flow.Subscription() {
-            @Override
-            public void request(long n) {
-                if (!StreamValidationUtils.checkRequestParam(n, subscriber::onError)) {
-                    return;
-                }
-                requested.set(n);
-                if (!firstProcessor.complete) {
-                    firstProcessor.subscription.request(n);
-                } else {
-                    secondProcessor.subscription.request(n);
-                }
-            }
-
-            @Override
-            public void cancel() {
-                firstProcessor.subscription.cancel();
-                secondProcessor.subscription.cancel();
-            }
-        });
+        firstPublisher.subscribe(new ConcatSubscriber<>(subscriber, secondPublisher));
     }
 
-    private class FirstProcessor implements Flow.Processor<Object, Object> {
+    static final class ConcatSubscriber<T> implements Flow.Subscriber<T>, Flow.Subscription {
 
-        private Flow.Subscription subscription;
-        private boolean complete = false;
+        final Flow.Subscriber<? super T> downstream;
 
-        @Override
-        public void subscribe(Flow.Subscriber<? super Object> s) {
+        final AtomicLong requested;
+
+        final AtomicReference<Flow.Subscription> secondUpstream;
+
+        Flow.Publisher<T> secondPublisher;
+
+        long received;
+
+        Flow.Subscription firstUpstream;
+
+        ConcatSubscriber(Flow.Subscriber<? super T> downstream, Flow.Publisher<T> secondPublisher) {
+            this.downstream = downstream;
+            this.secondPublisher = secondPublisher;
+            this.secondUpstream = new AtomicReference<>();
+            this.requested = new AtomicLong();
         }
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            Objects.requireNonNull(subscription);
-            this.subscription = subscription;
-            secondPublisher.subscribe(secondProcessor);
+            if (secondPublisher == null) {
+                SubscriptionHelper.deferredSetOnce(secondUpstream, requested, subscription);
+            } else {
+                this.firstUpstream = subscription;
+                downstream.onSubscribe(this);
+            }
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public void onNext(Object o) {
-            requested.decrementAndGet();
-            ConcatPublisher.this.subscriber.onNext((T) o);
+        public void onNext(T item) {
+            received++;
+            downstream.onNext(item);
         }
 
         @Override
-        public void onError(Throwable t) {
-            complete = true;
-            Optional.ofNullable(secondProcessor.subscription).ifPresent(Flow.Subscription::cancel);
-            subscription.cancel();
-            ConcatPublisher.this.subscriber.onError(t);
-        }
-
-        @Override
-        public void onComplete() {
-            complete = true;
-            Optional.ofNullable(secondProcessor.subscription).ifPresent(s -> s.request(requested.get()));
-        }
-    }
-
-
-    private class SecondProcessor implements Flow.Processor<Object, Object> {
-
-        private Flow.Subscription subscription;
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super Object> s) {
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            Objects.requireNonNull(subscription);
-            this.subscription = subscription;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void onNext(Object o) {
-            ConcatPublisher.this.subscriber.onNext((T) o);
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            firstProcessor.subscription.cancel();
-            subscription.cancel();
-            ConcatPublisher.this.subscriber.onError(t);
+        public void onError(Throwable throwable) {
+            secondPublisher = null;
+            firstUpstream = null;
+            secondUpstream.lazySet(null);
+            downstream.onError(throwable);
         }
 
         @Override
         public void onComplete() {
-            ConcatPublisher.this.subscriber.onComplete();
+            if (secondPublisher == null) {
+                secondUpstream.lazySet(null);
+                downstream.onComplete();
+            } else {
+                Flow.Publisher<T> second = secondPublisher;
+                secondPublisher = null;
+                firstUpstream = null;
+
+                SubscriptionHelper.produced(requested, received);
+
+                second.subscribe(this);
+            }
+        }
+
+        @Override
+        public void request(long n) {
+            if (n <= 0L) {
+                onError(new IllegalArgumentException("Rule §3.9 violated: non-positive request calls are forbidden"));
+                return;
+            }
+            SubscriptionHelper.deferredRequest(secondUpstream, requested, n);
+            Flow.Subscription upstream = firstUpstream;
+            if (upstream != null) {
+                upstream.request(n);
+            }
+        }
+
+        @Override
+        public void cancel() {
+            Flow.Subscription upstream = firstUpstream;
+            firstUpstream = null;
+            if (upstream != null) {
+                upstream.cancel();
+            }
+
+            SubscriptionHelper.cancel(secondUpstream);
         }
     }
 }
