@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,12 +22,19 @@
                            http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
        version="2.0"
        bean-discovery-mode="annotated">
-  <scan>
-    <exclude name="io.helidon.integrations.cdi.jpa.JtaTransactionSupport">
-      <if-class-not-available name="javax.transaction.Transaction"/>
-    </exclude>
-    <exclude name="io.helidon.integrations.cdi.jpa.NoTransactionSupport">
-      <if-class-available name="javax.transaction.Transaction"/>
-    </exclude>
-  </scan>
+    <scan>
+        <exclude name="io.helidon.integrations.cdi.jpa.JtaDataSourceProvider">
+            <if-class-not-available name="javax.transaction.Transaction"/>
+        </exclude>
+        <exclude name="io.helidon.integrations.cdi.jpa.BeanManagerBackedDataSourceProvider">
+            <if-class-available name="javax.transaction.Transaction"/>
+        </exclude>
+
+        <exclude name="io.helidon.integrations.cdi.jpa.JtaTransactionSupport">
+            <if-class-not-available name="javax.transaction.Transaction"/>
+        </exclude>
+        <exclude name="io.helidon.integrations.cdi.jpa.NoTransactionSupport">
+            <if-class-available name="javax.transaction.Transaction"/>
+        </exclude>
+    </scan>
 </beans>
