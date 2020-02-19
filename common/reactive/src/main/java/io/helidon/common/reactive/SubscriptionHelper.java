@@ -166,4 +166,19 @@ enum SubscriptionHelper implements Flow.Subscription {
         }
         return false;
     }
+
+    /**
+     * Check if current is null and incoming is not null.
+     * @param current the current subscription, should be null
+     * @param incoming the incoming subscription, should be non-null
+     * @throws IllegalStateException if current is not-null indicating a bug in an operator calling onSubscribe
+     *                               more than once
+     */
+    public static void validate(Flow.Subscription current, Flow.Subscription incoming) {
+        Objects.requireNonNull(incoming);
+        if (current != null) {
+            incoming.cancel();
+            throw new IllegalStateException("Flow.Subscription already set.");
+        }
+    }
 }

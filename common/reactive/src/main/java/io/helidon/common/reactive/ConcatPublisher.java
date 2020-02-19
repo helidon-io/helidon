@@ -78,6 +78,7 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
             if (secondPublisher == null) {
                 SubscriptionHelper.deferredSetOnce(secondUpstream, requested, subscription);
             } else {
+                SubscriptionHelper.validate(this.firstUpstream, subscription);
                 this.firstUpstream = subscription;
                 downstream.onSubscribe(this);
             }
