@@ -78,7 +78,7 @@ public final class MediaSupport {
      * @return MediaSupport
      */
     public static MediaSupport create(Config config) {
-        return builder(config).build();
+        return builder().config(config).build();
     }
 
     /**
@@ -98,7 +98,7 @@ public final class MediaSupport {
      * @return MediaSupport
      */
     public static MediaSupport createWithDefaults(Config config) {
-        return builder(config).registerDefaults().build();
+        return builder().config(config).registerDefaults().build();
     }
 
     /**
@@ -107,15 +107,6 @@ public final class MediaSupport {
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Create a new {@link Builder} instance.
-     * @param config a {@link Config}
-     * @return a new {@link Builder}
-     */
-    public static Builder builder(Config config) {
-        return builder().config(config);
     }
 
     /**
