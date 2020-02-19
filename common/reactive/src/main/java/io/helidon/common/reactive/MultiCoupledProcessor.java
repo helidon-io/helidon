@@ -20,8 +20,6 @@ package io.helidon.common.reactive;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -49,8 +47,6 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private Flow.Subscriber<T> passedInSubscriber;
     private Flow.Subscriber<? super R> outletSubscriber;
     private Flow.Publisher<R> passedInPublisher;
-    private ExecutorService executorService;
-    private Flow.Subscriber<? super T> inletSubscriber;
     private Flow.Subscription inletSubscription;
     private Flow.Subscription passedInPublisherSubscription;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
@@ -60,20 +56,9 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     private CompletableFuture<Void> readyToSignalPassedInSubscriber = new CompletableFuture<>();
     private CompletableFuture<Void> readyToSignalOutletSubscriber = new CompletableFuture<>();
 
-
-    private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher,
-                                  ExecutorService executorService) {
-        this.passedInSubscriber = passedInSubscriber;
-        this.passedInPublisher = passedInPublisher;
-        this.executorService = executorService;
-        this.inletSubscriber = this;
-    }
-
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
         this.passedInSubscriber = passedInSubscriber;
         this.passedInPublisher = passedInPublisher;
-        this.inletSubscriber = this;
-        this.executorService = null;
     }
 
     /**
@@ -88,22 +73,6 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
     public static <T, R> MultiCoupledProcessor<T, R> create(Flow.Subscriber<T> passedInSubscriber,
                                                             Flow.Publisher<R> passedInPublisher) {
         return new MultiCoupledProcessor<>(passedInSubscriber, passedInPublisher);
-    }
-
-    /**
-     * Create new {@link MultiCoupledProcessor}.
-     *
-     * @param passedInSubscriber to send items from inlet to
-     * @param passedInPublisher  to get items for outlet from
-     * @param executorService    to call signals forbidden by rule 203 to be on the same thread
-     * @param <T>                Inlet and passed in subscriber item type
-     * @param <R>                Outlet and passed in publisher item type
-     * @return {@link MultiCoupledProcessor}
-     */
-    public static <T, R> MultiCoupledProcessor<T, R> create(Flow.Subscriber<T> passedInSubscriber,
-                                                            Flow.Publisher<R> passedInPublisher,
-                                                            ExecutorService executorService) {
-        return new MultiCoupledProcessor<>(passedInSubscriber, passedInPublisher, executorService);
     }
 
     @Override
@@ -144,13 +113,11 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                     }
                 });
                 readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
-                    //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                    forbiddenSignal(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
+                    Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
                     if (!passedInSubscriberCompleted.getAndSet(true)) {
                         passedInSubscriber.onError(t);
                     }
                 });
-                inletSubscriber.onError(t);
             }
 
             @Override
@@ -158,7 +125,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 //Passed in publisher completed
                 done.set(true);
                 readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
-                    forbiddenSignal(() -> Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel));
+                    Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
                     if (!passedInSubscriberCompleted.getAndSet(true)) {
                         passedInSubscriber.onComplete();
                     }
@@ -250,7 +217,7 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 outletSubscriber.onError(t);
             }
         });
-        forbiddenSignal(() -> Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel));
+        Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel);
     }
 
     @Override
@@ -267,22 +234,6 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                 outletSubscriber.onComplete();
             }
         });
-        Executors.newFixedThreadPool(1).execute(() -> passedInPublisherSubscription.cancel());
-    }
-
-    /**
-     * Rule 203 versus coupled operator spec workaround.
-     * https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-     *
-     * @param runnable forbidden signal to be signalled by another thread
-     */
-    private void forbiddenSignal(Runnable runnable) {
-        if (Objects.isNull(executorService)) {
-            ExecutorService oneTimeExecutorService = Executors.newFixedThreadPool(1);
-            oneTimeExecutorService.execute(runnable);
-            oneTimeExecutorService.shutdown();
-        } else {
-            executorService.execute(runnable);
-        }
+        Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel);
     }
 }

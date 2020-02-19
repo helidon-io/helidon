@@ -124,8 +124,9 @@ public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscripti
             subscriptionLock.lock();
 
             if (subscriber != null) {
-                subscriber.onSubscribe(EmptySubscription.INSTANCE);
-                subscriber.onError(StreamValidationUtils.createOnlyOneSubscriberAllowedException());
+                s.onSubscribe(EmptySubscription.INSTANCE);
+                s.onError(StreamValidationUtils.createOnlyOneSubscriberAllowedException());
+                return;
             }
             subscriber = s;
             if (subscription != null) {

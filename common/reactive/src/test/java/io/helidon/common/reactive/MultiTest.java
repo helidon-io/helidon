@@ -35,6 +35,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -535,6 +536,20 @@ public class MultiTest {
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), is(DATA));
+    }
+
+    @Test
+    public void testDoubleSubscribe() {
+        TestSubscriber<Integer> subscriber1 = new TestSubscriber<>();
+        TestSubscriber<Integer> subscriber2 = new TestSubscriber<>();
+        Multi<Integer> multi = Multi.just(1);
+        multi.subscribe(subscriber1);
+        multi.subscribe(subscriber2);
+        assertThat(subscriber1.getSubcription(), is(not(nullValue())));
+        assertThat(subscriber1.getSubcription(), is(not(EmptySubscription.INSTANCE)));
+        assertThat(subscriber1.getLastError(), is(nullValue()));
+        assertThat(subscriber2.getSubcription(), is(EmptySubscription.INSTANCE));
+        assertThat(subscriber2.getLastError(), is(instanceOf(IllegalStateException.class)));
     }
 
     private static class MultiTestSubscriber<T> extends TestSubscriber<T> {

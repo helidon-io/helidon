@@ -203,7 +203,9 @@ public class BaseProcessorTest {
         TestSubscriber<String> subscriber2 = new TestSubscriber<>();
         processor.subscribe(subscriber2);
         assertThat(subscriber1.getSubcription(), is(not(nullValue())));
-        assertThat(subscriber2.getSubcription(), is(not(nullValue())));
+        assertThat(subscriber1.getLastError(), is(nullValue()));
+        assertThat(subscriber2.getSubcription(), is(EmptySubscription.INSTANCE));
+        assertThat(subscriber2.getLastError(), is(instanceOf(IllegalStateException.class)));
     }
 
     private static class TestProcessor<T> extends BaseProcessor<T, T> {
