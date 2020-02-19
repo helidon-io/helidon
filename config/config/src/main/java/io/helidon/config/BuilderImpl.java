@@ -36,8 +36,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -342,15 +340,9 @@ class BuilderImpl implements Config.Builder {
         /*
          Mappers
          */
-        if (mapperServicesEnabled) {
-            loadMapperServices(prioritizedMappers);
-        }
-        Priorities.sort(prioritizedMappers);
-        // as the mapperProviders.add adds the last as first, we need to reverse order
-        Collections.reverse(prioritizedMappers);
-        prioritizedMappers.forEach(mapperProviders::add);
-        ConfigMapperManager configMapperManager = buildMappers(mapperProviders);
-
+        ConfigMapperManager configMapperManager = buildMappers(prioritizedMappers,
+                                                               mapperProviders,
+                                                               mapperServicesEnabled);
 
         /*
          Filters
@@ -380,6 +372,17 @@ class BuilderImpl implements Config.Builder {
                               keyResolving,
                               aliasGenerator)
                 .newConfig();
+    }
+
+    private static void addBuiltInMapperServices(List<PrioritizedMapperProvider> prioritizedMappers) {
+        // we must add default mappers using a known priority (200), so they can be overridden by services
+        // and yet we can still define a service that is only used after these (such as config beans)
+        prioritizedMappers
+                .add(new HelidonMapperWrapper(new InternalMapperProvider(ConfigMappers.essentialMappers(),
+                                                                         "essential"), 200));
+        prioritizedMappers
+                .add(new HelidonMapperWrapper(new InternalMapperProvider(ConfigMappers.builtInMappers(),
+                                                                         "built-in"), 200));
     }
 
     @Override
@@ -650,31 +653,37 @@ class BuilderImpl implements Config.Builder {
         return parsers;
     }
 
+    // this is a unit test method
     static ConfigMapperManager buildMappers(MapperProviders userDefinedProviders) {
+        return buildMappers(new ArrayList<>(), userDefinedProviders, false);
+    }
+
+    static ConfigMapperManager buildMappers(List<PrioritizedMapperProvider> prioritizedMappers,
+                                            MapperProviders userDefinedProviders,
+                                            boolean mapperServicesEnabled) {
+
+        // prioritized mapper providers
+        if (mapperServicesEnabled) {
+            loadMapperServices(prioritizedMappers);
+        }
+        addBuiltInMapperServices(prioritizedMappers);
+        Priorities.sort(prioritizedMappers);
+
+        // as the mapperProviders.add adds the last as first, we need to reverse order
+        Collections.reverse(prioritizedMappers);
+
 
         MapperProviders providers = MapperProviders.create();
 
-        List<ConfigMapperProvider> prioritizedProviders = new LinkedList<>();
-
-        // we must add default mappers using a known priority (49), so they can be overridden by services
-        // and yet we can still define a service that is only used after these (such as config beans)
-        prioritizedProviders.add(new InternalPriorityMapperProvider(ConfigMappers.essentialMappers()));
-        prioritizedProviders.add(new InternalPriorityMapperProvider(ConfigMappers.builtInMappers()));
-
-        prioritizedProviders = ConfigUtils
-                .asPrioritizedStream(prioritizedProviders, ConfigMapperProvider.PRIORITY)
-                .collect(Collectors.toList());
-
-        // add built in converters and converters from service loader
-        prioritizedProviders.forEach(providers::add);
-
+        // these are added first, as they end up last
+        prioritizedMappers.forEach(providers::add);
         // user defined converters always have priority over anything else
         providers.addAll(userDefinedProviders);
 
         return new ConfigMapperManager(providers);
     }
 
-    private void loadMapperServices(List<PrioritizedMapperProvider> providers) {
+    private static void loadMapperServices(List<PrioritizedMapperProvider> providers) {
         HelidonServiceLoader.builder(ServiceLoader.load(ConfigMapperProvider.class))
                 .defaultPriority(ConfigMapperProvider.PRIORITY)
                 .build()
@@ -779,20 +788,23 @@ class BuilderImpl implements Config.Builder {
 
     }
 
-    /**
-     * Internal mapper with low priority to enable overrides.
-     */
-    @Priority(200)
-    static class InternalPriorityMapperProvider implements ConfigMapperProvider {
+    static class InternalMapperProvider implements ConfigMapperProvider {
         private final Map<Class<?>, Function<Config, ?>> converterMap;
+        private final String name;
 
-        InternalPriorityMapperProvider(Map<Class<?>, Function<Config, ?>> converterMap) {
+        InternalMapperProvider(Map<Class<?>, Function<Config, ?>> converterMap, String name) {
             this.converterMap = converterMap;
+            this.name = name;
         }
 
         @Override
         public Map<Class<?>, Function<Config, ?>> mappers() {
             return converterMap;
+        }
+
+        @Override
+        public String toString() {
+            return name + " internal mappers";
         }
     }
 
@@ -861,6 +873,11 @@ class BuilderImpl implements Config.Builder {
         @Override
         public <T> Optional<BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
             return delegate.mapper(type);
+        }
+
+        @Override
+        public String toString() {
+            return priority + ": " + delegate;
         }
     }
 

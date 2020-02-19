@@ -16,16 +16,14 @@
 package io.helidon.config.etcd;
 
 import java.util.Set;
-import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.config.spi.PollingStrategy;
-import io.helidon.config.spi.PollingStrategyProvider;
+import io.helidon.config.spi.ChangeWatcherProvider;
 
 /**
  * Service loader service for ETCD config source.
  */
-public class EtcdWatcherProvider implements PollingStrategyProvider {
+public class EtcdWatcherProvider implements ChangeWatcherProvider {
     static final String TYPE = "etcd";
 
     @Override
@@ -34,18 +32,8 @@ public class EtcdWatcherProvider implements PollingStrategyProvider {
     }
 
     @Override
-    public Function<Object, PollingStrategy> create(String type, Config metaConfig) {
-        return object -> {
-            if (object instanceof EtcdConfigSourceBuilder.EtcdEndpoint) {
-                return EtcdWatcher.create((EtcdConfigSourceBuilder.EtcdEndpoint) object);
-            }
-
-            throw new IllegalArgumentException("EtcdWatchPollingStrategy expects "
-                                                       + EtcdConfigSourceBuilder.EtcdEndpoint.class.getName()
-                                                       + ", but got: "
-                                                       + (null == object ? "null" : object.getClass().getName()));
-        };
-
+    public EtcdWatcher create(String type, Config metaConfig) {
+        return EtcdWatcher.create(metaConfig);
     }
 
     @Override

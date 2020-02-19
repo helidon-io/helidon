@@ -38,10 +38,8 @@ public class SecureConfigFromConfigTest extends AbstractSecureConfigTest {
         config = Config.create().get("aes-current");
 
         configRequiresEncryption = Config.builder()
-                .sources(ConfigSources.create(
-                        //override require encryption
-                        ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
-                        ConfigSources.classpath("application.yaml")))
+                .addSource(ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")))
+                .addSource(ConfigSources.classpath("application.yaml"))
                 .build().get("aes-current");
 
         assertThat("We must have the correct configuration file", config.get("pwd1").type().isLeaf());

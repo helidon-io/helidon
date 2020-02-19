@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.config.yaml.YamlConfigParser;
+
 /**
  * YAML Parser implementation.
  */
@@ -28,6 +30,6 @@ module io.helidon.config.yaml {
 
     exports io.helidon.config.yaml;
 
-    provides io.helidon.config.spi.ConfigParser with io.helidon.config.yaml.internal.YamlConfigParser;
+    provides io.helidon.config.spi.ConfigParser with YamlConfigParser;
 
 }

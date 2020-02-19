@@ -16,15 +16,17 @@
 
 package io.helidon.config.etcd;
 
-import java.time.Instant;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.ConfigException;
+import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
+import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ChangeWatcher;
 
 /**
@@ -34,70 +36,77 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdWatcher.class.getName());
 
-    private final EtcdEndpoint endpoint;
-    private final EtcdClient etcdClient;
+    private final AtomicBoolean started = new AtomicBoolean();
 
-    private EtcdWatchSubscriber etcdWatchSubscriber;
+    private EtcdEndpoint endpoint;
+    private EtcdClient etcdClient;
 
     /**
      * Creates polling strategy from etcd params.
-     *
-     * @param endpoint etcd remote descriptor
-     * @return configured polling strategy
      */
-    public static EtcdWatcher create(EtcdEndpoint endpoint) {
-        return new EtcdWatcher(endpoint);
+    EtcdWatcher() {
     }
 
     /**
-     * Creates polling strategy from etcd params.
+     * Creates a change watcher for sources based on etcd that provide
+     * {@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint} as a target
      *
-     * @param endpoint etcd remote descriptor
+     * @return configured polling strategy
      */
-    EtcdWatcher(EtcdEndpoint endpoint) {
+    public static EtcdWatcher create() {
+        return new EtcdWatcher();
+    }
+
+    /**
+     * Create a new instance from meta configuration.
+     *
+     * @param metaConfig currently ignored
+     * @return a new etcd watcher
+     */
+    public static EtcdWatcher create(Config metaConfig) {
+        return new EtcdWatcher();
+    }
+
+    @Override
+    public void start(EtcdEndpoint endpoint, Consumer<ChangeEvent<EtcdEndpoint>> listener) {
+        if (!started.compareAndSet(false, true)) {
+            throw new IllegalStateException("EtcdWatcher cannot be reused for multiple sources");
+        }
         this.endpoint = endpoint;
-        etcdClient = endpoint.api()
+        this.etcdClient = endpoint.api()
                 .clientFactory()
                 .createClient(endpoint.uri());
+        try {
+            Flow.Publisher<Long> watchPublisher = etcdClient().watch(endpoint.key());
+            watchPublisher.subscribe(new EtcdWatchSubscriber(listener, endpoint));
+        } catch (EtcdClientException ex) {
+            LOGGER.log(Level.WARNING, String.format("Subscription on watching on '%s' key has failed. "
+                                                            + "Watching by '%s' polling strategy will not start.",
+                                                    EtcdWatcher.this.endpoint.key(),
+                                                    EtcdWatcher.this), ex);
+        }
+    }
+
+    @Override
+    public void stop() {
+        if (!started.get()) {
+            return;
+        }
+
+        try {
+            this.etcdClient.close();
+        } catch (EtcdClientException e) {
+            LOGGER.log(Level.FINE, "Faield to close etcd client", e);
+        }
+    }
+
+    @Override
+    public Class<EtcdEndpoint> type() {
+        return EtcdEndpoint.class;
     }
 
     EtcdClient etcdClient() {
         return etcdClient;
-    }
-
-    void subscribePollingStrategy() {
-        etcdWatchSubscriber = new EtcdWatchSubscriber();
-        try {
-            Flow.Publisher<Long> watchPublisher = etcdClient().watch(endpoint.key());
-            watchPublisher.subscribe(etcdWatchSubscriber);
-        } catch (EtcdClientException ex) {
-            ticksSubmitter.closeExceptionally(
-                    new ConfigException(
-                            String.format("Subscription on watching on '%s' key has failed. "
-                                                  + "Watching by '%s' polling strategy will not start.",
-                                          EtcdWatcher.this.endpoint.key(),
-                                          EtcdWatcher.this),
-                            ex));
-        }
-    }
-
-    void cancelPollingStrategy() {
-        etcdWatchSubscriber.cancelSubscription();
-        etcdWatchSubscriber = null;
-    }
-
-    @Override
-    public Flow.Publisher<PollingEvent> ticks() {
-        return ticksPublisher;
-    }
-
-    private void fireEvent(Long item) {
-        ticksSubmitter.offer(
-                EtcdPollingEvent.from(item),
-                (subscriber, pollingEvent) -> {
-                    LOGGER.log(Level.FINER, String.format("Event %s has not been delivered to %s.", pollingEvent, subscriber));
-                    return false;
-                });
     }
 
     EtcdEndpoint etcdEndpoint() {
@@ -105,45 +114,19 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
     }
 
     /**
-     * An etcd polling event with the new content.
-     */
-    private interface EtcdPollingEvent extends PollingEvent {
-
-        /**
-         * Returns etcd revision.
-         *
-         * @return etcd revision
-         */
-        Long index();
-
-        static EtcdPollingEvent from(Long index) {
-            Instant timestamp = Instant.now();
-            return new EtcdPollingEvent() {
-                @Override
-                public Long index() {
-                    return index;
-                }
-
-                @Override
-                public Instant timestamp() {
-                    return timestamp;
-                }
-
-                @Override
-                public String toString() {
-                    return "EtcdPollingEvent @ " + timestamp + " # " + index;
-                }
-            };
-        }
-
-    }
-
-    /**
      * {@link Flow.Subscriber} on {@link EtcdClient#watch(String)}.
      */
-    private class EtcdWatchSubscriber implements Flow.Subscriber<Long> {
+    private static class EtcdWatchSubscriber implements Flow.Subscriber<Long> {
 
         private Flow.Subscription subscription;
+        private final Consumer<ChangeEvent<EtcdEndpoint>> listener;
+        private EtcdEndpoint endpoint;
+
+        public EtcdWatchSubscriber(Consumer<ChangeEvent<EtcdEndpoint>> listener,
+                                   EtcdEndpoint endpoint) {
+            this.listener = listener;
+            this.endpoint = endpoint;
+        }
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
@@ -154,35 +137,20 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
 
         @Override
         public void onNext(Long item) {
-            EtcdWatcher.this.fireEvent(item);
+            listener.accept(ChangeEvent.create(endpoint, ChangeEventType.CHANGED));
         }
 
         @Override
         public void onError(Throwable throwable) {
-            EtcdWatcher.this.ticksSubmitter
-                    .closeExceptionally(new ConfigException(
+            LOGGER.log(Level.WARNING,
                             String.format(
-                                    "Watching on '%s' key has failed. Watching by '%s' polling strategy will not continue. %s",
-                                    EtcdWatcher.this.endpoint.key(),
-                                    EtcdWatcher.this,
-                                    throwable.getLocalizedMessage()),
-                            throwable));
+                                    "Watching on '%s' key has failed. Watching will not continue. ",
+                                    endpoint.key()),
+                            throwable);
         }
 
         @Override
         public void onComplete() {
-            LOGGER.fine(String.format("Watching on '%s' key has completed. Watching by '%s' polling strategy will not continue.",
-                                      EtcdWatcher.this.endpoint.key(),
-                                      EtcdWatcher.this));
-
-            EtcdWatcher.this.ticksSubmitter.close();
-        }
-
-        private void cancelSubscription() {
-            if (subscription != null) {
-                subscription.cancel();
-            }
         }
     }
-
 }

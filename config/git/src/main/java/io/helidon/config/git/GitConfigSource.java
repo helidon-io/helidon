@@ -16,8 +16,8 @@
 
 package io.helidon.config.git;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,8 +38,9 @@ import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.FileSourceHelper;
-import io.helidon.config.spi.ConfigContent;
+import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ParsableSource;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
@@ -63,7 +63,7 @@ import static java.util.Collections.singleton;
  * Config source is initialized by {@link GitConfigSourceBuilder}.
  */
 public class GitConfigSource extends AbstractConfigSource
-        implements ParsableSource, PollableSource<byte[]>, ParsableSource {
+        implements ParsableSource, PollableSource<byte[]>, AutoCloseable {
 
     private static final Logger LOGGER = Logger.getLogger(GitConfigSource.class.getName());
 
@@ -108,9 +108,11 @@ public class GitConfigSource extends AbstractConfigSource
         } else {
             this.directory = endpoint.directory();
         }
+    }
 
+    @Override
+    public void init(ConfigContext context) {
         try {
-            // TODO: this is worn - should not leak into other methods in constructor
             init();
             targetPath = directory.resolve(endpoint.path());
         } catch (IOException | GitAPIException | JGitInternalException e) {
@@ -119,7 +121,6 @@ public class GitConfigSource extends AbstractConfigSource
                                                     directory.toString()),
                                       e);
         }
-
     }
 
     /**
@@ -179,24 +180,35 @@ public class GitConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public Optional<ConfigParser.Content> load() throws ConfigException {
-        pull();
+    public Optional<Content> load() throws ConfigException {
         if (!Files.exists(targetPath)) {
             return Optional.empty();
         }
+
+        return FileSourceHelper.readDataAndDigest(targetPath)
+                .map(dad -> Content.builder()
+                        .data(new ByteArrayInputStream(dad.data()))
+                        .stamp(dad.digest())
+                        .mediaType(MediaTypes.detectType(targetPath))
+                        .build());
+    }
+
+    @Override
+    public Optional<String> mediaType() {
+        return super.mediaType();
     }
 
     private void init() throws IOException, GitAPIException {
 
-        if (!directory.toFile().exists()) {
+        if (!Files.exists(directory)) {
             throw new ConfigException(String.format("Directory '%s' does not exist.", directory.toString()));
         }
 
-        if (!directory.toFile().isDirectory()) {
+        if (!Files.isDirectory(directory)) {
             throw new ConfigException(String.format("'%s' is not a directory.", directory.toString()));
         }
 
-        if (!directory.toFile().canRead() || !directory.toFile().canWrite()) {
+        if (!Files.isReadable(directory) || !Files.isWritable(directory)) {
             throw new ConfigException(String.format("Directory '%s' is not accessible.", directory.toString()));
         }
 
@@ -223,6 +235,9 @@ public class GitConfigSource extends AbstractConfigSource
         repository = new FileRepositoryBuilder()
                 .setGitDir(directory.resolve(".git").toFile())
                 .build();
+
+        // make sure we have the latest data before we start using this config source
+        pull();
     }
 
     private void pull() throws GitAPIException {
@@ -248,30 +263,6 @@ public class GitConfigSource extends AbstractConfigSource
         }
         LOGGER.finest(() -> "git rebase result: " + result.getRebaseResult().getStatus().name());
         LOGGER.finest(() -> "git fetch result: " + result.getFetchResult().getMessages());
-    }
-
-
-    private Instant lastModifiedTime(Path path) {
-        return FileSourceHelper.lastModifiedTime(path);
-    }
-
-    @Override
-    protected ConfigContent<byte[]> contendt() throws ConfigException {
-
-        if (LOGGER.isLoggable(Level.FINE)) {
-            Instant lastModifiedTime = lastModifiedTime(targetPath);
-            LOGGER.log(Level.FINE, String.format("Getting content from '%s'. Last stamp is %s.", targetPath, lastModifiedTime));
-        }
-
-        String fileContent = FileSourceHelper.safeReadContent(targetPath);
-        LOGGER.finest(fileContent);
-
-        ConfigContent.Builder<byte[]> builder = ConfigContent.builder(new StringReader(fileContent));
-
-        MediaTypes.detectType(targetPath).ifPresent(builder::mediaType);
-        FileSourceHelper.digest(targetPath).ifPresent(builder::stamp);
-
-        return builder.build();
     }
 
     GitConfigSourceBuilder.GitEndpoint gitEndpoint() {
@@ -306,7 +297,7 @@ public class GitConfigSource extends AbstractConfigSource
 
     private void deleteTempDirectory() throws IOException {
         LOGGER.log(Level.FINE, () -> String.format("GitConfigSource deleting temp directory %s", directory.toString()));
-        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(directory, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 if (!Files.isWritable(file)) {

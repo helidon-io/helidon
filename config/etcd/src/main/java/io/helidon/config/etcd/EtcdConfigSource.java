@@ -89,7 +89,7 @@ public class EtcdConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public Optional<ChangeWatcher<?>> changeWatcher() {
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
         return super.changeWatcher();
     }
 

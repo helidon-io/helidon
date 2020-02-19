@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.yaml.internal;
+package io.helidon.config.yaml;
 
 import java.nio.file.Paths;
 
@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * Test left in to make sure we correctly evaluate yaml file type suffix.
  */
-public class YamlFileTypeDetectorTest {
+public class YamlMediaTypeDetectorTest {
 
     @Test
     public void testProbeContentType() {

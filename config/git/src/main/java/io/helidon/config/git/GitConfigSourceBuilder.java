@@ -25,13 +25,11 @@ import java.util.Objects;
 import io.helidon.common.Builder;
 import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ParsableSource;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
-import io.helidon.config.spi.WatchableSource;
 
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -71,8 +69,7 @@ public final class GitConfigSourceBuilder
         extends AbstractConfigSourceBuilder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint>
         implements Builder<GitConfigSource>,
                    PollableSource.Builder<GitConfigSourceBuilder>,
-                   ParsableSource.Builder<GitConfigSourceBuilder>,
-                   WatchableSource.Builder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint> {
+                   ParsableSource.Builder<GitConfigSourceBuilder> {
 
 
     private static final String PATH_KEY = "path";
@@ -159,11 +156,6 @@ public final class GitConfigSourceBuilder
     @Override
     public GitConfigSourceBuilder pollingStrategy(PollingStrategy pollingStrategy) {
         return super.pollingStrategy(pollingStrategy);
-    }
-
-    @Override
-    public GitConfigSourceBuilder changeWatcher(ChangeWatcher<GitEndpoint> changeWatcher) {
-        return super.changeWatcher(changeWatcher);
     }
 
     GitEndpoint target() {

@@ -38,10 +38,8 @@ public class SecureLegacyConfigFromConfigTest extends AbstractSecureConfigTest {
         config = Config.create().get("aes-legacy");
 
         configRequiresEncryption = Config.builder()
-                .sources(ConfigSources.create(
-                        //override require encryption
-                        ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
-                        ConfigSources.classpath("application.yaml")))
+                .addSource(ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")))
+                .addSource(ConfigSources.classpath("application.yaml"))
                 .build()
                 .get("aes-legacy");
 

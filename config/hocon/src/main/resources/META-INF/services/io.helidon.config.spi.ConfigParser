@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.config.hocon.internal.HoconConfigParser
+io.helidon.config.hocon.HoconConfigParser

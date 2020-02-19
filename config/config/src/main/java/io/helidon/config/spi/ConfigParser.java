@@ -167,6 +167,18 @@ public interface ConfigParser {
             }
 
             /**
+             * A shortcut method to invoke with result of {@link io.helidon.common.media.type.MediaTypes#detectType(String)}
+             *  and similar methods. Only sets media type if the parameter is present.
+             *
+             * @param mediaType optional of media type
+             * @return updated builder instance
+             */
+            public Builder mediaType(Optional<String> mediaType) {
+                mediaType.ifPresent(this::mediaType);
+                return this;
+            }
+
+            /**
              * Configure charset if known by the config source.
              *
              * @param charset charset to use if the content should be read using a reader

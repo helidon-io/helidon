@@ -19,9 +19,9 @@ package io.helidon.config.tests.bundle;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValues;
-import io.helidon.config.hocon.HoconConfigParserBuilder;
+import io.helidon.config.hocon.HoconConfigParser;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.yaml.YamlConfigParserBuilder;
+import io.helidon.config.yaml.YamlConfigParser;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +43,7 @@ public class SmokeTest {
 
     @Test
     public void testRequiredModulesIncluded() {
-        ConfigParser hoconConfigParser = HoconConfigParserBuilder.buildDefault();
-        ConfigParser yamlConfigParser = YamlConfigParserBuilder.buildDefault();
+        ConfigParser hoconConfigParser = HoconConfigParser.create();
+        ConfigParser yamlConfigParser = YamlConfigParser.create();
     }
 }

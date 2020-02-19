@@ -17,14 +17,14 @@
 /**
  * YAML format ConfigParser implementation.
  * <p>
- * It supports {@value io.helidon.config.yaml.internal.YamlConfigParser#MEDIA_TYPE_APPLICATION_YAML} format.
+ * It supports {@value io.helidon.config.yaml.YamlConfigParser#MEDIA_TYPE_APPLICATION_YAML} format.
  * <p>
  * The parser implementation supports {@link java.util.ServiceLoader}, i.e. {@link io.helidon.config.Config.Builder}
  * can automatically load and register YAML ConfigParser instance,
  * if not {@link io.helidon.config.Config.Builder#disableParserServices() disabled}.
  * Priority of the {@code YamlConfigParser} to be used by {@link io.helidon.config.Config.Builder},
  * if loaded automatically as a {@link java.util.ServiceLoader service},
- * is {@value io.helidon.config.yaml.internal.YamlConfigParser#PRIORITY}.
+ * is {@value io.helidon.config.yaml.YamlConfigParser#PRIORITY}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(io.helidon.config.spi.ConfigParser)
  * registered programmatically} using {@link io.helidon.config.yaml.YamlConfigParserBuilder builder API}.
  * <p>

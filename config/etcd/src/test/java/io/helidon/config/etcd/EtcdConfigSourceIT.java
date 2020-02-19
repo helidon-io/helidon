@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.internal.client.EtcdClient;
-import io.helidon.config.hocon.internal.HoconConfigParser;
+import io.helidon.config.hocon.HoconConfigParser;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -54,7 +54,7 @@ public class EtcdConfigSourceIT {
                                  .api(version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                                  .build())
-                .addParser(new HoconConfigParser())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         assertThat(config.get("security").asNodeList().get(), hasSize(1));
@@ -70,9 +70,9 @@ public class EtcdConfigSourceIT {
                                  .key("configuration")
                                  .api(version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                                 .pollingStrategy(EtcdWatcher::create)
+                                 .changeWatcher(EtcdWatcher.create())
                                  .build())
-                .addParser(new HoconConfigParser())
+                .addParser(HoconConfigParser.create())
                 .build();
 
         assertThat(config.get("security").asNodeList().get(), hasSize(1));

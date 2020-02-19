@@ -51,7 +51,7 @@ public class CustomConfigSourceTypesTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(MetaConfig::configSource).get();
+        ConfigSource source = metaConfig.as(MetaConfig::configSource).get().get(0);
 
         assertThat(source, is(instanceOf(sourceClass)));
 

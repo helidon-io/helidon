@@ -39,7 +39,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.yaml.internal.YamlConfigParser;
+import io.helidon.config.yaml.YamlConfigParser;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;

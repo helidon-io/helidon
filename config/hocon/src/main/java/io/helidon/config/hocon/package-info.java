@@ -17,15 +17,15 @@
 /**
  * HOCON format ConfigParser implementation using Typesafe (Lightbend) Config library.
  * <p>
- * It supports {@value io.helidon.config.hocon.internal.HoconConfigParser#MEDIA_TYPE_APPLICATION_HOCON} and
- * {@value io.helidon.config.hocon.internal.HoconConfigParser#MEDIA_TYPE_APPLICATION_JSON} formats.
+ * It supports {@value io.helidon.config.hocon.HoconConfigParser#MEDIA_TYPE_APPLICATION_HOCON} and
+ * {@value io.helidon.config.hocon.HoconConfigParser#MEDIA_TYPE_APPLICATION_JSON} formats.
  * <p>
  * The parser implementation supports {@link java.util.ServiceLoader}, i.e. {@link io.helidon.config.Config.Builder}
  * can automatically load and register HOCON ConfigParser instance,
  * if not {@link io.helidon.config.Config.Builder#disableParserServices() disabled}.
  * Priority of the parser to be used by {@link io.helidon.config.Config.Builder},
  * if loaded automatically as a {@link java.util.ServiceLoader service},
- * is {@value io.helidon.config.hocon.internal.HoconConfigParser#PRIORITY}.
+ * is {@value io.helidon.config.hocon.HoconConfigParser#PRIORITY}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(io.helidon.config.spi.ConfigParser)
  * registered programmatically} using {@link io.helidon.config.hocon.HoconConfigParserBuilder builder API}.
  * <p>

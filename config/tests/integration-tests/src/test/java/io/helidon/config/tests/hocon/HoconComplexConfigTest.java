@@ -17,7 +17,7 @@
 package io.helidon.config.tests.hocon;
 
 import io.helidon.config.Config;
-import io.helidon.config.hocon.HoconConfigParserBuilder;
+import io.helidon.config.hocon.HoconConfigParser;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.tests.AbstractComplexConfigTest;
 
@@ -32,6 +32,6 @@ public class HoconComplexConfigTest extends AbstractComplexConfigTest {
 
     @Override
     protected ConfigParser createConfigParser() {
-        return HoconConfigParserBuilder.buildDefault();
+        return HoconConfigParser.create();
     }
 }

@@ -35,5 +35,5 @@ module io.helidon.config.etcd {
     exports io.helidon.config.etcd;
 
     provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.config.etcd.EtcdConfigSourceProvider;
-    provides io.helidon.config.spi.PollingStrategyProvider with EtcdWatcherProvider;
+    provides io.helidon.config.spi.ChangeWatcherProvider with EtcdWatcherProvider;
 }

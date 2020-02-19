@@ -16,15 +16,13 @@
 
 package io.helidon.config.tests.module.meta1;
 
+import io.helidon.common.Builder;
 import io.helidon.config.Config;
-import io.helidon.config.spi.AbstractSource;
-import io.helidon.config.spi.ConfigSource;
 
 /**
  * Testing implementation of config source builder.
  */
-public class MyConfigSourceBuilder1
-        extends AbstractSource.Builder<MyConfigSourceBuilder1, MyEndpoint1, ConfigSource> {
+public class MyConfigSourceBuilder1 implements Builder<MyConfigSource1> {
 
     private final MyEndpoint1 endpoint;
     private boolean myProp3;
@@ -35,7 +33,6 @@ public class MyConfigSourceBuilder1
      * @param endpoint endpoint
      */
     private MyConfigSourceBuilder1(MyEndpoint1 endpoint) {
-        super(MyEndpoint1.class);
         this.endpoint = endpoint;
     }
 
@@ -62,10 +59,9 @@ public class MyConfigSourceBuilder1
                 .config(metaConfig);
     }
 
-    @Override
     public MyConfigSourceBuilder1 config(Config metaConfig) {
         metaConfig.get("myProp3").asBoolean().ifPresent(this::myProp3);
-        return super.config(metaConfig);
+        return this;
     }
 
     /**
@@ -79,17 +75,12 @@ public class MyConfigSourceBuilder1
         return this;
     }
 
-    @Override
-    protected MyEndpoint1 target() {
-        return endpoint;
-    }
-
     /**
      * Creates new source instance.
      *
      * @return new source instance
      */
-    public ConfigSource build() {
+    public MyConfigSource1 build() {
         return new MyConfigSource1(endpoint, myProp3);
     }
 

@@ -16,10 +16,12 @@
 
 package io.helidon.config.etcd;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.StringReader;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -30,7 +32,7 @@ import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.client.MockEtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.spi.ConfigContent;
+import io.helidon.config.spi.ConfigParser;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -112,16 +114,16 @@ public class EtcdConfigSourceTest {
 
         EtcdConfigSource mockedConfigSource = spy(configSource);
         when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
-        when(mockedConfigSource.load()).thenReturn(new ConfigContent<Long>() {
+        when(mockedConfigSource.load()).thenReturn(Optional.of(new ConfigParser.Content() {
             @Override
             public Optional<String> mediaType() {
                 return Optional.of(MEDIA_TYPE_APPLICATION_HOCON);
             }
 
             @Override
-            public Readable asReadable() {
+            public InputStream data() {
                 try {
-                    return new StringReader(etcdClient.get("configuration"));
+                    return new ByteArrayInputStream(etcdClient.get("configuration").getBytes(StandardCharsets.UTF_8));
                 } catch (EtcdClientException e) {
                     fail(e);
                     return null;
@@ -129,10 +131,15 @@ public class EtcdConfigSourceTest {
             }
 
             @Override
-            public Optional<Long> stamp() {
+            public Charset charset() {
+                return StandardCharsets.UTF_8;
+            }
+
+            @Override
+            public Optional<Object> stamp() {
                 return Optional.of(revision.getAndIncrement());
             }
-        });
+        }));
 
         Config config = Config.builder()
                 .sources(mockedConfigSource)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.hocon.internal;
+package io.helidon.config.hocon;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,7 +35,6 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigResolveOptions;
-import com.typesafe.config.ConfigValue;
 
 /**
  * Typesafe (Lightbend) Config (HOCON) {@link ConfigParser} implementation that supports following media types:
@@ -86,7 +85,7 @@ public class HoconConfigParser implements ConfigParser {
      * @param resolvingEnabled resolving substitutions support enabled
      * @param resolveOptions   resolving options
      */
-    public HoconConfigParser(boolean resolvingEnabled, ConfigResolveOptions resolveOptions) {
+    HoconConfigParser(boolean resolvingEnabled, ConfigResolveOptions resolveOptions) {
         if (resolvingEnabled) {
             Objects.requireNonNull(resolveOptions, "resolveOptions parameter is mandatory");
         }
@@ -96,11 +95,33 @@ public class HoconConfigParser implements ConfigParser {
     }
 
     /**
-     * Initializes HOCON Config Parser with {@link Config#resolve() HOCON resolving substitutions support} enabled.
-     * {@link ConfigResolveOptions#defaults()} is used to resolve loaded configuration.
+     * To be used by Java Service Loader only!!!
+     *
+     * @deprecated Use {@link #builder()} to construct a customized instance, or {@link #create()} to get an instance with
+     * defaults
      */
+    @Deprecated
     public HoconConfigParser() {
         this(true, ConfigResolveOptions.defaults());
+    }
+
+    /**
+     * Create a new instance of HOCON config parser using default configuration.
+     *
+     * @return a new instance of parser
+     * @see #builder()
+     */
+    public static HoconConfigParser create() {
+        return builder().build();
+    }
+
+    /**
+     * Create a new fluent API builder for a HOCON config parser.
+     *
+     * @return a new builder instance
+     */
+    public static HoconConfigParserBuilder builder() {
+        return new HoconConfigParserBuilder();
     }
 
     @Override
@@ -112,7 +133,7 @@ public class HoconConfigParser implements ConfigParser {
     public ObjectNode parse(Content content) {
         Config typesafeConfig;
         try (InputStream readable = content.data()) {
-            typesafeConfig = ConfigFactory.parseReader(new InputStreamReader(content.data(), content.charset()));
+            typesafeConfig = ConfigFactory.parseReader(new InputStreamReader(readable, content.charset()));
             if (resolvingEnabled) {
                 typesafeConfig = typesafeConfig.resolve(resolveOptions);
             }
@@ -127,18 +148,16 @@ public class HoconConfigParser implements ConfigParser {
 
     private static ObjectNode fromConfig(ConfigObject config) {
         ObjectNode.Builder builder = ObjectNode.builder();
-        config.entrySet()
-                .forEach(entry -> {
-                    String key = io.helidon.config.Config.Key.escapeName(entry.getKey());
-                    ConfigValue value = entry.getValue();
-                    if (value instanceof ConfigList) {
-                        builder.addList(key, fromList((ConfigList) value));
-                    } else if (value instanceof ConfigObject) {
-                        builder.addObject(key, fromConfig((ConfigObject) value));
-                    } else {
-                        builder.addValue(key, value.unwrapped().toString());
-                    }
-                });
+        config.forEach((unescapedKey, value) -> {
+            String key = io.helidon.config.Config.Key.escapeName(unescapedKey);
+            if (value instanceof ConfigList) {
+                builder.addList(key, fromList((ConfigList) value));
+            } else if (value instanceof ConfigObject) {
+                builder.addObject(key, fromConfig((ConfigObject) value));
+            } else {
+                builder.addValue(key, value.unwrapped().toString());
+            }
+        });
         return builder.build();
     }
 

@@ -49,11 +49,9 @@ import static org.mockito.Mockito.mock;
  * Tests {@link ConfigMapperManager}.
  */
 public class ConfigMapperManagerTest {
-    private static final ConfigMapperManager managerNoServices = BuilderImpl.buildMappers(
-            MapperProviders.create());
+    private static final ConfigMapperManager managerNoServices = BuilderImpl.buildMappers(MapperProviders.create());
 
-    private static final ConfigMapperManager managerWithServices = BuilderImpl.buildMappers(
-            MapperProviders.create());
+    private static final ConfigMapperManager managerWithServices = BuilderImpl.buildMappers(MapperProviders.create());
 
     @Test
     public void testUnknownMapper() {

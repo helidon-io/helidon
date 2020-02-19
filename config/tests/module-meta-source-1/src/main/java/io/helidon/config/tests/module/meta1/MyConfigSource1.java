@@ -21,13 +21,15 @@ import java.util.Optional;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.objectmapping.Value;
-import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigContent.NodeContent;
+import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.NodeConfigSource;
 
 /**
  * Testing implementation of config source.
  */
-public class MyConfigSource1 implements ConfigSource {
+public class MyConfigSource1 implements NodeConfigSource, ConfigSource {
 
     private final MyEndpoint1 endpoint;
     private final boolean myProp3;
@@ -59,10 +61,12 @@ public class MyConfigSource1 implements ConfigSource {
     }
 
     @Override
-    public Optional<ConfigNode.ObjectNode> load() throws ConfigException {
-        return Optional.of(ConfigNode.ObjectNode.builder()
-                                   .addValue(endpoint.getMyProp1(), Objects.toString(endpoint.getMyProp2()))
-                                   .addValue("enabled", Objects.toString(myProp3))
+    public Optional<NodeContent> load() throws ConfigException {
+        return Optional.of(NodeContent.builder()
+                                   .node(ObjectNode.builder()
+                                                 .addValue(endpoint.getMyProp1(), Objects.toString(endpoint.getMyProp2()))
+                                                 .addValue("enabled", Objects.toString(myProp3))
+                                                 .build())
                                    .build());
     }
 

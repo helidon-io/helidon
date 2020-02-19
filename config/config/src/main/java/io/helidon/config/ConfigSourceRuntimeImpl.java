@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -269,6 +270,16 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
 
     @Override
     public Map<String, String> getProperties() {
+        if (isSystemProperties()) {
+            // this is a "hack" for MP TCK tests
+            // System properties act as a mutable source for the purpose of MicroProfile
+            Map<String, String> result = new HashMap<>();
+            Properties properties = System.getProperties();
+            for (String key : properties.stringPropertyNames()) {
+                result.put(key, properties.getProperty(key));
+            }
+            return result;
+        }
         initialLoad();
         return new HashMap<>(mpData);
     }
@@ -517,12 +528,13 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
                         if (mediaType.isPresent()) {
                             parser = configContext.findParser(mediaType.get());
                             if (parser.isEmpty()) {
-                                throw new ConfigException("Could not find parser for media type " + mediaType.get());
+                                throw new ConfigException("Cannot find suitable parser for '" + mediaType
+                                        .get() + "' media type for config source " + configSource.description());
                             }
                             return parser.get().parse(content);
                         }
 
-                        throw new ConfigException("Could not find media type of config source " + configSource);
+                        throw new ConfigException("Could not find media type of config source " + configSource.description());
                     });
         }
     }

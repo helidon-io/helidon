@@ -18,7 +18,6 @@ package io.helidon.config.etcd;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
@@ -26,12 +25,12 @@ import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.client.MockEtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.spi.PollingStrategy.PollingEvent;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link EtcdWatcher}.
@@ -43,88 +42,41 @@ public class EtcdWatcherTest {
     @Test
     public void testBasics() throws EtcdClientException, InterruptedException {
         MockEtcdClient etcdClient = new MockEtcdClient(DEFAULT_URI);
-        EtcdWatcher etcdWatcher = new MockEtcdWatcher(
-                new EtcdEndpoint(DEFAULT_URI, "key", EtcdApi.v2),
-                etcdClient);
+        EtcdWatcher etcdWatcher = new MockEtcdWatcher(etcdClient);
 
-        CountDownLatch initLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(3);
 
-        etcdWatcher.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-                initLatch.countDown();
-            }
-
-            @Override
-            public void onNext(PollingEvent item) {
-                nextLatch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-
-        assertThat(initLatch.await(1000, TimeUnit.MILLISECONDS), is(true));
+        etcdWatcher.start(new EtcdEndpoint(DEFAULT_URI, "key", EtcdApi.v2), change -> nextLatch.countDown());
 
         etcdClient.put("key", "value1");
         etcdClient.put("key", "value2");
         etcdClient.put("key", "value3");
 
         assertThat(nextLatch.await(1000, TimeUnit.MILLISECONDS), is(true));
+
+        etcdWatcher.stop();
     }
 
     @Test
-    public void testSubscribeOnce() throws InterruptedException {
+    public void testCannotStartMultiple() {
         MockEtcdClient etcdClient = new MockEtcdClient(DEFAULT_URI);
-        EtcdWatcher etcdWatcher = new MockEtcdWatcher(
-                new EtcdEndpoint(DEFAULT_URI, "key", EtcdApi.v2),
-                etcdClient);
+        EtcdWatcher etcdWatcher = new MockEtcdWatcher(etcdClient);
 
-        int count = 5;
-        CountDownLatch initLatch = new CountDownLatch(5);
+        etcdWatcher.start(new EtcdEndpoint(DEFAULT_URI, "key", EtcdApi.v2), change -> {
+        });
 
-        for (int i = 0; i < count; i++) {
-            etcdWatcher.ticks()
-                    .subscribe(new Flow.Subscriber<PollingEvent>() {
-                        @Override
-                        public void onSubscribe(Flow.Subscription subscription) {
-                            subscription.request(Long.MAX_VALUE);
-                            initLatch.countDown();
-                        }
+        assertThrows(IllegalStateException.class,
+                     () -> etcdWatcher.start(new EtcdEndpoint(DEFAULT_URI, "key", EtcdApi.v2), change -> {
+                     }));
 
-                        @Override
-                        public void onNext(PollingEvent item) {
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                        }
-
-                        @Override
-                        public void onComplete() {
-                        }
-                    });
-        }
-
-        assertThat(initLatch.await(1000, TimeUnit.MILLISECONDS), is(true));
-
-        assertThat(etcdClient.watchPublisher("key").getNumberOfSubscribers(), is(1));
+        etcdWatcher.stop();
     }
 
     private static class MockEtcdWatcher extends EtcdWatcher {
 
         private final MockEtcdClient etcdClient;
 
-        MockEtcdWatcher(EtcdEndpoint etcdEndpoint, MockEtcdClient etcdClient) {
-            super(etcdEndpoint);
-
+        MockEtcdWatcher(MockEtcdClient etcdClient) {
             this.etcdClient = etcdClient;
         }
 

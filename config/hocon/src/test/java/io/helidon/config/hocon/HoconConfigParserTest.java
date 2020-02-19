@@ -16,8 +16,10 @@
 
 package io.helidon.config.hocon;
 
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,12 +33,11 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
-import io.helidon.config.hocon.internal.HoconConfigParser;
-import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import com.typesafe.config.ConfigResolveOptions;
@@ -61,7 +62,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabled() {
-        ConfigParser parser = HoconConfigParserBuilder.buildDefault();
+        ConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
                 + "aaa = 1 \n"
                 + "bbb = ${aaa} \n"
@@ -77,7 +78,7 @@ public class HoconConfigParserTest {
     @Test
     public void testResolveDisabled() {
         ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParserBuilder.create().disableResolving().build();
+            ConfigParser parser = HoconConfigParser.builder().disableResolving().build();
             parser.parse((StringContent) () -> ""
                     + "aaa = 1 \n"
                     + "bbb = ${aaa} \n"
@@ -95,7 +96,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabledEnvVar() {
-        ConfigParser parser = HoconConfigParserBuilder.buildDefault();
+        ConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -105,7 +106,7 @@ public class HoconConfigParserTest {
     @Test
     public void testResolveEnabledEnvVarDisabled() {
         ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParserBuilder.create()
+            ConfigParser parser = HoconConfigParser.builder()
                     .resolveOptions(ConfigResolveOptions.noSystem())
                     .build();
             parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
@@ -121,7 +122,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testEmpty() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "");
 
         assertThat(node.entrySet(), hasSize(0));
@@ -129,7 +130,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testSingleValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -138,7 +139,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testStringListValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = [ bbb, ccc, ddd ]");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -152,7 +153,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testComplexValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
                 + "aaa =  \"bbb\"\n"
                 + "arr = [ bbb, 13, true, 3.14159 ] \n"
@@ -281,15 +282,20 @@ public class HoconConfigParserTest {
     //
 
     @FunctionalInterface
-    private interface StringContent extends ConfigContent {
+    private interface StringContent extends Content {
         @Override
         default Optional<String> mediaType() {
             return Optional.of(HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON);
         }
 
         @Override
-        default Reader asReadable() {
-            return new StringReader(getContent());
+        default InputStream data() {
+            return new ByteArrayInputStream(getContent().getBytes(StandardCharsets.UTF_8));
+        }
+
+        @Override
+        default Charset charset() {
+            return StandardCharsets.UTF_8;
         }
 
         String getContent();

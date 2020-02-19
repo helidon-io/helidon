@@ -223,11 +223,11 @@ public class FileSourceHelper {
             this.digest = digest;
         }
 
-        byte[] data() {
+        public byte[] data() {
             return data;
         }
 
-        byte[] digest() {
+        public byte[] digest() {
             return digest;
         }
     }

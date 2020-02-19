@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.yaml.internal;
+package io.helidon.config.yaml;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -67,13 +67,25 @@ public class YamlConfigParser implements ConfigParser {
 
     /**
      * Default constructor needed by Java Service loader.
+     * @deprecated This method should not be directly used, use {@link #create()}
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
     public YamlConfigParser() {
         // fix for NPE in Yaml parser when running in Graal
         // cannot be in static block, as that gets ignored
         if (System.getProperty("java.runtime.name") == null) {
             System.setProperty("java.runtime.name", "unknown");
         }
+    }
+
+    /**
+     * Create a new YAML Config Parser.
+     *
+     * @return a new instance of parser for YAML
+     */
+    public static YamlConfigParser create() {
+        return new YamlConfigParser();
     }
 
     @Override

@@ -70,9 +70,14 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return parser;
     }
 
+    @Override
+    public String toString() {
+        return description();
+    }
+
     ObjectNode processNodeMapping(Function<String, Optional<ConfigParser>> mediaToParser,
-                                             ConfigKeyImpl configKey,
-                                             ObjectNode loaded) {
+                                  ConfigKeyImpl configKey,
+                                  ObjectNode loaded) {
 
         if (!mediaMappingSupported) {
             return loaded;
