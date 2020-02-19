@@ -124,6 +124,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public static MessageBodyWriterContext create(MediaSupport mediaSupport, EventListener eventListener, Parameters headers,
             List<MediaType> acceptedTypes) {
+
         if (mediaSupport == null) {
             return new MessageBodyWriterContext(null, eventListener, headers, acceptedTypes);
         }
