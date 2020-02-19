@@ -17,8 +17,6 @@
 
 package io.helidon.common.reactive;
 
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,17 +54,17 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
     static final class ConcatSubscriber<T> implements Flow.Subscriber<T>, Flow.Subscription {
 
-        final Flow.Subscriber<? super T> downstream;
+        private final Flow.Subscriber<? super T> downstream;
 
-        final AtomicLong requested;
+        private final AtomicLong requested;
 
-        final AtomicReference<Flow.Subscription> secondUpstream;
+        private final AtomicReference<Flow.Subscription> secondUpstream;
 
-        Flow.Publisher<T> secondPublisher;
+        private Flow.Publisher<T> secondPublisher;
 
-        long received;
+        private long received;
 
-        Flow.Subscription firstUpstream;
+        private Flow.Subscription firstUpstream;
 
         ConcatSubscriber(Flow.Subscriber<? super T> downstream, Flow.Publisher<T> secondPublisher) {
             this.downstream = downstream;
