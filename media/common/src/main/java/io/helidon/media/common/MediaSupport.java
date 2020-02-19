@@ -24,10 +24,18 @@ public final class MediaSupport {
 
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
+    private final boolean serverErrorsIncludeStackTraces;
 
     private MediaSupport(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        this(readerContext, writerContext, false);
+    }
+
+    private MediaSupport(MessageBodyReaderContext readerContext,
+                         MessageBodyWriterContext writerContext,
+                         boolean serverErrorsIncludeStackTraces) {
         this.readerContext = readerContext;
         this.writerContext = writerContext;
+        this.serverErrorsIncludeStackTraces = serverErrorsIncludeStackTraces;
     }
 
     /**
@@ -47,11 +55,30 @@ public final class MediaSupport {
     }
 
     /**
+     * Returns {@code true} if server errors will include stack trace
+     * information.
+     * @return {@code true} if server errors will include stack trace
+     * information
+     */
+    public boolean serverErrorsIncludeStackTraces() {
+        return serverErrorsIncludeStackTraces;
+    }
+
+    /**
      * Create a new instance with empty reader and writer contexts.
      * @return MediaSupport
      */
     public static MediaSupport create() {
         return builder().build();
+    }
+
+    /**
+     * Create a new instance with empty reader and writer contexts.
+     * @param config a {@link Config}
+     * @return MediaSupport
+     */
+    public static MediaSupport create(Config config) {
+        return builder(config).build();
     }
 
     /**
@@ -71,15 +98,24 @@ public final class MediaSupport {
      * @return MediaSupport
      */
     public static MediaSupport createWithDefaults(Config config) {
-        return builder().registerDefaults(config).build();
+        return builder(config).registerDefaults().build();
     }
 
     /**
      * Create a new {@link Builder} instance.
-     * @return Builder
+     * @return a new {@link Builder}
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create a new {@link Builder} instance.
+     * @param config a {@link Config}
+     * @return a new {@link Builder}
+     */
+    public static Builder builder(Config config) {
+        return builder().config(config);
     }
 
     /**
@@ -89,6 +125,7 @@ public final class MediaSupport {
 
         private final MessageBodyReaderContext readerContext;
         private final MessageBodyWriterContext writerContext;
+        private boolean serverErrorsIncludeStackTraces;
 
         Builder() {
             readerContext = MessageBodyReaderContext.create();
@@ -96,34 +133,17 @@ public final class MediaSupport {
         }
 
         /**
-         * Register the default readers and writers.
-         * <h3>Default readers</h3>
-         * <ul>
-         * <li>{@link StringBodyReader} - converts payload into
-         * {@code String.class}</li>
-         * <li>{@link InputStreamBodyReader} - converts payload into
-         * {@code InputStream.class}</li>
-         * </ul>
-         * <h3>Default writers</h3>
-         * <ul>
-         * <li>{@link CharSequenceBodyWriter} - generates payload from
-         * {@code CharSequence.class}</li>
-         * <li>{@link ByteChannelBodyWriter} - generates payload from
-         * {@code ReadableByteChannel.class}</li>
-         * <li>{@link PathBodyWriter} - generates payload from
-         * {@code Path.class}</li>
-         * <li>{@link FileBodyWriter} - generates payload from
-         * {@code File.class}</li>
-         * <li>{@link ThrowableBodyWriter} - generates payload from
-         * {@link Throwable Throwable.class}</li>
-         * </ul>
-         *
-         * @return this builder instance
-         *
-         * @see #registerDefaults(Config)
+         * Configures this {@link Builder} from the supplied {@link Config}.
+         * @param config a {@link Config}
+         * @return this {@link Builder}
          */
-        public Builder registerDefaults() {
-            return registerDefaults(null);
+        public Builder config(Config config) {
+            if (config == null) {
+                serverErrorsIncludeStackTraces = false;
+            } else {
+                serverErrorsIncludeStackTraces = config.get("serverErrorsIncludeStackTraces").as(Boolean.TYPE).orElse(false);
+            }
+            return this;
         }
 
         /**
@@ -149,22 +169,9 @@ public final class MediaSupport {
          * {@link Throwable Throwable.class}</li>
          * </ul>
          *
-         * @param config a {@link Config} whose {@code
-         * serverErrorsIncludeStackTraces} key will be sought as a
-         * {@code boolean} value indicating whether the default {@link
-         * ThrowableBodyWriter} will include {@link Throwable}
-         * {@linkplain Throwable#printStackTrace() stack traces} as
-         * part of web application errors
-         * @return this builder instance
+         * @return this {@link Builder}
          */
-        public Builder registerDefaults(Config config) {
-            final boolean serverErrorsIncludeStackTraces;
-            if (config == null) {
-                serverErrorsIncludeStackTraces = false;
-            } else {
-                serverErrorsIncludeStackTraces = config.get("serverErrorsIncludeStackTraces").as(Boolean.TYPE).orElse(false);
-            }
-
+        public Builder registerDefaults() {
             // default readers
             readerContext
                     .registerReader(StringBodyReader.create())
