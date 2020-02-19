@@ -37,6 +37,7 @@ import static com.xebialabs.restito.semantics.Action.contentType;
 import static com.xebialabs.restito.semantics.Action.header;
 import static com.xebialabs.restito.semantics.Action.status;
 import static com.xebialabs.restito.semantics.Action.stringContent;
+import static com.xebialabs.restito.semantics.Condition.custom;
 import static com.xebialabs.restito.semantics.Condition.method;
 import static com.xebialabs.restito.semantics.Condition.uri;
 import static io.helidon.config.ConfigTest.waitForAssert;
@@ -255,7 +256,7 @@ public class UrlOverrideSourceServerMockTest {
         assertThat(config.get("aaa.bbb.url").asString().get(), is("URL1"));
 
         whenHttp(server).
-                match(method(GET), uri("/override")).
+                match(custom(call -> call.getMethod().equals(GET) || call.getMethod().equals(HEAD)), uri("/override")).
                 then(
                         status(OK_200),
                         contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES),

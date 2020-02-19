@@ -62,7 +62,7 @@ public class BuilderImplTest {
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
                                           eq(ConfigSourcesRuntime.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           notNull(), //changesExecutor
@@ -86,7 +86,7 @@ public class BuilderImplTest {
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
                                           eq(ConfigSourcesRuntime.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
@@ -111,7 +111,7 @@ public class BuilderImplTest {
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
                                           eq(ConfigSourcesRuntime.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor

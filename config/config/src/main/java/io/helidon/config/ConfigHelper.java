@@ -59,38 +59,6 @@ public final class ConfigHelper {
         return new OnNextFunctionSubscriber<>(onNextFunction);
     }
 
-    /**
-     * Creates a {@link Flow.Publisher} which wraps the provided one and also
-     * supports "active" and "suspended" states.
-     * <p>
-     * The new {@code Publisher} starts in the "suspended" state.
-     * Upon the first subscriber request the {@code Publisher} transitions into the "active" state
-     * and invokes the caller-supplied {@code onFirstSubscriptionRequest} {@code Runnable}.
-     * When the last subscriber cancels the returned {@code Publisher} transitions into the "suspended" state and
-     * invokes the caller-provided {@code onLastSubscriptionCancel} {@code Runnable}.
-     *
-     * @param delegatePublisher          publisher to be wrapped
-     * @param onFirstSubscriptionRequest hook invoked when the first subscriber requests events from the publisher
-     * @param onLastSubscriptionCancel   hook invoked when last remaining subscriber cancels its subscription
-     * @param <T>                        the type of the items provided by the publisher
-     * @return new instance of suspendable {@link Flow.Publisher}
-     */
-    public static <T> Flow.Publisher<T> suspendablePublisher(Flow.Publisher<T> delegatePublisher,
-                                                             Runnable onFirstSubscriptionRequest,
-                                                             Runnable onLastSubscriptionCancel) {
-        return new SuspendablePublisher<T>(delegatePublisher) {
-            @Override
-            protected void onFirstSubscriptionRequest() {
-                onFirstSubscriptionRequest.run();
-            }
-
-            @Override
-            protected void onLastSubscriptionCancel() {
-                onLastSubscriptionCancel.run();
-            }
-        };
-    }
-
     static Map<ConfigKeyImpl, ConfigNode> createFullKeyToNodeMap(ConfigNode.ObjectNode objectNode) {
         Map<ConfigKeyImpl, ConfigNode> result;
 

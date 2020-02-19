@@ -37,7 +37,7 @@ final class UrlHelper {
 
     static boolean isModified(URL url, Instant stamp) {
         return dataStamp(url)
-                .map(newStamp -> newStamp.isAfter(stamp))
+                .map(newStamp -> newStamp.isAfter(stamp) || newStamp.equals(Instant.MIN))
                 .orElse(true);
     }
 

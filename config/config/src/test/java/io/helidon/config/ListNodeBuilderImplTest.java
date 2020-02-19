@@ -16,13 +16,11 @@
 
 package io.helidon.config;
 
-import java.util.List;
-
+import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
@@ -31,8 +29,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.stringContainsInOrder;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ListNodeBuilderImpl}.
@@ -93,16 +89,15 @@ public class ListNodeBuilderImplTest {
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeListToValue() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            new ObjectNodeBuilderImpl()
-                    .addList("top1.prop1", ListNode.builder().addValue("another value").build())
-                    .addValue("top1.prop1.0.sub", "text")
-                    .build();
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "'0'", "OBJECT", "VALUE")));
+        ObjectNode rootNode = new ObjectNodeBuilderImpl()
+                .addList("top1.prop1", ListNode.builder().addValue("another value").build())
+                .addValue("top1.prop1.0.sub", "text")
+                .build();
+
+        ListNode prop1 = (ListNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        ConfigNode firstElement = prop1.get(0);
+        assertThat(((ObjectNode) firstElement).get("sub"), valueNode("text"));
     }
 
 }

@@ -17,12 +17,12 @@
 package io.helidon.config;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
@@ -58,41 +58,37 @@ public class ObjectNodeBuilderImplTest {
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeValueToList() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            new ObjectNodeBuilderImpl()
-                    .addList("top1.prop1", ListNode.builder().addValue("2").build())
-                    .addValue("top1.prop1", "1")
-                    .build();
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "LIST")));
+        ObjectNode rootNode = new ObjectNodeBuilderImpl()
+                .addList("top1.prop1", ListNode.builder().addValue("2").build())
+                .addValue("top1.prop1", "1")
+                .build();
+
+        assertThat(((ObjectNode) rootNode.get("top1")).get("prop1").value(), is(Optional.of("1")));
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeValueToObject() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            new ObjectNodeBuilderImpl()
-                    .addValue("top1.prop1.sub", "2")
-                    .addValue("top1.prop1", "1")
-                    .build();
-        });
-        assertThat(ex.getMessage(), stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "OBJECT")));
+        ObjectNode rootNode = new ObjectNodeBuilderImpl()
+                .addValue("top1.prop1.sub", "2")
+                .addValue("top1.prop1", "1")
+                .build();
+
+        ObjectNode prop1 = (ObjectNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        assertThat(prop1.value(), is(Optional.of("1")));
+        assertThat(prop1.get("sub").value(), is(Optional.of("2")));
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeObjectToValue() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            new ObjectNodeBuilderImpl()
-                    .addValue("top1.prop1", "2")
-                    .addValue("top1.prop1.sub", "1")
-                    .build();
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "merge", "prop1", "OBJECT", "VALUE")));
+        ObjectNode rootNode = new ObjectNodeBuilderImpl()
+                .addValue("top1.prop1", "2")
+                .addValue("top1.prop1.sub", "1")
+                .build();
+
+        ObjectNode prop1 = (ObjectNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        assertThat(prop1.value(), is(Optional.of("2")));
+        assertThat(prop1.get("sub").value(), is(Optional.of("1")));
     }
 
     @Test
@@ -131,12 +127,12 @@ public class ObjectNodeBuilderImplTest {
         });
         assertThat(ex.getMessage(),
                    stringContainsInOrder(List.of("top1",
-                                                                  "prop1",
-                                                                  "merge",
-                                                                  "OBJECT",
-                                                                  "'2'",
-                                                                  "LIST",
-                                                                  "out of bounds")));
+                                                 "prop1",
+                                                 "merge",
+                                                 "OBJECT",
+                                                 "'2'",
+                                                 "LIST",
+                                                 "out of bounds")));
     }
 
     @Test
@@ -149,12 +145,12 @@ public class ObjectNodeBuilderImplTest {
         });
         assertThat(ex.getMessage(),
                    stringContainsInOrder(List.of("top1",
-                                                                  "prop1",
-                                                                  "merge",
-                                                                  "OBJECT",
-                                                                  "'-1'",
-                                                                  "LIST",
-                                                                  "negative index")));
+                                                 "prop1",
+                                                 "merge",
+                                                 "OBJECT",
+                                                 "'-1'",
+                                                 "LIST",
+                                                 "negative index")));
     }
 
     @Test
@@ -173,16 +169,13 @@ public class ObjectNodeBuilderImplTest {
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeListToValue() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            new ObjectNodeBuilderImpl()
-                    .addValue("top1.prop1", "2")
-                    .addList("top1.prop1", ListNode.builder().addValue("2").build())
-                    .build();
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "VALUE")));
+        ObjectNode rootNode = new ObjectNodeBuilderImpl()
+                .addValue("top1.prop1", "2")
+                .addList("top1.prop1", ListNode.builder().addValue("2").build())
+                .build();
+
+        assertThat(((ObjectNode) rootNode.get("top1")).get("prop1").value(), is(Optional.of("2")));
     }
 
     @Test

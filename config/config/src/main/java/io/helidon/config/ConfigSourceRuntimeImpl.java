@@ -362,14 +362,14 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
         private final Supplier<Optional<ObjectNode>> reloader;
         private final ConfigSource source;
         private final PollableSource<Object> pollable;
-        private AtomicReference<Object> lastStamp;
+        private final AtomicReference<Object> lastStamp;
 
-        public PollingStrategyListener(BuilderImpl.ConfigContextImpl configContext,
-                                       List<BiConsumer<String, ConfigNode>> listeners,
-                                       Supplier<Optional<ObjectNode>> reloader,
-                                       ConfigSource source,
-                                       PollableSource<Object> pollable,
-                                       AtomicReference<Object> lastStamp) {
+        private PollingStrategyListener(BuilderImpl.ConfigContextImpl configContext,
+                                        List<BiConsumer<String, ConfigNode>> listeners,
+                                        Supplier<Optional<ObjectNode>> reloader,
+                                        ConfigSource source,
+                                        PollableSource<Object> pollable,
+                                        AtomicReference<Object> lastStamp) {
 
             this.configContext = configContext;
             this.listeners = listeners;
@@ -382,7 +382,7 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
         @Override
         public ChangeEventType poll(Instant when) {
             Object lastStampValue = lastStamp.get();
-            if (null == lastStampValue || pollable.isModified(lastStampValue)) {
+            if ((null == lastStampValue) || pollable.isModified(lastStampValue)) {
                 Optional<ObjectNode> objectNode = reloader.get();
                 if (objectNode.isEmpty()) {
                     if (source.optional()) {

@@ -34,11 +34,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.OverrideSource;
 
 /**
  * Config provider represents initialization context used to create new instance of Config again and again.
@@ -51,7 +49,7 @@ class ProviderImpl implements Config.Context {
 
     private final ConfigMapperManager configMapperManager;
     private final ConfigSourcesRuntime configSource;
-    private final OverrideSource overrideSource;
+    private final OverrideSourceRuntime overrideSource;
     private final List<Function<Config, ConfigFilter>> filterProviders;
     private final boolean cachingEnabled;
 
@@ -66,7 +64,7 @@ class ProviderImpl implements Config.Context {
     @SuppressWarnings("ParameterNumber")
     ProviderImpl(ConfigMapperManager configMapperManager,
                  ConfigSourcesRuntime configSource,
-                 OverrideSource overrideSource,
+                 OverrideSourceRuntime overrideSource,
                  List<Function<Config, ConfigFilter>> filterProviders,
                  boolean cachingEnabled,
                  Executor changesExecutor,
@@ -93,6 +91,8 @@ class ProviderImpl implements Config.Context {
             // only start listening for changes once the first config is built
             configSource.changeListener(objectNode -> rebuild(objectNode, false));
             configSource.startChanges();
+            overrideSource.changeListener(() -> rebuild(configSource.latest(), false));
+            overrideSource.startChanges();
             listening = true;
         }
 
@@ -126,14 +126,8 @@ class ProviderImpl implements Config.Context {
         // filtering
         ChainConfigFilter targetFilter = new ChainConfigFilter();
         // add override filter
-        if (!overrideSource.equals(OverrideSources.empty())) {
-            OverrideConfigFilter filter = new OverrideConfigFilter(
-                    () -> overrideSource.load()
-                            .map(ConfigContent.OverrideContent::data)
-                            .orElse(OverrideSource.OverrideData.empty())
-                            .data());
-            targetFilter.addFilter(filter);
-        }
+        overrideSource.addFilter(targetFilter);
+
         // factory
         ConfigFactory factory = new ConfigFactory(configMapperManager,
                                                   rootNode.orElseGet(ObjectNode::empty),

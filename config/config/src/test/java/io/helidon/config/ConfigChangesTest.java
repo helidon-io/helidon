@@ -531,7 +531,7 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue("key1", "string value 2").build());
 
         // wait for event
-        onNextLatch.await(2, TimeUnit.SECONDS);
+        onNextLatch.await(3, TimeUnit.SECONDS);
 
         // verify event
         Config newConfig = newConfigReference.get();

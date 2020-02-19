@@ -17,15 +17,16 @@
 package io.helidon.config.spi;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -77,40 +78,35 @@ public class FallbackMergingStrategyTest {
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeValueToList() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            mergeLoads(
-                    ObjectNode.builder().addValue("top1.prop1", "1").build(),
-                    ObjectNode.builder().addList("top1.prop1", ListNode.builder()
-                            .addValue("2").build()).build());
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "LIST")));
+        ObjectNode rootNode = mergeLoads(
+                ObjectNode.builder().addValue("top1.prop1", "1").build(),
+                ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                        .addValue("2").build()).build());
+
+        assertThat(((ObjectNode) rootNode.get("top1")).get("prop1").value(), is(Optional.of("1")));
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeValueToObject() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            mergeLoads(
-                    ObjectNode.builder().addValue("top1.prop1", "1").build(),
-                    ObjectNode.builder().addValue("top1.prop1.sub", "2").build());
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "VALUE", "OBJECT")));
+        ObjectNode rootNode = mergeLoads(
+                ObjectNode.builder().addValue("top1.prop1", "1").build(),
+                ObjectNode.builder().addValue("top1.prop1.sub", "2").build());
+
+        ObjectNode prop1 = (ObjectNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        assertThat(prop1.value(), is(Optional.of("1")));
+        assertThat(prop1.get("sub").value(), is(Optional.of("2")));
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeObjectToValue() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            mergeLoads(
-                    ObjectNode.builder().addValue("top1.prop1.sub", "1").build(),
-                    ObjectNode.builder().addValue("top1.prop1", "2").build());
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "OBJECT", "VALUE")));
+        ObjectNode rootNode = mergeLoads(
+                ObjectNode.builder().addValue("top1.prop1.sub", "1").build(),
+                ObjectNode.builder().addValue("top1.prop1", "2").build());
+
+        ObjectNode prop1 = (ObjectNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        assertThat(prop1.value(), is(Optional.of("2")));
+        assertThat(prop1.get("sub").value(), is(Optional.of("1")));
     }
 
     @Test
@@ -166,16 +162,14 @@ public class FallbackMergingStrategyTest {
     }
 
     @Test
-    @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeListToValue() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            mergeLoads(
-                    ObjectNode.builder().addList("top1.prop1", ListNode.builder()
-                            .addValue("1").build()).build(),
-                    ObjectNode.builder().addValue("top1.prop1", "2").build());
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "VALUE")));
+        ObjectNode rootNode = mergeLoads(
+                ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                        .addValue("1").build()).build(),
+                ObjectNode.builder().addValue("top1.prop1", "2").build());
+
+        ListNode prop1 = (ListNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        assertThat(prop1.value(), is(Optional.of("2")));
     }
 
     @Test

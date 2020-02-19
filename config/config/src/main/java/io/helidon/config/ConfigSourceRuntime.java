@@ -27,6 +27,11 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * config source.
  */
 public interface ConfigSourceRuntime {
+    /**
+     * Change support for a runtime.
+     *
+     * @param change change listener
+     */
     void onChange(BiConsumer<String, ConfigNode> change);
 
     /**

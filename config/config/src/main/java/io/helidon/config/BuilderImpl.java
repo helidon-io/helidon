@@ -373,7 +373,7 @@ class BuilderImpl implements Config.Builder {
         //config provider
         return createProvider(configMapperManager,
                               configSources,
-                              overrideSource,
+                              new OverrideSourceRuntime(overrideSource),
                               filterProviders,
                               cachingEnabled,
                               changesExecutor,
@@ -623,7 +623,7 @@ class BuilderImpl implements Config.Builder {
     @SuppressWarnings("ParameterNumber")
     ProviderImpl createProvider(ConfigMapperManager configMapperManager,
                                 ConfigSourcesRuntime targetConfigSource,
-                                OverrideSource overrideSource,
+                                OverrideSourceRuntime overrideSource,
                                 List<Function<Config, ConfigFilter>> filterProviders,
                                 boolean cachingEnabled,
                                 Executor changesExecutor,

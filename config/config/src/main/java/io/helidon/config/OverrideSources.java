@@ -120,5 +120,10 @@ public final class OverrideSources {
         public String toString() {
             return "EmptyOverrideSource";
         }
+
+        @Override
+        public boolean optional() {
+            return true;
+        }
     }
 }
