@@ -130,7 +130,11 @@ public final class MediaSupport {
          */
         public Builder config(Config config) {
             config.get("server-errors-include-stack-traces").asBoolean().ifPresent(this::serverErrorsIncludeStackTraces);
-            config.get("register-defaults").asBoolean().ifPresent(b -> registerDefaults());
+            config.get("register-defaults").asBoolean().ifPresent(b -> {
+                    if (b) {
+                        registerDefaults();
+                    }
+                });
             return this;
         }
 
