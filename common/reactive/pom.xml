@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>org.reactivestreams</groupId>
-            <artifactId>reactive-streams-tck</artifactId>
+            <artifactId>reactive-streams-tck-flow</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

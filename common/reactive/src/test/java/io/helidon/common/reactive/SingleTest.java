@@ -73,7 +73,7 @@ public class SingleTest {
         };
         Single.<String>just("foo").subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getLastError(), instanceOf(IllegalArgumentException.class));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
@@ -88,7 +88,7 @@ public class SingleTest {
         };
         Single.<String>just("foo").subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getLastError(), instanceOf(IllegalArgumentException.class));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
