@@ -15,10 +15,10 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.mapper.Mapper;
-
 import java.util.Objects;
 import java.util.concurrent.Flow;
+
+import io.helidon.common.mapper.Mapper;
 
 /**
  * Maps the upstream items via a {@link Mapper} function.
@@ -47,7 +47,7 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
 
         private final Mapper<T, R> mapper;
 
-        Flow.Subscription upstream;
+        private Flow.Subscription upstream;
 
         MapperSubscriber(Flow.Subscriber<? super R> downstream, Mapper<T, R> mapper) {
             this.downstream = downstream;
