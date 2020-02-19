@@ -158,6 +158,19 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
+    public Void send(Throwable content) {
+        if (status() == null) {
+            if (content instanceof HttpException) {
+                status(((HttpException) content).status());
+            } else {
+                status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            }
+        }
+        send((Object) content);
+        return null;
+    }
+
+    @Override
     public <T> CompletionStage<ServerResponse> send(T content) {
         try {
             sendLockSupport.execute(() -> {
