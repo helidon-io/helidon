@@ -41,7 +41,7 @@ import io.helidon.config.spi.ConfigParser.Content;
  * @param <S> a type of data stamp
  * @see Builder
  */
-public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implements ConfigSource {
+public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
 
     private final Function<Config.Key, String> mediaTypeMapping;
     private final Function<Config.Key, ConfigParser> parserMapping;
@@ -63,6 +63,7 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implem
     @Override
     public final void init(ConfigContext context) {
         configContext = context;
+        super.init(context);
     }
 
     /**
