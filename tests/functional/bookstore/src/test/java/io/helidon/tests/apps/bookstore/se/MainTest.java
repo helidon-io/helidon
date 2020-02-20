@@ -96,7 +96,7 @@ class MainTest {
     }
 
     private void runExitOnStartedTest(String edition) throws Exception {
-        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"));
+        Arguments args = toArguments(editionToJarPath(edition), Collections.singletonList("-Dexit.on.started=!"));
         CapturingApplicationConsole console = new CapturingApplicationConsole();
         application = localPlatform.launch("java", args, Console.of(console));
         Queue<String> stdOut = console.getCapturedOutputLines();
