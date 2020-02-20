@@ -78,7 +78,6 @@ Notable changes:
 - Upgrade Netty to 4.1.45 [1309](https://github.com/oracle/helidon/pull/1309)
 - Upgrade Google libraries for Google login provider. [1229](https://github.com/oracle/helidon/pull/1229)
 - Upgrade H2, HikariCP, Jedis, OCI SDK versions [1198](https://github.com/oracle/helidon/pull/1198)
-- Upgrade reactor to 3.3.1-RELEASE [1235](https://github.com/oracle/helidon/pull/1235)
 - Upgrade to FT 2.0.2 and Failsafe 2.2.3 [1204](https://github.com/oracle/helidon/pull/1204)
 
 
@@ -99,6 +98,7 @@ Here are the details:
 - Removed `io.helidon.common.OptionalHelper`, please use methods of `java.util.Optional`
 - Removed `io.helidon.common.StackWalker`, please use `java.lang.StackWalker`
 - Removed `io.helidon.common.InputStreamHelper`, please use `java.io.InputStream` methods
+- Removed dependency on Project Reactor
 
 #### Tracing
 - We have upgraded to OpenTracing version 0.33.0 that is not backward compatible, the following breaking changes exist

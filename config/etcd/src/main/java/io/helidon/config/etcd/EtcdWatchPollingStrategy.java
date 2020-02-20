@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package io.helidon.config.etcd;
 
 import java.time.Instant;
 import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;

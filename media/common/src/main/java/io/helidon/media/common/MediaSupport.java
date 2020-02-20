@@ -15,6 +15,8 @@
  */
 package io.helidon.media.common;
 
+import io.helidon.config.Config;
+
 /**
  * Media support.
  */
@@ -22,10 +24,18 @@ public final class MediaSupport {
 
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
+    private final boolean serverErrorsIncludeStackTraces;
 
     private MediaSupport(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        this(readerContext, writerContext, false);
+    }
+
+    private MediaSupport(MessageBodyReaderContext readerContext,
+                         MessageBodyWriterContext writerContext,
+                         boolean serverErrorsIncludeStackTraces) {
         this.readerContext = readerContext;
         this.writerContext = writerContext;
+        this.serverErrorsIncludeStackTraces = serverErrorsIncludeStackTraces;
     }
 
     /**
@@ -45,11 +55,30 @@ public final class MediaSupport {
     }
 
     /**
+     * Returns {@code true} if server errors will include stack trace
+     * information.
+     * @return {@code true} if server errors will include stack trace
+     * information
+     */
+    public boolean serverErrorsIncludeStackTraces() {
+        return serverErrorsIncludeStackTraces;
+    }
+
+    /**
      * Create a new instance with empty reader and writer contexts.
      * @return MediaSupport
      */
     public static MediaSupport create() {
         return builder().build();
+    }
+
+    /**
+     * Create a new instance with empty reader and writer contexts.
+     * @param config a {@link Config}
+     * @return MediaSupport
+     */
+    public static MediaSupport create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -62,8 +91,19 @@ public final class MediaSupport {
     }
 
     /**
+     * Create a new instance with the default readers and writers registered on
+     * the contexts.
+     * @param config a {@link Config} that will be passed to {@link
+     * Builder#registerDefaults(Config)}
+     * @return MediaSupport
+     */
+    public static MediaSupport createWithDefaults(Config config) {
+        return builder().config(config).registerDefaults().build();
+    }
+
+    /**
      * Create a new {@link Builder} instance.
-     * @return Builder
+     * @return a new {@link Builder}
      */
     public static Builder builder() {
         return new Builder();
@@ -76,10 +116,39 @@ public final class MediaSupport {
 
         private final MessageBodyReaderContext readerContext;
         private final MessageBodyWriterContext writerContext;
+        private boolean serverErrorsIncludeStackTraces;
 
         Builder() {
             readerContext = MessageBodyReaderContext.create();
             writerContext = MessageBodyWriterContext.create();
+        }
+
+        /**
+         * Configures this {@link Builder} from the supplied {@link Config}.
+         * @param config a {@link Config}
+         * @return this {@link Builder}
+         */
+        public Builder config(Config config) {
+            config.get("server-errors-include-stack-traces").asBoolean().ifPresent(this::serverErrorsIncludeStackTraces);
+            config.get("register-defaults").asBoolean().ifPresent(b -> {
+                    if (b) {
+                        registerDefaults();
+                    }
+                });
+            return this;
+        }
+
+        /**
+         * Ensures that {@link MediaSupport} instances {@linkplain
+         * #build() built} by this {@link Builder} will include stack
+         * trace information when server errors are returned.
+         * @param serverErrorsIncludeStackTraces whether stack trace
+         * information should be included
+         * @return this {@link Builder}
+         */
+        public Builder serverErrorsIncludeStackTraces(boolean serverErrorsIncludeStackTraces) {
+            this.serverErrorsIncludeStackTraces = serverErrorsIncludeStackTraces;
+            return this;
         }
 
         /**
@@ -101,9 +170,11 @@ public final class MediaSupport {
          * {@code Path.class}</li>
          * <li>{@link FileBodyWriter} - generates payload from
          * {@code File.class}</li>
+         * <li>{@link ThrowableBodyWriter} - generates payload from
+         * {@link Throwable Throwable.class}</li>
          * </ul>
          *
-         * @return this builder instance
+         * @return this {@link Builder}
          */
         public Builder registerDefaults() {
             // default readers
@@ -117,7 +188,7 @@ public final class MediaSupport {
                     .registerWriter(ByteChannelBodyWriter.create())
                     .registerWriter(PathBodyWriter.create())
                     .registerWriter(FileBodyWriter.create())
-                    .registerWriter(ThrowableBodyWriter.create(false));
+                    .registerWriter(ThrowableBodyWriter.create(serverErrorsIncludeStackTraces));
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.config.internal;
 
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -113,10 +113,12 @@ public class ValueResolvingFilter implements ConfigFilter {
     private static final String REGEX_BACKSLASH = "\\\\(?=\\$\\{([^}]+)\\})";
     private static final Pattern PATTERN_BACKSLASH = Pattern.compile(REGEX_BACKSLASH);
 
+    // I only care about unresolved key happening within the same thread
+    private static final ThreadLocal<Set<Config.Key>> UNRESOLVED_KEYS = ThreadLocal.withInitial(HashSet::new);
+
     private Config root;
     private Optional<Boolean> failOnMissingReferenceSetting = Optional.empty();
     private boolean failOnMissingReference = false;
-    private final Collection<Config.Key> unresolvedKeys = new ConcurrentLinkedQueue<>();
 
     /**
      * Creates an instance of filter with the specified behavior on missing
@@ -155,11 +157,11 @@ public class ValueResolvingFilter implements ConfigFilter {
 
     @Override
     public String apply(Config.Key key, String stringValue) {
-        if (unresolvedKeys.contains(key)) {
+        if (!UNRESOLVED_KEYS.get().add(key)) {
+            UNRESOLVED_KEYS.get().clear();
             throw new IllegalStateException("Recursive update");
         }
         try {
-            unresolvedKeys.add(key);
             return format(stringValue);
         } catch (MissingValueException e) {
             if (failOnMissingReference) {
@@ -169,7 +171,7 @@ public class ValueResolvingFilter implements ConfigFilter {
                 return stringValue;
             }
         } finally {
-            unresolvedKeys.remove(key);
+            UNRESOLVED_KEYS.get().remove(key);
         }
     }
 
