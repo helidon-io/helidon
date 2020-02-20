@@ -36,8 +36,16 @@ final class SingleMappingProcessor<T, U> extends BaseProcessor<T, U> implements 
 
     @Override
     protected void submit(T item) {
-        U value = mapper.map(item);
+        U value = null;
+        try {
+            value = mapper.map(item);
+        } catch (Throwable t) {
+            getSubscription().cancel();
+            onError(t);
+            return;
+        }
         if (value == null) {
+            getSubscription().cancel();
             onError(new IllegalStateException("Mapper returned a null value"));
             return;
         }

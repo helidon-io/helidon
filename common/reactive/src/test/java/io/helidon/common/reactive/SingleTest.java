@@ -401,6 +401,17 @@ public class SingleTest {
         assertThat(subscription2.canceled, is(equalTo(true)));
     }
 
+    @Test
+    void exceptionThrowingMapper() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
+        Single.just("foo").<String>map(s -> {
+            throw new IllegalStateException("bar!");
+        }).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
     private static class SingleTestSubscriber<T> extends TestSubscriber<T> {
 
         @Override
