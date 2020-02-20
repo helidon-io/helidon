@@ -151,10 +151,10 @@ public class MultiFlatMapProcessor<T, X> extends BaseProcessor<T, X> implements 
     }
 
     @Override
-    @SuppressWarnings("checkstyle:emptyStatement")
     public void request(long n) {
-        // race against Publisher setting a new backp
-        while (!backp.maybeRequest(n)) ;
+        while (!backp.maybeRequest(n)) {
+            // race against Publisher setting a new backp
+        }
     }
 
     @Override
