@@ -150,6 +150,7 @@ public class DirectoryConfigSource extends AbstractConfigSource
     /**
      * {@inheritDoc}
      * <p>
+     * A fluent API builder for {@link io.helidon.config.DirectoryConfigSource}.
      */
     public static final class Builder extends AbstractConfigSourceBuilder<Builder, Path>
                 implements PollableSource.Builder<Builder>,

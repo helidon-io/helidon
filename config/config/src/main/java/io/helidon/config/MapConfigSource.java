@@ -41,7 +41,7 @@ public class MapConfigSource extends AbstractConfigSource implements ConfigSourc
     private final Map<?, ?> map;
     private final String mapSourceName;
 
-    MapConfigSource(MapBuilder builder) {
+    MapConfigSource(MapBuilder<?> builder) {
         super(builder);
 
         // we intentionally keep the original instance, so we can watch for changes
@@ -101,6 +101,9 @@ public class MapConfigSource extends AbstractConfigSource implements ConfigSourc
         return mapSourceName.isEmpty() ? "" : mapSourceName;
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.config.MapConfigSource}.
+     */
     public static final class Builder extends MapBuilder<Builder> {
         private Builder() {
         }
@@ -112,9 +115,13 @@ public class MapConfigSource extends AbstractConfigSource implements ConfigSourc
     }
 
     /**
-     * A fluent API builder for {@link MapConfigSource}.
+     * An abstract fluent API builder for {@link MapConfigSource}.
+     * If you want to extend {@link io.helidon.config.MapConfigSource}, you can use this class as a base for
+     * your own builder.
+     *
+     * @param <T> type of the implementing builder
      */
-    public static abstract class MapBuilder<T extends MapBuilder<T>> extends AbstractConfigSourceBuilder<T, Void>
+    public abstract static class MapBuilder<T extends MapBuilder<T>> extends AbstractConfigSourceBuilder<T, Void>
             implements io.helidon.common.Builder<MapConfigSource>,
                        PollableSource.Builder<T> {
 
@@ -123,6 +130,9 @@ public class MapConfigSource extends AbstractConfigSource implements ConfigSourc
         @SuppressWarnings("unchecked")
         private final T me = (T) this;
 
+        /**
+         * Creat a new builder instance.
+         */
         protected MapBuilder() {
         }
 
@@ -166,16 +176,22 @@ public class MapConfigSource extends AbstractConfigSource implements ConfigSourc
             return super.pollingStrategy(pollingStrategy);
         }
 
+        /**
+         * Map used as data of this config source.
+         *
+         * @return map with the data
+         */
         protected Map<?, ?> map() {
             return map;
         }
 
+        /**
+         * Name of the source.
+         *
+         * @return name
+         */
         protected String sourceName() {
             return sourceName;
-        }
-
-        protected T me() {
-            return me;
         }
     }
 }

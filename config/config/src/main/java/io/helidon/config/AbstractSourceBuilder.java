@@ -105,6 +105,14 @@ public abstract class AbstractSourceBuilder<B extends AbstractSourceBuilder<B, U
         return me;
     }
 
+    /**
+     * Configure a change watcher.
+     * This method must be exposed by builders of sources that change watching ({@link io.helidon.config.spi.WatchableSource}).
+     * The type of the change watcher must match the type of the target of this source.
+     *
+     * @param changeWatcher change watcher to use, such as {@link io.helidon.config.FileSystemWatcher}
+     * @return updated builder instance
+     */
     protected B changeWatcher(ChangeWatcher<U> changeWatcher) {
         if (!(this instanceof WatchableSource.Builder)) {
             throw new ConfigException("You are attempting to configure a change watcher on a source builder that does "

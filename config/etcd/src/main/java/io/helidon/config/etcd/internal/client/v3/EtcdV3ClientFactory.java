@@ -21,7 +21,7 @@ import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientFactory;
 
 /**
- * TODO javadoc.
+ * Factor for V3 client.
  */
 public class EtcdV3ClientFactory implements EtcdClientFactory {
     @Override

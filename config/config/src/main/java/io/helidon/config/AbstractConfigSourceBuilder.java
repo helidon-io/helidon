@@ -24,6 +24,13 @@ import java.util.function.Function;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.Source;
 
+/**
+ * Common ancestor for config source builders, taking care of configurable options understood by the config
+ * module.
+ *
+ * @param <B> Type of the builder implementation
+ * @param <U> Type of a target if this builder supports change watching, use {@code Void} if not
+ */
 public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSourceBuilder<B, U>, U>
         extends AbstractSourceBuilder<B, U>
         implements Source.Builder<B> {
@@ -101,7 +108,13 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
         return me;
     }
 
-
+    /**
+     * A parser if this is a {@link io.helidon.config.spi.ParsableSource} and explicit parser
+     * is configured.
+     *
+     * @param parser parser configured for this source
+     * @return updated builder instance
+     */
     protected B parser(ConfigParser parser) {
         this.parser = parser;
         return me;
@@ -119,6 +132,13 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
         return Optional.ofNullable(parserMapping);
     }
 
+    /**
+     * Media type if this is a {@link io.helidon.config.spi.ParsableSource} and explicit media type
+     * is configured.
+     *
+     * @param mediaType media type configured for this source
+     * @return updated builder instance
+     */
     protected B mediaType(String mediaType) {
         this.mediaType = mediaType;
         return me;

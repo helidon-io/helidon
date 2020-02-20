@@ -29,6 +29,9 @@ import io.helidon.config.spi.ParsableSource;
  * In-memory implementation of config source.
  */
 class InMemoryConfigSource {
+    private InMemoryConfigSource() {
+    }
+
     static NodeConfigSource create(String uri, NodeContent content) {
         Objects.requireNonNull(uri, "uri cannot be null");
         Objects.requireNonNull(content, "content cannot be null");

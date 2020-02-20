@@ -43,6 +43,9 @@ public interface ConfigContent {
         return Optional.empty();
     }
 
+    /**
+     * A content of an {@link io.helidon.config.spi.OverrideSource}.
+     */
     interface OverrideContent extends ConfigContent {
         /**
          * A fluent API builder for {@link io.helidon.config.spi.ConfigContent.OverrideContent}.
@@ -136,8 +139,10 @@ public interface ConfigContent {
 
     /**
      * Fluent API builder for {@link ConfigContent}, common ancestor for parsable content builder and node content builder.
+     *
+     * @param <T> type of the implementing builder
      */
-    class Builder<T extends Builder> {
+    class Builder<T extends Builder<T>> {
         private Object stamp;
 
         @SuppressWarnings("unchecked")

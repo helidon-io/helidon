@@ -49,7 +49,7 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
 
     /**
      * Creates a change watcher for sources based on etcd that provide
-     * {@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint} as a target
+     * {@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint} as a target.
      *
      * @return configured polling strategy
      */
@@ -122,7 +122,7 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
         private final Consumer<ChangeEvent<EtcdEndpoint>> listener;
         private EtcdEndpoint endpoint;
 
-        public EtcdWatchSubscriber(Consumer<ChangeEvent<EtcdEndpoint>> listener,
+        EtcdWatchSubscriber(Consumer<ChangeEvent<EtcdEndpoint>> listener,
                                    EtcdEndpoint endpoint) {
             this.listener = listener;
             this.endpoint = endpoint;

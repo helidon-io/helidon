@@ -59,6 +59,12 @@ public class MyConfigSourceBuilder1 implements Builder<MyConfigSource1> {
                 .config(metaConfig);
     }
 
+    /**
+     * Create an instance based on config.
+     *
+     * @param metaConfig meta config
+     * @return new builder instance
+     */
     public MyConfigSourceBuilder1 config(Config metaConfig) {
         metaConfig.get("myProp3").asBoolean().ifPresent(this::myProp3);
         return this;

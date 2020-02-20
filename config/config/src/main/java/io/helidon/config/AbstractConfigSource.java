@@ -51,6 +51,13 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
     private final Optional<Function<Config.Key, Optional<ConfigParser>>> parserMapping;
     private final boolean mediaMappingSupported;
 
+    /**
+     * Use common data from the builder to setup media type, parser, media type mapping, and
+     * parser mapping on this instance. Additional common data is handled by
+     * {@link io.helidon.config.AbstractSource#AbstractSource(AbstractSourceBuilder)}.
+     *
+     * @param builder builder used to set up this config source
+     */
     protected AbstractConfigSource(AbstractConfigSourceBuilder<?, ?> builder) {
         super(builder);
 
@@ -62,10 +69,23 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         this.mediaMappingSupported = mediaTypeMapping.isPresent() || parserMapping.isPresent();
     }
 
+    /**
+     * Media type if on eis configured for parsing content of {@link io.helidon.config.spi.ParsableSource}.
+     * If there is none configured (default), a parser is chosen based on
+     * {@link io.helidon.config.spi.ConfigParser.Content#mediaType()} - media type detected during load of data.
+     *
+     * @return configured media type or empty if none configured
+     */
     protected Optional<String> mediaType() {
         return mediaType;
     }
 
+    /**
+     * Config parser if one is configured to use for parsing content of {@link io.helidon.config.spi.ParsableSource}.
+     * If one is not configured on a source (default), a parser is chosen based on {@link #mediaType()}.
+     *
+     * @return a configured parser, or empty if one should be chosen from media type (or if this is not a parsable source)
+     */
     protected Optional<ConfigParser> parser() {
         return parser;
     }
@@ -87,8 +107,8 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
     }
 
     private ObjectNode processObject(Function<String, Optional<ConfigParser>> mediaToParser,
-                                                ConfigKeyImpl key,
-                                                ObjectNode objectNode) {
+                                     ConfigKeyImpl key,
+                                     ObjectNode objectNode) {
         ObjectNode.Builder builder = ObjectNode.builder();
 
         objectNode.forEach((name, node) -> builder.addNode(name, processNode(mediaToParser, key.child(name), node)));
@@ -136,10 +156,10 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         ConfigParser found = parser.get();
 
         return found.parse(ConfigParser.Content.builder()
-                // value node must have a value
-                .data(toStream(valueNode.get()))
-                .charset(StandardCharsets.UTF_8)
-                .build());
+                                   // value node must have a value
+                                   .data(toStream(valueNode.get()))
+                                   .charset(StandardCharsets.UTF_8)
+                                   .build());
     }
 
     private InputStream toStream(String string) {
@@ -168,12 +188,12 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
 
         // if media is explicit, parser is required
         return Optional.of(mediaToParser.apply(mediaType)
-                .orElseThrow(() -> new ConfigException("Cannot find parser for media type "
-                                                               + mediaType
-                                                               + " for key "
-                                                               + key
-                                                               + " in config source "
-                                                               + description())));
+                                   .orElseThrow(() -> new ConfigException("Cannot find parser for media type "
+                                                                                  + mediaType
+                                                                                  + " for key "
+                                                                                  + key
+                                                                                  + " in config source "
+                                                                                  + description())));
 
     }
 }

@@ -274,7 +274,8 @@
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
         <module name="TodoComment">
-            <property name="format" value="(TODO)|(FIXME)|(EDIT)"/>
+            <!-- TODO - we should add this configuration to remove todos from code -->
+            <!-- <property name="format" value="(TODO)|(FIXME)|(EDIT)"/>-->
         </module>
         <module name="UpperEll"/>
 

@@ -28,6 +28,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
  * Implementation of {@link ObjectNode.Builder}.
+ * This class is {@code public} for the time being, though it should not be.
  */
 public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, ObjectNode.Builder> implements ObjectNode.Builder {
 
@@ -51,6 +52,11 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
         this.members = new HashMap<>();
     }
 
+    /**
+     * Create a new builder instance.
+     *
+     * @return a new builder
+     */
     public static ObjectNodeBuilderImpl create() {
         return new ObjectNodeBuilderImpl();
     }

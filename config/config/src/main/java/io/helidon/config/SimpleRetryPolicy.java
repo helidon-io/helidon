@@ -192,6 +192,9 @@ public final class SimpleRetryPolicy implements RetryPolicy {
         return overallTimeout;
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.config.SimpleRetryPolicy}.
+     */
     public static final class Builder implements io.helidon.common.Builder<SimpleRetryPolicy> {
         private int retries = 3;
         private Duration delay = Duration.ofMillis(200);

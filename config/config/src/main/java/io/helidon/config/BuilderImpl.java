@@ -389,7 +389,6 @@ class BuilderImpl implements Config.Builder {
     public Config.Builder config(Config metaConfig) {
         metaConfig.get("caching.enabled").asBoolean().ifPresent(this::cachingEnabled);
         metaConfig.get("key-resolving.enabled").asBoolean().ifPresent(this::keyResolvingEnabled);
-        metaConfig.get("value-resolving.enabled").asBoolean().ifPresent(this::valueResolvingEnabled);
         metaConfig.get("parsers.enabled").asBoolean().ifPresent(this::parserServicesEnabled);
         metaConfig.get("mappers.enabled").asBoolean().ifPresent(this::mapperServicesEnabled);
         metaConfig.get("config-source-services.enabled").asBoolean().ifPresent(this::configSourceServicesEnabled);
@@ -460,8 +459,8 @@ class BuilderImpl implements Config.Builder {
                                                                      .pollingStrategy(PollingStrategies
                                                                                               .regular(Duration.ofSeconds(2))
                                                                                               .build())
-                                                                     .build()
-                , 100));
+                                                                     .build(),
+                                                             100));
         prioritizedSources.add(new HelidonSourceWithPriority(ConfigSources.environmentVariables(), 100));
         prioritizedSources.add(new HelidonSourceWithPriority(ConfigSources.classpath("application.yaml")
                                                                      .optional(true)
@@ -558,10 +557,6 @@ class BuilderImpl implements Config.Builder {
 
     private void parserServicesEnabled(Boolean aBoolean) {
         parserServicesEnabled = aBoolean;
-    }
-
-    private void valueResolvingEnabled(Boolean aBoolean) {
-        // TODO this is a noop as is disableValueResolving
     }
 
     private void keyResolvingEnabled(Boolean aBoolean) {
@@ -671,7 +666,6 @@ class BuilderImpl implements Config.Builder {
 
         // as the mapperProviders.add adds the last as first, we need to reverse order
         Collections.reverse(prioritizedMappers);
-
 
         MapperProviders providers = MapperProviders.create();
 

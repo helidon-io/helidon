@@ -68,6 +68,13 @@ public interface ConfigSource extends Supplier<ConfigSource>, Source {
         return this;
     }
 
+    /**
+     * Initialize the config source with a {@link ConfigContext}.
+     * <p>
+     * The method is executed during {@link Config} bootstrapping by {@link Config.Builder}.
+     *
+     * @param context a config context
+     */
     default void init(ConfigContext context) {
     }
 }

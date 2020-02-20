@@ -23,12 +23,35 @@ import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.RetryPolicy;
 import io.helidon.config.spi.Source;
 
+/**
+ * Source options as a super set of all possible combinations of source implementation.
+ * When used as a base class, together with {@link io.helidon.config.AbstractSourceBuilder}, you can set up any
+ * source type.
+ *
+ * @see io.helidon.config.AbstractSourceBuilder
+ * @see io.helidon.config.AbstractConfigSource
+ * @see io.helidon.config.AbstractConfigSourceBuilder
+ */
 public class AbstractSource implements Source {
+    // any source
     private final boolean optional;
-    private final Optional<PollingStrategy> pollingStrategy;
     private final Optional<RetryPolicy> retryPolicy;
+    // pollable source
+    private final Optional<PollingStrategy> pollingStrategy;
+    // watchable source
     private final Optional<ChangeWatcher<Object>> changeWatcher;
 
+    /**
+     * A new instance configured from the provided builder.
+     * The builder is used to set the following:
+     * <ul>
+     *     <li>{@link #optional()} - for any source, whether the content must be present, or is optional</li>
+     *     <li>{@link #retryPolicy()} - for any source, policy used to retry attempts at reading the content</li>
+     *     <li>{@link #pollingStrategy()} - for {@link io.helidon.config.spi.PollableSource}, the polling strategy (if any)</li>
+     *     <li>{@link #changeWatcher()} - for {@link io.helidon.config.spi.WatchableSource}, the change watcher (if any)</li>
+     * </ul>
+     * @param builder builder used to read the configuration options
+     */
     @SuppressWarnings("unchecked")
     protected AbstractSource(AbstractSourceBuilder<?, ?> builder) {
         this.optional = builder.isOptional();
@@ -47,10 +70,22 @@ public class AbstractSource implements Source {
         return optional;
     }
 
+    /**
+     * A polling strategy of this source, if it implements {@link io.helidon.config.spi.PollableSource} and has one
+     * configured.
+     *
+     * @return polling strategy if any configured
+     */
     protected Optional<PollingStrategy> pollingStrategy() {
         return pollingStrategy;
     }
 
+    /**
+     * A change watcher of this source, if it implements {@link io.helidon.config.spi.WatchableSource} and has one
+     * configured.
+     *
+     * @return change watcher if any configured
+     */
     protected Optional<ChangeWatcher<Object>> changeWatcher() {
         return changeWatcher;
     }
