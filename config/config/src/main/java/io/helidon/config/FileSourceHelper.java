@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.channels.FileLock;
 import java.nio.channels.NonWritableChannelException;
 import java.nio.charset.StandardCharsets;
@@ -44,9 +43,10 @@ import java.util.stream.Collectors;
  * @see FileOverrideSource
  * @see io.helidon.config.DirectoryConfigSource
  */
-public class FileSourceHelper {
+public final class FileSourceHelper {
 
     private static final Logger LOGGER = Logger.getLogger(FileSourceHelper.class.getName());
+    private static final int FILE_BUFFER_SIZE = 4096;
 
     private FileSourceHelper() {
         throw new AssertionError("Instantiation not allowed.");
@@ -86,14 +86,14 @@ public class FileSourceHelper {
             FileLock lock = null;
             try {
                 lock = fis.getChannel().tryLock(0L, Long.MAX_VALUE, false);
-            } catch (NonWritableChannelException e) {
+            } catch (NonWritableChannelException ignored) {
                 // non writable channel means that we do not need to lock it
             }
             try {
                 try (BufferedReader bufferedReader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
                     return bufferedReader.lines().collect(Collectors.joining("\n"));
                 } catch (IOException e) {
-                    throw new ConfigException(String.format("Cannot read from path '%s'", path));
+                    throw new ConfigException(String.format("Cannot read from path '%s'", path), e);
                 }
             } finally {
                 if (lock != null) {
@@ -117,12 +117,12 @@ public class FileSourceHelper {
      * @param path a path to the file
      * @return an MD5 digest of the file or null if the file cannot be read
      */
+    @SuppressWarnings("StatementWithEmptyBody")
     public static Optional<byte[]> digest(Path path) {
         MessageDigest digest = digest();
 
-        try (InputStream fis = Files.newInputStream(path)) {
-            DigestInputStream dis = new DigestInputStream(fis, digest);
-            byte[] buffer = new byte[4096];
+        try (DigestInputStream dis = new DigestInputStream(Files.newInputStream(path), digest)) {
+            byte[] buffer = new byte[FILE_BUFFER_SIZE];
             while (dis.read(buffer) != -1) {
                 // just discard - we are only interested in the digest information
             }
@@ -134,13 +134,27 @@ public class FileSourceHelper {
         }
     }
 
-    public static boolean isModified(Path filePath, byte[] stamp) {
+    /**
+     * Check if a file on the file system is changed, as compared to the digest provided.
+     *
+     * @param filePath path of the file
+     * @param digest digest of the file
+     * @return {@code true} if the file exists and has the same digest, {@code false} otherwise
+     */
+    public static boolean isModified(Path filePath, byte[] digest) {
         return !digest(filePath)
-                .map(newStamp -> Arrays.equals(stamp, newStamp))
+                .map(newDigest -> Arrays.equals(digest, newDigest))
                 // if new stamp is not present, it means the file was deleted
                 .orElse(false);
     }
 
+    /**
+     * Check if a file on the file system is changed based on its last modification timestamp.
+     *
+     * @param filePath path of the file
+     * @param stamp last modification stamp
+     * @return {@code true} if the file exists and has the same last modification timestamp, {@code false} otherwise
+     */
     public static boolean isModified(Path filePath, Instant stamp) {
         return lastModifiedTime(filePath)
                 .map(newStamp -> newStamp.isAfter(stamp))
@@ -162,9 +176,8 @@ public class FileSourceHelper {
         try (FileInputStream fis = new FileInputStream(filePath.toFile())) {
             FileLock lock = lockFile(filePath, fis);
 
-            try {
-                DigestInputStream dis = new DigestInputStream(fis, md);
-                byte[] buffer = new byte[4096];
+            try (DigestInputStream dis = new DigestInputStream(fis, md)) {
+                byte[] buffer = new byte[FILE_BUFFER_SIZE];
                 int len;
                 while ((len = dis.read(buffer)) != -1) {
                     baos.write(buffer, 0, len);
@@ -214,19 +227,31 @@ public class FileSourceHelper {
         }
     }
 
-    public static class DataAndDigest {
-        private byte[] data;
-        private byte[] digest;
+    /**
+     * Data and digest of a file.
+     * Data in an instance are guaranteed to be paired - e.g. the digest is for the bytes provided.
+     */
+    public static final class DataAndDigest {
+        private final byte[] data;
+        private final byte[] digest;
 
         private DataAndDigest(byte[] data, byte[] digest) {
             this.data = data;
             this.digest = digest;
         }
 
+        /**
+         * Data loaded from the file.
+         * @return bytes of the file
+         */
         public byte[] data() {
             return data;
         }
 
+        /**
+         * Digest of the data that was loaded.
+         * @return bytes of the digest
+         */
         public byte[] digest() {
             return digest;
         }

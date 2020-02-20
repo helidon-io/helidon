@@ -43,6 +43,45 @@ public abstract class AbstractSourceBuilder<B extends AbstractSourceBuilder<B, U
     @SuppressWarnings("unchecked")
     private B me = (B) this;
 
+    /**
+     * Configure builder from meta configuration.
+     * <p>
+     * The following configuration options are supported:
+     * <table class="config">
+     * <caption>Optional configuration parameters</caption>
+     * <tr>
+     *     <th>key</th>
+     *     <th>default value</th>
+     *     <th>description</th>
+     * </tr>
+     * <tr>
+     *     <td>optional</td>
+     *     <td>{@code false}</td>
+     *     <td>Configure to {@code true} if this source should not fail configuration setup when underlying data is missing.</td>
+     * </tr>
+     * <tr>
+     *     <td>polling-strategy</td>
+     *     <td>No polling strategy is added by default</td>
+     *     <td>Meta configuration of a polling strategy to be used with this source, add configuration to {@code properties}
+     *      sub node.</td>
+     * </tr>
+     * <tr>
+     *     <td>change-watcher</td>
+     *     <td>No change watcher is added by default</td>
+     *     <td>Meta configuration of a change watcher to be used with this source, add configuration to {@code properties}
+     *      sub node.</td>
+     * </tr>
+     * <tr>
+     *     <td>retry-policy</td>
+     *     <td>No retry policy is added by default</td>
+     *     <td>Meta configuration of a retry policy to be used to load this source, add configuration to {@code properties}
+     *      sub node.</td>
+     * </tr>
+     * </table>
+     *
+     * @param metaConfig meta configuration of this source
+     * @return updated builder instance
+     */
     @SuppressWarnings("unchecked")
     protected B config(Config metaConfig) {
 
@@ -75,6 +114,16 @@ public abstract class AbstractSourceBuilder<B extends AbstractSourceBuilder<B, U
         return me;
     }
 
+    /**
+     * Configure a polling strategy.
+     * This method must be exposed by builders of sources that support polling.
+     *
+     * If you see this method as being protected in your builder, the source has removed
+     * support for polling, such as {@link io.helidon.config.ClasspathConfigSource}.
+     *
+     * @param pollingStrategy polling strategy to use
+     * @return updated builder instance
+     */
     protected B pollingStrategy(PollingStrategy pollingStrategy) {
         if (!(this instanceof PollableSource.Builder)) {
             throw new ConfigException("You are attempting to configure a polling strategy on a source builder that does "

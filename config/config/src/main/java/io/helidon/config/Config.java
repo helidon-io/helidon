@@ -1268,7 +1268,7 @@ public interface Config {
          * @param overridingSource a source with overriding key patterns and assigned values
          * @return an updated builder instance
          */
-        Builder overrides(Supplier<OverrideSource> overridingSource);
+        Builder overrides(Supplier<? extends OverrideSource> overridingSource);
 
         /**
          * Disables an usage of resolving key tokens.

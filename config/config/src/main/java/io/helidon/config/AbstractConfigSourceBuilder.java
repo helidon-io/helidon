@@ -36,6 +36,29 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
     @SuppressWarnings("unchecked")
     private B me = (B) this;
 
+    /**
+     * {@inheritDoc}
+     *
+     * <table class="config">
+     * <caption>Media type and type mapping</caption>
+     * <tr>
+     *      <td>media-type</td>
+     *      <td>Media type from loaded data is used by default for parsable config sources</td>
+     *      <td>Explicit media type to use, such as when a file has invalid suffix, or when we need to explicitly mark
+     *      the media type.</td>
+     * </tr>
+     * <tr>
+     *     <td>media-type-mapping</td>
+     *     <td>No media type mapping is done by default</td>
+     *     <td>A mapping of key to a media type, allowing us to have a key that contains a sub-tree (e.g. a key that contains
+     *     json data)
+     *      - when we configure a mapping of the key to {@code application/json}, the data would be expanded into config
+     *      as a proper tree structure</td>
+     * </tr>
+     * </table>
+     * @param metaConfig meta configuration of this source
+     * @return updated builder instance
+     */
     protected B config(Config metaConfig) {
         super.config(metaConfig);
 

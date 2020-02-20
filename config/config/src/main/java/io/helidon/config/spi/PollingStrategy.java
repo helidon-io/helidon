@@ -141,12 +141,7 @@ import io.helidon.config.PollingStrategies;
  * @see PollingStrategies PollingStrategies - access built-in implementations.
  */
 @FunctionalInterface
-public interface PollingStrategy extends Supplier<PollingStrategy> {
-
-    @Override
-    default PollingStrategy get() {
-        return this;
-    }
+public interface PollingStrategy {
 
     /**
      * Start this polling strategy. From this point in time, the polled will receive

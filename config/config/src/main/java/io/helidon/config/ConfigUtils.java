@@ -195,7 +195,7 @@ final class ConfigUtils {
      * <p>
      * It can be used to implement Rx Debounce operator (http://reactivex.io/documentation/operators/debounce.html).
      */
-    public static class ScheduledTask {
+    static class ScheduledTask {
         private final ScheduledExecutorService executorService;
         private final Runnable command;
         private final Duration delay;
@@ -209,7 +209,7 @@ final class ConfigUtils {
          * @param command         the command to be executed on {@code executorService}
          * @param delay           the {@code command} is scheduled with specified delay
          */
-        public ScheduledTask(ScheduledExecutorService executorService, Runnable command, Duration delay) {
+        ScheduledTask(ScheduledExecutorService executorService, Runnable command, Duration delay) {
             this.executorService = executorService;
             this.command = command;
             this.delay = delay;

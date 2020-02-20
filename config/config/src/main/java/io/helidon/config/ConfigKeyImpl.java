@@ -46,7 +46,7 @@ class ConfigKeyImpl implements Config.Key {
             path.addAll(parent.path);
             fullSB.append(parent.fullKey);
         }
-        if (!name.equals("")) {
+        if (!name.isEmpty()) {
             if (fullSB.length() > 0) {
                 fullSB.append(".");
             }
@@ -60,7 +60,7 @@ class ConfigKeyImpl implements Config.Key {
 
     @Override
     public ConfigKeyImpl parent() {
-        if (null == parent) {
+        if (isRoot()) {
             throw new IllegalStateException("Attempting to get parent of a root node. Guard by isRoot instead");
         }
         return parent;
@@ -124,7 +124,7 @@ class ConfigKeyImpl implements Config.Key {
     private ConfigKeyImpl child(List<String> path) {
         ConfigKeyImpl result = this;
         for (String name : path) {
-            if ("".equals(name)) {
+            if (name.isEmpty()) {
                 continue;
             }
             result = new ConfigKeyImpl(result, name);

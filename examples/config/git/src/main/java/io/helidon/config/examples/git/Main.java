@@ -66,7 +66,8 @@ public class Main {
         System.out.println("Loading from branch " + env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("null"));
 
         Config config = Config.create(
-                GitConfigSource.builder("application.conf")
+                GitConfigSource.builder()
+                        .path("application.conf")
                         .uri(URI.create("https://github.com/helidonrobot/test-config.git"))
                         .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
                         .build());

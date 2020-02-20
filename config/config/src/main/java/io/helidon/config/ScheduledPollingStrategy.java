@@ -24,7 +24,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.logging.Logger;
 
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
@@ -32,15 +31,13 @@ import io.helidon.config.spi.PollingStrategy;
 /**
  * A strategy which allows the user to schedule periodically fired polling event.
  */
-/*
- * This class will trigger checks in a periodic manner.
- * The actual check if the source has changed is done elsewhere, this is just responsible for telling us
- * "check now".
- * The feedback is an information whether the change happened or not.
- */
 public final class ScheduledPollingStrategy implements PollingStrategy {
-
-    private static final Logger LOGGER = Logger.getLogger(ScheduledPollingStrategy.class.getName());
+    /*
+     * This class will trigger checks in a periodic manner.
+     * The actual check if the source has changed is done elsewhere, this is just responsible for telling us
+     * "check now".
+     * The feedback is an information whether the change happened or not.
+     */
 
     private final RecurringPolicy recurringPolicy;
     private final boolean defaultExecutor;
@@ -77,6 +74,11 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
                 .build();
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.config.ScheduledPollingStrategy}.
+     *
+     * @return a new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -105,10 +107,6 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
         }
     }
 
-    synchronized void startScheduling() {
-        scheduleNext();
-    }
-
     private void scheduleNext() {
         scheduledFuture = executor.schedule(this::fireEvent,
                                             recurringPolicy.interval().toMillis(),
@@ -132,10 +130,6 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
         scheduleNext();
     }
 
-    ScheduledFuture<?> scheduledFuture() {
-        return scheduledFuture;
-    }
-
     ScheduledExecutorService executor() {
         return executor;
     }
@@ -147,6 +141,9 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
                 + '}';
     }
 
+    /**
+     * A fluent API builder for {@link io.helidon.config.ScheduledPollingStrategy}.
+     */
     public static final class Builder implements io.helidon.common.Builder<ScheduledPollingStrategy> {
         private RecurringPolicy recurringPolicy;
         private ScheduledExecutorService executor;
@@ -159,11 +156,23 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
             return new ScheduledPollingStrategy(this);
         }
 
+        /**
+         * Configure the recurring policy to use.
+         *
+         * @param recurringPolicy policy
+         * @return updated builder instance
+         */
         public Builder recurringPolicy(RecurringPolicy recurringPolicy) {
             this.recurringPolicy = recurringPolicy;
             return this;
         }
 
+        /**
+         * Executor service to use to schedule the polling events.
+         *
+         * @param executor executor service for scheduling events
+         * @return updated builder instance
+         */
         public Builder executor(ScheduledExecutorService executor) {
             this.executor = executor;
             return this;
@@ -202,13 +211,13 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
 
     static class AdaptiveRecurringPolicy implements RecurringPolicy {
 
+        private final AtomicInteger prolongationFactor = new AtomicInteger(0);
+
         private final Duration min;
         private final Duration max;
         private final BiFunction<Duration, Integer, Duration> shortenFunction;
         private final BiFunction<Duration, Integer, Duration> lengthenFunction;
         private Duration delay;
-
-        private AtomicInteger prolongationFactor = new AtomicInteger(0);
 
         AdaptiveRecurringPolicy(Duration min,
                                 Duration initialDelay,
@@ -231,26 +240,28 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
         public void shorten() {
             int factor = prolongationFactor.updateAndGet((i) -> {
                 if (i < 0) {
-                    return --i;
+                    --i;
+                    return i;
                 } else {
                     return -1;
                 }
             });
             Duration candidate = shortenFunction.apply(delay, -factor);
-            delay = min.compareTo(candidate) > 0 ? min : candidate;
+            delay = (min.compareTo(candidate) > 0) ? min : candidate;
         }
 
         @Override
         public void lengthen() {
             int factor = prolongationFactor.updateAndGet((i) -> {
                 if (i > 0) {
-                    return ++i;
+                    ++i;
+                    return i;
                 } else {
                     return 1;
                 }
             });
             Duration candidate = lengthenFunction.apply(delay, factor);
-            delay = max.compareTo(candidate) > 0 ? candidate : max;
+            delay = (max.compareTo(candidate) > 0) ? candidate : max;
         }
 
         Duration delay() {
@@ -259,13 +270,11 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
     }
 
     /**
-     * NOTE: TEMPORARILY MOVED FROM POLLING_STRATEGY, WILL BE PUBLIC API AGAIN LATER, Issue #14.
-     * <p>
      * An SPI that allows users to define their own policy how to change the interval between scheduled ticking.
      * <p>
      * The only needed implementation is of {@link #interval()}. Methods {@link #shorten()} and {@link #lengthen()} might be used
-     * to shorten or to lengthen an interval. Both of them are called from scheduled polling strategy {@link
-     * ScheduledPollingStrategy#configSourceChanged(boolean) method}.
+     * to shorten or to lengthen an interval. Both of them are called from scheduled polling strategy depending on
+     * the result of the polling event ({@link io.helidon.config.spi.PollingStrategy.Polled#poll(java.time.Instant)}.
      */
     @FunctionalInterface
     public interface RecurringPolicy {
@@ -307,12 +316,11 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
         /**
          * Creates a builder of {@link RecurringPolicy} with an ability to change the behaviour, with a boundaries and
          * the possibility to react to feedback given by {@link #shorten()} or {@link #lengthen()}.
-         * <p>
          */
         //* See {@link ScheduledPollingStrategy#adaptive(Duration)} for detailed documentation.
         final class AdaptiveBuilder {
 
-            private Duration interval;
+            private final Duration interval;
             private Duration min;
             private Duration max;
             private BiFunction<Duration, Integer, Duration> shortenFunction;
@@ -380,11 +388,11 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
              * @return the new instance
              */
             public RecurringPolicy build() {
-                Duration min = this.min == null ? interval.dividedBy(10) : this.min;
-                Duration max = this.max == null ? interval.multipliedBy(5) : this.max;
-                BiFunction<Duration, Integer, Duration> lengthenFunction = this.lengthenFunction == null
+                Duration min = (this.min == null) ? interval.dividedBy(10) : this.min;
+                Duration max = (this.max == null) ? interval.multipliedBy(5) : this.max;
+                BiFunction<Duration, Integer, Duration> lengthenFunction = (this.lengthenFunction == null)
                         ? DEFAULT_LENGTHEN : this.lengthenFunction;
-                BiFunction<Duration, Integer, Duration> shortenFunction = this.shortenFunction == null
+                BiFunction<Duration, Integer, Duration> shortenFunction = (this.shortenFunction == null)
                         ? DEFAULT_SHORTEN : this.shortenFunction;
                 return new ScheduledPollingStrategy.AdaptiveRecurringPolicy(min, interval, max, shortenFunction,
                                                                             lengthenFunction);

@@ -168,7 +168,7 @@ class BuilderImpl implements Config.Builder {
     }
 
     @Override
-    public Config.Builder overrides(Supplier<OverrideSource> overridingSource) {
+    public Config.Builder overrides(Supplier<? extends OverrideSource> overridingSource) {
         this.overrideSource = overridingSource.get();
         return this;
     }

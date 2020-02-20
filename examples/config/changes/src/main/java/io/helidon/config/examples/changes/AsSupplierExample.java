@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
+import io.helidon.config.FileSystemWatcher;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -52,13 +52,17 @@ public class AsSupplierExample {
     public void run() {
         Config config = Config
                 .create(file("conf/dev.yaml")
-                              .optional()
-                              .pollingStrategy(PollingStrategies::watch),
+                                .optional()
+                                // change watcher is a standalone component that watches for
+                                // changes and notifies the config system when a change occurs
+                                .changeWatcher(FileSystemWatcher.create()),
                         file("conf/config.yaml")
-                              .optional()
-                              .pollingStrategy(regular(Duration.ofSeconds(2))),
-                        classpath("default.yaml")
-                              .pollingStrategy(regular(Duration.ofSeconds(10))));
+                                .optional()
+                                // polling strategy triggers regular checks on the source to check
+                                // for changes, utilizing a concept of "stamp" of the data that is provided
+                                // and validated by the source
+                                .pollingStrategy(regular(Duration.ofSeconds(2))),
+                        classpath("default.yaml"));
 
         // greeting.get() always return up-to-date value
         final Supplier<String> greeting = config.get("app.greeting").asString().supplier();

@@ -17,6 +17,7 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * A source implementing this interface provides support for polling using a {@link io.helidon.config.spi.PollingStrategy}.
@@ -52,5 +53,9 @@ public interface PollableSource<S> {
      */
     interface Builder<T extends Builder<T>> {
         T pollingStrategy(PollingStrategy pollingStrategy);
+
+        default T pollingStrategy(Supplier<? extends PollingStrategy> pollingStrategy) {
+            return pollingStrategy(pollingStrategy.get());
+        }
     }
 }

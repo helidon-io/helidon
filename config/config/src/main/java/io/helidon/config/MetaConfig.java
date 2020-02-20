@@ -34,10 +34,39 @@ import io.helidon.config.spi.RetryPolicy;
 
 /**
  * Meta configuration.
- *
- * TODO document meta configuration
- *  - files loaded as part of meta config lookup
- *  - options to specify in meta configuration
+ * <p>
+ * Configuration allows configuring itself using meta configuration.
+ * Config looks for {@code meta-config.*} files in the current directory and on the classpath, where the {@code *} is
+ * one of the supported media type suffixes (such as {@code yaml} when {@code helidon-config-yaml} module is on the classpath).
+ * <p>
+ * Meta configuration can define which config sources to load, including possible retry policy, polling strategy and change
+ * watchers.
+ * <p>
+ * Example of a YAML meta configuration file:
+ * <pre>
+ * sources:
+ *   - type: "environment-variables"
+ *   - type: "system-properties"
+ *   - type: "file"
+ *     properties:
+ *       path: "conf/dev.yaml"
+ *       optional: true
+ *   - type: "file"
+ *     properties:
+ *       path: "conf/config.yaml"
+ *       optional: true
+ *   - type: "classpath"
+ *     properties:
+ *       resource: "default.yaml"
+ * </pre>
+ * This configuration would load the following config sources (in the order specified):
+ * <ul>
+ *     <li>Environment variables config source
+ *     <li>System properties config source</li>
+ *     <li>File config source from file {@code conf/dev.yaml} that is optional</li>
+ *     <li>File config source from file {@code conf/config.yaml} that is optional</li>
+ *     <li>Classpath resource config source for resource {@code default.yaml} that is mandatory</li>
+ * </ul>
  */
 public final class MetaConfig {
     private static final Logger LOGGER = Logger.getLogger(MetaConfig.class.getName());
@@ -82,13 +111,19 @@ public final class MetaConfig {
      * Load a polling strategy based on its meta configuration.
      *
      * @param metaConfig meta configuration of a polling strategy
-     * @return a function that creates a polling strategy instance for an instance of target type
+     * @return a polling strategy instance
      */
     public static PollingStrategy pollingStrategy(Config metaConfig) {
         return MetaProviders.pollingStrategy(metaConfig.get("type").asString().get(),
                                              metaConfig.get("properties"));
     }
 
+    /**
+     * Load a change watcher based on its meta configuration.
+     *
+     * @param metaConfig meta configuration of a change watcher
+     * @return a change watcher instance
+     */
     public static ChangeWatcher<?> changeWatcher(Config metaConfig) {
         String type = metaConfig.get("type").asString().get();
         ChangeWatcher<?> changeWatcher = MetaProviders.changeWatcher(type, metaConfig.get("properties"));
