@@ -113,7 +113,7 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
                                             TimeUnit.MILLISECONDS);
     }
 
-    private void fireEvent() {
+    private synchronized void fireEvent() {
         ChangeEventType event = polled.poll(Instant.now());
         switch (event) {
         case CHANGED:

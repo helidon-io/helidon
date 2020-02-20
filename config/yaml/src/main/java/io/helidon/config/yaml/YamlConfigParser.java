@@ -16,7 +16,6 @@
 
 package io.helidon.config.yaml;
 
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
@@ -96,9 +95,9 @@ public class YamlConfigParser implements ConfigParser {
     @Override
     public ObjectNode parse(Content content) throws ConfigParserException {
         Map yamlMap;
-        try (InputStream stream = content.data()) {
+        try (InputStreamReader reader = new InputStreamReader(content.data(), content.charset())) {
             Yaml yaml = new Yaml();
-            yamlMap = yaml.loadAs(new InputStreamReader(stream, content.charset()), Map.class);
+            yamlMap = yaml.loadAs(reader, Map.class);
             if (yamlMap == null) { // empty source
                 return ObjectNode.empty();
             }

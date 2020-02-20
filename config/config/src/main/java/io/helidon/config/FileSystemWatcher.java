@@ -137,7 +137,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
     }
 
     @Override
-    public void stop() {
+    public synchronized void stop() {
         runtimes.forEach(TargetRuntime::stop);
 
         if (defaultExecutor) {

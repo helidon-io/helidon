@@ -245,7 +245,9 @@ public final class FileSourceHelper {
          * @return bytes of the file
          */
         public byte[] data() {
-            return data;
+            byte[] result = new byte[data.length];
+            System.arraycopy(data, 0, result, 0, data.length);
+            return result;
         }
 
         /**
@@ -253,7 +255,9 @@ public final class FileSourceHelper {
          * @return bytes of the digest
          */
         public byte[] digest() {
-            return digest;
+            byte[] result = new byte[digest.length];
+            System.arraycopy(digest, 0, result, 0, digest.length);
+            return result;
         }
     }
 }

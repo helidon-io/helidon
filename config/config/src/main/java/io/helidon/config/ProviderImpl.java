@@ -100,18 +100,18 @@ class ProviderImpl implements Config.Context {
     }
 
     @Override
-    public Config reload() {
+    public synchronized Config reload() {
         rebuild(configSource.latest(), true);
         return lastConfig;
     }
 
     @Override
-    public Instant timestamp() {
+    public synchronized Instant timestamp() {
         return lastConfig.timestamp();
     }
 
     @Override
-    public Config last() {
+    public synchronized Config last() {
         return lastConfig;
     }
 
@@ -231,11 +231,18 @@ class ProviderImpl implements Config.Context {
     }
 
     private void fireLastChangeEvent() {
-        if (lastConfigsDiff != null) {
-            LOGGER.log(Level.FINER, String.format("Firing last event %s (again)", lastConfigsDiff));
+        ConfigDiff configDiffs;
+
+        synchronized (this) {
+            configDiffs = this.lastConfigsDiff;
+        }
+
+        if (configDiffs != null) {
+            LOGGER.log(Level.FINER, String.format("Firing last event %s (again)", configDiffs));
+
             changesExecutor.execute(() -> {
                 for (Consumer<ConfigDiff> listener : listeners) {
-                    listener.accept(lastConfigsDiff);
+                    listener.accept(configDiffs);
                 }
             });
         }
