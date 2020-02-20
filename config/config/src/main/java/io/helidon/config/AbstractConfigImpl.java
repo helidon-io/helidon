@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,10 +86,6 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
 
         changesPublisher = new FilteringConfigChangeEventPublisher(factory.changes());
         context = new NodeContextImpl();
-    }
-
-    ConfigMapperManager mapperManager() {
-        return mapperManager;
     }
 
     /**
@@ -186,7 +183,6 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
     /*
      * MicroProfile Config methods
      */
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T getValue(String propertyName, Class<T> propertyType) {
         Config config = latestConfig.get();
@@ -300,7 +296,7 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
      */
     private void waitForSubscription(long timeout, TimeUnit unit) {
         CountDownLatch subscribeLatch = new CountDownLatch(1);
-        subscriber = new Flow.Subscriber<ConfigDiff>() {
+        subscriber = new Flow.Subscriber<>() {
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
                 subscription.request(Long.MAX_VALUE);
@@ -337,13 +333,28 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
                 .get(AbstractConfigImpl.this.key);
     }
 
-    ConfigFactory factory() {
-        return factory;
-    }
-
     @Override
-    public Flow.Publisher<Config> changes() {
-        return changesPublisher;
+    public void onChange(Consumer<Config> onChangeConsumer) {
+        changesPublisher.subscribe(new Flow.Subscriber<>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                // I want all
+                subscription.request(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(Config item) {
+                onChangeConsumer.accept(item);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
     }
 
     void initMp() {
@@ -383,13 +394,7 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
             }
         }
 
-        // see #1183
-        // this must be changed, as otherwise we would not get changes in MP
-        //       and why did it work when the MpConfig was a separate implementation?
-        //        onChange(newConfig -> {
-        //            // this does not work - seems that when there is more than one subscriber, the events are not delivered
-        //            latestConfig.set(newConfig);
-        //        });
+        onChange(latestConfig::set);
     }
 
     /**

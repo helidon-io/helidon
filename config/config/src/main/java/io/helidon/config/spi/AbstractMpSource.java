@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public abstract class AbstractMpSource<S> extends AbstractSource<ConfigNode.Obje
 
     @Override
     public void init(ConfigContext context) {
-        this.changes().subscribe(new Flow.Subscriber<Optional<ConfigNode.ObjectNode>>() {
+        this.changes().subscribe(new Flow.Subscriber<>() {
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
                 subscription.request(Long.MAX_VALUE);

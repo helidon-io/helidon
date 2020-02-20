@@ -495,7 +495,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return tenant id of the cache record
          */
-        protected String idcsTenantId() {
+        public String idcsTenantId() {
             return idcsMtContext.tenantId();
         }
 
@@ -504,7 +504,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return username of the cache record
          */
-        protected String username() {
+        public String username() {
             return username;
         }
 
@@ -513,7 +513,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return application id of the cache record
          */
-        protected String idcsAppName() {
+        public String idcsAppName() {
             return idcsMtContext.appId();
         }
 
@@ -522,7 +522,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return IDCS multitenancy context of the cache record
          */
-        protected IdcsMtContext idcsMtContext() {
+        public IdcsMtContext idcsMtContext() {
             return idcsMtContext;
         }
 
