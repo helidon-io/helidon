@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config.internal;
 import io.helidon.config.Config;
 
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,60 +27,65 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
+
 /**
  * Tests {@link ConfigKeyImpl}.
  */
 public class ConfigKeyImplTest {
-
+    private static final ConfigKeyImpl ROOT = ConfigKeyImpl.of();
+    
     @Test
     public void testConfigKeyOf() {
-        assertThatKey((ConfigKeyImpl) Config.Key.create(""), true, nullValue(), "", "");
-        assertThatKey((ConfigKeyImpl) Config.Key.create("aaa"), false, not(nullValue()), "aaa", "aaa");
-        assertThatKey((ConfigKeyImpl) Config.Key.create("aaa.bbb.ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
+        assertThatKey((ConfigKeyImpl) Config.Key.create(""), true, null, "", "");
+        assertThatKey((ConfigKeyImpl) Config.Key.create("aaa"), false, is(ROOT), "aaa", "aaa");
+        assertThatKey((ConfigKeyImpl) Config.Key.create("aaa.bbb.ccc"), false, not(ROOT), "ccc", "aaa.bbb.ccc");
     }
 
     @Test
     public void testOfRoot() {
-        assertThatKey(ConfigKeyImpl.of(), true, nullValue(), "", "");
-        assertThatKey(ConfigKeyImpl.of(""), true, nullValue(), "", "");
-        assertThatKey(ConfigKeyImpl.of().child(""), true, nullValue(), "", "");
-        assertThatKey(ConfigKeyImpl.of().child(ConfigKeyImpl.of()), true, nullValue(), "", "");
+        assertThatKey(ConfigKeyImpl.of(), true, is(ROOT), "", "");
+        assertThatKey(ConfigKeyImpl.of(""), true, is(ROOT), "", "");
+        assertThatKey(ConfigKeyImpl.of().child(""), true, is(ROOT), "", "");
+        assertThatKey(ConfigKeyImpl.of().child(ConfigKeyImpl.of()), true, is(ROOT), "", "");
     }
 
     @Test
     public void testOf() {
-        assertThatKey(ConfigKeyImpl.of("aaa"), false, not(nullValue()), "aaa", "aaa");
-        assertThatKey(ConfigKeyImpl.of("aaa.bbb"), false, not(nullValue()), "bbb", "aaa.bbb");
-        assertThatKey(ConfigKeyImpl.of("aaa.bbb.ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
+        assertThatKey(ConfigKeyImpl.of("aaa"), false, is(ROOT), "aaa", "aaa");
+        assertThatKey(ConfigKeyImpl.of("aaa.bbb"), false, not(ROOT), "bbb", "aaa.bbb");
+        assertThatKey(ConfigKeyImpl.of("aaa.bbb.ccc"), false, not(ROOT), "ccc", "aaa.bbb.ccc");
     }
 
     @Test
     public void testChildLevel1() {
-        assertThatKey(ConfigKeyImpl.of().child("aaa"), false, not(nullValue()), "aaa", "aaa");
-        assertThatKey(ConfigKeyImpl.of().child(ConfigKeyImpl.of("aaa")), false, not(nullValue()), "aaa", "aaa");
+        assertThatKey(ConfigKeyImpl.of().child("aaa"), false, is(ROOT), "aaa", "aaa");
+        assertThatKey(ConfigKeyImpl.of().child(ConfigKeyImpl.of("aaa")), false, is(ROOT), "aaa", "aaa");
     }
 
     @Test
     public void testChildLevel2() {
-        assertThatKey(ConfigKeyImpl.of("aaa").child("bbb"), false, not(nullValue()), "bbb", "aaa.bbb");
-        assertThatKey(ConfigKeyImpl.of("aaa").child(ConfigKeyImpl.of("bbb")), false, not(nullValue()), "bbb", "aaa.bbb");
+        assertThatKey(ConfigKeyImpl.of("aaa").child("bbb"), false, not(ROOT), "bbb", "aaa.bbb");
+        assertThatKey(ConfigKeyImpl.of("aaa").child(ConfigKeyImpl.of("bbb")), false, not(ROOT), "bbb", "aaa.bbb");
 
-        assertThatKey(ConfigKeyImpl.of().child("aaa.bbb"), false, not(nullValue()), "bbb", "aaa.bbb");
-        assertThatKey(ConfigKeyImpl.of().child(ConfigKeyImpl.of("aaa.bbb")), false, not(nullValue()), "bbb", "aaa.bbb");
+        assertThatKey(ConfigKeyImpl.of().child("aaa.bbb"), false, not(ROOT), "bbb", "aaa.bbb");
+        assertThatKey(ConfigKeyImpl.of().child(ConfigKeyImpl.of("aaa.bbb")), false, not(ROOT), "bbb", "aaa.bbb");
     }
 
     @Test
     public void testChildLevel3() {
-        assertThatKey(ConfigKeyImpl.of().child("aaa").child("bbb").child("ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
-        assertThatKey(ConfigKeyImpl.of().child("aaa.bbb").child("ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
-        assertThatKey(ConfigKeyImpl.of().child("aaa").child("bbb.ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
-        assertThatKey(ConfigKeyImpl.of().child("aaa.bbb.ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
+        assertThatKey(ConfigKeyImpl.of().child("aaa").child("bbb").child("ccc"), false, not(ROOT), "ccc", "aaa.bbb.ccc");
+        assertThatKey(ConfigKeyImpl.of().child("aaa.bbb").child("ccc"), false, not(ROOT), "ccc", "aaa.bbb.ccc");
+        assertThatKey(ConfigKeyImpl.of().child("aaa").child("bbb.ccc"), false, not(ROOT), "ccc", "aaa.bbb.ccc");
+        assertThatKey(ConfigKeyImpl.of().child("aaa.bbb.ccc"), false, not(ROOT), "ccc", "aaa.bbb.ccc");
     }
 
     private void assertThatKey(ConfigKeyImpl key, boolean root, Matcher<Object> parentMatcher, String name, String toString) {
         assertThat(key.isRoot(), is(root));
-        assertThat(key.parent(), parentMatcher);
+        if (root) {
+            Assertions.assertThrows(IllegalStateException.class, key::parent);
+        } else {
+            assertThat(key.parent(), parentMatcher);
+        }
         assertThat(key.name(), is(name));
         assertThat(key.toString(), is(toString));
     }

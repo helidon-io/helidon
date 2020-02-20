@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,16 +36,9 @@ public class ConfigKeyImpl implements Config.Key {
 
     private ConfigKeyImpl(ConfigKeyImpl parent, String name) {
         Objects.requireNonNull(name, "name is mandatory");
-        if (parent != null && name.equals("")) {
-            if (parent.isRoot()) {
-                //collapse roots to single one
-                parent = null;
-            } else {
-                throw new IllegalArgumentException("Illegal empty name. Only root can be empty.");
-            }
-        }
+
         if (name.contains(".")) {
-            throw new IllegalArgumentException("Illegal key token format. Dot character ('.') is not ");
+            throw new IllegalArgumentException("Illegal key token format. Dot character ('.') is not supported.");
         }
 
         this.parent = parent;
@@ -64,12 +57,20 @@ public class ConfigKeyImpl implements Config.Key {
         }
         this.name = Config.Key.unescapeName(name);
         this.path = Collections.unmodifiableList(path);
-        fullKey = fullSB.toString();
+        this.fullKey = fullSB.toString();
     }
 
     @Override
     public ConfigKeyImpl parent() {
+        if (null == parent) {
+            throw new IllegalStateException("Attempting to get parent of a root node. Guard by isRoot instead");
+        }
         return parent;
+    }
+
+    @Override
+    public boolean isRoot() {
+        return (null == parent);
     }
 
     /**
@@ -125,6 +126,9 @@ public class ConfigKeyImpl implements Config.Key {
     private ConfigKeyImpl child(List<String> path) {
         ConfigKeyImpl result = this;
         for (String name : path) {
+            if ("".equals(name)) {
+                continue;
+            }
             result = new ConfigKeyImpl(result, name);
         }
         return result;

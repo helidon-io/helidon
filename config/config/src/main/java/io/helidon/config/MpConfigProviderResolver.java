@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,99 +202,103 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
             this.delegate.set(newDelegate);
         }
 
+        private io.helidon.config.Config getCurrent() {
+            return delegate.get().context().last();
+        }
+
         @Override
         public Instant timestamp() {
-            return delegate.get().timestamp();
+            return getCurrent().timestamp();
         }
 
         @Override
         public Key key() {
-            return delegate.get().key();
+            return getCurrent().key();
         }
 
         @Override
         public io.helidon.config.Config get(Key key) {
-            return delegate.get().get(key);
+            return getCurrent().get(key);
         }
 
         @Override
         public io.helidon.config.Config detach() {
-            return delegate.get().detach();
+            return getCurrent().detach();
         }
 
         @Override
         public Type type() {
-            return delegate.get().type();
+            return getCurrent().type();
         }
 
         @Override
         public boolean hasValue() {
-            return delegate.get().hasValue();
+            return getCurrent().hasValue();
         }
 
         @Override
         public Stream<io.helidon.config.Config> traverse(Predicate<io.helidon.config.Config> predicate) {
-            return delegate.get().traverse();
+            return getCurrent().traverse();
         }
 
         @Override
         public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
-            return delegate.get().convert(type, value);
+            return getCurrent().convert(type, value);
         }
 
         @Override
         public <T> ConfigValue<T> as(GenericType<T> genericType) {
-            return delegate.get().as(genericType);
+            return getCurrent().as(genericType);
         }
 
         @Override
         public <T> ConfigValue<T> as(Class<T> type) {
-            return delegate.get().as(type);
+            return getCurrent().as(type);
         }
 
         @Override
         public <T> ConfigValue<T> as(Function<io.helidon.config.Config, T> mapper) {
-            return delegate.get().as(mapper);
+            return getCurrent().as(mapper);
         }
 
         @Override
         public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
-            return delegate.get().asList(type);
+            return getCurrent().asList(type);
         }
 
         @Override
         public <T> ConfigValue<List<T>> asList(Function<io.helidon.config.Config, T> mapper) throws ConfigMappingException {
-            return delegate.get().asList(mapper);
+            return getCurrent().asList(mapper);
         }
 
         @Override
         public ConfigValue<List<io.helidon.config.Config>> asNodeList() throws ConfigMappingException {
-            return delegate.get().asNodeList();
+            return getCurrent().asNodeList();
         }
 
         @Override
         public ConfigValue<Map<String, String>> asMap() throws MissingValueException {
-            return delegate.get().asMap();
+            return getCurrent().asMap();
         }
 
         @Override
         public <T> T getValue(String propertyName, Class<T> propertyType) {
-            return ((Config) delegate.get()).getValue(propertyName, propertyType);
+            return ((Config) getCurrent()).getValue(propertyName, propertyType);
         }
 
         @Override
         public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-            return ((Config) delegate.get()).getOptionalValue(propertyName, propertyType);
+            return ((Config) getCurrent()).getOptionalValue(propertyName, propertyType);
         }
 
         @Override
         public Iterable<String> getPropertyNames() {
-            return ((Config) delegate.get()).getPropertyNames();
+            return ((Config) getCurrent()).getPropertyNames();
         }
 
         @Override
         public Iterable<ConfigSource> getConfigSources() {
-            return ((Config) delegate.get()).getConfigSources();
+            return ((Config) getCurrent()).getConfigSources();
         }
 
         /**
@@ -303,7 +307,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
          * @return the instance backing this config delegate
          */
         public Config delegate() {
-            return (Config) delegate.get();
+            return (Config) getCurrent();
         }
     }
 }

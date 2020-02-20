@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -142,11 +142,6 @@
                 <groupId>io.jaegertracing</groupId>
                 <artifactId>jaeger-client</artifactId>
                 <version>${version.lib.jaegertracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.projectreactor</groupId>
-                <artifactId>reactor-core</artifactId>
-                <version>${version.lib.reactor}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
