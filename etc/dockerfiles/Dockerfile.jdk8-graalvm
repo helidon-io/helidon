@@ -22,7 +22,8 @@ RUN set -x \
     && apt-get -y update \
     && apt-get -y install curl
 
-RUN curl -O -L https://github.com/oracle/graal/releases/download/vm-19.2.0/graalvm-ce-linux-amd64-19.2.0.tar.gz && \
+RUN curl -O -L \
+    https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.1/graalvm-ce-java8-linux-amd64-19.3.1.tar.gz && \
     tar -xvzf graalvm-*.tar.gz && \
     rm graalvm-*.tar.gz && \
     mv graalvm-* graalvm && \
@@ -54,7 +55,7 @@ FROM debian:stretch-slim as final
 
 RUN set -x \
     && apt-get -y update \
-    && apt-get -y install gcc zlib1g-dev \
+    && apt-get -y install gcc zlib1g-dev libstdc++-6-dev \
     && apt-get clean autoclean \
     && apt-get autoremove --yes \
     && rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log
