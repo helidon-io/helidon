@@ -192,18 +192,17 @@ public final class MetricsSupport implements Service {
     static String toPrometheusData(Registry registry) {
         StringBuilder builder = new StringBuilder();
         Set<String> serialized = new HashSet<>();
-        List<Map.Entry<MetricID, HelidonMetric>> metrics = registry.stream()
+        registry.stream()
                 .sorted(Map.Entry.comparingByKey())
-                .collect(Collectors.toList());
-        for (Map.Entry<MetricID, HelidonMetric> entry : metrics) {
-            String name = entry.getKey().getName();
-            if (!serialized.contains(name)) {
-                toPrometheusData(builder, entry.getKey(), entry.getValue(), true);
-                serialized.add(name);
-            } else {
-                toPrometheusData(builder, entry.getKey(), entry.getValue(), false);
-            }
-        }
+                .forEach(entry -> {
+                    String name = entry.getKey().getName();
+                    if (!serialized.contains(name)) {
+                        toPrometheusData(builder, entry.getKey(), entry.getValue(), true);
+                        serialized.add(name);
+                    } else {
+                        toPrometheusData(builder, entry.getKey(), entry.getValue(), false);
+                    }
+                });
         return builder.toString();
     }
 
