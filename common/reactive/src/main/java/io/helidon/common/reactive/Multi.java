@@ -76,10 +76,8 @@ public interface Multi<T> extends Subscribable<T> {
      * @param predicate predicate to filter stream with
      * @return Multi
      */
-    default Multi<T> filter(Predicate<T> predicate) {
-        MultiFilterProcessor<T> processor = MultiFilterProcessor.create(predicate);
-        this.subscribe(processor);
-        return processor;
+    default Multi<T> filter(Predicate<? super T> predicate) {
+        return new MultiFilterPublisher<>(this, predicate);
     }
 
     /**
