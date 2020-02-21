@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,30 @@
 
 package io.helidon.metrics;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import java.util.Collections;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for {@link MetricsSupport}.
@@ -143,5 +150,22 @@ class MetricsSupportTest {
         Registry myBase = myRF.getARegistry(MetricRegistry.Type.BASE);
         assertFalse(myBase.getGauges().containsKey(METRIC_USED_HEAP), "Base registry incorrectly contains "
                 + METRIC_USED_HEAP + " when base was configured as disabled");
+    }
+
+    @Test
+    void testPrometheusDataNoTypeDups() throws Exception {
+        Set<String> found = new HashSet<>();
+        String data = MetricsSupport.toPrometheusData(app, base);
+        try (BufferedReader reader = new BufferedReader(new StringReader(data))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] tokens = line.split(" ");
+                if (tokens.length > 3 && tokens[1].equals("TYPE")) {
+                    String metric = tokens[2];
+                    assertFalse(found.contains(metric));
+                    found.add(metric);
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,10 +214,12 @@ abstract class MetricImpl implements HelidonMetric {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String nameWithUnits = prometheusNameWithUnits(metricID);
-        prometheusType(sb, nameWithUnits, metadata.getType());
-        prometheusHelp(sb, nameWithUnits);
+        if (withHelpType) {
+            prometheusType(sb, nameWithUnits, metadata.getType());
+            prometheusHelp(sb, nameWithUnits);
+        }
         sb.append(nameWithUnits).append(prometheusTags(metricID.getTags())).append(" ").append(prometheusValue()).append('\n');
     }
 
