@@ -13,26 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.reactive;
 
-import java.util.Objects;
-import java.util.concurrent.Flow.Subscriber;
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
+import org.testng.annotations.Test;
 
-/**
- * Implementation of {@link Single} that represents a non {@code null} value.
- *
- * @param <T> item type
- */
-final class SingleJust<T> implements Single<T> {
+import java.util.concurrent.Flow;
 
-    private final T value;
+@Test
+public class SingleJustTckTest extends FlowPublisherVerification<Long> {
 
-    SingleJust(T value) {
-        this.value = Objects.requireNonNull(value, "value cannot be null!");
+    public SingleJustTckTest() {
+        super(new TestEnvironment(50));
     }
 
     @Override
-    public void subscribe(Subscriber<? super T> subscriber) {
-        subscriber.onSubscribe(new SingleSubscription<>(value, subscriber));
+    public Flow.Publisher<Long> createFlowPublisher(long l) {
+        return Single.just(l);
+    }
+
+    @Override
+    public Flow.Publisher<Long> createFailedFlowPublisher() {
+        return null;
+    }
+
+    @Override
+    public long maxElementsFromPublisher() {
+        return 1;
     }
 }
