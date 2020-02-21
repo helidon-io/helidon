@@ -348,7 +348,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * Defaults to {@link #IDCS_SUBJECT_TYPE_USER}.
          *
          * @param subjectType type of subject to use when requesting roles from IDCS
-         * @return udpated builder instance
+         * @return updated builder instance
          */
         public B defaultIdcsSubjectType(String subjectType) {
             this.defaultIdcsSubjectType = subjectType;
