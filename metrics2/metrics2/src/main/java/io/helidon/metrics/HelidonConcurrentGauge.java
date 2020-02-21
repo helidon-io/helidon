@@ -90,11 +90,13 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String name = prometheusNameWithUnits(metricID);
         final String nameCurrent = name + "_current";
-        prometheusType(sb, nameCurrent, metadata().getType());
-        prometheusHelp(sb, nameCurrent);
+        if (withHelpType) {
+            prometheusType(sb, nameCurrent, metadata().getType());
+            prometheusHelp(sb, nameCurrent);
+        }
         sb.append(nameCurrent).append(prometheusTags(metricID.getTags()))
                 .append(" ").append(prometheusValue()).append('\n');
         final String nameMin = name + "_min";

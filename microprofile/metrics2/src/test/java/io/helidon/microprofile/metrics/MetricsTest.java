@@ -129,7 +129,7 @@ public class MetricsTest extends MetricsBaseTest {
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
         String promData = MetricsSupport.toPrometheusData(
-                new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge).trim();
+                new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge, true).trim();
 
         assertThat(promData, containsString("# TYPE application_gaugeForInjectionTest_seconds gauge"));
         assertThat(promData, containsString("\n# HELP application_gaugeForInjectionTest_seconds"));

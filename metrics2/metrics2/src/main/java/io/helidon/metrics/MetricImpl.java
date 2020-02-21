@@ -214,10 +214,12 @@ abstract class MetricImpl implements HelidonMetric {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String nameWithUnits = prometheusNameWithUnits(metricID);
-        prometheusType(sb, nameWithUnits, metadata.getType());
-        prometheusHelp(sb, nameWithUnits);
+        if (withHelpType) {
+            prometheusType(sb, nameWithUnits, metadata.getType());
+            prometheusHelp(sb, nameWithUnits);
+        }
         sb.append(nameWithUnits).append(prometheusTags(metricID.getTags())).append(" ").append(prometheusValue()).append('\n');
     }
 

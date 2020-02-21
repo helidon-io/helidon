@@ -77,12 +77,15 @@ final class HelidonMeter extends MetricImpl implements Meter {
     application:requests_fifteen_min_rate_per_second 12.126
     */
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String name = metricID.getName();
         String nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_total";
         String tags = prometheusTags(metricID.getTags());
-        prometheusType(sb, nameUnits, "counter");
-        prometheusHelp(sb, nameUnits);
+
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "counter");
+            prometheusHelp(sb, nameUnits);
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
