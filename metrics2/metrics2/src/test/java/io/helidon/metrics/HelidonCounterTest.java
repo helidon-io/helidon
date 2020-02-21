@@ -109,14 +109,14 @@ class HelidonCounterTest {
                 + "# HELP base_theName_total theDescription\n"
                 + "base_theName_total{a=\"b\",c=\"d\"} 17\n";
 
-        counter.prometheusData(sb, counterID);
+        counter.prometheusData(sb, counterID, true);
         assertThat(sb.toString(), is(expected));
 
         expected = "# TYPE base_theName_total counter\n"
                 + "# HELP base_theName_total theDescription\n"
                 + "base_theName_total 49\n";
         sb = new StringBuilder();
-        wrappingCounter.prometheusData(sb, wrappingCounterID);
+        wrappingCounter.prometheusData(sb, wrappingCounterID, true);
         assertThat(sb.toString(), is(expected));
     }
 

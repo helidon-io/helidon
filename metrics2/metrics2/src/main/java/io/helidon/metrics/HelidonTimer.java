@@ -106,12 +106,14 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String nameUnits;
         String name = metricID.getName();
         String tags = prometheusTags(metricID.getTags());
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -119,7 +121,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_one_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -127,7 +131,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_five_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -135,7 +141,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_fifteen_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -147,7 +155,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
         Snapshot snap = getSnapshot();
 
         nameUnits = prometheusNameWithUnits(name + "_mean", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -155,7 +165,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name + "_max", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -163,7 +175,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name + "_min", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -171,7 +185,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name + "_stddev", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -179,8 +195,10 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, unit);
-        prometheusType(sb, nameUnits, "summary");
-        prometheusHelp(sb, nameUnits);
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "summary");
+            prometheusHelp(sb, nameUnits);
+        }
         nameUnits = prometheusNameWithUnits(name, unit) + "_count";
         sb.append(nameUnits)
                 .append(tags)

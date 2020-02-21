@@ -71,7 +71,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         Units units = getUnits();
         String tags = prometheusTags(metricID.getTags());
         String name = metricID.getName();
@@ -84,7 +84,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
         nameUnits = prometheusNameWithUnits(name + "_mean", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -94,7 +96,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_max_bytes gauge
         // application:file_sizes_max_bytes 31716
         nameUnits = prometheusNameWithUnits(name + "_max", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -104,7 +108,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_min_bytes gauge
         // application:file_sizes_min_bytes 180
         nameUnits = prometheusNameWithUnits(name + "_min", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -114,7 +120,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_stddev_bytes gauge
         // application:file_sizes_stddev_bytes 1054.7343037063602
         nameUnits = prometheusNameWithUnits(name + "_stddev", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -125,8 +133,10 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # HELP application:file_sizes_bytes Users file size
         // application:file_sizes_bytes_count 2037
         nameUnits = prometheusNameWithUnits(name, unit);
-        prometheusType(sb, nameUnits, "summary");
-        prometheusHelp(sb, nameUnits);
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "summary");
+            prometheusHelp(sb, nameUnits);
+        }
         nameUnits = prometheusNameWithUnits(name, unit) + "_count";
         sb.append(nameUnits)
                 .append(tags)

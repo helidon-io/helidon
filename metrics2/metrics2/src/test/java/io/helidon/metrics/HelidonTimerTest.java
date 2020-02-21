@@ -198,7 +198,7 @@ class HelidonTimerTest {
     @Test
     void testPrometheus() {
         final StringBuilder sb = new StringBuilder();
-        dataSetTimer.prometheusData(sb, dataSetTimerID);
+        dataSetTimer.prometheusData(sb, dataSetTimerID, true);
         final String prometheusData = sb.toString();
         assertThat(prometheusData, startsWith("# TYPE application_response_time_rate_per_second gauge\n"
                                                       + "application_response_time_rate_per_second 200.0\n"

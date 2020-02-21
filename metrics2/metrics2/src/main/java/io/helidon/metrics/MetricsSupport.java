@@ -429,7 +429,7 @@ public final class MetricsSupport implements Service {
                         res.send(builder.build());
                     } else if (mediaType == MediaType.TEXT_PLAIN) {
                         final StringBuilder sb = new StringBuilder();
-                        entry.getValue().prometheusData(sb, entry.getKey());
+                        entry.getValue().prometheusData(sb, entry.getKey(), true);
                         res.send(sb.toString());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
