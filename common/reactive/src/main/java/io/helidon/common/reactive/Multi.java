@@ -229,7 +229,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if iterable is {@code null}
      */
     static <T> Multi<T> from(Iterable<T> iterable) {
-        return Multi.from(IterablePublisher.create(iterable));
+        return new MultiFromIterable<>(iterable);
     }
 
 

@@ -52,7 +52,7 @@ public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flo
     @SuppressWarnings("unchecked")
     public static <T> MultiOnErrorResumeProcessor<T> resume(Function<Throwable, ?> supplier) {
         MultiOnErrorResumeProcessor<T> processor = new MultiOnErrorResumeProcessor<>();
-        processor.publisherSupplier = t -> IterablePublisher.create(List.of(((Function<Throwable, T>) supplier).apply(t)));
+        processor.publisherSupplier = t -> new MultiFromIterable<>(List.of(((Function<Throwable, T>) supplier).apply(t)));
         return processor;
     }
 
