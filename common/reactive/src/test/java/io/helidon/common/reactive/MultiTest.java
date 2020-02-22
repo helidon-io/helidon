@@ -545,11 +545,14 @@ public class MultiTest {
         Multi<Integer> multi = Multi.just(1);
         multi.subscribe(subscriber1);
         multi.subscribe(subscriber2);
+
         assertThat(subscriber1.getSubcription(), is(not(nullValue())));
         assertThat(subscriber1.getSubcription(), is(not(EmptySubscription.INSTANCE)));
         assertThat(subscriber1.getLastError(), is(nullValue()));
-        assertThat(subscriber2.getSubcription(), is(EmptySubscription.INSTANCE));
-        assertThat(subscriber2.getLastError(), is(instanceOf(IllegalStateException.class)));
+
+        assertThat(subscriber2.getSubcription(), is(not(nullValue())));
+        assertThat(subscriber2.getSubcription(), is(not(EmptySubscription.INSTANCE)));
+        assertThat(subscriber2.getLastError(), is(nullValue()));
     }
 
     private static class MultiTestSubscriber<T> extends TestSubscriber<T> {
