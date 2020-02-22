@@ -20,6 +20,16 @@ x-my-personal-map:
     last: Myself
   value-1: 2.3
 x-other-item: 10
+x-boolean: true
+x-int: 117
+x-string-array:
+  - one
+  - two
+x-object-array:
+  - name: item-1
+    value: 16
+  - name: item-2
+    value: 18
 info:
   title: Helidon SE OpenAPI test 
   description: OpenAPI document for testing

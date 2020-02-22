@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,24 +21,15 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.CollectionsHelper;
-
-import io.smallrye.openapi.api.models.PathItemImpl;
-import io.smallrye.openapi.api.models.media.SchemaImpl;
-import io.smallrye.openapi.api.models.parameters.ParameterImpl;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
+import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -74,18 +65,22 @@ class Serializer {
         JSON_DUMPER_OPTIONS.setSplitLines(false);
     }
 
-    static void serialize(OpenAPI openAPI, OpenApiSerializer.Format fmt, Writer writer) {
+    static void serialize(Map<Class<?>, ExpandedTypeDescription> types, Map<Class<?>, ExpandedTypeDescription> implsToTypes,
+            OpenAPI openAPI, OpenApiSerializer.Format fmt,
+            Writer writer) {
         if (fmt == OpenApiSerializer.Format.JSON) {
-            serialize(openAPI, writer, JSON_DUMPER_OPTIONS, DumperOptions.ScalarStyle.DOUBLE_QUOTED);
+            serialize(types, implsToTypes, openAPI, writer, JSON_DUMPER_OPTIONS, DumperOptions.ScalarStyle.DOUBLE_QUOTED);
         } else {
-            serialize(openAPI, writer, YAML_DUMPER_OPTIONS, DumperOptions.ScalarStyle.PLAIN);
+            serialize(types, implsToTypes, openAPI, writer, YAML_DUMPER_OPTIONS, DumperOptions.ScalarStyle.PLAIN);
         }
     }
 
-    private static void serialize(OpenAPI openAPI, Writer writer, DumperOptions dumperOptions,
+    private static void serialize(Map<Class<?>, ExpandedTypeDescription> types,
+            Map<Class<?>, ExpandedTypeDescription> implsToTypes, OpenAPI openAPI, Writer writer,
+            DumperOptions dumperOptions,
             DumperOptions.ScalarStyle stringStyle) {
 
-        Yaml yaml = new Yaml(new CustomRepresenter(dumperOptions, stringStyle), dumperOptions);
+        Yaml yaml = new Yaml(new CustomRepresenter(types, implsToTypes, dumperOptions, stringStyle), dumperOptions);
         yaml.dump(openAPI, new TagSuppressingWriter(writer));
     }
 
@@ -103,48 +98,32 @@ class Serializer {
 
         private static final String EXTENSIONS = "extensions";
 
-        private static final Map<Class<?>, Set<String>> CHILD_ENUM_NAMES = new HashMap<>();
-        private static final Map<Class<?>, Map<String, Set<String>>> CHILD_ENUM_VALUES =
-                new HashMap<>();
-
-        static {
-            CHILD_ENUM_NAMES.put(PathItemImpl.class, toEnumNames(PathItem.HttpMethod.class));
-            CHILD_ENUM_VALUES.put(SchemaImpl.class,
-                    CollectionsHelper.mapOf("type", toEnumNames(Schema.SchemaType.class)));
-            CHILD_ENUM_VALUES.put(ParameterImpl.class,
-                    CollectionsHelper.mapOf("style", toEnumNames(Parameter.Style.class),
-                            "in", toEnumNames(Parameter.In.class)));
-        }
-
         private final DumperOptions dumperOptions;
         private final DumperOptions.ScalarStyle stringStyle;
 
-        CustomRepresenter(DumperOptions dumperOptions, DumperOptions.ScalarStyle stringStyle) {
+        private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
+
+        CustomRepresenter(Map<Class<?>, ExpandedTypeDescription> types,
+                Map<Class<?>, ExpandedTypeDescription> implsToTypes, DumperOptions dumperOptions,
+                DumperOptions.ScalarStyle stringStyle) {
+            this.implsToTypes = implsToTypes;
             this.dumperOptions = dumperOptions;
             this.stringStyle = stringStyle;
-        }
-
-        // TODO use the following two methods from tests to make sure all enums in the OpenAPI
-        //  interfaces are represented in the maps.
-        Map<Class<?>, Set<String>> childEnumNames() {
-            return CHILD_ENUM_NAMES;
-        }
-
-        Map<Class<?>, Map<String, Set<String>>> childEnumValues() {
-            return CHILD_ENUM_VALUES;
-        }
-
-        private static <E extends Enum<E>> Set<String> toEnumNames(Class<E> enumType) {
-            Set<String> result = new HashSet<>();
-            for (Enum<E> e : enumType.getEnumConstants()) {
-                result.add(e.name());
-            }
-            return result;
+            types.forEach((type, typeDescription) -> {
+                addTypeDescription(new ImplTypeDescription(typeDescription));
+            });
         }
 
         @Override
         protected Node representScalar(Tag tag, String value, DumperOptions.ScalarStyle style) {
             return super.representScalar(tag, value, isExemptedFromQuotes(tag) ? DumperOptions.ScalarStyle.PLAIN : style);
+        }
+
+        @Override
+        protected Node representSequence(Tag tag, Iterable<?> sequence, DumperOptions.FlowStyle flowStyle) {
+            Node result = super.representSequence(tag, sequence, flowStyle);
+            representedObjects.clear();
+            return result;
         }
 
         private boolean isExemptedFromQuotes(Tag tag) {
@@ -161,14 +140,12 @@ class Serializer {
 
             Property p = property;
             Object v = propertyValue;
-            if (CHILD_ENUM_NAMES.getOrDefault(javaBean.getClass(), Collections.emptySet()).contains(property.getName())) {
+            SnakeYAMLParserHelper.EnumType<?> enumType = implsToTypes.get(javaBean.getClass()).enumType(property.getName());
+            if (enumType != null) {
                 p = new DelegatingProperty(property, property.getName().toLowerCase());
             }
-            if (propertyValue instanceof Enum && CHILD_ENUM_VALUES.getOrDefault(javaBean.getClass(),
-                    Collections.emptyMap())
-                    .getOrDefault(property.getName(), Collections.emptySet())
-                    .contains(((Enum) propertyValue).name())) {
-                v = ((Enum) propertyValue).name().toLowerCase();
+            if (propertyValue instanceof Enum) {
+                v = enumType.valueOf(((Enum) propertyValue).name()).toString();
             }
             NodeTuple result = okToProcess(javaBean, property)
                     ? super.representJavaBeanProperty(javaBean, p, v, customTag) : null;
@@ -178,17 +155,25 @@ class Serializer {
         @Override
         protected MappingNode representJavaBean(Set<Property> properties, Object javaBean) {
             MappingNode result = super.representJavaBean(properties, javaBean);
-            processExtensions(result);
+            processExtensions(result, javaBean);
+            representedObjects.clear();
             return result;
         }
 
-        private void processExtensions(MappingNode node) {
-            List<NodeTuple> tuples = node.getValue();
+        private void processExtensions(MappingNode node, Object javaBean) {
+            if (!Extensible.class.isAssignableFrom(javaBean.getClass())) {
+                return;
+            }
+
+            List<NodeTuple> tuples = new ArrayList<>(node.getValue());
 
             if (tuples == null) {
                 return;
             }
             List<NodeTuple> updatedTuples = new ArrayList<>();
+            Extensible<?> ext = (Extensible<?>) javaBean;
+
+
             tuples.forEach(tuple -> {
                 Node keyNode = tuple.getKeyNode();
                 if (keyNode.getTag().equals(Tag.STR)) {
@@ -337,4 +322,5 @@ class Serializer {
             return super.equals(other);
         }
     }
+
 }

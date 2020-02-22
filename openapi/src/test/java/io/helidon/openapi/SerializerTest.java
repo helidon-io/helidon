@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.openapi;
 
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.json.JsonArray;
@@ -37,11 +37,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class SerializerTest {
 
+    private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper;
+
+    private static Map<Class<?>, ExpandedTypeDescription> implsToTypes;
+
+    @BeforeAll
+    public static void prepareHelper() {
+        helper = OpenAPISupport.helper();
+        implsToTypes = OpenAPISupport.buildImplsToTypes(helper);
+    }
+
     @Test
     public void testJSONSerialization() throws IOException {
-        OpenAPI openAPI = ParserTest.parse("/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
         Writer writer = new StringWriter();
-        Serializer.serialize(openAPI, OpenApiSerializer.Format.JSON, writer);
+        Serializer.serialize(helper.types(), implsToTypes, openAPI, OpenApiSerializer.Format.JSON, writer);
         JsonStructure json = TestUtil.jsonFromReader(new StringReader(writer.toString()));
 
         assertThat(json.getValue("/x-my-personal-map/owner/last").toString(), is("\"Myself\""));
@@ -63,20 +73,62 @@ class SerializerTest {
         JsonObject secondObj = second.asJsonObject();
         checkJsonPathStringValue(secondObj, "/when", "yesterday");
         checkJsonPathStringValue(secondObj, "/how", "with the lead pipe");
+
+        JsonValue xInt = json.getValue("/x-int");
+        assertThat(xInt.getValueType(), is(JsonValue.ValueType.NUMBER));
+        assertThat(Integer.valueOf(xInt.toString()), is(117));
+
+        JsonValue xBoolean = json.getValue("/x-boolean");
+        assertThat(xBoolean.getValueType(), is(JsonValue.ValueType.TRUE));
+
+        JsonValue xStrings = json.getValue("/x-string-array");
+        assertThat(xStrings.getValueType(), is(JsonValue.ValueType.ARRAY));
+        JsonArray xStringArray = xStrings.asJsonArray();
+        assertThat(xStringArray.size(), is(2));
+        checkJsonStringValue(xStringArray.get(0), "one");
+        checkJsonStringValue(xStringArray.get(1), "two");
+
+        JsonValue xObjects = json.getValue("/x-object-array");
+        assertThat(xObjects.getValueType(), is(JsonValue.ValueType.ARRAY));
+        JsonArray xObjectArray = xObjects.asJsonArray();
+        assertThat(xObjectArray.size(), is(2));
+        first = xObjectArray.get(0);
+        assertThat(first.getValueType(), is(JsonValue.ValueType.OBJECT));
+        firstObj = first.asJsonObject();
+        checkJsonPathStringValue(firstObj, "/name", "item-1");
+        checkJsonPathIntValue(firstObj, "/value", 16);
+        second = xObjectArray.get(1);
+        assertThat(second.getValueType(), is(JsonValue.ValueType.OBJECT));
+        secondObj = second.asJsonObject();
+        checkJsonPathStringValue(secondObj, "/name", "item-2");
+        checkJsonPathIntValue(secondObj, "/value", 18);
+
     }
 
     private void checkJsonPathStringValue(JsonObject jsonObject, String pointer, String expected) {
-        JsonValue who = jsonObject.getValue(pointer);
-        assertThat(who.getValueType(), is(JsonValue.ValueType.STRING));
-        assertThat(who.toString(), is("\"" + expected + "\""));
+        checkJsonStringValue(jsonObject.getValue(pointer), expected);
+    }
+
+    private void checkJsonStringValue(JsonValue jsonValue, String expected) {
+        assertThat(jsonValue.getValueType(), is(JsonValue.ValueType.STRING));
+        assertThat(jsonValue.toString(), is("\"" + expected + "\""));
+    }
+
+    private void checkJsonPathIntValue(JsonObject jsonObject, String pointer, int expected) {
+        checkJsonIntValue(jsonObject.getValue(pointer), expected);
+    }
+
+    private void checkJsonIntValue(JsonValue val, int expected) {
+        assertThat(val.getValueType(), is(JsonValue.ValueType.NUMBER));
+        assertThat(Integer.valueOf(val.toString()), is(expected));
     }
 
     @Test
     public void testYAMLSerialization() throws IOException {
-        OpenAPI openAPI = ParserTest.parse("/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
         Writer writer = new StringWriter();
-        Serializer.serialize(openAPI, OpenApiSerializer.Format.YAML, writer);
-        openAPI = Parser.parseYAML(new StringReader(writer.toString()));
+        Serializer.serialize(helper.types(), implsToTypes, openAPI, OpenApiSerializer.Format.YAML, writer);
+        openAPI = OpenAPIParser.parse(helper.types(), new StringReader(writer.toString()), OpenAPISupport.OpenAPIMediaType.JSON);
         Object candidateMap = openAPI.getExtensions()
                 .get("x-my-personal-map");
         assertThat(candidateMap, is(instanceOf(Map.class)));

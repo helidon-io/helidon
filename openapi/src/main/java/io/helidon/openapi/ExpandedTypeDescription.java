@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Set;
 
 import org.eclipse.microprofile.openapi.models.Extensible;
+import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.introspector.MethodProperty;
@@ -62,7 +64,7 @@ class ExpandedTypeDescription extends TypeDescription {
 
     private static final String EXTENSION_PROPERTY_PREFIX = "x-";
 
-    private final Map<String, Function<String, Enum<?>>> enumEvaluators = new HashMap<>();
+    private final Map<String, SnakeYAMLParserHelper.EnumType<?>> enums = new HashMap<>();
 
     private Class<?> impl;
 
@@ -74,8 +76,15 @@ class ExpandedTypeDescription extends TypeDescription {
      * @return resulting TypeDescription
      */
     static ExpandedTypeDescription create(Class<? extends Object> clazz, Class<?> impl) {
-        ExpandedTypeDescription result = new ExpandedTypeDescription(clazz, impl);
+
+        ExpandedTypeDescription result = clazz.equals(Schema.class)
+            ? new SchemaTypeDescription(clazz, impl) : new ExpandedTypeDescription(clazz, impl);
         return result;
+    }
+
+    static ExpandedTypeDescription addEnum(ExpandedTypeDescription type, SnakeYAMLParserHelper.EnumType<?> enumType) {
+        type.addEnum(enumType.propertyName(), enumType);
+        return type;
     }
 
     private ExpandedTypeDescription(Class<? extends Object> clazz, Class<?> impl) {
@@ -84,16 +93,15 @@ class ExpandedTypeDescription extends TypeDescription {
     }
 
     /**
-     * Adds an enum to the type description, by property name and a reference to the enum's {@code
-     * valueOf()} method.
+     * Adds an enum to the type description, by property name and the enum type def
+     * in the generated helper class.
      *
      * @param propertyName property name for the enum
-     * @param fn method reference to the enum's valueOf method
-     * @param <E> the Enum type
+     * @param enumType type for the Enum
      * @return this type description
      */
-    <E extends Enum<E>> ExpandedTypeDescription addEnum(String propertyName, Function<String, Enum<?>> fn) {
-        enumEvaluators.put(propertyName, fn);
+    ExpandedTypeDescription addEnum(String propertyName, SnakeYAMLParserHelper.EnumType enumType) {
+        enums.put(propertyName, enumType);
         return this;
     }
 
@@ -109,16 +117,53 @@ class ExpandedTypeDescription extends TypeDescription {
         return this;
     }
 
+    /**
+     * Adds property handling for extensions.
+     *
+     * @return this type description
+     */
+    ExpandedTypeDescription addExtensions() {
+        PropertySubstitute sub = new PropertySubstitute("extensions", Map.class, "getExtensions", "setExtensions");
+        sub.setTargetType(impl);
+        substituteProperty(sub);
+        return this;
+    }
+
     @Override
     public Property getProperty(String name) {
         return isExtension(name) ? new ExtensionProperty(name) : super.getProperty(name);
     }
 
     @Override
+    public Set<Property> getProperties() {
+        /*
+         * The YAML/JSON contains lower-case PathItem.HttpMethod names, and we provide
+         * property substitutions (declarations) for those lower-case versions. But the OpenAPI
+         * bean analysis will give upper-case property names. We need to remove those from the
+         * property list.
+         */
+        Set<Property> result = super.getProperties();
+        Set<Property> propsToRemove = new HashSet<Property>();
+
+        if (getType().equals(PathItem.class)) {
+            for (Property p : result) {
+                for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
+                    if (p.getName().equals(m.name())) {
+                        propsToRemove.add(p);
+                    }
+                }
+            }
+            result.removeAll(propsToRemove);
+        }
+        return result;
+    }
+
+    @Override
     public Object newInstance(String propertyName, Node node) {
-        if (enumEvaluators.containsKey(propertyName)) {
+        if (enums.containsKey(propertyName)) {
             String valueText = ((ScalarNode) node).getValue().toUpperCase();
-            return enumEvaluators.get(propertyName).apply((valueText));
+
+            return enums.get(propertyName).valueOf(valueText);
         }
         return super.newInstance(propertyName, node);
     }
@@ -126,6 +171,19 @@ class ExpandedTypeDescription extends TypeDescription {
     @Override
     public boolean setupPropertyType(String key, Node valueNode) {
         return setupExtensionType(key, valueNode) || super.setupPropertyType(key, valueNode);
+    }
+
+    /**
+     * Returns the implementation class associated with this type descr.
+     *
+     * @return implementation class
+     */
+    Class<?> impl() {
+        return impl;
+    }
+
+    SnakeYAMLParserHelper.EnumType<?> enumType(String propertyName) {
+        return enums.get(propertyName);
     }
 
     private boolean setupExtensionType(String key, Node valueNode) {
@@ -198,10 +256,6 @@ class ExpandedTypeDescription extends TypeDescription {
             } catch (IntrospectionException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
-        }
-        static SchemaTypeDescription create(Class<? extends Object> clazz, Class<?> impl) {
-            SchemaTypeDescription result = new SchemaTypeDescription(clazz, impl);
-            return result;
         }
 
         private SchemaTypeDescription(Class<? extends Object> clazz, Class<?> impl) {

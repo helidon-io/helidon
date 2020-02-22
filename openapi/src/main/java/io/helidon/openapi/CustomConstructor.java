@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,15 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeId;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 
+/**
+ * Specialized constructor for building {@code Node} objects that include properties of type {@code Map}
+ * that also correspond to specific domain types.
+ * <p>
+ * Left to its default implementation, SnakeYAML would create a node corresponding to a {@code Map} instead of the correct
+ * specific type. These methods intercept those attempts and, instead, build nodes that correspond to the appropriate specific
+ * type (if any).
+ * </p>
+ */
 class CustomConstructor extends Constructor {
 
     private static final Map<Class<?>, Class<?>> CHILD_MAP_TYPES = new HashMap<>();

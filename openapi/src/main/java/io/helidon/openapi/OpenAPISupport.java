@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,9 +38,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
@@ -60,8 +65,13 @@ import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
 import io.smallrye.openapi.runtime.scanner.AnnotationScannerExtension;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import io.smallrye.openapi.runtime.scanner.OpenApiAnnotationScanner;
+import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.eclipse.microprofile.openapi.models.Operation;
+import org.eclipse.microprofile.openapi.models.PathItem;
+import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.jboss.jandex.IndexView;
+import org.yaml.snakeyaml.TypeDescription;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -100,8 +110,13 @@ public class OpenAPISupport implements Service {
 
     private final OpenAPI model;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
+    private final SnakeYAMLParserHelper<ExpandedTypeDescription> helper;
+    private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
 
     private OpenAPISupport(Builder builder) {
+        helper = builder.helper;
+        adjustTypeDescriptions(helper.types());
+        implsToTypes = buildImplsToTypes(helper);
         webContext = builder.webContext();
         model = prepareModel(builder.openAPIConfig(), builder.indexView(), builder.staticFile());
     }
@@ -123,6 +138,49 @@ public class OpenAPISupport implements Service {
                 .get(webContext, this::prepareResponse);
     }
 
+    static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
+        SnakeYAMLParserHelper<ExpandedTypeDescription> result = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create,
+                ExpandedTypeDescription::addEnum);
+        adjustTypeDescriptions(result.types());
+        return result;
+    }
+
+    static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(SnakeYAMLParserHelper<ExpandedTypeDescription> helper) {
+        return helper.entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getValue().impl(),
+                        entry -> entry.getValue()));
+    }
+
+    private static void adjustTypeDescriptions(Map<Class<?>, ExpandedTypeDescription> types) {
+        TypeDescription pathItemTD = types.get(PathItem.class);
+        for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
+            pathItemTD.substituteProperty(m.name().toLowerCase(), Operation.class, getter(m), setter(m));
+            pathItemTD.setExcludes(m.name());
+        }
+
+        TypeDescription schemaTD = types.get(Schema.class);
+        schemaTD.substituteProperty("enum", List.class, "getEnumeration", "setEnumeration");
+        schemaTD.substituteProperty("default", Object.class, "getDefaultValue", "setDefaultValue");
+
+        for (ExpandedTypeDescription td : types.values()) {
+            if (Extensible.class.isAssignableFrom(td.getType())) {
+                td.addExtensions();
+            }
+        }
+    }
+
+    private static String getter(PathItem.HttpMethod method) {
+        return methodName("get", method);
+    }
+
+    private static String setter(PathItem.HttpMethod method) {
+        return methodName("set", method);
+    }
+
+    private static String methodName(String operation, PathItem.HttpMethod method) {
+        return operation + method.name();
+    }
+
     /**
      * Prepares the OpenAPI model that later will be used to create the OpenAPI
      * document for endpoints in this application.
@@ -140,7 +198,7 @@ public class OpenAPISupport implements Service {
                 OpenApiDocument.INSTANCE.config(config);
                 OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
                 if (staticFile != null) {
-                    OpenApiDocument.INSTANCE.modelFromStaticFile(Parser.parse(staticFile.getContent(),
+                    OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper.types(), staticFile.getContent(),
                             OpenAPIMediaType.byFormat(staticFile.getFormat())));
                 }
                 if (isAnnotationProcessingEnabled(config)) {
@@ -160,8 +218,6 @@ public class OpenAPISupport implements Service {
     private boolean isAnnotationProcessingEnabled(OpenApiConfig config) {
         return !config.scanDisable();
     }
-
-
 
     private void expandModelUsingAnnotations(OpenApiConfig config, IndexView indexView) throws IOException {
         if (indexView != null) {
@@ -200,7 +256,7 @@ public class OpenAPISupport implements Service {
             resp.status(Http.Status.OK_200);
             resp.headers().add(Http.Header.CONTENT_TYPE, resultMediaType.toString());
             resp.send(openAPIDocument);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             resp.status(Http.Status.INTERNAL_SERVER_ERROR_500);
             resp.send("Error serializing OpenAPI document");
             LOGGER.log(Level.SEVERE, "Error serializing OpenAPI document", ex);
@@ -245,7 +301,7 @@ public class OpenAPISupport implements Service {
 
     private String formatDocument(Format fmt) {
         StringWriter sw = new StringWriter();
-        Serializer.serialize(model, fmt, sw);
+        Serializer.serialize(helper.types(), implsToTypes, model, fmt, sw);
         return sw.toString();
     }
 
@@ -301,8 +357,8 @@ public class OpenAPISupport implements Service {
                 case '9':
                     try {
                         JsonReader reader = JSON_READER_FACTORY.createReader(new StringReader(value));
-                        JsonObject json = reader.readObject();
-                        return json;
+                        JsonValue jsonValue = reader.readValue();
+                        return convertJsonValue(jsonValue);
                     } catch (Exception ex) {
                         LOGGER.log(Level.SEVERE, String.format("Error parsing extension key: %s, value: %s", key, value), ex);
                     }
@@ -314,6 +370,40 @@ public class OpenAPISupport implements Service {
 
             // Treat as JSON string.
             return value;
+        }
+
+        private static Object convertJsonValue(JsonValue jsonValue) {
+            switch (jsonValue.getValueType()) {
+                case ARRAY:
+                    JsonArray jsonArray = jsonValue.asJsonArray();
+                    return jsonArray.stream()
+                            .map(OpenAPISupport.HelidonAnnotationScannerExtension::convertJsonValue)
+                            .collect(Collectors.toList());
+
+                case FALSE:
+                    return Boolean.FALSE;
+
+                case TRUE:
+                    return Boolean.TRUE;
+
+                case NULL:
+                    return null;
+
+                case STRING:
+                    return JsonString.class.cast(jsonValue).getString();
+
+                case NUMBER:
+                    JsonNumber jsonNumber = JsonNumber.class.cast(jsonValue);
+                    return jsonNumber.numberValue();
+
+                case OBJECT:
+                    JsonObject jsonObject = jsonValue.asJsonObject();
+                    return jsonObject.entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, entry -> convertJsonValue(entry.getValue())));
+
+                default:
+                    return jsonValue.toString();
+            }
         }
     }
 
@@ -466,10 +556,12 @@ public class OpenAPISupport implements Service {
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
+        private SnakeYAMLParserHelper<ExpandedTypeDescription> helper;
 
         @Override
         public OpenAPISupport build() {
             validate();
+            helper = helper();
             return new OpenAPISupport(this);
         }
 

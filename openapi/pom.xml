@@ -95,6 +95,8 @@
                             <implementationsConfig>
                                 <inputDirectory>${openapi-impls-dir}</inputDirectory>
                             </implementationsConfig>
+                            <implementationPrefix>io.smallrye</implementationPrefix>
+                            <interfacePrefix>org.eclipse.microprofile.openapi</interfacePrefix>
                         </configuration>
                     </execution>
                 </executions>

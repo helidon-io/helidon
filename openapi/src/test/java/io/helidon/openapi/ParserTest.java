@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.openapi;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.microprofile.openapi.models.OpenAPI;
@@ -31,9 +32,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class ParserTest {
 
+    private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = OpenAPISupport.helper();
+
     @Test
     public void testParserUsingYAML() throws IOException {
-        OpenAPI openAPI = parse("/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = parse(helper,"/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
         assertThat(openAPI.getOpenapi(), is("3.0.0"));
         assertThat(openAPI.getPaths().getPathItem("/pets").getGET().getParameters().get(0).getIn(),
                 is(Parameter.In.QUERY));
@@ -41,7 +44,7 @@ class ParserTest {
 
     @Test
     public void testExtensions() throws IOException {
-        OpenAPI openAPI = parse("/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = parse(helper,"/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
         Object xMyPersonalMap = openAPI.getExtensions().get("x-my-personal-map");
         assertThat(xMyPersonalMap, is(instanceOf(Map.class)));
         Map<?,?> map = (Map<?,?>) xMyPersonalMap;
@@ -55,20 +58,39 @@ class ParserTest {
         map = (Map<?,?>) owner;
         assertThat(map.get("first"), equalTo("Me"));
         assertThat(map.get("last"), equalTo("Myself"));
+
+        Object xBoolean = openAPI.getExtensions().get("x-boolean");
+        assertThat(xBoolean, is(instanceOf(Boolean.class)));
+        Boolean b = (Boolean) xBoolean;
+        assertThat(b, is(true));
+
+        Object xInt = openAPI.getExtensions().get("x-int");
+        assertThat(xInt, is(instanceOf(Integer.class)));
+        Integer i = (Integer) xInt;
+        assertThat(i, is(117));
+
+        Object xStrings = openAPI.getExtensions().get("x-string-array");
+        assertThat(xStrings, is(instanceOf(List.class)));
+        List<?> list = (List<?>) xStrings;
+        Object first = list.get(0);
+        assertThat(first, is(instanceOf(String.class)));
+        String f = (String) first;
+        assertThat(f, is(equalTo("one")));
     }
 
     @Test
     public void testParserUsingJSON() throws IOException {
-        OpenAPI openAPI = parse("/petstore.json", OpenAPISupport.OpenAPIMediaType.JSON);
+        OpenAPI openAPI = parse(helper,"/petstore.json", OpenAPISupport.OpenAPIMediaType.JSON);
         assertThat(openAPI.getOpenapi(), is("3.0.0"));
 // TODO - uncomment the following once full $ref support is in place
 //        assertThat(openAPI.getPaths().getPathItem("/pet").getPUT().getRequestBody().getDescription(),
 //                containsString("needs to be added to the store"));
     }
 
-    static OpenAPI parse(String path, OpenAPISupport.OpenAPIMediaType mediaType) throws IOException {
+    static OpenAPI parse(SnakeYAMLParserHelper<ExpandedTypeDescription> helper, String path,
+            OpenAPISupport.OpenAPIMediaType mediaType) throws IOException {
         try (InputStream is = ParserTest.class.getResourceAsStream(path)) {
-            return Parser.parse(is, mediaType);
+            return OpenAPIParser.parse(helper.types(), is, mediaType);
         }
     }
 }
