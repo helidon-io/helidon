@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,6 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,11 +28,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.stream.Collectors;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.stream.JsonParser;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
+import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
 import com.oracle.bedrock.runtime.options.Arguments;
+import com.oracle.bedrock.runtime.options.Console;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,8 +49,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class MainTest {
 
@@ -76,17 +80,40 @@ class MainTest {
     }
 
     void startTheApplication(String appJarPath, List<String> javaArgs) throws Exception {
-        if (application != null) {
-            Assertions.fail("Can't start the application, it is already running");
-        }
-
-        List<String> startArgs = new ArrayList<>(javaArgs);
-        startArgs.add("-Dserver.port=" + port);
-        startArgs.add("-jar");
-        startArgs.add(appJarPath);
-
-        application = localPlatform.launch("java", Arguments.of(startArgs));
+        Arguments args = toArguments(appJarPath, javaArgs);
+        application = localPlatform.launch("java", args);
         waitForApplicationUp();
+    }
+
+    @Test
+    void exitOnStartedSe() throws Exception {
+        runExitOnStartedTest("se");
+    }
+
+    @Test
+    void exitOnStartedMp() throws Exception {
+        runExitOnStartedTest("mp");
+    }
+
+    private void runExitOnStartedTest(String edition) throws Exception {
+        Arguments args = toArguments(editionToJarPath(edition), Collections.singletonList("-Dexit.on.started=!"));
+        CapturingApplicationConsole console = new CapturingApplicationConsole();
+        application = localPlatform.launch("java", args, Console.of(console));
+        Queue<String> stdOut = console.getCapturedOutputLines();
+        long maxTime = System.currentTimeMillis() + (10 * 1000);
+        do {
+            if (stdOut.stream().anyMatch(line -> line.contains("exit.on.started"))) {
+                return;
+            }
+            Thread.sleep(500);
+        } while (System.currentTimeMillis() < maxTime);
+
+        String eol = System.getProperty("line.separator");
+        Assertions.fail("quickstart " + edition + " did not exit as expected." + eol
+                        + eol
+                        + "stdOut: " + stdOut + eol
+                        + eol
+                        + " stdErr: " + console.getCapturedErrorLines());
     }
 
     @Test
@@ -338,6 +365,18 @@ class MainTest {
                 responseCode = -1;
             }
         } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1 ));
+    }
+
+    private static Arguments toArguments(String appJarPath, List<String> javaArgs) {
+        if (application != null) {
+            Assertions.fail("Can't start the application, it is already running");
+        }
+
+        List<String> startArgs = new ArrayList<>(javaArgs);
+        startArgs.add("-Dserver.port=" + port);
+        startArgs.add("-jar");
+        startArgs.add(appJarPath);
+        return Arguments.of(startArgs);
     }
 
     private static String editionToJarPath(String edition) {
