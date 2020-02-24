@@ -30,6 +30,7 @@ import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.yaml.snakeyaml.TypeDescription;
+import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.introspector.MethodProperty;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertySubstitute;
@@ -71,7 +72,6 @@ class ExpandedTypeDescription extends TypeDescription {
     private final Map<String, SnakeYAMLParserHelper.EnumType<?>> enums = new HashMap<>();
 
     private Class<?> impl;
-    private boolean hasDefaultProperty = false;
 
     /**
      * Factory method for ease of chaining other method invocations.
@@ -206,12 +206,16 @@ class ExpandedTypeDescription extends TypeDescription {
         return enums.get(propertyName);
     }
 
-    void hasDefaultProperty(boolean value) {
-        this.hasDefaultProperty = value;
-    }
-
     boolean hasDefaultProperty() {
-        return hasDefaultProperty;
+        try {
+            Property p = getProperty("defaultValue");
+            return true;
+        } catch (YAMLException ex) {
+            if (ex.getMessage().startsWith("Unable to find property")) {
+                return false;
+            }
+            throw ex;
+        }
     }
 
     private boolean setupExtensionType(String key, Node valueNode) {
