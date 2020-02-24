@@ -48,22 +48,10 @@ class OpenAPIParser {
 
         types.forEach((type, td) -> {
                     topConstructor.addTypeDescription(td);
-                    if (isRef(td)) {
-                        td.addRef();
-                    }
                 });
 
         Yaml yaml = new Yaml(topConstructor);
         OpenAPI result = yaml.loadAs(reader, OpenAPI.class);
         return result;
-    }
-
-    private static boolean isRef(TypeDescription td) {
-        for (Class<?> c : td.getType().getInterfaces()) {
-            if (c.equals(Reference.class)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

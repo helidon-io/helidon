@@ -41,6 +41,7 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
+import org.yaml.snakeyaml.resolver.Resolver;
 
 /**
  * Expresses an existing {@code OpenAPI} instance as an OpenAPI document. This implementation uses
@@ -116,6 +117,13 @@ class Serializer {
 
         @Override
         protected Node representScalar(Tag tag, String value, DumperOptions.ScalarStyle style) {
+            /*
+             * This if works around this SnakeYAML issue:
+             * https://bitbucket.org/asomov/snakeyaml/issues/473/incorrect-scalar-style-chosen-for-float
+             */
+            if (tag == Tag.FLOAT && Resolver.INT.matcher(value).matches()) {
+                tag = Tag.INT;
+            }
             return super.representScalar(tag, value, isExemptedFromQuotes(tag) ? DumperOptions.ScalarStyle.PLAIN : style);
         }
 
@@ -139,7 +147,7 @@ class Serializer {
             }
 
             Property p = property;
-            Object v = propertyValue;
+            Object v = adjustPropertyValue(propertyValue);
             SnakeYAMLParserHelper.EnumType<?> enumType = implsToTypes.get(javaBean.getClass()).enumType(property.getName());
             if (enumType != null) {
                 p = new DelegatingProperty(property, property.getName().toLowerCase());
@@ -150,6 +158,21 @@ class Serializer {
             NodeTuple result = okToProcess(javaBean, property)
                     ? super.representJavaBeanProperty(javaBean, p, v, customTag) : null;
             return result;
+        }
+
+        private Object adjustPropertyValue(Object propertyValue) {
+            /* Some MP OpenAPI TCK tests expect an integer-style format, even for BigDecimal types, if the
+             * value is an integer. Because the formatting is done in SnakeYAML code based on the type of the value,
+             * we need to replace a, for example BigDecimal that happen to be an integer value, with an Integer.
+             * See https://github.com/eclipse/microprofile-open-api/issues/412
+             */
+            if (Number.class.isInstance(propertyValue)) {
+                Number n = (Number) propertyValue;
+                if (n.intValue() == n.floatValue()) {
+                    propertyValue = Integer.valueOf(n.intValue());
+                }
+            }
+            return propertyValue;
         }
 
         @Override

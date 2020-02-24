@@ -19,6 +19,7 @@ package io.helidon.openapi;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.introspector.MethodProperty;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertySubstitute;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 
@@ -64,9 +66,12 @@ class ExpandedTypeDescription extends TypeDescription {
 
     private static final String EXTENSION_PROPERTY_PREFIX = "x-";
 
+    private static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
+
     private final Map<String, SnakeYAMLParserHelper.EnumType<?>> enums = new HashMap<>();
 
     private Class<?> impl;
+    private boolean hasDefaultProperty = false;
 
     /**
      * Factory method for ease of chaining other method invocations.
@@ -79,11 +84,17 @@ class ExpandedTypeDescription extends TypeDescription {
 
         ExpandedTypeDescription result = clazz.equals(Schema.class)
             ? new SchemaTypeDescription(clazz, impl) : new ExpandedTypeDescription(clazz, impl);
+        result.setPropertyUtils(PROPERTY_UTILS);
         return result;
     }
 
     static ExpandedTypeDescription addEnum(ExpandedTypeDescription type, SnakeYAMLParserHelper.EnumType<?> enumType) {
         type.addEnum(enumType.propertyName(), enumType);
+        return type;
+    }
+
+    static ExpandedTypeDescription recordHasDefaultProperty(ExpandedTypeDescription type) {
+        type.hasDefaultProperty(true);
         return type;
     }
 
@@ -173,6 +184,15 @@ class ExpandedTypeDescription extends TypeDescription {
         return setupExtensionType(key, valueNode) || super.setupPropertyType(key, valueNode);
     }
 
+    void addExcludes(String... propNames) {
+        if (excludes == Collections.<String>emptySet()) {
+            excludes = new HashSet<String>();
+        }
+        for (String propName : propNames) {
+            excludes.add(propName);
+        }
+    }
+
     /**
      * Returns the implementation class associated with this type descr.
      *
@@ -184,6 +204,14 @@ class ExpandedTypeDescription extends TypeDescription {
 
     SnakeYAMLParserHelper.EnumType<?> enumType(String propertyName) {
         return enums.get(propertyName);
+    }
+
+    void hasDefaultProperty(boolean value) {
+        this.hasDefaultProperty = value;
+    }
+
+    boolean hasDefaultProperty() {
+        return hasDefaultProperty;
     }
 
     private boolean setupExtensionType(String key, Node valueNode) {

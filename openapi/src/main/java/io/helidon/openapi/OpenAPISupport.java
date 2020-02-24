@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -69,9 +70,12 @@ import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
+import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
+import org.yaml.snakeyaml.introspector.Property;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -140,7 +144,7 @@ public class OpenAPISupport implements Service {
 
     static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
         SnakeYAMLParserHelper<ExpandedTypeDescription> result = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create,
-                ExpandedTypeDescription::addEnum);
+                ExpandedTypeDescription::addEnum, ExpandedTypeDescription::recordHasDefaultProperty);
         adjustTypeDescriptions(result.types());
         return result;
     }
@@ -152,21 +156,42 @@ public class OpenAPISupport implements Service {
     }
 
     private static void adjustTypeDescriptions(Map<Class<?>, ExpandedTypeDescription> types) {
-        TypeDescription pathItemTD = types.get(PathItem.class);
+        ExpandedTypeDescription pathItemTD = types.get(PathItem.class);
         for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
             pathItemTD.substituteProperty(m.name().toLowerCase(), Operation.class, getter(m), setter(m));
-            pathItemTD.setExcludes(m.name());
+            pathItemTD.addExcludes(m.name());
         }
 
-        TypeDescription schemaTD = types.get(Schema.class);
-        schemaTD.substituteProperty("enum", List.class, "getEnumeration", "setEnumeration");
-        schemaTD.substituteProperty("default", Object.class, "getDefaultValue", "setDefaultValue");
+        CollectionsHelper.<Class<?>>setOf(Schema.class, ServerVariable.class).forEach(c -> {
+            ExpandedTypeDescription tdWithEnumeration = types.get(c);
+            tdWithEnumeration.substituteProperty("enum", List.class, "getEnumeration", "setEnumeration");
+            tdWithEnumeration.addPropertyParameters("enum", String.class);
+            tdWithEnumeration.addExcludes("enumeration");
+        });
 
         for (ExpandedTypeDescription td : types.values()) {
             if (Extensible.class.isAssignableFrom(td.getType())) {
                 td.addExtensions();
             }
+            if (td.hasDefaultProperty()) {
+                td.substituteProperty("default", Object.class, "getDefaultValue", "setDefaultValue");
+                td.addExcludes("defaultValue");
+            }
+            if (isRef(td)) {
+                if (isRef(td)) {
+                    td.addRef();
+                }
+            }
         }
+    }
+
+    private static boolean isRef(TypeDescription td) {
+        for (Class<?> c : td.getType().getInterfaces()) {
+            if (c.equals(Reference.class)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String getter(PathItem.HttpMethod method) {
