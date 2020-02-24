@@ -1396,9 +1396,9 @@ public interface Config {
         Builder disableMapperServices();
 
         /**
-         * Registers a {@link ConfigParser} instance that can be used by registered {@link ConfigSource}s to
-         * parse {@link io.helidon.config.spi.ConfigContent configuration content}.
-         * Parsers are tried to be used by {@link io.helidon.config.spi.ConfigContext#findParser(String)}
+         * Registers a {@link ConfigParser} instance that can be used by config system to parse
+         * parse {@link io.helidon.config.spi.ConfigParser.Content} of {@link io.helidon.config.spi.ParsableSource}.
+         * Parsers {@link io.helidon.config.spi.ConfigParser#supportedMediaTypes()} is queried
          * in same order as was registered by this method.
          * Programmatically registered parsers have priority over other options.
          * <p>
@@ -1677,7 +1677,7 @@ public interface Config {
          *       optional: true
          *       path: "conf/dev-application.yaml"
          *       polling-strategy:
-         *         type: "watch"
+         *         type: "regular"
          *       retry-policy:
          *         type: "repeat"
          *         properties:
@@ -1687,6 +1687,9 @@ public interface Config {
          *        optional: true
          *        resource: "application.yaml"
          * </pre>
+         *
+         * @param metaConfig meta configuration to set this builder up
+         * @return updated builder from meta configuration
          */
         Builder config(Config metaConfig);
     }

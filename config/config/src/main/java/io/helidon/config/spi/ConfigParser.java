@@ -19,7 +19,6 @@ package io.helidon.config.spi;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +27,7 @@ import io.helidon.config.ConfigParsers;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
- * Transforms config {@link ConfigContent} into a {@link ConfigNode.ObjectNode} that
+ * Transforms config {@link io.helidon.config.spi.ConfigParser.Content} into a {@link ConfigNode.ObjectNode} that
  * represents the original structure and values from the content.
  * <p>
  * The application can register parsers on a {@code Builder} using the
@@ -41,10 +40,11 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  * <p>
  * A parser can specify a {@link javax.annotation.Priority}. If no priority is
  * explicitly assigned, the value of {@value PRIORITY} is assumed.
+ * <p>
+ * Parser is used by the config system and a config source provides data as an input stream.
  *
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
- * @see ConfigSource#load()
- * @see AbstractParsableConfigSource
+ * @see io.helidon.config.spi.ParsableSource
  * @see ConfigParsers ConfigParsers - access built-in implementations.
  */
 public interface ConfigParser {
@@ -57,11 +57,12 @@ public interface ConfigParser {
     /**
      * Returns set of supported media types by the parser.
      * <p>
-     * Set of supported media types is used while {@link ConfigContext#findParser(String) looking for appropriate parser}
-     * by {@link ConfigSource} implementations.
+     * Set of supported media types is used when config system looks for appropriate parser based on media type
+     * of content.
      * <p>
-     * {@link ConfigSource} implementations usually use {@link java.nio.file.Files#probeContentType(Path)} method
-     * to guess source media type, if not explicitly set.
+     * {@link io.helidon.config.spi.ParsableSource} implementations can use {@link io.helidon.common.media.type.MediaTypes}
+     * to probe for media type of content to provide it to config system through
+     * {@link io.helidon.config.spi.ConfigParser.Content.Builder#mediaType(String)}.
      *
      * @return supported media types by the parser
      */

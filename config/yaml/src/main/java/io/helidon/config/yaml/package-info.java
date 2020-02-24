@@ -26,9 +26,9 @@
  * if loaded automatically as a {@link java.util.ServiceLoader service},
  * is {@value io.helidon.config.yaml.YamlConfigParser#PRIORITY}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(io.helidon.config.spi.ConfigParser)
- * registered programmatically} using {@link io.helidon.config.yaml.YamlConfigParserBuilder builder API}.
+ * registered programmatically} using {@link io.helidon.config.yaml.YamlConfigParser#create()}.
  * <p>
- * YAML integration is placed in {@code io.helidon.config.yaml} Java 9 module.
+ * YAML integration is placed in {@code io.helidon.config.yaml} module.
  * Maven coordinates are {@code io.helidon.config:helidon-config-yaml}.
  *
  * @see io.helidon.config Configuration API

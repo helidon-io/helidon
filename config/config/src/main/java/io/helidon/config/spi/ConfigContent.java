@@ -55,6 +55,7 @@ public interface ConfigContent {
         static Builder builder() {
             return new Builder();
         }
+
         /**
          * Data of this override source.
          *
@@ -155,6 +156,7 @@ public interface ConfigContent {
          * Content stamp.
          *
          * @param stamp stamp of the content
+         * @return updated builder instance
          */
         public T stamp(Object stamp) {
             this.stamp = stamp;

@@ -26,7 +26,6 @@ import io.helidon.common.Builder;
 import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ParsableSource;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
@@ -58,9 +57,6 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
  * The temporary file is cleaned up by the {@link GitConfigSource#close()} method).
  * A specified directory, that is not empty, must be a valid git repository, otherwise an exception is thrown.
  * If the directory nor the uri is not set, an exception is thrown.
- * <p>
- * If Git ConfigSource is {@code mandatory} and a {@code uri} is not responsive or {@code key} does not exist
- * then {@link ConfigSource#load} throws {@link io.helidon.config.ConfigException}.
  * <p>
  * One of {@code media-type} and {@code parser} properties must be set to be clear how to parse the content. If both of them
  * are set, then {@code parser} has precedence.
