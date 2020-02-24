@@ -13,20 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.webclient;
 
-import io.helidon.webclient.security.WebClientSecurityProvider;
-import io.helidon.webclient.spi.WebClientServiceProvider;
+import io.helidon.common.context.Context;
+import io.helidon.common.http.Http;
 
 /**
- * Helidon WebClient Security.
+ * Response which is created upon receiving of server response.
  */
-module io.helidon.webclient.security {
-    requires java.logging;
+public interface WebClientServiceResponse {
 
-    requires io.helidon.security;
-    requires io.helidon.webclient;
+    /**
+     * Received response headers.
+     *
+     * @return immutable response headers
+     */
+    WebClientResponseHeaders headers();
 
-    exports io.helidon.webclient.security;
+    /**
+     * Context in which this response is received.
+     *
+     * @return current context
+     */
+    Context context();
 
-    provides WebClientServiceProvider with WebClientSecurityProvider;
+    /**
+     * Status of the response.
+     *
+     * @return response status
+     */
+    Http.ResponseStatus status();
+
 }

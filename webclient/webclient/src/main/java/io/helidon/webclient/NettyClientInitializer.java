@@ -41,8 +41,8 @@ import io.netty.util.concurrent.FutureListener;
 class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private final RequestConfiguration configuration;
-    private final CompletableFuture<ClientResponse> future;
-    private final CompletableFuture<ClientServiceResponse> requestComplete;
+    private final CompletableFuture<WebClientResponse> future;
+    private final CompletableFuture<WebClientServiceResponse> requestComplete;
 
     /**
      * Creates new instance.
@@ -52,8 +52,8 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
      * @param requestComplete future indicating completed request
      */
     NettyClientInitializer(RequestConfiguration configuration,
-                           CompletableFuture<ClientResponse> future,
-                           CompletableFuture<ClientServiceResponse> requestComplete) {
+                           CompletableFuture<WebClientResponse> future,
+                           CompletableFuture<WebClientServiceResponse> requestComplete) {
         this.configuration = configuration;
         this.future = future;
         this.requestComplete = requestComplete;

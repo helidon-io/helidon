@@ -17,6 +17,7 @@ package io.helidon.webclient;
 
 import java.net.ProxySelector;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -227,7 +228,7 @@ public interface Proxy {
          * @return updated builder instance
          */
         public Builder password(char[] password) {
-            this.password = password;
+            this.password = Arrays.copyOf(password, password.length);
             return this;
         }
 

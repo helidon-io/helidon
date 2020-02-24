@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.webclient.security;
 
-import io.helidon.webclient.security.WebClientSecurityProvider;
+import io.helidon.config.Config;
+import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
 /**
- * Helidon WebClient Security.
+ * Client security SPI provider.
  */
-module io.helidon.webclient.security {
-    requires java.logging;
+public class WebClientSecurityProvider implements WebClientServiceProvider {
+    @Override
+    public String configKey() {
+        return "security";
+    }
 
-    requires io.helidon.security;
-    requires io.helidon.webclient;
-
-    exports io.helidon.webclient.security;
-
-    provides WebClientServiceProvider with WebClientSecurityProvider;
+    @Override
+    public WebClientService create(Config config) {
+        return WebClientSecurity.create();
+    }
 }

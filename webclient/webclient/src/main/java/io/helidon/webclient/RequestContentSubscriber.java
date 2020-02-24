@@ -33,7 +33,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
-import static io.helidon.webclient.ClientRequestBuilderImpl.REQUEST;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
 
 /**
  * Subscriber which handles entity sending.
@@ -43,8 +43,8 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     private static final Logger LOGGER = Logger.getLogger(RequestContentSubscriber.class.getName());
     private static final LastHttpContent LAST_HTTP_CONTENT = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
 
-    private final CompletableFuture<ClientResponse> responseFuture;
-    private final CompletableFuture<ClientServiceRequest> sent;
+    private final CompletableFuture<WebClientResponse> responseFuture;
+    private final CompletableFuture<WebClientServiceRequest> sent;
     private final DefaultHttpRequest request;
     private final Channel channel;
 
@@ -54,8 +54,8 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
 
     RequestContentSubscriber(DefaultHttpRequest request,
                              Channel channel,
-                             CompletableFuture<ClientResponse> responseFuture,
-                             CompletableFuture<ClientServiceRequest> sent) {
+                             CompletableFuture<WebClientResponse> responseFuture,
+                             CompletableFuture<WebClientServiceRequest> sent) {
         this.request = request;
         this.channel = channel;
         this.responseFuture = responseFuture;
@@ -119,8 +119,8 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 
-        ClientRequestBuilder.ClientRequest clientRequest = channel.attr(REQUEST).get();
-        ClientServiceRequest serviceRequest = clientRequest.configuration().clientServiceRequest();
+        WebClientRequestBuilder.ClientRequest clientRequest = channel.attr(REQUEST).get();
+        WebClientServiceRequest serviceRequest = clientRequest.configuration().clientServiceRequest();
         sent.complete(serviceRequest);
     }
 

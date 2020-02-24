@@ -24,8 +24,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
-import io.helidon.webclient.ClientException;
-import io.helidon.webclient.metrics.ClientMetrics;
+import io.helidon.webclient.WebClientException;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -108,8 +107,8 @@ public class RequestTest extends TestParent {
                     .toCompletableFuture()
                     .get();
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof ClientException) {
-                ClientException clientException = (ClientException) e.getCause();
+            if (e.getCause() instanceof WebClientException) {
+                WebClientException clientException = (WebClientException) e.getCause();
                 assertThat(clientException.getMessage(), startsWith("Max number of redirects extended! (5)"));
             } else {
                 fail(e);
@@ -149,7 +148,7 @@ public class RequestTest extends TestParent {
                     .toCompletableFuture()
                     .get();
         } catch (ExecutionException e) {
-            ClientException ce = (ClientException) e.getCause();
+            WebClientException ce = (WebClientException) e.getCause();
             assertThat(ce.getMessage(), startsWith("Entity of the request with status 404"));
             return;
         } catch (Exception e) {

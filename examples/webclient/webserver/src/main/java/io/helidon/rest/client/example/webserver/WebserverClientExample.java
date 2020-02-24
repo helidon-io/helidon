@@ -21,8 +21,8 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.common.JsonProcessing;
-import io.helidon.webclient.ClientException;
-import io.helidon.webclient.ClientResponse;
+import io.helidon.webclient.WebClientException;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.Proxy;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.metrics.ClientMetrics;
@@ -89,7 +89,7 @@ public class WebserverClientExample {
                 // request specific handler
                 .register(JsonProcessing.create().newWriter())
                 .submit(object)
-                .thenApply(ClientResponse::content)
+                .thenApply(WebClientResponse::content)
                 .thenAccept(res::send)
                 .exceptionally(throwable -> handleException(res, throwable));
     }
@@ -124,8 +124,8 @@ public class WebserverClientExample {
     }
 
     private static Void handleException(ServerResponse res, Throwable throwable) {
-        if (throwable instanceof ClientException) {
-            ClientException e = (ClientException) throwable;
+        if (throwable instanceof WebClientException) {
+            WebClientException e = (WebClientException) throwable;
             e.response()
                     .ifPresentOrElse(clientResponse -> {
                         res.status(clientResponse.status());
@@ -149,7 +149,7 @@ public class WebserverClientExample {
                 .uri("http://www.google.com")
                 .context(req.context())
                 .request()
-                .thenApply(ClientResponse::content)
+                .thenApply(WebClientResponse::content)
                 .thenAccept(res::send)
                 .exceptionally(throwable -> handleException(res, throwable));
     }

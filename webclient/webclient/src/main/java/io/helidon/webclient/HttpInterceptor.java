@@ -33,8 +33,8 @@ public interface HttpInterceptor {
      * @param responseFuture completable future of the current response
      */
     void handleInterception(HttpResponse httpResponse,
-                            ClientRequestBuilder.ClientRequest clientRequest,
-                            CompletableFuture<ClientResponse> responseFuture);
+                            WebClientRequestBuilder.ClientRequest clientRequest,
+                            CompletableFuture<WebClientResponse> responseFuture);
 
     /**
      * If run of the response processing should continue after interception is handled by interceptor.
@@ -50,5 +50,5 @@ public interface HttpInterceptor {
      * @param configuration  configuration
      * @return if response should be intercepted
      */
-    boolean shouldIntercept(HttpResponseStatus responseStatus, ClientConfiguration configuration);
+    boolean shouldIntercept(HttpResponseStatus responseStatus, WebClientConfiguration configuration);
 }

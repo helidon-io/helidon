@@ -18,7 +18,7 @@ package io.helidon.rest.client.example.basic;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import io.helidon.webclient.ClientResponse;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.FileSubscriber;
 import io.helidon.webclient.WebClient;
 
@@ -33,7 +33,7 @@ public class UploadAndDownloadExample {
         client.put()
                 .uri(uri)
                 .submit(Paths.get("someFile.txt"))
-                .thenApply(ClientResponse::status)
+                .thenApply(WebClientResponse::status)
                 .thenAccept(System.out::println);
     }
 
@@ -44,7 +44,7 @@ public class UploadAndDownloadExample {
         client.get()
                 .uri(uri)
                 .request()
-                .thenApply(ClientResponse::content)
+                .thenApply(WebClientResponse::content)
                 .thenAccept(sub::subscribeTo)
                 .thenAccept(o -> System.out.println("Download completed"));
     }

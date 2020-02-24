@@ -49,8 +49,8 @@ final class NettyClient implements WebClient {
 
     private static final AtomicBoolean DEFAULTS_CONFIGURED = new AtomicBoolean();
 
-    private static final ClientConfiguration DEFAULT_CONFIGURATION =
-            ClientConfiguration.builder()
+    private static final WebClientConfiguration DEFAULT_CONFIGURATION =
+            WebClientConfiguration.builder()
                     .config(EMPTY_CONFIG)
                     .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
                     .readTimeout(DEFAULT_READ_TIMEOUT)
@@ -63,7 +63,7 @@ final class NettyClient implements WebClient {
                     .build();
 
     // configurable per client instance
-    static final AtomicReference<ClientConfiguration> SHARED_CONFIGURATION = new AtomicReference<>(DEFAULT_CONFIGURATION);
+    static final AtomicReference<WebClientConfiguration> SHARED_CONFIGURATION = new AtomicReference<>(DEFAULT_CONFIGURATION);
 
     // shared by all client instances
     private static LazyValue<NioEventLoopGroup> eventGroup = LazyValue.create(() -> {
@@ -71,7 +71,7 @@ final class NettyClient implements WebClient {
     });
 
     // this instance configuration
-    private final ClientConfiguration configuration;
+    private final WebClientConfiguration configuration;
 
     /**
      * Creates new instance.
@@ -91,24 +91,24 @@ final class NettyClient implements WebClient {
     }
 
     @Override
-    public ClientRequestBuilder put() {
-        return ClientRequestBuilderImpl.create(eventGroup, configuration, Http.Method.PUT);
+    public WebClientRequestBuilder put() {
+        return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.Method.PUT);
     }
 
     @Override
-    public ClientRequestBuilder get() {
-        return ClientRequestBuilderImpl.create(eventGroup, configuration, Http.Method.GET);
+    public WebClientRequestBuilder get() {
+        return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.Method.GET);
     }
 
     @Override
-    public ClientRequestBuilder method(String method) {
-        return ClientRequestBuilderImpl.create(eventGroup, configuration, Http.RequestMethod.create(method));
+    public WebClientRequestBuilder method(String method) {
+        return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.RequestMethod.create(method));
     }
 
     static void configureDefaults(Config globalConfig) {
         if (DEFAULTS_CONFIGURED.compareAndSet(false, true)) {
             Config config = globalConfig.get("client");
-            ClientConfiguration.Builder<?, ?> builder = DEFAULT_CONFIGURATION.derive();
+            WebClientConfiguration.Builder<?, ?> builder = DEFAULT_CONFIGURATION.derive();
             Config eventLoopConfig = config.get("event-loop");
             int numberOfThreads = eventLoopConfig.get("workers")
                     .asInt()

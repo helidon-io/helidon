@@ -20,6 +20,7 @@ import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webclient.security.WebClientSecurity;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests for {@link io.helidon.webclient.security.ClientSecurity}.
+ * Tests for {@link WebClientSecurity}.
  */
 public class SecurityTest extends TestParent {
 

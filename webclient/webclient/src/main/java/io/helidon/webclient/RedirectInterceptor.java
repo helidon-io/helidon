@@ -33,18 +33,18 @@ class RedirectInterceptor implements HttpInterceptor {
 
     @Override
     public void handleInterception(HttpResponse httpResponse,
-                                   ClientRequestBuilder.ClientRequest clientRequest,
-                                   CompletableFuture<ClientResponse> responseFuture) {
+                                   WebClientRequestBuilder.ClientRequest clientRequest,
+                                   CompletableFuture<WebClientResponse> responseFuture) {
         if (clientRequest.method() != Http.Method.GET) {
-            throw new ClientException("Redirecting is currently supported only for GET method.");
+            throw new WebClientException("Redirecting is currently supported only for GET method.");
         }
         if (httpResponse.headers().contains(Http.Header.LOCATION)) {
             String newUri = httpResponse.headers().get(Http.Header.LOCATION);
             LOGGER.fine(() -> "Redirecting to " + newUri);
-            CompletionStage<ClientResponse> redirectResponse = ClientRequestBuilderImpl
+            CompletionStage<WebClientResponse> redirectResponse = WebClientRequestBuilderImpl
                     .create(clientRequest)
                     .uri(newUri)
-                    .request(ClientResponse.class);
+                    .request(WebClientResponse.class);
             redirectResponse.whenComplete((clResponse, throwable) -> {
                 if (throwable == null) {
                     responseFuture.complete(clResponse);
@@ -53,7 +53,7 @@ class RedirectInterceptor implements HttpInterceptor {
                 }
             });
         } else {
-            throw new ClientException("There is no " + Http.Header.LOCATION + " header present in response! "
+            throw new WebClientException("There is no " + Http.Header.LOCATION + " header present in response! "
                                               + "It is not clear where to redirect.");
         }
     }
@@ -64,7 +64,7 @@ class RedirectInterceptor implements HttpInterceptor {
     }
 
     @Override
-    public boolean shouldIntercept(HttpResponseStatus responseStatus, ClientConfiguration configuration) {
+    public boolean shouldIntercept(HttpResponseStatus responseStatus, WebClientConfiguration configuration) {
         return configuration.followRedirects()
                 && responseStatus == HttpResponseStatus.MOVED_PERMANENTLY
                 || responseStatus == HttpResponseStatus.FOUND

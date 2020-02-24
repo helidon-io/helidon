@@ -34,11 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClientRequestHeadersImplTest {
 
-    private ClientRequestHeaders clientRequestHeaders;
+    private WebClientRequestHeaders clientRequestHeaders;
 
     @BeforeEach
     public void beforeEach() {
-        clientRequestHeaders = new ClientRequestHeadersImpl();
+        clientRequestHeaders = new WebClientRequestHeadersImpl();
     }
 
     @Test

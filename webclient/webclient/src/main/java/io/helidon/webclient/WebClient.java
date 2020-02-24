@@ -33,8 +33,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaSupport;
-import io.helidon.webclient.spi.ClientService;
-import io.helidon.webclient.spi.ClientServiceProvider;
+import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webclient.spi.WebClientServiceProvider;
 
 /**
  * Base client which is used to perform requests.
@@ -64,14 +64,14 @@ public interface WebClient {
      *
      * @return client request builder
      */
-    ClientRequestBuilder put();
+    WebClientRequestBuilder put();
 
     /**
      * Create a request builder for a get method.
      *
      * @return client request builder
      */
-    ClientRequestBuilder get();
+    WebClientRequestBuilder get();
 
     /**
      * Create a request builder for a method based on method parameter.
@@ -79,7 +79,7 @@ public interface WebClient {
      * @param method request method
      * @return client request builder
      */
-    ClientRequestBuilder method(String method);
+    WebClientRequestBuilder method(String method);
 
     final class Builder implements io.helidon.common.Builder<WebClient> {
 
@@ -87,8 +87,8 @@ public interface WebClient {
             HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
         }
 
-        private final ArrayList<ClientServiceProvider> clientServices = new ArrayList<>();
-        private final ClientConfiguration.Builder configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
+        private final ArrayList<WebClientServiceProvider> clientServices = new ArrayList<>();
+        private final WebClientConfiguration.Builder configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
 
         private Config config = Config.empty();
 
@@ -100,15 +100,15 @@ public interface WebClient {
             return new NettyClient(this);
         }
 
-        public Builder register(ClientService service) {
-            clientServices.add(new ClientServiceProvider() {
+        public Builder register(WebClientService service) {
+            clientServices.add(new WebClientServiceProvider() {
                 @Override
                 public String configKey() {
                     return "ignored";
                 }
 
                 @Override
-                public ClientService create(Config config) {
+                public WebClientService create(Config config) {
                     return service;
                 }
             });
@@ -198,7 +198,7 @@ public interface WebClient {
             try {
                 return baseUri(url.toURI());
             } catch (URISyntaxException e) {
-                throw new ClientException("Failed to create URI from URL", e);
+                throw new WebClientException("Failed to create URI from URL", e);
             }
         }
 
@@ -212,14 +212,14 @@ public interface WebClient {
             return this;
         }
 
-        public ClientConfiguration configuration() {
+        public WebClientConfiguration configuration() {
             configuration.clientServices(services());
             return configuration.build();
         }
 
-        private List<ClientService> services() {
-            HelidonServiceLoader.Builder<ClientServiceProvider> services = HelidonServiceLoader
-                    .builder(ServiceLoader.load(ClientServiceProvider.class));
+        private List<WebClientService> services() {
+            HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
+                    .builder(ServiceLoader.load(WebClientServiceProvider.class));
             this.clientServices.forEach(services::addService);
             Config servicesConfig = config.get("services");
             servicesConfig.get("excludes").asList(String.class).orElse(Collections.emptyList())

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.webclient.spi.WebClientServiceProvider;
+
 /**
  * Helidon WebClient.
  */
@@ -39,6 +41,6 @@ module io.helidon.webclient {
     exports io.helidon.webclient;
     exports io.helidon.webclient.spi;
 
-    uses io.helidon.webclient.spi.ClientServiceProvider;
+    uses WebClientServiceProvider;
 
 }

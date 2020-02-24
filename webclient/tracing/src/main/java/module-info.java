@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import io.helidon.webclient.spi.WebClientServiceProvider;
+import io.helidon.webclient.tracing.WebClientTracingProvider;
+
 /**
  * Helidon WebClient Tracing.
  */
@@ -25,6 +28,6 @@ module io.helidon.webclient.tracing {
 
     exports io.helidon.webclient.tracing;
 
-    provides io.helidon.webclient.spi.ClientServiceProvider with io.helidon.webclient.tracing.ClientTracingProvider;
+    provides WebClientServiceProvider with WebClientTracingProvider;
 
 }

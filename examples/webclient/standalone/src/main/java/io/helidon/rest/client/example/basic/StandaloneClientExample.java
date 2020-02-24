@@ -68,34 +68,6 @@ public class StandaloneClientExample {
                 .context(context)
                 .build();
 
-        /*
-         * Each request is created using a builder like fluent api
-         */
-        //        CompletionStage<ClientResponse> response = client.put()
-        //                .uri("http://localhost:8080/greeting")
-        //                // parent span
-        //                .property(ClientTracing.PARENT_SPAN, spanContext)
-        //                // override tracing span
-        //                .property(ClientTracing.SPAN_NAME, "myspan")
-        //                // override metric name
-        //                .property(ClientMetrics.ENDPOINT_NAME, "aServiceName")
-        //                .property(ClientSecurity.PROVIDER_NAME, "http-basic-auth")
-        //                // override security
-        //                .property("io.helidon.security.outbound.username", "aUser")
-        //                // add custom header
-        //                .header("MY_HEADER", "Value")
-        //                // override proxy configuration of client
-        //                .proxy(Proxy.noProxy())
-        //                // send entity (may be a publisher of chunks)
-        //                // should support forms
-        //                .submit("New Hello");
-        //
-        //
-        //        response.thenApply(ClientResponse::status)
-        //                .thenAccept(System.out::println)
-        //                .toCompletableFuture()
-        //                .join();
-
         client.get()
                 .uri("https://www.google.com")
                 .request(String.class)

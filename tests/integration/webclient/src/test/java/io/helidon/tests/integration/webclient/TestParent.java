@@ -26,9 +26,8 @@ import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.webclient.Proxy;
 import io.helidon.webclient.WebClient;
-import io.helidon.webclient.spi.ClientService;
+import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -72,7 +71,7 @@ public class TestParent {
         }
     }
 
-    protected static WebClient createNewClient(ClientService... clientServices) {
+    protected static WebClient createNewClient(WebClientService... clientServices) {
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();

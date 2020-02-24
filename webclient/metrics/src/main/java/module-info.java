@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import io.helidon.webclient.metrics.WebClientMetricsProvider;
+import io.helidon.webclient.spi.WebClientServiceProvider;
+
 /**
  * Helidon WebClient Metrics.
  */
@@ -24,6 +27,6 @@ module io.helidon.webclient.metrics {
 
     exports io.helidon.webclient.metrics;
 
-    provides io.helidon.webclient.spi.ClientServiceProvider with io.helidon.webclient.metrics.ClientMetricsProvider;
+    provides WebClientServiceProvider with WebClientMetricsProvider;
 
 }

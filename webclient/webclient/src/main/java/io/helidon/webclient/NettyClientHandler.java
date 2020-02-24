@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.OriginThreadPublisher;
-import io.helidon.webclient.spi.ClientService;
+import io.helidon.webclient.spi.WebClientService;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -39,14 +39,14 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.AttributeKey;
 
-import static io.helidon.webclient.ClientRequestBuilderImpl.REQUEST;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
 
 /**
  * Created for each request/response interaction.
  */
 class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
-    private static final AttributeKey<ClientServiceResponse> SERVICE_RESPONSE = AttributeKey.valueOf("response");
+    private static final AttributeKey<WebClientServiceResponse> SERVICE_RESPONSE = AttributeKey.valueOf("response");
 
     private static final List<HttpInterceptor> HTTP_INTERCEPTORS = new ArrayList<>();
 
@@ -54,9 +54,9 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         HTTP_INTERCEPTORS.add(new RedirectInterceptor());
     }
 
-    private final ClientResponseImpl.Builder clientResponse;
-    private final CompletableFuture<ClientResponse> responseFuture;
-    private final CompletableFuture<ClientServiceResponse> requestComplete;
+    private final WebClientResponseImpl.Builder clientResponse;
+    private final CompletableFuture<WebClientResponse> responseFuture;
+    private final CompletableFuture<WebClientServiceResponse> requestComplete;
     private HttpResponsePublisher publisher;
 
     /**
@@ -65,11 +65,11 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
      * @param responseFuture  response future
      * @param requestComplete request complete future
      */
-    NettyClientHandler(CompletableFuture<ClientResponse> responseFuture,
-                       CompletableFuture<ClientServiceResponse> requestComplete) {
+    NettyClientHandler(CompletableFuture<WebClientResponse> responseFuture,
+                       CompletableFuture<WebClientServiceResponse> requestComplete) {
         this.responseFuture = responseFuture;
         this.requestComplete = requestComplete;
-        this.clientResponse = ClientResponseImpl.builder();
+        this.clientResponse = WebClientResponseImpl.builder();
     }
 
     @Override
@@ -85,7 +85,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         if (msg instanceof HttpResponse) {
             ctx.channel().config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
-            ClientRequestBuilder.ClientRequest clientRequest = ctx.channel().attr(REQUEST).get();
+            WebClientRequestBuilder.ClientRequest clientRequest = ctx.channel().attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
 
             this.publisher = new HttpResponsePublisher(ctx);
@@ -114,20 +114,20 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
             // we got a response, we can safely complete the future
             // all errors are now fed only to the publisher
-            ClientResponse clientResponse = this.clientResponse.build();
+            WebClientResponse clientResponse = this.clientResponse.build();
             requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
                                                      clientResponse.headers().toMap());
 
-            ClientServiceResponse clientServiceResponse = new ClientServiceResponseImpl(requestConfiguration.context().get(),
-                                                                                        clientResponse.headers(),
-                                                                                        clientResponse.status());
+            WebClientServiceResponse clientServiceResponse = new WebClientServiceResponseImpl(requestConfiguration.context().get(),
+                                                                                              clientResponse.headers(),
+                                                                                              clientResponse.status());
 
             ctx.channel().attr(SERVICE_RESPONSE).set(clientServiceResponse);
 
-            List<ClientService> services = requestConfiguration.services();
-            CompletionStage<ClientServiceResponse> csr = CompletableFuture.completedFuture(clientServiceResponse);
+            List<WebClientService> services = requestConfiguration.services();
+            CompletionStage<WebClientServiceResponse> csr = CompletableFuture.completedFuture(clientServiceResponse);
 
-            for (ClientService service : services) {
+            for (WebClientService service : services) {
                 csr = csr.thenCompose(clientSerResponse -> service.response(clientRequest, clientSerResponse));
             }
 
@@ -141,7 +141,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (msg instanceof LastHttpContent) {
-            ClientServiceResponse clientServiceResponse = ctx.channel().attr(SERVICE_RESPONSE).get();
+            WebClientServiceResponse clientServiceResponse = ctx.channel().attr(SERVICE_RESPONSE).get();
             requestComplete.complete(clientServiceResponse);
 
             publisher.complete();

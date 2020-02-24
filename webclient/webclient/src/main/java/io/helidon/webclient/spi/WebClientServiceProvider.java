@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.webclient.spi;
 
-import io.helidon.webclient.security.WebClientSecurityProvider;
-import io.helidon.webclient.spi.WebClientServiceProvider;
+import io.helidon.config.Config;
 
 /**
- * Helidon WebClient Security.
+ * Java service loader interface.
  */
-module io.helidon.webclient.security {
-    requires java.logging;
+public interface WebClientServiceProvider {
+    /**
+     * Config key expected under {@code client.services.config}.
+     *
+     * @return name of the configuration node of this service
+     */
+    String configKey();
 
-    requires io.helidon.security;
-    requires io.helidon.webclient;
-
-    exports io.helidon.webclient.security;
-
-    provides WebClientServiceProvider with WebClientSecurityProvider;
+    /**
+     * Create a new service instance based on configuration.
+     *
+     * @param config configuration of this service
+     * @return a new client service instance
+     */
+    WebClientService create(Config config);
 }

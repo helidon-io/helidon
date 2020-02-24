@@ -69,7 +69,7 @@ public final class FileSubscriber implements Flow.Subscriber<DataChunk> {
     public static FileSubscriber create(Path filePath) {
         // make sure we can write the path
         if (Files.exists(filePath)) {
-            throw new ClientException("Path " + filePath.toAbsolutePath() + " already exists, cannot download into it");
+            throw new WebClientException("Path " + filePath.toAbsolutePath() + " already exists, cannot download into it");
         }
 
         try {
@@ -77,7 +77,7 @@ public final class FileSubscriber implements Flow.Subscriber<DataChunk> {
             FileChannel channel = FileChannel.open(tempPath, StandardOpenOption.WRITE);
             return new FileSubscriber(filePath, tempPath, channel);
         } catch (IOException e) {
-            throw new ClientException("Failed to open temporary file", e);
+            throw new WebClientException("Failed to open temporary file", e);
         }
     }
 
@@ -94,7 +94,7 @@ public final class FileSubscriber implements Flow.Subscriber<DataChunk> {
 
             subscription.request(1);
         } catch (IOException e) {
-            throw new ClientException("Failed to write data to temporary file: " + tempPath.toAbsolutePath(), e);
+            throw new WebClientException("Failed to write data to temporary file: " + tempPath.toAbsolutePath(), e);
         } finally {
             item.release();
         }
@@ -118,7 +118,7 @@ public final class FileSubscriber implements Flow.Subscriber<DataChunk> {
             Files.move(tempPath, filePath);
             resultFuture.complete(filePath);
         } catch (IOException e) {
-            throw new ClientException("Failed to move file from temp to final. Temp: " + tempPath
+            throw new WebClientException("Failed to move file from temp to final. Temp: " + tempPath
                     .toAbsolutePath() + ", final: " + filePath.toAbsolutePath(), e);
         }
     }

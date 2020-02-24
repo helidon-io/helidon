@@ -13,20 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.webclient.metrics;
 
-import io.helidon.webclient.security.WebClientSecurityProvider;
+import io.helidon.config.Config;
+import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
 /**
- * Helidon WebClient Security.
+ * Service for web client metrics.
  */
-module io.helidon.webclient.security {
-    requires java.logging;
+public class WebClientMetricsProvider implements WebClientServiceProvider {
 
-    requires io.helidon.security;
-    requires io.helidon.webclient;
+    @Override
+    public String configKey() {
+        return "metrics";
+    }
 
-    exports io.helidon.webclient.security;
+    @Override
+    public WebClientService create(Config config) {
+        return WebClientMetrics.create(config);
+    }
 
-    provides WebClientServiceProvider with WebClientSecurityProvider;
 }

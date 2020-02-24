@@ -22,8 +22,8 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Http;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.WebClient;
-import io.helidon.webclient.metrics.ClientMetrics;
-import io.helidon.webclient.spi.ClientService;
+import io.helidon.webclient.metrics.WebClientMetrics;
+import io.helidon.webclient.spi.WebClientService;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
@@ -36,7 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests for {@link ClientMetrics}.
+ * Tests for {@link WebClientMetrics}.
  */
 public class MetricsTest extends TestParent {
 
@@ -44,16 +44,16 @@ public class MetricsTest extends TestParent {
 
     @Test
     public void testCounter() throws Exception {
-        ClientService serviceCounterAll = ClientMetrics.counter().nameFormat("counter.%1$s.%2$s").build();
-        ClientService serviceCounterGet = ClientMetrics.counter()
+        WebClientService serviceCounterAll = WebClientMetrics.counter().nameFormat("counter.%1$s.%2$s").build();
+        WebClientService serviceCounterGet = WebClientMetrics.counter()
                 .methods(Http.Method.GET)
                 .nameFormat("counter.get.%1$s.%2$s")
                 .build();
-        ClientService serviceCounterError = ClientMetrics.counter()
+        WebClientService serviceCounterError = WebClientMetrics.counter()
                 .nameFormat("counter.error.%1$s.%2$s")
                 .success(false)
                 .build();
-        ClientService serviceCounterSuccess = ClientMetrics.counter()
+        WebClientService serviceCounterSuccess = WebClientMetrics.counter()
                 .nameFormat("counter.success.%1$s.%2$s")
                 .errors(false)
                 .build();
@@ -97,16 +97,16 @@ public class MetricsTest extends TestParent {
 
     @Test
     public void testMeter() throws Exception {
-        ClientService serviceMeterAll = ClientMetrics.meter().nameFormat("meter.%1$s.%2$s").build();
-        ClientService serviceMeterGet = ClientMetrics.meter()
+        WebClientService serviceMeterAll = WebClientMetrics.meter().nameFormat("meter.%1$s.%2$s").build();
+        WebClientService serviceMeterGet = WebClientMetrics.meter()
                 .methods(Http.Method.GET)
                 .nameFormat("meter.get.%1$s.%2$s")
                 .build();
-        ClientService serviceMeterError = ClientMetrics.meter()
+        WebClientService serviceMeterError = WebClientMetrics.meter()
                 .nameFormat("meter.error.%1$s.%2$s")
                 .success(false)
                 .build();
-        ClientService serviceMeterSuccess = ClientMetrics.meter()
+        WebClientService serviceMeterSuccess = WebClientMetrics.meter()
                 .nameFormat("meter.success.%1$s.%2$s")
                 .errors(false)
                 .build();
@@ -153,17 +153,17 @@ public class MetricsTest extends TestParent {
         ConcurrentGauge progressAll = FACTORY.concurrentGauge("gauge.GET.localhost");
         ConcurrentGauge progressPut = FACTORY.concurrentGauge("gauge.put.PUT.localhost");
         ConcurrentGauge progressGet = FACTORY.concurrentGauge("gauge.get.GET.localhost");
-        ClientService inProgressAll = ClientMetrics.gaugeInProgress().nameFormat("gauge.%1$s.%2$s").build();
-        ClientService inProgressPut = ClientMetrics.gaugeInProgress()
+        WebClientService inProgressAll = WebClientMetrics.gaugeInProgress().nameFormat("gauge.%1$s.%2$s").build();
+        WebClientService inProgressPut = WebClientMetrics.gaugeInProgress()
                 .methods(Http.Method.PUT)
                 .nameFormat("gauge.put.%1$s.%2$s")
                 .build();
-        ClientService inProgressGet = ClientMetrics.gaugeInProgress()
+        WebClientService inProgressGet = WebClientMetrics.gaugeInProgress()
                 .methods(Http.Method.GET)
                 .nameFormat("gauge.get.%1$s.%2$s")
                 .build();
 
-        ClientService clientService = request -> {
+        WebClientService clientService = request -> {
             request.whenSent()
                     .thenAccept(clientServiceRequest -> {
                         assertThat(progressAll.getCount(), is(1L));

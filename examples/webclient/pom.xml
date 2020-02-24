@@ -26,7 +26,7 @@
     </parent>
 
     <groupId>io.helidon.examples.webclient</groupId>
-    <artifactId>helidon-examples-webclient</artifactId>
+    <artifactId>helidon-examples-webclient-project</artifactId>
 
     <packaging>pom</packaging>
 

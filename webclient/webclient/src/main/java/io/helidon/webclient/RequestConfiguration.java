@@ -23,16 +23,16 @@ import java.util.Set;
 
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyWriter;
-import io.helidon.webclient.spi.ClientService;
+import io.helidon.webclient.spi.WebClientService;
 
 /**
  * Configuration of specific request.
  */
-class RequestConfiguration extends ClientConfiguration {
+class RequestConfiguration extends WebClientConfiguration {
 
     private final URI requestURI;
-    private final ClientServiceRequest clientServiceRequest;
-    private final List<ClientService> services;
+    private final WebClientServiceRequest clientServiceRequest;
+    private final List<WebClientService> services;
     private final Set<MessageBodyReader<?>> requestReaders;
     private final Set<MessageBodyWriter<?>> requestWriters;
 
@@ -49,11 +49,11 @@ class RequestConfiguration extends ClientConfiguration {
         return requestURI;
     }
 
-    ClientServiceRequest clientServiceRequest() {
+    WebClientServiceRequest clientServiceRequest() {
         return clientServiceRequest;
     }
 
-    List<ClientService> services() {
+    List<WebClientService> services() {
         return services;
     }
 
@@ -69,11 +69,11 @@ class RequestConfiguration extends ClientConfiguration {
         return new Builder(requestURI);
     }
 
-    static class Builder extends ClientConfiguration.Builder<Builder, RequestConfiguration> {
+    static class Builder extends WebClientConfiguration.Builder<Builder, RequestConfiguration> {
 
-        private ClientServiceRequest clientServiceRequest;
+        private WebClientServiceRequest clientServiceRequest;
         private URI requestURI;
-        private List<ClientService> services = new ArrayList<>();
+        private List<WebClientService> services = new ArrayList<>();
         private Set<MessageBodyReader<?>> requestReaders;
         private Set<MessageBodyWriter<?>> messageBodyWriters;
 
@@ -81,12 +81,12 @@ class RequestConfiguration extends ClientConfiguration {
             this.requestURI = requestURI;
         }
 
-        Builder clientServiceRequest(ClientServiceRequest clientServiceRequest) {
+        Builder clientServiceRequest(WebClientServiceRequest clientServiceRequest) {
             this.clientServiceRequest = clientServiceRequest;
             return this;
         }
 
-        Builder services(List<ClientService> services) {
+        Builder services(List<WebClientService> services) {
             this.services = Collections.unmodifiableList(services);
             return this;
         }
