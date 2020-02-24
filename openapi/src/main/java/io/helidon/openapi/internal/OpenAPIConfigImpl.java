@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     private final Set<String> servers;
     private final Boolean scanDependenciesDisable = Boolean.TRUE;
     private final Set<String> scanDependenciesJars = Collections.emptySet();
+    private final boolean schemaReferencesEnable;
+    private final String customSchemaRegistryClass;
+    private final Boolean applicationPathDisable;
 
     private OpenAPIConfigImpl(Builder builder) {
         modelReader = builder.modelReader;
@@ -61,6 +64,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         pathServers = builder.pathServers;
         servers = new HashSet<>(builder.servers);
         scanDisable = builder.scanDisable;
+        schemaReferencesEnable = builder.schemaReferencesEnable;
+        customSchemaRegistryClass = builder.customSchemaRegistryClass;
+        applicationPathDisable = builder.applicationPathDisable;
     }
 
     /**
@@ -132,6 +138,21 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         return scanDependenciesJars;
     }
 
+    @Override
+    public boolean schemaReferencesEnable() {
+        return schemaReferencesEnable;
+    }
+
+    @Override
+    public String customSchemaRegistryClass() {
+        return customSchemaRegistryClass;
+    }
+
+    @Override
+    public boolean applicationPathDisable() {
+        return applicationPathDisable;
+    }
+
     private static <T, U> Set<U> chooseEntry(Map<T, Set<U>> map, T key) {
         if (map.containsKey(key)) {
             return map.get(key);
@@ -167,7 +188,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         static final String SERVERS = CONFIG_PREFIX + "servers";
         static final String SERVERS_PATH = CONFIG_PREFIX + "servers.path";
         static final String SERVERS_OPERATION = CONFIG_PREFIX + "servers.operation";
-        static final String SCHEMA_REFERENCES_ENABLED = CONFIG_PREFIX + "schema-references.enable";
+        static final String SCHEMA_REFERENCES_ENABLE = CONFIG_PREFIX + "schema-references.enable";
+        static final String CUSTOM_SCHEMA_REGISTRY_CLASS = CONFIG_PREFIX + "custom-schema-registry.class";
+        static final String APPLICATION_PATH_DISABLE = CONFIG_PREFIX + "application-path.disable";
 
         static final List<String> CONFIG_KEYS = Arrays.asList(new String[] {MODEL_READER, FILTER, SERVERS});
 
@@ -177,6 +200,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         private final Map<String, Set<String>> pathServers = new HashMap<>();
         private final Set<String> servers = new HashSet<>();
         private boolean scanDisable = true;
+        private boolean schemaReferencesEnable;
+        private String customSchemaRegistryClass;
+        private Boolean applicationPathDisable;
 
         private Builder() {
         }
@@ -199,6 +225,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
             stringFromConfig(config, SERVERS, this::servers);
             listFromConfig(config, SERVERS_PATH, this::pathServers);
             listFromConfig(config, SERVERS_OPERATION, this::operationServers);
+            booleanFromConfig(config, SCHEMA_REFERENCES_ENABLE, this::schemaReferencesEnable);
+            stringFromConfig(config, CUSTOM_SCHEMA_REGISTRY_CLASS, this::customSchemaRegistryClass);
+            booleanFromConfig(config, APPLICATION_PATH_DISABLE, this::applicationPathDisable);
             return this;
         }
 
@@ -305,6 +334,38 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          */
         public Builder scanDisable(boolean value) {
             scanDisable = value;
+            return this;
+        }
+
+        /**
+         * Sets whether schema references are enabled.
+         *
+         * @param value new setting for schema references enabled
+         * @return updated builder
+         */
+        public Builder schemaReferencesEnable(Boolean value) {
+            schemaReferencesEnable = value;
+            return this;
+        }
+
+        /**
+         * Sets the custom schema registry class.
+         *
+         * @param className class to be assigned
+         * @return updated builder
+         */
+        public Builder customSchemaRegistryClass(String className) {
+            customSchemaRegistryClass = className;
+            return this;
+        }
+
+        /**
+         * Sets whether the app path search should be disabled.
+         * @param value true/false
+         * @return updated builder
+         */
+        public Builder applicationPathDisable(Boolean value) {
+            applicationPathDisable = value;
             return this;
         }
 

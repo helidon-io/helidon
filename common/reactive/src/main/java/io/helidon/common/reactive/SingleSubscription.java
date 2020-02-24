@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,37 +17,46 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Single fixed item subscription.
+ *
+ * {@code this} represents the current state changed atomically upon interacting with the Subscription interface.
  */
-final class SingleSubscription<T> implements Subscription {
+final class SingleSubscription<T> extends AtomicInteger implements Subscription {
 
     private final T value;
     private final Subscriber<? super T> subscriber;
-    private final AtomicBoolean delivered;
-    private final AtomicBoolean canceled;
+
+    static final int FRESH = 0;
+    static final int REQUESTED = 1;
+    static final int COMPLETED = 2;
+    static final int CANCELED = 3;
 
     SingleSubscription(T value, Subscriber<? super T> subscriber) {
+        super(FRESH);
         this.value = value;
         this.subscriber = subscriber;
-        this.delivered = new AtomicBoolean(false);
-        this.canceled = new AtomicBoolean(false);
     }
 
     @Override
     public void request(long n) {
-        if (n >= 0 && !canceled.get()) {
-            if (delivered.compareAndSet(false, true)) {
+        if (n <= 0L) {
+            cancel();
+            subscriber.onError(new IllegalArgumentException("Rule §3.9 violated: non-positive requests are forbidden."));
+        } else {
+            if (compareAndSet(FRESH, REQUESTED)) {
                 subscriber.onNext(value);
-                subscriber.onComplete();
+                if (compareAndSet(REQUESTED, COMPLETED)) {
+                    subscriber.onComplete();
+                }
             }
         }
     }
 
     @Override
     public void cancel() {
-        canceled.set(true);
+        set(CANCELED);
     }
 }

@@ -17,10 +17,11 @@
 
 package io.helidon.common.reactive;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 /**
@@ -28,11 +29,15 @@ import java.util.function.Function;
  *
  * @param <T> item type
  */
-public class MultiOnErrorResumeProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiOnErrorResumeProcessor<T> implements Flow.Processor<T, T>, Flow.Subscription, Multi<T> {
 
-    private Function<Throwable, T> supplier;
     private Function<Throwable, Flow.Publisher<T>> publisherSupplier;
-    private AtomicReference<Optional<Flow.Subscription>> onErrorPublisherSubscription = new AtomicReference<>(Optional.empty());
+    private Flow.Subscription subscription;
+    private Flow.Subscriber<? super T> subscriber;
+    private final ReentrantLock subscriptionLock = new ReentrantLock();
+    private RequestedCounter requestedCounter = new RequestedCounter();
+    private Optional<Throwable> error = Optional.empty();
+    private boolean done;
 
     private MultiOnErrorResumeProcessor() {
     }
@@ -47,7 +52,7 @@ public class MultiOnErrorResumeProcessor<T> extends BufferedProcessor<T, T> impl
     @SuppressWarnings("unchecked")
     public static <T> MultiOnErrorResumeProcessor<T> resume(Function<Throwable, ?> supplier) {
         MultiOnErrorResumeProcessor<T> processor = new MultiOnErrorResumeProcessor<>();
-        processor.supplier = (Function<Throwable, T>) supplier;
+        processor.publisherSupplier = t -> new MultiFromIterable<>(List.of(((Function<Throwable, T>) supplier).apply(t)));
         return processor;
     }
 
@@ -66,65 +71,119 @@ public class MultiOnErrorResumeProcessor<T> extends BufferedProcessor<T, T> impl
         return processor;
     }
 
+
     @Override
-    protected void tryRequest(Flow.Subscription subscription) {
-        super.tryRequest(onErrorPublisherSubscription.get()
-                .orElse(subscription));
+    public void subscribe(Flow.Subscriber<? super T> subscriber) {
+        subscriptionLock(() -> {
+            this.subscriber = SequentialSubscriber.create(subscriber);
+            if (Objects.nonNull(this.subscription)) {
+                this.subscriber.onSubscribe(this);
+                if (done) {
+                    tryComplete();
+                }
+            }
+        });
+        error.ifPresent(this::fail);
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        super.submit(item);
+    public void onSubscribe(Flow.Subscription subscription) {
+        subscriptionLock(() -> {
+            this.subscription = subscription;
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onSubscribe(this);
+            }
+        });
+    }
+
+    @Override
+    public void request(long n) {
+        requestedCounter.increment(n, this::onError);
+        subscriptionLock(() -> subscription.request(n));
+    }
+
+    @Override
+    public void cancel() {
+        subscriptionLock(() -> subscription.cancel());
+    }
+
+    @Override
+    public void onNext(T item) {
+        requestedCounter.tryDecrement();
+        subscriptionLock(() -> subscriber.onNext(item));
     }
 
     @Override
     public void onError(Throwable ex) {
         Objects.requireNonNull(ex);
         try {
-            if (Objects.nonNull(supplier)) {
+            publisherSupplier.apply(ex).subscribe(SequentialSubscriber.create(new Flow.Subscriber<T>() {
 
-                submit(supplier.apply(ex));
-                tryComplete();
-
-            } else {
-                publisherSupplier.apply(ex).subscribe(new Flow.Subscriber<T>() {
-
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        Objects.requireNonNull(subscription);
-                        onErrorPublisherSubscription.set(Optional.of(subscription));
-                        if (getRequestedCounter().get() > 0) {
-                            subscription.request(getRequestedCounter().get());
+                @Override
+                public void onSubscribe(Flow.Subscription s) {
+                    Objects.requireNonNull(s);
+                    subscriptionLock(() -> subscription = s);
+                    try {
+                        requestedCounter.lock();
+                        if (requestedCounter.get() > 0) {
+                            s.request(requestedCounter.get());
                         }
+                    } finally {
+                        requestedCounter.unlock();
                     }
+                }
 
-                    @Override
-                    public void onNext(T t) {
-                        submit(t);
-                    }
+                @Override
+                public void onNext(T t) {
+                    subscriptionLock(() -> subscriber.onNext(t));
+                }
 
-                    @Override
-                    public void onError(Throwable t) {
-                        Objects.requireNonNull(t);
-                        fail(t);
-                    }
+                @Override
+                public void onError(Throwable t) {
+                    fail(t);
+                }
 
-                    @Override
-                    public void onComplete() {
-                        MultiOnErrorResumeProcessor.this.onComplete();
-                        onErrorPublisherSubscription.set(Optional.empty());
-                    }
-                });
-            }
+                @Override
+                public void onComplete() {
+                    MultiOnErrorResumeProcessor.this.onComplete();
+                }
+            }));
+
         } catch (Throwable t) {
-            onErrorPublisherSubscription.get().ifPresent(Flow.Subscription::cancel);
             fail(t);
         }
     }
 
+    private void fail(Throwable t) {
+        subscriptionLock(() -> {
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onError(t);
+            } else {
+                this.error = Optional.of(t);
+            }
+        });
+    }
+
     @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        subscription.cancel();
-        onErrorPublisherSubscription.get().ifPresent(Flow.Subscription::cancel);
+    public void onComplete() {
+        done = true;
+        tryComplete();
+    }
+
+    private void tryComplete() {
+        subscriptionLock(() -> {
+            if (Objects.nonNull(subscriber)) {
+                subscriber.onComplete();
+            }
+        });
+    }
+
+    private void subscriptionLock(Runnable guardedBlock) {
+        try {
+            subscriptionLock.lock();
+            guardedBlock.run();
+        } finally {
+            subscriptionLock.unlock();
+        }
     }
 }

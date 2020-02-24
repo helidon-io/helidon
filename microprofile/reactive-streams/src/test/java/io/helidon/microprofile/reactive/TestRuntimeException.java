@@ -15,19 +15,12 @@
  *
  */
 
-package io.helidon.common.reactive;
+package io.helidon.microprofile.reactive;
 
-/**
- * Raised when back-pressure buffer overflows.
- */
-public class BackPressureOverflowException extends Exception {
+public class TestRuntimeException extends RuntimeException {
+    public static final String TEST_MSG = TestRuntimeException.class.getSimpleName();
 
-    /**
-     * Create new {@link BackPressureOverflowException}.
-     *
-     * @param limit Overflown limit
-     */
-    public BackPressureOverflowException(int limit) {
-        super(String.format("Buffer limit %d exceeded.", limit));
+    public TestRuntimeException() {
+        super(TEST_MSG);
     }
 }
