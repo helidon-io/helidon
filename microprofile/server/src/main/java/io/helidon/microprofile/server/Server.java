@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.Provider;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -160,6 +161,7 @@ public interface Server {
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
+        private final List<Class<?>> providerClasses = new LinkedList<>();
         private final List<JaxRsApplication> applications = new LinkedList<>();
         private HelidonServiceLoader.Builder<MpService> extensionBuilder;
         private ResourceConfig resourceConfig;
@@ -178,11 +180,13 @@ public interface Server {
             extensionBuilder = HelidonServiceLoader.builder(ServiceLoader.load(MpService.class));
         }
 
-        private static ResourceConfig configForResourceClasses(List<Class<?>> resourceClasses) {
+        private static ResourceConfig configForClasses(List<Class<?>> resourceClasses, List<Class<?>> providerClasses) {
             return ResourceConfig.forApplication(new Application() {
                 @Override
                 public Set<Class<?>> getClasses() {
-                    return new HashSet<>(resourceClasses);
+                    HashSet<Class<?>> classes = new HashSet<>(resourceClasses);
+                    classes.addAll(providerClasses);
+                    return classes;
                 }
             });
         }
@@ -241,7 +245,7 @@ public interface Server {
 
             if (applications.isEmpty()) {
                 if (!resourceClasses.isEmpty()) {
-                    resourceConfig = configForResourceClasses(resourceClasses);
+                    resourceConfig = configForClasses(resourceClasses, providerClasses);
                 }
                 if (null == resourceConfig) {
                     resourcesFromContainer();
@@ -251,7 +255,7 @@ public interface Server {
                     applications.add(JaxRsApplication.create(resourceConfig));
                 }
             } else if (!resourceClasses.isEmpty()) {
-                applications.add(JaxRsApplication.create(configForResourceClasses(resourceClasses)));
+                applications.add(JaxRsApplication.create(configForClasses(resourceClasses, providerClasses)));
             }
 
             STARTUP_LOGGER.finest("Jersey resource configuration");
@@ -281,10 +285,11 @@ public interface Server {
 
             if (applications.isEmpty()) {
                 List<Class<?>> resourceClasses = extension.getResourceClasses();
+                List<Class<?>> providerClasses = extension.getProviderClasses();
                 if (resourceClasses.isEmpty()) {
                     LOGGER.warning("Failed to find JAX-RS resource to use");
                 }
-                resourceConfig = configForResourceClasses(resourceClasses);
+                resourceConfig = configForClasses(resourceClasses, providerClasses);
             } else {
                 applications.forEach(this::addApplication);
             }
@@ -315,7 +320,7 @@ public interface Server {
         private SeContainer createContainer(ClassLoader classLoader) {
             // not in CDI
             Weld initializer = new Weld();
-            initializer.addBeanDefiningAnnotations(Path.class);
+            initializer.addBeanDefiningAnnotations(Path.class, Provider.class);
             initializer.setClassLoader(classLoader);
             Map<String, Object> props = new HashMap<>(config.helidonConfig()
                                                               .get("cdi")
@@ -326,6 +331,10 @@ public interface Server {
 
             // add resource classes explicitly configured without CDI annotations
             this.resourceClasses.stream()
+                    .filter(this::notACdiBean)
+                    .forEach(initializer::addBeanClasses);
+            // add provider classes explicitly configured without CDI annotations
+            this.providerClasses.stream()
                     .filter(this::notACdiBean)
                     .forEach(initializer::addBeanClasses);
 
@@ -504,10 +513,10 @@ public interface Server {
          * registering one application under root ("/") and another under "/app1" would not work as expected).
          *
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
-         * <li>All Applications and Application classes</li>
-         * <li>Resource classes</li>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -526,10 +535,10 @@ public interface Server {
          * registering one application under root ("/") and another under "/app1" would not work as expected).
          *
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
-         * <li>All Applications and Application classes</li>
-         * <li>Resource classes</li>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -548,11 +557,10 @@ public interface Server {
         /**
          * JAX-RS application class to use.
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
-         * <li>Application class</li>
-         * <li>Application</li>
-         * <li>Resource classes</li>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -567,10 +575,10 @@ public interface Server {
         /**
          * JAX-RS application class to use.
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
          * <li>Applications and application classes</li>
-         * <li>Resource classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -589,10 +597,10 @@ public interface Server {
         /**
          * Add a JAX-RS resource class to use.
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
          * <li>Applications and application classes</li>
-         * <li>Resource classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -601,6 +609,24 @@ public interface Server {
          */
         public Builder addResourceClass(Class<?> resource) {
             this.resourceClasses.add(resource);
+            return this;
+        }
+
+        /**
+         * Add a JAX-RS provider class to use.
+         * <p>
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
+         * <ul>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
+         * <li>Resource config</li>
+         * </ul>
+         *
+         * @param provider provider class to add, list of these classes is used to bootstrap Jersey
+         * @return modified builder
+         */
+        public Builder addProviderClass(Class<?> provider) {
+            this.providerClasses.add(provider);
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.Provider;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.config.MpConfig;
@@ -85,6 +86,7 @@ class ServerRunner {
         // first create classes end get all applications
         List<Class<?>> applicationClasses = new LinkedList<>();
         List<Class<?>> resourceClasses = new LinkedList<>();
+        List<Class<?>> providerClasses = new LinkedList<>();
 
         for (String className : classNames) {
             try {
@@ -96,6 +98,9 @@ class ServerRunner {
                 } else if (c.isAnnotationPresent(Path.class) && !c.isInterface()) {
                     LOGGER.finest(() -> "Adding resource class: " + c.getName());
                     resourceClasses.add(c);
+                } else if (c.isAnnotationPresent(Provider.class) && !c.isInterface()) {
+                    LOGGER.finest(() -> "Adding provider class: " + c.getName());
+                    providerClasses.add(c);
                 } else {
                     LOGGER.finest(() -> "Class " + c.getName() + " is neither annotated with Path nor an application.");
                 }
@@ -114,6 +119,9 @@ class ServerRunner {
             if (applicationClasses.isEmpty()) {
                 for (Class<?> resourceClass : resourceClasses) {
                     builder.addResourceClass(resourceClass);
+                }
+                for (Class<?> providerClass : providerClasses) {
+                    builder.addProviderClass(providerClass);
                 }
             }
         }

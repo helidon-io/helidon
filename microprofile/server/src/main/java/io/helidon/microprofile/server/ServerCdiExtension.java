@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.Provider;
 
 /**
  * Extension to gather JAX-RS application or JAX-RS resource classes
@@ -33,6 +34,7 @@ import javax.ws.rs.core.Application;
  */
 public class ServerCdiExtension implements Extension {
     private final List<Class<?>> resourceClasses = new LinkedList<>();
+    private final List<Class<?>> providerClasses = new LinkedList<>();
     private final List<Class<? extends Application>> applications = new LinkedList<>();
 
     /**
@@ -53,9 +55,12 @@ public class ServerCdiExtension implements Extension {
         if (Application.class.isAssignableFrom(theClass)) {
             this.applications.add((Class<? extends Application>) theClass);
         } else {
-            // still may be a jax-rs resource (with no application attached)
+            // still may be a jax-rs resource or provider (with no application attached)
             if (at.isAnnotationPresent(Path.class)) {
                 this.resourceClasses.add(theClass);
+            }
+            if (at.isAnnotationPresent(Provider.class)) {
+                this.providerClasses.add(theClass);
             }
         }
 
@@ -67,5 +72,9 @@ public class ServerCdiExtension implements Extension {
 
     List<Class<?>> getResourceClasses() {
         return resourceClasses;
+    }
+
+    List<Class<?>> getProviderClasses() {
+        return providerClasses;
     }
 }
