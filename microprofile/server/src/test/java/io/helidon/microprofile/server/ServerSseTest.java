@@ -62,6 +62,7 @@ class ServerSseTest {
     @Test
     void testSse() throws Exception {
         Server server = Server.builder()
+                .port(0)
                 .addApplication("/", new TestApplication1())
                 .build();
         server.start();

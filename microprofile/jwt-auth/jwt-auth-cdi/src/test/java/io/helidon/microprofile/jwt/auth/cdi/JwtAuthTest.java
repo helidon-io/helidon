@@ -68,7 +68,10 @@ class JwtAuthTest {
 
     @BeforeAll
     static void startServer() {
-        server = Server.create(MyApp.class);
+        server = Server.builder()
+                .port(0)
+                .addApplication(MyApp.class)
+                .build();
         server.start();
 
         client = ClientBuilder.newClient();

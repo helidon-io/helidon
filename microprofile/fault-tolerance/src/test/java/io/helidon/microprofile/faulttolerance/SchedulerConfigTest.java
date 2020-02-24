@@ -38,7 +38,7 @@ class SchedulerConfigTest {
     void testNonDefaultConfig() {
         Server server = null;
         try {
-            server = Server.builder().port(-1).build();
+            server = Server.builder().port(0).build();
             server.start();
 
             CommandScheduler commandScheduler = CommandScheduler.create(8);

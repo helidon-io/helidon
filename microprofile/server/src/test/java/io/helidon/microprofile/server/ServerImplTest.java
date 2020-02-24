@@ -88,6 +88,7 @@ class ServerImplTest {
     @Test
     void testTwoApps() {
         Server server = Server.builder()
+                .port(0)
                 .addApplication("/app1", new TestApplication1())
                 .addApplication("/app2/", new TestApplication2())       // trailing slash ignored
                 .build();

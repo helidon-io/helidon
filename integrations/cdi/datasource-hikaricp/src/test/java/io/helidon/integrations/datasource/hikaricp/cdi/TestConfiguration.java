@@ -52,7 +52,7 @@ class TestConfiguration {
     @BeforeEach
     void startServer() {
         this.stopServer();
-        final Server.Builder builder = Server.builder();
+        final Server.Builder builder = Server.builder().port(0);
         assertNotNull(builder);
         // The Helidon MicroProfile server implementation uses
         // ConfigProviderResolver#getConfig(ClassLoader) directly

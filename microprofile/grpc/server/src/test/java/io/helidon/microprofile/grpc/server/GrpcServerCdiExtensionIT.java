@@ -58,7 +58,7 @@ public class GrpcServerCdiExtensionIT {
 
     @BeforeAll
     public static void startServer() {
-        server = Server.create().start();
+        server = Server.builder().port(0).build().start();
         beanManager = server.cdiContainer().getBeanManager();
     }
 

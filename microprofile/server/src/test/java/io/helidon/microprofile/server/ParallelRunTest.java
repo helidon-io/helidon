@@ -54,7 +54,7 @@ class ParallelRunTest {
 
     @Test
     void testParallelRunDisabled() {
-        Server server2 = Server.builder().port(-1).build();
+        Server server2 = Server.builder().port(0).build();
         assertThrows(IllegalStateException.class, server2::start);
     }
 

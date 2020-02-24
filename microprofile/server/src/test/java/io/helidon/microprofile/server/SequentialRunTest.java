@@ -24,7 +24,7 @@ public class SequentialRunTest {
     @Test
     void testSequentialRun() {
         // sequential must always work, as we do not compete for resources (even on same port)
-        Server server1 = Server.builder().port(-1).build();
+        Server server1 = Server.builder().port(0).build();
         server1.start();
         int port = server1.port();
         server1.stop();
