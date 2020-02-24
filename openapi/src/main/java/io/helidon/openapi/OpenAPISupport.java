@@ -110,17 +110,17 @@ public class OpenAPISupport implements Service {
 
     private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
 
+    private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = null;
+
     private final String webContext;
 
     private final OpenAPI model;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
-    private final SnakeYAMLParserHelper<ExpandedTypeDescription> helper;
     private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
 
     private OpenAPISupport(Builder builder) {
-        helper = builder.helper;
-        adjustTypeDescriptions(helper.types());
-        implsToTypes = buildImplsToTypes(helper);
+        adjustTypeDescriptions(helper().types());
+        implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
         model = prepareModel(builder.openAPIConfig(), builder.indexView(), builder.staticFile());
     }
@@ -142,11 +142,12 @@ public class OpenAPISupport implements Service {
                 .get(webContext, this::prepareResponse);
     }
 
-    static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
-        SnakeYAMLParserHelper<ExpandedTypeDescription> result = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create,
-                ExpandedTypeDescription::addEnum);
-        adjustTypeDescriptions(result.types());
-        return result;
+    synchronized static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
+        if (helper == null) {
+            helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
+            adjustTypeDescriptions(helper.types());
+        }
+        return helper;
     }
 
     static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(SnakeYAMLParserHelper<ExpandedTypeDescription> helper) {
@@ -223,7 +224,7 @@ public class OpenAPISupport implements Service {
                 OpenApiDocument.INSTANCE.config(config);
                 OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
                 if (staticFile != null) {
-                    OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper.types(), staticFile.getContent(),
+                    OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper().types(), staticFile.getContent(),
                             OpenAPIMediaType.byFormat(staticFile.getFormat())));
                 }
                 if (isAnnotationProcessingEnabled(config)) {
@@ -326,7 +327,7 @@ public class OpenAPISupport implements Service {
 
     private String formatDocument(Format fmt) {
         StringWriter sw = new StringWriter();
-        Serializer.serialize(helper.types(), implsToTypes, model, fmt, sw);
+        Serializer.serialize(helper().types(), implsToTypes, model, fmt, sw);
         return sw.toString();
     }
 

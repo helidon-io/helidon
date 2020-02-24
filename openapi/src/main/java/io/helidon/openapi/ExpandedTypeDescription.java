@@ -69,8 +69,6 @@ class ExpandedTypeDescription extends TypeDescription {
 
     private static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
 
-    private final Map<String, SnakeYAMLParserHelper.EnumType<?>> enums = new HashMap<>();
-
     private Class<?> impl;
 
     /**
@@ -88,27 +86,9 @@ class ExpandedTypeDescription extends TypeDescription {
         return result;
     }
 
-    static ExpandedTypeDescription addEnum(ExpandedTypeDescription type, SnakeYAMLParserHelper.EnumType<?> enumType) {
-        type.addEnum(enumType.propertyName(), enumType);
-        return type;
-    }
-
     private ExpandedTypeDescription(Class<? extends Object> clazz, Class<?> impl) {
         super(clazz, null, impl);
         this.impl = impl;
-    }
-
-    /**
-     * Adds an enum to the type description, by property name and the enum type def
-     * in the generated helper class.
-     *
-     * @param propertyName property name for the enum
-     * @param enumType type for the Enum
-     * @return this type description
-     */
-    ExpandedTypeDescription addEnum(String propertyName, SnakeYAMLParserHelper.EnumType enumType) {
-        enums.put(propertyName, enumType);
-        return this;
     }
 
     /**
@@ -140,36 +120,29 @@ class ExpandedTypeDescription extends TypeDescription {
         return isExtension(name) ? new ExtensionProperty(name) : super.getProperty(name);
     }
 
-    @Override
-    public Set<Property> getProperties() {
-        /*
-         * The YAML/JSON contains lower-case PathItem.HttpMethod names, and we provide
-         * property substitutions (declarations) for those lower-case versions. But the OpenAPI
-         * bean analysis will give upper-case property names. We need to remove those from the
-         * property list.
-         */
-        Set<Property> result = super.getProperties();
-        Set<Property> propsToRemove = new HashSet<Property>();
-
-        if (getType().equals(PathItem.class)) {
-            for (Property p : result) {
-                for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
-                    if (p.getName().equals(m.name())) {
-                        propsToRemove.add(p);
-                    }
-                }
+    Property getPropertyNoEx(String name) {
+        try {
+            Property p = getProperty("defaultValue");
+            return p;
+        } catch (YAMLException ex) {
+            if (ex.getMessage().startsWith("Unable to find property")) {
+                return null;
             }
-            result.removeAll(propsToRemove);
+            throw ex;
         }
-        return result;
     }
 
     @Override
     public Object newInstance(String propertyName, Node node) {
-        if (enums.containsKey(propertyName)) {
-            String valueText = ((ScalarNode) node).getValue().toUpperCase();
-
-            return enums.get(propertyName).valueOf(valueText);
+        Property p = getProperty(propertyName);
+        if (p.getType().isEnum()) {
+            Class<Enum> eClass = (Class<Enum>) p.getType();
+            String valueText = ScalarNode.class.cast(node).getValue();
+            for (Enum e : eClass.getEnumConstants()) {
+                if (e.toString().equals(valueText)) {
+                    return e;
+                }
+            }
         }
         return super.newInstance(propertyName, node);
     }
@@ -197,20 +170,8 @@ class ExpandedTypeDescription extends TypeDescription {
         return impl;
     }
 
-    SnakeYAMLParserHelper.EnumType<?> enumType(String propertyName) {
-        return enums.get(propertyName);
-    }
-
     boolean hasDefaultProperty() {
-        try {
-            Property p = getProperty("defaultValue");
-            return true;
-        } catch (YAMLException ex) {
-            if (ex.getMessage().startsWith("Unable to find property")) {
-                return false;
-            }
-            throw ex;
-        }
+        return getPropertyNoEx("defaultValue") != null;
     }
 
     private boolean setupExtensionType(String key, Node valueNode) {

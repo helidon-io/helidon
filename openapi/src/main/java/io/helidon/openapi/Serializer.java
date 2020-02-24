@@ -148,12 +148,13 @@ class Serializer {
 
             Property p = property;
             Object v = adjustPropertyValue(propertyValue);
-            SnakeYAMLParserHelper.EnumType<?> enumType = implsToTypes.get(javaBean.getClass()).enumType(property.getName());
-            if (enumType != null) {
-                p = new DelegatingProperty(property, property.getName().toLowerCase());
+            Class<?> type = implsToTypes.get(javaBean.getClass()).getType();
+            if (type.isEnum()) {
+                p = new DelegatingProperty(property, property.toString());
             }
             if (propertyValue instanceof Enum) {
-                v = enumType.valueOf(((Enum) propertyValue).name()).toString();
+                Enum e = (Enum) propertyValue;
+                v = e.toString();
             }
             NodeTuple result = okToProcess(javaBean, property)
                     ? super.representJavaBeanProperty(javaBean, p, v, customTag) : null;

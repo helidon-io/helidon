@@ -38,10 +38,6 @@ class ImplTypeDescription extends TypeDescription {
         delegate = td;
     }
 
-    public ExpandedTypeDescription addEnum(String propertyName, SnakeYAMLParserHelper.EnumType enumType) {
-        return delegate.addEnum(propertyName, enumType);
-    }
-
     public ExpandedTypeDescription addRef() {
         return delegate.addRef();
     }
@@ -63,10 +59,6 @@ class ImplTypeDescription extends TypeDescription {
 
     public Class<?> impl() {
         return delegate.impl();
-    }
-
-    public SnakeYAMLParserHelper.EnumType<?> enumType(String propertyName) {
-        return delegate.enumType(propertyName);
     }
 
     @Override
