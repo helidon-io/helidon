@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.smallrye.openapi.api.models.OpenAPIImpl;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
@@ -117,13 +118,6 @@ class Serializer {
 
         @Override
         protected Node representScalar(Tag tag, String value, DumperOptions.ScalarStyle style) {
-            /*
-             * This if works around this SnakeYAML issue:
-             * https://bitbucket.org/asomov/snakeyaml/issues/473/incorrect-scalar-style-chosen-for-float
-             */
-            if (tag == Tag.FLOAT && Resolver.INT.matcher(value).matches()) {
-                tag = Tag.INT;
-            }
             return super.representScalar(tag, value, isExemptedFromQuotes(tag) ? DumperOptions.ScalarStyle.PLAIN : style);
         }
 
@@ -240,6 +234,8 @@ class Serializer {
     static class TagSuppressingWriter extends PrintWriter {
 
         private static final Pattern UNQUOTED_TRAILING_TAG_PATTERN = Pattern.compile("![^\"]+$");
+        private static final Pattern SMALLRYE_IMPL_TAG_PATTERN =
+                Pattern.compile("!!" + OpenAPIImpl.class.getPackage().getName() + ".+$");
 
         TagSuppressingWriter(Writer out) {
             super(out);
@@ -263,7 +259,7 @@ class Serializer {
 
         private int detag(CharSequence cs, int off, int len) {
             int result = len;
-            Matcher m = UNQUOTED_TRAILING_TAG_PATTERN.matcher(cs.subSequence(off, off + len));
+            Matcher m = SMALLRYE_IMPL_TAG_PATTERN.matcher(cs.subSequence(off, off + len));
             if (m.matches()) {
                 result = len - (m.end() - m.start());
             }
