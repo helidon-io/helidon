@@ -63,7 +63,7 @@ public class EtcdV3Client implements EtcdClient {
      */
     public EtcdV3Client(URI uri) {
         ManagedChannelBuilder mcb = ManagedChannelBuilder.forAddress(uri.getHost(), uri.getPort());
-        this.channel = mcb.usePlaintext(true).build();
+        this.channel = mcb.usePlaintext().build();
 
         kvStub = KVGrpc.newBlockingStub(channel);
         watchStub = WatchGrpc.newStub(channel);
