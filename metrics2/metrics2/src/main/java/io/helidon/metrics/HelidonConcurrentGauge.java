@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,11 +90,13 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String name = prometheusNameWithUnits(metricID);
         final String nameCurrent = name + "_current";
-        prometheusType(sb, nameCurrent, metadata().getType());
-        prometheusHelp(sb, nameCurrent);
+        if (withHelpType) {
+            prometheusType(sb, nameCurrent, metadata().getType());
+            prometheusHelp(sb, nameCurrent);
+        }
         sb.append(nameCurrent).append(prometheusTags(metricID.getTags()))
                 .append(" ").append(prometheusValue()).append('\n');
         final String nameMin = name + "_min";

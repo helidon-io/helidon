@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,24 @@
  */
 package io.helidon.integrations.cdi.jpa.chirp;
 
-import java.util.Objects;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.SQLException;
 
 import javax.annotation.sql.DataSourceDefinition;
-import javax.inject.Inject;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
 import javax.persistence.SynchronizationType;
 import javax.persistence.TransactionRequiredException;
+import javax.sql.DataSource;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
@@ -45,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -52,13 +57,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DataSourceDefinition(
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:TestRollbackScenarios;INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
+    url = "jdbc:h2:mem:TestCascadePersist;INIT=SET TRACE_LEVEL_FILE=4\\;SET DB_CLOSE_DELAY=-1",
     serverName = "",
     properties = {
         "user=sa"
     }
 )
-class TestRollbackScenarios {
+class TestCascadePersist {
 
     private SeContainer cdiContainer;
 
@@ -70,7 +75,7 @@ class TestRollbackScenarios {
         synchronization = SynchronizationType.SYNCHRONIZED,
         unitName = "chirp"
     )
-    private EntityManager jpaTransactionScopedSynchronizedEntityManager;
+    private EntityManager em;
 
 
     /*
@@ -78,7 +83,7 @@ class TestRollbackScenarios {
      */
 
 
-    TestRollbackScenarios() {
+    TestCascadePersist() {
         super();
     }
 
@@ -89,11 +94,18 @@ class TestRollbackScenarios {
 
 
     @BeforeEach
-    void startCdiContainer() {
+    void startCdiContainerAndRunDDL() throws SQLException {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
         assertNotNull(initializer);
         this.cdiContainer = initializer.initialize();
+        final DataSource ds = this.cdiContainer.select(DataSource.class).get();
+        assertNotNull(ds);
+        try (final Connection connection = ds.getConnection();
+             final Statement statement = connection.createStatement()) {
+            assertNotNull(statement);
+            statement.executeUpdate("RUNSCRIPT FROM 'classpath:chirp.ddl'");
+        }
     }
 
     @AfterEach
@@ -109,19 +121,12 @@ class TestRollbackScenarios {
      */
 
 
-    TestRollbackScenarios self() {
-        return this.cdiContainer.select(TestRollbackScenarios.class).get();
+    TestCascadePersist self() {
+        return this.cdiContainer.select(TestCascadePersist.class).get();
     }
 
-    /**
-     * A "business method" providing access to one of this {@link
-     * TestRollbackScenarios}' {@link EntityManager}
-     * instances for use by {@link Test}-annotated methods.
-     *
-     * @return a non-{@code null} {@link EntityManager}
-     */
-    EntityManager getJpaTransactionScopedSynchronizedEntityManager() {
-        return this.jpaTransactionScopedSynchronizedEntityManager;
+    EntityManager getEntityManager() {
+        return this.em;
     }
 
     TransactionManager getTransactionManager() {
@@ -152,23 +157,24 @@ class TestRollbackScenarios {
 
 
     @Test
-    void testRollbackScenarios()
+    void testCascadePersist()
         throws HeuristicMixedException,
                HeuristicRollbackException,
                InterruptedException,
                NotSupportedException,
                RollbackException,
+               SQLException,
                SystemException
     {
 
         // Get a CDI contextual reference to this test instance.  It
         // is important to use "self" in this test instead of "this".
-        final TestRollbackScenarios self = self();
+        final TestCascadePersist self = self();
         assertNotNull(self);
 
         // Get the EntityManager that is synchronized with and scoped
         // to a JTA transaction.
-        final EntityManager em = self.getJpaTransactionScopedSynchronizedEntityManager();
+        final EntityManager em = self.getEntityManager();
         assertNotNull(em);
         assertTrue(em.isOpen());
 
@@ -180,7 +186,9 @@ class TestRollbackScenarios {
         assertFalse(em.isJoinedToTransaction());
 
         // Get the TransactionManager that normally is behind the
-        // scenes and use it to start a Transaction.
+        // scenes and use it to start a Transaction.  This simulates
+        // entering a method annotated
+        // with @Transactional(TxType.REQUIRES_NEW) or similar.
         final TransactionManager tm = self.getTransactionManager();
         assertNotNull(tm);
         tm.begin();
@@ -189,124 +197,117 @@ class TestRollbackScenarios {
         // Now magically our EntityManager should be joined to it.
         assertTrue(em.isJoinedToTransaction());
 
-        // Create a JPA entity and insert it.
+        // Create an author but don't persist him explicitly.
         Author author = new Author("Abraham Lincoln");
-        em.persist(author);
 
         // No trip to the database has happened yet, so the author's
         // identifier isn't set yet.
         assertNull(author.getId());
 
+        // Set up a blog for that Author.
+        Microblog blog = new Microblog(author, "Gettysburg Address Draft 1");
+
+        // Persist the blog.  The Author should be persisted too.
+        em.persist(blog);
+        assertTrue(em.contains(blog));
+        assertTrue(em.contains(author));
+
+        // No trip to the database has happened yet, so neither the
+        // blog's nor the author's identifiers are set yet.
+        assertNull(blog.getId());
+        assertNull(author.getId());
+
         // Commit the transaction.  Because we're relying on the
         // default flush mode, this will cause a flush to the
-        // database, which, in turn, will result in author identifier
+        // database, which, in turn, will result in identifier
         // generation.
         tm.commit();
         assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
         assertEquals(Integer.valueOf(1), author.getId());
+        assertEquals(Integer.valueOf(1), blog.getId());
 
         // We're no longer in a transaction.
         assertFalse(em.isJoinedToTransaction());
 
         // The persistence context should be cleared.
+        assertFalse(em.contains(blog));
         assertFalse(em.contains(author));
 
-        // Ensure transaction statuses are what we think they are.
-        tm.begin();
-        tm.setRollbackOnly();
-        try {
-          assertEquals(Status.STATUS_MARKED_ROLLBACK, tm.getStatus());
-        } finally {
-          tm.rollback();
-        }
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
-
-        // We can do non-transactional things.
-        assertTrue(em.isOpen());
-        author = em.find(Author.class, Integer.valueOf(1));
-        assertNotNull(author);
-
-        // Note that because we've invoked this somehow outside of a
-        // transaction everything it touches is detached, per section
-        // 7.6.2 of the JPA 2.2 specification.
-        assertFalse(em.contains(author));
-
-        // Remove everything.
-        tm.begin();
-        author = em.merge(author);
-        assertNotNull(author);
-        assertTrue(em.contains(author));
-        em.remove(author);
-        tm.commit();
-        assertFalse(em.contains(author));
-
-        // Perform a rollback "in the middle" of a sequence of
-        // operations and observe that the EntityManager is in the
-        // proper state throughout.
-        author = new Author("John Kennedy");
-        tm.begin();
-        em.persist(author);
-        assertTrue(em.contains(author));
-        tm.rollback();
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
-        assertFalse(em.contains(author));
-        try {
-          em.remove(author);
-          fail("remove() was allowed to complete without a transaction");
-        } catch (final IllegalArgumentException | TransactionRequiredException expected) {
-          // The javadocs say only that either of these exceptions may
-          // be thrown in this case but do not indicate which one is
-          // preferred.  EclipseLink 2.7.4 throws a
-          // TransactionRequiredException here.  It probably should
-          // throw an IllegalArgumentException; see
-          // https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117
-          // which is related.
+        // Let's check the database directly.
+        final DataSource ds = this.cdiContainer.select(DataSource.class).get();
+        assertNotNull(ds);
+        try (final Connection connection = ds.getConnection();
+             final Statement statement = connection.createStatement()) {
+            assertNotNull(statement);
+            ResultSet rs = statement.executeQuery("SELECT COUNT(1) FROM MICROBLOG");
+            assertNotNull(rs);
+            try {
+                assertTrue(rs.next());
+                assertEquals(1, rs.getInt(1));
+            } finally {
+                rs.close();
+            }
+            rs = statement.executeQuery("SELECT COUNT(1) FROM AUTHOR");
+            assertNotNull(rs);
+            try {
+                assertTrue(rs.next());
+                assertEquals(1, rs.getInt(1));
+            } finally {
+                rs.close();
+            }
         }
 
-        // author is detached; prove it.
+        // Start a new transaction.
         tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
-        assertTrue(em.isJoinedToTransaction());
-        assertFalse(em.contains(author));
-        em.detach(author); // redundant; just making a point
-        assertFalse(em.contains(author));
+
+        assertFalse(em.contains(blog));
+        final Microblog newBlog = em.find(Microblog.class, Integer.valueOf(1));
+        assertNotNull(newBlog);
+        assertTrue(em.contains(newBlog));
+
+        assertEquals(blog.getId(), newBlog.getId());
+        blog = newBlog;
+
+        // Now let's have our author write some stuff.
+        final Chirp chirp1 = new Chirp(blog, "Four score and seven years ago");
+        final Chirp chirp2 = new Chirp(blog, "our fathers brought forth on this continent,");
+        final Chirp chirp3 = new Chirp(blog, "a new nation, conceived in Liberty, "
+                                       + "and dedicated to the proposition that all men are created "
+                                       + "equal. Now we are engaged in a great civil war, testing "
+                                       + "whether that nation, or any nation so conceived and so "
+                                       + "dedicated, can long endure.");
+        blog.addChirp(chirp1);
+        assertSame(blog, chirp1.getMicroblog());
+        blog.addChirp(chirp2);
+        assertSame(blog, chirp2.getMicroblog());
+        blog.addChirp(chirp3);
+        assertSame(blog, chirp3.getMicroblog());
+
+        // Commit the transaction.  The changes should be propagated.
+        // However, this will fail, because the third chirp above is
+        // (deliberately) too long.  The transaction should roll back.
         try {
-          em.remove(author);
-          // We shouldn't get here because author is detached but with
-          // EclipseLink 2.7.4 we do.  See
-          // https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117.
-        } catch (final IllegalArgumentException expected) {
+            tm.commit();
+            fail("Commit was able to happen");
+        } catch (final RollbackException expected) {
 
         }
-        tm.rollback();
 
-        // Remove the author properly.
-        tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
-        assertTrue(em.isJoinedToTransaction());
-        assertFalse(em.contains(author));
-        author = em.merge(author);
-        em.remove(author);
-        tm.commit();
-        assertFalse(em.contains(author));
-
-        // Cause a timeout-tripped rollback.
-        tm.setTransactionTimeout(1); // 1 second
-        author = new Author("Woodrow Wilson");
-        tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
-        Thread.sleep(1500L); // 1.5 seconds (arbitrarily greater than 1 second)
-        assertEquals(Status.STATUS_ROLLEDBACK, tm.getStatus());
-        try {
-          em.persist(author);
-          fail("Transaction rolled back but persist still happened");
-        } catch (final TransactionRequiredException expected) {
-          
+        // Now the question is: were any chirps written?  They
+        // should not have been written (i.e. the rollback should have
+        // functioned properly.  Let's make sure.
+        try (final Connection connection = ds.getConnection();
+             final Statement statement = connection.createStatement()) {
+            assertNotNull(statement);
+            ResultSet rs = statement.executeQuery("SELECT COUNT(1) FROM CHIRP");
+            assertNotNull(rs);
+            try {
+                assertTrue(rs.next());
+                assertEquals(0, rs.getInt(1));
+            } finally {
+                rs.close();
+            }
         }
-        tm.rollback();
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
-
-        tm.setTransactionTimeout(60); // 60 seconds; the usual default
 
     }
 

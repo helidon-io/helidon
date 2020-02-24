@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@
         <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
+        <version.plugin.helidon>1.1.1</version.plugin.helidon>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
@@ -179,6 +180,11 @@
                         <mainClass>${mainClass}</mainClass>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -219,4 +225,25 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>jlink-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>jlink-image</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

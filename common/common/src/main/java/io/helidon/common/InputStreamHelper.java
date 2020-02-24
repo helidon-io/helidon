@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ public abstract class InputStreamHelper {
     private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-    private InputStreamHelper(){}
+    private InputStreamHelper() {
+    }
 
     /**
      * Reads all remaining bytes from the input stream.This method blocks until

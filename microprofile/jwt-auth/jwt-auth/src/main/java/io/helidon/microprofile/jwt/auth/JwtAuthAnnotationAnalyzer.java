@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,30 +102,15 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     // resource class analysis
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
-        return performAnalysis(maybeAnnotated, previousResponse);
+        return AnalyzerResponse.builder(previousResponse)
+                .build();
     }
 
     // resource method analysis
     @Override
     public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
-        return performAnalysis(maybeAnnotated, previousResponse);
-    }
-
-    private AnalyzerResponse performAnalysis(AnnotatedElement maybeAnnotated, AnalyzerResponse previousResponse) {
-        if (isMpJwt(previousResponse) && isRolesAllowed(maybeAnnotated)) {
-            return AnalyzerResponse.builder(previousResponse)
-                    .authenticationResponse(Flag.REQUIRED)
-                    .build();
-        }
-
-        return previousResponse;
-    }
-
-    private boolean isMpJwt(AnalyzerResponse previous) {
-        return previous.registry()
-                .getInstance(RegisterMpJwt.class)
-                .map(RegisterMpJwt::isMpJwt)
-                .orElse(false);
+        return AnalyzerResponse.builder(previousResponse)
+                .build();
     }
 
     private boolean isRolesAllowed(AnnotatedElement maybeAnnotated) {

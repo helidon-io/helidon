@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,7 +212,7 @@ class HelidonHistogramTest {
     @Test
     void testPrometheus() throws IOException, ParseException {
         final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntID);
+        histoInt.prometheusData(sb, histoIntID, true);
         parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
                 .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
                                     EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),

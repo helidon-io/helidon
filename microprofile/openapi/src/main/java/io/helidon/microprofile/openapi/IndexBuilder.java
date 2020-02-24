@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019-2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ public class IndexBuilder implements Extension {
         List<IndexView> indices = new ArrayList<>();
         for (URL indexURL : indexURLs) {
             try (InputStream indexIS = indexURL.openStream()) {
-                LOGGER.log(Level.FINE, "Adding Jandex index at {0}", indexURL.toString());
+                LOGGER.log(Level.CONFIG, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
             } catch (IOException ex) {
                 throw new IOException("Attempted to read from previously-located index file "
@@ -138,7 +138,7 @@ public class IndexBuilder implements Extension {
             }
         }
 
-        LOGGER.log(Level.FINE, "Using internal Jandex index created from CDI bean discovery");
+        LOGGER.log(Level.CONFIG, "Using internal Jandex index created from CDI bean discovery");
         Index result = indexer.complete();
         dumpIndex(Level.FINER, result);
         return result;

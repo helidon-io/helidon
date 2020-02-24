@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -182,17 +184,26 @@ public final class MetricsSupport implements Service {
 
     static String toPrometheusData(Registry... registries) {
         return Arrays.stream(registries)
+                .filter(r -> !r.empty())
                 .map(MetricsSupport::toPrometheusData)
                 .collect(Collectors.joining());
     }
 
     static String toPrometheusData(Registry registry) {
-        return registry.stream()
-                .sorted(Comparator.comparing(Map.Entry::getKey))
-                .collect(StringBuilder::new,
-                        (sb, entry) -> toPrometheusData(sb, entry.getKey(), entry.getValue()),
-                        StringBuilder::append)
-                .toString();
+        StringBuilder builder = new StringBuilder();
+        Set<String> serialized = new HashSet<>();
+        registry.stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    String name = entry.getKey().getName();
+                    if (!serialized.contains(name)) {
+                        toPrometheusData(builder, entry.getKey(), entry.getValue(), true);
+                        serialized.add(name);
+                    } else {
+                        toPrometheusData(builder, entry.getKey(), entry.getValue(), false);
+                    }
+                });
+        return builder.toString();
     }
 
     /**
@@ -200,11 +211,12 @@ public final class MetricsSupport implements Service {
      *
      * @param metricID the {@code MetricID} for the metric to be formatted
      * @param metric the {@code Metric} containing the data to be formatted
+     * @param withHelpType flag controlling serialization of HELP and TYPE
      * @return metric info in Prometheus format
      */
-    public static String toPrometheusData(MetricID metricID, Metric metric) {
+    public static String toPrometheusData(MetricID metricID, Metric metric, boolean withHelpType) {
         final StringBuilder sb = new StringBuilder();
-        checkMetricTypeThenRun(sb, metricID, metric);
+        checkMetricTypeThenRun(sb, metricID, metric, withHelpType);
         return sb.toString();
     }
 
@@ -213,10 +225,11 @@ public final class MetricsSupport implements Service {
      *
      * @param name the name of the metric
      * @param metric the {@code Metric} containing the data to be formatted
+     * @param withHelpType flag controlling serialization of HELP and TYPE
      * @return metric info in Prometheus format
      */
-    public static String toPrometheusData(String name, Metric metric) {
-        return toPrometheusData(new MetricID(name), metric);
+    public static String toPrometheusData(String name, Metric metric, boolean withHelpType) {
+        return toPrometheusData(new MetricID(name), metric, withHelpType);
     }
 
     /**
@@ -228,13 +241,15 @@ public final class MetricsSupport implements Service {
      *
      * @param metricID the {@code MetricID} for the metric to convert
      * @param metric the {@code Metric} to convert to Prometheus format
+     * @param withHelpType flag controlling serialization of HELP and TYPE
      * @return {@code String} containing the Prometheus data
      */
-    static void toPrometheusData(StringBuilder sb, MetricID metricID, Metric metric) {
-        checkMetricTypeThenRun(sb, metricID, metric);
+    static void toPrometheusData(StringBuilder sb, MetricID metricID, Metric metric, boolean withHelpType) {
+        checkMetricTypeThenRun(sb, metricID, metric, withHelpType);
     }
 
-    private static void checkMetricTypeThenRun(StringBuilder sb, MetricID metricID, Metric metric) {
+    private static void checkMetricTypeThenRun(StringBuilder sb, MetricID metricID, Metric metric,
+                                               boolean withHelpType) {
         Objects.requireNonNull(metric);
 
         if (!(metric instanceof HelidonMetric)) {
@@ -244,7 +259,7 @@ public final class MetricsSupport implements Service {
                     HelidonMetric.class.getName()));
         }
 
-        ((HelidonMetric) metric).prometheusData(sb, metricID);
+        ((HelidonMetric) metric).prometheusData(sb, metricID, withHelpType);
     }
 
     // unit testable
@@ -413,7 +428,7 @@ public final class MetricsSupport implements Service {
                         res.send(builder.build());
                     } else if (mediaType == MediaType.TEXT_PLAIN) {
                         final StringBuilder sb = new StringBuilder();
-                        entry.getValue().prometheusData(sb, entry.getKey());
+                        entry.getValue().prometheusData(sb, entry.getKey(), true);
                         res.send(sb.toString());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
