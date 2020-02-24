@@ -17,6 +17,7 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -28,33 +29,53 @@ import java.util.function.Consumer;
 public class RequestedCounter {
 
     private final AtomicLong requested = new AtomicLong();
+    private ReentrantLock counterLock = new ReentrantLock();
+    private final boolean strictMode;
+
+    /**
+     * Create new request counter with strict mode off.
+     */
+    public RequestedCounter() {
+        this.strictMode = Boolean.FALSE;
+    }
+
+    /**
+     * Create new request counter, with strict mode true are all operations with counter protected by lock.
+     *
+     * @param strictMode true for turning strict mode on
+     */
+    public RequestedCounter(boolean strictMode) {
+        this.strictMode = strictMode;
+    }
 
     /**
      * Increments safely a requested event counter to prevent {@code Long.MAX_VALUE} overflow.
      *
-     * @param increment amount of additional events to request.
+     * @param increment    amount of additional events to request.
      * @param errorHandler a consumer of {@code IllegalArgumentException} to
-     * process errors
+     *                     process errors
      */
     public void increment(long increment, Consumer<? super IllegalArgumentException> errorHandler) {
         if (!StreamValidationUtils.checkRequestParam(increment, errorHandler)) {
             return;
         }
+        try {
+            lock();
+            requested.updateAndGet(original -> {
+                if (original == Long.MAX_VALUE) {
+                    return Long.MAX_VALUE;
+                }
 
-        requested.updateAndGet(original -> {
-            if (original == Long.MAX_VALUE) {
-                return Long.MAX_VALUE;
-            }
-
-            long r = original + increment;
-            // HD 2-12 Overflow iff both arguments have the opposite sign of the result; inspired by Math.addExact(long, long)
-            if (r == Long.MAX_VALUE || ((original ^ r) & (increment ^ r)) < 0) {
-                // unbounded reached
-                return Long.MAX_VALUE;
-            } else {
-                return r;
-            }
-        });
+                if (Long.MAX_VALUE - original > increment) {
+                    return original + increment;
+                } else {
+                    // unbounded reached
+                    return Long.MAX_VALUE;
+                }
+            });
+        } finally {
+            unlock();
+        }
     }
 
     /**
@@ -64,15 +85,36 @@ public class RequestedCounter {
      * counter value was already set to zero.
      */
     public boolean tryDecrement() {
-        return requested.getAndUpdate(val -> {
-                            if (val == Long.MAX_VALUE) {
-                                return val;
-                            } else if (val > 0) {
-                                return val - 1;
-                            } else {
-                                return 0;
-                            }
-                        }) > 0;
+        try {
+            lock();
+            return requested.getAndUpdate(val -> {
+                if (val == Long.MAX_VALUE) {
+                    return val;
+                } else if (val > 0) {
+                    return val - 1;
+                } else {
+                    return 0;
+                }
+            }) > 0;
+        } finally {
+            unlock();
+        }
+    }
+
+    /**
+     * Lock internal counter if strict mode is on.
+     */
+    public void lock() {
+        if (!strictMode) return;
+        this.counterLock.lock();
+    }
+
+    /**
+     * Unlock internal counter.
+     */
+    public void unlock() {
+        if (!strictMode) return;
+        this.counterLock.unlock();
     }
 
     /**

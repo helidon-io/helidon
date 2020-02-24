@@ -15,19 +15,7 @@
  *
  */
 
-package io.helidon.common.reactive;
-
 /**
- * Raised when back-pressure buffer overflows.
+ * Support for MicroProfile Reactive Streams Operators in Helidon MP.
  */
-public class BackPressureOverflowException extends Exception {
-
-    /**
-     * Create new {@link BackPressureOverflowException}.
-     *
-     * @param limit Overflown limit
-     */
-    public BackPressureOverflowException(int limit) {
-        super(String.format("Buffer limit %d exceeded.", limit));
-    }
-}
+package io.helidon.microprofile.reactive;

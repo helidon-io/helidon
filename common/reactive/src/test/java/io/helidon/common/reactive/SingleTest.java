@@ -228,10 +228,10 @@ public class SingleTest {
     }
 
     @Test
-    public void testMapMany() {
+    public void testFlatMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("f.o.o")
-                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
+                .flatMap((str) ->  new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -239,10 +239,10 @@ public class SingleTest {
     }
 
     @Test
-    public void testEmptyMapMany() {
+    public void testEmptyFlatMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.<String>empty()
-                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
+                .flatMap((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -250,10 +250,10 @@ public class SingleTest {
     }
 
     @Test
-    public void testErrorMapMany() {
+    public void testErrorFlatMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.<String>error(new IllegalStateException("foo!"))
-                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
+                .flatMap((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
@@ -261,10 +261,10 @@ public class SingleTest {
     }
 
     @Test
-    public void testNeverMapMany() {
+    public void testNeverFlatMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.<String>never()
-                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
+                .flatMap((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -272,18 +272,18 @@ public class SingleTest {
     }
 
     @Test
-    public void testMapManyNullMapper() {
+    public void testFlatMapNullMapper() {
         try {
-            Single.just("bar").map(null);
+            Single.just("bar").flatMap(null);
             fail("NullPointerException should have been thrown");
         } catch(NullPointerException ex) {
         }
     }
 
     @Test
-    public void testMapManyMapperNullValue() {
+    public void testFlatMapMapperNullValue() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.just("bar").mapMany((s) -> (Multi<String>) null).subscribe(subscriber);
+        Single.just("bar").flatMap((s) -> (Multi<String>) null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
@@ -399,6 +399,17 @@ public class SingleTest {
         assertThat(future.isDone(), is(equalTo(false)));
         assertThat(subscription1.canceled, is(equalTo(true)));
         assertThat(subscription2.canceled, is(equalTo(true)));
+    }
+
+    @Test
+    void exceptionThrowingMapper() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
+        Single.just("foo").<String>map(s -> {
+            throw new IllegalStateException("bar!");
+        }).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
     }
 
     private static class SingleTestSubscriber<T> extends TestSubscriber<T> {

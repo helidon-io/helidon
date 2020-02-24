@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.Optional;
 import java.util.concurrent.Flow;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -27,21 +28,31 @@ import java.util.function.Function;
  *
  * @param <R> Type of the processed items.
  */
-public class MultiTappedProcessor<R> extends BufferedProcessor<R, R> implements Multi<R> {
+public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Multi<R> {
 
+    private Optional<BiFunction<Flow.Subscriber<? super R>, Long, Long>> onRequestFunction = Optional.empty();
+    private Optional<Function<Flow.Subscriber<? super R>, Flow.Subscriber<? super R>>> whenSubscribeFunction = Optional.empty();
     private Optional<Function<R, R>> onNextFunction = Optional.empty();
     private Optional<Consumer<Throwable>> onErrorConsumer = Optional.empty();
     private Optional<Runnable> onCompleteRunnable = Optional.empty();
     private Optional<Consumer<Flow.Subscription>> onCancelConsumer = Optional.empty();
 
-    private MultiTappedProcessor() {
+    /**
+     * Create new processor with no functions to execute when signals are intercepted.
+     */
+    protected MultiTappedProcessor() {
+    }
+
+    @Override
+    protected void submit(R item) {
+        getSubscriber().onNext(item);
     }
 
     /**
      * Create new processor with no functions to execute when signals are intercepted.
      *
      * @param <R> Type of the processed items.
-     * @return Brand new {@link MultiTappedProcessor}
+     * @return Brand new {@link io.helidon.common.reactive.MultiTappedProcessor}
      */
     public static <R> MultiTappedProcessor<R> create() {
         return new MultiTappedProcessor<>();
@@ -51,7 +62,7 @@ public class MultiTappedProcessor<R> extends BufferedProcessor<R, R> implements 
      * Set {@link java.util.function.Function} to be executed when onNext signal is intercepted.
      *
      * @param function Function to be invoked.
-     * @return This {@link MultiTappedProcessor}
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
      */
     public MultiTappedProcessor<R> onNext(Function<R, R> function) {
         onNextFunction = Optional.ofNullable(function);
@@ -59,11 +70,22 @@ public class MultiTappedProcessor<R> extends BufferedProcessor<R, R> implements 
     }
 
     /**
+     * Set {@link java.util.function.Function} to be executed when subscribe signal is intercepted.
+     *
+     * @param function Function to be invoked.
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
+     */
+    public MultiTappedProcessor<R> whenSubscribe(Function<Flow.Subscriber<? super R>, Flow.Subscriber<? super R>> function) {
+        whenSubscribeFunction = Optional.ofNullable(function);
+        return this;
+    }
+
+    /**
      * Set {@link java.util.function.Consumer} to be executed when onError signal is intercepted.
      *
      * @param consumer Consumer to be executed when onError signal is intercepted,
-     *                 argument is intercepted {@link java.lang.Throwable}.
-     * @return This {@link MultiTappedProcessor}
+     *                 argument is intercepted {@link Throwable}.
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
      */
     public MultiTappedProcessor<R> onError(Consumer<Throwable> consumer) {
         onErrorConsumer = Optional.ofNullable(consumer);
@@ -71,13 +93,24 @@ public class MultiTappedProcessor<R> extends BufferedProcessor<R, R> implements 
     }
 
     /**
-     * Set {@link java.lang.Runnable} to be executed when onComplete signal is intercepted.
+     * Set {@link Runnable} to be executed when onComplete signal is intercepted.
      *
-     * @param runnable {@link java.lang.Runnable} to be executed.
-     * @return This {@link MultiTappedProcessor}
+     * @param runnable {@link Runnable} to be executed.
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
      */
     public MultiTappedProcessor<R> onComplete(Runnable runnable) {
         onCompleteRunnable = Optional.ofNullable(runnable);
+        return this;
+    }
+
+    /**
+     * Set {@link java.util.function.Function} to be executed when request signal is intercepted.
+     *
+     * @param function Function to be invoked.
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
+     */
+    public MultiTappedProcessor<R> onRequest(BiFunction<Flow.Subscriber<? super R>, Long, Long> function) {
+        onRequestFunction = Optional.ofNullable(function);
         return this;
     }
 
@@ -86,7 +119,7 @@ public class MultiTappedProcessor<R> extends BufferedProcessor<R, R> implements 
      *
      * @param consumer Consumer to be executed when onCancel signal is intercepted,
      *                 argument is intercepted {@link java.util.concurrent.Flow.Subscription}.
-     * @return This {@link MultiTappedProcessor}
+     * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
      */
     public MultiTappedProcessor<R> onCancel(Consumer<Flow.Subscription> consumer) {
         onCancelConsumer = Optional.ofNullable(consumer);
@@ -94,25 +127,54 @@ public class MultiTappedProcessor<R> extends BufferedProcessor<R, R> implements 
     }
 
     @Override
-    protected void hookOnNext(R item) {
-        submit(onNextFunction.map(f -> f.apply(item)).orElse(item));
+    public void request(long n) {
+        super.request(onRequestFunction.map(r -> r.apply(super.getSubscriber(), n)).orElse(n));
     }
 
     @Override
-    protected void hookOnError(Throwable error) {
-        onErrorConsumer.ifPresent(c -> c.accept(error));
-        super.hookOnError(error);
+    public void cancel() {
+        onCancelConsumer.ifPresent(c -> c.accept(super.getSubscription()));
+        super.cancel();
     }
 
     @Override
-    protected void hookOnComplete() {
-        onCompleteRunnable.ifPresent(Runnable::run);
-        super.hookOnComplete();
+    public void subscribe(Flow.Subscriber<? super R> s) {
+        Flow.Subscriber<? super R> subscriber = s;
+        if (whenSubscribeFunction.isPresent()) {
+            subscriber = whenSubscribeFunction.map(f -> f.apply(s)).get();
+        }
+        super.subscribe(subscriber);
     }
 
     @Override
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        onCancelConsumer.ifPresent(c -> c.accept(subscription));
-        subscription.cancel();
+    public void onNext(R item) {
+        R value;
+        try {
+            value = onNextFunction.map(f -> f.apply(item)).orElse(item);
+        } catch (Throwable t) {
+            super.onError(t);
+            return;
+        }
+        super.onNext(value);
+    }
+
+    @Override
+    public void onError(Throwable error) {
+        try {
+            onErrorConsumer.ifPresent(c -> c.accept(error));
+        } catch (Throwable t) {
+            error.addSuppressed(t);
+        }
+        super.onError(error);
+    }
+
+    @Override
+    public void onComplete() {
+        try {
+            onCompleteRunnable.ifPresent(Runnable::run);
+            super.onComplete();
+        } catch (Throwable t) {
+            super.onError(t);
+        }
     }
 }

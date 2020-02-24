@@ -17,20 +17,30 @@
 
 package io.helidon.common.reactive;
 
-import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * Let pass only specified number of items.
  *
  * @param <T> both input/output type
  */
-public class MultiLimitProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiLimitProcessor<T> extends MultiFilterProcessor<T> {
 
-    private final AtomicLong counter;
+    private long counter = 0;
+    private Long limit;
 
     private MultiLimitProcessor(Long limit) {
-        counter = new AtomicLong(limit);
+        super();
+        this.limit = limit;
+        super.setPredicate(item -> {
+            if (limit > counter++) {
+                return true;
+            }
+            // by design done as part of onNext, so it is thread-safe w.r.t. invocation of any Subscriber methods
+            // so complete(...) causes onComplete to be signalled to downstream, and any signals from upstream or
+            // downstream during or following this call will be ignored
+            getSubscription().cancel();
+            complete();
+            return false;
+        });
     }
 
     /**
@@ -45,35 +55,20 @@ public class MultiLimitProcessor<T> extends BufferedProcessor<T, T> implements M
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super T> s) {
-        super.subscribe(s);
-        if (counter.get() == 0L) {
-            tryComplete();
+    protected void downstreamSubscribe() {
+        super.downstreamSubscribe();
+        if (limit == 0) {
+            getSubscription().cancel();
+            complete();
         }
     }
 
     @Override
     public void onError(Throwable ex) {
-        if (0 < this.counter.get()) {
+        if (limit > counter) {
             super.onError(ex);
         } else {
-            tryComplete();
+            complete();
         }
-    }
-
-    @Override
-    protected void hookOnNext(T item) {
-        long actCounter = this.counter.getAndDecrement();
-        if (0 < actCounter) {
-            submit(item);
-        } else {
-            getSubscription().ifPresent(Flow.Subscription::cancel);
-            tryComplete();
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "LimitProcessor{" + "counter=" + counter + '}';
     }
 }

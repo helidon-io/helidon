@@ -18,7 +18,9 @@
 package io.helidon.common.reactive;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -32,9 +34,9 @@ public class CoupledProcessorTest {
         Multi<Integer> secondStream = Multi.just(1, 2, 3);
         MultiTappedProcessor<Integer> passedInSubscriber = MultiTappedProcessor.create();
         MultiCoupledProcessor<Integer, Integer> coupledProcessor = MultiCoupledProcessor.create(passedInSubscriber, secondStream);
+        firstStream.subscribe(coupledProcessor);
         Single<Integer> firstSingle = Multi.from(coupledProcessor).first();
         Single<Integer> secondSingle = Multi.from(passedInSubscriber).first();
-        firstStream.subscribe(coupledProcessor);
 
         Assertions.assertThrows(Exception.class, () -> firstSingle.get(1, TimeUnit.SECONDS));
         Assertions.assertThrows(Exception.class, () -> secondSingle.get(1, TimeUnit.SECONDS));
@@ -42,15 +44,36 @@ public class CoupledProcessorTest {
 
     @Test
     void signalOnCompleteTest() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> passedInSubscriberCompleted = new CompletableFuture<>();
         Multi<Integer> firstStream = Multi.just(4, 5, 6);
         Multi<Integer> secondStream = Multi.just(1, 2, 3);
         MultiTappedProcessor<Integer> passedInSubscriber = MultiTappedProcessor.create();
         MultiCoupledProcessor<Integer, Integer> coupledProcessor = MultiCoupledProcessor.create(passedInSubscriber, secondStream);
-        Single<List<Integer>> firstResult = Multi.from(coupledProcessor).collectList();
-        Single<List<Integer>> secondResult = Multi.from(passedInSubscriber).collectList();
         firstStream.subscribe(coupledProcessor);
+        List<Integer> firstResult = Multi.from(coupledProcessor).collectList().get(1, TimeUnit.SECONDS);
+        passedInSubscriber.subscribe(new Flow.Subscriber<Integer>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                subscription.request(Long.MAX_VALUE);
+            }
 
-        Assertions.assertEquals(List.of(1, 2, 3), firstResult.get(1, TimeUnit.SECONDS));
-        Assertions.assertEquals(List.of(), secondResult.get(1, TimeUnit.SECONDS), "Needs to be empty, complete signal already sent by upstream");
+            @Override
+            public void onNext(Integer item) {
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                passedInSubscriberCompleted.complete(null);
+            }
+        });
+
+
+        Assertions.assertEquals(List.of(1, 2, 3), firstResult);
+        passedInSubscriberCompleted.get(100, TimeUnit.MILLISECONDS);
     }
 }

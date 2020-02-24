@@ -624,6 +624,13 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Reactive Streams Operators -->
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-reactive-streams</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.serviceconfiguration</groupId>

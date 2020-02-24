@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -36,12 +35,20 @@ final class SingleMappingProcessor<T, U> extends BaseProcessor<T, U> implements 
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        U value = mapper.map(item);
-        if (value == null) {
-            onError(new IllegalStateException("Mapper returned a null value"));
-        } else {
-            submit(value);
+    protected void submit(T item) {
+        U value = null;
+        try {
+            value = mapper.map(item);
+        } catch (Throwable t) {
+            getSubscription().cancel();
+            onError(t);
+            return;
         }
+        if (value == null) {
+            getSubscription().cancel();
+            onError(new IllegalStateException("Mapper returned a null value"));
+            return;
+        }
+        getSubscriber().onNext((U) value);
     }
 }
