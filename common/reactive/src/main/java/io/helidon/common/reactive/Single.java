@@ -78,6 +78,18 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Map this {@link Single} instance to a {@link Single} using the given {@link Mapper}.
+     *
+     * @param <U>    mapped items type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapSingle(Function<T, Single<U>> mapper) {
+        return new SingleFlatMapSingle<>(this, mapper);
+    }
+
+    /**
      * Exposes this {@link Single} instance as a {@link CompletionStage}.
      * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
      * exceptionally with an {@link IllegalStateException}
