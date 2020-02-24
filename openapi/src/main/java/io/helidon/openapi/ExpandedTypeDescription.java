@@ -93,11 +93,6 @@ class ExpandedTypeDescription extends TypeDescription {
         return type;
     }
 
-    static ExpandedTypeDescription recordHasDefaultProperty(ExpandedTypeDescription type) {
-        type.hasDefaultProperty(true);
-        return type;
-    }
-
     private ExpandedTypeDescription(Class<? extends Object> clazz, Class<?> impl) {
         super(clazz, null, impl);
         this.impl = impl;

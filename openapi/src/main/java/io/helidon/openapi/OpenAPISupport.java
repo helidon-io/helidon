@@ -144,7 +144,7 @@ public class OpenAPISupport implements Service {
 
     static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
         SnakeYAMLParserHelper<ExpandedTypeDescription> result = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create,
-                ExpandedTypeDescription::addEnum, ExpandedTypeDescription::recordHasDefaultProperty);
+                ExpandedTypeDescription::addEnum);
         adjustTypeDescriptions(result.types());
         return result;
     }
