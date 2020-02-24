@@ -320,7 +320,7 @@ public interface Server {
         private SeContainer createContainer(ClassLoader classLoader) {
             // not in CDI
             Weld initializer = new Weld();
-            initializer.addBeanDefiningAnnotations(Path.class, Provider.class);
+            initializer.addBeanDefiningAnnotations(Path.class);
             initializer.setClassLoader(classLoader);
             Map<String, Object> props = new HashMap<>(config.helidonConfig()
                                                               .get("cdi")
