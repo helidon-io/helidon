@@ -21,13 +21,13 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.common.JsonProcessing;
-import io.helidon.webclient.WebClientException;
-import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.Proxy;
 import io.helidon.webclient.WebClient;
-import io.helidon.webclient.metrics.ClientMetrics;
-import io.helidon.webclient.security.ClientSecurity;
-import io.helidon.webclient.tracing.ClientTracing;
+import io.helidon.webclient.WebClientException;
+import io.helidon.webclient.WebClientResponse;
+import io.helidon.webclient.metrics.WebClientMetrics;
+import io.helidon.webclient.security.WebClientSecurity;
+import io.helidon.webclient.tracing.WebClientTracing;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -53,18 +53,18 @@ public class WebserverClientExample {
         webClient = WebClient.builder()
                 // default configuration of client metrics
                 // REQUIRES: metrics registry configured on request context (injected by MetricsSupport)
-                .register(ClientMetrics.create(config.get("client.services.config.metrics")))
-                .register(ClientMetrics.timer()
+                .register(WebClientMetrics.create(config.get("client.services.config.metrics")))
+                .register(WebClientMetrics.timer()
                                   .methods("GET", "POST")
                                   .nameFormat("neco")
                                   .description("Cool description")
                                   .build())
                 // default configuration of tracing
                 // REQUIRES: span context configured on request context (injected by future TracingSupport)
-                .register(ClientTracing.create())
+                .register(WebClientTracing.create())
                 // default configuration of client security - invokes outbound provider(s) and updates headers
                 // REQUIRES: security and security context configured on request context (injected by WebSecurity)
-                .register(ClientSecurity.create())
+                .register(WebClientSecurity.create())
                 .proxy(Proxy.create(config))
                 .build();
 

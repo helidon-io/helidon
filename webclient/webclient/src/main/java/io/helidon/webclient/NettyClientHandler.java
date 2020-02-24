@@ -118,9 +118,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
                                                      clientResponse.headers().toMap());
 
-            WebClientServiceResponse clientServiceResponse = new WebClientServiceResponseImpl(requestConfiguration.context().get(),
-                                                                                              clientResponse.headers(),
-                                                                                              clientResponse.status());
+            WebClientServiceResponse clientServiceResponse =
+                    new WebClientServiceResponseImpl(requestConfiguration.context().get(),
+                                                     clientResponse.headers(),
+                                                     clientResponse.status());
 
             ctx.channel().attr(SERVICE_RESPONSE).set(clientServiceResponse);
 

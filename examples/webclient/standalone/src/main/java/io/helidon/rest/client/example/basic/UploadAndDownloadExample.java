@@ -18,9 +18,9 @@ package io.helidon.rest.client.example.basic;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.FileSubscriber;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 
 /**
  * Example of how to upload and download file.
