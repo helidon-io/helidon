@@ -43,7 +43,6 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
-import org.yaml.snakeyaml.resolver.Resolver;
 
 /**
  * Expresses an existing {@code OpenAPI} instance as an OpenAPI document. This implementation uses
@@ -58,7 +57,8 @@ class Serializer {
 
     private static final Logger LOGGER = Logger.getLogger(Serializer.class.getName());
 
-    private Serializer() {}
+    private Serializer() {
+    }
 
     static {
         YAML_DUMPER_OPTIONS.setIndent(2);
@@ -192,12 +192,10 @@ class Serializer {
 
             List<NodeTuple> tuples = new ArrayList<>(node.getValue());
 
-            if (tuples == null) {
+            if (tuples.isEmpty()) {
                 return;
             }
             List<NodeTuple> updatedTuples = new ArrayList<>();
-            Extensible<?> ext = (Extensible<?>) javaBean;
-
 
             tuples.forEach(tuple -> {
                 Node keyNode = tuple.getKeyNode();

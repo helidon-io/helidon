@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.Reference;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -33,7 +32,8 @@ import org.yaml.snakeyaml.constructor.Constructor;
  */
 class OpenAPIParser {
 
-    private OpenAPIParser() {}
+    private OpenAPIParser() {
+    }
 
     static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, InputStream inputStream,
             OpenAPISupport.OpenAPIMediaType openAPIMediaType) {

@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -75,7 +74,6 @@ import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
-import org.yaml.snakeyaml.introspector.Property;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -142,7 +140,7 @@ public class OpenAPISupport implements Service {
                 .get(webContext, this::prepareResponse);
     }
 
-    synchronized static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
+    static synchronized SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
         if (helper == null) {
             helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
             adjustTypeDescriptions(helper.types());
@@ -582,12 +580,10 @@ public class OpenAPISupport implements Service {
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
-        private SnakeYAMLParserHelper<ExpandedTypeDescription> helper;
 
         @Override
         public OpenAPISupport build() {
             validate();
-            helper = helper();
             return new OpenAPISupport(this);
         }
 

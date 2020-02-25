@@ -16,14 +16,14 @@
  */
 package io.helidon.openapi;
 
+import java.util.Set;
+
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertySubstitute;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.Tag;
-
-import java.util.Set;
 
 /**
  * Version of {@code TypeDescription} used for implementation classes (rather than the corresponding interfaces) which delegate
