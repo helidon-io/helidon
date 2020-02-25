@@ -36,7 +36,6 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.ext.Provider;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -63,7 +62,6 @@ public interface Server {
      * @throws MpException in case the server fails to be created
      * @see #builder()
      */
-    @SafeVarargs
     static Server create(Application... applications) throws MpException {
         Builder builder = builder();
         Arrays.stream(applications).forEach(builder::addApplication);
@@ -150,14 +148,13 @@ public interface Server {
      */
     final class Builder {
 
-        {
+        static {
             // Load the initialization start time as early as possible from non-public code.
             ServerImpl.recordInitStart(System.nanoTime());
         }
 
         // there should only be one
         private static final AtomicInteger MP_SERVER_COUNTER = new AtomicInteger(1);
-        private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
@@ -243,19 +240,12 @@ public interface Server {
 
             STARTUP_LOGGER.finest("CDI Container obtained");
 
-            if (applications.isEmpty()) {
-                if (!resourceClasses.isEmpty()) {
-                    resourceConfig = configForClasses(resourceClasses, providerClasses);
-                }
-                if (null == resourceConfig) {
-                    resourcesFromContainer();
-                }
-
-                if (null != resourceConfig) {
-                    applications.add(JaxRsApplication.create(resourceConfig));
-                }
-            } else if (!resourceClasses.isEmpty()) {
+            addResourcesFromContainer();
+            if (!resourceClasses.isEmpty()) {
                 applications.add(JaxRsApplication.create(configForClasses(resourceClasses, providerClasses)));
+            }
+            if (resourceConfig != null) {
+                applications.add(JaxRsApplication.create(resourceConfig));
             }
 
             STARTUP_LOGGER.finest("Jersey resource configuration");
@@ -275,24 +265,15 @@ public interface Server {
             return new ServerImpl(this);
         }
 
-        private void resourcesFromContainer() {
+        private void addResourcesFromContainer() {
             ServerCdiExtension extension = cdiContainer.getBeanManager().getExtension(ServerCdiExtension.class);
             if (null == extension) {
                 throw new RuntimeException("Failed to find JAX-RS resource to use, extension not registered with container");
             }
 
-            List<Class<? extends Application>> applications = extension.getApplications();
-
-            if (applications.isEmpty()) {
-                List<Class<?>> resourceClasses = extension.getResourceClasses();
-                List<Class<?>> providerClasses = extension.getProviderClasses();
-                if (resourceClasses.isEmpty()) {
-                    LOGGER.warning("Failed to find JAX-RS resource to use");
-                }
-                resourceConfig = configForClasses(resourceClasses, providerClasses);
-            } else {
-                applications.forEach(this::addApplication);
-            }
+            extension.getApplications().forEach(this::addApplication);
+            resourceClasses.addAll(extension.getResourceClasses());
+            providerClasses.addAll(extension.getProviderClasses());
         }
 
         private Optional<SeContainer> currentContainer() {
@@ -332,11 +313,11 @@ public interface Server {
             // add resource classes explicitly configured without CDI annotations
             this.resourceClasses.stream()
                     .filter(this::notACdiBean)
-                    .forEach(initializer::addBeanClasses);
+                    .forEach(initializer::addBeanClass);
             // add provider classes explicitly configured without CDI annotations
             this.providerClasses.stream()
                     .filter(this::notACdiBean)
-                    .forEach(initializer::addBeanClasses);
+                    .forEach(initializer::addBeanClass);
 
             STARTUP_LOGGER.finest("Initializer");
             SeContainer container = initializer.initialize();

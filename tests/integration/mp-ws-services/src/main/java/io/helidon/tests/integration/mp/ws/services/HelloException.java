@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,16 @@
  */
 package io.helidon.tests.integration.mp.ws.services;
 
-import io.helidon.microprofile.server.Server;
-
 /**
- * Main class for integration test.
+ * Simple exception class to use with custom exception mapper.
  */
-public class MpServicesMain {
-    public static void main(String[] args) {
-        startTheServer();
-    }
-
-    static Server startTheServer() {
-        return Server.builder()
-                // need to register this one explicitly in order to avoid
-                // generic type argument erasure by Weld proxy
-                .addProviderClass(HtmlWriter.class)
-                .build()
-                .start();
+public class HelloException extends RuntimeException {
+    /**
+     * Construct HelloException instance.
+     *
+     * @param message error message
+     */
+    public HelloException(String message) {
+        super(message);
     }
 }

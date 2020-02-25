@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
@@ -46,24 +47,19 @@ public class ServerCdiExtension implements Extension {
     @SuppressWarnings("unchecked")
     public <T> void gatherApplications(@Observes ProcessInjectionTarget<T> pit) {
         AnnotatedType<T> at = pit.getAnnotatedType();
-        if (!at.isAnnotationPresent(ApplicationScoped.class)) {
-            return;
-        }
+        boolean applicationScoped = at.isAnnotationPresent(ApplicationScoped.class);
+        boolean requestScoped = at.isAnnotationPresent(RequestScoped.class);
 
-        // class is annotated, let's make sure it is an application
-        Class<?> theClass = at.getJavaClass();
-        if (Application.class.isAssignableFrom(theClass)) {
-            this.applications.add((Class<? extends Application>) theClass);
-        } else {
-            // still may be a jax-rs resource or provider (with no application attached)
-            if (at.isAnnotationPresent(Path.class)) {
+        if (applicationScoped || requestScoped) {
+            Class<?> theClass = at.getJavaClass();
+            if (applicationScoped && Application.class.isAssignableFrom(theClass)) {
+                this.applications.add((Class<? extends Application>) theClass);
+            } else if (at.isAnnotationPresent(Path.class)) { // resources can be either request or application scoped
                 this.resourceClasses.add(theClass);
-            }
-            if (at.isAnnotationPresent(Provider.class)) {
+            } else if (applicationScoped && at.isAnnotationPresent(Provider.class)) {
                 this.providerClasses.add(theClass);
             }
         }
-
     }
 
     List<Class<? extends Application>> getApplications() {

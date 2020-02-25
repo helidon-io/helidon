@@ -35,3 +35,11 @@ io.helidon.tests.integration.mp.ws.services:
       path: "/jaxrs"
 
 app.message: "message"
+
+filter:
+  header:
+    name: "X-Foo"
+    value: "bar"
+
+html:
+  tag: "h1"

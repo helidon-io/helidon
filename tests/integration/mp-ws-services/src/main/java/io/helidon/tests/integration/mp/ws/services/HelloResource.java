@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,28 @@
  */
 package io.helidon.tests.integration.mp.ws.services;
 
-import io.helidon.microprofile.server.Server;
+import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 
 /**
- * Main class for integration test.
+ * Simple resource that tests explicit resource registration.
  */
-public class MpServicesMain {
-    public static void main(String[] args) {
-        startTheServer();
+@ApplicationScoped
+@Path("/hello")
+public class HelloResource {
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    public String sayHello() {
+        return "Hello";
     }
 
-    static Server startTheServer() {
-        return Server.builder()
-                // need to register this one explicitly in order to avoid
-                // generic type argument erasure by Weld proxy
-                .addProviderClass(HtmlWriter.class)
-                .build()
-                .start();
+    @GET
+    @Path("error")
+    public String error() {
+        throw new HelloException("hello error");
     }
 }

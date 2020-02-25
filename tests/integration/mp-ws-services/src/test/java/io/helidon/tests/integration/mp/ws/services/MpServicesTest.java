@@ -23,7 +23,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import javax.ws.rs.core.MediaType;
+
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Status;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -60,6 +63,9 @@ class MpServicesTest {
                 () -> test(9998, "/services/service1", "service1"),
                 () -> test(9998, "/services/service2", "service2"),
                 () -> test(9998, "/services/service3", "service3"),
+                () -> testHeader(9998, "/hello", "X-Foo", "bar"),
+                () -> test(9998, "/hello", MediaType.TEXT_HTML, "<h1>Hello</h1>"),
+                () -> test(9998, "/hello/error", MediaType.TEXT_PLAIN, Status.CREATED_201, "HELLO ERROR"),
                 // by priority, the service2 should be on this endpoint
                 () -> test(9998, "/services/service2", "service2"),
                 () -> test(9999, "/services", "admin"),
@@ -73,15 +79,32 @@ class MpServicesTest {
         test(9999, "/jaxrs", "jax-rs");
     }
 
-
-    private void test(int port, String path, String expected) throws IOException {
+    private void testHeader(int port, String path, String header, String expected) throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port + path).openConnection();
 
+        con.connect();
+        assertThat(con.getHeaderField(header), is(expected));
+        con.disconnect();
+    }
+
+    private void test(int port, String path, String expected) throws IOException {
+        test(port, path, null, Status.OK_200, expected);
+    }
+
+    private void test(int port, String path, String accept, String expected) throws IOException {
+        test(port, path, accept, Status.OK_200, expected);
+    }
+
+    private void test(int port, String path, String accept, Status expectedStatus, String expected) throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port + path).openConnection();
+        if (accept != null) {
+            con.setRequestProperty("Accept", accept);
+        }
         con.connect();
 
         assertThat("Should be a successful request (http://localhost:" + port + path + ")",
                    con.getResponseCode(),
-                   is(Http.Status.OK_200.code()));
+                   is(expectedStatus.code()));
 
         InputStream inputStream = con.getInputStream();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -97,5 +120,4 @@ class MpServicesTest {
 
         con.disconnect();
     }
-
 }
