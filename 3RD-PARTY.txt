@@ -672,7 +672,7 @@ PackageCopyrightText:
 Arthur De Magalhaes arthurdm@ca.ibm.com
 
 =======================
-Small Rye Open API 1.1.1
+Small Rye Open API 1.2.0
 =======================
 SmallRye: MicroProfile OpenAPI Implementation (io.smallrye:smallrye-open-api)
 Copyright 2018 Red Hat, Inc.
@@ -893,7 +893,7 @@ commons-lang3-3.9.jar
 
 
 =======================
-grpc-java 1.25.0
+grpc-java 1.27.1
 =======================
 Copyright 2014 The gRPC Authors
 Apache License, Version 2.0
@@ -1314,7 +1314,7 @@ Apache License, Version 2.0
 --------------------------------------------
 
 =======================
-reactor-core 3.1.5-RELEASE
+reactor-core 3.3.1-RELEASE
 =======================
 
 Non-Blocking Reactive Foundation for the JVM (io.projectreactor:reactor-core)
@@ -1546,10 +1546,9 @@ Copyright 2009 Sun Microsystems, Inc. All rights reserved.
 Copyright 2015,2016 Red Hat, Inc., and individual contributors
 
 =======================
-netty 4.1.42.Final
+netty 4.1.45.Final
 =======================
 The Netty Project
-netty-4.1.42.Final
 Copyright 2012,2019 The Netty Project
 Copyright 2011,2018 The Netty Project
 Copyright 2014,2017 The Netty Project
