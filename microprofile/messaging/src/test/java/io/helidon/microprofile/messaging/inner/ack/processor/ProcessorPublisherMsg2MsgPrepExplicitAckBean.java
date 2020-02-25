@@ -57,6 +57,7 @@ public class ProcessorPublisherMsg2MsgPrepExplicitAckBean implements AssertableT
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
+    @SuppressWarnings("unchecked")
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public Publisher<Message<String>> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());

@@ -58,6 +58,7 @@ public class ProcessorPublisherBuilderMsg2MsgPrepExplicitAckBean implements Asse
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
+    @SuppressWarnings("unchecked")
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public PublisherBuilder<Message<String>> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());

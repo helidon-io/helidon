@@ -21,8 +21,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public interface AssertableTestBean<T> {
-    public static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("teST1", "TEst2", "tESt3"));
+public interface AssertableTestBean {
+
+    Set<String> TEST_DATA = new HashSet<>(Arrays.asList("teST1", "TEst2", "tESt3"));
 
     void assertValid();
 }

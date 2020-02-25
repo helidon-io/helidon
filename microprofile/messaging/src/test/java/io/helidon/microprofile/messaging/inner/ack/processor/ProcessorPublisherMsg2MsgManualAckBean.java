@@ -57,6 +57,7 @@ public class ProcessorPublisherMsg2MsgManualAckBean implements AssertableTestBea
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
+    @SuppressWarnings("unchecked")
     @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     public Publisher<Message<String>> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());
