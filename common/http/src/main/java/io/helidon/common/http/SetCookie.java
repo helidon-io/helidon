@@ -72,7 +72,6 @@ public class SetCookie {
     public static SetCookie parse(String setCookie) {
         String[] cookieParts = setCookie.split(PARAM_SEPARATOR);
         String nameAndValue = cookieParts[0];
-        //check na equals pozici
         int equalsIndex = nameAndValue.indexOf('=');
         String name = nameAndValue.substring(0, equalsIndex);
         String value = nameAndValue.length() == equalsIndex ? null : nameAndValue.substring(equalsIndex + 1);
