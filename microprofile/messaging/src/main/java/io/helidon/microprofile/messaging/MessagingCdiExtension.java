@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
@@ -34,6 +36,8 @@ import io.helidon.microprofile.messaging.channel.ChannelRouter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+
+import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * MicroProfile Reactive Messaging CDI Extension.
@@ -64,14 +68,14 @@ public class MessagingCdiExtension implements Extension {
         channelRouter.registerBeanReference(event.getBean());
     }
 
-    private void makeConnections(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
+    private void makeConnections(@Observes @Priority(PLATFORM_AFTER + 101) @Initialized(ApplicationScoped.class) Object event,
+                                 BeanManager beanManager) {
         if (!deploymentExceptions.isEmpty()) {
             deploymentExceptions.stream()
                     .skip(1)
                     .forEach(Throwable::printStackTrace);
             throw deploymentExceptions.get(0);
         }
-        LOGGER.info("Final connect");
         // Subscribe subscribers and publish publishers
         channelRouter.connect(beanManager);
         LOGGER.info("All connected");

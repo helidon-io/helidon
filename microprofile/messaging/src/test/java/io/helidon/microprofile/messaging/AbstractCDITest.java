@@ -35,10 +35,12 @@ import java.util.stream.Collectors;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
+import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -106,6 +108,9 @@ public abstract class AbstractCDITest {
     }
 
     private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
+        //cleanup
+        stopCdiContainer();
+
         p = new HashMap<>(p);
         p.put("mp.initializer.allow", "true");
         Config config = Config.builder()
@@ -122,6 +127,21 @@ public abstract class AbstractCDITest {
         assertNotNull(initializer);
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
+    }
+
+    protected static void stopCdiContainer() {
+        try {
+            ServerCdiExtension server = CDI.current()
+                    .getBeanManager()
+                    .getExtension(ServerCdiExtension.class);
+
+            if (server.started()) {
+                SeContainer container = (SeContainer) CDI.current();
+                container.close();
+            }
+        } catch (IllegalStateException e) {
+            //noop container is not running
+        }
     }
 
     protected static final class CdiTestCase {
