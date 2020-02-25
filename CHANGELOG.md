@@ -15,13 +15,29 @@ This is a bug fix release of Helidon.
 - JAX-RS: Application path had to contain leading "/" [1261](https://github.com/oracle/helidon/pull/1261)
 - Security: OIDC and JWT: groups claim in a JWT is now honored and a Role is created in subject for each such group. [1325](https://github.com/oracle/helidon/pull/1325)
 - Security: OIDC redirect with cookies now uses Same-Site policy of Lax by default to prevent infinite redirects. If the default value is use, a warning is printed explaining the change. [1314](https://github.com/oracle/helidon/pull/1314)
+- Security: #1408 public fields for IdcsMtRoleMapperProvider.MtCacheKey for Helidon 1.x [1413](https://github.com/oracle/helidon/pull/1413)
+- JPA/JTA: Transaction fixes [1376](https://github.com/oracle/helidon/pull/1376)
+- Metrics: Fix Prometheus format problems [1427](https://github.com/oracle/helidon/pull/1427)
 - OpenAPI: Support multiple jandex.idx files on the classpath [1318](https://github.com/oracle/helidon/pull/1318)
-- gRPC minor enhancements [1277](https://github.com/oracle/helidon/pull/1277)
-- Archetypes: Fix optional files in bare archetypes. [1250](https://github.com/oracle/helidon/pull/1250)
-- Force upgrade of shrinkwrap used by arquillian to support https [1308](https://github.com/oracle/helidon/pull/1308)
+- gRPC: minor enhancements [1277](https://github.com/oracle/helidon/pull/1277)
 - Fix application jar class-path for SNAPSHOT versioned dependencies [1298](https://github.com/oracle/helidon/pull/1298)
+- Archetypes: Fix optional files in bare archetypes. [1250](https://github.com/oracle/helidon/pull/1250)
+- Examples: Add OpenAPI annotations to MP quickstart [1393](https://github.com/oracle/helidon/pull/1393)
+- Examples: Update gradle files to work with Gradle 5, 6. [1352](https://github.com/oracle/helidon/pull/1352)
+- Upgrade jdk8-graalvm docker image to graalvm 19.3.1. Add libstdc++-6-dev [1428](https://github.com/oracle/helidon/pull/1428)
+- Upgrade netty to 4.1.45 [1425](https://github.com/oracle/helidon/pull/1425)
+- Upgrade Grpc java [1437](https://github.com/oracle/helidon/pull/1437)
+- Upgrade SmallRye OpenAPI to 1.2.0 [1421](https://github.com/oracle/helidon/pull/1421)
 - Upgrade reactor to 3.3.1-RELEASE [1237](https://github.com/oracle/helidon/pull/1237)
 - Upgrade H2, HikariCP, Jedis Client, OCI Client [1270](https://github.com/oracle/helidon/pull/1270)
+- Upgrade shrinkwrap used by arquillian to support https [1308](https://github.com/oracle/helidon/pull/1308)
+
+### Experimental
+
+The following enhancements are experimental. They should be considered unstable and subject
+to change.
+
+- Add jlink-image support [1423](https://github.com/oracle/helidon/pull/1423)
 
 ## [1.4.1]
 
