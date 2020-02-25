@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,6 +55,8 @@ class Serializer {
 
     private static final DumperOptions YAML_DUMPER_OPTIONS = new DumperOptions();
     private static final DumperOptions JSON_DUMPER_OPTIONS = new DumperOptions();
+
+    private static final Logger LOGGER = Logger.getLogger(Serializer.class.getName());
 
     private Serializer() {}
 
@@ -161,10 +164,14 @@ class Serializer {
              * we need to replace a, for example BigDecimal that happen to be an integer value, with an Integer.
              * See https://github.com/eclipse/microprofile-open-api/issues/412
              */
-            if (Number.class.isInstance(propertyValue)) {
+            if (Number.class.isInstance(propertyValue) && !Boolean.getBoolean("io.helidon.openapi.skipTCKWorkaround")) {
                 Number n = (Number) propertyValue;
-                if (n.intValue() == n.floatValue()) {
+                float diff = n.floatValue() - n.intValue();
+                if (diff == 0) {
                     propertyValue = Integer.valueOf(n.intValue());
+                } else if (Math.abs(diff) < 0.1) {
+                    LOGGER.warning(String.format("Integer approximation of %f did not match but the difference was only %e",
+                            n, diff));
                 }
             }
             return propertyValue;
@@ -233,9 +240,8 @@ class Serializer {
      */
     static class TagSuppressingWriter extends PrintWriter {
 
-        private static final Pattern UNQUOTED_TRAILING_TAG_PATTERN = Pattern.compile("![^\"]+$");
         private static final Pattern SMALLRYE_IMPL_TAG_PATTERN =
-                Pattern.compile("!!" + OpenAPIImpl.class.getPackage().getName() + ".+$");
+                Pattern.compile("!!" + Pattern.quote(OpenAPIImpl.class.getPackage().getName()) + ".+$");
 
         TagSuppressingWriter(Writer out) {
             super(out);
