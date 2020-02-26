@@ -16,12 +16,16 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.util.concurrent.CompletionStage;
+
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+
+import io.opentracing.Tracer;
 
 /**
  * The application main class.
@@ -40,12 +44,25 @@ public final class Main {
         startServer();
     }
 
+    static CompletionStage<WebServer> startServer(Tracer tracer) {
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
+
+        // Get webserver config from the "server" section of application.yaml
+        ServerConfiguration serverConfig =
+                ServerConfiguration.builder(config.get("server"))
+                        .tracer(tracer)
+                        .build();
+
+        return startIt(config, serverConfig);
+    }
+
     /**
      * Start the server.
      *
      * @return the created {@link WebServer} instance
      */
-    static WebServer startServer() {
+    static CompletionStage<WebServer> startServer() {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
@@ -53,18 +70,23 @@ public final class Main {
         ServerConfiguration serverConfig =
                 ServerConfiguration.create(config.get("server"));
 
+        return startIt(config, serverConfig);
+    }
+
+    private static CompletionStage<WebServer> startIt(Config config, ServerConfiguration serverConfig) {
         WebServer server = WebServer.create(serverConfig, createRouting(config));
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
-                .thenAccept(ws -> {
-                    serverPort = ws.port();
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port() + "/greet");
-                    ws.whenShutdown().thenRun(()
-                                                      -> System.out.println("WEB server is DOWN. Good bye!"));
-                })
+        CompletionStage<WebServer> start = server.start();
+
+        start.thenAccept(ws -> {
+            serverPort = ws.port();
+            System.out.println(
+                    "WEB server is up! http://localhost:" + ws.port() + "/greet");
+            ws.whenShutdown().thenRun(()
+                                              -> System.out.println("WEB server is DOWN. Good bye!"));
+        })
                 .exceptionally(t -> {
                     System.err.println("Startup failed: " + t.getMessage());
                     t.printStackTrace(System.err);
@@ -72,8 +94,7 @@ public final class Main {
                 });
 
         // Server threads are not daemon. No need to block. Just react.
-
-        return server;
+        return start;
     }
 
     /**
@@ -90,5 +111,4 @@ public final class Main {
                 .register("/greet", greetService)
                 .build();
     }
-
 }

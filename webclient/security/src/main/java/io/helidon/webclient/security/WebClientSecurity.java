@@ -17,7 +17,9 @@ package io.helidon.webclient.security;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
@@ -81,7 +83,15 @@ public class WebClientSecurity implements WebClientService {
     public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
         Context requestContext = request.context();
         // context either from request or create a new one
-        SecurityContext context = requestContext.get(SecurityContext.class).orElseGet(() -> createContext(request));
+        Optional<SecurityContext> maybeContext = requestContext.get(SecurityContext.class);
+
+        if (null == security) {
+            if (maybeContext.isEmpty()) {
+                return CompletableFuture.completedFuture(request);
+            }
+        }
+
+        SecurityContext context = maybeContext.orElseGet(() -> createContext(request));
 
         Span span = context.tracer()
                 .buildSpan("security:outbound")

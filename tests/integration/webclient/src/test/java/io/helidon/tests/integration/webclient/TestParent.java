@@ -47,7 +47,7 @@ public class TestParent {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
+        webServer = Main.startServer().toCompletableFuture().get();
 
         long timeout = 2000; // 2 seconds should be enough to start the server
         long now = System.currentTimeMillis();
@@ -82,7 +82,7 @@ public class TestParent {
         context.register(securityContext);
 
         WebClient.Builder builder = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet/")
+                .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .config(CONFIG.get("client"))
                 .context(context)
                 .mediaSupport(MediaSupport.builder()
