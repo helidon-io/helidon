@@ -67,9 +67,9 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
         private final AtomicBoolean canceled;
 
-        private Flow.Publisher<T> source1;
+        private transient Flow.Publisher<T> source1;
 
-        private Flow.Publisher<T> source2;
+        private transient Flow.Publisher<T> source2;
 
         private int index;
 
