@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests related to {@link Config#onChange(java.util.function.Consumer)}.
@@ -531,7 +532,10 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue("key1", "string value 2").build());
 
         // wait for event
-        onNextLatch.await(3, TimeUnit.SECONDS);
+        int changeTimeout = 3;
+        if (!onNextLatch.await(changeTimeout, TimeUnit.SECONDS)) {
+            fail("Change did not come within the expected timeout of " + changeTimeout + " seconds");
+        }
 
         // verify event
         Config newConfig = newConfigReference.get();
