@@ -16,11 +16,6 @@
 
 server:
   port: 9998
-  sockets:
-    admin:
-      port: 9999
-
-app.message: "message"
 
 filter:
   header:

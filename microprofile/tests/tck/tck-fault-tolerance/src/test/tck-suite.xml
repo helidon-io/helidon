@@ -24,8 +24,8 @@
       -->
     <test name="microprofile-fault-tolerance 2.0 TCK">
         <packages>
-            <!-- package name="org.eclipse.microprofile.fault.tolerance.tck.*">
-            </package -->
+            <package name="org.eclipse.microprofile.fault.tolerance.tck.*">
+            </package>
         </packages>
     </test>
 </suite>

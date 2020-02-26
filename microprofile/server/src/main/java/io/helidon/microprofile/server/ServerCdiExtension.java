@@ -26,7 +26,6 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
-import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.Provider;
@@ -59,8 +58,7 @@ public class ServerCdiExtension implements Extension {
             // not include
             if (applicationScoped
                     || at.isAnnotationPresent(RequestScoped.class)
-                    || at.isAnnotationPresent(Dependent.class)
-                    || at.isAnnotationPresent(Singleton.class)) {
+                    || at.isAnnotationPresent(Dependent.class)) {
                 this.resourceClasses.add(theClass);
             }
         } else if (at.isAnnotationPresent(Provider.class)) {
