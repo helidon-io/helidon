@@ -61,17 +61,17 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
         private static final long serialVersionUID = -1593224722447706944L;
 
-        final InnerSubscriber<T> inner1;
+        private final InnerSubscriber<T> inner1;
 
-        final InnerSubscriber<T> inner2;
+        private final InnerSubscriber<T> inner2;
 
-        final AtomicBoolean canceled;
+        private final AtomicBoolean canceled;
 
-        Flow.Publisher<T> source1;
+        private Flow.Publisher<T> source1;
 
-        Flow.Publisher<T> source2;
+        private Flow.Publisher<T> source2;
 
-        int index;
+        private int index;
 
         ConcatCancelingSubscription(Flow.Subscriber<? super T> subscriber,
                                     Flow.Publisher<T> source1, Flow.Publisher<T> source2) {
@@ -137,13 +137,13 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
             private static final long serialVersionUID = 3029954591185720794L;
 
-            final Flow.Subscriber<? super T> downstream;
+            private final Flow.Subscriber<? super T> downstream;
 
-            final ConcatCancelingSubscription<T> parent;
+            private final ConcatCancelingSubscription<T> parent;
 
-            final AtomicLong requested;
+            private final AtomicLong requested;
 
-            long produced;
+            private long produced;
 
             InnerSubscriber(Flow.Subscriber<? super T> downstream, ConcatCancelingSubscription<T> parent) {
                 this.downstream = downstream;
