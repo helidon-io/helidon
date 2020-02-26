@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
@@ -52,7 +51,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractCDITest {
 
-    static final AtomicReference<Server> singleServerReference = new AtomicReference<>();
+    static Server singleServerReference;
 
     static {
         try (InputStream is = AbstractCDITest.class.getResourceAsStream("/logging.properties")) {
@@ -69,7 +68,7 @@ public abstract class AbstractCDITest {
     }
 
     protected void cdiBeanClasses(Set<Class<?>> classes) {
-
+        //noop
     }
 
     @BeforeEach
@@ -82,10 +81,13 @@ public abstract class AbstractCDITest {
 
     @AfterEach
     public void tearDown() {
-        Optional.ofNullable(cdiContainer)
-                .ifPresent(SeContainer::close);
-        Optional.ofNullable(singleServerReference.get())
-                .ifPresent(Server::stop);
+        try {
+            singleServerReference.stop();
+            cdiContainer.close();
+        } catch (Throwable t) {
+            //emergency cleanup see #1446
+            stopCdiContainer();
+        }
     }
 
 
@@ -108,9 +110,6 @@ public abstract class AbstractCDITest {
     }
 
     private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
-        //cleanup
-        stopCdiContainer();
-
         p = new HashMap<>(p);
         p.put("mp.initializer.allow", "true");
         Config config = Config.builder()
@@ -120,7 +119,7 @@ public abstract class AbstractCDITest {
         final Server.Builder builder = Server.builder();
         assertNotNull(builder);
         builder.config(config);
-        singleServerReference.set(builder.build());
+        singleServerReference = builder.build();
         ConfigProviderResolver.instance()
                 .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
