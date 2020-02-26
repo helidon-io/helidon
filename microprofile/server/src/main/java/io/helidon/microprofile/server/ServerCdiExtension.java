@@ -20,7 +20,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
@@ -48,17 +47,14 @@ public class ServerCdiExtension implements Extension {
     public <T> void gatherApplications(@Observes ProcessInjectionTarget<T> pit) {
         AnnotatedType<T> at = pit.getAnnotatedType();
         boolean applicationScoped = at.isAnnotationPresent(ApplicationScoped.class);
-        boolean requestScoped = at.isAnnotationPresent(RequestScoped.class);
 
-        if (applicationScoped || requestScoped) {
-            Class<?> theClass = at.getJavaClass();
-            if (applicationScoped && Application.class.isAssignableFrom(theClass)) {
-                this.applications.add((Class<? extends Application>) theClass);
-            } else if (at.isAnnotationPresent(Path.class)) { // resources can be either request or application scoped
-                this.resourceClasses.add(theClass);
-            } else if (applicationScoped && at.isAnnotationPresent(Provider.class)) {
-                this.providerClasses.add(theClass);
-            }
+        Class<?> theClass = at.getJavaClass();
+        if (applicationScoped && Application.class.isAssignableFrom(theClass)) {
+            this.applications.add((Class<? extends Application>) theClass);
+        } else if (at.isAnnotationPresent(Path.class)) {
+            this.resourceClasses.add(theClass);
+        } else if (at.isAnnotationPresent(Provider.class)) {
+            this.providerClasses.add(theClass);
         }
     }
 

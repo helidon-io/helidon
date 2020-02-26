@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.mp.ws.services;
+package io.helidon.tests.integration.mp.autodiscovery;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
+import javax.inject.Inject;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * Simple resource that tests explicit resource registration.
+ * Example bean.
  */
 @ApplicationScoped
-@Path("/hello")
-public class HelloResource {
-    @GET
-    @Produces(MediaType.TEXT_HTML)
-    public String sayHello() {
-        return "Hello";
+public class MessageBean {
+    @Inject
+    @ConfigProperty(name = "app.message")
+    private String message;
+
+    public String message() {
+        return message;
     }
 
-    @GET
-    @Path("error")
-    public String error() {
-        throw new HelloException("hello error");
+    @Override
+    public String toString() {
+        return message;
     }
 }

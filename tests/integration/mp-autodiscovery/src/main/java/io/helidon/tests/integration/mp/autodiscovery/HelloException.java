@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.mp.ws.services;
-
-import io.helidon.microprofile.server.Server;
+package io.helidon.tests.integration.mp.autodiscovery;
 
 /**
- * Main class for integration test.
+ * Simple exception class to use with custom exception mapper.
  */
-public class MpServicesMain {
-    public static void main(String[] args) {
-        startTheServer();
-    }
-
-    static Server startTheServer() {
-        return Server.create().start();
+public class HelloException extends RuntimeException {
+    /**
+     * Construct HelloException instance.
+     *
+     * @param message error message
+     */
+    public HelloException(String message) {
+        super(message);
     }
 }

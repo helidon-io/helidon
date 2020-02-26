@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,3 +19,13 @@ server:
   sockets:
     admin:
       port: 9999
+
+app.message: "message"
+
+filter:
+  header:
+    name: "X-Foo"
+    value: "bar"
+
+html:
+  tag: "h1"

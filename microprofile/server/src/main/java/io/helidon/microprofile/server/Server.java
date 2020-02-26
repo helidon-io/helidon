@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
@@ -240,12 +241,17 @@ public interface Server {
 
             STARTUP_LOGGER.finest("CDI Container obtained");
 
-            addResourcesFromContainer();
-            if (!resourceClasses.isEmpty()) {
-                applications.add(JaxRsApplication.create(configForClasses(resourceClasses, providerClasses)));
-            }
-            if (resourceConfig != null) {
-                applications.add(JaxRsApplication.create(resourceConfig));
+            if (applications.isEmpty()) {
+                // no explicit or discovered applications
+                if (!resourceClasses.isEmpty()) {
+                    resourceConfig = configForClasses(resourceClasses, providerClasses);
+                }
+                if (null == resourceConfig) {
+                    addResourcesFromContainer();
+                }
+                if (null != resourceConfig) {
+                    applications.add(JaxRsApplication.create(resourceConfig));
+                }
             }
 
             STARTUP_LOGGER.finest("Jersey resource configuration");
@@ -271,9 +277,15 @@ public interface Server {
                 throw new RuntimeException("Failed to find JAX-RS resource to use, extension not registered with container");
             }
 
-            extension.getApplications().forEach(this::addApplication);
-            resourceClasses.addAll(extension.getResourceClasses());
-            providerClasses.addAll(extension.getProviderClasses());
+            List<Class<? extends Application>> applications = extension.getApplications();
+
+            if (applications.isEmpty()) {
+                resourceClasses.addAll(extension.getResourceClasses());
+                providerClasses.addAll(extension.getProviderClasses());
+                resourceConfig = configForClasses(resourceClasses, providerClasses);
+            } else {
+                applications.forEach(this::addApplication);
+            }
         }
 
         private Optional<SeContainer> currentContainer() {
@@ -332,6 +344,11 @@ public interface Server {
             }
 
             if (clazz.getAnnotation(ApplicationScoped.class) != null) {
+                //CDI bean
+                return false;
+            }
+
+            if (clazz.getAnnotation(Dependent.class) != null) {
                 //CDI bean
                 return false;
             }

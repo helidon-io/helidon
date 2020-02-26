@@ -13,37 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.mp.ws.services;
+package io.helidon.tests.integration.mp.autodiscovery;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import static javax.ws.rs.core.Response.Status.CREATED;
+
 /**
- * Simple CDI-managed filter that should be discovered, configured
- * and registered automatically.
+ * Simple CDI-managed exception mapper that should be discovered,
+ * configured and registered automatically.
  */
 @ApplicationScoped
 @Provider
-public class HeaderAddingFilter implements ContainerResponseFilter {
+public class HelloExceptionMapper implements ExceptionMapper<HelloException> {
     @Inject
-    @ConfigProperty(name = "filter.header.name")
-    private String name;
-
-    @Inject
-    @ConfigProperty(name = "filter.header.value")
-    private String value;
+    @ConfigProperty(name = "exception.upercase", defaultValue = "true")
+    private boolean fUppercase;
 
     @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        MultivaluedMap<String, Object> headers = responseContext.getHeaders();
+    public Response toResponse(HelloException exception) {
+        String message = fUppercase
+                ? exception.getMessage().toUpperCase()
+                : exception.getMessage();
 
-        headers.add(name, value);
+        return Response.status(CREATED).entity(message).build();
     }
 }

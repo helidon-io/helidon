@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.mp.ws.services;
+package io.helidon.tests.integration.mp.autodiscovery;
+
+import io.helidon.microprofile.server.Server;
 
 /**
- * Simple exception class to use with custom exception mapper.
+ * Main class for integration test.
  */
-public class HelloException extends RuntimeException {
-    /**
-     * Construct HelloException instance.
-     *
-     * @param message error message
-     */
-    public HelloException(String message) {
-        super(message);
+public class MpServicesMain {
+    public static void main(String[] args) {
+        startTheServer();
+    }
+
+    static Server startTheServer() {
+        return Server.create().start();
     }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.mp.ws.services;
+package io.helidon.tests.integration.mp.autodiscovery;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -22,14 +22,8 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
-import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -39,8 +33,6 @@ import javax.ws.rs.ext.Provider;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import static javax.interceptor.Interceptor.Priority.APPLICATION;
-
 /**
  * Simple message body writer for HTML content.
  */
@@ -49,6 +41,7 @@ import static javax.interceptor.Interceptor.Priority.APPLICATION;
 //@ApplicationScoped
 @Provider
 @Produces(MediaType.TEXT_HTML)
+@Dependent
 public class HtmlWriter implements MessageBodyWriter<String> {
 
     @Inject
