@@ -20,10 +20,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.Provider;
@@ -52,7 +55,14 @@ public class ServerCdiExtension implements Extension {
         if (applicationScoped && Application.class.isAssignableFrom(theClass)) {
             this.applications.add((Class<? extends Application>) theClass);
         } else if (at.isAnnotationPresent(Path.class)) {
-            this.resourceClasses.add(theClass);
+            // we need to make sure this has at least one bean defining annotation, otherwise do
+            // not include
+            if (applicationScoped
+                    || at.isAnnotationPresent(RequestScoped.class)
+                    || at.isAnnotationPresent(Dependent.class)
+                    || at.isAnnotationPresent(Singleton.class)) {
+                this.resourceClasses.add(theClass);
+            }
         } else if (at.isAnnotationPresent(Provider.class)) {
             this.providerClasses.add(theClass);
         }
