@@ -18,6 +18,8 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -49,93 +51,139 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
     @Override
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
-        firstPublisher.subscribe(new ConcatSubscriber<>(subscriber, secondPublisher));
+        ConcatCancelingSubscription<T> parent = new ConcatCancelingSubscription<>(subscriber, firstPublisher, secondPublisher);
+        subscriber.onSubscribe(parent);
+        parent.drain();
     }
 
-    static final class ConcatSubscriber<T> implements Flow.Subscriber<T>, Flow.Subscription {
+    static final class ConcatCancelingSubscription<T>
+            extends AtomicInteger implements Flow.Subscription {
 
-        private final Flow.Subscriber<? super T> downstream;
+        private static final long serialVersionUID = -1593224722447706944L;
 
-        private final AtomicLong requested;
+        final InnerSubscriber<T> inner1;
 
-        private final AtomicReference<Flow.Subscription> secondUpstream;
+        final InnerSubscriber<T> inner2;
 
-        private Flow.Publisher<T> secondPublisher;
+        final AtomicBoolean canceled;
 
-        private long received;
+        Flow.Publisher<T> source1;
 
-        private Flow.Subscription firstUpstream;
+        Flow.Publisher<T> source2;
 
-        ConcatSubscriber(Flow.Subscriber<? super T> downstream, Flow.Publisher<T> secondPublisher) {
-            this.downstream = downstream;
-            this.secondPublisher = secondPublisher;
-            this.secondUpstream = new AtomicReference<>();
-            this.requested = new AtomicLong();
-        }
+        int index;
 
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            if (secondPublisher == null) {
-                SubscriptionHelper.deferredSetOnce(secondUpstream, requested, subscription);
-            } else {
-                SubscriptionHelper.validate(this.firstUpstream, subscription);
-                this.firstUpstream = subscription;
-                downstream.onSubscribe(this);
-            }
-        }
-
-        @Override
-        public void onNext(T item) {
-            received++;
-            downstream.onNext(item);
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            secondPublisher = null;
-            firstUpstream = null;
-            secondUpstream.lazySet(null);
-            downstream.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            if (secondPublisher == null) {
-                secondUpstream.lazySet(null);
-                downstream.onComplete();
-            } else {
-                Flow.Publisher<T> second = secondPublisher;
-                secondPublisher = null;
-                firstUpstream = null;
-
-                SubscriptionHelper.produced(requested, received);
-
-                second.subscribe(this);
-            }
+        ConcatCancelingSubscription(Flow.Subscriber<? super T> subscriber,
+                                    Flow.Publisher<T> source1, Flow.Publisher<T> source2) {
+            this.inner1 = new InnerSubscriber<>(subscriber, this);
+            this.inner2 = new InnerSubscriber<>(subscriber, this);
+            this.canceled = new AtomicBoolean();
+            this.source1 = source1;
+            this.source2 = source2;
         }
 
         @Override
         public void request(long n) {
-            if (n <= 0L) {
-                onError(new IllegalArgumentException("Rule §3.9 violated: non-positive request calls are forbidden"));
-                return;
-            }
-            SubscriptionHelper.deferredRequest(secondUpstream, requested, n);
-            Flow.Subscription upstream = firstUpstream;
-            if (upstream != null) {
-                upstream.request(n);
-            }
+            SubscriptionHelper.deferredRequest(inner2, inner2.requested, n);
+            SubscriptionHelper.deferredRequest(inner1, inner1.requested, n);
         }
 
         @Override
         public void cancel() {
-            Flow.Subscription upstream = firstUpstream;
-            firstUpstream = null;
-            if (upstream != null) {
-                upstream.cancel();
+            if (canceled.compareAndSet(false, true)) {
+                SubscriptionHelper.cancel(inner1);
+                SubscriptionHelper.cancel(inner2);
+                drain();
+            }
+        }
+
+        void drain() {
+            if (getAndIncrement() != 0) {
+                return;
             }
 
-            SubscriptionHelper.cancel(secondUpstream);
+            int missed = 1;
+            for (;;) {
+
+                if (index == 0) {
+                    index = 1;
+                    Flow.Publisher<T> source = source1;
+                    source1 = null;
+                    source.subscribe(inner1);
+                } else if (index == 1) {
+                    index = 2;
+                    Flow.Publisher<T> source = source2;
+                    source2 = null;
+                    if (inner1.produced != 0L) {
+                        SubscriptionHelper.produced(inner2.requested, inner1.produced);
+                    }
+                    source.subscribe(inner2);
+                } else if (index == 2) {
+                    index = 3;
+                    if (!canceled.get()) {
+                        inner1.downstream.onComplete();
+                    }
+                }
+
+                missed = addAndGet(-missed);
+                if (missed == 0) {
+                    break;
+                }
+            }
+        }
+
+        static final class InnerSubscriber<T> extends AtomicReference<Flow.Subscription>
+                implements Flow.Subscriber<T> {
+
+            private static final long serialVersionUID = 3029954591185720794L;
+
+            final Flow.Subscriber<? super T> downstream;
+
+            final ConcatCancelingSubscription<T> parent;
+
+            final AtomicLong requested;
+
+            long produced;
+
+            InnerSubscriber(Flow.Subscriber<? super T> downstream, ConcatCancelingSubscription<T> parent) {
+                this.downstream = downstream;
+                this.parent = parent;
+                this.requested = new AtomicLong();
+            }
+
+            @Override
+            public void onSubscribe(Flow.Subscription s) {
+                SubscriptionHelper.deferredSetOnce(this, requested, s);
+            }
+
+            @Override
+            public void onNext(T t) {
+                if (get() != SubscriptionHelper.CANCELED) {
+                    produced++;
+                    downstream.onNext(t);
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                if (get() != SubscriptionHelper.CANCELED) {
+                    lazySet(SubscriptionHelper.CANCELED);
+                    downstream.onError(t);
+
+                    parent.cancel();
+                } else {
+                    // FIXME
+                    //  HelidonReactivePlugins.onError(t);
+                }
+            }
+
+            @Override
+            public void onComplete() {
+                if (get() != SubscriptionHelper.CANCELED) {
+                    lazySet(SubscriptionHelper.CANCELED);
+                    parent.drain();
+                }
+            }
         }
     }
 }
