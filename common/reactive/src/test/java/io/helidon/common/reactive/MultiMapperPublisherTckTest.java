@@ -15,12 +15,11 @@
  */
 package io.helidon.common.reactive;
 
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-
-import java.util.Collections;
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
 
 public class MultiMapperPublisherTckTest extends FlowPublisherVerification<Integer> {
 
@@ -30,7 +29,7 @@ public class MultiMapperPublisherTckTest extends FlowPublisherVerification<Integ
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long n) {
-        return Multi.from(IterablePublisher.create(() -> IntStream.range(0, (int)n).boxed().iterator()))
+        return Multi.from(() -> IntStream.range(0, (int) n).boxed().iterator())
                 .map(v -> v + 1);
     }
 
