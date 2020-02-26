@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.integration.mp.ws.services;
+package io.helidon.tests.integration.mp.autodiscovery;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,7 +23,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.common.http.Http;
+import javax.ws.rs.core.MediaType;
+
+import io.helidon.common.http.Http.Status;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -53,42 +55,48 @@ class MpServicesTest {
     }
 
     @Test
-    void testServices() throws Exception {
+    void testDiscovered() throws Exception {
         assertAll(
                 // by priority, the service1 should be on this endpoint
-                () -> test(9998, "/services", "service1"),
-                () -> test(9998, "/services/service1", "service1"),
-                () -> test(9998, "/services/service2", "service2"),
-                () -> test(9998, "/services/service3", "service3"),
-                // by priority, the service2 should be on this endpoint
-                () -> test(9998, "/services/service2", "service2"),
-                () -> test(9999, "/services", "admin"),
-                () -> test(9999, "/services/admin", "admin")
+                () -> testHeader(9998, "/hello", "X-Foo", "bar"),
+                () -> test(9998, "/hello", MediaType.TEXT_HTML, "<h1>Hello</h1>"),
+                () -> test(9998, "/hello/error", MediaType.TEXT_PLAIN, Status.CREATED_201, "HELLO ERROR")
         );
     }
 
-    @Test
-    void testJaxrs() throws IOException {
-        // configured in application.yaml to override both the routing name and the routing path
-        test(9999, "/jaxrs", "jax-rs");
-    }
-
-
-    private void test(int port, String path, String expected) throws IOException {
+    private void testHeader(int port, String path, String header, String expected) throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port + path).openConnection();
 
+        con.connect();
+        assertThat(con.getHeaderField(header), is(expected));
+        con.disconnect();
+    }
+
+    private void test(int port, String path, String expected) throws IOException {
+        test(port, path, null, Status.OK_200, expected);
+    }
+
+    private void test(int port, String path, String accept, String expected) throws IOException {
+        test(port, path, accept, Status.OK_200, expected);
+    }
+
+    private void test(int port, String path, String accept, Status expectedStatus, String expected) throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port + path).openConnection();
+        if (accept != null) {
+            con.setRequestProperty("Accept", accept);
+        }
         con.connect();
 
         assertThat("Should be a successful request (http://localhost:" + port + path + ")",
                    con.getResponseCode(),
-                   is(Http.Status.OK_200.code()));
+                   is(expectedStatus.code()));
 
         InputStream inputStream = con.getInputStream();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
         int len;
 
-        while((len = inputStream.read(buffer)) > 0) {
+        while ((len = inputStream.read(buffer)) > 0) {
             bytes.write(buffer, 0, len);
         }
         inputStream.close();
