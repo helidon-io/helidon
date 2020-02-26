@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.FeatureContext;
 
+import org.glassfish.jersey.client.ClientAsyncExecutor;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 import org.glassfish.jersey.spi.ExecutorServiceProvider;
 
@@ -36,16 +37,19 @@ import org.glassfish.jersey.spi.ExecutorServiceProvider;
 public class JerseyClientAutoDiscoverable implements AutoDiscoverable {
     @Override
     public void configure(FeatureContext context) {
-        context.register(new ExecutorServiceProvider() {
-            @Override
-            public ExecutorService getExecutorService() {
-                return JaxRsClient.executor().get();
-            }
+        context.register(new EsProvider());
+    }
 
-            @Override
-            public void dispose(ExecutorService executorService) {
-                // no-op, as we use a shared executor instance
-            }
-        });
+    @ClientAsyncExecutor
+    private static final class EsProvider implements ExecutorServiceProvider {
+        @Override
+        public ExecutorService getExecutorService() {
+            return JaxRsClient.executor().get();
+        }
+
+        @Override
+        public void dispose(ExecutorService executorService) {
+            // no-op, as we use a shared executor instance
+        }
     }
 }
