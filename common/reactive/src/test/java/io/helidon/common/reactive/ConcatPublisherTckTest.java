@@ -38,8 +38,8 @@ public class ConcatPublisherTckTest extends FlowPublisherVerification<Integer> {
     public Flow.Publisher<Integer> createFlowPublisher(long n) {
         int firstHalf = (int)(n / 2);
         return ConcatPublisher.create(
-                IterablePublisher.create(() -> IntStream.range(0, firstHalf).boxed().iterator()),
-                IterablePublisher.create(() -> IntStream.range(firstHalf, (int)n).boxed().iterator())
+                Multi.from(() -> IntStream.range(0, firstHalf).boxed().iterator()),
+                Multi.from(() -> IntStream.range(firstHalf, (int)n).boxed().iterator())
         );
     }
 
