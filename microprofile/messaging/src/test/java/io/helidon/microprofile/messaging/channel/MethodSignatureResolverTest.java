@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ import java.util.stream.Stream;
 import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -267,7 +269,9 @@ class MethodSignatureResolverTest {
     @ParameterizedTest
     @MethodSource("locateTestMethods")
     void signatureResolving(MethodTestCase testCase) {
-        assertEquals(testCase.expectedType, MethodSignatureResolver.create(testCase.m).resolve());
+        Optional<MethodSignatureType> signatureType = MethodSignatureResolver.create(testCase.m).resolve();
+        assertTrue(signatureType.isPresent());
+        assertEquals(testCase.expectedType, signatureType.get());
     }
 
     @Test

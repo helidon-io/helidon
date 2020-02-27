@@ -29,6 +29,7 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
+import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.microprofile.messaging.connector.IncomingConnector;
 import io.helidon.microprofile.messaging.connector.OutgoingConnector;
@@ -44,6 +45,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
  * Orchestrator for all found channels, methods and connectors.
  */
 public class ChannelRouter {
+    private Errors.Collector errors = Errors.collector();
     private Config config = (Config) ConfigProvider.getConfig();
 
     private List<AbstractMethod> connectableBeanMethods = new ArrayList<>();
@@ -149,7 +151,7 @@ public class ChannelRouter {
     }
 
     private void addIncomingMethod(AnnotatedMethod m) {
-        IncomingMethod incomingMethod = new IncomingMethod(m);
+        IncomingMethod incomingMethod = new IncomingMethod(m, errors);
         incomingMethod.validate();
 
         String channelName = incomingMethod.getIncomingChannelName();
@@ -161,7 +163,7 @@ public class ChannelRouter {
     }
 
     private void addOutgoingMethod(AnnotatedMethod m) {
-        OutgoingMethod outgoingMethod = new OutgoingMethod(m);
+        OutgoingMethod outgoingMethod = new OutgoingMethod(m, errors);
         outgoingMethod.validate();
 
         String channelName = outgoingMethod.getOutgoingChannelName();
@@ -173,7 +175,7 @@ public class ChannelRouter {
     }
 
     private void addProcessorMethod(AnnotatedMethod m) {
-        ProcessorMethod channelMethod = new ProcessorMethod(m);
+        ProcessorMethod channelMethod = new ProcessorMethod(m, errors);
         channelMethod.validate();
 
         String incomingChannelName = channelMethod.getIncomingChannelName();
@@ -209,5 +211,9 @@ public class ChannelRouter {
             throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
         }
         return (T) instance;
+    }
+
+    public Errors.Collector getErrors() {
+        return errors;
     }
 }

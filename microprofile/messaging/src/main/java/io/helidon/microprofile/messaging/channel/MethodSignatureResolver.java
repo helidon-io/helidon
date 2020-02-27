@@ -29,8 +29,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import javax.enterprise.inject.spi.DeploymentException;
-
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -207,14 +205,13 @@ public final class MethodSignatureResolver {
      * of recognized signature
      * @throws javax.enterprise.inject.spi.DeploymentException for un-recognized signature
      */
-    public MethodSignatureType resolve() {
+    public Optional<MethodSignatureType> resolve() {
         return resolveRules
                 .stream()
                 .map(Supplier::get)
                 .filter(Optional::isPresent)
                 .findFirst()
-                .map(Optional::get)
-                .orElseThrow(() -> new DeploymentException("Unsupported method signature " + method));
+                .map(Optional::get);
     }
 
     /**

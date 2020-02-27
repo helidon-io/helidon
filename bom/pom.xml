@@ -631,6 +631,13 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Reactive Messaging -->
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-messaging</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.serviceconfiguration</groupId>
@@ -766,18 +773,6 @@
             <dependency>
                 <groupId>io.helidon.microprofile.openapi</groupId>
                 <artifactId>helidon-microprofile-openapi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <!-- Reactive Streams -->
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-reactive-streams</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <!-- Reactive Messaging -->
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-messaging</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
         </dependencies>

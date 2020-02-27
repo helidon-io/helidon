@@ -23,6 +23,7 @@ import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
+import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -31,10 +32,10 @@ import org.reactivestreams.Publisher;
 
 class OutgoingMethod extends AbstractMethod {
 
-    private Publisher publisher;
+    private Publisher<?> publisher;
 
-    OutgoingMethod(AnnotatedMethod method) {
-        super(method.getJavaMember());
+    OutgoingMethod(AnnotatedMethod<?> method, Errors.Collector errors) {
+        super(method.getJavaMember(), errors);
         super.setOutgoingChannelName(method.getAnnotation(Outgoing.class).value());
     }
 
@@ -46,7 +47,7 @@ class OutgoingMethod extends AbstractMethod {
                 switch (getType()) {
                     case OUTGOING_PUBLISHER_MSG_2_VOID:
                     case OUTGOING_PUBLISHER_PAYL_2_VOID:
-                        publisher = (Publisher) getMethod().invoke(getBeanInstance());
+                        publisher = (Publisher<?>) getMethod().invoke(getBeanInstance());
                         break;
                     case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
                     case OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID:
@@ -57,7 +58,7 @@ class OutgoingMethod extends AbstractMethod {
                                 .format("Not implemented signature %s", getType()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
+                throw new DeploymentException(e);
             }
         } else {
             // Invoke on each request publisher
@@ -65,19 +66,20 @@ class OutgoingMethod extends AbstractMethod {
         }
     }
 
+    @Override
     void validate() {
         super.validate();
         if (getOutgoingChannelName() == null || getOutgoingChannelName().trim().isEmpty()) {
-            throw new DeploymentException(String
+            super.errors().fatal(String
                     .format("Missing channel name in annotation @Outgoing, method: %s", getMethod()));
         }
         if (getMethod().getReturnType().equals(Void.TYPE)) {
-            throw new DeploymentException(String
-                    .format("Method annotated as @Outgoing channel cannot have return type void, method: %s", getMethod()));
+            super.errors().fatal(String.format("Method annotated as @Outgoing channel cannot have return type void, method: %s",
+                    getMethod()));
         }
     }
 
-    public Publisher getPublisher() {
+    public Publisher<?> getPublisher() {
         return publisher;
     }
 

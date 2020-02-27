@@ -23,6 +23,7 @@ import java.util.Optional;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 
+import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -36,13 +37,22 @@ abstract class AbstractMethod {
     private Method method;
     private Object beanInstance;
     private MethodSignatureType type;
+    private Errors.Collector errors;
     private Acknowledgment.Strategy ackStrategy;
 
 
-    AbstractMethod(Method method) {
+    AbstractMethod(Method method, Errors.Collector errors) {
         this.method = method;
-        type = MethodSignatureResolver.create(method).resolve();
-        resolveAckStrategy();
+        this.errors = errors;
+        Optional<MethodSignatureType> signatureType = MethodSignatureResolver
+                .create(method)
+                .resolve();
+        if (signatureType.isPresent()) {
+            this.type = signatureType.get();
+            resolveAckStrategy();
+        } else {
+            errors.fatal("Unsupported method signature " + method);
+        }
     }
 
     void validate() {
@@ -50,9 +60,8 @@ abstract class AbstractMethod {
                 .map(Acknowledgment::value)
                 .filter(s -> !type.getSupportedAckStrategies().contains(s))
                 .ifPresent(strategy -> {
-                    throw new RuntimeException(
-                            String.format("Acknowledgment strategy %s is not supported for method signature: %s",
-                                    strategy, type));
+                    errors.fatal(String.format("Acknowledgment strategy %s is not supported for method signature: %s",
+                            strategy, type));
                 });
     }
 
@@ -62,6 +71,10 @@ abstract class AbstractMethod {
 
     public Method getMethod() {
         return method;
+    }
+
+    public Errors.Collector errors() {
+        return errors;
     }
 
     Object getBeanInstance() {

@@ -23,6 +23,7 @@ import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 
+import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -43,16 +44,17 @@ class IncomingMethod extends AbstractMethod {
 
     private Subscriber subscriber;
 
-    IncomingMethod(AnnotatedMethod method) {
-        super(method.getJavaMember());
+    IncomingMethod(AnnotatedMethod method, Errors.Collector errors) {
+        super(method.getJavaMember(), errors);
         super.setIncomingChannelName(method.getAnnotation(Incoming.class).value());
     }
 
+    @Override
     void validate() {
         super.validate();
         if (getIncomingChannelName() == null || getIncomingChannelName().trim().isEmpty()) {
-            throw new DeploymentException(String
-                    .format("Missing channel name in annotation @Incoming on method %s", getMethod().toString()));
+            super.errors().fatal(String.format("Missing channel name in annotation @Incoming on method %s",
+                    getMethod().toString()));
         }
     }
 

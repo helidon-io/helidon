@@ -19,8 +19,8 @@ package io.helidon.microprofile.messaging.channel;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
 
+import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -32,8 +32,8 @@ class ProcessorMethod extends AbstractMethod {
     private Processor<Object, Object> processor;
     private UniversalChannel outgoingChannel;
 
-    ProcessorMethod(AnnotatedMethod method) {
-        super(method.getJavaMember());
+    ProcessorMethod(AnnotatedMethod method, Errors.Collector errors) {
+        super(method.getJavaMember(), errors);
         super.setIncomingChannelName(method.getAnnotation(Incoming.class).value());
         super.setOutgoingChannelName(method.getAnnotation(Outgoing.class).value());
     }
@@ -52,18 +52,18 @@ class ProcessorMethod extends AbstractMethod {
     @Override
     public void validate() {
         super.validate();
+
         if (getIncomingChannelName() == null || getIncomingChannelName().trim().isEmpty()) {
-            throw new DeploymentException(String
-                    .format("Missing channel name in annotation @Incoming on method %s", getMethod()));
+            super.errors().fatal(String.format("Missing channel name in annotation @Incoming on method %s", getMethod()));
         }
         if (getOutgoingChannelName() == null || getOutgoingChannelName().trim().isEmpty()) {
-            throw new DeploymentException(String
-                    .format("Missing channel name in annotation @Outgoing on method %s", getMethod()));
+            super.errors().fatal(String.format("Missing channel name in annotation @Outgoing on method %s", getMethod()));
         }
         if (this.getMethod().getParameterTypes().length > 1) {
-            throw new DeploymentException("Bad processor method signature, "
-                    + "wrong number of parameters, only one or none allowed."
-                    + getMethod());
+            super.errors()
+                    .fatal(String
+                            .format("Bad processor method signature, wrong number of parameters, only one or none allowed.%s",
+                                    getMethod()));
         }
     }
 
