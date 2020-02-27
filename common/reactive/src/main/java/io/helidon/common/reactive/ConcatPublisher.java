@@ -17,6 +17,9 @@
 
 package io.helidon.common.reactive;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,9 +59,10 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
         parent.drain();
     }
 
-    static final class ConcatCancelingSubscription<T> implements Flow.Subscription {
+    static final class ConcatCancelingSubscription<T>
+            extends AtomicInteger implements Flow.Subscription {
 
-        private final AtomicInteger wip;
+        private static final long serialVersionUID = -1593224722447706944L;
 
         private final InnerSubscriber<T> inner1;
 
@@ -74,7 +78,6 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
         ConcatCancelingSubscription(Flow.Subscriber<? super T> subscriber,
                                     Flow.Publisher<T> source1, Flow.Publisher<T> source2) {
-            this.wip = new AtomicInteger();
             this.inner1 = new InnerSubscriber<>(subscriber, this);
             this.inner2 = new InnerSubscriber<>(subscriber, this);
             this.canceled = new AtomicBoolean();
@@ -98,7 +101,7 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
         }
 
         void drain() {
-            if (wip.getAndIncrement() != 0) {
+            if (getAndIncrement() != 0) {
                 return;
             }
 
@@ -125,11 +128,21 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
                     }
                 }
 
-                missed = wip.addAndGet(-missed);
+                missed = addAndGet(-missed);
                 if (missed == 0) {
                     break;
                 }
             }
+        }
+
+        private void writeObject(ObjectOutputStream stream)
+                throws IOException {
+            stream.defaultWriteObject();
+        }
+
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            stream.defaultReadObject();
         }
 
         static final class InnerSubscriber<T> extends AtomicReference<Flow.Subscription>
@@ -184,6 +197,17 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
                     parent.drain();
                 }
             }
+
+            private void writeObject(ObjectOutputStream stream)
+                    throws IOException {
+                stream.defaultWriteObject();
+            }
+
+            private void readObject(ObjectInputStream stream)
+                    throws IOException, ClassNotFoundException {
+                stream.defaultReadObject();
+            }
+
         }
     }
 }
