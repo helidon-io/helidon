@@ -32,12 +32,6 @@ This is a bug fix release of Helidon.
 - Upgrade H2, HikariCP, Jedis Client, OCI Client [1270](https://github.com/oracle/helidon/pull/1270)
 - Upgrade shrinkwrap used by arquillian to support https [1308](https://github.com/oracle/helidon/pull/1308)
 
-### Experimental
-
-The following enhancements are experimental. They should be considered unstable and subject
-to change.
-
-- Add jlink-image support [1423](https://github.com/oracle/helidon/pull/1423)
 
 ## [1.4.1]
 
