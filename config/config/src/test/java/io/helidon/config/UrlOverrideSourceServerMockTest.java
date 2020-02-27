@@ -29,7 +29,6 @@ import io.helidon.config.spi.OverrideSource;
 import com.xebialabs.restito.server.StubServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.xebialabs.restito.builder.stub.StubHttp.whenHttp;
@@ -175,8 +174,7 @@ public class UrlOverrideSourceServerMockTest {
     }
 
     @Test
-    @Disabled("Temporary, until we merge change support PR, fails tests")
-    public void testWildcardsChanges() throws MalformedURLException, InterruptedException {
+    public void testWildcardsChanges() throws MalformedURLException {
 
         whenHttp(server).
                 match(method(GET), uri("/override")).
