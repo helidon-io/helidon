@@ -38,6 +38,7 @@ import org.eclipse.microprofile.metrics.MetricType;
  */
 abstract class WebClientMetric implements WebClientService {
 
+    public static final int ERROR_STATUS_CODE = 400;
     private final MetricRegistry registry;
     private final Set<String> methods;
     private final String nameFormat;
@@ -82,6 +83,21 @@ abstract class WebClientMetric implements WebClientService {
         return errors;
     }
 
+    boolean shouldContinueOnSuccess(Http.RequestMethod method, int status) {
+        return handlesMethod(method) && measureSuccess() && status < ERROR_STATUS_CODE;
+    }
+
+    boolean shouldContinueOnError(Http.RequestMethod method) {
+        return handlesMethod(method) && measureErrors();
+    }
+
+    boolean shouldContinueOnError(Http.RequestMethod method, int status) {
+        if (status >= ERROR_STATUS_CODE) {
+            return shouldContinueOnError(method);
+        }
+        return false;
+    }
+
     Metadata createMetadata(WebClientServiceRequest request, WebClientServiceResponse response) {
         String name;
         if (response == null) {
@@ -115,7 +131,7 @@ abstract class WebClientMetric implements WebClientService {
      */
     public static final class Builder implements io.helidon.common.Builder<WebClientMetric> {
 
-        private WebClientMetricType type;
+        private final WebClientMetricType type;
         private Set<String> methods = Collections.emptySet();
         private String nameFormat;
         private String description;

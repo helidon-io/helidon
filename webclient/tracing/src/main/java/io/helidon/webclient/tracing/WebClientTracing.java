@@ -84,7 +84,7 @@ public final class WebClientTracing implements WebClientService {
 
         tracerHeaders.forEach((name, value) -> request.headers().put(name, value));
 
-        request.whenComplete().thenAccept(response -> {
+        request.whenResponseReceived().thenAccept(response -> {
             int status = response.status().code();
             Tags.HTTP_STATUS.set(span, status);
             if (status >= HTTP_STATUS_ERROR_THRESHOLD) {

@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -29,6 +31,7 @@ import io.helidon.common.reactive.OriginThreadPublisher;
 import io.helidon.webclient.spi.WebClientService;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpContent;
@@ -46,6 +49,8 @@ import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
  */
 class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
+    private static final Logger LOGGER = Logger.getLogger(NettyClientHandler.class.getName());
+
     private static final AttributeKey<WebClientServiceResponse> SERVICE_RESPONSE = AttributeKey.valueOf("response");
 
     private static final List<HttpInterceptor> HTTP_INTERCEPTORS = new ArrayList<>();
@@ -56,18 +61,23 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     private final WebClientResponseImpl.Builder clientResponse;
     private final CompletableFuture<WebClientResponse> responseFuture;
+    private final CompletableFuture<WebClientServiceResponse> responseReceived;
     private final CompletableFuture<WebClientServiceResponse> requestComplete;
     private HttpResponsePublisher publisher;
+    private ResponseCloser responseCloser;
 
     /**
      * Creates new instance.
      *
-     * @param responseFuture  response future
-     * @param requestComplete request complete future
+     * @param responseFuture   response future
+     * @param responseReceived response received future
+     * @param requestComplete  request complete future
      */
     NettyClientHandler(CompletableFuture<WebClientResponse> responseFuture,
+                       CompletableFuture<WebClientServiceResponse> responseReceived,
                        CompletableFuture<WebClientServiceResponse> requestComplete) {
         this.responseFuture = responseFuture;
+        this.responseReceived = responseReceived;
         this.requestComplete = requestComplete;
         this.clientResponse = WebClientResponseImpl.builder();
     }
@@ -89,18 +99,19 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             RequestConfiguration requestConfiguration = clientRequest.configuration();
 
             this.publisher = new HttpResponsePublisher(ctx);
+            this.responseCloser = new ResponseCloser(ctx);
             this.clientResponse.contentPublisher(publisher)
                     .mediaSupport(requestConfiguration.mediaSupport())
                     .requestBodyReaders(requestConfiguration.requestReaders())
                     .status(helidonStatus(response.status()))
-                    .httpVersion(Http.Version.create(response.protocolVersion().toString()));
+                    .httpVersion(Http.Version.create(response.protocolVersion().toString()))
+                    .responseCloser(responseCloser);
 
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
                     interceptor.handleInterception(response, clientRequest, responseFuture);
                     if (!interceptor.continueAfterInterception()) {
-                        publisher.complete();
-                        ctx.close();
+                        responseCloser.close().addListener(future -> LOGGER.finest("Response closed due to redirection"));
                         return;
                     }
                 }
@@ -132,7 +143,17 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 csr = csr.thenCompose(clientSerResponse -> service.response(clientRequest, clientSerResponse));
             }
 
-            csr.whenComplete((clientSerResponse, throwable) -> responseFuture.complete(clientResponse));
+            csr.whenComplete((clientSerResponse, throwable) -> {
+                responseReceived.complete(clientServiceResponse);
+                if (shouldResponseAutomaticallyClose(clientResponse)) {
+                    responseCloser.close().addListener(future -> {
+                        LOGGER.finest("Response automatically closed. No entity expected.");
+                        responseFuture.complete(clientResponse);
+                    });
+                } else {
+                    responseFuture.complete(clientResponse);
+                }
+            });
         }
 
         // never "else-if" - msg may be an instance of more than one type, we must process all of them
@@ -142,12 +163,21 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (msg instanceof LastHttpContent) {
-            WebClientServiceResponse clientServiceResponse = ctx.channel().attr(SERVICE_RESPONSE).get();
-            requestComplete.complete(clientServiceResponse);
-
-            publisher.complete();
-            ctx.close();
+            if (!responseCloser.isClosed()) {
+                responseCloser.close();
+            }
         }
+    }
+
+    private boolean shouldResponseAutomaticallyClose(WebClientResponse clientResponse) {
+        WebClientResponseHeaders headers = clientResponse.headers();
+        if (clientResponse.status() == Http.Status.NO_CONTENT_204) {
+            return true;
+        }
+        return headers.contentType().isEmpty()
+                && (
+                headers.first(Http.Header.CONTENT_LENGTH).isEmpty()
+                        || headers.first(Http.Header.CONTENT_LENGTH).get().equals("0"));
     }
 
     @Override
@@ -231,6 +261,33 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                                     buf.nioBuffer().asReadOnlyBuffer(),
                                     buf::release,
                                     true);
+        }
+
+    }
+
+    final class ResponseCloser {
+
+        private final AtomicBoolean closed;
+        private final ChannelHandlerContext ctx;
+
+        ResponseCloser(ChannelHandlerContext ctx) {
+            this.ctx = ctx;
+            this.closed = new AtomicBoolean();
+        }
+
+        boolean isClosed() {
+            return closed.get();
+        }
+
+        ChannelFuture close() {
+            if (closed.compareAndSet(false, true)) {
+                WebClientServiceResponse clientServiceResponse = ctx.channel().attr(SERVICE_RESPONSE).get();
+                requestComplete.complete(clientServiceResponse);
+
+                publisher.complete();
+                return ctx.close();
+            }
+            throw new WebClientException("Response has been already closed!");
         }
 
     }

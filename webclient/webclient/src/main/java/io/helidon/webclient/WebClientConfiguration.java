@@ -481,10 +481,6 @@ class WebClientConfiguration {
                     .as(Proxy.builder()::config)
                     .map(Proxy.Builder::build)
                     .ifPresent(this::proxy);
-
-            //            config.get("targets").asNodeList()
-            //                    .ifPresent(configs -> configs.forEach(tarConf -> target(OutboundTarget.create(tarConf))));
-            // TODO add all configurable options
             return me;
         }
 

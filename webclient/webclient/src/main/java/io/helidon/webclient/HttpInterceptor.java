@@ -23,7 +23,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 /**
  * Intercepts and handles responses with specific codes.
  */
-public interface HttpInterceptor {
+interface HttpInterceptor {
 
     /**
      * Process which should happen in case of interception.

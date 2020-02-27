@@ -18,6 +18,7 @@ package io.helidon.webclient.metrics;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClientServiceRequest;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -40,18 +41,21 @@ public class WebClientMeter extends WebClientMetric {
 
     @Override
     public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
+        Http.RequestMethod method = request.method();
+        request.whenResponseReceived()
+                .thenAccept(response -> {
+                    if (shouldContinueOnError(method, response.status().code())) {
+                        updateMeter(createMetadata(request, null));
+                    }
+                });
         request.whenComplete()
                 .thenAccept(response -> {
-                    if (handlesMethod(request.method())) {
-                        if (measureSuccess() && response.status().code() < 400) {
-                            updateMeter(createMetadata(request, response));
-                        } else if (measureErrors() && response.status().code() >= 400) {
-                            updateMeter(createMetadata(request, response));
-                        }
+                    if (shouldContinueOnSuccess(method, response.status().code())) {
+                        updateMeter(createMetadata(request, null));
                     }
                 })
                 .exceptionally(throwable -> {
-                    if (measureErrors()) {
+                    if (shouldContinueOnError(method)) {
                         updateMeter(createMetadata(request, null));
                     }
                     return null;

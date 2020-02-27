@@ -35,10 +35,23 @@ public class WebClientException extends RuntimeException {
         super(message);
     }
 
+    /**
+     * Creates new instance of web client exception.
+     *
+     * @param message exception message
+     * @param cause exception cause
+     */
     WebClientException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    /**
+     * Creates new instance of web client exception.
+     *
+     * @param message exception message
+     * @param cause exception cause
+     * @param response web client response
+     */
     WebClientException(String message, Throwable cause, WebClientResponse response) {
         super(message, cause);
         this.response = response;

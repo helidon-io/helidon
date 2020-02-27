@@ -85,7 +85,6 @@ public class WebserverClientExample {
 
         webClient.put()
                 .uri("http://localhost:8080/greeint")
-                .context(req.context())
                 // request specific handler
                 .register(JsonProcessing.create().newWriter())
                 .submit(object)
@@ -97,7 +96,6 @@ public class WebserverClientExample {
     private static void proxyResponse(ServerRequest req, ServerResponse res) {
         webClient.get()
                 .uri("http://localhost:8080/greet")
-                .context(req.context())
                 .request()
                 .thenAccept(clientResponse -> {
                     res.headers().add("CUSTOM_RESPONSE", "HEADER");
@@ -108,7 +106,6 @@ public class WebserverClientExample {
 
     private static void proxyRequestAndResponse(ServerRequest req, ServerResponse res) {
         webClient.get()
-                .context(req.context())
                 .uri("http://localhost:8080")
                 .path(req.path())
                 .queryParams(req.queryParams())
@@ -147,7 +144,6 @@ public class WebserverClientExample {
     private static void hello(ServerRequest req, ServerResponse res) {
         webClient.get()
                 .uri("http://www.google.com")
-                .context(req.context())
                 .request()
                 .thenApply(WebClientResponse::content)
                 .thenAccept(res::send)

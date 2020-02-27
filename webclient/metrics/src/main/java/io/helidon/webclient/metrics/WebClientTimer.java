@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClientServiceRequest;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -42,19 +43,22 @@ class WebClientTimer extends WebClientMetric {
     @Override
     public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
         long start = System.nanoTime();
+        Http.RequestMethod method = request.method();
 
+        request.whenResponseReceived()
+                .thenAccept(response -> {
+                    if (shouldContinueOnError(method, response.status().code())) {
+                        updateTimer(createMetadata(request, response), start);
+                    }
+                });
         request.whenComplete()
                 .thenAccept(response -> {
-                    if (handlesMethod(request.method())) {
-                        if (measureSuccess() && response.status().code() < 400) {
-                            updateTimer(createMetadata(request, response), start);
-                        } else if (measureErrors() && response.status().code() >= 400) {
-                            updateTimer(createMetadata(request, response), start);
-                        }
+                    if (shouldContinueOnSuccess(method, response.status().code())) {
+                        updateTimer(createMetadata(request, response), start);
                     }
                 })
                 .exceptionally(throwable -> {
-                    if (measureErrors()) {
+                    if (shouldContinueOnError(method)) {
                         updateTimer(createMetadata(request, null), start);
                     }
                     return null;

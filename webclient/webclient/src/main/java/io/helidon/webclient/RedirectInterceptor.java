@@ -54,7 +54,7 @@ class RedirectInterceptor implements HttpInterceptor {
             });
         } else {
             throw new WebClientException("There is no " + Http.Header.LOCATION + " header present in response! "
-                                              + "It is not clear where to redirect.");
+                                                 + "It is not clear where to redirect.");
         }
     }
 
@@ -65,8 +65,10 @@ class RedirectInterceptor implements HttpInterceptor {
 
     @Override
     public boolean shouldIntercept(HttpResponseStatus responseStatus, WebClientConfiguration configuration) {
-        return configuration.followRedirects()
-                && responseStatus == HttpResponseStatus.MOVED_PERMANENTLY
+        if (!configuration.followRedirects()) {
+            return false;
+        }
+        return responseStatus == HttpResponseStatus.MOVED_PERMANENTLY
                 || responseStatus == HttpResponseStatus.FOUND
                 || responseStatus == HttpResponseStatus.SEE_OTHER
                 || responseStatus == HttpResponseStatus.TEMPORARY_REDIRECT

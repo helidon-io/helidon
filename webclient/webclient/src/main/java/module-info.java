@@ -22,13 +22,14 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 module io.helidon.webclient {
 
     requires java.logging;
+    
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.http;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.media.common;
     requires io.helidon.common.pki;
     requires io.helidon.common.serviceloader;
-    requires transitive io.helidon.config;
-    requires io.helidon.media.common;
 
     requires io.netty.buffer;
     requires io.netty.codec;
@@ -41,6 +42,6 @@ module io.helidon.webclient {
     exports io.helidon.webclient;
     exports io.helidon.webclient.spi;
 
-    uses WebClientServiceProvider;
+    uses io.helidon.webclient.spi.WebClientServiceProvider;
 
 }

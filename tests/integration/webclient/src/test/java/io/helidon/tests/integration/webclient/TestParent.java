@@ -35,9 +35,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
- * TODO Javadoc
+ * Parent class for integration tests.
  */
-public class TestParent {
+class TestParent {
 
     protected static final Config CONFIG = Config.create();
     private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();

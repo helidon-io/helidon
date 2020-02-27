@@ -40,10 +40,12 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     private final String fragment;
     private final HashParameters parameters;
     private final CompletionStage<WebClientServiceRequest> sent;
+    private final CompletableFuture<WebClientServiceResponse> responseReceived;
     private final CompletableFuture<WebClientServiceResponse> complete;
 
     WebClientServiceRequestImpl(WebClientRequestBuilderImpl requestBuilder,
                                 CompletionStage<WebClientServiceRequest> sent,
+                                CompletableFuture<WebClientServiceResponse> responseReceived,
                                 CompletableFuture<WebClientServiceResponse> complete) {
         this.headers = requestBuilder.headers();
         this.context = requestBuilder.context();
@@ -51,6 +53,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
         this.version = requestBuilder.httpVersion();
         this.uri = requestBuilder.uri();
         this.query = requestBuilder.query();
+        this.responseReceived = responseReceived;
         this.queryParams = queryParams();
         this.path = requestBuilder.path();
         this.fragment = requestBuilder.fragment();
@@ -72,6 +75,11 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     @Override
     public CompletionStage<WebClientServiceRequest> whenSent() {
         return sent;
+    }
+
+    @Override
+    public CompletionStage<WebClientServiceResponse> whenResponseReceived() {
+        return responseReceived;
     }
 
     @Override

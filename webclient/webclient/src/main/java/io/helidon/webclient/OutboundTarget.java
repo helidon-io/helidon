@@ -31,7 +31,7 @@ import io.helidon.config.Config;
  * Outbound target is a set of protocols and hosts that share a configuration.
  * Name is considered to be a unique identification of a target, so it is used for hashCode and equals methods.
  */
-public final class OutboundTarget {
+final class OutboundTarget {
     /**
      * Configuration key for name of target.
      */

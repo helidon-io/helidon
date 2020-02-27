@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Flow;
+import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -35,20 +36,24 @@ import io.helidon.media.common.MessageBodyReaderContext;
  */
 final class WebClientResponseImpl implements WebClientResponse {
 
+    private static final Logger LOGGER = Logger.getLogger(NettyClientHandler.class.getName());
+
     private final WebClientResponseHeadersImpl headers;
     private final Flow.Publisher<DataChunk> publisher;
     private final Http.ResponseStatus status;
     private final Http.Version version;
     private final MediaSupport mediaSupport;
     private final Set<MessageBodyReader<?>> requestReaders;
+    private final NettyClientHandler.ResponseCloser responseCloser;
 
     private WebClientResponseImpl(Builder builder) {
-        headers = WebClientResponseHeaders.create(builder.headers);
+        headers = WebClientResponseHeadersImpl.create(builder.headers);
         publisher = builder.publisher;
         status = builder.status;
         version = builder.version;
         mediaSupport = builder.mediaSupport;
         requestReaders = builder.requestReaders;
+        responseCloser = builder.responseCloser;
     }
 
     /**
@@ -68,6 +73,11 @@ final class WebClientResponseImpl implements WebClientResponse {
     @Override
     public Http.Version version() {
         return version;
+    }
+
+    @Override
+    public void close() {
+        responseCloser.close().addListener(future -> LOGGER.finest("Response has been closed."));
     }
 
     @Override
@@ -95,6 +105,7 @@ final class WebClientResponseImpl implements WebClientResponse {
         private Http.ResponseStatus status = Http.Status.INTERNAL_SERVER_ERROR_500;
         private Http.Version version = Http.Version.V1_1;
         private Set<MessageBodyReader<?>> requestReaders;
+        private NettyClientHandler.ResponseCloser responseCloser;
 
         @Override
         public WebClientResponseImpl build() {
@@ -165,6 +176,17 @@ final class WebClientResponseImpl implements WebClientResponse {
          */
         Builder addHeader(String name, List<String> values) {
             this.headers.put(name, values);
+            return this;
+        }
+
+        /**
+         * Sets objects which helps to close response.
+         *
+         * @param responseCloser object closer object
+         * @return updated builder instance
+         */
+        Builder responseCloser(NettyClientHandler.ResponseCloser responseCloser) {
+            this.responseCloser = responseCloser;
             return this;
         }
     }

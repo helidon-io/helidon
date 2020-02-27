@@ -18,39 +18,17 @@ package io.helidon.webclient;
 import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
 import io.helidon.common.http.SetCookie;
 
 /**
  * Headers that may be available on response from server.
  */
 public interface WebClientResponseHeaders extends Headers {
-
-    /**
-     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Parameters} instance.
-     *
-     * @param parameters headers in parameters instance
-     * @return response headers instance
-     */
-    static WebClientResponseHeaders create(Parameters parameters) {
-        return create(parameters.toMap());
-    }
-
-    /**
-     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Map}.
-     *
-     * @param headers response headers in map
-     * @return response headers instance
-     */
-    static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
-        return new WebClientResponseHeadersImpl(headers);
-    }
 
     /**
      * Returns {@link SetCookie} header of the response.

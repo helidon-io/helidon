@@ -20,7 +20,7 @@ import java.util.function.Function;
 /**
  * Supported client metric types.
  */
-public enum WebClientMetricType {
+enum WebClientMetricType {
 
     /**
      * Client counter metric.

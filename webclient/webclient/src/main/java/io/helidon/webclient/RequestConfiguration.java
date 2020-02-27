@@ -69,7 +69,7 @@ class RequestConfiguration extends WebClientConfiguration {
         return new Builder(requestURI);
     }
 
-    static class Builder extends WebClientConfiguration.Builder<Builder, RequestConfiguration> {
+    static final class Builder extends WebClientConfiguration.Builder<Builder, RequestConfiguration> {
 
         private WebClientServiceRequest clientServiceRequest;
         private URI requestURI;

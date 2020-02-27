@@ -42,20 +42,24 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private final RequestConfiguration configuration;
     private final CompletableFuture<WebClientResponse> future;
+    private final CompletableFuture<WebClientServiceResponse> responseReceived;
     private final CompletableFuture<WebClientServiceResponse> requestComplete;
 
     /**
      * Creates new instance.
      *
-     * @param configuration   request configuration
+     *  @param configuration   request configuration
      * @param future          response completable future
+     * @param responseReceived future indicating recerved response headers
      * @param requestComplete future indicating completed request
      */
     NettyClientInitializer(RequestConfiguration configuration,
                            CompletableFuture<WebClientResponse> future,
+                           CompletableFuture<WebClientServiceResponse> responseReceived,
                            CompletableFuture<WebClientServiceResponse> requestComplete) {
         this.configuration = configuration;
         this.future = future;
+        this.responseReceived = responseReceived;
         this.requestComplete = requestComplete;
     }
 
@@ -102,6 +106,6 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("logger", new LoggingHandler(LogLevel.TRACE));
         pipeline.addLast("httpCodec", new HttpClientCodec());
         pipeline.addLast("httpDecompressor", new HttpContentDecompressor());
-        pipeline.addLast("helidonHandler", new NettyClientHandler(future, requestComplete));
+        pipeline.addLast("helidonHandler", new NettyClientHandler(future, responseReceived, requestComplete));
     }
 }

@@ -67,13 +67,9 @@ class TracingPropagationTest {
                                       .build())
                 .build();
 
-        WebClientResponse response = client.get()
+        client.get()
                 .request()
-                .toCompletableFuture()
-                .get();
-
-        // we must fully read entity for tracing to finish
-        response.content().as(JsonObject.class)
+                .thenAccept(WebClientResponse::close)
                 .toCompletableFuture()
                 .get();
 

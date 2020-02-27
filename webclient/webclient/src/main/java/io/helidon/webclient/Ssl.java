@@ -63,7 +63,7 @@ public class Ssl {
      *
      * @return trust all certificates
      */
-    public boolean trustAll() {
+    boolean trustAll() {
         return trustAll;
     }
 
@@ -74,7 +74,7 @@ public class Ssl {
      *
      * @return disable hostname verification
      */
-    public boolean disableHostnameVerification() {
+    boolean disableHostnameVerification() {
         return disableHostnameVerification;
     }
 
@@ -83,7 +83,7 @@ public class Ssl {
      *
      * @return trusted certificates
      */
-    public List<X509Certificate> certificates() {
+    List<X509Certificate> certificates() {
         return certificates;
     }
 
@@ -92,7 +92,7 @@ public class Ssl {
      *
      * @return client private key
      */
-    public Optional<PrivateKey> clientPrivateKey() {
+    Optional<PrivateKey> clientPrivateKey() {
         return Optional.ofNullable(clientPrivateKey);
     }
 
@@ -101,7 +101,7 @@ public class Ssl {
      *
      * @return client certificate chain
      */
-    public List<X509Certificate> clientCertificateChain() {
+    List<X509Certificate> clientCertificateChain() {
         return clientCertificateChain;
     }
 
@@ -110,7 +110,7 @@ public class Ssl {
      *
      * @return ssl context
      */
-    public Optional<SSLContext> sslContext() {
+    Optional<SSLContext> sslContext() {
         return Optional.ofNullable(sslContext);
     }
 

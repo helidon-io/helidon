@@ -41,20 +41,16 @@ class WebClientGaugeInProgress extends WebClientMetric {
     public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
         ConcurrentGauge gauge = metricRegistry().concurrentGauge(createMetadata(request, null));
         boolean shouldBeHandled = handlesMethod(request.method());
-        if (shouldBeHandled) {
+        if (!shouldBeHandled) {
+            return CompletableFuture.completedFuture(request);
+        } else {
             gauge.inc();
         }
 
         request.whenComplete()
-                .thenAccept(response -> {
-                    if (shouldBeHandled) {
-                        gauge.dec();
-                    }
-                })
+                .thenAccept(response -> gauge.dec())
                 .exceptionally(throwable -> {
-                    if (shouldBeHandled) {
-                        gauge.dec();
-                    }
+                    gauge.dec();
                     return null;
                 });
 

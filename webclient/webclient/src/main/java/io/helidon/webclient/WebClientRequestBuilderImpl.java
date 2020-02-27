@@ -381,9 +381,11 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private <T> CompletionStage<T> invoke(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
         this.uri = prepareFinalURI();
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> complete = new CompletableFuture<>();
         WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this,
                                                                                    sent,
+                                                                                   responseReceived,
                                                                                    complete);
         CompletionStage<WebClientServiceRequest> rcs = CompletableFuture.completedFuture(completedRequest);
 
@@ -414,7 +416,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group)
                     .channel(NioSocketChannel.class)
-                    .handler(new NettyClientInitializer(requestConfiguration, result, complete))
+                    .handler(new NettyClientInitializer(requestConfiguration, result, responseReceived, complete))
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) configuration.connectTimeout().toMillis());
 
             ChannelFuture channelFuture = bootstrap.connect(uri.getHost(), uri.getPort());
@@ -427,9 +429,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                                                                      sent);
                     requestEntity.subscribe(requestContentSubscriber);
                 } else {
-                    result.completeExceptionally(new WebClientException(uri.toString(), cause));
                     sent.completeExceptionally(cause);
+                    responseReceived.completeExceptionally(cause);
                     complete.completeExceptionally(cause);
+                    result.completeExceptionally(new WebClientException(uri.toString(), cause));
                 }
             });
             channelFuture.channel().attr(REQUEST).set(clientRequest);
@@ -447,7 +450,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         //If the response status is greater then 300, ask user to change requested entity to ClientResponse
         if (response.status().code() >= Http.Status.MOVED_PERMANENTLY_301.code()) {
             throw new WebClientException("Entity of the request with status " + response.status().code()
-                                              + " could not be automatically handled! Request for ClientResponse instead.");
+                                                 + " could not be automatically handled! Request for ClientResponse instead.");
         }
         return response.content();
     }
@@ -455,6 +458,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private URI prepareFinalURI() {
         if (this.uri == null) {
             throw new WebClientException("There is no specified uri for the request.");
+        } else if (this.uri.getHost() == null) {
+            throw new WebClientException("Invalid uri " + this.uri + ". Uri.getHost() returned null.");
         }
         String scheme = Optional.ofNullable(this.uri.getScheme())
                 .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: " + uri.toString()));
@@ -464,9 +469,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         int port = uri.getPort() > -1 ? uri.getPort() : DEFAULT_SUPPORTED_PROTOCOLS.getOrDefault(scheme, -1);
         if (port == -1) {
             throw new WebClientException("Client could not get port for schema " + scheme + ". "
-                                              + "Please specify correct port to use.");
+                                                 + "Please specify correct port to use.");
         }
         String path = resolvePath();
+        this.path = ClientPath.create(null, path, new HashMap<>());
         //We need null values for query and fragment if we dont want to have trailing ?# chars
         String query = query().isEmpty() ? null : query();
         String fragment = this.fragment.isEmpty() ? null : this.fragment;

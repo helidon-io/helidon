@@ -30,7 +30,10 @@ import io.helidon.common.http.DataChunk;
 
 /**
  * A file writer that subscribes to chunks of data.
+ *
+ * @deprecated This will most likely be removed when multipart is implemented.
  */
+@Deprecated
 public final class FileSubscriber implements Flow.Subscriber<DataChunk> {
     private static final Logger LOGGER = Logger.getLogger(FileSubscriber.class.getName());
 

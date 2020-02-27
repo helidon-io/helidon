@@ -48,6 +48,13 @@ public interface WebClientServiceRequest extends HttpRequest {
     CompletionStage<WebClientServiceRequest> whenSent();
 
     /**
+     * Completes when the response headers has been received, but entity has not been processed yet.
+     *
+     * @return completion stage that finishes when we received headers
+     */
+    CompletionStage<WebClientServiceResponse> whenResponseReceived();
+
+    /**
      * Completes when the full processing of this request is done (e.g. we have received a full response).
      *
      * @return completion stage that finishes when we receive and fully read response from the server

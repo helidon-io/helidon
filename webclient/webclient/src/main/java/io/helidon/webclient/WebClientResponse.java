@@ -54,4 +54,11 @@ public interface WebClientResponse {
      * @return http version
      */
     Http.Version version();
+
+    /**
+     * Closes created response.
+     * This needs to be called when user
+     * TODO upravit
+     */
+    void close();
 }

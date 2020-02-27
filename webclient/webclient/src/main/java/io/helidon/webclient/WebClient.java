@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +41,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 public interface WebClient {
 
     /**
-     * Create a new rest client.
+     * Create a new WebClient.
      *
      * @return client
      */
@@ -87,8 +86,9 @@ public interface WebClient {
             HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
         }
 
-        private final ArrayList<WebClientServiceProvider> clientServices = new ArrayList<>();
-        private final WebClientConfiguration.Builder configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
+        private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
+        private final HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
+                .builder(ServiceLoader.load(WebClientServiceProvider.class));
 
         private Config config = Config.empty();
 
@@ -100,8 +100,14 @@ public interface WebClient {
             return new NettyClient(this);
         }
 
+        /**
+         * Register new instance of {@link WebClientService}.
+         *
+         * @param service client service instance
+         * @return updated builder instance
+         */
         public Builder register(WebClientService service) {
-            clientServices.add(new WebClientServiceProvider() {
+            services.addService(new WebClientServiceProvider() {
                 @Override
                 public String configKey() {
                     return "ignored";
@@ -115,36 +121,93 @@ public interface WebClient {
             return this;
         }
 
-        public Builder register() {
+        /**
+         * Exclude specific {@link WebClientServiceProvider} provider from being loaded.
+         *
+         * @param providerClass excluded provider
+         * @return updated builder instance
+         */
+        public Builder exclude(Class<? extends WebClientServiceProvider> providerClass) {
+            services.addExcludedClass(providerClass);
             return this;
         }
 
+        /**
+         * Sets if Java Service loader should be used to load all {@link WebClientServiceProvider}.
+         *
+         * @param useServiceLoader whether to use the Java Service loader
+         * @return updated builder instance
+         */
+        public Builder useSystemServiceLoader(boolean useServiceLoader) {
+            services.useSystemServiceLoader(useServiceLoader);
+            return this;
+        }
+
+        /**
+         * Sets new proxy which will used for the requests.
+         *
+         * @param proxy proxy instance
+         * @return updated builder instance
+         */
         public Builder proxy(Proxy proxy) {
             this.configuration.proxy(proxy);
             return this;
         }
 
+        /**
+         * Sets media support of the client. This {@link MediaSupport} instance contains reader and writers
+         * which will be used as default for each request.
+         *
+         * @param mediaSupport media support
+         * @return updated builder instance
+         */
         public Builder mediaSupport(MediaSupport mediaSupport) {
             configuration.mediaSupport(mediaSupport);
             return this;
         }
 
+        /**
+         * Config of this client.
+         *
+         * @param config client config
+         * @return updated builder instance
+         */
         public Builder config(Config config) {
             this.config = config;
             configuration.config(config);
             return this;
         }
 
+        /**
+         * Sets new connection timeout.
+         *
+         * @param amount amount of time
+         * @param unit   time unit
+         * @return updated builder instance
+         */
         public Builder connectTimeout(long amount, TemporalUnit unit) {
             configuration.connectTimeout(Duration.of(amount, unit));
             return this;
         }
 
+        /**
+         * Sets new read timeout.
+         *
+         * @param amount amount of time
+         * @param unit   time unit
+         * @return updated builder instance
+         */
         public Builder readTimeout(long amount, TemporalUnit unit) {
             configuration.readTimeout(Duration.of(amount, unit));
             return this;
         }
 
+        /**
+         * Sets new {@link Ssl} instance which contains ssl configuration.
+         *
+         * @param ssl ssl instance
+         * @return updated builder instance
+         */
         public Builder ssl(Ssl ssl) {
             configuration.ssl(ssl);
             return this;
@@ -185,15 +248,33 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Sets base uri for each request.
+         *
+         * @param uri base uri
+         * @return updated builder instance
+         */
         public Builder baseUri(URI uri) {
             configuration.uri(uri);
             return this;
         }
 
+        /**
+         * Sets base uri for each request.
+         *
+         * @param uri base uri
+         * @return updated builder instance
+         */
         public Builder baseUri(String uri) {
             return baseUri(URI.create(uri));
         }
 
+        /**
+         * Sets base url for each request.
+         *
+         * @param url base url
+         * @return updated builder instance
+         */
         public Builder baseUri(URL url) {
             try {
                 return baseUri(url.toURI());
@@ -202,25 +283,34 @@ public interface WebClient {
             }
         }
 
+        /**
+         * Sets if redirects should be followed or not.
+         *
+         * @param follow follow redirects
+         * @return updated builder instance
+         */
         public Builder followRedirects(boolean follow) {
             configuration.followRedirects(follow);
             return this;
         }
 
+        /**
+         * Sets user agent name.
+         *
+         * @param userAgent user agent
+         * @return updated builder instance
+         */
         public Builder userAgent(String userAgent) {
             configuration.userAgent(userAgent);
             return this;
         }
 
-        public WebClientConfiguration configuration() {
+        WebClientConfiguration configuration() {
             configuration.clientServices(services());
             return configuration.build();
         }
 
         private List<WebClientService> services() {
-            HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
-                    .builder(ServiceLoader.load(WebClientServiceProvider.class));
-            this.clientServices.forEach(services::addService);
             Config servicesConfig = config.get("services");
             servicesConfig.get("excludes").asList(String.class).orElse(Collections.emptyList())
                     .forEach(services::addExcludedClassName);

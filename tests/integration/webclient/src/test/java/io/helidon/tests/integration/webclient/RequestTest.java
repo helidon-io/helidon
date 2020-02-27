@@ -53,16 +53,16 @@ public class RequestTest extends TestParent {
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        webClient.get()
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
+    public void testHelloWorld(){
+        try {
+            webClient.get()
+                    .request(JsonObject.class)
+                    .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
+                    .toCompletableFuture()
+                    .get();
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 
     @Test
@@ -75,6 +75,7 @@ public class RequestTest extends TestParent {
                         if (response.status() != Http.Status.NOT_FOUND_404) {
                             fail("This request should be 404!");
                         }
+                        response.close();
                     })
                     .toCompletableFuture()
                     .get();
@@ -84,21 +85,21 @@ public class RequestTest extends TestParent {
     }
 
     @Test
-    public void testFollowRedirect() throws Exception {
-        webClient.get()
-                .path("/redirect")
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
+    public void testFollowRedirect() {
+        try {
+            webClient.get()
+                    .path("/redirect")
+                    .request(JsonObject.class)
+                    .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
+                    .toCompletableFuture()
+                    .get();
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 
     @Test
-    public void testFollowRedirectInfinite(){
+    public void testFollowRedirectInfinite() {
         try {
             webClient.get()
                     .path("/redirect/infinite")
@@ -140,7 +141,7 @@ public class RequestTest extends TestParent {
     }
 
     @Test
-    public void testNotHandled() {
+    public void testEntityNotHandled() {
         try {
             webClient.get()
                     .path("/incorrect")
