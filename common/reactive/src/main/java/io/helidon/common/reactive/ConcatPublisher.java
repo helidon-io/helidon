@@ -56,10 +56,9 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
         parent.drain();
     }
 
-    static final class ConcatCancelingSubscription<T>
-            extends AtomicInteger implements Flow.Subscription {
+    static final class ConcatCancelingSubscription<T> implements Flow.Subscription {
 
-        private static final long serialVersionUID = -1593224722447706944L;
+        private final AtomicInteger wip;
 
         private final InnerSubscriber<T> inner1;
 
@@ -67,14 +66,15 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
 
         private final AtomicBoolean canceled;
 
-        private transient Flow.Publisher<T> source1;
+        private Flow.Publisher<T> source1;
 
-        private transient Flow.Publisher<T> source2;
+        private Flow.Publisher<T> source2;
 
         private int index;
 
         ConcatCancelingSubscription(Flow.Subscriber<? super T> subscriber,
                                     Flow.Publisher<T> source1, Flow.Publisher<T> source2) {
+            this.wip = new AtomicInteger();
             this.inner1 = new InnerSubscriber<>(subscriber, this);
             this.inner2 = new InnerSubscriber<>(subscriber, this);
             this.canceled = new AtomicBoolean();
@@ -98,7 +98,7 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
         }
 
         void drain() {
-            if (getAndIncrement() != 0) {
+            if (wip.getAndIncrement() != 0) {
                 return;
             }
 
@@ -125,7 +125,7 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
                     }
                 }
 
-                missed = addAndGet(-missed);
+                missed = wip.addAndGet(-missed);
                 if (missed == 0) {
                     break;
                 }
