@@ -36,7 +36,7 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 
 /**
- * Extension of {@link TypeDescription} that handles of:
+ * Extension of {@link TypeDescription} that handles:
  * <ul>
  *     <li>nested enums,</li>
  *     <li>extensible types, and</li>
@@ -58,6 +58,9 @@ import org.yaml.snakeyaml.nodes.ScalarNode;
  * <p>
  *     A subnode {@code $ref} maps to the {@code ref} property on the MP OpenAPI types. This type
  *     description simplifies defining the {@code $ref} property to those types that support it.
+ * </p>
+ * <p>
+ *     We use this expanded version of {@code TypeDescription} with the generated SnakeYAMLParserHelper class.
  * </p>
  */
 class ExpandedTypeDescription extends TypeDescription {
@@ -133,6 +136,7 @@ class ExpandedTypeDescription extends TypeDescription {
     public Object newInstance(String propertyName, Node node) {
         Property p = getProperty(propertyName);
         if (p.getType().isEnum()) {
+            @SuppressWarnings("unchecked")
             Class<Enum> eClass = (Class<Enum>) p.getType();
             String valueText = ScalarNode.class.cast(node).getValue();
             for (Enum e : eClass.getEnumConstants()) {

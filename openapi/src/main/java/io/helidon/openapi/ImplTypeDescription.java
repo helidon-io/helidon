@@ -27,7 +27,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 
 /**
  * Version of {@code TypeDescription} used for implementation classes (rather than the corresponding interfaces) which delegate
- * most method invocations to the {@code TypeDescription} for the interface.
+ * most method invocations to the {@code TypeDescription} for the related interface.
  */
 class ImplTypeDescription extends TypeDescription {
 

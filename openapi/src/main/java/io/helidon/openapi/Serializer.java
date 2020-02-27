@@ -47,8 +47,8 @@ import org.yaml.snakeyaml.representer.Representer;
 /**
  * Expresses an existing {@code OpenAPI} instance as an OpenAPI document. This implementation uses
  * SnakeYAML to write OpenAPI documents from the SmallRye MP OpenAPI model interfaces and classes
- * while suppressing the tag output (which would indicate the SmallRye classes -- we don't want to
- * suggest that the output can only be read into the SmallRye implementation).
+ * while suppressing tags that would indicate the SmallRye classes -- we don't want to
+ * suggest that the output can only be read into the SmallRye implementation.
  */
 class Serializer {
 

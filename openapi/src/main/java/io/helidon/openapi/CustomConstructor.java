@@ -38,17 +38,30 @@ import org.yaml.snakeyaml.nodes.NodeId;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 
 /**
- * Specialized constructor for building {@code Node} objects that include properties of type {@code Map}
- * that also correspond to specific domain types.
+ * Specialized constructor for modifying {@code Node} objects for OpenAPI types that extend {@code Map} to adjust the type of
+ * the child nodes of such nodes.
  * <p>
- * Left to its default implementation, SnakeYAML would create a node corresponding to a {@code Map} instead of the correct
- * specific type. These methods intercept those attempts and, instead, build nodes that correspond to the appropriate specific
- * type (if any).
+ * Several MicroProfile OpenAPI interfaces extend {@code Map}. For example, {@code Paths} extends {@code Map
+ * <String, PathItem>} and {@code SecurityRequirement} extends {@code Map<String, List<String>>}. When SnakeYAML builds the node
+ * corresponding to one of these types, it correctly creates each child node as a {@code MappingNode} but it assigns those
+ * child nodes a type of {@code Object} instead of the mapped type -- {@code PathItem} in the example above.
+ * </p>
+ * <p>
+ * This class customizes the preparation of the node tree in these situations by setting the types for the child nodes explicitly
+ * to the corresponding child type. In OpenAPI 1.1.2 there are two situations, depending on whether the mapped-to type is a
+ * {@code List} or not.
+ * </p>
+ * <p>
+ * The MicroProfile OpenAPI 2.0 versions of the interfaces no longer use this construct of an interface extending {@code Map}, so
+ * ideally we can remove this workaround when we adopt 2.0.
  * </p>
  */
 class CustomConstructor extends Constructor {
 
+    // maps OpenAPI interfaces which extend Map<?, type> to the mapped-to type where that mapped-to type is NOT List
     private static final Map<Class<?>, Class<?>> CHILD_MAP_TYPES = new HashMap<>();
+
+    // maps OpenAPI interfaces which extend Map<?, List<type>> to the type that appears in the list
     private static final Map<Class<?>, Class<?>> CHILD_MAP_OF_LIST_TYPES = new HashMap<>();
 
     static {
