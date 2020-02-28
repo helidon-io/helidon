@@ -361,6 +361,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
         /**
          * Sets whether the app path search should be disabled.
+         *
          * @param value true/false
          * @return updated builder
          */

@@ -524,6 +524,11 @@
                     </dependencies>
                 </plugin>
                 <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
                     <version>${version.plugin.protobuf}</version>
