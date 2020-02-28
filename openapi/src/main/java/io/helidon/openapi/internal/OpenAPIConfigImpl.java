@@ -360,9 +360,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         }
 
         /**
-         * Sets whether to disable application path.
+         * Sets whether the app path search should be disabled.
          *
-         * @param value whether to disable or not
+         * @param value true/false
          * @return updated builder
          */
         public Builder applicationPathDisable(Boolean value) {

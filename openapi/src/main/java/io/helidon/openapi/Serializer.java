@@ -114,9 +114,9 @@ class Serializer {
             this.implsToTypes = implsToTypes;
             this.dumperOptions = dumperOptions;
             this.stringStyle = stringStyle;
-            types.forEach((type, typeDescription) -> {
-                addTypeDescription(new ImplTypeDescription(typeDescription));
-            });
+            types.values().stream()
+                .map(ImplTypeDescription::new)
+                .forEach(this::addTypeDescription);
         }
 
         @Override
@@ -233,7 +233,7 @@ class Serializer {
     }
 
     /**
-     * Suppress the tag output; the resulting document can be read into any MP OpenAPI
+     * Suppress the tag output for SmallRye implementation classes so the resulting document can be read into any MP OpenAPI
      * implementation, not just SmallRye's.
      */
     static class TagSuppressingWriter extends PrintWriter {

@@ -46,9 +46,8 @@ class OpenAPIParser {
         TypeDescription openAPITD = types.get(OpenAPI.class);
         Constructor topConstructor = new CustomConstructor(openAPITD);
 
-        types.forEach((type, td) -> {
-                    topConstructor.addTypeDescription(td);
-                });
+        types.values()
+                .forEach(topConstructor::addTypeDescription);
 
         Yaml yaml = new Yaml(topConstructor);
         OpenAPI result = yaml.loadAs(reader, OpenAPI.class);

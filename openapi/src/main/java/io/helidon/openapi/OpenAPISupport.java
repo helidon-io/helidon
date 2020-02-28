@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -153,8 +154,8 @@ public class OpenAPISupport implements Service {
 
     static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(SnakeYAMLParserHelper<ExpandedTypeDescription> helper) {
         return helper.entrySet().stream()
-                .collect(Collectors.toMap(entry -> entry.getValue().impl(),
-                        entry -> entry.getValue()));
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toMap(ExpandedTypeDescription::impl, Function.identity()));
     }
 
     private static void adjustTypeDescriptions(Map<Class<?>, ExpandedTypeDescription> types) {

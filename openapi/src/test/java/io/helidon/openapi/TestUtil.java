@@ -331,7 +331,7 @@ public class TestUtil {
                         .build())
                 .start()
                 .toCompletableFuture()
-                .get(10000, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
         LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", result.port());
         return result;
     }
