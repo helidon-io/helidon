@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class GrpcServerCdiExtensionIT {
 
     @BeforeAll
     public static void startServer() {
-        server = Server.create().start();
+        server = Server.builder().port(0).build().start();
         beanManager = server.cdiContainer().getBeanManager();
     }
 

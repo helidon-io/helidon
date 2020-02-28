@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.Provider;
 
 /**
  * Extension to gather JAX-RS application or JAX-RS resource classes
@@ -33,6 +36,7 @@ import javax.ws.rs.core.Application;
  */
 public class ServerCdiExtension implements Extension {
     private final List<Class<?>> resourceClasses = new LinkedList<>();
+    private final List<Class<?>> providerClasses = new LinkedList<>();
     private final List<Class<? extends Application>> applications = new LinkedList<>();
 
     /**
@@ -44,21 +48,22 @@ public class ServerCdiExtension implements Extension {
     @SuppressWarnings("unchecked")
     public <T> void gatherApplications(@Observes ProcessInjectionTarget<T> pit) {
         AnnotatedType<T> at = pit.getAnnotatedType();
-        if (!at.isAnnotationPresent(ApplicationScoped.class)) {
-            return;
-        }
+        boolean applicationScoped = at.isAnnotationPresent(ApplicationScoped.class);
 
-        // class is annotated, let's make sure it is an application
         Class<?> theClass = at.getJavaClass();
-        if (Application.class.isAssignableFrom(theClass)) {
+        if (applicationScoped && Application.class.isAssignableFrom(theClass)) {
             this.applications.add((Class<? extends Application>) theClass);
-        } else {
-            // still may be a jax-rs resource (with no application attached)
-            if (at.isAnnotationPresent(Path.class)) {
+        } else if (at.isAnnotationPresent(Path.class)) {
+            // we need to make sure this has at least one bean defining annotation, otherwise do
+            // not include
+            if (applicationScoped
+                    || at.isAnnotationPresent(RequestScoped.class)
+                    || at.isAnnotationPresent(Dependent.class)) {
                 this.resourceClasses.add(theClass);
             }
+        } else if (at.isAnnotationPresent(Provider.class)) {
+            this.providerClasses.add(theClass);
         }
-
     }
 
     List<Class<? extends Application>> getApplications() {
@@ -67,5 +72,9 @@ public class ServerCdiExtension implements Extension {
 
     List<Class<?>> getResourceClasses() {
         return resourceClasses;
+    }
+
+    List<Class<?>> getProviderClasses() {
+        return providerClasses;
     }
 }

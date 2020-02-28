@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ class TestDataSourceAcquisition {
     @BeforeEach
     void startServer() {
         this.stopServer();
-        final Server.Builder builder = Server.builder();
+        final Server.Builder builder = Server.builder().port(0);
         assertNotNull(builder);
         // The Helidon MicroProfile server implementation uses
         // ConfigProviderResolver#getConfig(ClassLoader) directly

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.tests.integration.mp.autodiscovery;
 
 /**
- * Module info for re-packaged gRPC Java module.
+ * Simple exception class to use with custom exception mapper.
  */
-module io.grpc {
-    exports io.grpc;
-    exports io.grpc.inprocess;
-    exports io.grpc.internal;
-    exports io.grpc.util;
-
-    requires java.logging;
-    requires java.naming;
-
-    requires static com.google.common;
-
-    uses io.grpc.ManagedChannelProvider;
-    uses io.grpc.NameResolverProvider;
-    uses io.grpc.ServerProvider;
-    uses io.grpc.internal.BinaryLogProvider;
-    uses io.grpc.LoadBalancerProvider;
+public class HelloException extends RuntimeException {
+    /**
+     * Construct HelloException instance.
+     *
+     * @param message error message
+     */
+    public HelloException(String message) {
+        super(message);
+    }
 }

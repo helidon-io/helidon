@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.tests.integration.mp.autodiscovery;
+
+import io.helidon.microprofile.server.Server;
 
 /**
- * Module info for re-packaged gRPC Java module.
+ * Main class for integration test.
  */
-module io.grpc {
-    exports io.grpc;
-    exports io.grpc.inprocess;
-    exports io.grpc.internal;
-    exports io.grpc.util;
+public class MpServicesMain {
+    public static void main(String[] args) {
+        startTheServer();
+    }
 
-    requires java.logging;
-    requires java.naming;
-
-    requires static com.google.common;
-
-    uses io.grpc.ManagedChannelProvider;
-    uses io.grpc.NameResolverProvider;
-    uses io.grpc.ServerProvider;
-    uses io.grpc.internal.BinaryLogProvider;
-    uses io.grpc.LoadBalancerProvider;
+    static Server startTheServer() {
+        return Server.create().start();
+    }
 }

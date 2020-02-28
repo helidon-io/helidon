@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
@@ -62,7 +63,6 @@ public interface Server {
      * @throws MpException in case the server fails to be created
      * @see #builder()
      */
-    @SafeVarargs
     static Server create(Application... applications) throws MpException {
         Builder builder = builder();
         Arrays.stream(applications).forEach(builder::addApplication);
@@ -149,17 +149,17 @@ public interface Server {
      */
     final class Builder {
 
-        {
+        static {
             // Load the initialization start time as early as possible from non-public code.
             ServerImpl.recordInitStart(System.nanoTime());
         }
 
         // there should only be one
         private static final AtomicInteger MP_SERVER_COUNTER = new AtomicInteger(1);
-        private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
+        private final List<Class<?>> providerClasses = new LinkedList<>();
         private final List<JaxRsApplication> applications = new LinkedList<>();
         private HelidonServiceLoader.Builder<MpService> extensionBuilder;
         private ResourceConfig resourceConfig;
@@ -178,11 +178,13 @@ public interface Server {
             extensionBuilder = HelidonServiceLoader.builder(ServiceLoader.load(MpService.class));
         }
 
-        private static ResourceConfig configForResourceClasses(List<Class<?>> resourceClasses) {
+        private static ResourceConfig configForClasses(List<Class<?>> resourceClasses, List<Class<?>> providerClasses) {
             return ResourceConfig.forApplication(new Application() {
                 @Override
                 public Set<Class<?>> getClasses() {
-                    return new HashSet<>(resourceClasses);
+                    HashSet<Class<?>> classes = new HashSet<>(resourceClasses);
+                    classes.addAll(providerClasses);
+                    return classes;
                 }
             });
         }
@@ -240,18 +242,18 @@ public interface Server {
             STARTUP_LOGGER.finest("CDI Container obtained");
 
             if (applications.isEmpty()) {
+                // no explicit or discovered applications
                 if (!resourceClasses.isEmpty()) {
-                    resourceConfig = configForResourceClasses(resourceClasses);
+                    resourceConfig = configForClasses(resourceClasses, providerClasses);
                 }
                 if (null == resourceConfig) {
-                    resourcesFromContainer();
+                    addResourcesFromContainer();
                 }
-
                 if (null != resourceConfig) {
                     applications.add(JaxRsApplication.create(resourceConfig));
                 }
             } else if (!resourceClasses.isEmpty()) {
-                applications.add(JaxRsApplication.create(configForResourceClasses(resourceClasses)));
+                applications.add(JaxRsApplication.create(configForClasses(resourceClasses, providerClasses)));
             }
 
             STARTUP_LOGGER.finest("Jersey resource configuration");
@@ -271,7 +273,7 @@ public interface Server {
             return new ServerImpl(this);
         }
 
-        private void resourcesFromContainer() {
+        private void addResourcesFromContainer() {
             ServerCdiExtension extension = cdiContainer.getBeanManager().getExtension(ServerCdiExtension.class);
             if (null == extension) {
                 throw new RuntimeException("Failed to find JAX-RS resource to use, extension not registered with container");
@@ -280,11 +282,9 @@ public interface Server {
             List<Class<? extends Application>> applications = extension.getApplications();
 
             if (applications.isEmpty()) {
-                List<Class<?>> resourceClasses = extension.getResourceClasses();
-                if (resourceClasses.isEmpty()) {
-                    LOGGER.warning("Failed to find JAX-RS resource to use");
-                }
-                resourceConfig = configForResourceClasses(resourceClasses);
+                resourceClasses.addAll(extension.getResourceClasses());
+                providerClasses.addAll(extension.getProviderClasses());
+                resourceConfig = configForClasses(resourceClasses, providerClasses);
             } else {
                 applications.forEach(this::addApplication);
             }
@@ -327,7 +327,11 @@ public interface Server {
             // add resource classes explicitly configured without CDI annotations
             this.resourceClasses.stream()
                     .filter(this::notACdiBean)
-                    .forEach(initializer::addBeanClasses);
+                    .forEach(initializer::addBeanClass);
+            // add provider classes explicitly configured without CDI annotations
+            this.providerClasses.stream()
+                    .filter(this::notACdiBean)
+                    .forEach(initializer::addBeanClass);
 
             STARTUP_LOGGER.finest("Initializer");
             SeContainer container = initializer.initialize();
@@ -342,6 +346,11 @@ public interface Server {
             }
 
             if (clazz.getAnnotation(ApplicationScoped.class) != null) {
+                //CDI bean
+                return false;
+            }
+
+            if (clazz.getAnnotation(Dependent.class) != null) {
                 //CDI bean
                 return false;
             }
@@ -504,10 +513,10 @@ public interface Server {
          * registering one application under root ("/") and another under "/app1" would not work as expected).
          *
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
-         * <li>All Applications and Application classes</li>
-         * <li>Resource classes</li>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -526,10 +535,10 @@ public interface Server {
          * registering one application under root ("/") and another under "/app1" would not work as expected).
          *
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
-         * <li>All Applications and Application classes</li>
-         * <li>Resource classes</li>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -548,11 +557,10 @@ public interface Server {
         /**
          * JAX-RS application class to use.
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
-         * <li>Application class</li>
-         * <li>Application</li>
-         * <li>Resource classes</li>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -567,10 +575,10 @@ public interface Server {
         /**
          * JAX-RS application class to use.
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
          * <li>Applications and application classes</li>
-         * <li>Resource classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -589,10 +597,10 @@ public interface Server {
         /**
          * Add a JAX-RS resource class to use.
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
          * <ul>
          * <li>Applications and application classes</li>
-         * <li>Resource classes</li>
+         * <li>Resource and provider classes</li>
          * <li>Resource config</li>
          * </ul>
          *
@@ -601,6 +609,24 @@ public interface Server {
          */
         public Builder addResourceClass(Class<?> resource) {
             this.resourceClasses.add(resource);
+            return this;
+        }
+
+        /**
+         * Add a JAX-RS provider class to use.
+         * <p>
+         * Order is (e.g. if application is defined, resource and provider classes are ignored):
+         * <ul>
+         * <li>Applications and application classes</li>
+         * <li>Resource and provider classes</li>
+         * <li>Resource config</li>
+         * </ul>
+         *
+         * @param provider provider class to add, list of these classes is used to bootstrap Jersey
+         * @return modified builder
+         */
+        public Builder addProviderClass(Class<?> provider) {
+            this.providerClasses.add(provider);
             return this;
         }
 

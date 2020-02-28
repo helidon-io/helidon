@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class EtcdV3Client implements EtcdClient {
      */
     public EtcdV3Client(URI uri) {
         ManagedChannelBuilder mcb = ManagedChannelBuilder.forAddress(uri.getHost(), uri.getPort());
-        this.channel = mcb.usePlaintext(true).build();
+        this.channel = mcb.usePlaintext().build();
 
         kvStub = KVGrpc.newBlockingStub(channel);
         watchStub = WatchGrpc.newStub(channel);
