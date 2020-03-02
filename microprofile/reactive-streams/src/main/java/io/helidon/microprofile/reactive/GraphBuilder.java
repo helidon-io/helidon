@@ -17,6 +17,9 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -336,5 +339,15 @@ final class GraphBuilder extends HashMap<Class<? extends Stage>, Consumer<Stage>
     private <S extends Stage> GraphBuilder registerStage(Class<S> stageType, Consumer<S> consumer) {
         this.put(stageType, (Consumer<Stage>) consumer);
         return this;
+    }
+
+    private void writeObject(ObjectOutputStream stream)
+            throws IOException {
+        stream.defaultWriteObject();
+    }
+
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
     }
 }
