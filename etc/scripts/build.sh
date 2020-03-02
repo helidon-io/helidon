@@ -49,9 +49,28 @@ echo "========="
 mvn --version
 echo "========="
 
+VERSION_PLUGIN_JAVADOC="3.2.0-SNAPSHOT"
+
+# Our aggregated javadoc are built as part of the site lifecycle.
+# We require enhancements that are in maven-javadoc-plugin 3.2.0.
+# It isn't released yet. So we build a SNAPSHOT version ourselves.
+# Ick, I know. But we expect it to be released real-soon-now, so this
+# is a temporary hack.
+build_javadoc_plugin(){
+    readonly JAVADOC_GIT_URL="https://github.com/apache/maven-javadoc-plugin"
+    readonly JAVADOC_PLUGIN_DIR="${WS_DIR}/../maven-javadoc-plugin"
+
+    mkdir -p ${JAVADOC_PLUGIN_DIR}
+    git clone ${JAVADOC_GIT_URL} ${JAVADOC_PLUGIN_DIR}
+    mvn -f ${JAVADOC_PLUGIN_DIR}/pom.xml clean install -DskipTests=true
+}
+
+build_javadoc_plugin
+
 mvn -f ${WS_DIR}/pom.xml \
-    clean install -e \
+    clean install site -e \
     -B \
-    -Pexamples,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
+    -Dversion.plugin.javadoc=${VERSION_PLUGIN_JAVADOC} \
+    -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,pipeline
 
 examples/quickstarts/archetypes/test-archetypes.sh

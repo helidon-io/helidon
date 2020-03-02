@@ -49,6 +49,7 @@
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
+        <version.plugin.site>3.8.2</version.plugin.site>
     </properties>
 
     <dependencyManagement>
@@ -178,6 +179,14 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${version.plugin.site}</version>
+                    <configuration>
+                        <skip>true</skip>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
