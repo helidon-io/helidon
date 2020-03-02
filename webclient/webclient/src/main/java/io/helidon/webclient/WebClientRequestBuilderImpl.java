@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +35,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -92,6 +95,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private final WebClientRequestHeaders headers;
     private final Parameters queryParams;
     private final MessageBodyWriterContext writerContext;
+    private final AtomicBoolean handled;
 
     private URI uri;
     private Http.Version httpVersion;
@@ -118,7 +122,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.headers = new WebClientRequestHeadersImpl(this.configuration.headers());
         this.queryParams = HashParameters.create();
         this.httpVersion = Http.Version.V1_1;
-        this.fragment = "";
         this.redirectionCount = 0;
         this.services = configuration.clientServices();
         this.writerContext = MessageBodyWriterContext.create(configuration.mediaSupport(), null, headers, null);
@@ -128,6 +131,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         configuration.context().ifPresentOrElse(contextBuilder::parent,
                                                 () -> Contexts.context().ifPresent(contextBuilder::parent));
         this.context = contextBuilder.build();
+        this.handled = new AtomicBoolean();
     }
 
     public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
@@ -202,7 +206,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @Override
     public WebClientRequestBuilder queryParam(String name, String... values) {
-        queryParams.add(name, values);
+        for (String value : values) {
+            queryParams.add(name, URLEncoder.encode(value, StandardCharsets.UTF_8));
+        }
         return this;
     }
 
@@ -339,14 +345,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     String query() {
-        String queries = "";
-        for (Map.Entry<String, List<String>> entry : queryParams.toMap().entrySet()) {
-            for (String value : entry.getValue()) {
-                String query = entry.getKey() + "=" + value;
-                queries = queries.isEmpty() ? query : queries + "&" + query;
-            }
-        }
-        return queries;
+        return uri.getQuery() == null ? "" : uri.getQuery();
     }
 
     String fragment() {
@@ -450,37 +449,66 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         //If the response status is greater then 300, ask user to change requested entity to ClientResponse
         if (response.status().code() >= Http.Status.MOVED_PERMANENTLY_301.code()) {
             throw new WebClientException("Entity of the request with status " + response.status().code()
-                                                 + " could not be automatically handled! Request for ClientResponse instead.");
+                                                 + " could not be automatically handled! "
+                                                 + "Request for ClientResponse instead.");
         }
         return response.content();
     }
 
     private URI prepareFinalURI() {
-        if (this.uri == null) {
-            throw new WebClientException("There is no specified uri for the request.");
-        } else if (this.uri.getHost() == null) {
-            throw new WebClientException("Invalid uri " + this.uri + ". Uri.getHost() returned null.");
+        if (handled.compareAndSet(false, true)) {
+            if (uri == null) {
+                throw new WebClientException("There is no specified uri for the request.");
+            } else if (uri.getHost() == null) {
+                throw new WebClientException("Invalid uri " + uri + ". Uri.getHost() returned null.");
+            }
+            String scheme = Optional.ofNullable(uri.getScheme())
+                    .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: " + uri
+                            .toString()));
+            if (!DEFAULT_SUPPORTED_PROTOCOLS.containsKey(scheme)) {
+                throw new WebClientException(scheme + " transport protocol is not supported!");
+            }
+            int port = uri.getPort() > -1 ? uri.getPort() : DEFAULT_SUPPORTED_PROTOCOLS.getOrDefault(scheme, -1);
+            if (port == -1) {
+                throw new WebClientException("Client could not get port for schema " + scheme + ". "
+                                                     + "Please specify correct port to use.");
+            }
+            String path = resolvePath();
+            this.path = ClientPath.create(null, path, new HashMap<>());
+            //We need null values for query and fragment if we dont want to have trailing ?# chars
+            String query = resolveQuery();
+            fragment = fragment == null ? uri.getFragment() : fragment;
+            try {
+                return new URI(scheme, null, uri.getHost(), port, path, query, fragment);
+            } catch (URISyntaxException e) {
+                throw new WebClientException("Could not create URI instance for the request.", e);
+            }
         }
-        String scheme = Optional.ofNullable(this.uri.getScheme())
-                .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: " + uri.toString()));
-        if (!DEFAULT_SUPPORTED_PROTOCOLS.containsKey(scheme)) {
-            throw new WebClientException(scheme + " transport protocol is not supported!");
+        return this.uri;
+    }
+
+    private String resolveQuery() {
+        String queries = "";
+        for (Map.Entry<String, List<String>> entry : queryParams.toMap().entrySet()) {
+            for (String value : entry.getValue()) {
+                String query = entry.getKey() + "=" + value;
+                queries = queries.isEmpty() ? query : queries + "&" + query;
+            }
         }
-        int port = uri.getPort() > -1 ? uri.getPort() : DEFAULT_SUPPORTED_PROTOCOLS.getOrDefault(scheme, -1);
-        if (port == -1) {
-            throw new WebClientException("Client could not get port for schema " + scheme + ". "
-                                                 + "Please specify correct port to use.");
+        if (queries.isEmpty()) {
+            queries = uri.getQuery();
+        } else if (uri.getQuery() != null) {
+            queries = uri.getQuery() + "&" + queries;
         }
-        String path = resolvePath();
-        this.path = ClientPath.create(null, path, new HashMap<>());
-        //We need null values for query and fragment if we dont want to have trailing ?# chars
-        String query = query().isEmpty() ? null : query();
-        String fragment = this.fragment.isEmpty() ? null : this.fragment;
-        try {
-            return new URI(scheme, null, uri.getHost(), port, path, query, fragment);
-        } catch (URISyntaxException e) {
-            throw new WebClientException("Could not create URI instance for the request.", e);
+
+        if (uri.getQuery() != null) {
+            String[] uriQueries = uri.getQuery().split("&");
+            Arrays.stream(uriQueries)
+                    .map(s -> s.split("="))
+                    .forEach(keyValue -> queryParam(keyValue[0], keyValue[1]));
         }
+
+        return queries;
     }
 
     private String resolvePath() {

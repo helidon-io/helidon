@@ -36,9 +36,10 @@ import org.eclipse.microprofile.metrics.MetricType;
 /**
  * Base client metric class.
  */
-abstract class WebClientMetric implements WebClientService {
+public abstract class WebClientMetric implements WebClientService {
 
-    public static final int ERROR_STATUS_CODE = 400;
+    private static final int ERROR_STATUS_CODE = 400;
+
     private final MetricRegistry registry;
     private final Set<String> methods;
     private final String nameFormat;

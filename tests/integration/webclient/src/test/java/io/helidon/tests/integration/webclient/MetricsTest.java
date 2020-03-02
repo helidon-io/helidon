@@ -16,9 +16,6 @@
 package io.helidon.tests.integration.webclient;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
 import io.helidon.metrics.RegistryFactory;
@@ -31,7 +28,6 @@ import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,7 +42,7 @@ public class MetricsTest extends TestParent {
     private static final MetricRegistry FACTORY = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
     @Test
-    public void testCounter() throws Exception {
+    public void testCounter() {
         WebClientService serviceCounterAll = WebClientMetrics.counter().nameFormat("counter.%1$s.%2$s").build();
         WebClientService serviceCounterGet = WebClientMetrics.counter()
                 .methods(Http.Method.GET)
@@ -70,36 +66,32 @@ public class MetricsTest extends TestParent {
         assertThat(counterGet.getCount(), is(0L));
         assertThat(counterError.getCount(), is(0L));
         assertThat(counterSuccess.getCount(), is(0L));
-        webClient.get()
-                .request(String.class)
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
-        assertThat(counterAll.getCount(), is(1L));
-        assertThat(counterGet.getCount(), is(1L));
-        assertThat(counterError.getCount(), is(0L));
-        assertThat(counterSuccess.getCount(), is(1L));
-        webClient.get()
-                .path("/error")
-                .request()
-                .thenAccept(WebClientResponse::close)
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
-        assertThat(counterAll.getCount(), is(2L));
-        assertThat(counterGet.getCount(), is(2L));
-        assertThat(counterError.getCount(), is(1L));
-        assertThat(counterSuccess.getCount(), is(1L));
+        try {
+            webClient.get()
+                    .request(String.class)
+                    .toCompletableFuture()
+                    .get();
+            assertThat(counterAll.getCount(), is(1L));
+            assertThat(counterGet.getCount(), is(1L));
+            assertThat(counterError.getCount(), is(0L));
+            assertThat(counterSuccess.getCount(), is(1L));
+            webClient.get()
+                    .path("/error")
+                    .request()
+                    .thenAccept(WebClientResponse::close)
+                    .toCompletableFuture()
+                    .get();
+            assertThat(counterAll.getCount(), is(2L));
+            assertThat(counterGet.getCount(), is(2L));
+            assertThat(counterError.getCount(), is(1L));
+            assertThat(counterSuccess.getCount(), is(1L));
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 
     @Test
-    public void testMeter() throws Exception {
+    public void testMeter() {
         WebClientService serviceMeterAll = WebClientMetrics.meter().nameFormat("meter.%1$s.%2$s").build();
         WebClientService serviceMeterGet = WebClientMetrics.meter()
                 .methods(Http.Method.GET)
@@ -123,32 +115,28 @@ public class MetricsTest extends TestParent {
         assertThat(meterGet.getCount(), is(0L));
         assertThat(meterError.getCount(), is(0L));
         assertThat(meterSuccess.getCount(), is(0L));
-        webClient.get()
-                .request(String.class)
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
-        assertThat(meterAll.getCount(), is(1L));
-        assertThat(meterGet.getCount(), is(1L));
-        assertThat(meterError.getCount(), is(0L));
-        assertThat(meterSuccess.getCount(), is(1L));
-        webClient.get()
-                .path("/error")
-                .request()
-                .thenAccept(WebClientResponse::close)
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
-        assertThat(meterAll.getCount(), is(2L));
-        assertThat(meterGet.getCount(), is(2L));
-        assertThat(meterError.getCount(), is(1L));
-        assertThat(meterSuccess.getCount(), is(1L));
+        try {
+            webClient.get()
+                    .request(String.class)
+                    .toCompletableFuture()
+                    .get();
+            assertThat(meterAll.getCount(), is(1L));
+            assertThat(meterGet.getCount(), is(1L));
+            assertThat(meterError.getCount(), is(0L));
+            assertThat(meterSuccess.getCount(), is(1L));
+            webClient.get()
+                    .path("/error")
+                    .request()
+                    .thenAccept(WebClientResponse::close)
+                    .toCompletableFuture()
+                    .get();
+            assertThat(meterAll.getCount(), is(2L));
+            assertThat(meterGet.getCount(), is(2L));
+            assertThat(meterError.getCount(), is(1L));
+            assertThat(meterSuccess.getCount(), is(1L));
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 
     @Test
@@ -194,9 +182,9 @@ public class MetricsTest extends TestParent {
     @Test
     public void testErrorHandling() {
         WebClientService errorAll = WebClientMetrics.counter()
-            .success(false)
-            .nameFormat("counter.all.errors.%2$s")
-            .build();
+                .success(false)
+                .nameFormat("counter.all.errors.%2$s")
+                .build();
         WebClientService errorGet = WebClientMetrics.counter()
                 .methods(Http.Method.GET)
                 .success(false)
@@ -223,25 +211,21 @@ public class MetricsTest extends TestParent {
                     .thenAccept(WebClientResponse::close)
                     .toCompletableFuture()
                     .get();
-        } catch (Exception e) {
-            fail(e);
-        }
-        assertThat(counterAll.getCount(), is(1L));
-        assertThat(counterGet.getCount(), is(1L));
-        assertThat(counterPut.getCount(), is(0L));
-        try {
+            assertThat(counterAll.getCount(), is(1L));
+            assertThat(counterGet.getCount(), is(1L));
+            assertThat(counterPut.getCount(), is(0L));
             webClient.put()
                     .path("/invalid")
                     .submit()
                     .thenAccept(WebClientResponse::close)
                     .toCompletableFuture()
                     .get();
+            assertThat(counterAll.getCount(), is(2L));
+            assertThat(counterGet.getCount(), is(1L));
+            assertThat(counterPut.getCount(), is(1L));
         } catch (Exception e) {
             fail(e);
         }
-        assertThat(counterAll.getCount(), is(2L));
-        assertThat(counterGet.getCount(), is(1L));
-        assertThat(counterPut.getCount(), is(1L));
     }
 
 }

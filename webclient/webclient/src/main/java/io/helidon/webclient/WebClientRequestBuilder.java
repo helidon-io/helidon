@@ -43,6 +43,8 @@ public interface WebClientRequestBuilder {
     /**
      * String representation of request uri.
      *
+     * Replaces baseUri defined in client builder.
+     *
      * @param uri request uri
      * @return updated builder instance
      */
@@ -51,6 +53,8 @@ public interface WebClientRequestBuilder {
     /**
      * Request {@link URL}.
      *
+     * Replaces baseUri defined in client builder.
+     *
      * @param url request url
      * @return updated builder instance
      */
@@ -58,6 +62,8 @@ public interface WebClientRequestBuilder {
 
     /**
      * Request {@link URI}.
+     *
+     * Replaces baseUri defined in client builder.
      *
      * @param uri request uri
      * @return updated builder instance
@@ -93,6 +99,8 @@ public interface WebClientRequestBuilder {
     /**
      * Add a query parameter.
      *
+     * Appends these query parameters to the query parameters defined in the request uri.
+     *
      * @param name   query name
      * @param values query value
      * @return updated builder instance
@@ -127,6 +135,9 @@ public interface WebClientRequestBuilder {
 
     /**
      * Configure query parameters.
+     *
+     * Appends these query parameters to the query parameters defined in the request uri.
+     *
      * Copy all query parameters from supplied {@link Parameters} instance.
      *
      * @param queryParams to copy
@@ -161,6 +172,8 @@ public interface WebClientRequestBuilder {
     /**
      * Fragment of the request.
      *
+     * Replaces fragment defined in the request uri.
+     *
      * @param fragment request fragment
      * @return updated builder instance
      */
@@ -169,6 +182,8 @@ public interface WebClientRequestBuilder {
     /**
      * Path of the request.
      *
+     * Appends this path to the path defined in the request uri.
+     *
      * @param path path
      * @return updated builder instance
      */
@@ -176,6 +191,8 @@ public interface WebClientRequestBuilder {
 
     /**
      * Path of the request.
+     *
+     * Appends this path to the path defined in the request uri.
      *
      * @param path path
      * @return updated builder instance

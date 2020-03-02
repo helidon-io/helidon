@@ -68,10 +68,10 @@ class RedirectInterceptor implements HttpInterceptor {
         if (!configuration.followRedirects()) {
             return false;
         }
-        return responseStatus == HttpResponseStatus.MOVED_PERMANENTLY
-                || responseStatus == HttpResponseStatus.FOUND
-                || responseStatus == HttpResponseStatus.SEE_OTHER
-                || responseStatus == HttpResponseStatus.TEMPORARY_REDIRECT
-                || responseStatus == HttpResponseStatus.PERMANENT_REDIRECT;
+        return responseStatus.equals(HttpResponseStatus.MOVED_PERMANENTLY)
+                || responseStatus.equals(HttpResponseStatus.FOUND)
+                || responseStatus.equals(HttpResponseStatus.SEE_OTHER)
+                || responseStatus.equals(HttpResponseStatus.TEMPORARY_REDIRECT)
+                || responseStatus.equals(HttpResponseStatus.PERMANENT_REDIRECT);
     }
 }
