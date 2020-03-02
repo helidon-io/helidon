@@ -44,6 +44,7 @@ public interface Single<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Single<U> map(Mapper<T, U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
         return new SingleMapperPublisher<>(this, mapper);
     }
 
