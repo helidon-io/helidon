@@ -56,9 +56,8 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
+            SubscriptionHelper.validate(this.upstream, subscription);
             this.upstream = subscription;
-            // FIXME onSubscribe(subscription) should work too, but there are bugs in other
-            //  pre-existing operators preventing the TCK from passing without this
             downstream.onSubscribe(this);
         }
 
