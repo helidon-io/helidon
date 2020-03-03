@@ -145,10 +145,6 @@ class Serializer {
 
             Property p = property;
             Object v = adjustPropertyValue(propertyValue);
-            Class<?> type = implsToTypes.get(javaBean.getClass()).getType();
-            if (type.isEnum()) {
-                p = new DelegatingProperty(property, property.toString());
-            }
             if (propertyValue instanceof Enum) {
                 Enum e = (Enum) propertyValue;
                 v = e.toString();
@@ -269,81 +265,6 @@ class Serializer {
             }
 
             return result;
-        }
-    }
-
-    private static class DelegatingProperty extends Property {
-
-        private final Property delegate;
-
-        private DelegatingProperty(Property delegate, String name) {
-            super(name, delegate.getType());
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Class<?> getType() {
-            return delegate.getType();
-        }
-
-        @Override
-        public Class<?>[] getActualTypeArguments() {
-            return delegate.getActualTypeArguments();
-        }
-
-        @Override
-        public String getName() {
-            return super.getName();
-        }
-
-        @Override
-        public String toString() {
-            return super.toString();
-        }
-
-        @Override
-        public int compareTo(Property o) {
-            return super.compareTo(o);
-        }
-
-        @Override
-        public boolean isWritable() {
-            return delegate.isWritable();
-        }
-
-        @Override
-        public boolean isReadable() {
-            return delegate.isReadable();
-        }
-
-        @Override
-        public void set(Object object, Object value) throws Exception {
-            delegate.set(object, value);
-        }
-
-        @Override
-        public Object get(Object object) {
-            return delegate.get(object);
-        }
-
-        @Override
-        public List<Annotation> getAnnotations() {
-            return delegate.getAnnotations();
-        }
-
-        @Override
-        public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-            return delegate.getAnnotation(annotationType);
-        }
-
-        @Override
-        public int hashCode() {
-            return super.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            return super.equals(other);
         }
     }
 }
