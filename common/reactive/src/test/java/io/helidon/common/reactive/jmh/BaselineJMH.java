@@ -46,7 +46,7 @@ public class BaselineJMH {
     Integer[] array;
     Collection<Integer> collection;
 
-    @Param({/*"1", "10", "100", "1000", "10000", "100000",*/ "1000000"})
+    @Param({"1", "10", "100", "1000", "10000", "100000", "1000000"})
     int count;
 
     @Setup
