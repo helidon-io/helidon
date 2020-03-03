@@ -73,7 +73,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
                 .map(Charset::forName)
                 .orElse(StandardCharsets.UTF_8)
                 .encode(charSequence.toString());
-        Flow.Publisher<DataChunk> publisher = Multi.just(DataChunk.create(data));
+        Flow.Publisher<DataChunk> publisher = Multi.singleton(DataChunk.create(data));
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {

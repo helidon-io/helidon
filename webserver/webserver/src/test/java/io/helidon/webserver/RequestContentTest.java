@@ -266,7 +266,7 @@ public class RequestContentTest {
 
     @Test
     public void failingSubscribe() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("data".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("data".getBytes())));
 
         request.content().registerFilter((Publisher<DataChunk> publisher) -> {
             throw new IllegalStateException("failed-publisher-transformation");
@@ -287,7 +287,7 @@ public class RequestContentTest {
 
     @Test
     public void readerTest() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("2010-01-02".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("2010-01-02".getBytes())));
 
         request.content().registerReader(LocalDate.class,
                 (publisher, clazz) -> ContentReaders
@@ -304,21 +304,21 @@ public class RequestContentTest {
 
     @Test
     public void implicitByteArrayContentReader() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("test-string".getBytes())));
         CompletionStage<String> complete = request.content().as(byte[].class).thenApply(String::new);
         assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS),  is("test-string"));
     }
 
     @Test
     public void implicitStringContentReader() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("test-string".getBytes())));
         CompletionStage<? extends String> complete = request.content().as(String.class);
         assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }
 
     @Test
     public void overridingStringContentReader() throws Exception {
-        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.singleton(DataChunk.create("test-string".getBytes())));
 
         request.content().registerReader(String.class, (publisher, clazz) -> {
             fail("Should not be called");

@@ -243,7 +243,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>   item type
      * @param items items to publish
      * @return Multi
-     * @throws NullPointerException if items is {@code null}
+     * @throws NullPointerException if {@code items} is {@code null}
      */
     static <T> Multi<T> just(Collection<T> items) {
         return Multi.from(items);
@@ -255,11 +255,29 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>   item type
      * @param items items to publish
      * @return Multi
-     * @throws NullPointerException if items is {@code null}
+     * @throws NullPointerException if {@code items} is {@code null}
      */
     @SafeVarargs
     static <T> Multi<T> just(T... items) {
-        return Multi.from(List.of(items));
+        if (items.length == 0) {
+            return empty();
+        }
+        if (items.length == 1) {
+            return singleton(items[0]);
+        }
+        return new MultiFromArrayPublisher<>(items);
+    }
+
+    /**
+     * Create a {@link Multi} that emits a pre-existing item and then completes.
+     * @param item the item to emit.
+     * @param <T> the type of the item
+     * @return Multi
+     * @throws NullPointerException if {@code item} is {@code null}
+     */
+    static <T> Multi<T> singleton(T item) {
+        Objects.requireNonNull(item, "item is null");
+        return new MultiJustPublisher<>(item);
     }
 
     /**

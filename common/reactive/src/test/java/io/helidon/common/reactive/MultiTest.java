@@ -503,7 +503,7 @@ public class MultiTest {
     @Test
     void requestOneOfOneExpectComplete() {
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Multi.just("foo").subscribe(subscriber);
+        Multi.singleton("foo").subscribe(subscriber);
         subscriber.request1();
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -542,7 +542,7 @@ public class MultiTest {
     public void testDoubleSubscribe() {
         TestSubscriber<Integer> subscriber1 = new TestSubscriber<>();
         TestSubscriber<Integer> subscriber2 = new TestSubscriber<>();
-        Multi<Integer> multi = Multi.just(1);
+        Multi<Integer> multi = Multi.singleton(1);
         multi.subscribe(subscriber1);
         multi.subscribe(subscriber2);
 
