@@ -42,9 +42,9 @@ import org.reactivestreams.Subscriber;
  */
 class IncomingMethod extends AbstractMessagingMethod {
 
-    private Subscriber subscriber;
+    private Subscriber<? super Object> subscriber;
 
-    IncomingMethod(AnnotatedMethod method, Errors.Collector errors) {
+    IncomingMethod(AnnotatedMethod<?> method, Errors.Collector errors) {
         super(method.getJavaMember(), errors);
         super.setIncomingChannelName(method.getAnnotation(Incoming.class).value());
     }
@@ -66,19 +66,24 @@ class IncomingMethod extends AbstractMessagingMethod {
             try {
                 switch (getType()) {
                     case INCOMING_SUBSCRIBER_MSG_2_VOID:
-                        Subscriber originalMsgSubscriber = (Subscriber) getMethod().invoke(getBeanInstance());
-                        subscriber = new ProxySubscriber(this, originalMsgSubscriber);
+                        Subscriber<? super Object> originalMsgSubscriber =
+                                (Subscriber<? super Object>) getMethod().invoke(getBeanInstance());
+                        subscriber = new ProxySubscriber<>(this, originalMsgSubscriber);
                         break;
                     case INCOMING_SUBSCRIBER_PAYL_2_VOID:
-                        Subscriber originalPaylSubscriber = (Subscriber) getMethod().invoke(getBeanInstance());
-                        Subscriber unwrappedSubscriber = UnwrapProcessor.of(this.getMethod(), originalPaylSubscriber);
-                        subscriber = new ProxySubscriber(this, unwrappedSubscriber);
+                        Subscriber<? super Object> originalPaylSubscriber =
+                                (Subscriber<? super Object>) getMethod().invoke(getBeanInstance());
+                        Subscriber<? super Object> unwrappedSubscriber =
+                                UnwrapProcessor.of(this.getMethod(), originalPaylSubscriber);
+                        subscriber = new ProxySubscriber<>(this, unwrappedSubscriber);
                         break;
                     case INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID:
                     case INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID:
-                        SubscriberBuilder originalSubscriberBuilder = (SubscriberBuilder) getMethod().invoke(getBeanInstance());
-                        Subscriber unwrappedBuilder = UnwrapProcessor.of(this.getMethod(), originalSubscriberBuilder.build());
-                        subscriber = new ProxySubscriber(this, unwrappedBuilder);
+                        SubscriberBuilder<? super Object, ?> originalSubscriberBuilder =
+                                (SubscriberBuilder<? super Object, ?>) getMethod().invoke(getBeanInstance());
+                        Subscriber<? super Object> unwrappedBuilder =
+                                UnwrapProcessor.of(this.getMethod(), originalSubscriberBuilder.build());
+                        subscriber = new ProxySubscriber<>(this, unwrappedBuilder);
                         break;
                     default:
                         throw new UnsupportedOperationException(String
@@ -93,7 +98,7 @@ class IncomingMethod extends AbstractMessagingMethod {
         }
     }
 
-    Subscriber getSubscriber() {
+    Subscriber<? super Object> getSubscriber() {
         return subscriber;
     }
 

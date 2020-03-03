@@ -32,7 +32,7 @@ class ProcessorMethod extends AbstractMessagingMethod {
     private Processor<Object, Object> processor;
     private UniversalChannel outgoingChannel;
 
-    ProcessorMethod(AnnotatedMethod method, Errors.Collector errors) {
+    ProcessorMethod(AnnotatedMethod<?> method, Errors.Collector errors) {
         super(method.getJavaMember(), errors);
         super.setIncomingChannelName(method.getAnnotation(Incoming.class).value());
         super.setOutgoingChannelName(method.getAnnotation(Outgoing.class).value());

@@ -42,7 +42,7 @@ class IncomingConnector implements SubscribingConnector {
     private final Config config;
     private String connectorName;
     private OutgoingConnectorFactory connectorFactory;
-    private Map<String, Subscriber> subscriberMap = new HashMap<>();
+    private Map<String, Subscriber<? super Object>> subscriberMap = new HashMap<>();
 
     /**
      * Create new {@link IncomingConnector}.
@@ -59,10 +59,12 @@ class IncomingConnector implements SubscribingConnector {
     }
 
     @Override
-    public Subscriber getSubscriber(String channelName) {
-        Subscriber subscriber = subscriberMap.get(channelName);
+    @SuppressWarnings("unchecked")
+    public Subscriber<? super Object> getSubscriber(String channelName) {
+        Subscriber<? super Object> subscriber = subscriberMap.get(channelName);
         if (subscriber == null) {
-            subscriber = connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build();
+            subscriber = (Subscriber<? super Object>) (Subscriber<?>)
+                    connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build();
             subscriberMap.put(channelName, subscriber);
         }
         return subscriber;

@@ -64,7 +64,6 @@ class InternalProcessor implements Processor<Object, Object> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onNext(Object incomingValue) {
         try {
             Method method = processorMethod.getMethod();
@@ -75,11 +74,11 @@ class InternalProcessor implements Processor<Object, Object> {
             //Method returns publisher, time for flattening its PROCESSOR_MSG_2_PUBLISHER or *_BUILDER
             if (processedValue instanceof Publisher || processedValue instanceof PublisherBuilder) {
                 //Flatten, we are sure its invoke on every request method now
-                PublisherBuilder<Object> publisherBuilder;
+                PublisherBuilder<?> publisherBuilder;
                 if (processedValue instanceof Publisher) {
-                    publisherBuilder = ReactiveStreams.fromPublisher((Publisher<Object>) processedValue);
+                    publisherBuilder = ReactiveStreams.fromPublisher((Publisher<?>) processedValue);
                 } else {
-                    publisherBuilder = (PublisherBuilder<Object>) processedValue;
+                    publisherBuilder = (PublisherBuilder<?>) processedValue;
                 }
                 publisherBuilder.forEach(subVal -> {
                     try {
@@ -96,28 +95,26 @@ class InternalProcessor implements Processor<Object, Object> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Object preProcess(Object incomingValue, Class<?> expectedParamType) throws ExecutionException, InterruptedException {
         if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
-            Message incomingMessage = (Message) incomingValue;
-            incomingMessage.ack().toCompletableFuture().complete(incomingMessage.getPayload());
+            Message<?> incomingMessage = (Message<?>) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(null);
         }
 
         return MessageUtils.unwrap(incomingValue, expectedParamType);
     }
 
-    @SuppressWarnings("unchecked")
     private Object postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
         if (outgoingValue instanceof CompletionStage) {
             //Wait for completable stages to finish, yes it means to block see the spec
-            outgoingValue = ((CompletionStage) outgoingValue).toCompletableFuture().get();
+            outgoingValue = ((CompletionStage<?>) outgoingValue).toCompletableFuture().get();
         }
 
-        Message wrappedOutgoing = (Message) MessageUtils.unwrap(outgoingValue, Message.class);
+        Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class);
         if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
-            Message wrappedIncoming = (Message) MessageUtils.unwrap(incomingValue, Message.class);
-            wrappedOutgoing = (Message) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
+            Message<?> wrappedIncoming = (Message<?>) MessageUtils.unwrap(incomingValue, Message.class);
+            wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
         }
         return wrappedOutgoing;
     }

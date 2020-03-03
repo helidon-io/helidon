@@ -47,7 +47,6 @@ class InternalSubscriber implements Subscriber<Object> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onNext(Object message) {
         Method method = incomingMethod.getMethod();
         try {
@@ -63,35 +62,26 @@ class InternalSubscriber implements Subscriber<Object> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Object preProcess(Object incomingValue, Class<?> expectedParamType) throws ExecutionException, InterruptedException {
         if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
-            Message incomingMessage = (Message) incomingValue;
-            incomingMessage.ack().toCompletableFuture().complete(incomingMessage.getPayload());
+            Message<?> incomingMessage = (Message<?>) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(null);
         }
 
         return MessageUtils.unwrap(incomingValue, expectedParamType);
     }
 
-    @SuppressWarnings("unchecked")
     private void postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
         if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
                 && incomingValue instanceof Message) {
 
-            Message incomingMessage = (Message) incomingValue;
-            if (Objects.nonNull(outgoingValue) && outgoingValue instanceof CompletionStage) {
-                CompletionStage completionStage = (CompletionStage) outgoingValue;
-                Object result = completionStage.toCompletableFuture().get();
-                incomingMessage.ack().toCompletableFuture().complete(result);
+            Message<?> incomingMessage = (Message<?>) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(null);
 
-            } else {
-                // returns void
-                incomingMessage.ack().toCompletableFuture().complete(null);
-            }
         } else if (Objects.nonNull(outgoingValue)
                 && outgoingValue instanceof CompletionStage) {
-            CompletionStage completionStage = (CompletionStage) outgoingValue;
+            CompletionStage<?> completionStage = (CompletionStage<?>) outgoingValue;
             completionStage.toCompletableFuture().get();
         }
     }

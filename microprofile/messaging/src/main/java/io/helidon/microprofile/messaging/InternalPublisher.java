@@ -54,7 +54,7 @@ class InternalPublisher implements Publisher<Object>, Subscription {
             for (long i = 0; i < n && !closed.get(); i++) {
                 Object result = method.invoke(beanInstance);
                 if (result instanceof CompletionStage) {
-                    CompletionStage completionStage = (CompletionStage) result;
+                    CompletionStage<?> completionStage = (CompletionStage<?>) result;
                     subscriber.onNext(completionStage.toCompletableFuture().get());
                 } else {
                     subscriber.onNext(result);

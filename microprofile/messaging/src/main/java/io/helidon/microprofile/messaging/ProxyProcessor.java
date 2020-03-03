@@ -46,7 +46,7 @@ class ProxyProcessor implements Processor<Object, Object> {
 
     private final ProcessorMethod processorMethod;
     private final Publisher<Object> publisher;
-    private Subscriber subscriber;
+    private Subscriber<? super Object> subscriber;
     private Processor<Object, Object> processor;
     private boolean subscribed = false;
 
@@ -92,8 +92,7 @@ class ProxyProcessor implements Processor<Object, Object> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void subscribe(Subscriber s) {
+    public void subscribe(Subscriber<? super Object> s) {
         if (processor != null) {
             // Backed by real  processor
             processor.subscribe(s);
@@ -113,7 +112,6 @@ class ProxyProcessor implements Processor<Object, Object> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onNext(Object o) {
         try {
             preProcess(o);
@@ -133,12 +131,11 @@ class ProxyProcessor implements Processor<Object, Object> {
         subscriber.onComplete();
     }
 
-    @SuppressWarnings("unchecked")
     private void preProcess(Object incomingValue) {
         if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
-            Message incomingMessage = (Message) incomingValue;
-            incomingMessage.ack().toCompletableFuture().complete(incomingMessage.getPayload());
+            Message<?> incomingMessage = (Message<?>) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(null);
         }
     }
 }

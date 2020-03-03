@@ -51,7 +51,7 @@ class OutgoingMethod extends AbstractMessagingMethod {
                         break;
                     case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
                     case OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID:
-                        publisher = ((PublisherBuilder) getMethod().invoke(getBeanInstance())).buildRs();
+                        publisher = ((PublisherBuilder<?>) getMethod().invoke(getBeanInstance())).buildRs();
                         break;
                     default:
                         throw new UnsupportedOperationException(String

@@ -81,7 +81,7 @@ abstract class AbstractMessagingMethod {
         return beanInstance;
     }
 
-    void setDeclaringBean(Bean bean) {
+    void setDeclaringBean(Bean<?> bean) {
         this.bean = bean;
     }
 

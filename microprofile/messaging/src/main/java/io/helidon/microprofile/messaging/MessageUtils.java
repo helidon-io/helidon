@@ -90,7 +90,7 @@ class MessageUtils {
             }
         } else {
             if (value instanceof Message) {
-                return ((Message) value).getPayload();
+                return ((Message<?>) value).getPayload();
             } else {
                 return value;
             }

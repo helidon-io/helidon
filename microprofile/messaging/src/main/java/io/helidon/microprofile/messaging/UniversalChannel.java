@@ -37,7 +37,7 @@ class UniversalChannel {
     private OutgoingMethod outgoingMethod;
     private OutgoingConnector outgoingConnector;
     private ProcessorMethod outgoingProcessorMethod;
-    private Publisher publisher;
+    private Publisher<?> publisher;
     private Config config;
     private ChannelRouter router;
     private Optional<UniversalChannel> upstreamChannel = Optional.empty();
@@ -68,7 +68,6 @@ class UniversalChannel {
         this.outgoingMethod = outgoingMethod;
     }
 
-    @SuppressWarnings("unchecked")
     void connect() {
         StringBuilder connectMessage = new StringBuilder("Connecting channel ")
                 .append(name).append(" with outgoing method ");
@@ -92,7 +91,7 @@ class UniversalChannel {
 
         connectMessage.append(" and incoming method ");
 
-        Subscriber subscriber1;
+        Subscriber<? super Object> subscriber1;
         if (incomingMethod != null) {
             subscriber1 = incomingMethod.getSubscriber();
             connectMessage.append(incomingMethod.getMethod().getName());

@@ -43,7 +43,7 @@ class OutgoingConnector implements PublishingConnector {
     private final Config config;
     private String connectorName;
     private IncomingConnectorFactory connectorFactory;
-    private Map<String, Publisher> publisherMap = new HashMap<>();
+    private Map<String, Publisher<?>> publisherMap = new HashMap<>();
 
     /**
      * Create new {@link OutgoingConnector}.
@@ -70,8 +70,8 @@ class OutgoingConnector implements PublishingConnector {
     }
 
     @Override
-    public Publisher getPublisher(String channelName) {
-        Publisher publisher = publisherMap.get(channelName);
+    public Publisher<?> getPublisher(String channelName) {
+        Publisher<?> publisher = publisherMap.get(channelName);
         if (publisher == null) {
             publisher = connectorFactory
                     .getPublisherBuilder(getConnectorConfig(channelName))
@@ -82,8 +82,7 @@ class OutgoingConnector implements PublishingConnector {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void subscribe(String channelName, Subscriber subscriber) {
+    public void subscribe(String channelName, Subscriber<? super Object> subscriber) {
         getPublisher(channelName).subscribe(subscriber);
     }
 }

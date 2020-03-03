@@ -58,22 +58,20 @@ class ProxySubscriber<T> implements Subscriber<T> {
         originalSubscriber.onComplete();
     }
 
-    @SuppressWarnings("unchecked")
     private T preProcess(T incomingValue) {
         if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
-            Message incomingMessage = (Message) incomingValue;
-            incomingMessage.ack().toCompletableFuture().complete(incomingMessage.getPayload());
+            Message<?> incomingMessage = (Message<?>) incomingValue;
+            incomingMessage.ack().toCompletableFuture().complete(null);
         }
 
         return incomingValue;
     }
 
-    @SuppressWarnings("unchecked")
     private void postProcess(T incomingValue) {
         if (method.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
                 && incomingValue instanceof Message) {
-            Message incomingMessage = (Message) incomingValue;
+            Message<?> incomingMessage = (Message<?>) incomingValue;
             incomingMessage.ack().toCompletableFuture().complete(null);
         }
     }

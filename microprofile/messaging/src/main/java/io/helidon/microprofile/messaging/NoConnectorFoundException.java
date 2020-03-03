@@ -24,6 +24,8 @@ import javax.enterprise.inject.spi.DeploymentException;
  */
 class NoConnectorFoundException extends DeploymentException {
 
+    private static final long serialVersionUID = 8340553070127797847L;
+
     /**
      * Create new {@link NoConnectorFoundException}.
      *

@@ -148,7 +148,7 @@ class ChannelRouter {
         outgoingConnectorMap.put(connectorName, outgoingConnector);
     }
 
-    private void addIncomingMethod(AnnotatedMethod m) {
+    private void addIncomingMethod(AnnotatedMethod<?> m) {
         IncomingMethod incomingMethod = new IncomingMethod(m, errors);
         incomingMethod.validate();
 
@@ -160,7 +160,7 @@ class ChannelRouter {
         connectableBeanMethods.add(incomingMethod);
     }
 
-    private void addOutgoingMethod(AnnotatedMethod m) {
+    private void addOutgoingMethod(AnnotatedMethod<?> m) {
         OutgoingMethod outgoingMethod = new OutgoingMethod(m, errors);
         outgoingMethod.validate();
 
@@ -172,7 +172,7 @@ class ChannelRouter {
         connectableBeanMethods.add(outgoingMethod);
     }
 
-    private void addProcessorMethod(AnnotatedMethod m) {
+    private void addProcessorMethod(AnnotatedMethod<?> m) {
         ProcessorMethod channelMethod = new ProcessorMethod(m, errors);
         channelMethod.validate();
 
@@ -202,7 +202,7 @@ class ChannelRouter {
         javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {
-            CreationalContext creationalContext = beanManager.createCreationalContext(bean);
+            CreationalContext<?> creationalContext = beanManager.createCreationalContext(bean);
             instance = beanManager.getReference(bean, bean.getBeanClass(), creationalContext);
         }
         if (instance == null) {

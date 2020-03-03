@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.messaging.inner.ack.processor;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
@@ -57,6 +58,7 @@ public class ProcessorPublisherMsg2MsgPrepImplicitAckBean implements AssertableT
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
+    @SuppressWarnings("unchecked")
     public Publisher<Message<String>> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());
         return ReactiveStreams.of(msg, msg).buildRs();

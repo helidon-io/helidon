@@ -28,5 +28,5 @@ interface SubscribingConnector extends ConfigurableConnector {
         return getRootConfig().get("mp.messaging.outgoing");
     }
 
-    Subscriber getSubscriber(String channelName);
+    Subscriber<? super Object> getSubscriber(String channelName);
 }

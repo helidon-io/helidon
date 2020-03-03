@@ -36,7 +36,7 @@ class UnwrapProcessor implements Processor<Object, Object> {
     UnwrapProcessor() {
     }
 
-    static UnwrapProcessor of(Method method, Subscriber<Object> subscriber) {
+    static UnwrapProcessor of(Method method, Subscriber<? super Object> subscriber) {
         UnwrapProcessor unwrapProcessor = new UnwrapProcessor();
         unwrapProcessor.subscribe(subscriber);
         unwrapProcessor.setMethod(method);

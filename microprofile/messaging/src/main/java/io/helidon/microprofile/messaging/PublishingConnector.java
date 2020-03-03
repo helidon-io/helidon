@@ -29,7 +29,7 @@ interface PublishingConnector extends ConfigurableConnector {
         return getRootConfig().get("mp.messaging.incoming");
     }
 
-    Publisher getPublisher(String channelName);
+    Publisher<?> getPublisher(String channelName);
 
-    void subscribe(String channelName, Subscriber subscriber);
+    void subscribe(String channelName, Subscriber<? super Object> subscriber);
 }
