@@ -68,11 +68,10 @@ build_javadoc_plugin(){
 mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
     -B \
-    -Dversion.plugin.javadoc=${VERSION_PLUGIN_JAVADOC} \
     -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,pipeline
 
 examples/quickstarts/archetypes/test-archetypes.sh
 
 # Build site and agregated javadocs
 build_javadoc_plugin
-mvn site
+mvn -Dversion.plugin.javadoc=${VERSION_PLUGIN_JAVADOC} site
