@@ -429,7 +429,8 @@ public class MultiTest {
         CompletableFuture<Throwable> beenError = new CompletableFuture<>();
         Multi.<Integer>error(new RuntimeException())
                 .onError(beenError::complete)
-                .collectList();
+                .collectList()
+                .subscribe(e -> { });
 
         beenError.get(1, TimeUnit.SECONDS);
     }
