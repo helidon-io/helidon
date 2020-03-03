@@ -19,15 +19,17 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * Skips the first {@code n} items from the source and relays the rest as they are.
+ *
  * @param <T> the element type of the sequence
  */
 final class MultiSkipPublisher<T> implements Multi<T> {
 
     private final Multi<T> source;
-
     private final long n;
 
     MultiSkipPublisher(Multi<T> source, long n) {
@@ -46,13 +48,31 @@ final class MultiSkipPublisher<T> implements Multi<T> {
 
         private final Flow.Subscriber<? super T> downstream;
 
-        private long remaining;
+        private final AtomicLong remaining = new AtomicLong(0);
 
         private Flow.Subscription upstream;
 
-        SkipSubscriber(Flow.Subscriber<? super T> downstream, long remaining) {
+        private Consumer<T> onNextSurrogate;
+        private final Consumer<T> onNextNoSkip = new Consumer<T>() {
+            @Override
+            public void accept(T t) {
+                downstream.onNext(t);
+            }
+        };
+
+        SkipSubscriber(Flow.Subscriber<? super T> downstream, long skip) {
             this.downstream = downstream;
-            this.remaining = remaining;
+            this.remaining.set(skip);
+
+            this.onNextSurrogate = t -> {
+                long n = remaining.get();
+                if (n == 0L) {
+                    downstream.onNext(t);
+                    this.onNextSurrogate = this.onNextNoSkip;
+                } else {
+                    remaining.decrementAndGet();
+                }
+            };
         }
 
         @Override
@@ -62,7 +82,7 @@ final class MultiSkipPublisher<T> implements Multi<T> {
                 subscription.cancel();
                 throw new IllegalStateException("Subscription already set!");
             }
-            long n = remaining;
+            long n = remaining.get();
             upstream = subscription;
             downstream.onSubscribe(subscription);
             if (n != 0L) {
@@ -72,12 +92,7 @@ final class MultiSkipPublisher<T> implements Multi<T> {
 
         @Override
         public void onNext(T item) {
-            long n = remaining;
-            if (n == 0L) {
-                downstream.onNext(item);
-            } else {
-                remaining = n - 1L;
-            }
+            this.onNextSurrogate.accept(item);
         }
 
         @Override
