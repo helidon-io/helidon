@@ -36,23 +36,43 @@ public class Enum extends AbstractDescriptiveElement
      */
     private List<String> values;
 
+    /**
+     * Construct an Enum.
+     * @param name name for the enum
+     */
     public Enum(String name) {
         this.name   = name;
         this.values = new ArrayList<>();
     }
 
+    /**
+     * Return the name of the {@link Enum}.
+     * @return the name of the {@link Enum}
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Set the name of the {@link Enum}.
+     * @param name the name of the {@link Enum}
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * Return the values for the {@link Enum}.
+     * @return the values for the {@link Enum}
+     */
     public List<String> getValues() {
         return values;
     }
 
+    /**
+     * Add a value to the {@link Enum}.
+     * @param value value to add
+     */
     public void addValue(String value) {
         this.values.add(value);
     }
@@ -66,7 +86,7 @@ public class Enum extends AbstractDescriptiveElement
            .append(SPACER)
            .append(OPEN_CURLY)
            .append(NEWLINE);
-        
+
         values.forEach(v -> sb.append(SPACER).append(v).append(NEWLINE));
 
         return sb.append(CLOSE_CURLY).append(NEWLINE).toString();
@@ -74,10 +94,9 @@ public class Enum extends AbstractDescriptiveElement
 
     @Override
     public String toString() {
-        return "Enum{" +
-                "name='" + name + '\'' +
-                ", values=" + values +
-                ", description='" + description + '\'' +
-                '}';
+        return "Enum{"
+                + "name='" + name + '\''
+                + ", values=" + values
+                + ", description='" + getDescription() + '\'' + '}';
     }
 }

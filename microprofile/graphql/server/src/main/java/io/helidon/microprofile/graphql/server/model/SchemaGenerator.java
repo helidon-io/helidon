@@ -20,22 +20,89 @@ package io.helidon.microprofile.graphql.server.model;
  * An interface to represent a element that can generate a schema.
  */
 public interface SchemaGenerator {
+    /**
+     * Empty string.
+     */
     String NOTHING = "";
+
+    /**
+     * Comma and newline.
+     */
     String COMMA_NEWLINE = ",\n";
+
+    /**
+     * Comma and space.
+     */
     String COMMA_SPACE = ", ";
+
+    /**
+     * Comma.
+     */
     String COMMA = ",";
+
+    /**
+     * A comment identifier.
+     */
     String COMMENT = "#";
+
+    /**
+     * Spacer.
+     */
     char SPACER = ' ';
+
+    /**
+     * Newline.
+     */
     char NEWLINE = '\n';
+
+    /**
+     * Colon.
+     */
     char COLON = ':';
+
+    /**
+     * Equals.
+     */
     char EQUALS = '=';
+
+    /**
+     * Mandatory indicator.
+     */
     char MANDATORY = '!';
+
+    /**
+     * Double quote.
+     */
     char QUOTE = '"';
+
+    /**
+     * Open curly bracket.
+     */
     char OPEN_CURLY = '{';
+
+    /**
+     * Close curly bracket.
+     */
     char CLOSE_CURLY = '}';
+
+    /**
+     * Open square bracket.
+     */
     char OPEN_SQUARE = '[';
+
+    /**
+     * Close square bracket.
+     */
     char CLOSE_SQUARE = ']';
+
+    /**
+     * Open parenthesis.
+     */
     char OPEN_PARENTHESES = '(';
+
+    /**
+     * Close parenthesis.
+     */
     char CLOSE_PARENTHESES = ')';
 
     /**

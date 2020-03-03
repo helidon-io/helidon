@@ -18,7 +18,6 @@ package io.helidon.microprofile.graphql.server.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -27,11 +26,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import graphql.Scalars;
-import graphql.scalars.ExtendedScalars;
 import io.helidon.microprofile.graphql.server.model.Enum;
 import io.helidon.microprofile.graphql.server.model.Scalar;
 import io.helidon.microprofile.graphql.server.model.Schema;
+
+import graphql.Scalars;
+import graphql.scalars.ExtendedScalars;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
@@ -125,7 +125,7 @@ public class SchemaUtils {
             if (typeAnnotation != null || interfaceAnnotation != null || inputAnnotation != null) {
 
             }
-            
+
             // obtain top level query API's t
             if (clazz.isAnnotationPresent(GraphQLApi.class)) {
                 // defines top level

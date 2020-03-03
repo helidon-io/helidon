@@ -172,7 +172,7 @@ public class Schema implements SchemaGenerator {
 
     /**
      * Returns the {@link RuntimeWiring} for the given auto-generated schema.
-     * 
+     *
      * @return the {@link RuntimeWiring}
      */
     public RuntimeWiring getRuntimeWiring() {

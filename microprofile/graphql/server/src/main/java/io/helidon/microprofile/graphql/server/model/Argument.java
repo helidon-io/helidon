@@ -49,6 +49,7 @@ public class Argument extends AbstractDescriptiveElement
      * @param argumentName name of the argument
      * @param argumentType type of the argument
      * @param isMandatory  indicates if the argument is mandatory
+     * @param defaultValue  default value for the argument
      */
     public Argument(String argumentName, String argumentType, boolean isMandatory, Object defaultValue) {
         this.argumentName = argumentName;
@@ -138,13 +139,12 @@ public class Argument extends AbstractDescriptiveElement
 
     @Override
     public String toString() {
-        return "Argument{" +
-                "argumentName='" + argumentName + '\'' +
-                ", argumentType='" + argumentType + '\'' +
-                ", isMandatory=" + isMandatory +
-                ", defaultValue=" + defaultValue +
-                ", description='" + description + '\'' +
-                '}';
+        return "Argument{"
+                + "argumentName='" + argumentName + '\''
+                + ", argumentType='" + argumentType + '\''
+                + ", isMandatory=" + isMandatory
+                + ", defaultValue=" + defaultValue
+                + ", description='" + getDescription() + '\'' + '}';
     }
 
     @Override
@@ -159,15 +159,15 @@ public class Argument extends AbstractDescriptiveElement
             return false;
         }
         Argument argument = (Argument) o;
-        return isMandatory == argument.isMandatory &&
-                Objects.equals(argumentName, argument.argumentName) &&
-                Objects.equals(argumentType, argument.argumentType) &&
-                Objects.equals(description, argument.description) &&
-                Objects.equals(defaultValue, argument.defaultValue);
+        return isMandatory == argument.isMandatory
+                && Objects.equals(argumentName, argument.argumentName)
+                && Objects.equals(argumentType, argument.argumentType)
+                && Objects.equals(getDescription(), argument.getDescription())
+                && Objects.equals(defaultValue, argument.defaultValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), argumentName, argumentType, isMandatory, defaultValue, description);
+        return Objects.hash(super.hashCode(), argumentName, argumentType, isMandatory, defaultValue, getDescription());
     }
 }

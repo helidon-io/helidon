@@ -93,8 +93,7 @@ public class FieldDefinition extends AbstractDescriptiveElement
 
         if (isArrayReturnType()) {
             sb.append(SPACER).append(OPEN_SQUARE).append(getReturnType()).append(CLOSE_SQUARE);
-        }
-        else {
+        } else {
             sb.append(SPACER).append(getReturnType());
         }
 
@@ -181,15 +180,12 @@ public class FieldDefinition extends AbstractDescriptiveElement
 
     @Override
     public String toString() {
-        return "FieldDefinition{" +
-                "name='" + name + '\'' +
-                ", returnType='" + returnType + '\'' +
-                ", isArrayReturnType=" + isArrayReturnType +
-                ", isReturnTypeMandatory=" + isReturnTypeMandatory +
-                ", listArguments=" + listArguments +
-                ", description='" + description + '\'' +
-                '}';
+        return "FieldDefinition{"
+                + "name='" + name + '\''
+                + ", returnType='" + returnType + '\''
+                + ", isArrayReturnType=" + isArrayReturnType
+                + ", isReturnTypeMandatory=" + isReturnTypeMandatory
+                + ", listArguments=" + listArguments
+                + ", description='" + getDescription() + '\'' + '}';
     }
-
-
 }

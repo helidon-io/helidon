@@ -26,8 +26,8 @@ public class AbstractDescriptiveElement implements DescriptiveElement {
     /**
      * The description for an element.
      */
-    protected String description;
-    
+    private String description;
+
     @Override
     public void setDescription(String description) {
         this.description = description;

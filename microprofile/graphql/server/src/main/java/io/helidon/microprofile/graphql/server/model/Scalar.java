@@ -79,7 +79,7 @@ public class Scalar implements SchemaGenerator {
     public GraphQLScalarType getGraphQLScalarType() {
         return graphQLScalarType;
     }
-    
+
     @Override
     public String getSchemaAsString() {
         return new StringBuilder("scalar ")

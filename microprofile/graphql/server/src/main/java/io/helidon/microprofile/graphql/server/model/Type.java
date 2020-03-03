@@ -215,7 +215,7 @@ public class Type extends AbstractDescriptiveElement
                 && Objects.equals(valueClassName, type.valueClassName)
                 && Objects.equals(implementingInterface, type.implementingInterface)
                 && Objects.equals(listFieldDefinitions, type.listFieldDefinitions)
-                && Objects.equals(description, type.description);
+                && Objects.equals(getDescription(), type.getDescription());
     }
 
     @Override
@@ -225,7 +225,7 @@ public class Type extends AbstractDescriptiveElement
                                   valueClassName,
                                   isInterface,
                                   implementingInterface,
-                                  description,
+                                  getDescription(),
                                   listFieldDefinitions);
         return result;
     }
@@ -246,7 +246,7 @@ public class Type extends AbstractDescriptiveElement
                 + ", keyClassName='" + keyClassName + '\''
                 + ", valueClassName='" + valueClassName + '\''
                 + ", isInterface='" + isInterface + '\''
-                + ", description='" + description + '\''
+                + ", description='" + getDescription() + '\''
                 + ", implementingInterface='" + implementingInterface + '\''
                 + ", listFieldDefinitions=" + listFieldDefinitions + '}';
     }
