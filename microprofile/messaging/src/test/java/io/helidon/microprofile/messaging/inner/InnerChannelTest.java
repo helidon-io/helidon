@@ -48,7 +48,9 @@ public class InnerChannelTest extends AbstractCDITest {
                 .findAllClassesInPackage(
                         InnerChannelTest.class.getPackage().getName(),
                         ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
-                .stream().map(CdiTestCase::from);
+                .stream()
+                .peek(System.out::println)
+                .map(CdiTestCase::from);
     }
 
     @ParameterizedTest

@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;

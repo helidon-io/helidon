@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

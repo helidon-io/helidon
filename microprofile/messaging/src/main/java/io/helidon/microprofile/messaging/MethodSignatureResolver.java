@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -43,7 +43,7 @@ import org.reactivestreams.Subscriber;
  * Method signature resolving utility, returns {@link MethodSignatureType} for any recognized signature.
  * Throws {@link javax.enterprise.inject.spi.DeploymentException} for any un-recognized signature.
  */
-public final class MethodSignatureResolver {
+final class MethodSignatureResolver {
     private final Class<?> returnType;
     private final Type genericReturnType;
     private final Class<?>[] parameterTypes;
@@ -201,11 +201,11 @@ public final class MethodSignatureResolver {
      * Throws {@link javax.enterprise.inject.spi.DeploymentException}
      * for any un-recognized signature.
      *
-     * @return {@link io.helidon.microprofile.messaging.channel.MethodSignatureType}
+     * @return {@link MethodSignatureType}
      * of recognized signature
      * @throws javax.enterprise.inject.spi.DeploymentException for un-recognized signature
      */
-    public Optional<MethodSignatureType> resolve() {
+    Optional<MethodSignatureType> resolve() {
         return resolveRules
                 .stream()
                 .map(Supplier::get)
@@ -220,7 +220,7 @@ public final class MethodSignatureResolver {
      * @param method {@link java.lang.reflect.Method} to be resolved
      * @return {@link MethodSignatureResolver}
      */
-    public static MethodSignatureResolver create(Method method) {
+    static MethodSignatureResolver create(Method method) {
         return new MethodSignatureResolver(method);
     }
 

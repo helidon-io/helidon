@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -93,7 +93,7 @@ class IncomingMethod extends AbstractMethod {
         }
     }
 
-    public Subscriber getSubscriber() {
+    Subscriber getSubscriber() {
         return subscriber;
     }
 

@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.BeanManager;
@@ -67,7 +67,7 @@ class ProcessorMethod extends AbstractMethod {
         }
     }
 
-    public Processor<Object, Object> getProcessor() {
+    Processor<Object, Object> getProcessor() {
         return processor;
     }
 

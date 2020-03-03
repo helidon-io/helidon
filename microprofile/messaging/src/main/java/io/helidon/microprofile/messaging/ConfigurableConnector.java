@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.connector;
+package io.helidon.microprofile.messaging;
 
 import javax.enterprise.inject.spi.DeploymentException;
 

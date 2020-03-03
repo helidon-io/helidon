@@ -31,7 +31,6 @@ import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 
 import io.helidon.common.Errors;
-import io.helidon.microprofile.messaging.channel.ChannelRouter;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;

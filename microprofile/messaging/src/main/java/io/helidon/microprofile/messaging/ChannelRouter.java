@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +31,6 @@ import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
-import io.helidon.microprofile.messaging.connector.IncomingConnector;
-import io.helidon.microprofile.messaging.connector.OutgoingConnector;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -44,7 +42,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 /**
  * Orchestrator for all found channels, methods and connectors.
  */
-public class ChannelRouter {
+class ChannelRouter {
     private Errors.Collector errors = Errors.collector();
     private Config config = (Config) ConfigProvider.getConfig();
 
@@ -65,7 +63,7 @@ public class ChannelRouter {
      * @see org.eclipse.microprofile.reactive.messaging.Incoming
      * @see org.eclipse.microprofile.reactive.messaging.Outgoing
      */
-    public void registerBeanReference(Bean<?> bean) {
+    void registerBeanReference(Bean<?> bean) {
         connectableBeanMethods.stream()
                 .filter(m -> m.getDeclaringType() == bean.getBeanClass())
                 .forEach(m -> m.setDeclaringBean(bean));
@@ -76,7 +74,7 @@ public class ChannelRouter {
      *
      * @param beanManager {@link javax.enterprise.inject.spi.BeanManager} for looking-up bean instances of discovered methods
      */
-    public void connect(BeanManager beanManager) {
+    void connect(BeanManager beanManager) {
         this.beanManager = beanManager;
         //Needs to be initialized before connecting,
         // fast publishers would call onNext before all bean references are resolved
@@ -95,7 +93,7 @@ public class ChannelRouter {
      *          with {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
      *          or {@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotation
      */
-    public void registerMethod(AnnotatedMethod<?> m) {
+    void registerMethod(AnnotatedMethod<?> m) {
         if (m.isAnnotationPresent(Incoming.class) && m.isAnnotationPresent(Outgoing.class)) {
             this.addProcessorMethod(m);
         } else if (m.isAnnotationPresent(Incoming.class)) {
@@ -113,7 +111,7 @@ public class ChannelRouter {
      *
      * @param bean connector bean
      */
-    public void registerConnectorFactory(Bean<?> bean) {
+    void registerConnectorFactory(Bean<?> bean) {
         Class<?> beanType = bean.getBeanClass();
         Connector annotation = beanType.getAnnotation(Connector.class);
         if (IncomingConnectorFactory.class.isAssignableFrom(beanType) && null != annotation) {
@@ -124,7 +122,7 @@ public class ChannelRouter {
         }
     }
 
-    public Config getConfig() {
+    Config getConfig() {
         return config;
     }
 
@@ -213,7 +211,7 @@ public class ChannelRouter {
         return (T) instance;
     }
 
-    public Errors.Collector getErrors() {
+    Errors.Collector getErrors() {
         return errors;
     }
 }

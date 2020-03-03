@@ -15,14 +15,12 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-
-import io.helidon.microprofile.messaging.MessagingStreamException;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;

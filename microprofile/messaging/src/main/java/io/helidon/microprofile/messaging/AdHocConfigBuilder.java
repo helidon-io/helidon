@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.connector;
+package io.helidon.microprofile.messaging;
 
 import java.util.Map;
 import java.util.Properties;

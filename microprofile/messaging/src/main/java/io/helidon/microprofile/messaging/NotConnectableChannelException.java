@@ -22,7 +22,9 @@ import javax.enterprise.inject.spi.DeploymentException;
 /**
  * Raised when channel hasn't candidate method or connector from both sides.
  */
-public class NotConnectableChannelException extends DeploymentException {
+class NotConnectableChannelException extends DeploymentException {
+
+    private static final long serialVersionUID = -7635906078963196864L;
 
     /**
      * Create new {@link NotConnectableChannelException}.
@@ -30,7 +32,7 @@ public class NotConnectableChannelException extends DeploymentException {
      * @param channelName name of un-connectable channel
      * @param type        incoming or outgoing {@link NotConnectableChannelException.Type}
      */
-    public NotConnectableChannelException(String channelName, Type type) {
+    NotConnectableChannelException(String channelName, Type type) {
         super(composeMessage(channelName, type));
     }
 
@@ -41,7 +43,7 @@ public class NotConnectableChannelException extends DeploymentException {
     /**
      * Incoming or outgoing method/connector.
      */
-    public enum Type {
+    enum Type {
         /**
          * Incoming method or connector.
          */

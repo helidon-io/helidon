@@ -15,8 +15,18 @@
  *
  */
 
-/**
- * MicroProfile Reactive Messaging connectors abstraction model orchestrated by
- * {@link io.helidon.microprofile.messaging.channel.ChannelRouter}.
- */
-package io.helidon.microprofile.messaging.connector;
+package io.helidon.microprofile.messaging;
+
+import io.helidon.config.Config;
+
+import org.reactivestreams.Subscriber;
+
+interface SubscribingConnector extends ConfigurableConnector {
+
+    @Override
+    default Config getChannelsConfig() {
+        return getRootConfig().get("mp.messaging.outgoing");
+    }
+
+    Subscriber getSubscriber(String channelName);
+}

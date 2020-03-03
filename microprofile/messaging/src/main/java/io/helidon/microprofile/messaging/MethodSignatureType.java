@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -26,7 +26,7 @@ import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 /**
  * Supported method signatures as described in the MicroProfile Reactive Messaging Specification.
  */
-public enum MethodSignatureType {
+enum MethodSignatureType {
     /**
      * Processor method signature type.
      * <br>
@@ -476,7 +476,7 @@ public enum MethodSignatureType {
      *
      * @return {@code true} if should be invoked at assembly
      */
-    public boolean isInvokeAtAssembly() {
+    boolean isInvokeAtAssembly() {
         return invokeAtAssembly;
     }
 
@@ -485,7 +485,7 @@ public enum MethodSignatureType {
      *
      * @return Set of {@link org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy}
      */
-    public Set<Acknowledgment.Strategy> getSupportedAckStrategies() {
+    Set<Acknowledgment.Strategy> getSupportedAckStrategies() {
         return supportedAckStrategies;
     }
 
@@ -495,7 +495,7 @@ public enum MethodSignatureType {
      *
      * @return Default {@link org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy}
      */
-    public Acknowledgment.Strategy getDefaultAckType() {
+    Acknowledgment.Strategy getDefaultAckType() {
         return defaultAckType;
     }
 }

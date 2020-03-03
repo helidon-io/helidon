@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -98,7 +98,7 @@ class MessageUtils {
     }
 
     /**
-     * Same as {@link io.helidon.microprofile.messaging.channel.MessageUtils#unwrap(java.lang.Object, java.lang.Class)}.
+     * Same as {@link MessageUtils#unwrap(java.lang.Object, java.lang.Class)}.
      * But extracts expected type from method reflexively.
      *
      * @param value  to unwrap

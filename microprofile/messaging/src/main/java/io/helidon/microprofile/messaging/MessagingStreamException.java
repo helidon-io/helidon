@@ -20,14 +20,16 @@ package io.helidon.microprofile.messaging;
 /**
  * Wrapper for all exceptions raised during stream passage.
  */
-public class MessagingStreamException extends RuntimeException {
+class MessagingStreamException extends RuntimeException {
+
+    private static final long serialVersionUID = -4092879455705923455L;
 
     /**
      * Create new {@link MessagingStreamException}.
      *
      * @param cause wrapped exception
      */
-    public MessagingStreamException(Throwable cause) {
+    MessagingStreamException(Throwable cause) {
         super(cause);
     }
 }

@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -79,7 +79,7 @@ class OutgoingMethod extends AbstractMethod {
         }
     }
 
-    public Publisher<?> getPublisher() {
+    Publisher<?> getPublisher() {
         return publisher;
     }
 

@@ -15,17 +15,13 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.microprofile.messaging.NoConnectorFoundException;
-import io.helidon.microprofile.messaging.NotConnectableChannelException;
-import io.helidon.microprofile.messaging.connector.IncomingConnector;
-import io.helidon.microprofile.messaging.connector.OutgoingConnector;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;

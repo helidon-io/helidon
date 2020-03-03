@@ -15,8 +15,21 @@
  *
  */
 
-/**
- * MicroProfile Reactive Messaging channels and bean methods abstraction model
- * orchestrated by {@link io.helidon.microprofile.messaging.channel.ChannelRouter}.
- */
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
+
+import io.helidon.config.Config;
+
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
+interface PublishingConnector extends ConfigurableConnector {
+
+    @Override
+    default Config getChannelsConfig() {
+        return getRootConfig().get("mp.messaging.incoming");
+    }
+
+    Publisher getPublisher(String channelName);
+
+    void subscribe(String channelName, Subscriber subscriber);
+}

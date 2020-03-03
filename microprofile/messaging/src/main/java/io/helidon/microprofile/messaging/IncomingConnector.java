@@ -15,16 +15,14 @@
  *
  */
 
-package io.helidon.microprofile.messaging.connector;
+package io.helidon.microprofile.messaging;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.messaging.channel.ChannelRouter;
 
-import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
-import org.reactivestreams.Publisher;
+import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.reactivestreams.Subscriber;
 
 /**
@@ -39,25 +37,35 @@ import org.reactivestreams.Subscriber;
  * ...
  * }</pre>
  */
-public class OutgoingConnector implements PublishingConnector {
+class IncomingConnector implements SubscribingConnector {
 
     private final Config config;
     private String connectorName;
-    private IncomingConnectorFactory connectorFactory;
-    private Map<String, Publisher> publisherMap = new HashMap<>();
+    private OutgoingConnectorFactory connectorFactory;
+    private Map<String, Subscriber> subscriberMap = new HashMap<>();
 
     /**
-     * Create new {@link OutgoingConnector}.
+     * Create new {@link IncomingConnector}.
      *
      * @param connectorName    {@code [connector-name]} as defined in config
      * @param connectorFactory actual instance of connector bean found in cdi context
      *                         with annotation {@link org.eclipse.microprofile.reactive.messaging.spi.Connector}
-     * @param router           {@link io.helidon.microprofile.messaging.channel.ChannelRouter} main orchestrator with root config
+     * @param router           {@link io.helidon.microprofile.messaging.ChannelRouter} main orchestrator with root config
      */
-    public OutgoingConnector(String connectorName, IncomingConnectorFactory connectorFactory, ChannelRouter router) {
+    IncomingConnector(String connectorName, OutgoingConnectorFactory connectorFactory, ChannelRouter router) {
         this.connectorName = connectorName;
         this.connectorFactory = connectorFactory;
         this.config = router.getConfig();
+    }
+
+    @Override
+    public Subscriber getSubscriber(String channelName) {
+        Subscriber subscriber = subscriberMap.get(channelName);
+        if (subscriber == null) {
+            subscriber = connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build();
+            subscriberMap.put(channelName, subscriber);
+        }
+        return subscriber;
     }
 
     @Override
@@ -70,21 +78,5 @@ public class OutgoingConnector implements PublishingConnector {
         return config;
     }
 
-    @Override
-    public Publisher getPublisher(String channelName) {
-        Publisher publisher = publisherMap.get(channelName);
-        if (publisher == null) {
-            publisher = connectorFactory
-                    .getPublisherBuilder(getConnectorConfig(channelName))
-                    .buildRs();
-            publisherMap.put(channelName, publisher);
-        }
-        return publisher;
-    }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public void subscribe(String channelName, Subscriber subscriber) {
-        getPublisher(channelName).subscribe(subscriber);
-    }
 }

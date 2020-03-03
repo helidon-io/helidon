@@ -22,14 +22,14 @@ import javax.enterprise.inject.spi.DeploymentException;
 /**
  * Raised when no connector of given name has been found.
  */
-public class NoConnectorFoundException extends DeploymentException {
+class NoConnectorFoundException extends DeploymentException {
 
     /**
      * Create new {@link NoConnectorFoundException}.
      *
      * @param connectorName name of the connector
      */
-    public NoConnectorFoundException(String connectorName) {
+    NoConnectorFoundException(String connectorName) {
         super(String.format("No connector %s found!", connectorName));
     }
 }

@@ -15,7 +15,7 @@
  *
  */
 
-package io.helidon.microprofile.messaging.channel;
+package io.helidon.microprofile.messaging;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,11 +27,14 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import io.helidon.microprofile.messaging.MethodSignatureResolver;
+import io.helidon.microprofile.messaging.MethodSignatureType;
+
 public class SignatureTypeConsistencyTest {
 
     /**
-     * To keep consistency between {@link io.helidon.microprofile.messaging.channel.MethodSignatureType}
-     * and {@link MethodSignatureResolver}
+     * To keep consistency between {@link io.helidon.microprofile.messaging.MethodSignatureType}
+     * and {@link io.helidon.microprofile.messaging.MethodSignatureResolver}
      */
     @Test
     void isTypeUsedByResolver() throws IOException {
