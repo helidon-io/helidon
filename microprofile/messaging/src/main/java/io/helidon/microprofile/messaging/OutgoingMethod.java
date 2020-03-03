@@ -30,7 +30,7 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.reactivestreams.Publisher;
 
-class OutgoingMethod extends AbstractMethod {
+class OutgoingMethod extends AbstractMessagingMethod {
 
     private Publisher<?> publisher;
 

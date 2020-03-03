@@ -27,7 +27,7 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.reactivestreams.Processor;
 
-class ProcessorMethod extends AbstractMethod {
+class ProcessorMethod extends AbstractMessagingMethod {
 
     private Processor<Object, Object> processor;
     private UniversalChannel outgoingChannel;

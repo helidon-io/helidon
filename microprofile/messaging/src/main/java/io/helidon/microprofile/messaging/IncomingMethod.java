@@ -40,7 +40,7 @@ import org.reactivestreams.Subscriber;
  *     }
  * }</pre>
  */
-class IncomingMethod extends AbstractMethod {
+class IncomingMethod extends AbstractMessagingMethod {
 
     private Subscriber subscriber;
 

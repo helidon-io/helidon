@@ -46,7 +46,7 @@ class ChannelRouter {
     private Errors.Collector errors = Errors.collector();
     private Config config = (Config) ConfigProvider.getConfig();
 
-    private List<AbstractMethod> connectableBeanMethods = new ArrayList<>();
+    private List<AbstractMessagingMethod> connectableBeanMethods = new ArrayList<>();
 
     private Map<String, UniversalChannel> channelMap = new HashMap<>();
     private Map<String, IncomingConnector> incomingConnectorMap = new HashMap<>();

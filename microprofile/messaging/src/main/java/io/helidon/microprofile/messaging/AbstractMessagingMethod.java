@@ -28,7 +28,7 @@ import io.helidon.config.Config;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 
-abstract class AbstractMethod {
+abstract class AbstractMessagingMethod {
 
     private String incomingChannelName;
     private String outgoingChannelName;
@@ -41,7 +41,7 @@ abstract class AbstractMethod {
     private Acknowledgment.Strategy ackStrategy;
 
 
-    AbstractMethod(Method method, Errors.Collector errors) {
+    AbstractMessagingMethod(Method method, Errors.Collector errors) {
         this.method = method;
         this.errors = errors;
         Optional<MethodSignatureType> signatureType = MethodSignatureResolver
