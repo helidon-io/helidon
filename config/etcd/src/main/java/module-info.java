@@ -28,7 +28,6 @@ module io.helidon.config.etcd {
     requires com.google.common;
     requires io.helidon.common;
     requires io.helidon.common.media.type;
-    //requires grpc.api;
     requires io.grpc;
 
     exports io.helidon.config.etcd;

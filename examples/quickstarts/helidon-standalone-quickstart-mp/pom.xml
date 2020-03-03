@@ -31,6 +31,7 @@
 
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+        <maven.site.skip>true</maven.site.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -50,7 +51,6 @@
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
-        <version.plugin.site>3.8.2</version.plugin.site>
     </properties>
 
     <dependencyManagement>
@@ -178,14 +178,6 @@
                     <version>${version.plugin.exec}</version>
                     <configuration>
                         <mainClass>${mainClass}</mainClass>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>${version.plugin.site}</version>
-                    <configuration>
-                        <skip>true</skip>
                     </configuration>
                 </plugin>
             </plugins>
