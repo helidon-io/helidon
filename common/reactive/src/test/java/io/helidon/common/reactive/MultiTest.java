@@ -455,7 +455,8 @@ public class MultiTest {
 
         Multi.<Integer>error(new RuntimeException())
                 .onTerminate(() -> beenError.complete(null))
-                .first();
+                .first()
+                .subscribe(e -> { });
 
         beenError.get(1, TimeUnit.SECONDS);
         completed.get(1, TimeUnit.SECONDS);
