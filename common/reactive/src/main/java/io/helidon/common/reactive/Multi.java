@@ -97,10 +97,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @param predicate predicate to filter stream with
      * @return Multi
      */
-    default Multi<T> dropWhile(Predicate<T> predicate) {
-        MultiDropWhileProcessor<T> processor = MultiDropWhileProcessor.create(predicate);
-        this.subscribe(processor);
-        return processor;
+    default Multi<T> dropWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return new MultiDropWhilePublisher<>(this, predicate);
     }
 
     /**
