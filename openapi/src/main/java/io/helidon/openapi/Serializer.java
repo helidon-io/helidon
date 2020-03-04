@@ -176,6 +176,10 @@ class Serializer {
         protected MappingNode representJavaBean(Set<Property> properties, Object javaBean) {
             MappingNode result = super.representJavaBean(properties, javaBean);
             processExtensions(result, javaBean);
+            /*
+             * Clearing representedObjects is an awkward but effective way of preventing SnakeYAML from using anchors and
+             * aliases, which apparently the Jackson parser used in the TCK (as of this writing) does not handle properly.
+             */
             representedObjects.clear();
             return result;
         }
@@ -224,7 +228,8 @@ class Serializer {
             /*
              * The following construct might look awkward - and it is. But if SmallRye adds additional properties to its
              * implementation classes that are not in the corresponding interfaces - and therefore we want to skip processing
-             * them - then we can just add additional lines like the "reject |= ..." one, testing for the new case.
+             * them - then we can just add additional lines like the "reject |= ..." one, testing for the new case, without
+             * having to change any other lines in the method.
              */
             boolean reject = false;
             reject |= Parameter.class.isAssignableFrom(javaBean.getClass()) && property.getName().equals("hidden");

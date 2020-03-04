@@ -219,6 +219,7 @@ public class TestUtil {
     public static JsonStructure jsonFromResponse(HttpURLConnection cnx) throws IOException {
         JsonReader reader = JSON_READER_FACTORY.createReader(cnx.getInputStream());
         JsonStructure result = reader.read();
+        reader.close();
         return result;
     }
 
