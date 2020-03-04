@@ -64,7 +64,7 @@ class InternalProcessor implements Processor<Object, Object> {
     }
 
     @Override
-    public void onNext(Object incomingValue) {
+    public void onNext(final Object incomingValue) {
         try {
             Method method = processorMethod.getMethod();
             //Params size is already validated by ProcessorMethod
@@ -95,7 +95,7 @@ class InternalProcessor implements Processor<Object, Object> {
         }
     }
 
-    private Object preProcess(Object incomingValue, Class<?> expectedParamType) throws ExecutionException, InterruptedException {
+    private Object preProcess(final Object incomingValue, final Class<?> expectedParamType) {
         if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
             Message<?> incomingMessage = (Message<?>) incomingValue;
@@ -105,16 +105,18 @@ class InternalProcessor implements Processor<Object, Object> {
         return MessageUtils.unwrap(incomingValue, expectedParamType);
     }
 
-    private Object postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
+    private Object postProcess(final Object incomingValue, final Object outgoingValue)
+            throws ExecutionException, InterruptedException {
+        var outgoing = outgoingValue;
         if (outgoingValue instanceof CompletionStage) {
             //Wait for completable stages to finish, yes it means to block see the spec
-            outgoingValue = ((CompletionStage<?>) outgoingValue).toCompletableFuture().get();
+            outgoing = ((CompletionStage<?>) outgoingValue).toCompletableFuture().get();
         }
 
-        Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class);
+        Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoing, Message.class);
         if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
             Message<?> wrappedIncoming = (Message<?>) MessageUtils.unwrap(incomingValue, Message.class);
-            wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
+            wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoing, Message.class, wrappedIncoming::ack);
         }
         return wrappedOutgoing;
     }
