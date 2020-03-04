@@ -17,41 +17,44 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 /**
- *
+ * Detached configuration of a single connector.
  */
 class AdHocConfigBuilder {
-    private Config config;
-    private Properties properties = new Properties();
+    private final Map<String, String> configuration = new HashMap<>();
 
-    private AdHocConfigBuilder(Config config) {
-        this.config = config.detach();
+    private AdHocConfigBuilder() {
     }
 
     static AdHocConfigBuilder from(Config config) {
-        return new AdHocConfigBuilder(config);
+        AdHocConfigBuilder result = new AdHocConfigBuilder();
+        result.putAll(config);
+        return result;
     }
 
     AdHocConfigBuilder put(String key, String value) {
-        properties.setProperty(key, value);
+        configuration.put(key, value);
         return this;
     }
 
     AdHocConfigBuilder putAll(Config configToPut) {
-        properties.putAll(configToPut.detach().asMap().orElse(Map.of()));
+        configuration.putAll(configToPut.detach().asMap().orElse(Map.of()));
         return this;
     }
 
     org.eclipse.microprofile.config.Config build() {
-        Config newConfig = Config.builder(ConfigSources.create(properties), ConfigSources.create(config))
+        Config newConfig = Config.builder(ConfigSources.create(configuration))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
+                .disableFilterServices()
+                .disableSourceServices()
+                .disableParserServices()
                 .build();
         return (org.eclipse.microprofile.config.Config) newConfig;
     }
