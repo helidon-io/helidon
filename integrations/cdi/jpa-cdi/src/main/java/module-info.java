@@ -26,7 +26,6 @@
  */
 module io.helidon.integrations.cdi.jpa {
     requires java.xml.bind;
-    requires java.activation;
     requires java.transaction;
     requires java.annotation;
     requires java.sql;
