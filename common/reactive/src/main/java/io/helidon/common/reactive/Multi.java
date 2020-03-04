@@ -203,9 +203,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      */
     default Single<T> first() {
-        MultiFirstProcessor<T> processor = MultiFirstProcessor.create();
-        this.subscribe(processor);
-        return processor;
+        return new MultiFirstPublisher<>(this);
     }
 
     /**
