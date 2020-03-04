@@ -158,10 +158,23 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <U>            output item type
      * @return Multi
      */
-    default <U> Multi<U> flatMapIterable(Function<T, Iterable<U>> iterableMapper) {
-        MultiFlatMapProcessor<T, U> processor = MultiFlatMapProcessor.fromIterableMapper(iterableMapper);
-        this.subscribe(processor);
-        return processor;
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper) {
+        return flatMapIterable(iterableMapper, 32);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
+     *
+     * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
+     * @param prefetch the number of upstream items to request upfront, then 75% of this value after
+     *                 75% received and mapped
+     * @param <U>            output item type
+     * @return Multi
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper,
+                                         int prefetch) {
+        Objects.requireNonNull(iterableMapper, "iterableMapper is null");
+        return new MultiFlatMapIterable<>(this, iterableMapper, prefetch);
     }
 
     /**

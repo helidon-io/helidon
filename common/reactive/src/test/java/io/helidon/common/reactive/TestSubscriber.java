@@ -383,4 +383,47 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
         }
         return this;
     }
+
+    /**
+     * Assert that there were no items or terminal events received by
+     * this {@code TestSubscriber}.
+     * @return this
+     * @throws AssertionError if items or terminal events were received
+     */
+    public final TestSubscriber<T> assertEmpty() {
+        assertOnSubscribe();
+        assertItemCount(0);
+        assertNotTerminated();
+        return this;
+    }
+
+    /**
+     * Assert that there were no items or terminal events received by
+     * this {@code TestSubscriber}.
+     * @return this
+     * @throws AssertionError if items or terminal events were received
+     */
+    @SafeVarargs
+    public final TestSubscriber<T> assertValuesOnly(T... expectedItems) {
+        assertOnSubscribe();
+        assertValues(expectedItems);
+        assertNotTerminated();
+        return this;
+    }
+
+    /**
+     * Assert that there were no terminal events received by this
+     * {@code TestSubscriber}.
+     * @return this
+     * @throws AssertionError if terminal events were received
+     */
+    public final TestSubscriber<T> assertNotTerminated() {
+        if (!errors.isEmpty()) {
+            throw fail("Unexpected errror(s) present.");
+        }
+        if (completions != 0) {
+            throw fail("Unexpected completion(s).");
+        }
+        return this;
+    }
 }
