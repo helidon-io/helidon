@@ -145,9 +145,7 @@ public class MultiTest {
     public void testFirst() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
         Multi.just("foo", "bar").first().subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems().get(0), is(equalTo("foo")));
+        subscriber.assertResult("foo");
     }
 
     @Test
