@@ -50,13 +50,13 @@ public class MessagingCdiExtension implements Extension {
         HelidonFeatures.register(HelidonFlavor.MP, "Messaging");
     }
 
-    private ChannelRouter channelRouter = new ChannelRouter();
+    private final ChannelRouter channelRouter = new ChannelRouter();
 
     private void registerChannelMethods(
             @Observes
             @WithAnnotations({Incoming.class, Outgoing.class}) ProcessAnnotatedType<?> pat) {
         // Lookup channel methods
-        pat.getAnnotatedType().getMethods().forEach(m -> channelRouter.registerMethod(m));
+        pat.getAnnotatedType().getMethods().forEach(channelRouter::registerMethod);
     }
 
     private void onProcessBean(@Observes ProcessManagedBean<?> event) {
@@ -83,7 +83,6 @@ public class MessagingCdiExtension implements Extension {
                                  BeanManager beanManager) {
         // Subscribe subscribers, publish publishers and invoke "onAssembly" methods
         channelRouter.connect(beanManager);
-        LOGGER.info("All connected");
     }
 
 }

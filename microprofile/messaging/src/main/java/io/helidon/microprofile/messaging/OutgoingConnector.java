@@ -41,9 +41,9 @@ import org.reactivestreams.Subscriber;
 class OutgoingConnector implements PublishingConnector {
 
     private final Config config;
-    private String connectorName;
-    private IncomingConnectorFactory connectorFactory;
-    private Map<String, Publisher<?>> publisherMap = new HashMap<>();
+    private final String connectorName;
+    private final IncomingConnectorFactory connectorFactory;
+    private final Map<String, Publisher<?>> publisherMap = new HashMap<>();
 
     /**
      * Create new {@link OutgoingConnector}.

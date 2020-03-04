@@ -458,9 +458,9 @@ enum MethodSignatureType {
      */
     OUTGOING_COMPLETION_STAGE_PAYL_2_VOID(false, null);
 
-    private boolean invokeAtAssembly;
-    private Acknowledgment.Strategy defaultAckType;
-    private Set<Acknowledgment.Strategy> supportedAckStrategies;
+    private final boolean invokeAtAssembly;
+    private final Acknowledgment.Strategy defaultAckType;
+    private final Set<Acknowledgment.Strategy> supportedAckStrategies;
 
     MethodSignatureType(boolean invokeAtAssembly,
                         Acknowledgment.Strategy defaultAckType,

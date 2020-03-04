@@ -46,7 +46,7 @@ import org.reactivestreams.Subscription;
 class InternalProcessor implements Processor<Object, Object> {
 
 
-    private ProcessorMethod processorMethod;
+    private final ProcessorMethod processorMethod;
     private Subscriber<? super Object> subscriber;
 
     InternalProcessor(ProcessorMethod processorMethod) {

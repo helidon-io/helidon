@@ -29,8 +29,8 @@ import org.reactivestreams.Subscription;
  */
 class ProxySubscriber<T> implements Subscriber<T> {
 
-    private IncomingMethod method;
-    private Subscriber<T> originalSubscriber;
+    private final IncomingMethod method;
+    private final Subscriber<T> originalSubscriber;
 
     ProxySubscriber(IncomingMethod method, Subscriber<T> originalSubscriber) {
         this.method = method;

@@ -49,7 +49,7 @@ final class MethodSignatureResolver {
     private final Class<?>[] parameterTypes;
     private final Type[] genericParameterTypes;
     private final List<Supplier<Optional<MethodSignatureType>>> resolveRules = new ArrayList<>();
-    private Method method;
+    private final Method method;
 
     private MethodSignatureResolver(Method method) {
         this.method = method;

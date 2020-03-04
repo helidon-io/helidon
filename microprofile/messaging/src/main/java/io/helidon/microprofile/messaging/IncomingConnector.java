@@ -40,9 +40,9 @@ import org.reactivestreams.Subscriber;
 class IncomingConnector implements SubscribingConnector {
 
     private final Config config;
-    private String connectorName;
-    private OutgoingConnectorFactory connectorFactory;
-    private Map<String, Subscriber<? super Object>> subscriberMap = new HashMap<>();
+    private final String connectorName;
+    private final OutgoingConnectorFactory connectorFactory;
+    private final Map<String, Subscriber<? super Object>> subscriberMap = new HashMap<>();
 
     /**
      * Create new {@link IncomingConnector}.

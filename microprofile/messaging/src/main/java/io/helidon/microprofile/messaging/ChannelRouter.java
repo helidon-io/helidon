@@ -43,17 +43,17 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
  * Orchestrator for all found channels, methods and connectors.
  */
 class ChannelRouter {
-    private Errors.Collector errors = Errors.collector();
-    private Config config = (Config) ConfigProvider.getConfig();
+    private final Errors.Collector errors = Errors.collector();
+    private final Config config = (Config) ConfigProvider.getConfig();
 
-    private List<AbstractMessagingMethod> connectableBeanMethods = new ArrayList<>();
+    private final List<AbstractMessagingMethod> connectableBeanMethods = new ArrayList<>();
 
-    private Map<String, UniversalChannel> channelMap = new HashMap<>();
-    private Map<String, IncomingConnector> incomingConnectorMap = new HashMap<>();
-    private Map<String, OutgoingConnector> outgoingConnectorMap = new HashMap<>();
+    private final Map<String, UniversalChannel> channelMap = new HashMap<>();
+    private final Map<String, IncomingConnector> incomingConnectorMap = new HashMap<>();
+    private final Map<String, OutgoingConnector> outgoingConnectorMap = new HashMap<>();
 
-    private List<Bean<?>> incomingConnectorFactoryList = new ArrayList<>();
-    private List<Bean<?>> outgoingConnectorFactoryList = new ArrayList<>();
+    private final List<Bean<?>> incomingConnectorFactoryList = new ArrayList<>();
+    private final List<Bean<?>> outgoingConnectorFactoryList = new ArrayList<>();
     private BeanManager beanManager;
 
     /**

@@ -37,10 +37,9 @@ class UniversalChannel {
     private OutgoingMethod outgoingMethod;
     private OutgoingConnector outgoingConnector;
     private ProcessorMethod outgoingProcessorMethod;
-    private Publisher<?> publisher;
-    private Config config;
-    private ChannelRouter router;
-    private Optional<UniversalChannel> upstreamChannel = Optional.empty();
+    private final Config config;
+    private final ChannelRouter router;
+    private UniversalChannel upstreamChannel;
 
     UniversalChannel(ChannelRouter router) {
         this.router = router;
@@ -72,13 +71,14 @@ class UniversalChannel {
         StringBuilder connectMessage = new StringBuilder("Connecting channel ")
                 .append(name).append(" with outgoing method ");
 
+        Publisher<?> publisher;
         if (outgoingMethod != null) {
             publisher = outgoingMethod.getPublisher();
             connectMessage.append(outgoingMethod.getMethod().getName());
 
         } else if (outgoingProcessorMethod != null) {
             publisher = outgoingProcessorMethod.getProcessor();
-            upstreamChannel = Optional.of(outgoingProcessorMethod.getOutgoingChannel());
+            upstreamChannel = outgoingProcessorMethod.getOutgoingChannel();
             connectMessage.append(outgoingProcessorMethod.getMethod().getName());
 
         } else if (outgoingConnector != null) {
@@ -91,27 +91,29 @@ class UniversalChannel {
 
         connectMessage.append(" and incoming method ");
 
+        var optUpstreamChannel = Optional.ofNullable(this.upstreamChannel);
+
         Subscriber<? super Object> subscriber1;
         if (incomingMethod != null) {
             subscriber1 = incomingMethod.getSubscriber();
             connectMessage.append(incomingMethod.getMethod().getName());
             publisher.subscribe(subscriber1);
             //Continue connecting processor chain
-            upstreamChannel.ifPresent(UniversalChannel::connect);
+            optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingProcessorMethod != null) {
             subscriber1 = incomingProcessorMethod.getProcessor();
             connectMessage.append(incomingProcessorMethod.getMethod().getName());
             publisher.subscribe(subscriber1);
             //Continue connecting processor chain
-            upstreamChannel.ifPresent(UniversalChannel::connect);
+            optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingConnector != null) {
             subscriber1 = incomingConnector.getSubscriber(name);
             connectMessage.append(incomingConnector.getConnectorName());
             publisher.subscribe(subscriber1);
             //Continue connecting processor chain
-            upstreamChannel.ifPresent(UniversalChannel::connect);
+            optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else {
             LOGGER.severe(connectMessage.append("and no incoming method found!").toString());

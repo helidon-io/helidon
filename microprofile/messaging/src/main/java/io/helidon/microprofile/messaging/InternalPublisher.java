@@ -32,10 +32,10 @@ import org.reactivestreams.Subscription;
  */
 class InternalPublisher implements Publisher<Object>, Subscription {
 
-    private Method method;
-    private Object beanInstance;
     private Subscriber<? super Object> subscriber;
-    private AtomicBoolean closed = new AtomicBoolean(false);
+    private final Method method;
+    private final Object beanInstance;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     InternalPublisher(Method method, Object beanInstance) {
         this.method = method;

@@ -34,10 +34,10 @@ abstract class AbstractMessagingMethod {
     private String outgoingChannelName;
 
     private Bean<?> bean;
-    private Method method;
     private Object beanInstance;
     private MethodSignatureType type;
-    private Errors.Collector errors;
+    private final Method method;
+    private final Errors.Collector errors;
     private Acknowledgment.Strategy ackStrategy;
 
 

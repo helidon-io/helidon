@@ -18,7 +18,6 @@
 package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.ExecutionException;
 
 import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
@@ -43,7 +42,7 @@ class UnwrapProcessor implements Processor<Object, Object> {
         return unwrapProcessor;
     }
 
-    Object unwrap(Object o) throws ExecutionException, InterruptedException {
+    Object unwrap(Object o) {
         return MessageUtils.unwrap(o, method);
     }
 
@@ -60,11 +59,7 @@ class UnwrapProcessor implements Processor<Object, Object> {
 
     @Override
     public void onNext(Object o) {
-        try {
-            subscriber.onNext(unwrap(o));
-        } catch (ExecutionException | InterruptedException e) {
-            onError(e);
-        }
+        subscriber.onNext(unwrap(o));
     }
 
     @Override

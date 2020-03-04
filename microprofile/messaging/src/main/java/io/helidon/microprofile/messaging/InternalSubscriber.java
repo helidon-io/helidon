@@ -33,7 +33,7 @@ import org.reactivestreams.Subscription;
 class InternalSubscriber implements Subscriber<Object> {
 
     private Subscription subscription;
-    private IncomingMethod incomingMethod;
+    private final IncomingMethod incomingMethod;
 
     InternalSubscriber(IncomingMethod incomingMethod) {
         this.incomingMethod = incomingMethod;

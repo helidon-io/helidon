@@ -23,7 +23,6 @@ import java.lang.reflect.Type;
 import java.security.InvalidParameterException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import javax.enterprise.inject.spi.DeploymentException;
@@ -55,10 +54,8 @@ class MessageUtils {
      * @param value value for unwrap
      * @param type  expected type
      * @return unwrapped value
-     * @throws ExecutionException   can happen when unwrapping completable
-     * @throws InterruptedException can happen when unwrapping completable
      */
-    static Object unwrap(Object value, Class<?> type) throws ExecutionException, InterruptedException {
+    static Object unwrap(Object value, Class<?> type) {
         return unwrap(value, type, () -> CompletableFuture.completedFuture((Void) null));
     }
 
@@ -77,11 +74,8 @@ class MessageUtils {
      * @param type  expected type
      * @param onAck {@link java.util.function.Supplier} in case of message wrapping is used for completion stage inferring
      * @return unwrapped value
-     * @throws ExecutionException   can happen when unwrapping completable
-     * @throws InterruptedException can happen when unwrapping completable
      */
-    static Object unwrap(Object value, Class<?> type, Supplier<CompletionStage<Void>> onAck)
-            throws ExecutionException, InterruptedException {
+    static Object unwrap(Object value, Class<?> type, Supplier<CompletionStage<Void>> onAck) {
         if (type.equals(Message.class)) {
             if (value instanceof Message) {
                 return value;
@@ -104,10 +98,8 @@ class MessageUtils {
      * @param value  to unwrap
      * @param method to extract expected type from
      * @return unwrapped value
-     * @throws ExecutionException   can happen when unwrapping completable
-     * @throws InterruptedException can happen when unwrapping completable
      */
-    static Object unwrap(Object value, Method method) throws ExecutionException, InterruptedException {
+    static Object unwrap(Object value, Method method) {
         if (isMessageType(method)) {
             return unwrap(value, Message.class);
         }

@@ -18,7 +18,6 @@
 package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutionException;
 
 import javax.enterprise.inject.spi.DeploymentException;
 
@@ -113,12 +112,8 @@ class ProxyProcessor implements Processor<Object, Object> {
 
     @Override
     public void onNext(Object o) {
-        try {
-            preProcess(o);
-            subscriber.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
-        } catch (ExecutionException | InterruptedException e) {
-            onError(e);
-        }
+        preProcess(o);
+        subscriber.onNext(MessageUtils.unwrap(o, this.processorMethod.getMethod()));
     }
 
     @Override
