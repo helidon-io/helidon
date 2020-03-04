@@ -70,10 +70,9 @@ public interface Single<T> extends Subscribable<T> {
      * @return Publisher
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Multi<U> flatMap(Function<T, Publisher<U>> mapper) {
-        var processor = MultiFlatMapProcessor.fromPublisherMapper(mapper);
-        map(item -> item).subscribe(processor);
-        return processor;
+    default <U> Multi<U> flatMap(Function<? super T, ? extends Publisher<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleFlatMapMulti<>(this, mapper);
     }
 
     /**
