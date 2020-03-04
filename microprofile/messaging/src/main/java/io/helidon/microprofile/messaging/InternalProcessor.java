@@ -19,8 +19,8 @@ package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -48,9 +48,11 @@ class InternalProcessor implements Processor<Object, Object> {
 
     private final ProcessorMethod processorMethod;
     private Subscriber<? super Object> subscriber;
+    private final CompletableQueue<Object> completableQueue;
 
     InternalProcessor(ProcessorMethod processorMethod) {
         this.processorMethod = processorMethod;
+        this.completableQueue = CompletableQueue.create();
     }
 
     @Override
@@ -61,6 +63,15 @@ class InternalProcessor implements Processor<Object, Object> {
     @Override
     public void onSubscribe(Subscription s) {
         subscriber.onSubscribe(s);
+        completableQueue.onEachComplete((o, throwable) -> {
+            if (Objects.isNull(throwable)) {
+                var incomingValue = o.getMetadata();
+                var outgoingValue = o.getValue();
+                subscriber.onNext(postProcess(incomingValue, outgoingValue));
+            } else {
+                subscriber.onError(throwable);
+            }
+        });
     }
 
     @Override
@@ -81,16 +92,16 @@ class InternalProcessor implements Processor<Object, Object> {
                     publisherBuilder = (PublisherBuilder<?>) processedValue;
                 }
                 publisherBuilder.forEach(subVal -> {
-                    try {
+                    if (!completionStageAwait(incomingValue, subVal)) {
                         subscriber.onNext(postProcess(incomingValue, subVal));
-                    } catch (ExecutionException | InterruptedException e) {
-                        subscriber.onError(e);
                     }
                 }).run();
             } else {
-                subscriber.onNext(postProcess(incomingValue, processedValue));
+                if (!completionStageAwait(incomingValue, processedValue)) {
+                    subscriber.onNext(postProcess(incomingValue, processedValue));
+                }
             }
-        } catch (IllegalAccessException | InvocationTargetException | ExecutionException | InterruptedException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             subscriber.onError(e);
         }
     }
@@ -105,18 +116,21 @@ class InternalProcessor implements Processor<Object, Object> {
         return MessageUtils.unwrap(incomingValue, expectedParamType);
     }
 
-    private Object postProcess(final Object incomingValue, final Object outgoingValue)
-            throws ExecutionException, InterruptedException {
-        var outgoing = outgoingValue;
+    @SuppressWarnings("unchecked")
+    private boolean completionStageAwait(final Object incomingValue, final Object outgoingValue) {
         if (outgoingValue instanceof CompletionStage) {
             //Wait for completable stages to finish, yes it means to block see the spec
-            outgoing = ((CompletionStage<?>) outgoingValue).toCompletableFuture().get();
+            completableQueue.add(((CompletionStage<Object>) outgoingValue).toCompletableFuture(), incomingValue);
+            return true;
         }
+        return false;
+    }
 
-        Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoing, Message.class);
+    private Object postProcess(final Object incomingValue, final Object outgoingValue) {
+        Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class);
         if (processorMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
             Message<?> wrappedIncoming = (Message<?>) MessageUtils.unwrap(incomingValue, Message.class);
-            wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoing, Message.class, wrappedIncoming::ack);
+            wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
         }
         return wrappedOutgoing;
     }

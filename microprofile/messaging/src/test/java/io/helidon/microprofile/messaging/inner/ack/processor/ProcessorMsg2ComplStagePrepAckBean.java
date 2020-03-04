@@ -44,9 +44,10 @@ import org.reactivestreams.Publisher;
 public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final CompletableFuture<Void> receivedMessage = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
@@ -68,13 +69,15 @@ public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean {
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
         RESULT_DATA.add(msg.getPayload());
+        receivedMessage.complete(null);
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void assertValid() {
         try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            ackFuture.get(1, TimeUnit.SECONDS);
+            receivedMessage.get(1, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }

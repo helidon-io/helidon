@@ -19,8 +19,8 @@ package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.reactivestreams.Publisher;
@@ -36,10 +36,18 @@ class InternalPublisher implements Publisher<Object>, Subscription {
     private final Method method;
     private final Object beanInstance;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final CompletableQueue<Object> completableQueue;
 
     InternalPublisher(Method method, Object beanInstance) {
         this.method = method;
         this.beanInstance = beanInstance;
+        completableQueue = CompletableQueue.create((o, throwable) -> {
+            if (Objects.isNull(throwable)) {
+                subscriber.onNext(o.getValue());
+            } else {
+                subscriber.onError(throwable);
+            }
+        });
     }
 
     @Override
@@ -49,18 +57,19 @@ class InternalPublisher implements Publisher<Object>, Subscription {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void request(long n) {
         try {
             for (long i = 0; i < n && !closed.get(); i++) {
                 Object result = method.invoke(beanInstance);
                 if (result instanceof CompletionStage) {
-                    CompletionStage<?> completionStage = (CompletionStage<?>) result;
-                    subscriber.onNext(completionStage.toCompletableFuture().get());
+                    CompletionStage<Object> completionStage = (CompletionStage<Object>) result;
+                    completableQueue.add(completionStage.toCompletableFuture());
                 } else {
                     subscriber.onNext(result);
                 }
             }
-        } catch (IllegalAccessException | InvocationTargetException | InterruptedException | ExecutionException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             subscriber.onError(e);
         }
     }

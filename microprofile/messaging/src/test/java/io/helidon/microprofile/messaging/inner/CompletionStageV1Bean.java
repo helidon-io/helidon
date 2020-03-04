@@ -39,11 +39,6 @@ public class CompletionStageV1Bean extends AbstractShapeTestBean {
         return CompletableFuture.supplyAsync(() -> testSequence.incrementAndGet(), Executors.newSingleThreadExecutor());
     }
 
-//    @Outgoing("generator-payload-async")
-//    public Integer getPayloadAsyncs() {
-//        return testSequence.incrementAndGet();
-//    }
-
     @Incoming("generator-payload-async")
     public Subscriber<Integer> getFromInfiniteAsyncPayloadGenerator() {
         return ReactiveStreams.<Integer>builder()

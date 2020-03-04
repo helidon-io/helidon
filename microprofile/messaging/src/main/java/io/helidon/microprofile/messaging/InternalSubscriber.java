@@ -18,9 +18,6 @@
 package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -62,7 +59,7 @@ class InternalSubscriber implements Subscriber<Object> {
         }
     }
 
-    private Object preProcess(Object incomingValue, Class<?> expectedParamType) throws ExecutionException, InterruptedException {
+    private Object preProcess(final Object incomingValue, final Class<?> expectedParamType) {
         if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
             Message<?> incomingMessage = (Message<?>) incomingValue;
@@ -72,17 +69,13 @@ class InternalSubscriber implements Subscriber<Object> {
         return MessageUtils.unwrap(incomingValue, expectedParamType);
     }
 
-    private void postProcess(Object incomingValue, Object outgoingValue) throws ExecutionException, InterruptedException {
+    private void postProcess(final Object incomingValue, final Object outgoingValue) {
         if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
                 && incomingValue instanceof Message) {
 
             Message<?> incomingMessage = (Message<?>) incomingValue;
             incomingMessage.ack();
 
-        } else if (Objects.nonNull(outgoingValue)
-                && outgoingValue instanceof CompletionStage) {
-            CompletionStage<?> completionStage = (CompletionStage<?>) outgoingValue;
-            completionStage.toCompletableFuture().get();
         }
     }
 
