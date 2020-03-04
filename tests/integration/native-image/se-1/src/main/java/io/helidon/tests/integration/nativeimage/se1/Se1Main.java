@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
+import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jsonp.server.JsonSupport;
@@ -103,7 +103,7 @@ public final class Se1Main {
                 .sources(
                         classpath("se-test.yaml").optional(),
                         file("conf/se.yaml")
-                                .pollingStrategy(PollingStrategies::watch)
+                                .changeWatcher(FileSystemWatcher.create())
                                 .optional(),
                         classpath("application.yaml"))
                 .build();
