@@ -66,7 +66,7 @@ class InternalSubscriber implements Subscriber<Object> {
         if (incomingMethod.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
                 && incomingValue instanceof Message) {
             Message<?> incomingMessage = (Message<?>) incomingValue;
-            incomingMessage.ack().toCompletableFuture().complete(null);
+            incomingMessage.ack();
         }
 
         return MessageUtils.unwrap(incomingValue, expectedParamType);
@@ -77,7 +77,7 @@ class InternalSubscriber implements Subscriber<Object> {
                 && incomingValue instanceof Message) {
 
             Message<?> incomingMessage = (Message<?>) incomingValue;
-            incomingMessage.ack().toCompletableFuture().complete(null);
+            incomingMessage.ack();
 
         } else if (Objects.nonNull(outgoingValue)
                 && outgoingValue instanceof CompletionStage) {

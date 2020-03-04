@@ -39,12 +39,15 @@ import org.reactivestreams.Publisher;
 @ApplicationScoped
 public class IncomingPaylPostImplicitAckBean implements AssertableTestBean {
 
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedPre = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedPre = new AtomicBoolean(false);
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of("test-data", () -> {
+            ackFuture.complete(null);
+            return CompletableFuture.completedStage(null);
+        })).buildRs();
     }
 
     @Incoming("test-channel")
