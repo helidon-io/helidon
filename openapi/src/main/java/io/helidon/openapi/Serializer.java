@@ -18,7 +18,6 @@ package io.helidon.openapi;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.lang.annotation.Annotation;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
