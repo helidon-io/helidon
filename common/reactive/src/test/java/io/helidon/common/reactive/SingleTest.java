@@ -97,14 +97,13 @@ public class SingleTest {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
             @Override
             public void onSubscribe(Subscription subscription) {
+                super.onSubscribe(subscription);
                 subscription.request(1);
                 subscription.request(1);
             }
         };
         Single.<String>just("foo").subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
+        subscriber.assertResult("foo");
     }
 
     @Test
@@ -121,6 +120,7 @@ public class SingleTest {
         SingleTestSubscriber<Object> subscriber = new SingleTestSubscriber<Object>() {
             @Override
             public void onSubscribe(Subscription subscription) {
+                super.onSubscribe(subscription);
                 subscription.cancel();
             }
         };
