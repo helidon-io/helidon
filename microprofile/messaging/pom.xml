@@ -50,14 +50,13 @@
             <artifactId>helidon-microprofile-reactive-streams</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>internal-test-libs</artifactId>
-            <scope>test</scope>
+            <groupId>javax.interceptor</groupId>
+            <artifactId>javax.interceptor-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <!-- redirecting Weld logging to JUL logging -->
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>internal-test-libs</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
