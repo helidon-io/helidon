@@ -158,9 +158,9 @@ public class OpenAPISupport implements Service {
     }
 
     static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(SnakeYAMLParserHelper<ExpandedTypeDescription> helper) {
-        return helper.entrySet().stream()
+        return Collections.unmodifiableMap(helper.entrySet().stream()
                 .map(Map.Entry::getValue)
-                .collect(Collectors.toMap(ExpandedTypeDescription::impl, Function.identity()));
+                .collect(Collectors.toMap(ExpandedTypeDescription::impl, Function.identity())));
     }
 
     private static void adjustTypeDescriptions(Map<Class<?>, ExpandedTypeDescription> types) {
@@ -250,7 +250,8 @@ public class OpenAPISupport implements Service {
                 if (staticFile != null) {
                     OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper().types(), staticFile.getContent(),
                             OpenAPIMediaType.byFormat(staticFile.getFormat())));
-                }if (isAnnotationProcessingEnabled(config)) {
+                }
+                if (isAnnotationProcessingEnabled(config)) {
                     expandModelUsingAnnotations(config, indexView);
                 } else {
                     LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
@@ -390,7 +391,7 @@ public class OpenAPISupport implements Service {
 
             value = value.trim();
 
-            if ("true".equals(value) || "false".equals(value)) {
+            if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
                 return Boolean.valueOf(value);
             }
 

@@ -18,7 +18,6 @@ package io.helidon.openapi;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.lang.annotation.Annotation;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -222,6 +221,11 @@ class Serializer {
          * @return true if the property should be processes; false otherwise
          */
         private boolean okToProcess(Object javaBean, Property property) {
+            /*
+             * The following construct might look awkward - and it is. But if SmallRye adds additional properties to its
+             * implementation classes that are not in the corresponding interfaces - and therefore we want to skip processing
+             * them - then we can just add additional lines like the "reject |= ..." one, testing for the new case.
+             */
             boolean reject = false;
             reject |= Parameter.class.isAssignableFrom(javaBean.getClass()) && property.getName().equals("hidden");
             return !reject;

@@ -26,6 +26,7 @@ import javax.json.JsonObject;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -128,7 +129,9 @@ class SerializerTest {
         OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
         Writer writer = new StringWriter();
         Serializer.serialize(helper.types(), implsToTypes, openAPI, OpenApiSerializer.Format.YAML, writer);
-        openAPI = OpenAPIParser.parse(helper.types(), new StringReader(writer.toString()), OpenAPISupport.OpenAPIMediaType.JSON);
+        try (Reader reader = new StringReader(writer.toString())) {
+            openAPI = OpenAPIParser.parse(helper.types(), reader, OpenAPISupport.OpenAPIMediaType.JSON);
+        }
         Object candidateMap = openAPI.getExtensions()
                 .get("x-my-personal-map");
         assertThat(candidateMap, is(instanceOf(Map.class)));

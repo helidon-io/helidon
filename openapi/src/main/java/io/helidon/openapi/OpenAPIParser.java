@@ -16,6 +16,7 @@
  */
 package io.helidon.openapi;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -30,15 +31,16 @@ import org.yaml.snakeyaml.constructor.Constructor;
 /**
  * Abstraction for SnakeYAML parsing of JSON and YAML.
  */
-class OpenAPIParser {
+final class OpenAPIParser {
 
     private OpenAPIParser() {
     }
 
     static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, InputStream inputStream,
-            OpenAPISupport.OpenAPIMediaType openAPIMediaType) {
-        Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-        return parse(types, reader, openAPIMediaType);
+            OpenAPISupport.OpenAPIMediaType openAPIMediaType) throws IOException {
+        try (Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+            return parse(types, reader, openAPIMediaType);
+        }
     }
 
     static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, Reader reader,

@@ -225,6 +225,7 @@ public class TestUtil {
     static JsonStructure jsonFromReader(Reader reader) {
         JsonReader jsonReader = JSON_READER_FACTORY.createReader(reader);
         JsonStructure result = jsonReader.read();
+        jsonReader.close();
         return result;
     }
 
