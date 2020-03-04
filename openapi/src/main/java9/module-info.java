@@ -28,7 +28,7 @@ module io.helidon.openapi {
 
     requires smallrye.open.api;
     requires java.json;
-    requires java.desktop; // for java.bean package
+    requires java.desktop; // for java.beans package
     requires org.yaml.snakeyaml;
 
     requires microprofile.openapi.api;

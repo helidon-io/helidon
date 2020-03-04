@@ -38,8 +38,8 @@ import org.yaml.snakeyaml.nodes.NodeId;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 
 /**
- * Specialized constructor for modifying {@code Node} objects for OpenAPI types that extend {@code Map} to adjust the type of
- * the child nodes of such nodes.
+ * Specialized SnakeYAML constructor for modifying {@code Node} objects for OpenAPI types that extend {@code Map} to adjust the
+ * type of the child nodes of such nodes.
  * <p>
  * Several MicroProfile OpenAPI interfaces extend {@code Map}. For example, {@code Paths} extends {@code Map
  * <String, PathItem>} and {@code SecurityRequirement} extends {@code Map<String, List<String>>}. When SnakeYAML builds the node
@@ -56,7 +56,7 @@ import org.yaml.snakeyaml.nodes.SequenceNode;
  * ideally we can remove this workaround when we adopt 2.0.
  * </p>
  */
-class CustomConstructor extends Constructor {
+final class CustomConstructor extends Constructor {
 
     // maps OpenAPI interfaces which extend Map<?, type> to the mapped-to type where that mapped-to type is NOT List
     private static final Map<Class<?>, Class<?>> CHILD_MAP_TYPES = new HashMap<>();

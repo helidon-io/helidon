@@ -217,7 +217,7 @@ class ExpandedTypeDescription extends TypeDescription {
      *     specific node in the document actually uses and then processes it accordingly.
      * </p>
      */
-    static class SchemaTypeDescription extends ExpandedTypeDescription {
+    static final class SchemaTypeDescription extends ExpandedTypeDescription {
 
         private static final PropertyDescriptor ADDL_PROPS_PROP_DESCRIPTOR = preparePropertyDescriptor();
 
@@ -267,13 +267,18 @@ class ExpandedTypeDescription extends TypeDescription {
      */
     static class ExtensionProperty extends Property {
 
+        private static final Class[] EXTENSION_TYPE_ARGS = new Class[0];
+
         ExtensionProperty(String name) {
             super(name, Object.class);
         }
 
         @Override
         public Class<?>[] getActualTypeArguments() {
-            return new Class[0];
+            /*
+             * Extension properties have no type arguments, so we can safely always return an empty array.
+             */
+            return EXTENSION_TYPE_ARGS;
         }
 
         @Override

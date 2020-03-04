@@ -217,12 +217,14 @@ public class TestUtil {
     public static JsonStructure jsonFromResponse(HttpURLConnection cnx) throws IOException {
         JsonReader reader = JSON_READER_FACTORY.createReader(cnx.getInputStream());
         JsonStructure result = reader.read();
+        reader.close();
         return result;
     }
 
     static JsonStructure jsonFromReader(Reader reader) {
         JsonReader jsonReader = JSON_READER_FACTORY.createReader(reader);
         JsonStructure result = jsonReader.read();
+        jsonReader.close();
         return result;
     }
 
