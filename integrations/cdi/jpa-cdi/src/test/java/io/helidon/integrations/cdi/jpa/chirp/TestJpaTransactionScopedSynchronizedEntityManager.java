@@ -265,6 +265,17 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // the Author is managed, so we should see his ID.
         assertEquals(Integer.valueOf(1), author1.getId());
 
+        // Make sure the database contains the changes.
+        try (final Connection connection = dataSource.getConnection();
+             final Statement statement = connection.createStatement();
+             final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR WHERE ID = 1");) {
+            assertNotNull(resultSet);
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
+            assertEquals("Abraham Lincoln", resultSet.getString(2));
+            assertFalse(resultSet.next());
+        }
+        
         // The Author, however, is detached, because the transaction
         // is over, and because our PersistenceContextType is
         // TRANSACTION, not EXTENDED, the underlying persistence
@@ -347,6 +358,17 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // happened, our author's ID has changed.
         assertEquals(Integer.valueOf(2), author1.getId());
 
+        // Make sure the database contains the changes.
+        try (final Connection connection = dataSource.getConnection();
+             final Statement statement = connection.createStatement();
+             final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR");) {
+            assertNotNull(resultSet);
+            assertTrue(resultSet.next());
+            assertEquals(2, resultSet.getInt(1));
+            assertEquals("Abraham Lincoln", resultSet.getString(2));
+            assertFalse(resultSet.next());
+        }
+
         // Discard author1 in this unit test so we'll get a
         // NullPointerException if we try to use him again.
         author1 = null;
@@ -392,6 +414,17 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertFalse(em.isJoinedToTransaction());
         assertFalse(em.contains(author2));
         assertFalse(transactionScopedContext.isActive());
+
+        // Make sure the database contains the changes.
+        try (final Connection connection = dataSource.getConnection();
+             final Statement statement = connection.createStatement();
+             final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR");) {
+            assertNotNull(resultSet);
+            assertTrue(resultSet.next());
+            assertEquals(2, resultSet.getInt(1));
+            assertEquals("Abe Lincoln", resultSet.getString(2));
+            assertFalse(resultSet.next());
+        }
 
         // Let's go find him again.
         tm.begin();
