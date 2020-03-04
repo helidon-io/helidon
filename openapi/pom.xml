@@ -23,6 +23,7 @@
         <artifactId>helidon-project</artifactId>
         <version>1.4.2-SNAPSHOT</version>
     </parent>
+
     <groupId>io.helidon.openapi</groupId>
     <artifactId>helidon-openapi</artifactId>
 
