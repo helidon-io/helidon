@@ -65,15 +65,15 @@ abstract class AbstractMessagingMethod {
                 });
     }
 
-    public void init(BeanManager beanManager, Config config) {
+    void init(BeanManager beanManager, Config config) {
         this.beanInstance = ChannelRouter.lookup(bean, beanManager);
     }
 
-    public Method getMethod() {
+    Method getMethod() {
         return method;
     }
 
-    public Errors.Collector errors() {
+    Errors.Collector errors() {
         return errors;
     }
 
@@ -105,15 +105,15 @@ abstract class AbstractMessagingMethod {
         this.outgoingChannelName = outgoingChannelName;
     }
 
-    public MethodSignatureType getType() {
+    MethodSignatureType getType() {
         return type;
     }
 
-    public void setType(MethodSignatureType type) {
+    void setType(MethodSignatureType type) {
         this.type = type;
     }
 
-    public Acknowledgment.Strategy getAckStrategy() {
+    Acknowledgment.Strategy getAckStrategy() {
         return ackStrategy;
     }
 

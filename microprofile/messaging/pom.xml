@@ -25,6 +25,7 @@
         <version>2.0.0-SNAPSHOT</version>
     </parent>
 
+    <groupId>io.helidon.microprofile.messaging</groupId>
     <artifactId>helidon-microprofile-messaging</artifactId>
     <name>Helidon MicroProfile Reactive Messaging</name>
     <description>
@@ -35,7 +36,16 @@
         <dependency>
             <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
             <artifactId>microprofile-reactive-messaging-api</artifactId>
-            <version>1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                    <artifactId>microprofile-reactive-streams-operators-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                    <artifactId>microprofile-reactive-streams-operators-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
@@ -46,7 +56,7 @@
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
+            <groupId>io.helidon.microprofile.reactive-streams</groupId>
             <artifactId>helidon-microprofile-reactive-streams</artifactId>
         </dependency>
         <dependency>

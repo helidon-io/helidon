@@ -15,7 +15,7 @@
  */
 
 /**
- * Microprofile metrics implementation.
+ * MicroProfile Reactive Messaging implementation.
  */
 module io.helidon.microprofile.messaging {
     requires java.logging;
@@ -26,8 +26,8 @@ module io.helidon.microprofile.messaging {
     requires javax.interceptor.api;
     requires io.helidon.config;
     requires org.reactivestreams;
-    requires microprofile.reactive.messaging.api;
-    requires microprofile.reactive.streams.operators.api;
+    requires transitive microprofile.reactive.messaging.api;
+    requires transitive microprofile.reactive.streams.operators.api;
 
     exports io.helidon.microprofile.messaging;
 

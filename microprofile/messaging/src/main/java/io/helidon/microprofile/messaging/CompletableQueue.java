@@ -133,19 +133,19 @@ class CompletableQueue<T> {
             return new Item<>(completableFuture, metadata);
         }
 
-        public CompletableFuture<T> getCompletableFuture() {
+        CompletableFuture<T> getCompletableFuture() {
             return completableFuture;
         }
 
-        public Object getMetadata() {
+        Object getMetadata() {
             return metadata;
         }
 
-        public T getValue() {
+        T getValue() {
             return value;
         }
 
-        public void setValue(final T value) {
+        void setValue(final T value) {
             this.value = value;
         }
     }
