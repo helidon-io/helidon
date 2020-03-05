@@ -129,8 +129,7 @@ final class ConfigSourcesRuntime {
     synchronized Optional<ObjectNode> latest() {
         List<ObjectNode> objectNodes = loadedData.stream()
                 .map(RuntimeWithData::data)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toList());
 
         return Optional.of(mergingStrategy.merge(objectNodes));
@@ -150,8 +149,7 @@ final class ConfigSourcesRuntime {
 
         Set<String> allKeys = loadedData.stream()
                 .map(RuntimeWithData::data)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .flatMap(this::streamKeys)
                 .collect(Collectors.toSet());
 
@@ -168,8 +166,7 @@ final class ConfigSourcesRuntime {
 
         List<ObjectNode> objectNodes = loadedData.stream()
                 .map(RuntimeWithData::data)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toList());
 
         return Optional.of(mergingStrategy.merge(objectNodes));
