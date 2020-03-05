@@ -18,9 +18,15 @@ package io.helidon.microprofile.graphql.server.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 
@@ -80,6 +86,46 @@ public class JandexUtils {
             LOGGER.warning("Unable to load default Jandex index file: " + indexFile
                                    + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Return a {@link Collection} of {@link Class}es which are implementors of a given class/interface.
+     *
+     * @param clazz           {@link Class} to check for implementors
+     * @param includeAbstract indicates if abstract classes should be included
+     * @return a {@link Collection} of {@link Class}es
+     */
+    public Collection<Class<?>> getKnownImplementors(String clazz, boolean includeAbstract) {
+        if (index == null) {
+            return null;
+        }
+        Set<ClassInfo> allKnownImplementors = index.getAllKnownImplementors(DotName.createSimple(clazz));
+        Set<Class<?>> setResults = new HashSet<>();
+
+        for (ClassInfo classInfo : allKnownImplementors) {
+            Class<?> clazzName = null;
+            try {
+                clazzName = Class.forName(classInfo.toString());
+            } catch (ClassNotFoundException e) {
+                // ignore as class should exist
+            }
+            if (includeAbstract || !Modifier.isAbstract(clazzName.getModifiers())) {
+                setResults.add(clazzName);
+            }
+        }
+        return setResults;
+    }
+
+    /**
+     * Return a {@link Collection} of {@link Class}es which are implementors of a given class/interface
+     * and are not abstract.
+     *
+     * @param clazz  {@link Class} to check for implementors
+     *
+     * @return  a {@link Collection} of {@link Class}es
+     */
+    public Collection<Class<?>> getKnownImplementors(String clazz) {
+        return getKnownImplementors(clazz, false);
     }
 
     /**

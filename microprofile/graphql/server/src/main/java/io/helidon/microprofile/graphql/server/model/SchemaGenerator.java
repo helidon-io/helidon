@@ -48,7 +48,7 @@ public interface SchemaGenerator {
     /**
      * Spacer.
      */
-    char SPACER = ' ';
+    String SPACER = " ";
 
     /**
      * Newline.

@@ -13,14 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.microprofile.graphql.server.test.types;
 
-package io.helidon.microprofile.graphql.server.resource;
+import org.eclipse.microprofile.graphql.Id;
 
-import org.junit.jupiter.api.Test;
+/**
+ * Class to test Id annotation.
+ */
+public class TypeWithIdOnMethod {
+    private int id;
+    private String name;
 
-class GraphQLResourceTest {
-    @Test
-    public void test() {
+    public TypeWithIdOnMethod(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 
+    @Id
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

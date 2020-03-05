@@ -14,13 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.graphql.server.resource;
+package io.helidon.microprofile.graphql.server;
 
+import java.io.IOException;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-class GraphQLResourceTest {
-    @Test
-    public void test() {
+/**
+ * Integration tests for microprofile-graphql implementation.
+ */
+public class GraphQLIT extends AbstractGraphQLIT {
 
+    @BeforeAll
+    public static void setup() {
+        _setupTest();
+    }
+
+    @Test
+    @Disabled
+    public void basicTest() throws IOException, InterruptedException {
+        Thread.sleep(Long.MAX_VALUE);
     }
 }

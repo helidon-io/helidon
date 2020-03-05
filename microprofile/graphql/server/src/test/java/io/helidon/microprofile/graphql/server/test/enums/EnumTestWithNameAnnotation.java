@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.graphql.server.test;
+package io.helidon.microprofile.graphql.server.test.enums;
 
 import org.eclipse.microprofile.graphql.Enum;
+import org.eclipse.microprofile.graphql.Name;
 
 /**
- * Class to test enum discovery with enum name.
+ * Class to test enum discovery with name annotation.
  */
-@Enum("TShirtSize")
-public enum EnumTestWithEnumName {
+@Enum
+@Name("TShirtSize")
+public enum EnumTestWithNameAnnotation {
     S,
     M,
     L,

@@ -14,13 +14,34 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.graphql.server.resource;
+package io.helidon.microprofile.graphql.server.test.types;
 
-import org.junit.jupiter.api.Test;
+/**
+ * POJO to test multiple levels of object graph.
+ */
+public class Level1 {
+    private String code;
+    private Level2 level2;
 
-class GraphQLResourceTest {
-    @Test
-    public void test() {
-
+    public Level1(String code, Level2 level2) {
+        this.code = code;
+        this.level2 = level2;
     }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public Level2 getLevel2() {
+        return level2;
+    }
+
+    public void setLevel2(Level2 level2) {
+        this.level2 = level2;
+    }
+
 }

@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * The representation of a GraphQL Enum.
  */
-public class Enum extends AbstractDescriptiveElement
+public class SchemaEnum extends AbstractDescriptiveElement
         implements SchemaGenerator {
 
     /**
@@ -40,37 +40,37 @@ public class Enum extends AbstractDescriptiveElement
      * Construct an Enum.
      * @param name name for the enum
      */
-    public Enum(String name) {
+    public SchemaEnum(String name) {
         this.name   = name;
         this.values = new ArrayList<>();
     }
 
     /**
-     * Return the name of the {@link Enum}.
-     * @return the name of the {@link Enum}
+     * Return the name of the {@link SchemaEnum}.
+     * @return the name of the {@link SchemaEnum}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Set the name of the {@link Enum}.
-     * @param name the name of the {@link Enum}
+     * Set the name of the {@link SchemaEnum}.
+     * @param name the name of the {@link SchemaEnum}
      */
     public void setName(String name) {
         this.name = name;
     }
 
     /**
-     * Return the values for the {@link Enum}.
-     * @return the values for the {@link Enum}
+     * Return the values for the {@link SchemaEnum}.
+     * @return the values for the {@link SchemaEnum}
      */
     public List<String> getValues() {
         return values;
     }
 
     /**
-     * Add a value to the {@link Enum}.
+     * Add a value to the {@link SchemaEnum}.
      * @param value value to add
      */
     public void addValue(String value) {

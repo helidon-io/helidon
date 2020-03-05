@@ -25,7 +25,7 @@ import graphql.schema.DataFetcher;
 /**
  * The representation of a GraphQL Field Definition.
  */
-public class FieldDefinition extends AbstractDescriptiveElement
+public class SchemaFieldDefinition extends AbstractDescriptiveElement
         implements SchemaGenerator {
      /**
      * Name of the field definition.
@@ -50,7 +50,7 @@ public class FieldDefinition extends AbstractDescriptiveElement
     /**
      * List of arguments.
      */
-    private final List<Argument> listArguments;
+    private final List<SchemaArgument> listSchemaArguments;
 
     /**
      * {@link DataFetcher} to override default behaviour of field.
@@ -58,17 +58,17 @@ public class FieldDefinition extends AbstractDescriptiveElement
     private DataFetcher dataFetcher;
 
     /**
-     * Construct a {@link FieldDefinition}.
+     * Construct a {@link SchemaFieldDefinition}.
      *
      * @param name                   field definition name
      * @param returnType             return type
      * @param isArrayReturnType      indicates if the return type is an array type such as a native array([]) or a List, Collection, etc
      * @param isReturnTypeMandatory  indicates if the return type is mandatory.
      */
-    public FieldDefinition(String name, String returnType, boolean isArrayReturnType, boolean isReturnTypeMandatory) {
+    public SchemaFieldDefinition(String name, String returnType, boolean isArrayReturnType, boolean isReturnTypeMandatory) {
         this.name                  = name;
         this.returnType            = returnType;
-        this.listArguments         = new ArrayList<>();
+        this.listSchemaArguments = new ArrayList<>();
         this.isArrayReturnType     = isArrayReturnType;
         this.isReturnTypeMandatory = isReturnTypeMandatory;
     }
@@ -78,15 +78,13 @@ public class FieldDefinition extends AbstractDescriptiveElement
         StringBuilder sb = new StringBuilder(getSchemaElementDescription())
                 .append(getName());
 
-        // set compact mode if no argument descriptions exist
-        boolean isCompact = listArguments.stream().filter(a -> a.getDescription() != null).count() == 0;
-
-        if (listArguments.size() > 0) {
-            sb.append(OPEN_PARENTHESES).append(isCompact ? NOTHING : NEWLINE);
-            sb.append(listArguments.stream()
-                              .map(Argument::getSchemaAsString)
-                              .collect(Collectors.joining(isCompact ? COMMA_SPACE : COMMA_NEWLINE)));
-            sb.append(isCompact ? NOTHING : NEWLINE).append(CLOSE_PARENTHESES);
+        if (listSchemaArguments.size() > 0) {
+            sb.append(OPEN_PARENTHESES)
+              .append(NEWLINE)
+              .append(listSchemaArguments.stream()
+                              .map(SchemaArgument::getSchemaAsString)
+                              .collect(Collectors.joining(COMMA_SPACE + NEWLINE)));
+            sb.append(NEWLINE).append(CLOSE_PARENTHESES);
         }
 
         sb.append(COLON);
@@ -114,11 +112,11 @@ public class FieldDefinition extends AbstractDescriptiveElement
     }
 
     /**
-     * Return the {@link List} of {@link Argument}s.
-     * @return the {@link List} of {@link Argument}s
+     * Return the {@link List} of {@link SchemaArgument}s.
+     * @return the {@link List} of {@link SchemaArgument}s
      */
-    public List<Argument> getArguments() {
-        return listArguments;
+    public List<SchemaArgument> getArguments() {
+        return listSchemaArguments;
     }
 
     /**
@@ -146,8 +144,8 @@ public class FieldDefinition extends AbstractDescriptiveElement
     }
 
     /**
-     * Return the {@link DataFetcher} for this {@link FieldDefinition}.
-     * @return he {@link DataFetcher} for this {@link FieldDefinition}
+     * Return the {@link DataFetcher} for this {@link SchemaFieldDefinition}.
+     * @return he {@link DataFetcher} for this {@link SchemaFieldDefinition}
      */
     public DataFetcher getDataFetcher() {
         return dataFetcher;
@@ -170,12 +168,12 @@ public class FieldDefinition extends AbstractDescriptiveElement
     }
 
     /**
-     * Add a {@link Argument} to this {@link FieldDefinition}.
+     * Add a {@link SchemaArgument} to this {@link SchemaFieldDefinition}.
      *
-     * @param argument {@link Argument} to add
+     * @param schemaArgument {@link SchemaArgument} to add
      */
-    public void addArgument(Argument argument) {
-        listArguments.add(argument);
+    public void addArgument(SchemaArgument schemaArgument) {
+        listSchemaArguments.add(schemaArgument);
     }
 
     @Override
@@ -185,7 +183,7 @@ public class FieldDefinition extends AbstractDescriptiveElement
                 + ", returnType='" + returnType + '\''
                 + ", isArrayReturnType=" + isArrayReturnType
                 + ", isReturnTypeMandatory=" + isReturnTypeMandatory
-                + ", listArguments=" + listArguments
+                + ", listArguments=" + listSchemaArguments
                 + ", description='" + getDescription() + '\'' + '}';
     }
 }

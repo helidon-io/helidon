@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.graphql.server.test;
+package io.helidon.microprofile.graphql.server.test.types;
 
-import org.eclipse.microprofile.graphql.Enum;
+import org.eclipse.microprofile.graphql.Type;
 
 /**
- * Class to test enum discovery with no enum name.
+ * An interface with a different name via the {@Link Type} annotation.
  */
-@Enum
-public enum EnumTestNoEnumName {
-    S,
-    M,
-    L,
-    XL,
-    XXL,
-    XXXL
+@Type("NewName")
+public interface InterfaceWithTypeValue {
+    int getValue1();
+    String getValue2();
 }

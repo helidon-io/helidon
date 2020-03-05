@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.graphql.server.resource;
+package io.helidon.microprofile.graphql.server.test.enums;
 
-import org.junit.jupiter.api.Test;
+import org.eclipse.microprofile.graphql.Enum;
+import org.eclipse.microprofile.graphql.Name;
 
-class GraphQLResourceTest {
-    @Test
-    public void test() {
-
-    }
+/**
+ * Class to test enum discovery with enum name and name annotation.
+ * The enum name should win.
+ */
+@Enum("ThisShouldWin")
+@Name("TShirtSize")
+public enum EnumTestWithNameAndNameAnnotation {
+    S,
+    M,
+    L,
+    XL,
+    XXL,
+    XXXL
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,19 +45,19 @@ class SchemaTest extends AbstractGraphQLTest {
     @Test
     public void testTopLevelSchemaAsString() {
         Schema schema = new Schema();
-        schema.addType(new Type("Query", null, null));
+        schema.addType(new SchemaType("Query", null));
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-01.txt");
 
-        schema.addType(new Type("Mutation", null, null));
+        schema.addType(new SchemaType("Mutation", null));
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-02.txt");
 
-        schema.addType(new Type("Subscription", "", ""));
+        schema.addType(new SchemaType("Subscription", ""));
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-03.txt");
 
-        Directive directive = new Directive("format");
-        directive.addLocation(FIELD_DEFINITION.name());
-        directive.addArgument(new Argument("dateFormat", "String", true, null));
-        schema.addDirective(directive);
+        SchemaDirective schemaDirective = new SchemaDirective("format");
+        schemaDirective.addLocation(FIELD_DEFINITION.name());
+        schemaDirective.addArgument(new SchemaArgument("dateFormat", "String", true, null));
+        schema.addDirective(schemaDirective);
 
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-04.txt");
     }
@@ -67,13 +67,13 @@ class SchemaTest extends AbstractGraphQLTest {
         Schema schema = new Schema();
         assertThat(schema.getScalars().size(), is(0));
 
-        Scalar scalar1 = new Scalar("Test", Date.class.getName(), ExtendedScalars.Date);
-        Scalar scalar2 = new Scalar("Test2", Date.class.getName(), ExtendedScalars.Date);
-        schema.addScalar(scalar1);
-        schema.addScalar(scalar2);
+        SchemaScalar schemaScalar1 = new SchemaScalar("Test", Date.class.getName(), ExtendedScalars.Date);
+        SchemaScalar schemaScalar2 = new SchemaScalar("Test2", Date.class.getName(), ExtendedScalars.Date);
+        schema.addScalar(schemaScalar1);
+        schema.addScalar(schemaScalar2);
 
-        assertThat(schema.getScalars().contains(scalar1), is(true));
-        assertThat(schema.getScalars().contains(scalar2), is(true));
+        assertThat(schema.getScalars().contains(schemaScalar1), is(true));
+        assertThat(schema.getScalars().contains(schemaScalar2), is(true));
     }
 
     @Test
@@ -81,20 +81,20 @@ class SchemaTest extends AbstractGraphQLTest {
         Schema schema = new Schema();
         assertThat(schema.getDirectives().size(), is(0));
 
-        Directive directive1 = new Directive("directive1");
-        Directive directive2 = new Directive("directive2");
-        schema.addDirective(directive1);
-        schema.addDirective(directive2);
-        assertThat(schema.getDirectives().contains(directive1), is(true));
-        assertThat(schema.getDirectives().contains(directive2), is(true));
+        SchemaDirective schemaDirective1 = new SchemaDirective("directive1");
+        SchemaDirective schemaDirective2 = new SchemaDirective("directive2");
+        schema.addDirective(schemaDirective1);
+        schema.addDirective(schemaDirective2);
+        assertThat(schema.getDirectives().contains(schemaDirective1), is(true));
+        assertThat(schema.getDirectives().contains(schemaDirective2), is(true));
     }
 
     @Test
     public void testInputTypes() {
         Schema schema = new Schema();
         assertThat(schema.getInputTypes().size(), is(0));
-        InputType type1 = new InputType("name", "keyClass", "valueClass" );
-        InputType type2 = new InputType("name2", "keyClass2", "valueClass2");
+        SchemaInputType type1 = new SchemaInputType("name", "valueClass" );
+        SchemaInputType type2 = new SchemaInputType("name2", "valueClass2");
         schema.addInputType(type1);
         schema.addInputType(type2);
         assertThat(schema.getInputTypes().size(), is(2));
@@ -106,13 +106,13 @@ class SchemaTest extends AbstractGraphQLTest {
     public void tesTypes() {
         Schema schema = new Schema();
         assertThat(schema.getInputTypes().size(), is(0));
-        Type type1 = new Type("name", "keyClass", "valueClass");
-        Type type2 = new Type("name2", "keyClass2", "valueClass2");
-        schema.addType(type1);
-        schema.addType(type2);
+        SchemaType schemaType1 = new SchemaType("name", "valueClass");
+        SchemaType schemaType2 = new SchemaType("name2", "valueClass2");
+        schema.addType(schemaType1);
+        schema.addType(schemaType2);
         assertThat(schema.getTypes().size(), is(2));
-        assertThat(schema.getTypes().contains(type1), is(true));
-        assertThat(schema.getTypes().contains(type2), is(true));
+        assertThat(schema.getTypes().contains(schemaType1), is(true));
+        assertThat(schema.getTypes().contains(schemaType2), is(true));
     }
 
     @Test
@@ -123,12 +123,12 @@ class SchemaTest extends AbstractGraphQLTest {
         listString.add("NEWHOPE");
         listString.add("JEDI");
         listString.add("EMPIRE");
-        Enum enum1 = new Enum("Episode");
-        enum1.getValues().addAll(listString);
+        SchemaEnum schemaEnum1 = new SchemaEnum("Episode");
+        schemaEnum1.getValues().addAll(listString);
 
-        schema.addEnum(enum1);
+        schema.addEnum(schemaEnum1);
         assertThat(schema.getEnums().size(), is(1));
-        assertThat(schema.getEnums().contains(enum1), is(true));
+        assertThat(schema.getEnums().contains(schemaEnum1), is(true));
 
     }
 
@@ -136,6 +136,6 @@ class SchemaTest extends AbstractGraphQLTest {
     @Disabled
     public void testInvalidRuntimeWiring() {
         Schema schema = new Schema();
-        assertThrows(IllegalStateException.class, () -> schema.getRuntimeWiring());
+        assertThrows(IllegalStateException.class, schema::getRuntimeWiring);
     }
 }

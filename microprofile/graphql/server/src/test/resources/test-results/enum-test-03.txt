@@ -1,4 +1,4 @@
-"T Shirt Size"
+"Description\""
 enum ShirtSize {
  Small
  Medium

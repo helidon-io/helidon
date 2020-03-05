@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * The representation of a GraphQL directive.
  */
-public class Directive implements SchemaGenerator {
+public class SchemaDirective implements SchemaGenerator {
 
     /**
      * The name of the directive.
@@ -37,7 +37,7 @@ public class Directive implements SchemaGenerator {
     /**
      * The list of arguments for the directive.
      */
-    private final List<Argument> listArguments;
+    private final List<SchemaArgument> listSchemaArguments;
 
     /**
      * The locations the directive applies to.
@@ -45,13 +45,13 @@ public class Directive implements SchemaGenerator {
     private final Set<String> setLocations;
 
     /**
-     * Construct a {@link Directive}.
+     * Construct a {@link SchemaDirective}.
      *
      * @param name name of the directive
      */
-    public Directive(String name) {
+    public SchemaDirective(String name) {
         this.name = name;
-        this.listArguments = new ArrayList<>();
+        this.listSchemaArguments = new ArrayList<>();
         this.setLocations = new LinkedHashSet<>();
     }
 
@@ -64,10 +64,10 @@ public class Directive implements SchemaGenerator {
     public String getSchemaAsString() {
         StringBuilder sb = new StringBuilder("directive @" + getName());
 
-        if (listArguments.size() > 0) {
+        if (listSchemaArguments.size() > 0) {
             sb.append("(");
             AtomicBoolean isFirst = new AtomicBoolean(true);
-            listArguments.forEach(a -> {
+            listSchemaArguments.forEach(a -> {
                 String delim = isFirst.get() ? "" : ", ";
                 isFirst.set(false);
 
@@ -87,16 +87,16 @@ public class Directive implements SchemaGenerator {
     }
 
     /**
-     * Add an {@link Argument} to the {@link Directive}.
+     * Add an {@link SchemaArgument} to the {@link SchemaDirective}.
      *
-     * @param argument the {@link Argument} to add
+     * @param schemaArgument the {@link SchemaArgument} to add
      */
-    public void addArgument(Argument argument) {
-        listArguments.add(argument);
+    public void addArgument(SchemaArgument schemaArgument) {
+        listSchemaArguments.add(schemaArgument);
     }
 
     /**
-     * Add a location to the {@link Directive}.
+     * Add a location to the {@link SchemaDirective}.
      *
      * @param location the location to add
      */
@@ -105,21 +105,21 @@ public class Directive implements SchemaGenerator {
     }
 
     /**
-     * Return the name of the {@link Directive}.
+     * Return the name of the {@link SchemaDirective}.
      *
-     * @return the name of the {@link Directive}
+     * @return the name of the {@link SchemaDirective}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Return the {@link List} of {@link Argument}s.
+     * Return the {@link List} of {@link SchemaArgument}s.
      *
-     * @return the {@link List} of {@link Argument}s
+     * @return the {@link List} of {@link SchemaArgument}s
      */
-    public List<Argument> getArguments() {
-        return listArguments;
+    public List<SchemaArgument> getArguments() {
+        return listSchemaArguments;
     }
 
     /**
@@ -139,22 +139,22 @@ public class Directive implements SchemaGenerator {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Directive directive = (Directive) o;
-        return Objects.equals(name, directive.name)
-                && Objects.equals(listArguments, directive.listArguments)
-                && Objects.equals(setLocations, directive.setLocations);
+        SchemaDirective schemaDirective = (SchemaDirective) o;
+        return Objects.equals(name, schemaDirective.name)
+                && Objects.equals(listSchemaArguments, schemaDirective.listSchemaArguments)
+                && Objects.equals(setLocations, schemaDirective.setLocations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, listArguments, setLocations);
+        return Objects.hash(name, listSchemaArguments, setLocations);
     }
 
     @Override
     public String toString() {
         return "Directive{"
                 + "name='" + name + '\''
-                + ", listArguments=" + listArguments
+                + ", listArguments=" + listSchemaArguments
                 + ", setLocations=" + setLocations
                 + '}';
     }

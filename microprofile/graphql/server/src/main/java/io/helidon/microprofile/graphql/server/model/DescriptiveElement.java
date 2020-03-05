@@ -16,10 +16,9 @@
 
 package io.helidon.microprofile.graphql.server.model;
 
-import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.COMMENT;
 import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.NEWLINE;
 import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.NOTHING;
-import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.SPACER;
+import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.QUOTE;
 
 /**
  * Describes an element that has a description.
@@ -46,9 +45,10 @@ public interface DescriptiveElement {
     default String getSchemaElementDescription() {
 
         if (getDescription() != null) {
-            return new StringBuilder(COMMENT)
-                    .append(SPACER)
-                    .append(getDescription())
+            return new StringBuilder()
+                    .append(QUOTE)
+                    .append(getDescription().replaceAll("\"", "\\\\\""))
+                    .append(QUOTE)
                     .append(NEWLINE)
                     .toString();
         }

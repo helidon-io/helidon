@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,21 +25,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
 /**
- * Tests for {@link Scalar} class.
+ * Tests for {@link SchemaScalar} class.
  */
-class ScalarTest {
+class SchemaScalarTest {
 
     @Test
     public void testConstructors() {
-        Scalar scalar = new Scalar("myName", Integer.class.getName(), ExtendedScalars.DateTime);
-        assertThat(scalar.getName(), is("myName"));
-        assertThat(scalar.getActualClass(), is(Integer.class.getName()));
-        assertThat(scalar.getGraphQLScalarType().equals(ExtendedScalars.DateTime), is(true));
+        SchemaScalar schemaScalar = new SchemaScalar("myName", Integer.class.getName(), ExtendedScalars.DateTime);
+        assertThat(schemaScalar.getName(), is("myName"));
+        assertThat(schemaScalar.getActualClass(), is(Integer.class.getName()));
+        assertThat(schemaScalar.getGraphQLScalarType().equals(ExtendedScalars.DateTime), is(true));
     }
 
     @Test
     public void testGetScalarAsString() {
-        assertThat(new Scalar("Test", Date.class.getName(), ExtendedScalars.DateTime).getSchemaAsString(), is("scalar Test"));
-        assertThat(new Scalar("Date", Date.class.getName(), ExtendedScalars.DateTime).getSchemaAsString(), is("scalar Date"));
+        assertThat(new SchemaScalar("Test", Date.class.getName(), ExtendedScalars.DateTime).getSchemaAsString(), is("scalar Test"));
+        assertThat(new SchemaScalar("Date", Date.class.getName(), ExtendedScalars.DateTime).getSchemaAsString(), is("scalar Date"));
     }
 }

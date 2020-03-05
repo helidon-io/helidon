@@ -17,16 +17,32 @@
 package io.helidon.microprofile.graphql.server.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import graphql.GraphQLException;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.TypeResolver;
 import graphql.schema.idl.RuntimeWiring;
+import graphql.schema.idl.SchemaParser;
+import graphql.schema.idl.TypeDefinitionRegistry;
+import graphql.schema.idl.TypeRuntimeWiring;
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
+import static io.helidon.microprofile.graphql.server.util.SchemaUtils.getSafeClass;
 
 /**
  * The representation of a GraphQL Schema.
  */
 public class Schema implements SchemaGenerator {
+
+    private static final Logger LOGGER = Logger.getLogger(Schema.class.getName());
 
     /**
      * Default query name.
@@ -59,29 +75,29 @@ public class Schema implements SchemaGenerator {
     private String subscriptionName;
 
     /**
-     * List of {@link Type}s for this schema. This includes the standard schema types and other types.
+     * List of {@link SchemaType}s for this schema. This includes the standard schema types and other types.
      */
-    private final List<Type> listTypes;
+    private final List<SchemaType> listSchemaTypes;
 
     /**
-     * List of {@link Scalar}s that should be included in the schema.
+     * List of {@link SchemaScalar}s that should be included in the schema.
      */
-    private final List<Scalar> listScalars;
+    private final List<SchemaScalar> listSchemaScalars;
 
     /**
-     * List of {@link Directive}s that should be included in the schema.
+     * List of {@link SchemaDirective}s that should be included in the schema.
      */
-    private final List<Directive> listDirectives;
+    private final List<SchemaDirective> listSchemaDirectives;
 
     /**
-     * List of {@link InputType}s that should be included in the schema.
+     * List of {@link SchemaInputType}s that should be included in the schema.
      */
-    private final List<InputType> listInputTypes;
+    private final List<SchemaInputType> listInputTypes;
 
     /**
-     * List of {@link Enum}s that should be included in the schema.
+     * List of {@link SchemaEnum}s that should be included in the schema.
      */
-    private final List<Enum> listEnums;
+    private final List<SchemaEnum> listSchemaEnums;
 
     /**
      * Construct the DiscoveredSchema using the defaults.
@@ -93,41 +109,39 @@ public class Schema implements SchemaGenerator {
     /**
      * Construct the DiscoveredSchema using the the provided values.
      *
-     * @param queryName         name for the query type
-     * @param mutationName      name for the mutation type
-     * @param subscriptionName  name for the subscription type
+     * @param queryName        name for the query type
+     * @param mutationName     name for the mutation type
+     * @param subscriptionName name for the subscription type
      */
     public Schema(String queryName, String mutationName, String subscriptionName) {
-        this.queryName        = queryName;
-        this.mutationName     = mutationName;
+        this.queryName = queryName;
+        this.mutationName = mutationName;
         this.subscriptionName = subscriptionName;
-        this.listTypes        = new ArrayList<>();
-        this.listScalars      = new ArrayList<>();
-        this.listDirectives   = new ArrayList<>();
-        this.listInputTypes   = new ArrayList<>();
-        this.listEnums        = new ArrayList<>();
+        this.listSchemaTypes = new ArrayList<>();
+        this.listSchemaScalars = new ArrayList<>();
+        this.listSchemaDirectives = new ArrayList<>();
+        this.listInputTypes = new ArrayList<>();
+        this.listSchemaEnums = new ArrayList<>();
     }
 
-//    /**
-//     * Generates a {@link GraphQLSchema} from the current discovered schema.
-//     *
-//     * @return {@link GraphQLSchema}
-//     */
-//    public GraphQLSchema generateGraphQLSchema() {
-//        SchemaParser schemaParser           = new SchemaParser();
-//        TypeDefinitionRegistry typeDefinitionRegistry;
-//
-//        try {
-//            typeDefinitionRegistry = schemaParser.parse(generateGraphQLSchemaAsString());
-//            return new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, getRuntimeWiring());
-//        }
-//        catch (Exception e) {
-//            LoggingUtilities.log("Unable to parse the following generated schema:\n" + generateGraphQLSchemaAsString(),
-//                                 CacheFactory.LOG_WARN);
-//            throw e;
-//        }
-//    }
+    /**
+     * Generates a {@link GraphQLSchema} from the current discovered schema.
+     *
+     * @return {@link GraphQLSchema}
+     */
+    public GraphQLSchema generateGraphQLSchema() {
+        SchemaParser schemaParser = new SchemaParser();
+        TypeDefinitionRegistry typeDefinitionRegistry;
 
+        try {
+            typeDefinitionRegistry = schemaParser.parse(getSchemaAsString());
+            return new graphql.schema.idl.SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, getRuntimeWiring());
+        } catch (Exception e) {
+            String message = "Unable to parse the generated schema";
+            LOGGER.warning(message + "\n" + getSchemaAsString());
+            throw new GraphQLException(message, e);
+        }
+    }
 
     /**
      * Return the GraphQL schema representation of the element.
@@ -138,8 +152,8 @@ public class Schema implements SchemaGenerator {
     public String getSchemaAsString() {
         StringBuilder sb = new StringBuilder();
 
-        listDirectives.forEach(d -> sb.append(d.getSchemaAsString()).append('\n'));
-        if (listDirectives.size() > 0) {
+        listSchemaDirectives.forEach(d -> sb.append(d.getSchemaAsString()).append('\n'));
+        if (listSchemaDirectives.size() > 0) {
             sb.append('\n');
         }
 
@@ -158,14 +172,14 @@ public class Schema implements SchemaGenerator {
 
         sb.append(CLOSE_CURLY).append(NEWLINE).append(NEWLINE);
 
-        listTypes.stream()
+        listSchemaTypes.stream()
                 .forEach(t -> sb.append(t.getSchemaAsString()).append("\n"));
 
         listInputTypes.forEach(s -> sb.append(s.getSchemaAsString()).append('\n'));
 
-        listEnums.forEach(e -> sb.append(e.getSchemaAsString()).append('\n'));
+        listSchemaEnums.forEach(e -> sb.append(e.getSchemaAsString()).append('\n'));
 
-        listScalars.forEach(s -> sb.append(s.getSchemaAsString()).append('\n'));
+        listSchemaScalars.forEach(s -> sb.append(s.getSchemaAsString()).append('\n'));
 
         return sb.toString();
     }
@@ -179,267 +193,245 @@ public class Schema implements SchemaGenerator {
         RuntimeWiring.Builder builder = newRuntimeWiring();
 
         //  Create the top level Query Runtime Wiring.
-        Type queryType = getTypeByName(getQueryName());
-//
-//        if (queryType == null) {
-//            throw new IllegalStateException("No type exists for query of name " + getQueryName());
-//        }
-//
-//        final TypeRuntimeWiring.Builder typeRuntimeBuilder = newTypeWiring(getQueryName());
+        SchemaType querySchemaType = getTypeByName(getQueryName());
+
+        if (querySchemaType == null) {
+            throw new GraphQLException("No type exists for query of name " + getQueryName());
+        }
+
+        final TypeRuntimeWiring.Builder typeRuntimeBuilder = newTypeWiring(getQueryName());
 //
 //        queryType.getFieldDefinitions().forEach(fd -> {
 //            String cacheMapping = fd.getCacheMapping();
 //            if (fd.isArrayReturnType()) {
 //                typeRuntimeBuilder.dataFetcher(fd.getName(),
-//                                            DataFetcherUtils.newGenericFilterDataFetcher(cacheMapping));
-//            }
-//            else {
+//                                               DataFetcherUtils.newGenericFilterDataFetcher(cacheMapping));
+//            } else {
 //                typeRuntimeBuilder.dataFetcher(fd.getName(),
-//                                           DataFetcherUtils.newGenericSingleKeyDataFetcher(cacheMapping, "key"));
+//                                               DataFetcherUtils.newGenericSingleKeyDataFetcher(cacheMapping, "key"));
 //            }
 //        });
-//
-//        // register a type resolver for any interfaces if we have at least one
-//        Set<Type> setInterfaces = getTypes().stream().filter(Type::isInterface).collect(Collectors.toSet());
-//        if (setInterfaces.size() > 0) {
-//            final Map<String, String> mapTypes = new HashMap<>();
-//
-//            getTypes().stream().filter(t -> !t.isInterface()).forEach(t -> mapTypes.put(t.getName(), t.getValueClassName()));
-//
-//            // generate a TypeResolver for all types that are not interfaces
-//            TypeResolver typeResolver = env -> {
-//                 Object o = env.getObject();
-//                 for (Map.Entry<String, String> entry : mapTypes.entrySet()) {
-//                     String valueClass = entry.getValue();
-//                     if (valueClass != null) {
-//                         Class<?> typeClass = getSafeClass(entry.getValue());
-//                         if (typeClass != null && typeClass.isAssignableFrom(o.getClass())) {
-//                              return (GraphQLObjectType) env.getSchema().getType(entry.getKey());
-//                         }
-//                     }
-//                 }
-//                 return null;
-//            };
-//
-//            // add the type resolver to all interfaces and the Query object
-//            setInterfaces.forEach(t -> {
-//                builder.type(t.getName(), tr -> tr.typeResolver(typeResolver));
-//            });
-//            builder.type(getQueryName(), tr -> tr.typeResolver(typeResolver));
-//        }
-//
-//        // register the scalars
-//        getScalars().forEach(s -> builder.scalar(s.getGraphQLScalarType()));
-//
-//        // we should now have the query runtime binding
-//        builder.type(typeRuntimeBuilder);
-//
-//        // search for any types that have field definitions with DataFetchers
-//        getTypes().forEach(t -> {
-//            boolean hasDataFetchers = t.getFieldDefinitions().stream().filter(fd -> fd.getDataFetcher() != null).count() > 0;
-//            if (hasDataFetchers) {
-//               final TypeRuntimeWiring.Builder runtimeBuilder = newTypeWiring(t.getName());
-//               t.getFieldDefinitions().stream()
-//                       .filter(fd -> fd.getDataFetcher() != null)
-//                       .forEach(fd -> runtimeBuilder.dataFetcher(fd.getName(), fd.getDataFetcher()));
-//               builder.type(runtimeBuilder);
-//            }
-//        });
+
+        // register a type resolver for any interfaces if we have at least one
+        Set<SchemaType> setInterfaces = getTypes().stream().filter(SchemaType::isInterface).collect(Collectors.toSet());
+        if (setInterfaces.size() > 0) {
+            final Map<String, String> mapTypes = new HashMap<>();
+
+            getTypes().stream().filter(t -> !t.isInterface()).forEach(t -> mapTypes.put(t.getName(), t
+                    .getValueClassName()));
+
+            // generate a TypeResolver for all types that are not interfaces
+            TypeResolver typeResolver = env -> {
+                Object o = env.getObject();
+                for (Map.Entry<String, String> entry : mapTypes.entrySet()) {
+                    String valueClass = entry.getValue();
+                    if (valueClass != null) {
+                        Class<?> typeClass = getSafeClass(entry.getValue());
+                        if (typeClass != null && typeClass.isAssignableFrom(o.getClass())) {
+                            return (GraphQLObjectType) env.getSchema().getType(entry.getKey());
+                        }
+                    }
+                }
+                return null;
+            };
+
+            // add the type resolver to all interfaces and the Query object
+            setInterfaces.forEach(t -> {
+                builder.type(t.getName(), tr -> tr.typeResolver(typeResolver));
+            });
+            builder.type(getQueryName(), tr -> tr.typeResolver(typeResolver));
+        }
+
+        // register the scalars
+        getScalars().forEach(s -> builder.scalar(s.getGraphQLScalarType()));
+
+        // we should now have the query runtime binding
+        builder.type(typeRuntimeBuilder);
+
+        // search for any types that have field definitions with DataFetchers
+        getTypes().forEach(t -> {
+            boolean hasDataFetchers = t.getFieldDefinitions().stream().filter(fd -> fd.getDataFetcher() != null)
+                    .count() > 0;
+            if (hasDataFetchers) {
+                final TypeRuntimeWiring.Builder runtimeBuilder = newTypeWiring(t.getName());
+                t.getFieldDefinitions().stream()
+                        .filter(fd -> fd.getDataFetcher() != null)
+                        .forEach(fd -> runtimeBuilder.dataFetcher(fd.getName(), fd.getDataFetcher()));
+                builder.type(runtimeBuilder);
+            }
+        });
 
         return builder.build();
     }
-//
-//    /**
-//     * Register the Coherence Cache {@link org.dataloader.DataLoader}s with the {@link CoherenceGraphQLContext}.
-//     *
-//     * @param context {@link CoherenceGraphQLContext}
-//     */
-//    public void registerDataLoaders(CoherenceGraphQLContext context) {
-//        //  Create the top level Query Runtime wiring
-//        Type queryType = getTypeByName(getQueryName());
-//
-//        if (queryType == null) {
-//            throw new IllegalStateException("No type exists for query of name " + getQueryName());
-//        }
-//
-//        CoherenceDataLoader coherenceDataLoader = new CoherenceDataLoader(context);
-//
-//        queryType.getFieldDefinitions().forEach(fd -> {
-//            // retrieve the Type for the return type so we can get the mapped cache name
-//            Type returnType = getTypeByName(fd.getReturnType());
-//            if (!fd.isArrayReturnType()) {
-//                // only register DataLoader for non-array return types
-//                String cacheMapping = fd.getCacheMapping();
-//
-//                String returnClassName = returnType == null
-//                        ? null
-//                        : returnType.getKeyClassName();
-//                context.registerDataLoader(cacheMapping, coherenceDataLoader.newDataLoader(cacheMapping, returnClassName));
-//            }
-//        });
-//    }
 
     /**
-     * Return a {@link Type} that matches the type name.
+     * Return a {@link SchemaType} that matches the type name.
      *
      * @param typeName type name to match
-     * @return a {@link Type} that matches the type name or null if none found
+     * @return a {@link SchemaType} that matches the type name or null if none found
      */
-    public Type getTypeByName(String typeName) {
-        for (Type type : listTypes) {
-            if (type.getName().equals(typeName)) {
-                return type;
+    public SchemaType getTypeByName(String typeName) {
+        for (SchemaType schemaType : listSchemaTypes) {
+            if (schemaType.getName().equals(typeName)) {
+                return schemaType;
             }
         }
         return null;
     }
 
     /**
-     * Return a {@link Enum} that matches the enum name.
+     * Return a {@link SchemaEnum} that matches the enum name.
      *
      * @param enumName type name to match
-     * @return a {@link Enum} that matches the enum name or null if none found
+     * @return a {@link SchemaEnum} that matches the enum name or null if none found
      */
-    public Enum getEnumByName(String enumName) {
-        for (Enum enum1 : listEnums) {
-            if (enum1.getName().equals(enumName)) {
-                return enum1;
+    public SchemaEnum getEnumByName(String enumName) {
+        for (SchemaEnum schemaEnum1 : listSchemaEnums) {
+            if (schemaEnum1.getName().equals(enumName)) {
+                return schemaEnum1;
             }
         }
         return null;
     }
 
     /**
-     * Returns a {@link Scalar} which matches the provided class name.
-     * @param actualClazz  the class name to match
-     * @return {@link Scalar} or null if none found
+     * Returns a {@link SchemaScalar} which matches the provided class name.
+     *
+     * @param actualClazz the class name to match
+     * @return {@link SchemaScalar} or null if none found
      */
-    public Scalar getScalarByActualClass(String actualClazz) {
-        for (Scalar scalar : getScalars()) {
-            if (scalar.getActualClass().equals(actualClazz)) {
-                return scalar;
+    public SchemaScalar getScalarByActualClass(String actualClazz) {
+        for (SchemaScalar schemaScalar : getScalars()) {
+            if (schemaScalar.getActualClass().equals(actualClazz)) {
+                return schemaScalar;
             }
         }
         return null;
     }
 
     /**
-     * Returns true of the {@link Type} with the the given name is present for this {@link Schema}.
+     * Returns true of the {@link SchemaType} with the the given name is present for this {@link Schema}.
      *
      * @param type type name to search for
      * @return true if the type name is contained within the type list
      */
     public boolean containsTypeWithName(String type) {
-        return listTypes.stream().filter(t -> t.getName().equals(type)).count() == 1;
+        return listSchemaTypes.stream().filter(t -> t.getName().equals(type)).count() == 1;
     }
 
     /**
-     * Returns true of the {@link Scalar} with the the given name is present for this {@link Schema}.
+     * Returns true of the {@link SchemaScalar} with the the given name is present for this {@link Schema}.
      *
      * @param scalar the scalar name to search for
      * @return true if the scalar name is contained within the scalar list
      */
     public boolean containsScalarWithName(String scalar) {
-        return listScalars.stream().filter(s -> s.getName().equals(scalar)).count() == 1;
+        return listSchemaScalars.stream().filter(s -> s.getName().equals(scalar)).count() == 1;
     }
 
     /**
-     * Returns true of the {@link Enum} with the the given name is present for this {@link Schema}.
+     * Returns true of the {@link SchemaEnum} with the the given name is present for this {@link Schema}.
      *
      * @param enumName the enum name to search for
      * @return true if the enum name is contained within the enum list
      */
     public boolean containsEnumWithName(String enumName) {
-        return listEnums.stream().filter(e -> e.getName().equals(enumName)).count() == 1;
+        return listSchemaEnums.stream().filter(e -> e.getName().equals(enumName)).count() == 1;
     }
 
     /**
-     * Add a new {@link Type}.
+     * Add a new {@link SchemaType}.
      *
-     * @param type new {@link Type} to add
+     * @param schemaType new {@link SchemaType} to add
      */
-    public void addType(Type type) {
-        listTypes.add(type);
+    public void addType(SchemaType schemaType) {
+        listSchemaTypes.add(schemaType);
     }
 
     /**
-     * Add a new {@link Scalar}.
+     * Add a new {@link SchemaScalar}.
      *
-     * @param scalar new {@link Scalar} to add.
+     * @param schemaScalar new {@link SchemaScalar} to add.
      */
-    public void addScalar(Scalar scalar) {
-        listScalars.add(scalar);
+    public void addScalar(SchemaScalar schemaScalar) {
+        listSchemaScalars.add(schemaScalar);
     }
 
     /**
-     * Add a new {@link Directive}.
+     * Add a new {@link SchemaDirective}.
      *
-     * @param directive new {@link Directive} to add
+     * @param schemaDirective new {@link SchemaDirective} to add
      */
-    public void addDirective(Directive directive) {
-        listDirectives.add(directive);
+    public void addDirective(SchemaDirective schemaDirective) {
+        listSchemaDirectives.add(schemaDirective);
     }
 
     /**
-     * Add a new {@link InputType}.
+     * Add a new {@link SchemaInputType}.
      *
-     * @param inputType new {@link InputType} to add
+     * @param inputType new {@link SchemaInputType} to add
      */
-    public void addInputType(InputType inputType) {
+    public void addInputType(SchemaInputType inputType) {
         listInputTypes.add(inputType);
     }
 
     /**
-     * Add a new {@link Enum}.
+     * Add a new {@link SchemaEnum}.
      *
-     * @param enumToAdd new {@link Enum} to add
+     * @param schemaEnumToAdd new {@link SchemaEnum} to add
      */
-    public void addEnum(Enum enumToAdd) {
-        listEnums.add(enumToAdd);
+    public void addEnum(SchemaEnum schemaEnumToAdd) {
+        listSchemaEnums.add(schemaEnumToAdd);
     }
 
     /**
-     * Return the {@link List} of {@link Type}s.
-     * @return the {@link List} of {@link Type}s
+     * Return the {@link List} of {@link SchemaType}s.
+     *
+     * @return the {@link List} of {@link SchemaType}s
      */
-    public List<Type> getTypes() {
-        return listTypes;
+    public List<SchemaType> getTypes() {
+        return listSchemaTypes;
     }
 
     /**
-     * Return the {@link List} of {@link Scalar}s.
-     * @return the {@link List} of {@link Scalar}s
+     * Return the {@link List} of {@link SchemaScalar}s.
+     *
+     * @return the {@link List} of {@link SchemaScalar}s
      */
-    public List<Scalar> getScalars() {
-        return listScalars;
+    public List<SchemaScalar> getScalars() {
+        return listSchemaScalars;
     }
 
     /**
-     * Return the {@link List} of {@link Directive}s.
-     * @return the {@link List} of {@link Directive}s
+     * Return the {@link List} of {@link SchemaDirective}s.
+     *
+     * @return the {@link List} of {@link SchemaDirective}s
      */
-    public List<Directive> getDirectives() {
-        return listDirectives;
+    public List<SchemaDirective> getDirectives() {
+        return listSchemaDirectives;
     }
 
     /**
-     * Return the {@link List} of {@link InputType}s.
-     * @return the {@link List} of {@link InputType}s
+     * Return the {@link List} of {@link SchemaInputType}s.
+     *
+     * @return the {@link List} of {@link SchemaInputType}s
      */
-    public List<InputType> getInputTypes() {
+    public List<SchemaInputType> getInputTypes() {
         return listInputTypes;
     }
 
     /**
-     * Return the {@link List} of {@link Enum}s.
-     * @return the {@link List} of {@link Enum}s
+     * Return the {@link List} of {@link SchemaEnum}s.
+     *
+     * @return the {@link List} of {@link SchemaEnum}s
      */
-    public List<Enum> getEnums() {
-        return listEnums;
+    public List<SchemaEnum> getEnums() {
+        return listSchemaEnums;
     }
 
     /**
      * Return the query name.
+     *
      * @return the query name
      */
     public String getQueryName() {

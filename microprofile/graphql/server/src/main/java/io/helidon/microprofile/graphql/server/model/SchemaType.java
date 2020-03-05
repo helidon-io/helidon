@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * The representation of a GraphQL Type.
  */
-public class Type extends AbstractDescriptiveElement
+public class SchemaType extends AbstractDescriptiveElement
         implements SchemaGenerator {
 
     /**
@@ -32,42 +32,35 @@ public class Type extends AbstractDescriptiveElement
     private final String name;
 
     /**
-     * Key class name.
-     */
-    private String keyClassName;
-
-    /**
      * Value class name.
      */
     private final String valueClassName;
 
     /**
-     * Indicates if the {@link Type} is an interface.
+     * Indicates if the {@link SchemaType} is an interface.
      */
     private boolean isInterface;
 
     /**
-     * The interface that this {@link Type} implements.
+     * The interface that this {@link SchemaType} implements.
      */
     private String implementingInterface;
 
     /**
-     * {@link List} of {@link FieldDefinition}.
+     * {@link List} of {@link SchemaFieldDefinition}.
      */
-    private final List<FieldDefinition> listFieldDefinitions;
+    private final List<SchemaFieldDefinition> listSchemaFieldDefinitions;
 
     /**
      * Construct a @{link Type} with the given arguments.
      *
      * @param name           name of the Type
-     * @param keyClassName   key class name
      * @param valueClassName value class name
      */
-    public Type(String name, String keyClassName, String valueClassName) {
+    public SchemaType(String name, String valueClassName) {
         this.name = name;
-        this.keyClassName = keyClassName;
         this.valueClassName = valueClassName;
-        this.listFieldDefinitions = new ArrayList<>();
+        this.listSchemaFieldDefinitions = new ArrayList<>();
     }
 
     /**
@@ -87,7 +80,7 @@ public class Type extends AbstractDescriptiveElement
         }
         sb.append(SPACER).append(OPEN_CURLY).append(NEWLINE);
 
-        listFieldDefinitions.forEach(fd -> sb.append(fd.getSchemaAsString()).append(NEWLINE));
+        listSchemaFieldDefinitions.forEach(fd -> sb.append(fd.getSchemaAsString()).append(NEWLINE));
 
         // for each
         sb.append(CLOSE_CURLY).append(NEWLINE);
@@ -96,13 +89,13 @@ public class Type extends AbstractDescriptiveElement
     }
 
     /**
-     * Generates a {@link InputType} from the current {@link Type}.
+     * Generates a {@link SchemaInputType} from the current {@link SchemaType}.
      *
      * @param sSuffix the suffix to add to the type as it must be unique within Type and InputType
-     * @return an new {@link InputType}
+     * @return an new {@link SchemaInputType}
      */
-    public InputType createInputType(String sSuffix) {
-        InputType inputType = new InputType(getName() + sSuffix, getKeyClassName(), getValueClassName());
+    public SchemaInputType createInputType(String sSuffix) {
+        SchemaInputType inputType = new SchemaInputType(getName() + sSuffix, getValueClassName());
         getFieldDefinitions().forEach(fd -> {
             fd.getArguments().clear();
             inputType.addFieldDefinition(fd);
@@ -111,39 +104,21 @@ public class Type extends AbstractDescriptiveElement
     }
 
     /**
-     * Set the key class name for the @{link Type}.
+     * Set if the {@link SchemaType} is an interface.
      *
-     * @param keyClassName the key class name for the @{link Type}
-     */
-    public void setKeyClassName(String keyClassName) {
-        this.keyClassName = keyClassName;
-    }
-
-    /**
-     * Set if the {@link Type} is an interface.
-     *
-     * @param isInterface indicates if the {@link Type} is an interface;
+     * @param isInterface indicates if the {@link SchemaType} is an interface;
      */
     public void setIsInterface(boolean isInterface) {
         this.isInterface = isInterface;
     }
 
     /**
-     * Return the name of the {@link Type}.
+     * Return the name of the {@link SchemaType}.
      *
-     * @return the name of the {@link Type}
+     * @return the name of the {@link SchemaType}
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Return the key class name for the @{link Type}.
-     *
-     * @return the key class name for the @{link Type}.
-     */
-    public String getKeyClassName() {
-        return keyClassName;
     }
 
     /**
@@ -156,48 +131,48 @@ public class Type extends AbstractDescriptiveElement
     }
 
     /**
-     * Return the {@link List} of {@link FieldDefinition}s.
+     * Return the {@link List} of {@link SchemaFieldDefinition}s.
      *
-     * @return the {@link List} of {@link FieldDefinition}s
+     * @return the {@link List} of {@link SchemaFieldDefinition}s
      */
-    public List<FieldDefinition> getFieldDefinitions() {
-        return listFieldDefinitions;
+    public List<SchemaFieldDefinition> getFieldDefinitions() {
+        return listSchemaFieldDefinitions;
     }
 
     /**
-     * Indicates if the {@link Type} is an interface.
+     * Indicates if the {@link SchemaType} is an interface.
      *
-     * @return if the {@link Type} is an interface.
+     * @return if the {@link SchemaType} is an interface.
      */
     public boolean isInterface() {
         return isInterface;
     }
 
     /**
-     * Return the interface that this {@link Type} implements.
+     * Return the interface that this {@link SchemaType} implements.
      *
-     * @return the interface that this {@link Type} implements
+     * @return the interface that this {@link SchemaType} implements
      */
     public String getImplementingInterface() {
         return implementingInterface;
     }
 
     /**
-     * Set the interface that this {@link Type} implements.
+     * Set the interface that this {@link SchemaType} implements.
      *
-     * @param implementingInterface the interface that this {@link Type} implements
+     * @param implementingInterface the interface that this {@link SchemaType} implements
      */
     public void setImplementingInterface(String implementingInterface) {
         this.implementingInterface = implementingInterface;
     }
 
     /**
-     * Add a {@link FieldDefinition} to the {@link Type}.
+     * Add a {@link SchemaFieldDefinition} to the {@link SchemaType}.
      *
-     * @param fieldDefinition {@link FieldDefinition}
+     * @param schemaFieldDefinition {@link SchemaFieldDefinition}
      */
-    public void addFieldDefinition(FieldDefinition fieldDefinition) {
-        listFieldDefinitions.add(fieldDefinition);
+    public void addFieldDefinition(SchemaFieldDefinition schemaFieldDefinition) {
+        listSchemaFieldDefinitions.add(schemaFieldDefinition);
     }
 
     @Override
@@ -208,25 +183,23 @@ public class Type extends AbstractDescriptiveElement
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Type type = (Type) o;
-        return isInterface == type.isInterface
-                && Objects.equals(name, type.name)
-                && Objects.equals(keyClassName, type.keyClassName)
-                && Objects.equals(valueClassName, type.valueClassName)
-                && Objects.equals(implementingInterface, type.implementingInterface)
-                && Objects.equals(listFieldDefinitions, type.listFieldDefinitions)
-                && Objects.equals(getDescription(), type.getDescription());
+        SchemaType schemaType = (SchemaType) o;
+        return isInterface == schemaType.isInterface
+                && Objects.equals(name, schemaType.name)
+                && Objects.equals(valueClassName, schemaType.valueClassName)
+                && Objects.equals(implementingInterface, schemaType.implementingInterface)
+                && Objects.equals(listSchemaFieldDefinitions, schemaType.listSchemaFieldDefinitions)
+                && Objects.equals(getDescription(), schemaType.getDescription());
     }
 
     @Override
     public int hashCode() {
         int result = Objects.hash(name,
-                                  keyClassName,
                                   valueClassName,
                                   isInterface,
                                   implementingInterface,
                                   getDescription(),
-                                  listFieldDefinitions);
+                                  listSchemaFieldDefinitions);
         return result;
     }
 
@@ -243,18 +216,17 @@ public class Type extends AbstractDescriptiveElement
     protected String toStringInternal() {
         return "{"
                 + "name='" + name + '\''
-                + ", keyClassName='" + keyClassName + '\''
                 + ", valueClassName='" + valueClassName + '\''
                 + ", isInterface='" + isInterface + '\''
                 + ", description='" + getDescription() + '\''
                 + ", implementingInterface='" + implementingInterface + '\''
-                + ", listFieldDefinitions=" + listFieldDefinitions + '}';
+                + ", listFieldDefinitions=" + listSchemaFieldDefinitions + '}';
     }
 
     /**
-     * Return the GraphQL name for this {@link Type}.
+     * Return the GraphQL name for this {@link SchemaType}.
      *
-     * @return the GraphQL name for this {@link Type}.
+     * @return the GraphQL name for this {@link SchemaType}.
      */
     protected String getGraphQLName() {
         return isInterface() ? "interface" : "type";

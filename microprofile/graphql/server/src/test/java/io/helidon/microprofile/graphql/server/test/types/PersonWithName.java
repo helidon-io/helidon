@@ -14,13 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.graphql.server.resource;
+package io.helidon.microprofile.graphql.server.test.types;
 
-import org.junit.jupiter.api.Test;
+import org.eclipse.microprofile.graphql.Type;
 
-class GraphQLResourceTest {
-    @Test
-    public void test() {
 
+/**
+ * Class to test Type annotation with value.
+ */
+@Type("Person")
+public class PersonWithName {
+    private int personId;
+
+    public PersonWithName(int personId) {
+        this.personId = personId;
+    }
+
+    public int getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(int personId) {
+        this.personId = personId;
     }
 }

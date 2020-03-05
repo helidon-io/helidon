@@ -19,25 +19,24 @@ package io.helidon.microprofile.graphql.server.model;
 /**
  * The representation of a GraphQL Input Type.
  */
-public class InputType extends Type {
+public class SchemaInputType extends SchemaType {
 
     /**
-     * Construct an {@link InputType}.
+     * Construct an {@link SchemaInputType}.
      *
      * @param name           name for the input type
-     * @param keyClassName   fully qualified key class name
      * @param valueClassName fully qualified value name
      */
-    public InputType(String name, String keyClassName, String valueClassName) {
-        super(name, keyClassName, valueClassName);
+    public SchemaInputType(String name, String valueClassName) {
+        super(name, valueClassName);
     }
 
     @Override
-    public void addFieldDefinition(FieldDefinition fieldDefinition) {
-        if (fieldDefinition.getArguments().size() > 0) {
+    public void addFieldDefinition(SchemaFieldDefinition schemaFieldDefinition) {
+        if (schemaFieldDefinition.getArguments().size() > 0) {
             throw new IllegalArgumentException("input types cannot have fields with arguments");
         }
-        super.addFieldDefinition(fieldDefinition);
+        super.addFieldDefinition(schemaFieldDefinition);
     }
 
     @Override

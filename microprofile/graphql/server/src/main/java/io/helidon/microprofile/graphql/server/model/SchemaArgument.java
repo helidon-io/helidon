@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * The representation of a GraphQL Argument or Parameter.
  */
-public class Argument extends AbstractDescriptiveElement
+public class SchemaArgument extends AbstractDescriptiveElement
         implements SchemaGenerator {
     /**
      * Argument name.
@@ -44,14 +44,14 @@ public class Argument extends AbstractDescriptiveElement
     private final Object defaultValue;
 
     /**
-     * Construct a {@link Argument} instance.
+     * Construct a {@link SchemaArgument} instance.
      *
      * @param argumentName name of the argument
      * @param argumentType type of the argument
      * @param isMandatory  indicates if the argument is mandatory
      * @param defaultValue  default value for the argument
      */
-    public Argument(String argumentName, String argumentType, boolean isMandatory, Object defaultValue) {
+    public SchemaArgument(String argumentName, String argumentType, boolean isMandatory, Object defaultValue) {
         this.argumentName = argumentName;
         this.argumentType = argumentType;
         this.isMandatory = isMandatory;
@@ -158,12 +158,12 @@ public class Argument extends AbstractDescriptiveElement
         if (!super.equals(o)) {
             return false;
         }
-        Argument argument = (Argument) o;
-        return isMandatory == argument.isMandatory
-                && Objects.equals(argumentName, argument.argumentName)
-                && Objects.equals(argumentType, argument.argumentType)
-                && Objects.equals(getDescription(), argument.getDescription())
-                && Objects.equals(defaultValue, argument.defaultValue);
+        SchemaArgument schemaArgument = (SchemaArgument) o;
+        return isMandatory == schemaArgument.isMandatory
+                && Objects.equals(argumentName, schemaArgument.argumentName)
+                && Objects.equals(argumentType, schemaArgument.argumentType)
+                && Objects.equals(getDescription(), schemaArgument.getDescription())
+                && Objects.equals(defaultValue, schemaArgument.defaultValue);
     }
 
     @Override

@@ -23,7 +23,7 @@ import graphql.schema.GraphQLScalarType;
 /**
  * The representation of a GraphQL Scalar.
  */
-public class Scalar implements SchemaGenerator {
+public class SchemaScalar implements SchemaGenerator {
 
     /**
      * Name of the Scalar.
@@ -36,36 +36,36 @@ public class Scalar implements SchemaGenerator {
     private String actualClass;
 
     /**
-     * {@link GraphQLScalarType} to convert this {@link Scalar}.
+     * {@link GraphQLScalarType} to convert this {@link SchemaScalar}.
      */
     private GraphQLScalarType graphQLScalarType;
 
     /**
-     * Construct a {@link Scalar}.
+     * Construct a {@link SchemaScalar}.
      *
      * @param name              name
      * @param actualClass       actual class name
-     * @param graphQLScalarType {@link GraphQLScalarType} to convert this {@link Scalar}.
+     * @param graphQLScalarType {@link GraphQLScalarType} to convert this {@link SchemaScalar}.
      */
-    public Scalar(String name, String actualClass, GraphQLScalarType graphQLScalarType) {
+    public SchemaScalar(String name, String actualClass, GraphQLScalarType graphQLScalarType) {
         this.name = name;
         this.actualClass = actualClass;
         this.graphQLScalarType = graphQLScalarType;
     }
 
     /**
-     * Return the name of the {@link Scalar}.
+     * Return the name of the {@link SchemaScalar}.
      *
-     * @return the name of the {@link Scalar}
+     * @return the name of the {@link SchemaScalar}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Return the actual class name of the {@link Scalar}.
+     * Return the actual class name of the {@link SchemaScalar}.
      *
-     * @return the actual class name of the {@link Scalar}
+     * @return the actual class name of the {@link SchemaScalar}
      */
     public String getActualClass() {
         return actualClass;
@@ -95,10 +95,10 @@ public class Scalar implements SchemaGenerator {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Scalar scalar = (Scalar) o;
-        return Objects.equals(name, scalar.name)
-                && Objects.equals(actualClass, scalar.actualClass)
-                && Objects.equals(graphQLScalarType, scalar.graphQLScalarType);
+        SchemaScalar schemaScalar = (SchemaScalar) o;
+        return Objects.equals(name, schemaScalar.name)
+                && Objects.equals(actualClass, schemaScalar.actualClass)
+                && Objects.equals(graphQLScalarType, schemaScalar.graphQLScalarType);
     }
 
     @Override

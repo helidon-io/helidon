@@ -26,6 +26,8 @@ module helidon.microprofile.graphql.server {
     requires graphql.java;
     requires microprofile.graphql.api;
     requires graphql.java.extended.scalars;
+    requires java.desktop;
+    requires java.json.bind;
 
     exports io.helidon.microprofile.graphql.server.application;
 
