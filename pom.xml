@@ -843,6 +843,16 @@
                 <version>${version.lib.microprofile-openapi-api}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                <artifactId>microprofile-reactive-streams-operators-tck</artifactId>
+                <version>${version.lib.microprofile-reactive-streams-operators-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
+                <artifactId>microprofile-reactive-messaging-tck</artifactId>
+                <version>${version.lib.microprofile-reactive-messaging-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${version.lib.testng}</version>

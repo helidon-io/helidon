@@ -66,10 +66,6 @@ class IncomingMethod extends AbstractMessagingMethod {
             try {
                 switch (getType()) {
                     case INCOMING_SUBSCRIBER_MSG_2_VOID:
-                        Subscriber<? super Object> originalMsgSubscriber =
-                                (Subscriber<? super Object>) getMethod().invoke(getBeanInstance());
-                        subscriber = new ProxySubscriber<>(this, originalMsgSubscriber);
-                        break;
                     case INCOMING_SUBSCRIBER_PAYL_2_VOID:
                         Subscriber<? super Object> originalPaylSubscriber =
                                 (Subscriber<? super Object>) getMethod().invoke(getBeanInstance());

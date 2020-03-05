@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
+            <groupId>io.helidon.microprofile.messaging</groupId>
             <artifactId>helidon-microprofile-messaging</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>io.helidon.microprofile</groupId>
+                    <groupId>io.helidon.microprofile.reactive-streams</groupId>
                     <artifactId>helidon-microprofile-reactive-streams</artifactId>
                 </exclusion>
             </exclusions>
@@ -48,33 +48,22 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <!-- Workaround for TCKs expecting smallrye-like operators behaviour -->
+            <!-- https://github.com/eclipse/microprofile-reactive-messaging/issues/95 -->
             <groupId>io.smallrye.reactive</groupId>
             <artifactId>smallrye-reactive-streams-operators</artifactId>
             <version>1.0.10</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>rxjava</artifactId>
-                    <groupId>io.reactivex.rxjava2</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
-            <artifactId>microprofile-reactive-messaging-tck</artifactId>
-            <version>1.0</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>rxjava</artifactId>
-                    <groupId>io.reactivex.rxjava2</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.reactivex.rxjava2</groupId>
             <artifactId>rxjava</artifactId>
             <version>2.2.13</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
+            <artifactId>microprofile-reactive-messaging-tck</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

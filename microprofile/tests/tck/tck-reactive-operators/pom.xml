@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
+  ~ Copyright (c)  2020 Oracle and/or its affiliates.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -42,14 +42,13 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
+            <groupId>io.helidon.microprofile.reactive-streams</groupId>
             <artifactId>helidon-microprofile-reactive-streams</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
             <artifactId>microprofile-reactive-streams-operators-tck</artifactId>
-            <version>1.0.1</version>
         </dependency>
     </dependencies>
 
