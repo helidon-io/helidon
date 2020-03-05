@@ -148,7 +148,7 @@ public interface WebClientRequestBuilder {
     /**
      * Register new message body writer.
      *
-     * @param messageBodyWriter
+     * @param messageBodyWriter message body writer
      * @return updated builder instance
      */
     WebClientRequestBuilder register(MessageBodyWriter<?> messageBodyWriter);
@@ -156,7 +156,7 @@ public interface WebClientRequestBuilder {
     /**
      * Register new message body reader.
      *
-     * @param messageBodyReader
+     * @param messageBodyReader message body reader
      * @return updated builder instance
      */
     WebClientRequestBuilder register(MessageBodyReader<?> messageBodyReader);

@@ -256,6 +256,7 @@ public interface Proxy {
         /**
          * Configure proxy from environment variables and system properties.
          *
+         * @param useIt use system selector
          * @return updated builder instance
          */
         public Builder useSystemSelector(boolean useIt) {
