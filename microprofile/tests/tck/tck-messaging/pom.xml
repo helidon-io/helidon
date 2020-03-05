@@ -33,6 +33,7 @@
         <dependency>
             <groupId>io.helidon.microprofile.messaging</groupId>
             <artifactId>helidon-microprofile-messaging</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
