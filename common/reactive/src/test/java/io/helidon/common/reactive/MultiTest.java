@@ -208,7 +208,7 @@ public class MultiTest {
             }
         }).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
