@@ -15,15 +15,18 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -180,7 +183,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      */
     default Single<List<T>> collectList() {
-        return collect(new ListCollector<>());
+        return collect(ArrayList::new, List::add);
     }
 
     /**
@@ -192,9 +195,38 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if collector is {@code null}
      */
     default <U> Single<U> collect(Collector<T, U> collector) {
-        MultiCollectingProcessor<? super T, U> processor = new MultiCollectingProcessor<>(collector);
-        this.subscribe(processor);
-        return processor;
+        return collect(() -> collector, Collector::collect).map(Collector::value);
+    }
+
+    /**
+     * Collect the items of this {@link Multi} into a collection provided via a {@link Supplier}
+     * and mutated by a {@code BiConsumer} callback.
+     * @param collectionSupplier the {@link Supplier} that is called for each incoming {@link Subscriber}
+     *                           to create a fresh collection to collect items into
+     * @param accumulator the {@link BiConsumer} that receives the collection and the current item to put in
+     * @param <U> the type of the collection and result
+     * @return Single
+     * @throws NullPointerException if {@code collectionSupplier} or {@code combiner} is {@code null}
+     */
+    default <U> Single<U> collect(Supplier<U> collectionSupplier, BiConsumer<U, T> accumulator) {
+        Objects.requireNonNull(collectionSupplier, "collectionSupplier is null");
+        Objects.requireNonNull(accumulator, "combiner is null");
+        return new MultiCollectPublisher<>(this, collectionSupplier, accumulator);
+    }
+
+    /**
+     * Collects up upstream items with the help of a the callbacks of
+     * a {@link java.util.stream.Collector}.
+     * @param collector the collector whose {@code supplier()}, {@code accumulator()} and {@code finisher()} callbacks
+     *                  are used for collecting upstream items into a final form.
+     * @param <A> the accumulator type
+     * @param <R> the result type
+     * @return Single
+     * @throws NullPointerException if {@code collector} is {@code null}
+     */
+    default <A, R> Single<R> collectStream(java.util.stream.Collector<T, A, R> collector) {
+        Objects.requireNonNull(collector, "collector is null");
+        return new MultiCollectorPublisher<>(this, collector);
     }
 
     /**
