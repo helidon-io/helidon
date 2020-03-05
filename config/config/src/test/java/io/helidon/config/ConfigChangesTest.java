@@ -516,9 +516,10 @@ public class ConfigChangesTest {
         //MOCK onNextFunction
         CountDownLatch onNextLatch = new CountDownLatch(1);
         AtomicReference<Config> newConfigReference = new AtomicReference<>();
+
         Consumer<Config> onNextFunction = aConfig -> {
-            onNextLatch.countDown();
             newConfigReference.set(aConfig);
+            onNextLatch.countDown();
         };
 
         // register subscriber
@@ -527,7 +528,6 @@ public class ConfigChangesTest {
         TimeUnit.MILLISECONDS.sleep(20);
 
         // change config source
-        TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         configSource.changeLoadedObjectNode(
                 ObjectNode.builder().addValue("key1", "string value 2").build());
 
