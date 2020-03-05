@@ -163,6 +163,8 @@ public class ConfigContextTest {
 
         // RELOAD config
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure the timestamp changes.
+        // wait until the change is propagated
+        listener.get(500, true);
         Config reloaded = c.config.context().reload();
 
         // new config -> new timestamp

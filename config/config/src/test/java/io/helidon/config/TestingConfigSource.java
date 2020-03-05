@@ -34,8 +34,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class TestingConfigSource extends AbstractConfigSource
         implements PollableSource<Instant>, NodeConfigSource {
 
-    private Instant timestamp;
-    private ObjectNode loadedObjectNode;
+    private volatile Instant timestamp;
+    private volatile ObjectNode loadedObjectNode;
     private String uid;
 
     public TestingConfigSource(Builder builder) {
