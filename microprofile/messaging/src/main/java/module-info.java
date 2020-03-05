@@ -29,5 +29,7 @@ module io.helidon.microprofile.messaging {
     requires microprofile.reactive.messaging.api;
     requires microprofile.reactive.streams.operators.api;
 
+    exports io.helidon.microprofile.messaging;
+
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.messaging.MessagingCdiExtension;
 }

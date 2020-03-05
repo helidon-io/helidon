@@ -32,8 +32,10 @@ import java.util.function.BiConsumer;
  */
 class CompletableQueue<T> {
 
+    private static final long MAX_QUEUE_SIZE = 1024;
     private final ReentrantLock queueLock = new ReentrantLock();
     private final LinkedList<Item<T>> queue = new LinkedList<>();
+    private long size = 0;
     private volatile BiConsumer<Item<T>, ? super Throwable> onEachComplete;
 
     private CompletableQueue(final BiConsumer<Item<T>, ? super Throwable> onEachComplete) {
@@ -72,6 +74,9 @@ class CompletableQueue<T> {
         try {
             queueLock.lock();
             queue.add(Item.create(future, metadata));
+            if (++size > MAX_QUEUE_SIZE) {
+                throw new CompletableQueueOverflowException(MAX_QUEUE_SIZE);
+            }
             future.whenComplete((t, u) -> tryFlush());
         } finally {
             queueLock.unlock();
@@ -92,15 +97,19 @@ class CompletableQueue<T> {
     private void tryFlush() {
         try {
             queueLock.lock();
-            if (onEachComplete == null) return;
-            while (!queue.isEmpty() && queue.getFirst().getCompletableFuture().isDone()) {
-                var item = queue.poll();
-                if (Objects.isNull(item)) return;
-                item.setValue(item.getCompletableFuture().get());
-                onEachComplete.accept(item, null);
+            var onEachComplete = this.onEachComplete;
+            try {
+                if (onEachComplete == null) return;
+                while (!queue.isEmpty() && queue.getFirst().getCompletableFuture().isDone()) {
+                    var item = queue.poll();
+                    if (Objects.isNull(item)) return;
+                    size--;
+                    item.setValue(item.getCompletableFuture().get());
+                    onEachComplete.accept(item, null);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                onEachComplete.accept(null, e);
             }
-        } catch (InterruptedException | ExecutionException e) {
-            onEachComplete.accept(null, e);
         } finally {
             queueLock.unlock();
         }

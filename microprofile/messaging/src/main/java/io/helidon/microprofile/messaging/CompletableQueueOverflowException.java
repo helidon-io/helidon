@@ -18,18 +18,18 @@
 package io.helidon.microprofile.messaging;
 
 /**
- * Wrapper for all exceptions raised during stream passage.
+ * Raised when {@link io.helidon.microprofile.messaging.CompletableQueue} max size is reached.
  */
-public class MessagingStreamException extends RuntimeException {
+public class CompletableQueueOverflowException extends RuntimeException {
 
-    private static final long serialVersionUID = -4092879455705923455L;
+    private static final long serialVersionUID = 4510381373545074118L;
 
     /**
-     * Create new {@link MessagingStreamException}.
+     * Create new {@link io.helidon.microprofile.messaging.CompletableQueueOverflowException}.
      *
-     * @param cause wrapped exception
+     * @param maxSize maxim allowed size of queue
      */
-    public MessagingStreamException(Throwable cause) {
-        super(cause);
+    public CompletableQueueOverflowException(long maxSize) {
+        super(String.format("Maximum size %d of queue overflow!", maxSize));
     }
 }
