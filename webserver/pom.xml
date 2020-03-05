@@ -36,5 +36,6 @@
         <module>jersey</module>
         <module>test-support</module>
         <module>access-log</module>
+        <module>tyrus</module>
     </modules>
 </project>

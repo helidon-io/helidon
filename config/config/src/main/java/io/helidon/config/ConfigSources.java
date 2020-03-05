@@ -57,7 +57,6 @@ import static java.util.Objects.requireNonNull;
  */
 public final class ConfigSources {
 
-    private static final String SOURCES_KEY = "sources";
     static final String DEFAULT_MAP_NAME = "map";
     static final String DEFAULT_PROPERTIES_NAME = "properties";
 
@@ -757,9 +756,7 @@ public final class ConfigSources {
             Map<String, String> result = new HashMap<>();
 
             System.getProperties().stringPropertyNames()
-                    .forEach(it -> {
-                        result.put(it, System.getProperty(it));
-                    });
+                    .forEach(it -> result.put(it, System.getProperty(it)));
 
             return result;
         }

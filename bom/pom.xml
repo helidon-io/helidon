@@ -63,6 +63,11 @@
                 <artifactId>helidon-webserver-test-support</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-tyrus</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Helidon Jersey -->
             <dependency>
                 <groupId>io.helidon.jersey</groupId>
@@ -421,6 +426,11 @@
                 <artifactId>helidon-microprofile-access-log</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.websocket</groupId>
+                <artifactId>helidon-microprofile-websocket</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- metrics -->
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
@@ -611,6 +621,13 @@
             <dependency>
                 <groupId>io.helidon.microprofile.rest-client</groupId>
                 <artifactId>helidon-microprofile-rest-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Reactive Streams Operators -->
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-reactive-streams</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

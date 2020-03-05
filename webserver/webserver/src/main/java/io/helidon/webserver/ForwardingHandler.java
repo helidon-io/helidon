@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.webserver;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -27,6 +29,7 @@ import io.helidon.common.http.DataChunk;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -35,8 +38,10 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
@@ -57,19 +62,24 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private final NettyWebServer webServer;
     private final SSLEngine sslEngine;
     private final Queue<ReferenceHoldingQueue<DataChunk>> queues;
+    private final HttpRequestDecoder httpRequestDecoder;
 
     // this field is always accessed by the very same thread; as such, it doesn't need to be
     // concurrency aware
     private RequestContext requestContext;
 
+    private boolean isWebSocketUpgrade = false;
+
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
-                      Queue<ReferenceHoldingQueue<DataChunk>> queues) {
+                      Queue<ReferenceHoldingQueue<DataChunk>> queues,
+                      HttpRequestDecoder httpRequestDecoder) {
         this.routing = routing;
         this.webServer = webServer;
         this.sslEngine = sslEngine;
         this.queues = queues;
+        this.httpRequestDecoder = httpRequestDecoder;
     }
 
     @Override
@@ -145,6 +155,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 send400BadRequest(ctx, e.getMessage());
                 return;
             }
+
+            // If WebSockets upgrade, re-arrange pipeline and drop HTTP decoder
+            if (bareResponse.isWebSocketUpgrade()) {
+                LOGGER.fine("Replacing HttpRequestDecoder by WebSocketServerProtocolHandler");
+                ctx.pipeline().replace(httpRequestDecoder, "webSocketsHandler",
+                        new WebSocketServerProtocolHandler(bareRequest.uri().getPath(), null, true));
+                removeHandshakeHandler(ctx);        // already done by Tyrus
+                isWebSocketUpgrade = true;
+                return;
+            }
         }
 
         if (msg instanceof HttpContent) {
@@ -178,13 +198,48 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
 
             if (msg instanceof LastHttpContent) {
-                requestContext.publisher().complete();
-                requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
+                if (!isWebSocketUpgrade) {
+                    requestContext.publisher().complete();
+                    requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
+                }
             } else if (!content.isReadable()) {
                 // this is here to handle the case when the content is not readable but we didn't
                 // exceptionally complete the publisher and close the connection
                 throw new IllegalStateException("It is not expected to not have readable content.");
             }
+        }
+
+        // We receive a raw bytebuf if connection was upgraded to WebSockets
+        if (msg instanceof ByteBuf) {
+            if (!isWebSocketUpgrade) {
+                throw new IllegalStateException("Received ByteBuf without upgrading to WebSockets");
+            }
+            // Simply forward raw bytebuf to Tyrus for processing
+            LOGGER.finest(() -> "Received ByteBuf of WebSockets connection" + msg);
+            requestContext.publisher().submit((ByteBuf) msg);
+        }
+    }
+
+    /**
+     * Find and remove the WebSockets handshake handler. Note that the handler's implementation
+     * class is package private, so we look for it by name. Handshake is done in Helidon using
+     * Tyrus' code instead of here.
+     *
+     * @param ctx Channel handler context.
+     */
+    private static void removeHandshakeHandler(ChannelHandlerContext ctx) {
+        ChannelHandler handshakeHandler = null;
+        for (Iterator<Map.Entry<String, ChannelHandler>> it = ctx.pipeline().iterator(); it.hasNext();) {
+            ChannelHandler handler = it.next().getValue();
+            if (handler.getClass().getName().endsWith("WebSocketServerProtocolHandshakeHandler")) {
+                handshakeHandler = handler;
+                break;
+            }
+        }
+        if (handshakeHandler != null) {
+            ctx.pipeline().remove(handshakeHandler);
+        } else {
+            LOGGER.warning("Unable to remove WebSockets handshake handler from pipeline");
         }
     }
 

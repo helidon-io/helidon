@@ -39,5 +39,6 @@
         <module>idcs</module>
         <module>oidc</module>
         <module>openapi-basic</module>
+        <module>websocket</module>
     </modules>
 </project>

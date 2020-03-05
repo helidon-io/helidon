@@ -210,7 +210,7 @@ class HelidonHistogramTest {
     @Test
     void testPrometheus() throws IOException, ParseException {
         final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntID);
+        histoInt.prometheusData(sb, histoIntID, true);
         parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
                 .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
                                     EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),

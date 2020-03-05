@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-
 /**
  * Implementation of a layer that binds microprofile components together and
  * runs an HTTP server.
@@ -40,7 +38,9 @@ module io.helidon.microprofile.server {
 
     exports io.helidon.microprofile.server;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.server.ServerCdiExtension, JaxRsCdiExtension;
+    provides javax.enterprise.inject.spi.Extension with
+            io.helidon.microprofile.server.ServerCdiExtension,
+            io.helidon.microprofile.server.JaxRsCdiExtension;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.server to weld.core.impl;

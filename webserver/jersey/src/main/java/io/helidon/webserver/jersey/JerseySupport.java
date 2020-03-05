@@ -83,6 +83,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class JerseySupport implements Service {
 
+    private static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
+
     /**
      * The request scoped span qualifier that can be injected into a Jersey resource.
      * <pre><code>
@@ -231,6 +233,13 @@ public class JerseySupport implements Service {
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
+            // Skip this handler if a WebSocket upgrade request
+            Optional<String> secWebSocketKey = req.headers().value(SEC_WEBSOCKET_KEY);
+            if (secWebSocketKey.isPresent()) {
+                req.next();
+                return;
+            }
+
             // create a new context for jersey, so we do not modify webserver's internals
             Context parent = Contexts.context()
                     .orElseThrow(() -> new IllegalStateException("Context must be propagated from server"));

@@ -836,68 +836,6 @@ public interface Config {
     //
     // config changes
     //
-
-    /**
-     * Allows to subscribe on change on whole Config as well as on particular Config node.
-     * <p>
-     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
-     * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
-     * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
-     * with a node you are subscribed on.
-     * If a user subscribes on older instance of Config and ones has already been published the last one is automatically
-     * submitted to new-subscriber.
-     * <p>
-     * The {@code Config} notification support is based on {@link ConfigSource#changes() ConfigSource changes support}.
-     * <p>
-     * Method {@link Flow.Subscriber#onError(Throwable)} is never called.
-     * Method {@link Flow.Subscriber#onComplete()} is called in case an associated
-     * {@link ConfigSource#changes() ConfigSource's changes Publisher} signals {@code onComplete} as well.
-     * <p>
-     * Note: It does not matter what instance version of Config (related to single {@link Builder} initialization)
-     * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
-     * There is no added value to subscribe again on new Config instance.
-     *
-     * @return {@link Flow.Publisher} to be subscribed in. Never returns {@code null}.
-     * @see Config#onChange(Function)
-     */
-    @Deprecated
-    default Flow.Publisher<Config> changes() {
-        return Flow.Subscriber::onComplete;
-    }
-
-    /**
-     * Directly subscribes {@code onNextFunction} function on change on whole Config or on particular Config node.
-     * <p>
-     * It automatically creates {@link ConfigHelper#subscriber(Function) Flow.Subscriber} that will
-     * delegate {@link Flow.Subscriber#onNext(Object)} to specified {@code onNextFunction} function.
-     * Created subscriber automatically {@link Flow.Subscription#request(long) requests} {@link Long#MAX_VALUE all events}
-     * in it's {@link Flow.Subscriber#onSubscribe(Flow.Subscription)} method.
-     * Function {@code onNextFunction} returns {@code false} in case user wants to {@link Flow.Subscription#cancel() cancel}
-     * current subscription.
-     * <p>
-     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
-     * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
-     * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
-     * with a node you are subscribed on.
-     * If a user subscribes on older instance of Config and ones has already been published the last one is automatically
-     * submitted to new-subscriber.
-     * <p>
-     * The {@code Config} notification support is based on {@link ConfigSource#changes() ConfigSource changes support}.
-     * <p>
-     * Note: It does not matter what instance version of Config (related to single {@link Builder} initialization)
-     * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
-     * There is no added value to subscribe again on new Config instance.
-     *
-     * @param onNextFunction {@link Flow.Subscriber#onNext(Object)} functionality
-     * @see Config#changes()
-     * @see ConfigHelper#subscriber(Function)
-     * @deprecated use {@link #onChange(Consumer)} instead
-     */
-    @Deprecated
-    default void onChange(Function<Config, Boolean> onNextFunction) {
-        changes().subscribe(ConfigHelper.subscriber(onNextFunction));
-    }
-
     /**
      * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
      * <p>
@@ -915,11 +853,7 @@ public interface Config {
      * @param onChangeConsumer consumer invoked on change
      */
     default void onChange(Consumer<Config> onChangeConsumer) {
-        // temporary workaround before change support is replaced by one not using Flow API
-        changes().subscribe(ConfigHelper.subscriber(config -> {
-            onChangeConsumer.accept(config);
-            return true;
-        }));
+        // no-op
     }
 
     /**
@@ -946,14 +880,14 @@ public interface Config {
      * @see Config#key()
      */
     interface Key extends Comparable<Key> {
-
         /**
          * Returns instance of Key that represents key of parent config node.
          * <p>
-         * If the key represents root config node it returns {@code null}.
+         * If the key represents root config node it throws an exception.
          *
          * @return key that represents key of parent config node.
          * @see #isRoot()
+         * @throws java.lang.IllegalStateException in case you attempt to call this method on a root node
          */
         Key parent();
 
@@ -964,9 +898,7 @@ public interface Config {
          * @return {@code true} in case the key represents root node, otherwise {@code false}.
          * @see #parent()
          */
-        default boolean isRoot() {
-            return parent() == null;
-        }
+        boolean isRoot();
 
         /**
          * Returns the name of Config node.
@@ -1019,8 +951,7 @@ public interface Config {
             }
             StringBuilder sb = new StringBuilder();
             char[] chars = name.toCharArray();
-            for (int i = 0; i < chars.length; i++) {
-                char ch = chars[i];
+            for (char ch : chars) {
                 if (ch == '~') {
                     sb.append("~0");
                 } else if (ch == '.') {
@@ -1549,8 +1480,9 @@ public interface Config {
          * #addFilter(Function)} or {@link #addFilter(Supplier)} method.
          * <p>
          * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. Eg. when
-         * this builder's {@link #build} method creates the {@link Config} or when the new {@link Config#changes() change event}
-         * is fired with new Config instance with its own filter instance is created.
+         * this builder's {@link #build} method creates the {@link Config} or when the new
+         * {@link Config#onChange(java.util.function.Consumer)} is fired with new Config instance with its own filter instance
+         * is created.
          *
          * @param configFilterProvider a config filter provider as a function of {@link Config} to {@link ConfigFilter}
          * @return an updated builder instance
@@ -1568,7 +1500,8 @@ public interface Config {
          * #addFilter(Function)} or {@link #addFilter(Supplier)} method.
          * <p>
          * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. Eg. when
-         * this builder's {@link #build} method creates the {@link Config} or when the new {@link Config#changes() change event}
+         * this builder's {@link #build} method creates the {@link Config} or when the new
+         * {@link Config#onChange(java.util.function.Consumer)} change event
          * is fired with new Config instance with its own filter instance is created.
          *
          * @param configFilterSupplier a config filter provider as a supplier of a function of {@link Config} to {@link
@@ -1606,34 +1539,32 @@ public interface Config {
         Builder disableCaching();
 
         /**
-         * Specifies "observe-on" {@link Executor} to be used by {@link Config#changes()} to deliver new Config instance.
+         * Specifies "observe-on" {@link Executor} to be used by {@link Config#onChange(java.util.function.Consumer)} to deliver
+         * new Config instance.
          * Executor is also used to process reloading of config from appropriate {@link ConfigSource#changes() source}.
          * <p>
          * By default dedicated thread pool that creates new threads as needed, but
          * will reuse previously constructed threads when they are available is used.
          *
-         * @param changesExecutor the executor to use for async delivery of {@link Config#changes()} events
+         * @param changesExecutor the executor to use for async delivery of {@link Config#onChange(java.util.function.Consumer)}
          * @return an updated builder instance
          * @see #changesMaxBuffer(int)
-         * @see Config#changes()
-         * @see Config#onChange(Function)
-         * @see ConfigSource#changes()
+         * @see Config#onChange(java.util.function.Consumer)
          */
         Builder changesExecutor(Executor changesExecutor);
 
         /**
-         * Specifies maximum capacity for each subscriber's buffer to be used by by {@link Config#changes()}
-         * to deliver new Config instance.
+         * Specifies maximum capacity for each subscriber's buffer to be used by
+         * {@link Config#onChange(java.util.function.Consumer)} to deliver new Config instance.
          * <p>
          * By default {@link Flow#defaultBufferSize()} is used.
          * <p>
          * Note: Not consumed events will be dropped off.
          *
-         * @param changesMaxBuffer the maximum capacity for each subscriber's buffer of {@link Config#changes()} events.
+         * @param changesMaxBuffer the maximum capacity for each subscriber's buffer of new config events.
          * @return an updated builder instance
          * @see #changesExecutor(Executor)
-         * @see Config#changes()
-         * @see Config#onChange(Function)
+         * @see Config#onChange(java.util.function.Consumer)
          */
         Builder changesMaxBuffer(int changesMaxBuffer);
 

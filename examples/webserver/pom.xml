@@ -39,5 +39,6 @@
         <module>jersey</module>
         <module>opentracing</module>
         <module>streaming</module>
+        <module>websocket</module>
     </modules>
 </project>

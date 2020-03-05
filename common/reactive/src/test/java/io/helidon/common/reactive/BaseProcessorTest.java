@@ -16,11 +16,7 @@
 package io.helidon.common.reactive;
 
 
-import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -31,6 +27,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link BaseProcessor} test.
@@ -52,6 +50,7 @@ public class BaseProcessorTest {
         TestSubscriber<String> subscriber = new TestSubscriber<>();
         processor.onComplete();
         processor.subscribe(subscriber);
+        processor.onSubscribe(EmptySubscription.INSTANCE);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
     }
 
@@ -71,6 +70,7 @@ public class BaseProcessorTest {
         TestSubscriber<String> subscriber = new TestSubscriber<>();
         processor.onError(new IllegalStateException("foo!"));
         processor.subscribe(subscriber);
+        processor.onSubscribe(EmptySubscription.INSTANCE);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
     }
@@ -79,6 +79,7 @@ public class BaseProcessorTest {
     public void testOnNextAfterOnComplete() {
         TestProcessor<String> processor = new TestProcessor<>();
         TestSubscriber<String> subscriber = new TestSubscriber<>();
+        processor.onSubscribe(EmptySubscription.INSTANCE);
         processor.subscribe(subscriber);
         subscriber.request1();
         processor.onComplete();
@@ -91,46 +92,12 @@ public class BaseProcessorTest {
     public void testDoOnNextError() {
         TestProcessor<String> processor = new TestProcessor<String>() {
             @Override
-            protected void hookOnNext(String item) throws IllegalStateException {
-                throw new IllegalStateException("foo!");
+            public void onNext(String item) throws IllegalStateException {
+                super.onError(new IllegalStateException("foo!"));
             }
         };
         new TestPublisher<>("foo").subscribe(processor);
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        subscriber.request1();
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
-    public void testBeforeOnCompleteError() {
-        TestProcessor<String> processor = new TestProcessor<String>() {
-            @Override
-            protected void hookOnComplete() throws IllegalStateException {
-                throw new IllegalStateException("foo!");
-            }
-        };
-        new TestPublisher<>("foo").subscribe(processor);
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        subscriber.request1();
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), hasItems("foo"));
-    }
-
-    @Test
-    public void testSubmitError() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        new TestPublisher<>("foo").subscribe(processor);
-        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
-            @Override
-            public void onNext(String item) {
-                throw new IllegalStateException("foo!");
-            }
-        };
         processor.subscribe(subscriber);
         subscriber.request1();
         assertThat(subscriber.isComplete(), is(equalTo(false)));
@@ -161,6 +128,7 @@ public class BaseProcessorTest {
         processor.onError(new UnsupportedOperationException("bar!"));
         TestSubscriber<String> subscriber = new TestSubscriber<>();
         processor.subscribe(subscriber);
+        processor.onSubscribe(EmptySubscription.INSTANCE);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
     }
@@ -184,12 +152,7 @@ public class BaseProcessorTest {
     @Test
     public void testDeferredOnSubscribe() {
         TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscriber<String> subscriber = new TestSubscriber<String>(){
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.request(1);
-            }
-        };
+        TestSubscriber<String> subscriber = new TestSubscriber<String>(1L);
         processor.subscribe(subscriber);
         processor.onSubscribe(new Subscription() {
             @Override
@@ -203,9 +166,7 @@ public class BaseProcessorTest {
             }
         });
 
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
+        subscriber.assertResult("foo");
     }
 
     @Test
@@ -230,65 +191,14 @@ public class BaseProcessorTest {
     public void testDoubleSubscribe() {
         TestProcessor<String> processor = new TestProcessor<>();
         TestSubscriber<String> subscriber1 = new TestSubscriber<>();
+        processor.onSubscribe(EmptySubscription.INSTANCE);
         processor.subscribe(subscriber1);
         TestSubscriber<String> subscriber2 = new TestSubscriber<>();
         processor.subscribe(subscriber2);
         assertThat(subscriber1.getSubcription(), is(not(nullValue())));
-        assertThat(subscriber2.getSubcription(), is(nullValue()));
-    }
-
-    @Test
-    public void testNotEnoughRequestToSubmit() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        processor.submit("foo!");
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
-    public void testDoSubscribe() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        subscriber.request1();
-        processor.doSubscribe(new TestPublisher<>("foo"));
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
-    }
-
-    @Test
-    public void testDoSubscribeErrorDelegate() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        subscriber.request1();
-        processor.doSubscribe(new TestPublisher<String>(){
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onError(new IllegalStateException("foo!"));
-            }
-        });
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-    }
-
-    @Test
-    public void testDoSubscribeTwice() {
-        TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        processor.subscribe(subscriber);
-        subscriber.request1();
-        processor.doSubscribe(new TestPublisher<>("foo"));
-        TestPublisher<String> pub = new TestPublisher<>("bar");
-        processor.doSubscribe(pub);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
-        assertThat(pub.subscribed, is(equalTo(false)));
+        assertThat(subscriber1.getLastError(), is(nullValue()));
+        assertThat(subscriber2.getSubcription(), is(EmptySubscription.INSTANCE));
+        assertThat(subscriber2.getLastError(), is(instanceOf(IllegalStateException.class)));
     }
 
     private static class TestProcessor<T> extends BaseProcessor<T, T> {
@@ -297,21 +207,20 @@ public class BaseProcessorTest {
         Throwable error;
 
         @Override
-        protected void hookOnNext(T item) throws IllegalStateException {
-            super.hookOnNext(item);
-            submit(item);
+        protected void submit(T item) {
+            getSubscriber().onNext(item);
         }
 
         @Override
-        protected void hookOnComplete() throws IllegalStateException {
+        public void onComplete() {
             complete = true;
-            super.hookOnComplete();
+            super.onComplete();
         }
 
         @Override
-        protected void hookOnError(Throwable ex) throws IllegalStateException {
+        public void onError(Throwable ex) {
             error = ex;
-            super.hookOnError(ex);
+            super.onError(ex);
         }
     }
 }

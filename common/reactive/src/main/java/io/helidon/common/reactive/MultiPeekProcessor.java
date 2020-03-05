@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  *
  * @param <T> both input/output type
  */
-public class MultiPeekProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
+public class MultiPeekProcessor<T> extends BaseProcessor<T, T> implements Multi<T> {
 
     private Consumer<T> consumer;
 
@@ -44,13 +44,18 @@ public class MultiPeekProcessor<T> extends BufferedProcessor<T, T> implements Mu
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        consumer.accept(item);
-        submit(item);
+    protected void submit(T item) {
+        getSubscriber().onNext(item);
     }
 
     @Override
-    public String toString() {
-        return "PeekProcessor{" + "consumer=" + consumer + '}';
+    public void onNext(T item) {
+        try {
+            consumer.accept(item);
+            super.onNext(item);
+        } catch (Throwable t) {
+            cancel();
+            complete(t);
+        }
     }
 }

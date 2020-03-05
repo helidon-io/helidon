@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.config.spi;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.SubmissionPublisher;
 
-import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
