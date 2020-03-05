@@ -20,7 +20,10 @@ package io.helidon.microprofile.messaging.inner.subscriber;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -28,6 +31,7 @@ import io.helidon.microprofile.messaging.AssertableTestBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -39,6 +43,7 @@ import org.reactivestreams.Publisher;
 public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestBean {
 
     CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    private final CompletableFuture<Void> receivedMessage = new CompletableFuture<>();
 
     @Outgoing("cs-string-message")
     public Publisher<Message<String>> sourceForCsStringMessage() {
@@ -51,12 +56,18 @@ public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestB
     public CompletionStage<String> consumeMessageAndReturnCompletionStageOfString(Message<String> message) {
         return CompletableFuture.supplyAsync(() -> {
             RESULT_DATA.add(message.getPayload());
+            receivedMessage.complete(null);
             return "test";
         }, Executors.newSingleThreadExecutor());
     }
 
     @Override
     public void assertValid() {
+        try {
+        receivedMessage.get(1, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            fail(e);
+        }
         assertTrue(RESULT_DATA.containsAll(TEST_DATA));
         assertEquals(TEST_DATA.size(), RESULT_DATA.size());
     }
