@@ -130,7 +130,7 @@ class MetricImplTest {
                 + "# HELP base_theName theDescription\n"
                 + "base_theName 45\n";
         final StringBuilder sb = new StringBuilder();
-        impl.prometheusData(sb, implID);
+        impl.prometheusData(sb, implID, true);
         assertThat(sb.toString(), is(expected));
     }
 
@@ -140,7 +140,15 @@ class MetricImplTest {
                 + "# HELP base_counterWithoutDescription \n"
                 + "base_counterWithoutDescription 45\n";
         final StringBuilder sb = new StringBuilder();
-        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID);
+        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, true);
+        assertThat(sb.toString(), is(expected));
+    }
+
+    @Test
+    void testPrometheusWithoutTypeAndHelp() {
+        String expected = "base_counterWithoutDescription 45\n";
+        final StringBuilder sb = new StringBuilder();
+        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, false);
         assertThat(sb.toString(), is(expected));
     }
 

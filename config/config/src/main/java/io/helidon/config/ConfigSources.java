@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,6 @@ import static java.util.Objects.requireNonNull;
  */
 public final class ConfigSources {
 
-    private static final String SOURCES_KEY = "sources";
     static final String DEFAULT_MAP_NAME = "map";
     static final String DEFAULT_PROPERTIES_NAME = "properties";
 
@@ -120,14 +119,15 @@ public final class ConfigSources {
      *
      * @param readable  a {@code Readable} providing the configuration content
      * @param mediaType a configuration media type
+     * @param <T> dual type to mark parameter both readable and auto closeable
      * @return a config source
      */
-    public static ConfigSource create(Readable readable, String mediaType) {
+    public static <T extends Readable & AutoCloseable> ConfigSource create(T readable, String mediaType) {
         return InMemoryConfigSource.builder()
                 .mediaType(mediaType)
                 .changesExecutor(Runnable::run)
                 .changesMaxBuffer(1)
-                .content("Readable", ConfigParser.Content.create(readable, mediaType, Optional.of(Instant.now())))
+                .content("Readable", ConfigParser.Content.create(readable, mediaType, Instant.now()))
                 .build();
     }
 
@@ -146,7 +146,7 @@ public final class ConfigSources {
                 .mediaType(mediaType)
                 .changesExecutor(Runnable::run)
                 .changesMaxBuffer(1)
-                .content("String", ConfigParser.Content.create(new StringReader(content), mediaType, Optional.of(Instant.now())))
+                .content("String", ConfigParser.Content.create(new StringReader(content), mediaType, Instant.now()))
                 .build();
     }
 
@@ -756,9 +756,7 @@ public final class ConfigSources {
             Map<String, String> result = new HashMap<>();
 
             System.getProperties().stringPropertyNames()
-                    .forEach(it -> {
-                        result.put(it, System.getProperty(it));
-                    });
+                    .forEach(it -> result.put(it, System.getProperty(it)));
 
             return result;
         }

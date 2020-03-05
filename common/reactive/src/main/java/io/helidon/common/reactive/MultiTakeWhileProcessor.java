@@ -17,7 +17,6 @@
 
 package io.helidon.common.reactive;
 
-import java.util.concurrent.Flow;
 import java.util.function.Predicate;
 
 /**
@@ -25,11 +24,21 @@ import java.util.function.Predicate;
  *
  * @param <T> Item type
  */
-public class MultiTakeWhileProcessor<T> extends BufferedProcessor<T, T> implements Multi<T> {
-    private Predicate<T> predicate;
+public class MultiTakeWhileProcessor<T> extends MultiFilterProcessor<T> {
 
     private MultiTakeWhileProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+        super();
+        super.setPredicate(item -> {
+            if (predicate.test(item)) {
+                return true;
+            }
+            // by design done as part of onNext, so it is thread-safe w.r.t. invocation of any Subscriber methods
+            // so complete(...) causes onComplete to be signalled to downstream, and any signals from upstream or
+            // downstream during or following this call will be ignored
+            cancel();
+            complete();
+            return false;
+        });
     }
 
     /**
@@ -43,13 +52,4 @@ public class MultiTakeWhileProcessor<T> extends BufferedProcessor<T, T> implemen
         return new MultiTakeWhileProcessor<>(predicate);
     }
 
-    @Override
-    protected void hookOnNext(T item) {
-        if (predicate.test(item)) {
-            submit(item);
-        } else {
-            getSubscription().ifPresent(Flow.Subscription::cancel);
-            tryComplete();
-        }
-    }
 }

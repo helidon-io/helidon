@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.security.DenyAll;
 import javax.annotation.security.PermitAll;
@@ -34,6 +35,7 @@ import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonFeatures;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
@@ -59,6 +61,8 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
         HelidonFeatures.register("Security", "Authorization", "ABAC");
     }
 
+    private static final String CONFIG_KEY = "abac";
+
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
     private final Set<Class<? extends Annotation>> supportedAnnotations;
     private final Set<String> supportedConfigKeys;
@@ -67,7 +71,8 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     private final boolean failIfNoneValidated;
 
     private AbacProvider(Builder builder) {
-        ServiceLoader<AbacValidatorService> services = ServiceLoader.load(AbacValidatorService.class);
+        HelidonServiceLoader<AbacValidatorService> services =
+                HelidonServiceLoader.create(ServiceLoader.load(AbacValidatorService.class));
 
         for (AbacValidatorService service : services) {
             validators.add(service.instantiate(builder.config.get(service.configKey())));
@@ -139,7 +144,9 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
         // list all custom objects and check those that implement AttributeConfig and ...
         validateCustom(epConfig, collector);
 
-        validators.forEach(validator -> {
+        Optional<Config> abacConfig = epConfig.config(CONFIG_KEY);
+
+        for (var validator : validators) {
             // order of preference - explicit class, configuration, annotation
             Class<? extends AbacValidatorConfig> configClass = validator.configClass();
             String configKey = validator.configKey();
@@ -149,24 +156,28 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
             if (customObject.isPresent()) {
                 attributes.add(new RuntimeAttribute(validator, customObject.get()));
             } else {
-                epConfig.config(configKey)
-                        .ifPresentOrElse(attribConfig -> attributes
-                                .add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig))), () -> {
+                abacConfig.map(it -> it.get(configKey)).ifPresentOrElse(
+                        attribConfig -> {
+                            attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
+                        },
+                        () -> {
                             List<Annotation> annotationConfig = new ArrayList<>();
                             for (SecurityLevel securityLevel : epConfig.securityLevels()) {
                                 for (Class<? extends Annotation> annotation : annotations) {
                                     List<? extends Annotation> list = securityLevel
-                                            .combineAnnotations(annotation, EndpointConfig.AnnotationScope.values());
+                                            .combineAnnotations(annotation,
+                                                                EndpointConfig.AnnotationScope.values());
                                     annotationConfig.addAll(list);
                                 }
                             }
 
                             if (!annotationConfig.isEmpty()) {
-                                attributes.add(new RuntimeAttribute(validator, validator.fromAnnotations(epConfig)));
+                                attributes.add(new RuntimeAttribute(validator,
+                                                                    validator.fromAnnotations(epConfig)));
                             }
                         });
             }
-        });
+        }
 
         for (RuntimeAttribute attribute : attributes) {
             validate(attribute.getValidator(), attribute.getConfig(), collector, providerRequest);
@@ -228,39 +239,53 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     }
 
     private void validateConfig(EndpointConfig config, Errors.Collector collector) {
-        config.config("abac")
-                .ifPresent(abacConfig -> abacConfig.asMap()
-                        .ifPresent(theMap -> {
-                            int attributes = 0;
-                            int unsupported = 0;
-                            List<String> unsupportedKeys = new LinkedList<>();
+        config.config(CONFIG_KEY)
+                .ifPresent(abacConfig -> validateAbacConfig(abacConfig, collector));
+    }
 
-                            for (String key : theMap.keySet()) {
-                                attributes++;
-                                if (!supportedConfigKeys.contains(key)) {
-                                    unsupported++;
-                                    unsupportedKeys.add(key);
-                                }
-                            }
+    private void validateAbacConfig(Config abacConfig, Errors.Collector collector) {
+        // we need to iterate first level subkeys to see if they are supported
+        List<String> keys = abacConfig.asNodeList()
+                .orElseGet(List::of)
+                .stream()
+                .map(Config::name)
+                .collect(Collectors.toList());
 
-                            //evaluate that we can continue
-                            boolean fail = false;
-                            if (unsupported != 0) {
-                                if (unsupported == attributes && failIfNoneValidated) {
-                                    fail = true;
-                                } else if (failOnUnvalidated) {
-                                    fail = true;
-                                }
+        Set<String> uniqueKeys = new HashSet<>(keys);
 
-                                if (fail) {
-                                    for (String key : unsupportedKeys) {
-                                        collector.fatal(this,
-                                                        key + " attribute config key is not supported.");
-                                    }
-                                    collector.fatal(this, "Supported config keys: " + supportedConfigKeys);
-                                }
-                            }
-                        }));
+        if (uniqueKeys.size() != keys.size()) {
+            collector.fatal(keys, "There are duplicit keys under \"abac\" node in configuration.");
+        }
+
+        int attributes = 0;
+        int unsupported = 0;
+        List<String> unsupportedKeys = new LinkedList<>();
+
+        for (String key : uniqueKeys) {
+            attributes++;
+            if (!supportedConfigKeys.contains(key)) {
+                unsupported++;
+                unsupportedKeys.add(key);
+            }
+        }
+
+        //evaluate that we can continue
+        boolean fail = false;
+        if (unsupported != 0) {
+            if ((unsupported == attributes) && failIfNoneValidated) {
+                fail = true;
+            } else if (failOnUnvalidated) {
+                fail = true;
+            }
+
+            if (fail) {
+                for (String key : unsupportedKeys) {
+                    collector.fatal(this,
+                                    "\"" + key + "\" ABAC attribute config key is not supported.");
+                }
+                collector.fatal(this, "Supported ABAC config keys: " + supportedConfigKeys);
+            }
+        }
     }
 
     private void validateAnnotations(EndpointConfig epConfig, Errors.Collector collector) {

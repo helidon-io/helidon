@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.media.common;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -79,6 +81,33 @@ public final class ContentWriters {
      */
     public static Single<DataChunk> writeCharBuffer(CharBuffer buffer, Charset charset) {
         return Single.just(DataChunk.create(false, buffer.encode(charset)));
+    }
+
+    /**
+     * Create a a publisher {@link DataChunk} with the given
+     * {@link Throwable} / {@link Charset} and return a {@link Single}.
+     *
+     * @param throwable the {@link Throwable}
+     * @param charset the charset to use to encode the stack trace
+     * @return Single
+     */
+    public static Single<DataChunk> writeStackTrace(Throwable throwable, Charset charset) {
+        final StringWriter stringWriter = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(stringWriter);
+        String stackTraceString = null;
+        try {
+            throwable.printStackTrace(printWriter);
+            stackTraceString = stringWriter.toString();
+        } finally {
+            printWriter.close();
+        }
+        final Single<DataChunk> returnValue;
+        if (stackTraceString.isEmpty()) {
+            returnValue = Single.<DataChunk>empty();
+        } else {
+            returnValue = writeCharSequence(stackTraceString, charset);
+        }
+        return returnValue;
     }
 
     /**
@@ -147,4 +176,5 @@ public final class ContentWriters {
     public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter() {
         return byteChannelWriter(null);
     }
+
 }

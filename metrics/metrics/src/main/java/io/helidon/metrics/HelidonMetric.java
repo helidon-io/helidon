@@ -56,8 +56,9 @@ interface HelidonMetric extends Metric {
      *
      * @param sb the {@code StringBuilder} used to accumulate the output
      * @param metricID the {@code MetricID} for the metric to be formatted
+     * @param withHelpType flag to control if TYPE and HELP are to be included
      */
-    void prometheusData(StringBuilder sb, MetricID metricID);
+    void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType);
 
     /**
      * Return a name for this metric, possibly including a unit suffix.

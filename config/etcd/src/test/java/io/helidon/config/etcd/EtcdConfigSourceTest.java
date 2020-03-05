@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,8 +114,8 @@ public class EtcdConfigSourceTest {
         when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
         when(mockedConfigSource.content()).thenReturn(new ConfigParser.Content<Long>() {
             @Override
-            public String mediaType() {
-                return MEDIA_TYPE_APPLICATION_HOCON;
+            public Optional<String> mediaType() {
+                return Optional.of(MEDIA_TYPE_APPLICATION_HOCON);
             }
 
             @Override

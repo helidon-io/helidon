@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
@@ -122,7 +122,11 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         pollingEventSubscriber = null;
     }
 
-    Flow.Publisher<Optional<T>> changesPublisher() {
+    /**
+     * Publisher of changes of this source.
+     * @return publisher of source data
+     */
+    protected Flow.Publisher<Optional<T>> changesPublisher() {
         return changesPublisher;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -91,17 +92,20 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
 
     @Override
     public Parameters cookies() {
-        if (cookies == null) {
+        Parameters lCookies = this.cookies;
+        if (lCookies == null) {
             synchronized (internalLock) {
-                if (cookies == null) {
+                lCookies = this.cookies;
+                if (lCookies == null) {
                     List<Parameters> list = all(Http.Header.COOKIE).stream()
                                                     .map(CookieParser::parse)
                                                     .collect(Collectors.toList());
-                    cookies = Parameters.toUnmodifiableParameters(HashParameters.concat(list));
+                    lCookies = Parameters.toUnmodifiableParameters(HashParameters.concat(list));
+                    this.cookies = lCookies;
                 }
             }
         }
-        return cookies;
+        return lCookies;
     }
 
     @Override
@@ -188,7 +192,8 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
      */
     static class CookieParser {
 
-        private CookieParser() {}
+        private CookieParser() {
+        }
 
         private static final String RFC2965_VERSION = "$Version";
         private static final String RFC2965_PATH = "$Path";
@@ -225,7 +230,7 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
                 }
             }
 
-            Parameters result = new HashParameters();
+            Parameters result = HashParameters.create();
             for (String baseToken : Utils.tokenize(',', "\"", false, cookieHeaderValue)) {
                 for (String token : Utils.tokenize(';', "\"", false, baseToken)) {
                     int eqInd = token.indexOf('=');
@@ -240,27 +245,11 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
                             continue; // Skip RFC2965 attributes
                         }
                         String value = token.substring(eqInd + 1).trim();
-                        result.add(name, unwrap(value));
+                        result.add(name, Utils.unwrap(value));
                     }
                 }
             }
             return result;
-        }
-
-        /**
-         * Unwrap from double-quotes - if exists.
-         *
-         * @param str string to unwrap.
-         * @return unwrapped string.
-         */
-        private static String unwrap(String str) {
-            if (str == null) {
-                return null;
-            }
-            if (str.length() >= 2 && '"' == str.charAt(0) && '"' == str.charAt(str.length() - 1)) {
-                return str.substring(1, str.length() - 1);
-            }
-            return str;
         }
     }
 }

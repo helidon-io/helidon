@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.http.HashParameters;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +43,7 @@ public class HashParametersTest {
 
     @Test
     public void nonExistentKey() throws Exception {
-        HashParameters hashParameters = new HashParameters();
+        HashParameters hashParameters = HashParameters.create();
 
         assertThat(hashParameters.all("a"), hasSize(0));
         assertThat(hashParameters.first("a"), is(empty()));
@@ -50,7 +51,7 @@ public class HashParametersTest {
 
     @Test
     public void addNull() throws Exception {
-        HashParameters hashParameters = new HashParameters();
+        HashParameters hashParameters = HashParameters.create();
 
         hashParameters.add("a", ((String[]) null));
         hashParameters.add("a", "value");
@@ -63,7 +64,7 @@ public class HashParametersTest {
 
     @Test
     public void addMultipleAtOnce() throws Exception {
-        HashParameters hashParameters = new HashParameters();
+        HashParameters hashParameters = HashParameters.create();
 
         hashParameters.add("a", "v1", "v2");
 
@@ -73,7 +74,7 @@ public class HashParametersTest {
 
     @Test
     public void addMultipleOneByOne() throws Exception {
-        HashParameters hashParameters = new HashParameters();
+        HashParameters hashParameters = HashParameters.create();
 
         hashParameters.add("a", "v1");
         hashParameters.add("a", "v2");
@@ -84,7 +85,7 @@ public class HashParametersTest {
 
     @Test
     public void unmodifiabilityNonEmpty() throws Exception {
-        HashParameters hashParameters = new HashParameters();
+        HashParameters hashParameters = HashParameters.create();
 
         hashParameters.add("a", "v1", "v2");
 
@@ -95,7 +96,7 @@ public class HashParametersTest {
 
     @Test
     public void unmodifiabilityEmpty() throws Exception {
-        HashParameters hashParameters = new HashParameters();
+        HashParameters hashParameters = HashParameters.create();
 
         assertThrows(UnsupportedOperationException.class, () -> {
             hashParameters.all("a").add("this should fail");
@@ -104,7 +105,7 @@ public class HashParametersTest {
 
     @Test
     public void put() throws Exception {
-        HashParameters hp = new HashParameters();
+        HashParameters hp = HashParameters.create();
         List<String> result = hp.put("a", "v1", "v2", "v3");
         assertThat(hp.all("a"), contains("v1", "v2", "v3"));
         assertThat(result, IsCollectionWithSize.hasSize(0));
@@ -125,7 +126,7 @@ public class HashParametersTest {
 
     @Test
     public void putIfAbsent() throws Exception {
-        HashParameters hp = new HashParameters();
+        HashParameters hp = HashParameters.create();
         List<String> result = hp.putIfAbsent("a", "v1", "v2", "v3");
         assertThat(result, IsCollectionWithSize.hasSize(0));
         assertThat(hp.all("a"), contains("v1", "v2", "v3"));
@@ -152,7 +153,7 @@ public class HashParametersTest {
     @Test
     public void computeIfAbsent() throws Exception {
         AtomicBoolean visited = new AtomicBoolean(false);
-        HashParameters hp = new HashParameters();
+        HashParameters hp = HashParameters.create();
 
         List<String> result = hp.computeIfAbsent("a", k -> {
             visited.set(true);
@@ -201,7 +202,7 @@ public class HashParametersTest {
 
     @Test
     public void remove() throws Exception {
-        HashParameters hp = new HashParameters();
+        HashParameters hp = HashParameters.create();
         List<String> removed = hp.remove("a");
         assertThat(removed, IsCollectionWithSize.hasSize(0));
         hp.put("a", "v1", "v2");
@@ -212,7 +213,7 @@ public class HashParametersTest {
 
     @Test
     public void toMap() throws Exception {
-        HashParameters hp = new HashParameters();
+        HashParameters hp = HashParameters.create();
         hp.put("a", "v1", "v2");
         hp.put("b", "v3", "v4");
         Map<String, List<String>> map = hp.toMap();
@@ -223,10 +224,10 @@ public class HashParametersTest {
 
     @Test
     public void putAll() throws Exception {
-        HashParameters hp = new HashParameters();
+        HashParameters hp = HashParameters.create();
         hp.put("a", "a1", "a2");
         hp.put("b", "b1", "b2");
-        HashParameters hp2 = new HashParameters();
+        HashParameters hp2 = HashParameters.create();
         hp2.put("c", "c1", "c2");
         hp2.put("b", "b3", "b4");
 
@@ -242,10 +243,10 @@ public class HashParametersTest {
 
     @Test
     public void addAll() throws Exception {
-        HashParameters hp = new HashParameters();
+        HashParameters hp = HashParameters.create();
         hp.put("a", "a1", "a2");
         hp.put("b", "b1", "b2");
-        HashParameters hp2 = new HashParameters();
+        HashParameters hp2 = HashParameters.create();
         hp2.put("c", "c1", "c2");
         hp2.put("b", "b3", "b4");
 
@@ -272,14 +273,14 @@ public class HashParametersTest {
 
     @Test
     public void concat() throws Exception {
-        HashParameters p1 = new HashParameters();
+        HashParameters p1 = HashParameters.create();
         p1.add("a", "1", "2");
         p1.add("b", "3", "4", "5");
-        HashParameters p2 = new HashParameters();
+        HashParameters p2 = HashParameters.create();
         p2.add("a", "6");
         p2.add("c", "7", "8");
-        HashParameters p3 = new HashParameters();
-        HashParameters p4 = new HashParameters();
+        HashParameters p3 = HashParameters.create();
+        HashParameters p4 = HashParameters.create();
         p2.add("a", "9");
         p2.add("c", "10");
         p2.add("d", "11", "12");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,6 @@
 
 package io.helidon.microprofile.example.helloworld.explicit;
 
-import java.util.logging.Logger;
-
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-
 import io.helidon.microprofile.server.Server;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -29,8 +24,6 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
  * Explicit example.
  */
 public class Main {
-    private static final Logger LOGGER = Logger.getLogger("io.helidon.microprofile.startup");
-
     private Main() {
     }
 
@@ -40,12 +33,6 @@ public class Main {
      * @param args command line arguments (ignored)
      */
     public static void main(String[] args) {
-        LOGGER.finest("Main method");
-        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        LOGGER.finest("Weld instance");
-        SeContainer cdiContainer = initializer.initialize();
-        LOGGER.finest("Weld initialized");
-
         Server server = Server.builder()
                 .addApplication(HelloWorldApplication.class)
                 // using a customized helidon config instance (in this case the default...)

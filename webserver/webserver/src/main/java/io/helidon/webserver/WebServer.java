@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.media.common.MediaSupport;
 
 /**
  * Represents a immutably configured WEB server.
@@ -82,7 +82,14 @@ public interface WebServer {
      *
      * @return a server context
      */
-    ContextualRegistry context();
+    @SuppressWarnings("deprecation")
+    io.helidon.common.http.ContextualRegistry context();
+
+    /**
+     * Get the parent media support configuration.
+     * @return media support configuration
+     */
+    MediaSupport mediaSupport();
 
     /**
      * Returns a port number the default server socket is bound to and is listening on;
@@ -224,8 +231,8 @@ public interface WebServer {
 
         private final Map<String, Routing> routings = new HashMap<>();
         private final Routing defaultRouting;
-
         private ServerConfiguration configuration;
+        private MediaSupport mediaSupport;
 
         private Builder(Routing defaultRouting) {
             Objects.requireNonNull(defaultRouting, "Parameter 'default routing' must not be null!");
@@ -297,6 +304,26 @@ public interface WebServer {
         }
 
         /**
+         * Set the server wide media support configuration.
+         * @param mediaSupport media support configuration
+         * @return an updated builder
+         */
+        public Builder mediaSupport(MediaSupport mediaSupport) {
+            this.mediaSupport = mediaSupport;
+            return this;
+        }
+
+        /**
+         * Set the server wide media support configuration.
+         * @param mediaSupportBuilder media support builder
+         * @return an updated builder
+         */
+        public Builder mediaSupport(Supplier<MediaSupport> mediaSupportBuilder) {
+            this.mediaSupport = mediaSupportBuilder != null ? mediaSupportBuilder.get() : null;
+            return this;
+        }
+
+        /**
          * Builds the {@link WebServer} instance as configured by this builder and its parameters.
          *
          * @return a ready to use {@link WebServer}
@@ -315,13 +342,16 @@ public interface WebServer {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
+            if (mediaSupport == null) {
+                mediaSupport = MediaSupport.createWithDefaults();
+            }
             WebServer result = new NettyWebServer(configuration == null
                                                           // this is happening once per microservice, no need to store in
                                                           // a constant; also the configuration creates instances of context etc.
                                                           // that should not be initialized unless needed
                                                           ? ServerConfiguration.builder().build()
                                                           : configuration,
-                                                  defaultRouting, routings);
+                                                  defaultRouting, routings, mediaSupport);
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }

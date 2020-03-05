@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import javax.transaction.TransactionScoped;
  * @see NoTransactionSupport
  */
 @ApplicationScoped
-final class JtaTransactionSupport implements TransactionSupport {
+class JtaTransactionSupport implements TransactionSupport {
 
 
     /*
@@ -62,6 +62,24 @@ final class JtaTransactionSupport implements TransactionSupport {
      * Constructors.
      */
 
+
+    /**
+     * Creates a new {@link JtaTransactionSupport}.
+     *
+     * <p>This constructor exists only to conform to <a
+     * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#unproxyable">section
+     * 3.15 of the CDI specification</a> and for no other purpose.</p>
+     *
+     * @deprecated Please use the {@link
+     * #JtaTransactionSupport(BeanManager, TransactionManager)}
+     * constructor instead.
+     */
+    @Deprecated
+    JtaTransactionSupport() {
+        super();
+        this.beanManager = null;
+        this.transactionManager = null;
+    }
 
     /**
      * Creates a new {@link JtaTransactionSupport}.

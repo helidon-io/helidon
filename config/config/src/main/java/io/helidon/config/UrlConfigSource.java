@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
@@ -116,22 +114,27 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
     }
 
     private ConfigParser.Content<Instant> genericContent(URLConnection urlConnection) throws IOException, URISyntaxException {
-        final String mediaType = mediaType(null);
         Reader reader = new InputStreamReader(urlConnection.getInputStream(),
                                               StandardCharsets.UTF_8);
 
-        return ConfigParser.Content.create(reader, mediaType, Optional.of(Instant.now()));
+        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
+        builder.stamp(Instant.now());
+        mediaType()
+                .or(this::probeContentType)
+                .ifPresent(builder::mediaType);
+
+        return builder.build();
     }
 
     private ConfigParser.Content<Instant> httpContent(HttpURLConnection connection) throws IOException, URISyntaxException {
         connection.setRequestMethod(GET_METHOD);
 
-        final String mediaType = mediaType(connection.getContentType());
-        final Optional<Instant> timestamp;
+        Optional<String> mediaType = mediaType(connection.getContentType());
+        final Instant timestamp;
         if (connection.getLastModified() != 0) {
-            timestamp = Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+            timestamp = Instant.ofEpochMilli(connection.getLastModified());
         } else {
-            timestamp = Optional.of(Instant.now());
+            timestamp = Instant.now();
             LOGGER.fine("Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
                                 + timestamp + "' as a content timestamp.");
         }
@@ -139,48 +142,33 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         Reader reader = new InputStreamReader(connection.getInputStream(),
                                               ConfigUtils.getContentCharset(connection.getContentEncoding()));
 
-        return ConfigParser.Content.create(reader, mediaType, timestamp);
+        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
+
+        builder.stamp(timestamp);
+        mediaType.ifPresent(builder::mediaType);
+
+        return builder.build();
     }
 
     @Override
-    protected String mediaType() {
-        //do not call ConfigHelper.guessMediaType here - it is done in content() method
+    protected Optional<String> mediaType() {
         return super.mediaType();
     }
 
-    private String mediaType(String responseMediaType) throws URISyntaxException {
-        String mediaType = mediaType();
-        if (mediaType == null) {
-            mediaType = responseMediaType;
-            if (mediaType == null) {
-                mediaType = probeContentType();
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.fine("HTTP response does not contain content-type, used guessed one: " + mediaType + ".");
-                }
-            }
-        }
-        return mediaType;
+    private Optional<String> mediaType(String responseMediaType) throws URISyntaxException {
+        return mediaType()
+                .or(() -> Optional.ofNullable(responseMediaType))
+                .or(() -> {
+                    Optional<String> mediaType = probeContentType();
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.fine("HTTP response does not contain content-type, used guessed one: " + mediaType + ".");
+                    }
+                    return mediaType;
+                });
     }
 
-    private String probeContentType() throws URISyntaxException {
-        URI uri = url.toURI();
-        Path path;
-        switch (uri.getScheme()) {
-            case "jar":
-                String relativePath = uri.getSchemeSpecificPart();
-                int idx = relativePath.indexOf("!");
-                if (idx > 0 && idx < relativePath.length()) {
-                    relativePath = relativePath.substring(idx + 1);
-                }
-                path = Paths.get(relativePath);
-                break;
-            case "file":
-                path = Paths.get(uri);
-                break;
-            default:
-                path = Paths.get(url.getPath());
-        }
-        return ConfigHelper.detectContentType(path);
+    private Optional<String> probeContentType() {
+        return MediaTypes.detectType(url);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,8 +85,11 @@ public class ServerCdiExtension implements Extension {
 
     // runtime
     private WebServer webserver;
-    private int port;
-    private String listenHost = "0.0.0.0";
+
+    // these fields may be accessed from different threads than created on
+    private volatile int port;
+    private volatile String listenHost = "0.0.0.0";
+    private volatile boolean started;
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverConfigBuilder.config(config.get("server"));
@@ -95,6 +98,7 @@ public class ServerCdiExtension implements Extension {
 
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
+
         // make sure all configuration is in place
         if (null == jaxRsExecutorService) {
             jaxRsExecutorService = ServerThreadPoolSupplier.builder()
@@ -126,6 +130,7 @@ public class ServerCdiExtension implements Extension {
 
         try {
             webserver.start().toCompletableFuture().get();
+            started = true;
         } catch (Exception e) {
             throw new DeploymentException("Failed to start webserver", e);
         }
@@ -246,28 +251,8 @@ public class ServerCdiExtension implements Extension {
                                   + ", routingNameRequired: " + routingNameRequired);
         }
 
-        Routing.Builder routing;
-        if (namedRouting.isPresent()) {
-            String socket = namedRouting.get();
-            if (null == serverConfig.socket(socket)) {
-                if (routingNameRequired) {
-                    throw new IllegalStateException("JAX-RS application "
-                                                            + applicationMeta.appName()
-                                                            + " requires routing "
-                                                            + socket
-                                                            + " to exist, yet such a socket is not configured for web server");
-                } else {
-                    LOGGER.info("Routing " + socket + " does not exist, using default routing for application "
-                                        + applicationMeta.appName());
-
-                    routing = serverRoutingBuilder();
-                }
-            } else {
-                routing = serverNamedRoutingBuilder(socket);
-            }
-        } else {
-            routing = serverRoutingBuilder();
-        }
+        Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, serverConfig,
+                applicationMeta.appName());
 
         JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta);
         if (contextRoot.isPresent()) {
@@ -280,6 +265,42 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
+    /**
+     * Provides access to routing builder.
+     *
+     * @param namedRouting Named routing.
+     * @param routingNameRequired Routing name required.
+     * @param serverConfig Server configuration.
+     * @param appName Application's name.
+     * @return The routing builder.
+     */
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    public Routing.Builder routingBuilder(Optional<String> namedRouting, boolean routingNameRequired,
+                                           ServerConfiguration serverConfig, String appName) {
+        if (namedRouting.isPresent()) {
+            String socket = namedRouting.get();
+            if (null == serverConfig.socket(socket)) {
+                if (routingNameRequired) {
+                    throw new IllegalStateException("Application "
+                            + appName
+                            + " requires routing "
+                            + socket
+                            + " to exist, yet such a socket is not configured for web server");
+                } else {
+                    LOGGER.info("Routing " + socket + " does not exist, using default routing for application "
+                            + appName);
+
+                    return serverRoutingBuilder();
+                }
+            } else {
+                return serverNamedRoutingBuilder(socket);
+            }
+        } else {
+            return serverRoutingBuilder();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void registerWebServerServices(BeanManager beanManager,
                                            ServerConfiguration serverConfig) {
         List<Bean<?>> beans = prioritySort(beanManager.getBeans(Service.class));
@@ -292,6 +313,7 @@ public class ServerCdiExtension implements Extension {
             registerWebServerService(aClass, service, serverConfig);
         }
     }
+
 
     private static List<Bean<?>> prioritySort(Set<Bean<?>> beans) {
         List<Bean<?>> prioritized = new ArrayList<>(beans);
@@ -419,6 +441,14 @@ public class ServerCdiExtension implements Extension {
     }
 
     /**
+     * Current host the server is running on.
+     * @return host of this server
+     */
+    public String host() {
+        return listenHost;
+    }
+
+    /**
      * Current port the server is running on. This information is only available after the
      * server is actually started.
      *
@@ -426,6 +456,15 @@ public class ServerCdiExtension implements Extension {
      */
     public int port() {
         return port;
+    }
+
+    /**
+     * State of the server.
+     *
+     * @return {@code true} if the server is already started, {@code false} otherwise
+     */
+    public boolean started() {
+        return started;
     }
 
     /**

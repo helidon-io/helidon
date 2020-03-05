@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.Flow;
 
 import io.helidon.config.UrlConfigSource.UrlBuilder;
@@ -32,7 +33,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -70,7 +70,7 @@ public class UrlConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.mediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(configSource.mediaType(), is(Optional.of(TEST_MEDIA_TYPE)));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class UrlConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.mediaType(), is(nullValue()));
+        assertThat(configSource.mediaType(), is(Optional.empty()));
     }
 
     @Test
@@ -94,7 +94,7 @@ public class UrlConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.mediaType(), is(nullValue()));
+        assertThat(configSource.mediaType(), is(Optional.empty()));
     }
 
     @Test
@@ -106,8 +106,8 @@ public class UrlConfigSourceTest {
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-                configSource.init(mock(ConfigContext.class));
-                configSource.load();
+            configSource.init(mock(ConfigContext.class));
+            configSource.load();
         });
         assertThat(ex.getCause(), instanceOf(ConfigException.class));
         assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
@@ -127,8 +127,8 @@ public class UrlConfigSourceTest {
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-                configSource.init(mock(ConfigContext.class));
-                configSource.load();
+            configSource.init(mock(ConfigContext.class));
+            configSource.load();
         });
         assertThat(ex.getCause(), instanceOf(ConfigException.class));
         assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));

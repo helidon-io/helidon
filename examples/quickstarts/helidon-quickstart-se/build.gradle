@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,20 @@
  */
 
 apply plugin: 'java'
-apply plugin: 'maven'
 
 group = 'io.helidon.examples'
 version = '1.0-SNAPSHOT'
 
 description = """helidon-quickstart-se"""
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 11
+targetCompatibility = 11
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
 ext {
-    helidonversion = '1.2.2-SNAPSHOT'
+    helidonversion = '2.0.0-SNAPSHOT'
 }
 
 repositories {
@@ -38,21 +37,22 @@ repositories {
 }
 
 dependencies {
-    compile "io.helidon:helidon-bom:${project.helidonversion}"
-    compile 'io.helidon.bundles:helidon-bundles-webserver'
-    compile 'io.helidon.config:helidon-config-yaml'
-    compile 'io.helidon.health:helidon-health'
-    compile 'io.helidon.health:helidon-health-checks'
-    compile 'io.helidon.metrics:helidon-metrics'
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    // import Helidon BOM
+    implementation platform("io.helidon:helidon-dependencies:${project.helidonversion}")
+    implementation 'io.helidon.bundles:helidon-bundles-webserver'
+    implementation 'io.helidon.config:helidon-config-yaml'
+    implementation 'io.helidon.health:helidon-health'
+    implementation 'io.helidon.health:helidon-health-checks'
+    implementation 'io.helidon.metrics:helidon-metrics'
+
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-api'
 }
 
 // define a custom task to copy all dependencies in the runtime classpath
 // into build/libs/libs
 // uses built-in Copy
 task copyLibs(type: Copy) {
-  from configurations.runtime
+  from configurations.runtimeClasspath
   into 'build/libs/libs'
 }
 
@@ -64,10 +64,10 @@ assemble.dependsOn copyLibs
 // set the main classpath
 // add each jar under build/libs/libs into the classpath
 jar {
-  archiveName = "${project.name}.jar"
+  archiveFileName = "${project.name}.jar"
   manifest {
     attributes ('Main-Class': 'io.helidon.examples.quickstart.se.Main',
-                'Class-Path': configurations.runtime.files.collect { "libs/$it.name" }.join(' ')
+                'Class-Path': configurations.runtimeClasspath.files.collect { "libs/$it.name" }.join(' ')
                )
   }
 }

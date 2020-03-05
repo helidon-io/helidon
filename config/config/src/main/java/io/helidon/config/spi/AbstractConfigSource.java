@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import io.helidon.config.spi.ConfigParser.Content;
  * @param <S> a type of data stamp
  * @see Builder
  */
-public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implements ConfigSource {
+public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> {
 
     private final Function<Config.Key, String> mediaTypeMapping;
     private final Function<Config.Key, ConfigParser> parserMapping;
@@ -63,6 +63,7 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implem
     @Override
     public final void init(ConfigContext context) {
         configContext = context;
+        super.init(context);
     }
 
     /**
@@ -121,8 +122,9 @@ public abstract class AbstractConfigSource<S> extends AbstractMpSource<S> implem
     private ConfigNode processValue(Optional<S> datastamp, Config.Key key, ValueNode valueNode) {
         AtomicReference<ConfigNode> result = new AtomicReference<>(valueNode);
         findParserForKey(key)
-                .ifPresent(parser -> result.set(parser.parse(
-                        Content.create(new StringReader(valueNode.get()), null, datastamp))));
+                .ifPresent(parser -> result.set(parser.parse(Content.builder(new StringReader(valueNode.get()))
+                                                             .stamp(datastamp)
+                                                             .build())));
         return result.get();
     }
 

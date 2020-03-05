@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -43,18 +44,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<R> {
 
-    private SubscriberReference<T> passedInSubscriber;
-    private SubscriberReference<? super R> outletSubscriber;
+    private Flow.Subscriber<T> passedInSubscriber;
+    private Flow.Subscriber<? super R> outletSubscriber;
     private Flow.Publisher<R> passedInPublisher;
-    private Flow.Subscriber<? super T> inletSubscriber;
     private Flow.Subscription inletSubscription;
     private Flow.Subscription passedInPublisherSubscription;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private AtomicBoolean done = new AtomicBoolean(false);
+    private AtomicBoolean downStreamCompleted = new AtomicBoolean(false);
+    private AtomicBoolean passedInSubscriberCompleted = new AtomicBoolean(false);
+    private CompletableFuture<Void> readyToSignalPassedInSubscriber = new CompletableFuture<>();
+    private CompletableFuture<Void> readyToSignalOutletSubscriber = new CompletableFuture<>();
 
     private MultiCoupledProcessor(Flow.Subscriber<T> passedInSubscriber, Flow.Publisher<R> passedInPublisher) {
-        this.passedInSubscriber = SubscriberReference.create(passedInSubscriber);
+        this.passedInSubscriber = passedInSubscriber;
         this.passedInPublisher = passedInPublisher;
-        this.inletSubscriber = this;
     }
 
     /**
@@ -73,12 +77,12 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
 
     @Override
     public void subscribe(Flow.Subscriber<? super R> outletSubscriber) {
-        this.outletSubscriber = SubscriberReference.create(outletSubscriber);
+        this.outletSubscriber = outletSubscriber;
         passedInPublisher.subscribe(new Flow.Subscriber<R>() {
 
             @Override
             public void onSubscribe(Flow.Subscription passedInPublisherSubscription) {
-                //Passed in publisher called onSubscribed
+                //Passed in publisher called onSubscribe
                 Objects.requireNonNull(passedInPublisherSubscription);
                 // https://github.com/reactive-streams/reactive-streams-jvm#2.5
                 if (Objects.nonNull(MultiCoupledProcessor.this.passedInPublisherSubscription) || cancelled.get()) {
@@ -92,30 +96,45 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @SuppressWarnings("unchecked")
             public void onNext(R t) {
                 //Passed in publisher sent onNext
+                if (done.get()) return;
                 Objects.requireNonNull(t);
                 outletSubscriber.onNext(t);
             }
 
+
             @Override
             public void onError(Throwable t) {
                 //Passed in publisher sent onError
-                cancelled.set(true);
+                done.set(true);
                 Objects.requireNonNull(t);
-                outletSubscriber.onError(t);
-                passedInSubscriber.onError(t);
-                inletSubscriber.onError(t);
-                //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
+                readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+                    if (!downStreamCompleted.getAndSet(true)) {
+                        outletSubscriber.onError(t);
+                    }
+                });
+                readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+                    Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
+                    if (!passedInSubscriberCompleted.getAndSet(true)) {
+                        passedInSubscriber.onError(t);
+                    }
+                });
             }
 
             @Override
             public void onComplete() {
                 //Passed in publisher completed
-                cancelled.set(true);
-                outletSubscriber.onComplete();
-                passedInSubscriber.onComplete();
-                //203 https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
+                done.set(true);
+                readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+                    Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
+                    if (!passedInSubscriberCompleted.getAndSet(true)) {
+                        passedInSubscriber.onComplete();
+                    }
+                });
+                readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+                    if (!downStreamCompleted.getAndSet(true)) {
+                        outletSubscriber.onComplete();
+                    }
+                });
             }
         });
 
@@ -124,20 +143,20 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
             @Override
             public void request(long n) {
                 // Request from outlet subscriber
-                StreamValidationUtils.checkRecursionDepth(2, (actDepth, t) -> outletSubscriber.onError(t));
                 passedInPublisherSubscription.request(n);
             }
 
             @Override
             public void cancel() {
                 // Cancel from outlet subscriber
-                passedInSubscriber.onComplete();
+                if (!passedInSubscriberCompleted.getAndSet(true)) {
+                    passedInSubscriber.onComplete();
+                }
                 Optional.ofNullable(inletSubscription).ifPresent(Flow.Subscription::cancel);
-                passedInPublisherSubscription.cancel();
-                MultiCoupledProcessor.this.passedInSubscriber.releaseReference();
-                MultiCoupledProcessor.this.outletSubscriber.releaseReference();
+                Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel);
             }
         });
+        readyToSignalOutletSubscriber.complete(null);
     }
 
     @Override
@@ -152,7 +171,6 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
         passedInSubscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
-                StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> passedInSubscriber.onError(t));
                 inletSubscription.request(n);
             }
 
@@ -163,36 +181,59 @@ public class MultiCoupledProcessor<T, R> implements Flow.Processor<T, R>, Multi<
                     return;
                 }
                 inletSubscription.cancel();
-                outletSubscriber.onComplete();
-                passedInPublisherSubscription.cancel();
-                passedInSubscriber.releaseReference();
-                outletSubscriber.releaseReference();
+                readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+                    if (!downStreamCompleted.getAndSet(true)) {
+                        outletSubscriber.onComplete();
+                    }
+                });
+                readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+                    passedInPublisherSubscription.cancel();
+                });
             }
         });
+
+        readyToSignalPassedInSubscriber.complete(null);
     }
 
     @Override
     public void onNext(T t) {
         // Inlet/upstream publisher sent onNext
+        if (done.get()) return;
         passedInSubscriber.onNext(Objects.requireNonNull(t));
     }
 
     @Override
     public void onError(Throwable t) {
         // Inlet/upstream publisher sent error
-        cancelled.set(true);
-        passedInSubscriber.onError(Objects.requireNonNull(t));
-        outletSubscriber.onError(t);
-        passedInPublisherSubscription.cancel();
+        done.set(true);
+        Objects.requireNonNull(t);
+        readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+            if (!passedInSubscriberCompleted.getAndSet(true)) {
+                passedInSubscriber.onError(t);
+            }
+        });
+        readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+            if (!downStreamCompleted.getAndSet(true)) {
+                outletSubscriber.onError(t);
+            }
+        });
+        Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel);
     }
 
     @Override
     public void onComplete() {
         // Inlet/upstream publisher completed
-        cancelled.set(true);
-        passedInSubscriber.onComplete();
-        outletSubscriber.onComplete();
-        passedInPublisherSubscription.cancel();
+        done.set(true);
+        readyToSignalPassedInSubscriber.whenComplete((aVoid, throwable) -> {
+            if (!passedInSubscriberCompleted.getAndSet(true)) {
+                passedInSubscriber.onComplete();
+            }
+        });
+        readyToSignalOutletSubscriber.whenComplete((aVoid, throwable) -> {
+            if (!downStreamCompleted.getAndSet(true)) {
+                outletSubscriber.onComplete();
+            }
+        });
+        Optional.ofNullable(passedInPublisherSubscription).ifPresent(Flow.Subscription::cancel);
     }
-
 }

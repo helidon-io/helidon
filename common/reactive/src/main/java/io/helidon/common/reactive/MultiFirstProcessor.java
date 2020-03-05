@@ -15,16 +15,12 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * Processor of {@code Multi<T>} to {@code Single<T>}.
  *
  * @param <T> item type
  */
 final class MultiFirstProcessor<T> extends BaseProcessor<T, T> implements Single<T> {
-
-    private AtomicBoolean nextCalled = new AtomicBoolean(false);
 
     private MultiFirstProcessor() {
     }
@@ -34,15 +30,14 @@ final class MultiFirstProcessor<T> extends BaseProcessor<T, T> implements Single
     }
 
     @Override
-    public void onNext(T item) {
-        if (!nextCalled.getAndSet(true)) {
-            super.onNext(item);
-        }
+    protected void submit(T item) {
+        getSubscriber().onNext(item);
     }
 
     @Override
-    protected void hookOnNext(T item) {
-        submit(item);
-        onComplete();
+    protected void next(T item) {
+        cancel();
+        super.next(item);
+        super.complete();
     }
 }

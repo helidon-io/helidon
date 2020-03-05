@@ -17,7 +17,6 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
-import java.security.InvalidParameterException;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.reactive.Multi;
@@ -34,17 +33,7 @@ import org.reactivestreams.Subscription;
  * @param <T> type of items processor consumes
  * @param <R> type of items processor emits
  */
-public class HybridProcessor<T, R> implements Flow.Processor<T, R>, Processor<T, R>, Multi<R> {
-    private Processor<T, R> reactiveProcessor;
-    private Flow.Processor<T, R> flowProcessor;
-
-    private HybridProcessor(Processor<T, R> processor) {
-        this.reactiveProcessor = processor;
-    }
-
-    private HybridProcessor(Flow.Processor<T, R> processor) {
-        this.flowProcessor = processor;
-    }
+public interface HybridProcessor<T, R> extends Flow.Processor<T, R>, Processor<T, R>, Multi<R> {
 
     /**
      * Create new {@link io.helidon.microprofile.reactive.hybrid.HybridProcessor}
@@ -57,8 +46,38 @@ public class HybridProcessor<T, R> implements Flow.Processor<T, R>, Processor<T,
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    public static <T, R> HybridProcessor<T, R> from(Flow.Processor<T, R> processor) {
-        return new HybridProcessor<T, R>(processor);
+    static <T, R> HybridProcessor<T, R> from(Flow.Processor<T, R> processor) {
+        return new HybridProcessor<T, R>() {
+            @Override
+            public void subscribe(Flow.Subscriber<? super R> subscriber) {
+                processor.subscribe(subscriber);
+            }
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                processor.onSubscribe(subscription);
+            }
+
+            @Override
+            public void onNext(T item) {
+                processor.onNext(item);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                processor.onError(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                processor.onComplete();
+            }
+
+            @Override
+            public String toString() {
+                return processor.toString();
+            }
+        };
     }
 
     /**
@@ -72,83 +91,58 @@ public class HybridProcessor<T, R> implements Flow.Processor<T, R>, Processor<T,
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    public static <T, R> HybridProcessor<T, R> from(Processor<T, R> processor) {
-        return new HybridProcessor<T, R>(processor);
+    static <T, R> HybridProcessor<T, R> from(Processor<T, R> processor) {
+        return new HybridProcessor<T, R>() {
+
+            @Override
+            public void subscribe(Subscriber<? super R> subscriber) {
+                processor.subscribe(subscriber);
+            }
+
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                processor.onSubscribe(subscription);
+            }
+
+            @Override
+            public void onNext(T item) {
+                processor.onNext(item);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                processor.onError(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                processor.onComplete();
+            }
+
+            @Override
+            public String toString() {
+                return processor.toString();
+            }
+        };
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super R> subscriber) {
-        this.subscribe((Subscriber<? super R>) HybridSubscriber.from(subscriber));
+    default void subscribe(Flow.Subscriber<? super R> subscriber) {
+        subscribe((Subscriber<? super R>) HybridSubscriber.from(subscriber));
     }
 
     @Override
-    public void subscribe(Subscriber<? super R> s) {
-        if (reactiveProcessor != null) {
-            reactiveProcessor.subscribe(s);
-        } else if (flowProcessor != null) {
-            flowProcessor.subscribe(HybridSubscriber.from(s));
-        } else {
-            throw new InvalidParameterException("Hybrid processor has no processor");
-        }
+    default void subscribe(Subscriber<? super R> subscriber) {
+        subscribe((Flow.Subscriber<? super R>) HybridSubscriber.from(subscriber));
     }
 
     @Override
-    public void onSubscribe(Flow.Subscription subscription) {
-        if (reactiveProcessor != null) {
-            reactiveProcessor.onSubscribe(HybridSubscription.from(subscription));
-        } else if (flowProcessor != null) {
-            flowProcessor.onSubscribe(subscription);
-        } else {
-            throw new InvalidParameterException("Hybrid processor has no processor");
-        }
+    default void onSubscribe(Flow.Subscription subscription) {
+        onSubscribe((Subscription) HybridSubscription.from(subscription));
     }
 
     @Override
-    public void onSubscribe(Subscription s) {
-        if (reactiveProcessor != null) {
-            reactiveProcessor.onSubscribe(s);
-        } else if (flowProcessor != null) {
-            flowProcessor.onSubscribe(HybridSubscription.from(s));
-        } else {
-            throw new InvalidParameterException("Hybrid processor has no processor");
-        }
-    }
-
-    @Override
-    public void onNext(T item) {
-        if (reactiveProcessor != null) {
-            reactiveProcessor.onNext(item);
-        } else if (flowProcessor != null) {
-            flowProcessor.onNext(item);
-        } else {
-            throw new InvalidParameterException("Hybrid processor has no processor");
-        }
-    }
-
-    @Override
-    public void onError(Throwable throwable) {
-        if (reactiveProcessor != null) {
-            reactiveProcessor.onError(throwable);
-        } else if (flowProcessor != null) {
-            flowProcessor.onError(throwable);
-        } else {
-            throw new InvalidParameterException("Hybrid processor has no processor");
-        }
-    }
-
-    @Override
-    public void onComplete() {
-        if (reactiveProcessor != null) {
-            reactiveProcessor.onComplete();
-        } else if (flowProcessor != null) {
-            flowProcessor.onComplete();
-        } else {
-            throw new InvalidParameterException("Hybrid processor has no processor");
-        }
-    }
-
-    @Override
-    public String toString() {
-        return reactiveProcessor != null ? reactiveProcessor.toString() : String.valueOf(flowProcessor);
+    default void onSubscribe(Subscription subscription) {
+        onSubscribe((Flow.Subscription) HybridSubscription.from(subscription));
     }
 }

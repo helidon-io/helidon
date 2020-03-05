@@ -19,6 +19,11 @@ package io.helidon.metrics;
 import java.util.Collections;
 import java.util.Map;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonBuilderFactory;
@@ -148,5 +153,22 @@ class MetricsSupportTest {
         Registry myBase = myRF.getARegistry(MetricRegistry.Type.BASE);
         assertFalse(myBase.getGauges().containsKey(METRIC_USED_HEAP), "Base registry incorrectly contains "
                 + METRIC_USED_HEAP + " when base was configured as disabled");
+    }
+
+    @Test
+    void testPrometheusDataNoTypeDups() throws Exception {
+        Set<String> found = new HashSet<>();
+        String data = MetricsSupport.toPrometheusData(app, base);
+        try (BufferedReader reader = new BufferedReader(new StringReader(data))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] tokens = line.split(" ");
+                if (tokens.length > 3 && tokens[1].equals("TYPE")) {
+                    String metric = tokens[2];
+                    assertFalse(found.contains(metric));
+                    found.add(metric);
+                }
+            }
+        }
     }
 }

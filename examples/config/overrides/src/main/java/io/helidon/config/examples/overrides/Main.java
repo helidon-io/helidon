@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,13 +99,11 @@ public class Main {
     /**
      * Initialize logging from config.
      */
-    private static boolean initLogging(Config loggingConfig) {
+    private static void initLogging(Config loggingConfig) {
         String level = loggingConfig.get("level").asString().orElse("WARNING");
         //e.g. initialize logging using configured level...
 
         System.out.println("Set logging level to " + level + ".");
-
-        return true;
     }
 
 }

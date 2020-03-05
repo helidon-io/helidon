@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,17 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.CharBuffer;
-import java.nio.file.Path;
-import java.nio.file.spi.FileTypeDetector;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import io.helidon.config.internal.ConfigFileTypeDetector;
 
 /**
  * Common Configuration utilities.
  */
 public final class ConfigHelper {
     private static final int DEFAULT_BUFFER_CAPACITY = 1024;
-    private static final Logger LOGGER = Logger.getLogger(ConfigFileTypeDetector.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ConfigHelper.class.getName());
 
     private ConfigHelper() {
         throw new AssertionError("Instantiation not allowed.");
@@ -135,54 +126,6 @@ public final class ConfigHelper {
                 onLastSubscriptionCancel.run();
             }
         };
-    }
-
-    // lazy loading of default and installed file type detectors
-    private static class FileTypeDetectors {
-        static final List<FileTypeDetector> INSTALLED_DETECTORS =
-            loadInstalledDetectors();
-
-        // loads all installed file type detectors
-        private static List<FileTypeDetector> loadInstalledDetectors() {
-            return AccessController
-                    .doPrivileged(new PrivilegedAction<List<FileTypeDetector>>() {
-                        @Override
-                        public List<FileTypeDetector> run() {
-                            List<FileTypeDetector> list = new LinkedList<>();
-                            ServiceLoader<FileTypeDetector> loader = ServiceLoader
-                                    .load(FileTypeDetector.class);
-                            for (FileTypeDetector detector : loader) {
-                                list.add(detector);
-                            }
-                            return list;
-                        }
-                    });
-        }
-    }
-
-    /**
-     * Infers the content type contained in the provided {@code Path}.
-     *
-     * @param path path to check
-     * @return string with content type
-     */
-    public static String detectContentType(Path path) {
-        String result = null;
-
-        try {
-            for (FileTypeDetector detector : FileTypeDetectors.INSTALLED_DETECTORS) {
-                result = detector.probeContentType(path);
-                if (result != null) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.FINEST,
-                       e,
-                       () -> "Failed to find content type for " + path);
-        }
-
-        return result;
     }
 
     /**

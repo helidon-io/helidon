@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
         // Set up HTTP/2 pipeline if feature is enabled
         ServerConfiguration serverConfig = webServer.configuration();
+        HttpRequestDecoder requestDecoder = new HttpRequestDecoder();
         if (serverConfig.isHttp2Enabled()) {
             ExperimentalConfiguration experimental = serverConfig.experimental();
             Http2Configuration http2Config = experimental.http2();
@@ -100,7 +101,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             p.addLast(cleartextHttp2ServerUpgradeHandler);
             p.addLast(new HelidonEventLogger());
         } else {
-            p.addLast(new HttpRequestDecoder());
+            p.addLast(requestDecoder);
             // Uncomment the following line if you don't want to handle HttpChunks.
             //        p.addLast(new HttpObjectAggregator(1048576));
             p.addLast(new HttpResponseEncoder());
@@ -109,7 +110,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Helidon's forwarding handler
-        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues));
+        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues, requestDecoder));
 
         // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);

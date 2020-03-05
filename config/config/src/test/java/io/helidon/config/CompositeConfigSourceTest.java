@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceAAA = new AtomicReference<>();
         contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -142,7 +142,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceBBB = new AtomicReference<>();
         contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
@@ -253,7 +253,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceAAA = new AtomicReference<>();
         contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -263,7 +263,7 @@ public class CompositeConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceBBB = new AtomicReference<>();
         contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
@@ -295,7 +295,7 @@ public class CompositeConfigSourceTest {
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS);
         contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=22\nppp=9"),
                                                             PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                            Optional.of(Instant.now())));
+                                                            Instant.now()));
 
         // NO ticks event -> NO change yet
         assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
@@ -465,7 +465,7 @@ public class CompositeConfigSourceTest {
                         .content(ConfigParser.Content
                                          .create(new StringReader("ooo=1\nrrr=5"),
                                                  PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                 Optional.of(Instant.now())))
+                                                 Instant.now()))
                         .parser(ConfigParsers.properties())
                         .build())
                 .build();

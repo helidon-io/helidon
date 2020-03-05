@@ -16,312 +16,231 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Processor;
-import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A generic processor used for the implementation of {@link Multi} and {@link Single}.
+ * <p>
+ * Implementing Processor interface, delegating invocations to downstreamSubscribe, next and complete
+ * at the right times
+ * <p>
+ * Such right times are:
+ * <ul>
+ * <li>1. downstream onSubscription - only after both downstream called subscribe and upstream called
+ * onSubscription</li>
+ * <li>2. downstream onNext - will not happen before request(...)</li>
+ * <li>3. upstream request / cancel - will not happen before request(...) / cancel()</li>
+ * <li>4. request(...) / cancel() - will not happend before downstream onSubscription</li>
+ * <li>5. downstream onError / onComplete - will not happen before downstream onSubcription</li>
+ * <li>6. upstream onError / onComplete - may happen any time after upstream onSubscription, so keep track
+ * of upstream completion</li>
+ * <li>7. upstream onNext - will not happen before request(...)</li>
+ * </ul>
+ * <p>
+ * The order in which subscribe and onSubscription get called is not defined, so if you want to
+ * interact with upstream before downstreamSubscribe is called, you need to take care of the possibility
+ * that the downstream may have not called subscribe() yet (ie is not set up). In that case you may be
+ * better off implementing Processor yourself, not subclassing from BaseProcessor.
+ * <p>
+ * downstreamSubscribe needs to be called once and only once, whereas subscribe and onSubscription
+ * may be called by different threads - so ensuring atomicity of Subscriber's state transition.
+ * These methods are meant to be called only once, and by no more than one thread each, no need to do
+ * anything more complicated than synchronized.
  *
  * @param <T> subscribed type (input)
  * @param <U> published type (output)
  */
-abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
+public abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
-    private Subscription subscription;
-    private final SingleSubscriberHolder<U> subscriber;
-    private final RequestedCounter requested;
-    private final AtomicBoolean ready;
-    private final AtomicBoolean subscribed;
-    private SubscriberReference<? super U> referencedSubscriber;
-    private ReentrantLock publisherSequentialLock = new ReentrantLock();
-    private volatile boolean done;
+    private volatile boolean complete;
+    private volatile boolean cancelled;
     private Throwable error;
+    private Subscriber<? super U> subscriber;
+    private volatile Subscription subscription;
+    private final ReentrantLock subscriptionLock = new ReentrantLock();
+
 
     /**
-     * Generic processor used for the implementation of {@link Multi} and {@link Single}.
+     * This is invoked when this processor is in a state when both upstream and downstream subscriptions have
+     * been set up.
      */
-    BaseProcessor() {
-        requested = new RequestedCounter();
-        ready = new AtomicBoolean();
-        subscribed = new AtomicBoolean();
-        subscriber = new SingleSubscriberHolder<>();
-    }
-
-    @Override
-    public void request(long n) {
-        StreamValidationUtils.checkRequestParam(n, this::failAndCancel);
-        StreamValidationUtils.checkRecursionDepth(5, (actDepth, t) -> failAndCancel(t));
-        requested.increment(n, this::failAndCancel);
-        tryRequest(subscription);
-        if (done) {
-            tryComplete();
-        }
-    }
-
-    @Override
-    public void cancel() {
-        subscriber.cancel();
-        try {
-            hookOnCancel(subscription);
-        } catch (Throwable ex) {
-            failAndCancel(ex);
-        }
-    }
-
-    @Override
-    public void onSubscribe(Subscription s) {
-        try {
-            // https://github.com/reactive-streams/reactive-streams-jvm#1.3
-            publisherSequentialLock.lock();
-            // https://github.com/reactive-streams/reactive-streams-jvm#2.13
-            Objects.requireNonNull(s);
-            if (subscription == null) {
-                this.subscription = s;
-                tryRequest(s);
-            } else {
-                // https://github.com/reactive-streams/reactive-streams-jvm#2.5
-                s.cancel();
-            }
-        } finally {
-            publisherSequentialLock.unlock();
-        }
-    }
-
-    @Override
-    public void onNext(T item) {
-        try {
-            publisherSequentialLock.lock();
-            if (done) {
-                throw new IllegalStateException("Subscriber is closed!");
-            }
-            // https://github.com/reactive-streams/reactive-streams-jvm#2.13
-            Objects.requireNonNull(item);
-            try {
-                hookOnNext(item);
-            } catch (Throwable ex) {
-                failAndCancel(ex);
-            }
-        } finally {
-            publisherSequentialLock.unlock();
+    protected void downstreamSubscribe() {
+        boolean c = complete;
+        subscriber.onSubscribe(this);
+        // if was complete, signal; if became complete during onSubscription, then already signalled
+        if (c) {
+            cancel();
+            complete(error);
+            error = null;
         }
     }
 
     /**
-     * OnError downstream.
+     * This is invoked when this processor needs to signal onError or onComplete to downstream, and
+     * the downstream Subscriber is in a state that is allowed to receive onError / onComplete.
+     * It calls cancel(), too, although cancellation is not required, but we can do that as best
+     * effort CPU-saving
      *
-     * @param ex Exception to be reported downstream
+     * @param ex Exception to complete exceptionally with
      */
-    protected void fail(Throwable ex) {
-        // https://github.com/reactive-streams/reactive-streams-jvm#2.13
-        Objects.requireNonNull(ex);
-        done = true;
-        if (error == null) {
-            error = ex;
+    protected void complete(Throwable ex) {
+        if (Objects.nonNull(ex)) {
+            subscriber.onError(ex);
+        } else {
+            this.complete();
         }
-        tryComplete();
     }
 
     /**
-     * OnError downstream and cancel upstream.
-     *
-     * @param ex Exception to be reported downstream
+     * Complete by sending onComplete signal to down stream.
      */
-    protected void failAndCancel(Throwable ex) {
-        getSubscription().ifPresent(Flow.Subscription::cancel);
-        fail(ex);
+    protected void complete() {
+        subscriber.onComplete();
+    }
+
+    /**
+     * This is invoked when this processor receives onNext, and downstream Subscriber is
+     * in a state that is allowed to receive onNext.
+     *
+     * @param item to be sent to down stream
+     */
+    protected void next(T item) {
+        submit(item);
+    }
+
+    /**
+     * Invoke actual onNext signal to down stream.
+     *
+     * @param item       to be sent down stream
+     */
+    protected abstract void submit(T item);
+
+    @Override
+    public void subscribe(Subscriber<? super U> s) {
+        try {
+            subscriptionLock.lock();
+
+            if (subscriber != null) {
+                s.onSubscribe(EmptySubscription.INSTANCE);
+                s.onError(StreamValidationUtils.createOnlyOneSubscriberAllowedException());
+                return;
+            }
+            subscriber = s;
+            if (subscription != null) {
+                downstreamSubscribe();
+            }
+
+        } finally {
+            subscriptionLock.unlock();
+        }
+    }
+
+    /**
+     * All Subscriber method invocations are guaranteed to be in total order by Publisher specification,
+     * so no need to do anything special.
+     */
+    @Override
+    public void onSubscribe(Subscription sub) {
+        try {
+            subscriptionLock.lock();
+
+            if (this.subscription != null) {
+                sub.cancel();
+                return;
+            }
+
+            this.subscription = sub;
+            // maybe downstream registered earlier - let them know
+            if (subscriber != null) {
+                downstreamSubscribe();
+            }
+
+        } finally {
+            subscriptionLock.unlock();
+        }
     }
 
     @Override
     public void onError(Throwable ex) {
-        fail(ex);
+        Objects.requireNonNull(ex);
+        if (complete) {
+            return;
+        }
+        // it's ok to set complete without cancelling
+        // upstream knows Subscription is as good as cancelled
+        complete = true;
+
+        if (subscriber == null) {
+            this.error = ex;
+            return;
+        }
+
+        complete(ex);
     }
 
     @Override
     public void onComplete() {
-        done = true;
-        tryComplete();
+        if (complete) {
+            return;
+        }
+
+        complete = true;
+        // when upstream knows Subscription is as good as cancelled
+        if (subscriber == null) {
+            return;
+        }
+
+        complete();
     }
 
     @Override
-    public void subscribe(Subscriber<? super U> s) {
-        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-        referencedSubscriber = SubscriberReference.create(s);
-        try {
-            publisherSequentialLock.lock();
-            if (subscriber.register(s)) {
-                ready.set(true);
-                s.onSubscribe(this);
-                if (done) {
-                    tryComplete();
-                }
+    public void onNext(T item) {
+        if (!cancelled) {
+            if (complete) {
+                throw new IllegalStateException("Subscription already cancelled!");
             }
-        } finally {
-            publisherSequentialLock.unlock();
+            next(item);
         }
     }
 
     /**
-     * Processor's {@link Flow.Subscription} registered by
-     * {@link BaseProcessor#onSubscribe(Flow.Subscription)}.
-     *
-     * @return {@link Flow.Subscription}
+     * request and cancel are not guaranteed to be thread-safe by the Publisher
+     * but this is not interacting with any state of this Processor - thread-safety
+     * is sub's concern - eventually the problem of the Publisher that provides
+     * the highest level Subscription.
      */
-    protected Optional<Subscription> getSubscription() {
-        return Optional.ofNullable(subscription);
+    @Override
+    public void request(long n) {
+        if (cancelled) {
+            return;
+        }
+        StreamValidationUtils.checkRequestParam(n, this::onError);
+        subscription.request(n);
     }
 
-    /**
-     * Processor's {@link SingleSubscriberHolder}.
-     *
-     * @return {@link SingleSubscriberHolder}
-     */
-    protected SingleSubscriberHolder<U> getSubscriber() {
+    @Override
+    public void cancel() {
+        complete = true;
+        cancelled = true;
+        subscription.cancel();
+    }
+
+    protected Subscriber<? super U> getSubscriber() {
         return subscriber;
     }
 
-    /**
-     * Returns {@link RequestedCounter} with information about requested vs. submitted items.
-     *
-     * @return {@link RequestedCounter}
-     */
-    protected RequestedCounter getRequestedCounter() {
-        return requested;
+    protected Subscription getSubscription() {
+        return subscription;
     }
 
-    /**
-     * Submit an item to the subscriber.
-     *
-     * @param item item to be submitted
-     */
-    protected void submit(U item) {
-        if (requested.tryDecrement()) {
-            try {
-                subscriber.get().onNext(item);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                failAndCancel(ex);
-            } catch (Throwable ex) {
-                failAndCancel(ex);
-            }
-        } else {
-            notEnoughRequest(item);
-        }
+    protected Throwable getError() {
+        return error;
     }
 
-    /**
-     * Define what to do when there is not enough requests to submit item.
-     *
-     * @param item Item for submitting
-     */
-    protected void notEnoughRequest(U item) {
-        onError(new IllegalStateException("Not enough request to submit item"));
-    }
-
-    /**
-     * Hook for {@link Subscriber#onNext(java.lang.Object)}.
-     *
-     * @param item next item
-     */
-    protected void hookOnNext(T item) {
-    }
-
-    /**
-     * Hook for {@link Subscriber#onError(java.lang.Throwable)}.
-     *
-     * @param error error received
-     */
-    protected void hookOnError(Throwable error) {
-    }
-
-    /**
-     * Hook for {@link Subscriber#onComplete()}.
-     */
-    protected void hookOnComplete() {
-    }
-
-    /**
-     * Hook for {@link SingleSubscriberHolder#cancel()}.
-     *
-     * @param subscription of the processor for optional passing cancel event
-     */
-    protected void hookOnCancel(Flow.Subscription subscription) {
-        Optional.ofNullable(subscription).ifPresent(Flow.Subscription::cancel);
-        // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-        referencedSubscriber.releaseReference();
-    }
-
-    /**
-     * Subscribe the subscriber after the given delegate publisher.
-     *
-     * @param delegate delegate publisher
-     */
-    protected final void doSubscribe(Publisher<U> delegate) {
-        if (subscribed.compareAndSet(false, true)) {
-            delegate.subscribe(new Subscriber<U>() {
-                @Override
-                public void onSubscribe(Subscription subscription) {
-                    tryRequest(subscription);
-                }
-
-                @Override
-                public void onNext(U item) {
-                    submit(item);
-                }
-
-                @Override
-                public void onError(Throwable ex) {
-                    BaseProcessor.this.failAndCancel(ex);
-                }
-
-                @Override
-                public void onComplete() {
-                    BaseProcessor.this.onComplete();
-                }
-            });
-        }
-    }
-
-    private void completeOnError(Subscriber<? super U> sub, Throwable ex) {
-        hookOnError(ex);
-        sub.onError(ex);
-    }
-
-    /**
-     * Try close processor's subscriber.
-     */
-    protected void tryComplete() {
-        if (ready.get() && !subscriber.isClosed()) {
-            if (error != null) {
-                subscriber.close(sub -> completeOnError(sub, error));
-            } else {
-                try {
-                    hookOnComplete();
-                } catch (Throwable ex) {
-                    subscriber.close(sub -> completeOnError(sub, ex));
-                    return;
-                }
-                subscriber.close(Subscriber::onComplete);
-            }
-        }
-    }
-
-    /**
-     * Responsible for calling {@link Flow.Subscription#request(long)}.
-     *
-     * @param subscription {@link Flow.Subscription} to make a request from
-     */
-    protected void tryRequest(Subscription subscription) {
-        if (subscription != null && !subscriber.isClosed()) {
-            long n = requested.get();
-            if (n > 0) {
-                subscription.request(n);
-            }
-        }
+    protected void setError(Throwable error) {
+        this.error = error;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonFeatures;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -69,7 +70,8 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
 
     private PolicyValidator(Builder builder) {
         //first find all services
-        ServiceLoader<PolicyExecutorService> services = ServiceLoader.load(PolicyExecutorService.class);
+        HelidonServiceLoader<PolicyExecutorService> services =
+                HelidonServiceLoader.create(ServiceLoader.load(PolicyExecutorService.class));
 
         for (PolicyExecutorService service : services) {
             executors.add(service.instantiate(builder.config.get(service.configKey())));

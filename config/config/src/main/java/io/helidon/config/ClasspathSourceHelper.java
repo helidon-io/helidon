@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,7 +91,7 @@ class ClasspathSourceHelper {
 
     static <T> T content(String resource,
                          String description,
-                         BiFunction<InputStreamReader, Optional<Instant>, T> processor) throws ConfigException {
+                         BiFunction<InputStreamReader, Instant, T> processor) throws ConfigException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         InputStream inputStream = classLoader.getResourceAsStream(resource);
@@ -102,7 +101,7 @@ class ClasspathSourceHelper {
                        String.format("Error to get %s using %s CONTEXT ClassLoader.", description, classLoader));
             throw new ConfigException(description + " does not exist. Used ClassLoader: " + classLoader);
         }
-        Optional<Instant> resourceTimestamp = Optional.ofNullable(resourceTimestamp(resource));
+        Instant resourceTimestamp = resourceTimestamp(resource);
         try {
             LOGGER.log(Level.FINE,
                        String.format("Getting content from '%s'. Last modified at %s. Used ClassLoader: %s",

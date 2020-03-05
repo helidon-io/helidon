@@ -15,14 +15,18 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -42,9 +46,8 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> map(Mapper<T, U> mapper) {
-        MultiMapProcessor<T, U> processor = MultiMapProcessor.create(mapper);
-        this.subscribe(processor);
-        return processor;
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new MultiMapperPublisher<>(this, mapper);
     }
 
     /**
@@ -54,9 +57,8 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> peek(Consumer<T> consumer) {
-        MultiPeekProcessor<T> processor = MultiPeekProcessor.create(consumer);
-        this.subscribe(processor);
-        return processor;
+        return new MultiTappedPublisher<>(this, null, consumer,
+                null, null, null, null);
     }
 
     /**
@@ -65,9 +67,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> distinct() {
-        MultiDistinctProcessor<T> processor = MultiDistinctProcessor.create();
-        this.subscribe(processor);
-        return processor;
+        return new MultiDistinctPublisher<>(this, v -> v);
     }
 
     /**
@@ -77,9 +77,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> filter(Predicate<T> predicate) {
-        MultiFilterProcessor<T> processor = MultiFilterProcessor.create(predicate);
-        this.subscribe(processor);
-        return processor;
+        return new MultiFilterPublisher<>(this, predicate);
     }
 
     /**
@@ -91,9 +89,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> takeWhile(Predicate<T> predicate) {
-        MultiTakeWhileProcessor<T> processor = MultiTakeWhileProcessor.create(predicate);
-        this.subscribe(processor);
-        return processor;
+        return new MultiTakeWhilePublisher<>(this, predicate);
     }
 
     /**
@@ -117,9 +113,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> limit(long limit) {
-        MultiLimitProcessor<T> processor = MultiLimitProcessor.create(limit);
-        this.subscribe(processor);
-        return processor;
+        return new MultiLimitPublisher<>(this, limit);
     }
 
     /**
@@ -129,9 +123,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default Multi<T> skip(long skip) {
-        MultiSkipProcessor<T> processor = MultiSkipProcessor.create(skip);
-        this.subscribe(processor);
-        return processor;
+        return new MultiSkipPublisher<>(this, skip);
     }
 
     /**
@@ -142,9 +134,24 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      */
     default <U> Multi<U> flatMap(Function<T, Flow.Publisher<U>> publisherMapper) {
-        MultiFlatMapProcessor<T, U> processor = MultiFlatMapProcessor.fromPublisherMapper(publisherMapper);
-        this.subscribe(processor);
-        return processor;
+        return new MultiFlatMapPublisher<>(this, publisherMapper, 32, 32, false);
+    }
+    /**
+     * Transform item with supplied function and flatten resulting {@link Flow.Publisher} to downstream
+     * while limiting the maximum number of concurrent inner {@link Flow.Publisher}s and their in-flight
+     * item count, optionally aggregating and delaying all errors until all sources terminate.
+     *
+     * @param mapper {@link Function} receiving item as parameter and returning {@link Flow.Publisher}
+     * @param <U>             output item type
+     * @param maxConcurrency the maximum number of inner sources to run
+     * @param delayErrors if true, any error from the main and inner sources are aggregated and delayed until
+     *                    all of them terminate
+     * @param prefetch the number of items to request upfront from the inner sources, then request 75% more after 75%
+     *                 has been delivered
+     * @return Multi
+     */
+    default <U> Multi<U> flatMap(Function<T, Flow.Publisher<U>> mapper, long maxConcurrency, boolean delayErrors, long prefetch) {
+        return new MultiFlatMapPublisher<>(this, mapper, maxConcurrency, prefetch, delayErrors);
     }
 
     /**
@@ -176,7 +183,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      */
     default Single<List<T>> collectList() {
-        return collect(new ListCollector<>());
+        return collect(ArrayList::new, List::add);
     }
 
     /**
@@ -188,9 +195,38 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if collector is {@code null}
      */
     default <U> Single<U> collect(Collector<T, U> collector) {
-        MultiCollectingProcessor<? super T, U> processor = new MultiCollectingProcessor<>(collector);
-        this.subscribe(processor);
-        return processor;
+        return collect(() -> collector, Collector::collect).map(Collector::value);
+    }
+
+    /**
+     * Collect the items of this {@link Multi} into a collection provided via a {@link Supplier}
+     * and mutated by a {@code BiConsumer} callback.
+     * @param collectionSupplier the {@link Supplier} that is called for each incoming {@link Subscriber}
+     *                           to create a fresh collection to collect items into
+     * @param accumulator the {@link BiConsumer} that receives the collection and the current item to put in
+     * @param <U> the type of the collection and result
+     * @return Single
+     * @throws NullPointerException if {@code collectionSupplier} or {@code combiner} is {@code null}
+     */
+    default <U> Single<U> collect(Supplier<U> collectionSupplier, BiConsumer<U, T> accumulator) {
+        Objects.requireNonNull(collectionSupplier, "collectionSupplier is null");
+        Objects.requireNonNull(accumulator, "combiner is null");
+        return new MultiCollectPublisher<>(this, collectionSupplier, accumulator);
+    }
+
+    /**
+     * Collects up upstream items with the help of a the callbacks of
+     * a {@link java.util.stream.Collector}.
+     * @param collector the collector whose {@code supplier()}, {@code accumulator()} and {@code finisher()} callbacks
+     *                  are used for collecting upstream items into a final form.
+     * @param <A> the accumulator type
+     * @param <R> the result type
+     * @return Single
+     * @throws NullPointerException if {@code collector} is {@code null}
+     */
+    default <A, R> Single<R> collectStream(java.util.stream.Collector<T, A, R> collector) {
+        Objects.requireNonNull(collector, "collector is null");
+        return new MultiCollectorPublisher<>(this, collector);
     }
 
     /**
@@ -229,7 +265,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if iterable is {@code null}
      */
     static <T> Multi<T> from(Iterable<T> iterable) {
-        return Multi.from(IterablePublisher.create(iterable));
+        return new MultiFromIterable<>(iterable);
     }
 
 
@@ -301,5 +337,53 @@ public interface Multi<T> extends Subscribable<T> {
      */
     static <T> Multi<T> concat(Multi<T> firstMulti, Multi<T> secondMulti) {
         return ConcatPublisher.create(firstMulti, secondMulti);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onTerminate(Runnable onTerminate) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                e -> onTerminate.run(),
+                onTerminate,
+                null,
+                onTerminate);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onComplete(Runnable onTerminate) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                null,
+                onTerminate,
+                null,
+                null);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onError signal is received.
+     *
+     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                onErrorConsumer,
+                null,
+                null,
+                null);
     }
 }

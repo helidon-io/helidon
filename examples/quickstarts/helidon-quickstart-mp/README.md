@@ -4,7 +4,7 @@ This example implements a simple Hello World REST service using MicroProfile.
 
 ## Build and run
 
-With JDK8+
+With JDK11+
 ```bash
 mvn package
 java -jar target/helidon-quickstart-mp.jar
@@ -65,4 +65,53 @@ kubectl cluster-info                         # Verify which cluster
 kubectl get pods                             # Verify connectivity to cluster
 kubectl create -f app.yaml               # Deploy application
 kubectl get service helidon-quickstart-mp  # Verify deployed service
+```
+
+## Build a Java Runtime Image using jlink
+
+You can build a custom Java Runtime Image (JRI) containing the application jars and the JDK modules 
+on which they depend. This image also:
+
+* Enables Class Data Sharing by default to reduce startup time. 
+* Contains a customized `start` script to simplify CDS usage and support debug and test modes. 
+ 
+You can build a custom JRI in two different ways:
+* Local
+* Using Docker
+
+
+### Local build
+
+```
+# build the JRI
+mvn package -Pjlink-image
+```
+
+See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin#goal-jlink-image
+ for more information.
+
+Start the application:
+
+```
+./target/helidon-quickstart-se/bin/start
+```
+
+### Multi-stage Docker build
+
+Build the "jlink" Docker Image
+
+```
+docker build -t helidon-quickstart-se-jlink -f Dockerfile.jlink .
+```
+
+Start the application:
+
+```
+docker run --rm -p 8080:8080 helidon-quickstart-se-jlink:latest
+```
+
+See the start script help:
+
+```
+docker run --rm helidon-quickstart-se-jlink:latest --help
 ```

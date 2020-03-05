@@ -15,14 +15,12 @@
  */
 package io.helidon.media.jackson.server;
 
-import java.util.Objects;
-import java.util.function.BiFunction;
-
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.media.jackson.common.JacksonProcessing;
+import io.helidon.media.jackson.common.JacksonBodyReader;
+import io.helidon.media.jackson.common.JacksonBodyWriter;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.JsonService;
+import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
@@ -32,48 +30,41 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
-import static io.helidon.media.common.ContentTypeCharset.determineCharset;
 
 /**
  * A {@link Service} and a {@link Handler} that provides Jackson
  * support to Helidon.
  */
-public final class JacksonSupport extends JsonService {
+public final class JacksonSupport implements Service, Handler {
+
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "Jackson");
     }
 
-    private final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends ObjectMapper> objectMapperProvider;
+    private final JacksonBodyReader reader;
+    private final JacksonBodyWriter writer;
 
     /**
      * Creates a new {@link JacksonSupport}.
      *
-     * @param objectMapperProvider a {@link BiFunction} that returns
-     * an {@link ObjectMapper} when given a {@link ServerRequest} and
-     * a {@link ServerResponse}; must not be {@code null}
+     * @param objectMapper mapper, must not be {@code null}
      *
-     * @exception NullPointerException if {@code objectMapperProvider}
-     * is {@code null}
+     * @exception NullPointerException if {@code objectMapper} is {@code null}
      */
-    private JacksonSupport(final BiFunction<? super ServerRequest,
-                                           ? super ServerResponse,
-                                           ? extends ObjectMapper> objectMapperProvider) {
-        super();
-        this.objectMapperProvider = Objects.requireNonNull(objectMapperProvider);
+    private JacksonSupport(final ObjectMapper objectMapper) {
+        this.reader = JacksonBodyReader.create(objectMapper);
+        this.writer = JacksonBodyWriter.create(objectMapper);
+    }
+
+    @Override
+    public void update(Routing.Rules rules) {
+        rules.any(this);
     }
 
     @Override
     public void accept(final ServerRequest request, final ServerResponse response) {
-        final ObjectMapper objectMapper = this.objectMapperProvider.apply(request, response);
-        // Don't register reader/writer if content is a CharSequence (likely String) (see #645)
-        request.content()
-               .registerReader(cls -> !CharSequence.class.isAssignableFrom(cls)
-                                      && objectMapper.canDeserialize(objectMapper.constructType(cls)),
-                               JacksonProcessing.reader(objectMapper));
-        response.registerWriter(payload -> !(payload instanceof CharSequence)
-                                           && objectMapper.canSerialize(payload.getClass())
-                                           && acceptsJson(request, response),
-                                JacksonProcessing.writer(objectMapper, determineCharset(response.headers())));
+        request.content().registerReader(reader);
+        response.registerWriter(writer);
         request.next();
     }
 
@@ -87,24 +78,19 @@ public final class JacksonSupport extends JsonService {
             .registerModule(new ParameterNamesModule())
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule());
-        return create((req, res) -> mapper);
+        return create(mapper);
     }
 
     /**
      * Creates a new {@link JacksonSupport}.
      *
-     * @param objectMapperProvider a {@link BiFunction} that returns
-     * an {@link ObjectMapper} when given a {@link ServerRequest} and
-     * a {@link ServerResponse}; must not be {@code null}
-     *
+     * @param objectMapper must not be {@code null}
      * @return a new {@link JacksonSupport}
      *
-     * @exception NullPointerException if {@code objectMapperProvider}
+     * @exception NullPointerException if {@code objectMapper}
      * is {@code null}
      */
-    public static JacksonSupport create(final BiFunction<? super ServerRequest,
-                                                         ? super ServerResponse,
-                                                         ? extends ObjectMapper> objectMapperProvider) {
-        return new JacksonSupport(objectMapperProvider);
+    public static JacksonSupport create(ObjectMapper objectMapper) {
+        return new JacksonSupport(objectMapper);
     }
 }
