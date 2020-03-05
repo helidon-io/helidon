@@ -20,6 +20,7 @@ package io.helidon.microprofile.messaging.inner.subscriber;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +44,7 @@ import org.reactivestreams.Publisher;
 public class SubscriberPublMsgToPaylRetComplStringBean implements AssertableTestBean {
 
     CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
-    private final CompletableFuture<Void> receivedMessage = new CompletableFuture<>();
+    private final CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
 
     @Outgoing("cs-string-payload")
     public Publisher<Message<String>> sourceForCsStringPayload() {
@@ -55,7 +56,7 @@ public class SubscriberPublMsgToPaylRetComplStringBean implements AssertableTest
     public CompletionStage<String> consumePayloadAndReturnCompletionStageOfString(String payload) {
         return CompletableFuture.supplyAsync(() -> {
             RESULT_DATA.add(payload);
-            receivedMessage.complete(null);
+            countDownLatch.countDown();
             return "test";
         }, Executors.newWorkStealingPool());
     }
@@ -63,8 +64,8 @@ public class SubscriberPublMsgToPaylRetComplStringBean implements AssertableTest
     @Override
     public void assertValid() {
         try {
-            receivedMessage.get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
             fail(e);
         }
         assertTrue(RESULT_DATA.containsAll(TEST_DATA));

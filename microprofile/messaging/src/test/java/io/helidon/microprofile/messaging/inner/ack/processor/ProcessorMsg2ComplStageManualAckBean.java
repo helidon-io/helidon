@@ -20,6 +20,7 @@ package io.helidon.microprofile.messaging.inner.ack.processor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -46,7 +47,7 @@ public class ProcessorMsg2ComplStageManualAckBean implements AssertableTestBean 
     public static final String TEST_DATA = "test-data";
     private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
     private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private final CompletableFuture<Void> receivedMessage = new CompletableFuture<>();
+    private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
 
     @Outgoing("inner-processor")
@@ -69,7 +70,7 @@ public class ProcessorMsg2ComplStageManualAckBean implements AssertableTestBean 
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
         RESULT_DATA.add(msg.getPayload());
-        receivedMessage.complete(null);
+        countDownLatch.countDown();
         return CompletableFuture.completedFuture(null);
     }
 
@@ -77,7 +78,7 @@ public class ProcessorMsg2ComplStageManualAckBean implements AssertableTestBean 
     public void assertValid() {
         try {
             ackFuture.get(1, TimeUnit.SECONDS);
-            receivedMessage.get(1, TimeUnit.SECONDS);
+            countDownLatch.await(2, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }
