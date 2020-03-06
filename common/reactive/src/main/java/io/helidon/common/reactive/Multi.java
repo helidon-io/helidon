@@ -403,4 +403,44 @@ public interface Multi<T> extends Subscribable<T> {
                 null,
                 null);
     }
+
+    /**
+     * Emits a range of ever increasing integers.
+     * @param start the initial integer value
+     * @param count the number of integers to emit
+     * @return Multi
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    static Multi<Integer> range(int start, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count >= required");
+        }
+        if (count == 0) {
+            return empty();
+        }
+        if (count == 1) {
+            return singleton(start);
+        }
+        return new MultiRangePublisher(start, start + count);
+    }
+
+    /**
+     * Emits a range of ever increasing longs.
+     * @param start the initial long value
+     * @param count the number of longs to emit
+     * @return Multi
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    static Multi<Long> rangeLong(long start, long count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count >= required");
+        }
+        if (count == 0) {
+            return empty();
+        }
+        if (count == 1) {
+            return singleton(start);
+        }
+        return new MultiRangeLongPublisher(start, start + count);
+    }
 }
