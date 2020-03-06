@@ -55,7 +55,7 @@ class InternalSubscriber implements Subscriber<Object> {
         } catch (Exception e) {
             // Notify publisher to stop sending
             subscription.cancel();
-            throw new MessagingStreamException(e);
+            throw new MessagingException(e);
         }
     }
 
@@ -81,7 +81,7 @@ class InternalSubscriber implements Subscriber<Object> {
 
     @Override
     public void onError(Throwable t) {
-        throw new MessagingStreamException(t);
+        throw new MessagingException(t);
     }
 
     @Override

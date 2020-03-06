@@ -86,7 +86,7 @@ class UniversalChannel {
             connectMessage.append(outgoingConnector.getConnectorName());
         } else {
             LOGGER.severe(connectMessage.append("and no outgoing method found!").toString());
-            throw new NotConnectableChannelException(name, NotConnectableChannelException.Type.OUTGOING);
+            throw ExceptionUtils.createNoOutgoingMethodForChannel(name);
         }
 
         connectMessage.append(" and incoming method ");
@@ -117,7 +117,7 @@ class UniversalChannel {
 
         } else {
             LOGGER.severe(connectMessage.append("and no incoming method found!").toString());
-            throw new NotConnectableChannelException(name, NotConnectableChannelException.Type.INCOMING);
+            throw ExceptionUtils.createNoIncomingMethodForChannel(name);
         }
     }
 
@@ -131,11 +131,11 @@ class UniversalChannel {
         ConfigValue<String> outgoingConnectorName = config.get("mp.messaging.incoming").get(name).get("connector").asString();
         if (incomingConnectorName.isPresent()) {
             incomingConnector = router.getIncomingConnector(incomingConnectorName.get())
-                    .orElseThrow(() -> new NoConnectorFoundException(incomingConnectorName.get()));
+                    .orElseThrow(() -> ExceptionUtils.createNoConnectorFound(incomingConnectorName.get()));
         }
         if (outgoingConnectorName.isPresent()) {
             outgoingConnector = router.getOutgoingConnector(outgoingConnectorName.get())
-                    .orElseThrow(() -> new NoConnectorFoundException(outgoingConnectorName.get()));
+                    .orElseThrow(() -> ExceptionUtils.createNoConnectorFound(outgoingConnectorName.get()));
         }
     }
 

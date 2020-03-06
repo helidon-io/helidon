@@ -26,10 +26,11 @@ import java.util.concurrent.TimeoutException;
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
-import io.helidon.microprofile.messaging.CompletableQueueOverflowException;
+import io.helidon.microprofile.messaging.MessagingException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -90,7 +91,9 @@ public class ProcessorComplStageQueueOverflowBean implements AssertableTestBean 
     @Override
     public void assertValid() {
         try {
-            assertEquals(CompletableQueueOverflowException.class, overflowFuture.get(2, TimeUnit.SECONDS).getClass());
+            Throwable throwable = overflowFuture.get(2, TimeUnit.SECONDS);
+            assertEquals(MessagingException.class, throwable.getClass());
+            assertTrue(throwable.getMessage().contains("Maximum size"));
             assertFalse(forbiddenCall.isDone(), () -> {
                 try {
                     return forbiddenCall.get(1, TimeUnit.SECONDS);

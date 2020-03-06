@@ -17,19 +17,21 @@
 
 package io.helidon.microprofile.messaging;
 
-/**
- * Wrapper for all exceptions raised during stream passage.
- */
-public class MessagingStreamException extends RuntimeException {
+import javax.enterprise.inject.spi.DeploymentException;
 
-    private static final long serialVersionUID = -4092879455705923455L;
+/**
+ * Exception reporting problems during deployment of messaging.
+ */
+public class MessagingDeploymentException extends DeploymentException {
+
+    private static final long serialVersionUID = -3557502138808845259L;
 
     /**
-     * Create new {@link MessagingStreamException}.
+     * Create new {@link MessagingDeploymentException}.
      *
-     * @param cause wrapped exception
+     * @param message the exception message
      */
-    public MessagingStreamException(Throwable cause) {
-        super(cause);
+    MessagingDeploymentException(final String message) {
+        super(message);
     }
 }

@@ -18,18 +18,27 @@
 package io.helidon.microprofile.messaging;
 
 /**
- * Raised when {@link io.helidon.microprofile.messaging.CompletableQueue} max size is reached.
+ * Exception raised from messaging subscriber when onError signal is intercepted.
  */
-public class CompletableQueueOverflowException extends RuntimeException {
+public class MessagingException extends RuntimeException {
 
-    private static final long serialVersionUID = 4510381373545074118L;
+    private static final long serialVersionUID = 5597847427141298958L;
 
     /**
-     * Create new {@link io.helidon.microprofile.messaging.CompletableQueueOverflowException}.
+     * Create new {@link MessagingException} with supplied {@code Throwable} as cause.
      *
-     * @param maxSize maxim allowed size of queue
+     * @param cause of created {@link MessagingException}
      */
-    public CompletableQueueOverflowException(long maxSize) {
-        super(String.format("Maximum size %d of queue overflow!", maxSize));
+    MessagingException(final Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Create new {@link MessagingException} with supplied message.
+     *
+     * @param message the exception message
+     */
+    MessagingException(final String message) {
+        super(message);
     }
 }

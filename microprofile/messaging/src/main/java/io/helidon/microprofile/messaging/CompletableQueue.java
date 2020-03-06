@@ -75,7 +75,7 @@ class CompletableQueue<T> {
             queueLock.lock();
             queue.add(Item.create(future, metadata));
             if (++size > MAX_QUEUE_SIZE) {
-                throw new CompletableQueueOverflowException(MAX_QUEUE_SIZE);
+                throw ExceptionUtils.createCompletableQueueOverflow(MAX_QUEUE_SIZE);
             }
             future.whenComplete((t, u) -> tryFlush());
         } finally {
