@@ -19,7 +19,6 @@ package io.helidon.microprofile.graphql.server.util;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,7 @@ class JsonUtilsTest extends AbstractGraphQLTest {
     
     @Test
     @SuppressWarnings("unchecked")
-    public void testValidJSON() throws JsonProcessingException {
+    public void testValidJSON() {
         Map<String, Object> jsonMap = JsonUtils.convertJSONtoMap("{\"name\": \"tim\" }");
         assertThat(jsonMap, CoreMatchers.is(CoreMatchers.notNullValue()));
         assertThat(jsonMap.size(), CoreMatchers.is(1));
@@ -53,19 +52,19 @@ class JsonUtilsTest extends AbstractGraphQLTest {
     }
 
     @Test
-    public void testNullJson() throws JsonProcessingException {
+    public void testNullJson() {
         Map<String, Object> jsonMap = JsonUtils.convertJSONtoMap(null);
         assertThat(jsonMap.size(), CoreMatchers.is(0));
     }
 
     @Test
-    public void testEmptyJson() throws JsonProcessingException {
+    public void testEmptyJson() {
         Map<String, Object> jsonMap = JsonUtils.convertJSONtoMap("   ");
         assertThat(jsonMap.size(), CoreMatchers.is(0));
     }
 
     @Test
-    public void testConvertToJson() throws JsonProcessingException {
+    public void testConvertToJson() {
        Map<String, Object> map = new HashMap<>();
        map.put("name", "tim");
        assertThat(JsonUtils.convertMapToJson(map), CoreMatchers.is("{\"name\":\"tim\"}"));

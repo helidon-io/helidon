@@ -64,7 +64,7 @@ public class GraphQLResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     public Response processGraphQLQueryGET(@QueryParam("query") String query,
                                            @QueryParam("operationName") String operation,
-                                           @QueryParam("variables") String variables) throws JsonProcessingException {
+                                           @QueryParam("variables") String variables)  {
         Map<String, Object> mapVariables = null;
         if (variables != null) {
             mapVariables = JsonUtils.convertJSONtoMap(variables);
@@ -111,8 +111,7 @@ public class GraphQLResource {
      * @param variables variables to apply to query, may be null
      * @return a {@link Response} containing the results of the query
      */
-    private Response processRequest(String query, String operation, Map<String, Object> variables)
-            throws JsonProcessingException {
+    private Response processRequest(String query, String operation, Map<String, Object> variables) {
         ExecutionResult executionResult = context.execute(query, operation, variables);
         return Response.ok(JsonUtils.convertMapToJson(executionResult.toSpecification())).build();
     }
@@ -123,7 +122,7 @@ public class GraphQLResource {
      * @param variables Json string of variables
      * @return a {@link Map} of variables
      */
-    private Map<String, Object> getVariables(Object variables) throws JsonProcessingException {
+    private Map<String, Object> getVariables(Object variables) {
         if (variables instanceof Map) {
             Map<?, ?> inputVars = (Map) variables;
             Map<String, Object> vars = new HashMap<>();

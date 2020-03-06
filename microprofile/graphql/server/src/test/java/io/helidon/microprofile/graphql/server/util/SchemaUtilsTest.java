@@ -207,7 +207,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertThat(schemaUtils.getSimpleName(SchemaUtils.FLOAT), is(SchemaUtils.FLOAT));
         assertThat(schemaUtils.getSimpleName(SchemaUtils.STRING), is(SchemaUtils.STRING));
     }
-
+  
     private void assertDiscoveredMethod(SchemaUtils.DiscoveredMethod discoveredMethod,
                                         String name,
                                         String returnType,

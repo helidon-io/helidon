@@ -19,9 +19,11 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Map;
 
+import graphql.ExecutionResult;
 import io.helidon.microprofile.graphql.server.model.Schema;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
@@ -48,6 +50,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
 
     private String indexFileName = null;
     private File indexFile = null;
+    private DummyContext dummyContext = new DummyContext("Dummy");
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -135,6 +138,18 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     public void testInterfaceDiscoveryWithoutTypes() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class);
         assertInterfaceResults();
+    }
+
+    @Test
+    public void testSimpleQueryGenerationNoArgs() throws IOException, IntrospectionException, ClassNotFoundException {
+        setupIndex(indexFileName, SimpleQueriesNoArgs.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+      //  displaySchema(executionContext.getGraphQLSchema());
+        ExecutionResult result = executionContext.execute("query { hero }");
+
+        Map<String, Object> mapResults = getAndAssertResult(result);
+
+        assertThat(mapResults.size(), is(1));
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {

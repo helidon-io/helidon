@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server.model;
 import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.NEWLINE;
 import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.NOTHING;
 import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.QUOTE;
+import static io.helidon.microprofile.graphql.server.model.SchemaGenerator.TRIPLE_QUOTE;
 
 /**
  * Describes an element that has a description.
@@ -27,28 +28,36 @@ public interface DescriptiveElement {
 
     /**
      * Set the description for this element.
+     *
      * @param description the description for this element
      */
     void setDescription(String description);
 
     /**
      * Return the description for this element.
+     *
      * @return the description for this element
      */
     String getDescription();
 
     /**
-     * Return the description of the schema element.
-     * Only valid for Type, Field, Method, Parameter
+     * Return the description of the schema element. Only valid for Type, Field, Method, Parameter
+     *
      * @return the description of the schema element.
      */
     default String getSchemaElementDescription() {
 
-        if (getDescription() != null) {
+        String description = getDescription();
+        if (description != null) {
+            // if the description contains a quote or newline then use the triple quote option
+            boolean useNormalQuotes = description.indexOf('\n') == -1 && description.indexOf('"') == -1;
+
             return new StringBuilder()
-                    .append(QUOTE)
-                    .append(getDescription().replaceAll("\"", "\\\\\""))
-                    .append(QUOTE)
+                    .append(useNormalQuotes
+                                    ? QUOTE : (TRIPLE_QUOTE + NEWLINE))
+                    .append(description)
+                    .append(useNormalQuotes
+                                    ? QUOTE : (NEWLINE + TRIPLE_QUOTE))
                     .append(NEWLINE)
                     .toString();
         }

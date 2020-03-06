@@ -49,6 +49,10 @@
             <artifactId>jakarta.json.bind-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.eclipse</groupId>
+            <artifactId>yasson</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
             <exclusions>

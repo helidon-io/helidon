@@ -3,16 +3,18 @@ package io.helidon.microprofile.graphql.server.util;
 import java.util.Collections;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 
 /**
  * Various Json utilities.
  */
 public class JsonUtils {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    /**
+     * JSONB instance.
+     */
+    private static final Jsonb JSONB = JsonbBuilder.create();
 
     /**
      * Private constructor for utilities class.
@@ -27,11 +29,11 @@ public class JsonUtils {
      * @return a {@link Map} containing the JSON.
      */
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> convertJSONtoMap(String json) throws JsonProcessingException {
+    public static Map<String, Object> convertJSONtoMap(String json) {
         if (json == null || json.trim().length() == 0) {
             return Collections.emptyMap();
         }
-        return OBJECT_MAPPER.readValue(json, new TypeReference<>() { });
+        return JSONB.fromJson(json, Map.class);
     }
 
     /**
@@ -40,8 +42,8 @@ public class JsonUtils {
      * @param map {@link Map} to convert toJson
      * @return a Json String representation
      */
-    public static String convertMapToJson(Map map) throws JsonProcessingException {
-        return OBJECT_MAPPER.writeValueAsString(map);
+    public static String convertMapToJson(Map map) {
+        return JSONB.toJson(map);
     }
 }
 

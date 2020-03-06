@@ -23,7 +23,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Map;
 
+import graphql.ExecutionResult;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
 import io.helidon.microprofile.graphql.server.model.Schema;
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.Assertions;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Functionality for use by unit and functional tests.
@@ -50,33 +53,32 @@ public abstract class AbstractGraphQLTest {
     /**
      * Create a Jandex index using the given file name and classes.
      *
-     * @param fileName  the file name to write the index to. The classes should be in the format of
-     *                  "java/lang/Thread.class"
-     * @param clazzes   classes to index
+     * @param fileName the file name to write the index to. The classes should be in the format of "java/lang/Thread.class"
+     * @param clazzes  classes to index
      */
     public static void createManualIndex(String fileName, String... clazzes) throws IOException {
-         Indexer indexer = new Indexer();
-         for (String clazz : clazzes) {
-             InputStream stream = AbstractGraphQLTest.class.getClassLoader().getResourceAsStream(clazz);
-             indexer.index(stream);
-             stream.close();
-         }
-         Index index = indexer.complete();
+        Indexer indexer = new Indexer();
+        for (String clazz : clazzes) {
+            InputStream stream = AbstractGraphQLTest.class.getClassLoader().getResourceAsStream(clazz);
+            indexer.index(stream);
+            stream.close();
+        }
+        Index index = indexer.complete();
 
-         FileOutputStream out = new FileOutputStream(fileName);
-         IndexWriter writer = new IndexWriter(out);
-         try {
-             writer.write(index);
-         }
-         finally {
-             out.close();
-         }
+        FileOutputStream out = new FileOutputStream(fileName);
+        IndexWriter writer = new IndexWriter(out);
+        try {
+            writer.write(index);
+        } finally {
+            out.close();
+        }
     }
-    
+
     /**
      * Return a temporary file which will be used to import the Jandex index to.
+     *
      * @return a new {@link File}
-     * @throws IOException  if any IO related errors
+     * @throws IOException if any IO related errors
      */
     public static String getTempIndexFile() throws IOException {
         return Files.createTempFile("index" + System.currentTimeMillis(), "idx").toFile().toString();
@@ -103,8 +105,7 @@ public abstract class AbstractGraphQLTest {
             String sFromFile = new String(Files.readAllBytes(file.toPath()));
 
             assertThat("Results do not match expected", results, is(sFromFile));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("Exception in resultsMatch sResults=[" + results + "], sFileName=" + fileName, e);
         }
     }
@@ -113,22 +114,28 @@ public abstract class AbstractGraphQLTest {
 
         try {
             GraphQLSchema graphQLSchema = schema.generateGraphQLSchema();
-            System.err.println("Schema:\n=======\n"
-                                       + getSchemaPrinter().print(graphQLSchema) +
-                                       "\n=======");
+            displaySchema(graphQLSchema);
             return graphQLSchema;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Assertions.fail("Schema generation failed. " + e.getMessage() +
-                    "\ncause: " + e.getCause() +
-                    "\nSchema: \n" + schema.getSchemaAsString());
+                                    "\ncause: " + e.getCause() +
+                                    "\nSchema: \n" + schema.getSchemaAsString());
             return null;
         }
     }
 
+    protected void displaySchema(GraphQLSchema graphQLSchema) {
+        System.err.println("Schema:\n=======\n"
+                                   + getSchemaPrinter().print(graphQLSchema) +
+                                   "\n=======");
+    }
+
     protected SchemaPrinter getSchemaPrinter() {
         if (schemaPrinter == null) {
-            SchemaPrinter.Options options = SchemaPrinter.Options.defaultOptions().includeDirectives(false);
+            SchemaPrinter.Options options = SchemaPrinter.Options
+                    .defaultOptions().includeDirectives(false)
+                    .includeExtendedScalarTypes(true)
+                    .includeScalarTypes(true);
             schemaPrinter = new SchemaPrinter(options);
         }
         return schemaPrinter;
@@ -162,4 +169,52 @@ public abstract class AbstractGraphQLTest {
         return clazz.getName().replaceAll("\\.", "/") + ".class";
     }
 
+    protected boolean hasErrors(ExecutionResult executionResult) {
+        return executionResult.getErrors().size() > 0;
+    }
+
+    protected void displayErrors(ExecutionResult result) {
+        System.err.println(getError(result));
+    }
+
+    protected String getError(ExecutionResult result) {
+        assertThat(result, CoreMatchers.is(notNullValue()));
+        StringBuilder sb = new StringBuilder("Errors: ");
+        result.getErrors().forEach(e -> sb.append(e.getErrorType()
+                                                          .toString())
+                .append(" ")
+                .append(e.getMessage())
+                .append(" ")
+                .append(e.getLocations() != null ? e.getLocations().toString() : "")
+                .append('\n'));
+        return sb.toString();
+    }
+
+    /**
+     * Assert an {@link ExecutionResult} is true and if not then display the error.
+     *
+     * @param result {@link ExecutionResult} data
+     */
+    protected Map<String, Object> getAndAssertResult(ExecutionResult result) {
+        boolean failed = result.getErrors().size() > 0;
+        if (failed) {
+            String sError = getError(result);
+            fail(sError);
+        }
+        return result.getData();
+    }
+
+    /**
+     * Assert an {@link ExecutionResult} is true and if not then display the error.
+     *
+     * @param result {@link ExecutionResult} extensions
+     */
+    protected Map<Object, Object> getAndAssertExtensions(ExecutionResult result) {
+        boolean failed = result.getErrors().size() > 0;
+        if (failed) {
+            String sError = getError(result);
+            fail(sError);
+        }
+        return result.getExtensions();
+    }
 }

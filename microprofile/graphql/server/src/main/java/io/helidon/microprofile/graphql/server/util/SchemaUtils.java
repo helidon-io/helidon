@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server.util;
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -81,12 +82,12 @@ public class SchemaUtils {
         put(OffsetTime.class.getName(), new SchemaScalar("Time", OffsetTime.class.getName(), ExtendedScalars.Time));
         put(LocalTime.class.getName(), new SchemaScalar("LocalTime", OffsetTime.class.getName(), ExtendedScalars.Time));
         put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object));
-        put(Long.class.getName(), new SchemaScalar("Long", Long.class.getName(), Scalars.GraphQLLong));
         put(OffsetDateTime.class.getName(),
             new SchemaScalar("DateTime", OffsetDateTime.class.getName(), ExtendedScalars.DateTime));
         put(LocalDate.class.getName(), new SchemaScalar("Date", LocalDate.class.getName(), ExtendedScalars.Date));
         put(BigDecimal.class.getName(), new SchemaScalar("BigDecimal", Long.class.getName(), Scalars.GraphQLBigDecimal));
         put(BigInteger.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
+        put(Long.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
     }};
 
     /**
@@ -100,12 +101,6 @@ public class SchemaUtils {
         add("Float");
         add("java.lang.Float");
         add("java.lang.Number");
-    }};
-
-    private static final List<String> LONG_LIST = new ArrayList<>() {{
-        add("java.lang.Long");
-        add("long");
-        add("Long");
     }};
 
     private static final List<String> BOOLEAN_LIST = new ArrayList<>() {{
@@ -157,7 +152,6 @@ public class SchemaUtils {
         addAll(STRING_LIST);
         addAll(FLOAT_LIST);
         addAll(INTEGER_LIST);
-        addAll(LONG_LIST);
     }};
 
     /**
@@ -250,8 +244,9 @@ public class SchemaUtils {
     protected Schema generateSchemaFromClasses(Class<?>... clazzes) throws IntrospectionException, ClassNotFoundException {
         Schema schema = new Schema();
         List<SchemaType> listSchemaTypes = new ArrayList<>();
-        List<Class<?>> listGraphQLApis = new ArrayList<>();
         setUnresolvedTypes.clear();
+
+        SchemaType rootQueryType = new SchemaType(schema.getQueryName(), null);
 
         for (Class<?> clazz : clazzes) {
             // only include interfaces and concrete classes/enums
@@ -285,7 +280,8 @@ public class SchemaUtils {
                         type.setDescription(descriptionAnnotation.value());
                     }
 
-                    listSchemaTypes.add(type);
+                    // add the discovered type
+                    addTypeToSchema(schema, type);
 
                     if (type.isInterface()) {
                         // is an interface so check for any implementors and add them to
@@ -303,16 +299,12 @@ public class SchemaUtils {
                 // obtain top level query API's
                 //
                 if (clazz.isAnnotationPresent(GraphQLApi.class)) {
-                    // defines top level
-                    listGraphQLApis.add(clazz);
+                    addRootQueriesToSchema(rootQueryType, schema, clazz);
                 }
             }
         }
 
-        // process all the types
-        addTypesToSchema(schema, listSchemaTypes);
-
-        // create any types that are yet unresolved. e.g. an Order that contains OrderLine objects
+        // create any types that are still unresolved. e.g. an Order that contains OrderLine objects
         // we must also ensure if the unresolved type contains another unresolved type then we process it
         while (setUnresolvedTypes.size() > 0) {
             String returnType = setUnresolvedTypes.iterator().next();
@@ -340,7 +332,7 @@ public class SchemaUtils {
                     boolean fExists = schema.getTypes().stream()
                             .filter(t -> t.getName().equals(simpleName)).count() > 0;
                     if (!fExists) {
-                        SchemaType newType = generateType(returnType, setUnresolvedTypes);
+                        SchemaType newType = generateType(returnType);
 
                         // update any return types to the discovered scalars
                         checkScalars(schema, newType);
@@ -370,10 +362,8 @@ public class SchemaUtils {
             });
         });
 
-        SchemaType rootQueryType = new SchemaType(schema.getQueryName(), null);
-
         // process the @GraphQLApi annotated classes
-        if (listGraphQLApis.size() == 0) {
+        if (rootQueryType.getFieldDefinitions().size() == 0) {
             LOGGER.warning("Unable to find any classes with @GraphQLApi annotation."
                                    + "Unable to build schema");
         } else {
@@ -388,13 +378,12 @@ public class SchemaUtils {
     /**
      * Generate a {@link SchemaType} from a given class.
      *
-     * @param realReturnType     the class to generate type from
-     * @param setUnresolvedTypes the set of unresolved types to add to if we find one
+     * @param realReturnType the class to generate type from
      * @return a {@link SchemaType}
      * @throws IntrospectionException
      * @throws ClassNotFoundException
      */
-    private SchemaType generateType(String realReturnType, Set<String> setUnresolvedTypes)
+    private SchemaType generateType(String realReturnType)
             throws IntrospectionException, ClassNotFoundException {
 
         String simpleName = getSimpleName(realReturnType);
@@ -419,53 +408,70 @@ public class SchemaUtils {
     }
 
     /**
-     * Add all collected types to the {@link Schema}.
+     * Add all the queries in the annotated class to the root query defined by the {@link SchemaType}.
      *
-     * @param schema             the {@link Schema} to add to
-     * @param listTypes          the {@link List} of {@link Type}s previously obtained.
+     * @param schemaType the root query type
+     * @param clazz      {@link Class} to introspect
      * @throws IntrospectionException
-     * @throws ClassNotFoundException
      */
-    private void addTypesToSchema(Schema schema, List<SchemaType> listTypes)
-            throws IntrospectionException, ClassNotFoundException {
+    private void addRootQueriesToSchema(SchemaType schemaType, Schema schema, Class<?> clazz) throws IntrospectionException {
+        retrieveBeanMethods(clazz).forEach((k, v) -> {
+            String methodName = k;
+            DiscoveredMethod method = v;
 
-        for (SchemaType t : listTypes) {
-            String valueClassName = t.getValueClassName();
-            retrieveBeanMethods(Class.forName(valueClassName)).forEach((k, v) -> {
+            DataFetcher dataFetcher = null;
 
-                SchemaFieldDefinition fd = newFieldDefinition(v);
-                t.addFieldDefinition(fd);
-
-                checkScalars(schema, t);
-
-                String returnType = v.getReturnType();
-                // check to see if this is a known type
-                if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
-                    // value class was unchanged meaning we need to resolve
-                    setUnresolvedTypes.add(returnType);
-                }
-            });
-
-            // check if this Type is an interface then obtain all concrete classes that implement the type
-            // and add them to the set of unresolved types
-            if (t.isInterface()) {
-                Collection<Class<?>> setConcreteClasses = jandexUtils.getKnownImplementors(valueClassName);
-                setConcreteClasses.forEach(c -> setUnresolvedTypes.add(c.getName()));
+            SchemaFieldDefinition fd = newFieldDefinition(v);
+            if (dataFetcher != null) {
+                fd.setDataFetcher(dataFetcher);
             }
+            schemaType.addFieldDefinition(fd);
 
-            schema.addType(t);
-        }
+            checkScalars(schema, schemaType);
+
+            String returnType = v.getReturnType();
+            // check to see if this is a known type
+            if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
+                // value class was unchanged meaning we need to resolve
+                setUnresolvedTypes.add(returnType);
+            }
+        });
     }
 
     /**
-     * Process a {@link Class} which has been annotated with {@link GraphQLApi}.
+     * Add the type to the {@link Schema}.
      *
-     * @param schema the {@link Schema} to add the discovered information to
-     * @param clazz  {@link Class} to introspect
-     * @param
+     * @param schema the {@link Schema} to add to
+     * @throws IntrospectionException
+     * @throws ClassNotFoundException
      */
-    private void processGraphQLApi(Schema schema, Class<?> clazz) {
+    private void addTypeToSchema(Schema schema, SchemaType type)
+            throws IntrospectionException, ClassNotFoundException {
 
+        String valueClassName = type.getValueClassName();
+        retrieveBeanMethods(Class.forName(valueClassName)).forEach((k, v) -> {
+
+            SchemaFieldDefinition fd = newFieldDefinition(v);
+            type.addFieldDefinition(fd);
+
+            checkScalars(schema, type);
+
+            String returnType = v.getReturnType();
+            // check to see if this is a known type
+            if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
+                // value class was unchanged meaning we need to resolve
+                setUnresolvedTypes.add(returnType);
+            }
+        });
+
+        // check if this Type is an interface then obtain all concrete classes that implement the type
+        // and add them to the set of unresolved types
+        if (type.isInterface()) {
+            Collection<Class<?>> setConcreteClasses = jandexUtils.getKnownImplementors(valueClassName);
+            setConcreteClasses.forEach(c -> setUnresolvedTypes.add(c.getName()));
+        }
+
+        schema.addType(type);
     }
 
     /**
@@ -679,8 +685,6 @@ public class SchemaUtils {
     protected static String getGraphQLType(String className) {
         if (INTEGER_LIST.contains(className)) {
             return INT;
-        } else if (LONG_LIST.contains(className)) {
-            return Long.class.getName();
         } else if (FLOAT_LIST.contains(className)) {
             return FLOAT;
         } else if (BOOLEAN_LIST.contains(className)) {
@@ -713,105 +717,119 @@ public class SchemaUtils {
                 .forEach(pd -> {
                     Method readMethod = pd.getReadMethod();
                     Method writeMethod = pd.getWriteMethod();
-                    DiscoveredMethod discoveredMethod = null;
 
-                    String name = readMethod.getName();
-                    String prefix = null;
-                    String varName;
-                    if (name.startsWith("is")) {
-                        prefix = "is";
-                    } else if (name.startsWith("get")) {
-                        prefix = "get";
-                    }
-
-                    // remove the prefix and make first letter lowercase
-                    varName = name.replaceAll(prefix, "");
-                    varName = varName.substring(0, 1).toLowerCase() + varName.substring(1);
-
-                    // check for either Name or JsonbProperty annotations on method or field
-                    String annotatedName = getMethodName(readMethod);
-                    if (annotatedName != null) {
-                        varName = annotatedName;
-                    } else {
-                        // check the field
-                        annotatedName = getFieldName(clazz, pd.getName());
-                        if (annotatedName != null) {
-                            varName = annotatedName;
-                        }
-                    }
-
-                    Class returnClazz = readMethod.getReturnType();
-                    String returnClazzName = returnClazz.getName();
-
-                    boolean fieldHasIdAnnotation = false;
-                    // check for Id annotation on class or field associated with the read method
-                    // and if present change the type to ID
-                    try {
-                        Field field = clazz.getDeclaredField(pd.getName());
-                        fieldHasIdAnnotation = field != null && field.getAnnotation(Id.class) != null;
-                    } catch (NoSuchFieldException e) {
-                        // ignore
-                    }
-
-                    if (fieldHasIdAnnotation || readMethod.getAnnotation(Id.class) != null) {
-                        returnClazzName = ID;
-                    }
-
-                    // check various array types
-                    if (Collection.class.isAssignableFrom(returnClazz)) {
-                        java.lang.reflect.Type returnType = readMethod.getGenericReturnType();
-                        if (returnType instanceof ParameterizedType) {
-                            ParameterizedType paramReturnType = (ParameterizedType) returnType;
-                            discoveredMethod = new DiscoveredMethod(varName,
-                                                                    paramReturnType.getActualTypeArguments()[0].getTypeName(),
-                                                                    READ);
-                            discoveredMethod.setCollectionType(returnClazzName);
-                        }
-                    } else if (Map.class.isAssignableFrom(returnClazz)) {
-                        java.lang.reflect.Type returnType = readMethod.getGenericReturnType();
-                        if (returnType instanceof ParameterizedType) {
-                            ParameterizedType paramReturnType = (ParameterizedType) returnType;
-                            // we are only interested in the value type as for this implementation we return a collection of
-                            //values()
-                            discoveredMethod = new DiscoveredMethod(varName,
-                                                                    paramReturnType.getActualTypeArguments()[1].getTypeName(),
-                                                                    READ);
-                            discoveredMethod.setMap(true);
-                        }
-                    } else if (!returnClazzName.isEmpty() && returnClazzName.startsWith("[")) {
-                        // return type is array of either primitives or Objects/Interfaces.
-                        String sPrimitiveType = PRIMITIVE_ARRAY_MAP.get(returnClazzName);
-                        if (sPrimitiveType != null) {
-                            // is an array of primitives
-                            discoveredMethod = new DiscoveredMethod(varName, sPrimitiveType, READ);
-                            discoveredMethod.setArrayReturnType(true);
-                        } else {
-                            // Array of Object/Interface
-                            // We are only supporting single level arrays currently
-                            int cArrayCount = 0;
-                            for (int i = 0; i < returnClazzName.length(); i++) {
-                                if (returnClazzName.charAt(i) == '[') {
-                                    cArrayCount++;
-                                }
-                            }
-
-                            if (cArrayCount > 1) {
-                                LOGGER.warning("Multi-dimension arrays are not yet supported. Ignoring field " + name);
-                            } else {
-                                String sRealReturnClass = returnClazzName.substring(2, returnClazzName.length() - 1);
-                                discoveredMethod = new DiscoveredMethod(varName, sRealReturnClass, READ);
-                                discoveredMethod.setArrayReturnType(true);
-                            }
-                        }
-                    } else {
-                        discoveredMethod = new DiscoveredMethod(varName, returnClazzName, READ);
-                    }
+                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(readMethod, clazz, pd);
 
                     if (discoveredMethod != null) {
                         mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
                     }
                 });
         return mapDiscoveredMethods;
+    }
+
+    /**
+     * Generate a {@link DiscoveredMethod} from the given arguments.
+     *
+     * @param method {@link Method} being introspected
+     * @param clazz  {@link Class} being introspected
+     * @param pd     {@link PropertyDescriptor} for the property being introspected
+     * @return a {@link DiscoveredMethod}
+     */
+    private static DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz, PropertyDescriptor pd) {
+        DiscoveredMethod discoveredMethod = null;
+
+        String name = method.getName();
+        String prefix = null;
+        String varName;
+        if (name.startsWith("is")) {
+            prefix = "is";
+        } else if (name.startsWith("get")) {
+            prefix = "get";
+        }
+
+        // remove the prefix and make first letter lowercase
+        varName = name.replaceAll(prefix, "");
+        varName = varName.substring(0, 1).toLowerCase() + varName.substring(1);
+        // check for either Name or JsonbProperty annotations on method or field
+        String annotatedName = getMethodName(method);
+        if (annotatedName != null) {
+            varName = annotatedName;
+        } else {
+            // check the field
+            annotatedName = getFieldName(clazz, pd.getName());
+            if (annotatedName != null) {
+                varName = annotatedName;
+            }
+        }
+
+        Class returnClazz = method.getReturnType();
+        String returnClazzName = returnClazz.getName();
+
+        boolean fieldHasIdAnnotation = false;
+        // check for Id annotation on class or field associated with the read method
+        // and if present change the type to ID
+        try {
+            Field field = clazz.getDeclaredField(pd.getName());
+            fieldHasIdAnnotation = field != null && field.getAnnotation(Id.class) != null;
+        } catch (NoSuchFieldException e) {
+            // ignore
+        }
+
+        if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
+            returnClazzName = ID;
+        }
+
+        // check various array types
+        if (Collection.class.isAssignableFrom(returnClazz)) {
+            java.lang.reflect.Type returnType = method.getGenericReturnType();
+            if (returnType instanceof ParameterizedType) {
+                ParameterizedType paramReturnType = (ParameterizedType) returnType;
+                discoveredMethod = new DiscoveredMethod(varName,
+                                                        paramReturnType.getActualTypeArguments()[0].getTypeName(),
+                                                        READ, method);
+                discoveredMethod.setCollectionType(returnClazzName);
+            }
+        } else if (Map.class.isAssignableFrom(returnClazz)) {
+            java.lang.reflect.Type returnType = method.getGenericReturnType();
+            if (returnType instanceof ParameterizedType) {
+                ParameterizedType paramReturnType = (ParameterizedType) returnType;
+                // we are only interested in the value type as for this implementation we return a collection of
+                //values()
+                discoveredMethod = new DiscoveredMethod(varName,
+                                                        paramReturnType.getActualTypeArguments()[1].getTypeName(),
+                                                        READ, method);
+                discoveredMethod.setMap(true);
+            }
+        } else if (!returnClazzName.isEmpty() && returnClazzName.startsWith("[")) {
+            // return type is array of either primitives or Objects/Interfaces.
+            String sPrimitiveType = PRIMITIVE_ARRAY_MAP.get(returnClazzName);
+            if (sPrimitiveType != null) {
+                // is an array of primitives
+                discoveredMethod = new DiscoveredMethod(varName, sPrimitiveType, READ, method);
+                discoveredMethod.setArrayReturnType(true);
+            } else {
+                // Array of Object/Interface
+                // We are only supporting single level arrays currently
+                int cArrayCount = 0;
+                for (int i = 0; i < returnClazzName.length(); i++) {
+                    if (returnClazzName.charAt(i) == '[') {
+                        cArrayCount++;
+                    }
+                }
+
+                if (cArrayCount > 1) {
+                    LOGGER.warning("Multi-dimension arrays are not yet supported. Ignoring field " + name);
+                } else {
+                    String sRealReturnClass = returnClazzName.substring(2, returnClazzName.length() - 1);
+                    discoveredMethod = new DiscoveredMethod(varName, sRealReturnClass, READ, method);
+                    discoveredMethod.setArrayReturnType(true);
+                }
+            }
+        } else {
+            discoveredMethod = new DiscoveredMethod(varName, returnClazzName, READ, method);
+        }
+
+        return discoveredMethod;
     }
 
     /**
@@ -911,16 +929,22 @@ public class SchemaUtils {
         private boolean isMap;
 
         /**
+         * The actual method.
+         */
+        private Method method;
+
+        /**
          * Constructor using name and return type.
          *
          * @param name       name of the method
          * @param returnType return type
          * @param methodType type of the method
          */
-        public DiscoveredMethod(String name, String returnType, int methodType) {
+        public DiscoveredMethod(String name, String returnType, int methodType, Method method) {
             this.name = name;
             this.returnType = returnType;
             this.methodType = methodType;
+            this.method = method;
         }
 
         public String getName() {
@@ -975,6 +999,14 @@ public class SchemaUtils {
             return collectionType != null;
         }
 
+        public Method getMethod() {
+            return method;
+        }
+
+        public void setMethod(Method method) {
+            this.method = method;
+        }
+
         @Override
         public String toString() {
             return "DiscoveredMethod{"
@@ -983,6 +1015,7 @@ public class SchemaUtils {
                     + ", methodType=" + methodType
                     + ", collectionType='" + collectionType + '\''
                     + ", isArrayReturnType=" + isArrayReturnType
+                    + ", method=" + method
                     + ", isMap=" + isMap + '}';
         }
 
@@ -1000,12 +1033,14 @@ public class SchemaUtils {
                     && isMap == that.isMap
                     && Objects.equals(name, that.name)
                     && Objects.equals(returnType, that.returnType)
+                    && Objects.equals(method, that.method)
                     && Objects.equals(collectionType, that.collectionType);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, returnType, methodType, collectionType, isArrayReturnType, isMap);
+            return Objects.hash(name, returnType, methodType, method,
+                                collectionType, isArrayReturnType, isMap);
         }
     }
 

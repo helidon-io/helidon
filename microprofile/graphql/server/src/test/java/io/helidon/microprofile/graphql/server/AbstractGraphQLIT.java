@@ -141,7 +141,7 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
      * @param response {@link javax.ws.rs.core.Response} received from web server
      * @return the response as Json
      */
-    protected Map<String, Object> getJsonResponse(Response response) throws JsonProcessingException {
+    protected Map<String, Object> getJsonResponse(Response response) {
         String stringResponse = (response.readEntity(String.class));
         assertThat(stringResponse, is(notNullValue()));
         return JsonUtils.convertJSONtoMap(stringResponse);

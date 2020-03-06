@@ -26,11 +26,6 @@ public interface SchemaGenerator {
     String NOTHING = "";
 
     /**
-     * Comma and newline.
-     */
-    String COMMA_NEWLINE = ",\n";
-
-    /**
      * Comma and space.
      */
     String COMMA_SPACE = ", ";
@@ -41,9 +36,14 @@ public interface SchemaGenerator {
     String COMMA = ",";
 
     /**
-     * A comment identifier.
+     * Triple quote.
      */
-    String COMMENT = "#";
+    String TRIPLE_QUOTE = "\"\"\"";
+    
+    /**
+     * Double quote.
+     */
+    String QUOTE = "\"";
 
     /**
      * Spacer.
@@ -69,11 +69,6 @@ public interface SchemaGenerator {
      * Mandatory indicator.
      */
     char MANDATORY = '!';
-
-    /**
-     * Double quote.
-     */
-    char QUOTE = '"';
 
     /**
      * Open curly bracket.

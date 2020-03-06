@@ -71,6 +71,7 @@ public class ExecutionContext<C> {
      * A context to pass to GrapQL for execution.
      */
     private C context;
+
     /**
      * Return the {@link GraphQLSchema} instance created.
      *
@@ -100,7 +101,10 @@ public class ExecutionContext<C> {
             this.schema = schemaUtils.generateSchema();
             this.graphQLSchema = schema.generateGraphQLSchema();
             this.context = context;
-            SchemaPrinter.Options options = SchemaPrinter.Options.defaultOptions().includeDirectives(false);
+            SchemaPrinter.Options options = SchemaPrinter.Options
+                    .defaultOptions().includeDirectives(false)
+                    .includeScalarTypes(true)
+                    .includeExtendedScalarTypes(true);
             SchemaPrinter schemaPrinter = new SchemaPrinter(options);
 
             GraphQL.Builder builder = GraphQL.newGraphQL(this.graphQLSchema)

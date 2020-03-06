@@ -21,7 +21,7 @@ import org.eclipse.microprofile.graphql.Description;
 /**
  * Represents a Car.
  */
-@Description("A representation of a car")
+@Description("A representation of a car.\nThis description should be surrounded by triple quotes.\nThe end.")
 public class Car extends AbstractVehicle {
 
     private int numberOfDoors;
