@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * {@link Subscribeable} test.
+ * {@link Subscribable} test.
  */
 public class SubscribableTest {
 
     @Test
     public void testSubscriberFunctionalConsumer() {
         TestConsumer<String> consumer = new TestConsumer<>();
-        Multi.just("foo").subscribe(consumer);
+        Multi.singleton("foo").subscribe(consumer);
         assertThat(consumer.item, is(equalTo("foo")));
     }
 
@@ -54,7 +54,7 @@ public class SubscribableTest {
                 throw new IllegalStateException("foo!");
             }
         };
-        Multi.just("foo").subscribe(consumer, errorConsumer);
+        Multi.singleton("foo").subscribe(consumer, errorConsumer);
         assertThat(consumer.item, is(nullValue()));
         assertThat(errorConsumer.item, is(instanceOf(IllegalStateException.class)));
     }
@@ -107,7 +107,7 @@ public class SubscribableTest {
             }
         };
         TestConsumer<String> consumer = new TestConsumer<>();
-        Multi.just("foo").subscribe(consumer, null, null, subscriptionConsumer);
+        Multi.singleton("foo").subscribe(consumer, null, null, subscriptionConsumer);
         assertThat(consumer.item, is(equalTo("foo")));
     }
 
@@ -129,7 +129,7 @@ public class SubscribableTest {
                 throw new IllegalStateException("foo!");
             }
         };
-        Multi.<String>just("foo").subscribe(null, errorConsumer, null, subscriptionConsumer);
+        Multi.<String>singleton("foo").subscribe(null, errorConsumer, null, subscriptionConsumer);
         assertThat(errorConsumer.item, is(instanceOf(IllegalStateException.class)));
     }
 

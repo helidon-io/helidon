@@ -83,7 +83,7 @@ public class MultiTappedPublisherTest {
 
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.just(1)
+        Multi.singleton(1)
         .peek(v -> { throw new IllegalArgumentException(); })
         .subscribe(ts);
 
@@ -166,7 +166,7 @@ public class MultiTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         new MultiTappedPublisher<>(
-                Multi.just(1),
+                Multi.singleton(1),
                 null,
                 null,
                 null,
@@ -197,7 +197,7 @@ public class MultiTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         new MultiTappedPublisher<>(
-                Multi.just(1),
+                Multi.singleton(1),
                 null,
                 null,
                 null,
@@ -226,7 +226,7 @@ public class MultiTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         new MultiTappedPublisher<>(
-                Multi.just(1),
+                Multi.singleton(1),
                 null,
                 null,
                 e -> {
@@ -258,7 +258,7 @@ public class MultiTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         new MultiTappedPublisher<>(
-                Multi.just(1),
+                Multi.singleton(1),
                 null,
                 null,
                 e -> {
@@ -291,7 +291,7 @@ public class MultiTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         new MultiTappedPublisher<>(
-                Multi.just(1),
+                Multi.singleton(1),
                 null,
                 null,
                 null,
@@ -321,7 +321,7 @@ public class MultiTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         new MultiTappedPublisher<>(
-                Multi.just(1),
+                Multi.singleton(1),
                 null,
                 null,
                 e -> {
@@ -353,7 +353,7 @@ public class MultiTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         new MultiTappedPublisher<>(
-                Multi.just(1),
+                Multi.singleton(1),
                 null,
                 null,
                 e -> {
@@ -383,7 +383,7 @@ public class MultiTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-        Multi.just(1)
+        Multi.singleton(1)
                 .peek(v -> calls.getAndIncrement())
                 .peek(v -> calls.getAndIncrement())
                 .subscribe(ts);
@@ -402,7 +402,7 @@ public class MultiTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-        Multi.just(1)
+        Multi.singleton(1)
                 .onComplete(calls::getAndIncrement)
                 .onComplete(calls::getAndIncrement)
                 .subscribe(ts);
@@ -421,7 +421,7 @@ public class MultiTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-        Multi.just(1)
+        Multi.singleton(1)
                 .onTerminate(calls::getAndIncrement)
                 .onTerminate(calls::getAndIncrement)
                 .subscribe(ts);
@@ -440,7 +440,7 @@ public class MultiTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-        Multi.just(1)
+        Multi.singleton(1)
                 .onError(e -> calls.getAndIncrement())
                 .onError(e -> calls.getAndIncrement())
                 .subscribe(ts);
@@ -497,7 +497,7 @@ public class MultiTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-        Multi.just(1)
+        Multi.singleton(1)
                 .peek(v -> calls.getAndIncrement())
                 .peek(v -> calls.getAndIncrement())
                 .peek(v -> calls.getAndIncrement())
@@ -523,7 +523,7 @@ public class MultiTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-        Multi.just(1)
+        Multi.singleton(1)
                 .peek(v -> calls.getAndIncrement())
                 .onComplete(calls::getAndIncrement)
                 .onError(v -> calls.getAndIncrement())

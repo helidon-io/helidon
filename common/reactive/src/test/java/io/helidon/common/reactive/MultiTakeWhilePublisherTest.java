@@ -63,7 +63,7 @@ public class MultiTakeWhilePublisherTest {
     public void predicateCrash() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.<Integer>just(1)
+        Multi.<Integer>singleton(1)
                 .takeWhile(v -> { throw new IllegalArgumentException();})
                 .subscribe(ts);
 

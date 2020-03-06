@@ -238,7 +238,7 @@ public class MultiFlatMapPublisherTest {
     @Test
     public void justJust() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
-        Multi.just(1)
+        Multi.singleton(1)
                 .flatMap(Single::just)
                 .subscribe(ts);
 
@@ -258,7 +258,7 @@ public class MultiFlatMapPublisherTest {
                 subscription.request(Long.MAX_VALUE);
             }
         };
-        Multi.just(1)
+        Multi.singleton(1)
                 .flatMap(Single::just)
                 .subscribe(ts);
 
