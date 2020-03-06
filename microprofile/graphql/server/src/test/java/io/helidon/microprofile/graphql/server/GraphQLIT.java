@@ -17,10 +17,23 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Map;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.helidon.microprofile.graphql.server.test.types.Person;
+import io.helidon.microprofile.graphql.server.util.JsonUtils;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Integration tests for microprofile-graphql implementation.
@@ -28,13 +41,35 @@ import org.junit.jupiter.api.Test;
 public class GraphQLIT extends AbstractGraphQLIT {
 
     @BeforeAll
-    public static void setup() {
-        _setupTest();
+    public static void setup() throws IOException {
+        _startupTest(Person.class);
     }
 
     @Test
-    @Disabled
-    public void basicTest() throws IOException, InterruptedException {
-        Thread.sleep(Long.MAX_VALUE);
+    public void basicEndpointTests() throws InterruptedException, JsonProcessingException {
+        // test /graphql endpoint
+        WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL);
+        System.err.println(webTarget.getUri());
+        Map<String, Object> mapRequest = generateJsonRequest(QUERY_INTROSPECT, null, null);
+        Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(JsonUtils.convertMapToJson(mapRequest)));
+        assertThat(response, is(notNullValue()));
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+        
+        Map<String, Object> graphQLResults = getJsonResponse(response);
+        System.err.println(JsonUtils.convertMapToJson(graphQLResults));
+       // assertThat(graphQLResults.size(), CoreMatchers.is(1));
+
+    }
+
+    @Test
+    public void testUIEndpoint() throws InterruptedException {
+        // test /ui endpoint
+        WebTarget webTarget = getGraphQLWebTarget().path(UI).path("index.html");
+        System.err.println(webTarget.getUri());
+
+        Response response = webTarget.request().get();
+        assertThat(response, is(notNullValue()));
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+
     }
 }

@@ -18,16 +18,20 @@
  * GraphQL microprofile server module.
  */
 module helidon.microprofile.graphql.server {
-    requires io.helidon.microprofile.cdi;
     requires cdi.api;
-    requires java.ws.rs;
+
+    requires com.fasterxml.jackson.databind;
+    requires io.helidon.microprofile.cdi;
+
     requires jandex;
-    requires java.logging;
-    requires graphql.java;
-    requires microprofile.graphql.api;
-    requires graphql.java.extended.scalars;
+    requires java.ws.rs;
     requires java.desktop;
     requires java.json.bind;
+    requires java.annotation;
+    requires java.logging;
+    requires graphql.java;
+    requires graphql.java.extended.scalars;
+    requires microprofile.graphql.api;
 
     exports io.helidon.microprofile.graphql.server.application;
 

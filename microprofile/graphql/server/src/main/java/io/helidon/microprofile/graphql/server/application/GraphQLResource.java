@@ -16,6 +16,11 @@
 
 package io.helidon.microprofile.graphql.server.application;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -26,9 +31,26 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.helidon.microprofile.graphql.server.ExecutionContext;
+import io.helidon.microprofile.graphql.server.util.JsonUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import graphql.ExecutionResult;
+
+/**
+ * A resource for servicing GraphQL requests.
+ */
 @Path("/")
 @RequestScoped
 public class GraphQLResource {
+
+    private static final Logger LOGGER = Logger.getLogger(GraphQLResource.class.getName());
+
+    /**
+     * {@link ExecutionContext} for this resource.
+     */
+    private ExecutionContext<String> context;
+
     /**
      * Process a GET request.
      *
@@ -42,8 +64,12 @@ public class GraphQLResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     public Response processGraphQLQueryGET(@QueryParam("query") String query,
                                            @QueryParam("operationName") String operation,
-                                           @QueryParam("variables") String variables) {
-        return Response.ok("GET").build();
+                                           @QueryParam("variables") String variables) throws JsonProcessingException {
+        Map<String, Object> mapVariables = null;
+        if (variables != null) {
+            mapVariables = JsonUtils.convertJSONtoMap(variables);
+        }
+        return processRequest(query, operation, mapVariables);
     }
 
     /**
@@ -55,7 +81,57 @@ public class GraphQLResource {
     @POST
     @Produces({ MediaType.APPLICATION_JSON })
     @Consumes({ MediaType.APPLICATION_JSON })
-    public Response processGraphQLQueryPOST(String body) {
-        return Response.ok("POST").build();
+    public Response processGraphQLQueryPOST(String body) throws JsonProcessingException {
+        Map<String, Object> json = JsonUtils.convertJSONtoMap(body);
+        return processRequest(
+                (String) json.get("query"),
+                (String) json.get("operationName"),
+                getVariables(json.get("variables")));
     }
+
+    /**
+     * Initialize the {@link ExecutionContext}.
+     */
+    @PostConstruct
+    public void init() {
+        try {
+            context = new ExecutionContext<>("Dummy Context");
+        } catch (Exception e) {
+            LOGGER.warning("Unable to build GraphQL Schema: " + e);
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Process the GraphQL Query.
+     *
+     * @param query     query to process
+     * @param operation operation name, may be null
+     * @param variables variables to apply to query, may be null
+     * @return a {@link Response} containing the results of the query
+     */
+    private Response processRequest(String query, String operation, Map<String, Object> variables)
+            throws JsonProcessingException {
+        ExecutionResult executionResult = context.execute(query, operation, variables);
+        return Response.ok(JsonUtils.convertMapToJson(executionResult.toSpecification())).build();
+    }
+
+    /**
+     * Return a {@link Map} of variables from the given argument.
+     *
+     * @param variables Json string of variables
+     * @return a {@link Map} of variables
+     */
+    private Map<String, Object> getVariables(Object variables) throws JsonProcessingException {
+        if (variables instanceof Map) {
+            Map<?, ?> inputVars = (Map) variables;
+            Map<String, Object> vars = new HashMap<>();
+
+            inputVars.forEach((k, v) -> vars.put(String.valueOf(k), v));
+            return vars;
+        }
+        return JsonUtils.convertJSONtoMap(String.valueOf(variables));
+    }
+
 }

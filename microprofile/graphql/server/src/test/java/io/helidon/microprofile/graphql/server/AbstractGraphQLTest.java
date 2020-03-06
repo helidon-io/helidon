@@ -46,24 +46,6 @@ import static org.hamcrest.Matchers.is;
 public abstract class AbstractGraphQLTest {
 
     private SchemaPrinter schemaPrinter;
-    private String indexFileName = null;
-    private File indexFile = null;
-
-    public void setIndexFileName(String indexFileName) {
-        this.indexFileName = indexFileName;
-    }
-
-    public void setIndexFile(File indexFile) {
-        this.indexFile = indexFile;
-    }
-
-    public String getIndexFileName() {
-        return indexFileName;
-    }
-
-    public File getIndexFile() {
-        return indexFile;
-    }
 
     /**
      * Create a Jandex index using the given file name and classes.
@@ -152,20 +134,18 @@ public abstract class AbstractGraphQLTest {
         return schemaPrinter;
     }
 
-      /**
+    /**
      * Setup an index file for the given {@link Class}es.
      *
      * @param clazzes classes to setup index for
      * @return a {@link JandexUtils} instance
      * @throws IOException
      */
-    protected void setupIndex(Class<?>... clazzes) throws IOException {
-        indexFileName = getTempIndexFile();
-
-        createManualIndex(indexFileName, Arrays.stream(clazzes).map(this::getIndexClassName).toArray(String[]::new));
+    protected static void setupIndex(String indexFileName, Class<?>... clazzes) throws IOException {
+        createManualIndex(indexFileName, Arrays.stream(clazzes).map(c -> getIndexClassName(c)).toArray(String[]::new));
         System.setProperty(JandexUtils.PROP_INDEX_FILE, indexFileName);
         assertThat(indexFileName, CoreMatchers.is(notNullValue()));
-        indexFile = new File(indexFileName);
+        File indexFile = new File(indexFileName);
         assertThat(indexFile.exists(), CoreMatchers.is(true));
 
         // do a load to check the classes are there
@@ -175,7 +155,7 @@ public abstract class AbstractGraphQLTest {
         assertThat(utils.getIndex().getKnownClasses().size(), CoreMatchers.is(clazzes.length));
     }
 
-    protected String getIndexClassName(Class clazz) {
+    protected static String getIndexClassName(Class clazz) {
         if (clazz == null) {
             throw new IllegalArgumentException("Must not be null");
         }

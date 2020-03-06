@@ -206,6 +206,11 @@ public class SchemaUtils {
     private JandexUtils jandexUtils;
 
     /**
+     * Holds the {@link Set} of unresolved types while processing the annotations.
+     */
+    private Set<String> setUnresolvedTypes = new HashSet<>();
+
+    /**
      * Construct a {@link SchemaUtils} instance.
      */
     public SchemaUtils() {
@@ -246,7 +251,7 @@ public class SchemaUtils {
         Schema schema = new Schema();
         List<SchemaType> listSchemaTypes = new ArrayList<>();
         List<Class<?>> listGraphQLApis = new ArrayList<>();
-        Set<String> setUnresolvedTypes = new HashSet<>();
+        setUnresolvedTypes.clear();
 
         for (Class<?> clazz : clazzes) {
             // only include interfaces and concrete classes/enums
@@ -287,12 +292,6 @@ public class SchemaUtils {
                         jandexUtils.getKnownImplementors(clazz.getName()).forEach(c -> setUnresolvedTypes.add(c.getName()));
 
                     }
-//                    else {
-//                        // Automatically create an input type for this type if it is not an interface
-//                        listSchemaTypes.add(type.createInputType("Input"));
-//
-//                        // check if the class implements an interface and add to unresolved classes if it is annotated
-//                    }
                 } else if (inputAnnotation != null) {
                     // InputType
                     String inputTypeName = inputAnnotation.value();
@@ -311,7 +310,7 @@ public class SchemaUtils {
         }
 
         // process all the types
-        addTypesToSchema(schema, listSchemaTypes, setUnresolvedTypes);
+        addTypesToSchema(schema, listSchemaTypes);
 
         // create any types that are yet unresolved. e.g. an Order that contains OrderLine objects
         // we must also ensure if the unresolved type contains another unresolved type then we process it
@@ -424,11 +423,10 @@ public class SchemaUtils {
      *
      * @param schema             the {@link Schema} to add to
      * @param listTypes          the {@link List} of {@link Type}s previously obtained.
-     * @param setUnresolvedTypes the {@link Set} of unresolved types to update
      * @throws IntrospectionException
      * @throws ClassNotFoundException
      */
-    private void addTypesToSchema(Schema schema, List<SchemaType> listTypes, Set<String> setUnresolvedTypes)
+    private void addTypesToSchema(Schema schema, List<SchemaType> listTypes)
             throws IntrospectionException, ClassNotFoundException {
 
         for (SchemaType t : listTypes) {
@@ -724,8 +722,6 @@ public class SchemaUtils {
                         prefix = "is";
                     } else if (name.startsWith("get")) {
                         prefix = "get";
-                    } else if (name.startsWith("has")) {
-                        prefix = "has";
                     }
 
                     // remove the prefix and make first letter lowercase

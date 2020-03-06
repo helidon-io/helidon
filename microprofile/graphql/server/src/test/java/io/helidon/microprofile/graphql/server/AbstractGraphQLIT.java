@@ -16,44 +16,135 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.helidon.microprofile.cdi.Main;
 import io.helidon.microprofile.graphql.server.util.JandexUtils;
+import io.helidon.microprofile.graphql.server.util.JsonUtils;
 import io.helidon.microprofile.server.Server;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.logging.LoggingFeature;
 import org.junit.jupiter.api.AfterAll;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Abstract functionality for integration tests.
  */
 public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
 
-    private static Server server;
+    private static final Logger LOGGER = Logger.getLogger(AbstractGraphQLIT.class.getName());
+
+    /**
+     * Initial GraphiQL query from UI.
+     */
+    protected static final String QUERY_INTROSPECT = "query {\n"
+            + "  __schema {\n"
+            + "    types {\n"
+            + "      name\n"
+            + "    }\n"
+            + "  }\n"
+            + "}";
+
+    protected static final String QUERY = "query";
+    protected static final String VARIABLES = "variables";
+    protected static final String OPERATION = "operationName";
+    protected static final String GRAPHQL = "graphql";
+    protected static final String UI = "ui";
+
     private static String graphQLUrl;
-    private static String graphQLUIUrl;
 
-    public static int getPort() {
-        return server.port();
+    private static Client client;
+
+    public static Client getClient() {
+        return client;
     }
 
-    public static String getGraphQLUrl() {
-        return graphQLUrl;
-    }
-
-    public static void _setupTest() {
+    /**
+     * Startup the test and create the Jandex index with the supplied {@link Class}es.
+     *
+     * @param clazzes {@link Class}es to add to index
+     */
+    public static void _startupTest(Class<?>... clazzes) throws IOException {
+        // setup the Jandex index with the required classes
         System.clearProperty(JandexUtils.PROP_INDEX_FILE);
+        String indexFileName = getTempIndexFile();
+        setupIndex(indexFileName, clazzes);
+        System.setProperty(JandexUtils.PROP_INDEX_FILE, indexFileName);
 
-        server = Server.create().start();
-        String baseURL = "http://127.0.0.1:" + getPort() + "/";
-        graphQLUrl = baseURL + "graphql";
-        graphQLUIUrl = baseURL+ "ui";
+        Main.main(new String[0]);
 
+        // server = Server.create().start();
+        graphQLUrl= "http://127.0.0.1:7001/";
+        
         System.out.println("GraphQL URL: " + graphQLUrl);
-        System.out.println("GraphQL UI: " + graphQLUIUrl);
+
+        client = ClientBuilder.newBuilder()
+                .register(new LoggingFeature(LOGGER, Level.WARNING, LoggingFeature.Verbosity.PAYLOAD_ANY, 32768))
+                .property(ClientProperties.FOLLOW_REDIRECTS, true)
+                .build();
     }
 
     @AfterAll
     public static void teardownTest() {
-        if (server != null) {
-            server.stop();
-        }
+        Main.shutdown();
+    }
+
+    /**
+     * Return a {@link WebTarget} for the graphQL end point.
+     *
+     * @return a {@link WebTarget} for the graphQL end point
+     */
+    protected static WebTarget getGraphQLWebTarget() {
+        Client client = getClient();
+        return client.target(graphQLUrl);
+    }
+
+    protected String encode(String param) throws UnsupportedEncodingException {
+        return param == null ? null : param.replaceAll("}", "%7D").replaceAll("\\{", "%7B");
+    }
+
+    /**
+     * Generate a Json Map with a request to send to graphql
+     *
+     * @param query     the query to send
+     * @param operation optional operation
+     * @param variables optional variables
+     * @return a {@link java.util.Map}
+     */
+    protected Map<String, Object> generateJsonRequest(String query, String operation, Map<String, Object> variables) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(QUERY, query);
+        map.put(OPERATION, operation);
+        map.put(VARIABLES, variables);
+
+        return map;
+    }
+
+    /**
+     * Return the response as Json.
+     *
+     * @param response {@link javax.ws.rs.core.Response} received from web server
+     * @return the response as Json
+     */
+    protected Map<String, Object> getJsonResponse(Response response) throws JsonProcessingException {
+        String stringResponse = (response.readEntity(String.class));
+        assertThat(stringResponse, is(notNullValue()));
+        return JsonUtils.convertJSONtoMap(stringResponse);
     }
 
 }

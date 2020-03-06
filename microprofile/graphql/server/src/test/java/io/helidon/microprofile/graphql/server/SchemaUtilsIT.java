@@ -42,21 +42,24 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Integration ests for {@link SchemaUtilsTest}.
+ * Integration tests for {@link SchemaUtilsTest}.
  */
 public class SchemaUtilsIT extends AbstractGraphQLTest {
 
+    private String indexFileName = null;
+    private File indexFile = null;
+
     @BeforeEach
-    public void setupTest() {
+    public void setupTest() throws IOException {
         System.clearProperty(JandexUtils.PROP_INDEX_FILE);
-        setIndexFile(null);
-        setIndexFileName(null);
+        indexFileName = getTempIndexFile();;
+        indexFile = null;
     }
 
     @AfterEach
     public void teardownTest() {
-        if (getIndexFile() != null) {
-            getIndexFile().delete();
+        if (indexFile != null) {
+            indexFile.delete();
         }
     }
 
@@ -65,7 +68,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
      */
     @Test
     public void testTypeGenerationWithNoName() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(Person.class);
+        setupIndex(indexFileName, Person.class);
 
         SchemaUtils schemaUtils = new SchemaUtils();
         Schema schema = schemaUtils.generateSchema();
@@ -81,7 +84,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
      */
     @Test
     public void testPersonWithName() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(PersonWithName.class);
+        setupIndex(indexFileName, PersonWithName.class);
         SchemaUtils schemaUtils = new SchemaUtils();
         Schema schema = schemaUtils.generateSchema();
 
@@ -92,7 +95,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
 
     @Test
     public void testMultipleLevels() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(Level0.class);
+        setupIndex(indexFileName, Level0.class);
         SchemaUtils schemaUtils = new SchemaUtils();
         Schema schema = schemaUtils.generateSchema();
 
@@ -112,7 +115,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     @Test
     public void testInterfaceDiscoveryWithImplementorsWithNoTypeAnnotation()
             throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class);
+        setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class);
         assertInterfaceResults();
     }
 
@@ -121,7 +124,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
      */
     @Test
     public void testInterfaceDiscoveryWithUnresolvedType() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(Vehicle.class, Car.class, Motorbike.class, VehicleIncident.class, AbstractVehicle.class);
+        setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, VehicleIncident.class, AbstractVehicle.class);
         assertInterfaceResults();
     }
 
@@ -130,7 +133,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
      */
     @Test
     public void testInterfaceDiscoveryWithoutTypes() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class);
+        setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class);
         assertInterfaceResults();
     }
 
