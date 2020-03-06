@@ -79,6 +79,7 @@
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <version.lib.weld>3.1.2.Final</version.lib.weld>
+        <version.lib.jmh>1.23</version.lib.jmh>
         <!--
         !Version statement! - end
         -->
@@ -918,6 +919,17 @@
                 <artifactId>awaitility</artifactId>
                 <version>${version.lib.awaitility}</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${version.lib.jmh}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${version.lib.jmh}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
