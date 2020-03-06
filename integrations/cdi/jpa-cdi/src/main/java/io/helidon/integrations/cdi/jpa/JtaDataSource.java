@@ -141,21 +141,29 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
             break;
         }
 
+        // Get all of the TransactionSpecificConnections we have
+        // released into the world via our getConnection() and
+        // getConnection(String, String) methods, and inform them that
+        // the transaction is over.  Then remove them from the map
+        // since the transaction is over.  These particular
+        // Connections out in the world will not participate in future
+        // JTA transactions, even if such transactions are started on
+        // this thread.
         @SuppressWarnings("unchecked")
-        final Map<?, ? extends TransactionSpecificConnection> connectionMap =
+        final Map<?, ? extends TransactionSpecificConnection> myThreadLocalConnectionMap =
             (Map<?, ? extends TransactionSpecificConnection>) CONNECTION_STORAGE.get().get(this);
 
-        if (connectionMap != null && !connectionMap.isEmpty()) {
-            final Collection<? extends TransactionSpecificConnection> connections = connectionMap.values();
-            assert connections != null;
+        if (myThreadLocalConnectionMap != null && !myThreadLocalConnectionMap.isEmpty()) {
+            final Collection<? extends TransactionSpecificConnection> myConnections = myThreadLocalConnectionMap.values();
+            assert myConnections != null;
             try {
                 if (badStatusException != null) {
                     throw badStatusException;
                 } else {
-                    complete(connections, consumer);
+                    complete(myConnections, consumer);
                 }
             } finally {
-                connections.clear();
+                myConnections.clear();
             }
         }
     }
@@ -177,6 +185,15 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      * <p>The {@link TransactionSpecificConnection}s will also be
      * closed if a caller has requested their closing prior to this
      * method executing.</p>
+     *
+     * <p>If a user has not requested their closing prior to this
+     * method executing, the {@link TransactionSpecificConnection}s
+     * will not be closed, but will become closeable by the end user
+     * (allowing them to be released back to any backing connection
+     * pool that might exist).  They will no longer take part in any
+     * new JTA transactions from this point forward (a new {@link
+     * Connection} will have to be acquired while a JTA transaction is
+     * active for that behavior).</p>
      *
      * @param connections an {@link Iterable} of {@link
      * TransactionSpecificConnection} instances; may be {@code null}

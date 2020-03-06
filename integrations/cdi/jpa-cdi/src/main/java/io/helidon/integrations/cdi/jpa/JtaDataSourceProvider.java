@@ -46,9 +46,9 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
 
 
     /**
-     * A {@link ThreadLocal} {@link Map} of {@link DataSource}s
-     * indexed by their (possibly {@code null}) name that may also be
-     * {@linkplain
+     * A {@link ThreadLocal} holding a {@link Map} of {@link
+     * DataSource}s, indexed by their (possibly {@code null}) name or
+     * other application-wide identifier, that may also be {@linkplain
      * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
      * registered as <code>Synchronization</code> implementations} at
      * the start of a JTA transaction.
@@ -57,10 +57,17 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      *
      * <p>The {@link Map} {@linkplain ThreadLocal#get() contained by
      * this <code>ThreadLocal</code>} is not {@code null} until the
-     * application scope is destroyed.</p>
+     * {@linkplain ApplicationScoped application scope} is {@linkplain
+     * BeforeDestroyed destroyed}.</p>
      *
      * <p>The {@link Map} {@linkplain ThreadLocal#get() contained by
-     * this <code>ThreadLocal</code>} may be empty at any point.</p>
+     * this <code>ThreadLocal</code>} may be {@linkplain Map#isEmpty()
+     * empty} at any point.</p>
+     *
+     * @see #whenTransactionStarts(Object,
+     * TransactionSynchronizationRegistry)
+     *
+     * @see #whenApplicationTerminates(Object)
      */
     private static final ThreadLocal<? extends Map<Object, DataSource>> THREAD_LOCAL_DATASOURCES_BY_NAME =
         ThreadLocal.withInitial(() -> new HashMap<>());
@@ -107,6 +114,9 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      *
      * @param transactionManager a {@link TransactionManager}; must
      * not be {@code null}
+     *
+     * @exception NullPointerException if either {@code objects} or
+     * {@code transactionManager} is {@code null}
      */
     @Inject
     JtaDataSourceProvider(final Instance<Object> objects,
@@ -141,7 +151,8 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * return; may be {@code null}; ignored if both {@code jta}
      * and {@code useDefaultJta} are {@code true}
      *
-     * @return an appropriate {@link DataSource}, or {@code null}
+     * @return an appropriate {@link DataSource}, or {@code null} in
+     * edge cases
      *
      * @exception IllegalStateException if a {@link SQLException}
      * occurs
