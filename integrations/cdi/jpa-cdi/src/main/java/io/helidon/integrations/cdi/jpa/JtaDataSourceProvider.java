@@ -16,9 +16,9 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
@@ -46,22 +46,24 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
 
 
     /**
-     * A {@link ThreadLocal} {@link Set} of {@link Synchronization}s
-     * that will be {@linkplain
+     * A {@link ThreadLocal} {@link Map} of {@link DataSource}s
+     * indexed by their (possibly {@code null}) name that may also be
+     * {@linkplain
      * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
-     * registered} at the start of a JTA transaction.
+     * registered as <code>Synchronization</code> implementations} at
+     * the start of a JTA transaction.
      *
      * <p>This field is never {@code null}.</p>
      *
-     * <p>The {@link Set} {@linkplain ThreadLocal#get() contained by
+     * <p>The {@link Map} {@linkplain ThreadLocal#get() contained by
      * this <code>ThreadLocal</code>} is not {@code null} until the
      * application scope is destroyed.</p>
      *
-     * <p>The {@link Set} {@linkplain ThreadLocal#get() contained by
+     * <p>The {@link Map} {@linkplain ThreadLocal#get() contained by
      * this <code>ThreadLocal</code>} may be empty at any point.</p>
      */
-    private static final ThreadLocal<? extends Set<Synchronization>> SYNCHRONIZATIONS_TO_REGISTER =
-        ThreadLocal.withInitial(() -> new HashSet<>());
+    private static final ThreadLocal<? extends Map<Object, DataSource>> THREAD_LOCAL_DATASOURCES_BY_NAME =
+        ThreadLocal.withInitial(() -> new HashMap<>());
 
 
     /*
@@ -141,6 +143,9 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      *
      * @return an appropriate {@link DataSource}, or {@code null}
      *
+     * @exception IllegalStateException if a {@link SQLException}
+     * occurs
+     *
      * @see PersistenceUnitInfoBean#getJtaDataSource()
      *
      * @see PersistenceUnitInfoBean#getNonJtaDataSource()
@@ -156,9 +161,9 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
                     if (useDefaultJta) {
                         final Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class);
                         if (xaDataSources.isUnsatisfied()) {
-                            returnValue = this.convert(this.objects.select(DataSource.class).get(), jta);
+                            returnValue = this.convert(this.objects.select(DataSource.class).get(), jta, null);
                         } else {
-                            returnValue = this.convert(xaDataSources.get(), jta);
+                            returnValue = this.convert(xaDataSources.get(), jta, null);
                         }
                     } else {
                         returnValue = null;
@@ -167,9 +172,9 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
                     final Named named = NamedLiteral.of(dataSourceName);
                     final Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class, named);
                     if (xaDataSources.isUnsatisfied()) {
-                        returnValue = this.convert(this.objects.select(DataSource.class, named).get(), jta);
+                        returnValue = this.convert(this.objects.select(DataSource.class, named).get(), jta, dataSourceName);
                     } else {
-                        returnValue = this.convert(xaDataSources.get(), jta);
+                        returnValue = this.convert(xaDataSources.get(), jta, dataSourceName);
                     }
                 }
             } catch (final SQLException sqlException) {
@@ -183,41 +188,54 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         return returnValue;
     }
 
-    private DataSource convert(final XADataSource xaDataSource, final boolean jta)
+    private DataSource convert(final XADataSource xaDataSource, final boolean jta, final String dataSourceName)
         throws SQLException {
         Objects.requireNonNull(xaDataSource);
-        return new XADataSourceWrappingDataSource(xaDataSource, this.transactionManager);
+        final Map<Object, DataSource> threadLocalDataSourcesByName = THREAD_LOCAL_DATASOURCES_BY_NAME.get();
+        assert threadLocalDataSourcesByName != null;
+        DataSource dataSource = threadLocalDataSourcesByName.get(dataSourceName);
+        if (dataSource == null) {
+            dataSource = new XADataSourceWrappingDataSource(xaDataSource, dataSourceName, this.transactionManager);
+            threadLocalDataSourcesByName.put(dataSourceName, dataSource);
+        }
+        return dataSource;
     }
 
-    private DataSource convert(final DataSource dataSource, final boolean jta)
+    private DataSource convert(final DataSource dataSource, final boolean jta, final String dataSourceName)
         throws SQLException {
         final DataSource returnValue;
         if (!jta || dataSource == null || (dataSource instanceof JtaDataSource)) {
             returnValue = dataSource;
         } else if (dataSource instanceof XADataSource) {
             // Edge case
-            returnValue = this.convert((XADataSource) dataSource, jta);
+            returnValue = this.convert((XADataSource) dataSource, jta, dataSourceName);
         } else {
-            final JtaDataSource jtaDataSource = new JtaDataSource(dataSource, this.transactionManager);
-            SYNCHRONIZATIONS_TO_REGISTER.get().add(jtaDataSource);
+            final Map<Object, DataSource> threadLocalDataSourcesByName = THREAD_LOCAL_DATASOURCES_BY_NAME.get();
+            assert threadLocalDataSourcesByName != null;
+            DataSource jtaDataSource = threadLocalDataSourcesByName.get(dataSourceName);
+            if (jtaDataSource == null) {
+                jtaDataSource = new JtaDataSource(dataSource, dataSourceName, this.transactionManager);
+                threadLocalDataSourcesByName.put(dataSourceName, jtaDataSource);
+            }
             returnValue = jtaDataSource;
         }
         return returnValue;
     }
 
     private static void whenApplicationTerminates(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event) {
-        SYNCHRONIZATIONS_TO_REGISTER.get().clear();
-        SYNCHRONIZATIONS_TO_REGISTER.remove();
+        THREAD_LOCAL_DATASOURCES_BY_NAME.get().clear();
+        THREAD_LOCAL_DATASOURCES_BY_NAME.remove();
     }
 
     private static void whenTransactionStarts(@Observes @Initialized(TransactionScoped.class) final Object event,
                                               final TransactionSynchronizationRegistry tsr) {
-        if (tsr != null) {
-            assert tsr.getTransactionStatus() == Status.STATUS_ACTIVE;
-            for (final Synchronization synchronization : SYNCHRONIZATIONS_TO_REGISTER.get()) {
-                if (synchronization != null) {
-                    tsr.registerInterposedSynchronization(synchronization);
-                }
+        assert tsr != null;
+        assert tsr.getTransactionStatus() == Status.STATUS_ACTIVE;
+        final Map<?, ?> threadLocalSynchronizations = THREAD_LOCAL_DATASOURCES_BY_NAME.get();
+        assert threadLocalSynchronizations != null;
+        for (final Object synchronization : threadLocalSynchronizations.values()) {
+            if (synchronization instanceof Synchronization) {
+                tsr.registerInterposedSynchronization((Synchronization) synchronization);
             }
         }
     }

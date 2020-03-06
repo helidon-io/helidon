@@ -69,6 +69,8 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
     private final DataSource delegate;
 
+    private final String dataSourceName;
+
     private final TransactionManager transactionManager;
 
 
@@ -78,9 +80,11 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
 
     JtaDataSource(final DataSource delegate,
+                  final String dataSourceName,
                   final TransactionManager transactionManager) {
         super();
         this.delegate = Objects.requireNonNull(delegate);
+        this.dataSourceName = dataSourceName;
         this.transactionManager = Objects.requireNonNull(transactionManager);
     }
 
@@ -457,7 +461,6 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
         if (status == Status.STATUS_ACTIVE) {
             final Map<JtaDataSource, Map<Object, TransactionSpecificConnection>> connectionStorageMap = CONNECTION_STORAGE.get();
             assert connectionStorageMap != null;
-            // @SuppressWarnings("unchecked")
             Map<Object, TransactionSpecificConnection> myConnectionMap = connectionStorageMap.get(this);
             if (myConnectionMap == null) {
                 myConnectionMap = new HashMap<>();
@@ -479,7 +482,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
                 }
                 myConnectionMap.put(id, tsc);
             } else {
-                tsc.resetCloseCalled();
+                tsc.setCloseCalled(false);
             }
             returnValue = tsc;
         } else if (useZeroArgumentForm) {
@@ -525,7 +528,8 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
         private boolean closeCalled;
 
         private TransactionSpecificConnection(final Connection delegate) throws SQLException {
-            super(delegate, false);
+            super(delegate, false /* not closeable */);
+            assert !this.isCloseable();
             this.oldAutoCommit = this.getAutoCommit();
             this.setAutoCommit(false);
         }
@@ -536,7 +540,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
         @Override
         public void close() throws SQLException {
-            this.closeCalled = true;
+            this.setCloseCalled(true);
             super.close();
         }
 
@@ -544,8 +548,8 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
             return this.closeCalled || this.isClosed();
         }
 
-        private void resetCloseCalled() {
-            this.closeCalled = false;
+        private void setCloseCalled(final boolean closeCalled) {
+            this.closeCalled = closeCalled;
         }
 
     }
