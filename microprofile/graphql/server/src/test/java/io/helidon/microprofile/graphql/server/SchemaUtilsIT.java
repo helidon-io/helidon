@@ -150,6 +150,17 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         Map<String, Object> mapResults = getAndAssertResult(result);
 
         assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("hero"), is("R2-D2"));
+
+        result = executionContext.execute("query { episodeCount }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("episodeCount"), is(9));
+
+        result = executionContext.execute("query { badGuy }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("badGuy"), is("Darth Vader"));
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {

@@ -61,6 +61,7 @@ import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.util.SchemaUtils.DiscoveredMethod.READ;
@@ -366,10 +367,8 @@ public class SchemaUtils {
         if (rootQueryType.getFieldDefinitions().size() == 0) {
             LOGGER.warning("Unable to find any classes with @GraphQLApi annotation."
                                    + "Unable to build schema");
-        } else {
-            // add in "Query" object to for searching for all Objects and individual object
-
         }
+
         schema.addType(rootQueryType);
 
         return schema;
@@ -396,7 +395,7 @@ public class SchemaUtils {
         for (Map.Entry<String, DiscoveredMethod> entry : retrieveBeanMethods(Class.forName(realReturnType)).entrySet()) {
             DiscoveredMethod discoveredMethod = entry.getValue();
             String valueTypeName = discoveredMethod.getReturnType();
-            SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod);
+            SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, null);
             type.addFieldDefinition(fd);
 
             if (setUnresolvedTypes != null && discoveredMethod.getReturnType().equals(fd.getReturnType())) {
@@ -419,9 +418,10 @@ public class SchemaUtils {
             String methodName = k;
             DiscoveredMethod method = v;
 
-            DataFetcher dataFetcher = null;
+            // assuming no-args at the moment
+            DataFetcher dataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method.getMethod());
 
-            SchemaFieldDefinition fd = newFieldDefinition(v);
+            SchemaFieldDefinition fd = newFieldDefinition(v, getMethodName(method.getMethod()));
             if (dataFetcher != null) {
                 fd.setDataFetcher(dataFetcher);
             }
@@ -451,7 +451,7 @@ public class SchemaUtils {
         String valueClassName = type.getValueClassName();
         retrieveBeanMethods(Class.forName(valueClassName)).forEach((k, v) -> {
 
-            SchemaFieldDefinition fd = newFieldDefinition(v);
+            SchemaFieldDefinition fd = newFieldDefinition(v, null);
             type.addFieldDefinition(fd);
 
             checkScalars(schema, type);
@@ -508,24 +508,28 @@ public class SchemaUtils {
     /**
      * Return a new {@link SchemaFieldDefinition} with the given field and class.
      *
-     * @param method the {@link DiscoveredMethod}
+     * @param method       the {@link DiscoveredMethod}
+     * @param optionalName optional name for the field definition
      * @return a {@link SchemaFieldDefinition}
      */
     @SuppressWarnings("rawTypes")
-    private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod method) {
+    private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod method, String optionalName) {
         String sValueClassName = method.getReturnType();
         DataFetcher dataFetcher = null;
         boolean isArrayReturnType = method.isArrayReturnType || method.isCollectionType() || method.isMap();
 
         if (isArrayReturnType) {
-
             if (method.isMap) {
                 // add DataFetcher that will just retrieve the values() from the map
                 // dataFetcher = DataFetcherUtils.newMapValuesDataFetcher(fieldName);
             }
         }
 
-        SchemaFieldDefinition fd = new SchemaFieldDefinition(method.name, getGraphQLType(sValueClassName), isArrayReturnType,
+        SchemaFieldDefinition fd = new SchemaFieldDefinition(optionalName != null
+                                                                     ? optionalName
+                                                                     : method.name,
+                                                             getGraphQLType(sValueClassName),
+                                                             isArrayReturnType,
                                                              false);
         fd.setDataFetcher(dataFetcher);
         return fd;
@@ -575,6 +579,7 @@ public class SchemaUtils {
         Interface interfaceAnnotation = clazz.getAnnotation(Interface.class);
         Input inputAnnotation = clazz.getAnnotation(Input.class);
         Enum enumAnnotation = clazz.getAnnotation(Enum.class);
+        Query queryAnnotation = clazz.getAnnotation(Query.class);
 
         String name = "";
         if (typeAnnotation != null) {
@@ -585,6 +590,8 @@ public class SchemaUtils {
             name = inputAnnotation.value();
         } else if (enumAnnotation != null) {
             name = enumAnnotation.value();
+        } else if (queryAnnotation != null) {
+            name = queryAnnotation.value();
         }
 
         if (name.isBlank()) {
@@ -840,8 +847,12 @@ public class SchemaUtils {
      * @return the field name or null if non exist
      */
     protected static String getMethodName(Method method) {
+        Query queryAnnotation = method.getAnnotation(Query.class);
         Name nameAnnotation = method.getAnnotation(Name.class);
         JsonbProperty jsonbPropertyAnnotation = method.getAnnotation(JsonbProperty.class);
+        if (queryAnnotation != null && !queryAnnotation.value().isBlank()) {
+            return queryAnnotation.value();
+        }
         if (nameAnnotation != null && !nameAnnotation.value().isBlank()) {
             // Name annotation is specified so use this and don't bother checking JsonbProperty
             return nameAnnotation.value();
@@ -939,6 +950,7 @@ public class SchemaUtils {
          * @param name       name of the method
          * @param returnType return type
          * @param methodType type of the method
+         * @param method     {@link Method}
          */
         public DiscoveredMethod(String name, String returnType, int methodType, Method method) {
             this.name = name;

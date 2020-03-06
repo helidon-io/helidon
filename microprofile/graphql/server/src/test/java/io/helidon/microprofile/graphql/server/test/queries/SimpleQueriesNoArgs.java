@@ -44,4 +44,9 @@ public class SimpleQueriesNoArgs {
     public Long getTheNumberOfStars() {
         return Long.MAX_VALUE;
     }
+
+    @Query("badGuy")
+    public String getVillain() {
+        return "Darth Vader";
+    }
 }

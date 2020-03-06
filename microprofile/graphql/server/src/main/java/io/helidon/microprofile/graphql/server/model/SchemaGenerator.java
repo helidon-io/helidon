@@ -39,7 +39,7 @@ public interface SchemaGenerator {
      * Triple quote.
      */
     String TRIPLE_QUOTE = "\"\"\"";
-    
+
     /**
      * Double quote.
      */
