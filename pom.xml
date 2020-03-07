@@ -93,6 +93,7 @@
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.helidon-build-tools>1.0.10</version.plugin.helidon-build-tools>
+        <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
@@ -547,6 +548,11 @@
                     <groupId>com.ethlo.persistence.tools</groupId>
                     <artifactId>eclipselink-maven-plugin</artifactId>
                     <version>${version.plugin.eclipselink}</version>
+                </plugin>
+                <plugin>
+                  <groupId>org.hibernate.orm.tooling</groupId>
+                  <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                  <version>${version.plugin.hibernate-enhance}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jvnet.jaxb2.maven2</groupId>

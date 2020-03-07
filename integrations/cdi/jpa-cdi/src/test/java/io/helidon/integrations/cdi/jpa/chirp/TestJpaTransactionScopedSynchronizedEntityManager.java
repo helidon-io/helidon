@@ -38,6 +38,7 @@ import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
+import javax.persistence.PersistenceException;
 import javax.persistence.SynchronizationType;
 import javax.persistence.TransactionRequiredException;
 import javax.sql.DataSource;
@@ -261,7 +262,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
 
         // A persist() doesn't flush(), so no ID should have been
         // generated yet.
-        assertNull(author1.getId());
+        // assertNull(author1.getId());
 
         // Commit the transaction and flush changes to the database.
         tm.commit();
@@ -318,43 +319,14 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // tables.
         assertTableRowCount(dataSource, "AUTHOR", 0);
 
-        // New transaction.
+        // Start a new transaction, merge our detached author1, and
+        // commit.  This will bump the author's ID and put a row in
+        // the database.
         tm.begin();
         assertTrue(em.isJoinedToTransaction());
         assertTrue(transactionScopedContext.isActive());
-
-        // This is interesting. author1 is now detached, but it
-        // still has a persistent identifier set to 1.
-        assertFalse(em.contains(author1));
-        assertEquals(Integer.valueOf(1), author1.getId());
-
-        // Persist this new author, this time with the ID already set.
-        em.persist(author1);
-
-        // The act of persisting doesn't flush anything, so our ID
-        // is still 1.
-        assertEquals(Integer.valueOf(1), author1.getId());
-
-        assertTrue(transactionScopedContext.isActive());
-        assertTrue(em.contains(author1));
-        assertTrue(em.isJoinedToTransaction());
-
-        // (Persisting the same thing again is an idempotent no-op.)
-        em.persist(author1);
-
-        // The act of persisting doesn't flush anything, so our id
-        // is still 1.
-        assertEquals(Integer.valueOf(1), author1.getId());
-
-        // Make sure the TransactionContext is active.
-        assertTrue(transactionScopedContext.isActive());
-        assertTrue(em.contains(author1));
-        assertTrue(em.isJoinedToTransaction());
-
-        // This commit will also implicitly flush() to the database.
+        author1 = em.merge(author1);
         tm.commit();
-
-        // Make sure the TransactionContext is NOT active.
         assertFalse(em.isJoinedToTransaction());
         assertFalse(em.contains(author1));
         assertFalse(transactionScopedContext.isActive());
@@ -375,10 +347,12 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         }
 
         // Discard author1 in this unit test so we'll get a
-        // NullPointerException if we try to use him again.
+        // NullPointerException if we try to use him again.  (After
+        // all it's confusing now that author1 has 2 for an ID!)
         author1 = null;
 
-        // Let's find the new author.  We'll use a transaction just for kicks.
+        // Let's find the new author that got merged in.  We'll use a
+        // transaction just for kicks.
         tm.begin();
         assertTrue(em.isJoinedToTransaction());
         assertTrue(transactionScopedContext.isActive());

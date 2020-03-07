@@ -193,10 +193,6 @@ class TestRollbackScenarios {
         Author author = new Author("Abraham Lincoln");
         em.persist(author);
 
-        // No trip to the database has happened yet, so the author's
-        // identifier isn't set yet.
-        assertNull(author.getId());
-
         // Commit the transaction.  Because we're relying on the
         // default flush mode, this will cause a flush to the
         // database, which, in turn, will result in author identifier
