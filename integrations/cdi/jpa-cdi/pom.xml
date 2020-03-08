@@ -77,6 +77,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-hibernate</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config-cdi</artifactId>
             <scope>test</scope>
@@ -117,12 +122,12 @@
             <artifactId>helidon-integrations-cdi-delegates</artifactId>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
             <scope>compile</scope>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -153,43 +158,18 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <!--
+            Please note that the ordering of the following plugins
+            below is significant:
+
+            * maven-resources-plugin
+            * eclipselink-maven-plugin
+            * hibernate-enhance-maven-plugin
+            * maven-surefire-plugin
+        -->
+
         <plugins>
-            <plugin>
-                <groupId>com.ethlo.persistence.tools</groupId>
-                <artifactId>eclipselink-maven-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.junit.jupiter</groupId>
-                        <artifactId>junit-jupiter-api</artifactId>
-                        <version>${version.lib.junit}</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>weave</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>weave</goal>
-                        </goals>
-                        <configuration>
-                            <persistenceInfoLocation>${project.build.testOutputDirectory}</persistenceInfoLocation>
-                            <source>${project.build.testOutputDirectory}</source>
-                            <target>${project.build.testOutputDirectory}</target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>modelgen</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>modelgen</goal>
-                        </goals>
-                        <configuration>
-                            <source>${project.build.testSourceDirectory}</source>
-                            <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.jvnet.jaxb2.maven2</groupId>
                 <artifactId>maven-jaxb2-plugin</artifactId>
@@ -230,13 +210,147 @@
                 </executions>
             </plugin>
             <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-resources-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>Copy test classes to Eclipselink weaving area</id>
+                  <goals>
+                    <goal>copy-resources</goal>
+                  </goals>
+                  <phase>process-test-classes</phase>
+                  <configuration>
+                    <resources>
+                      <resource>
+                        <directory>${project.build.testOutputDirectory}</directory>
+                        <filtering>false</filtering>
+                      </resource>
+                    </resources>
+                    <outputDirectory>${project.build.directory}/eclipselink/test-classes</outputDirectory>
+                    <overwrite>true</overwrite>
+                  </configuration>
+                </execution>
+                <execution>
+                  <id>Copy test classes to Hibernate weaving area</id>
+                  <goals>
+                    <goal>copy-resources</goal>
+                  </goals>
+                  <phase>process-test-classes</phase>
+                  <configuration>
+                    <resources>
+                      <resource>
+                        <directory>${project.build.testOutputDirectory}</directory>
+                        <filtering>false</filtering>
+                      </resource>
+                    </resources>
+                    <outputDirectory>${project.build.directory}/hibernate/test-classes</outputDirectory>
+                    <overwrite>true</overwrite>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.ethlo.persistence.tools</groupId>
+                <artifactId>eclipselink-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-api</artifactId>
+                        <version>${version.lib.junit}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>Statically weave JPA entities for Eclipselink</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>weave</goal>
+                        </goals>
+                        <configuration>
+                            <source>${project.build.directory}/eclipselink/test-classes</source>
+                            <target>${project.build.directory}/eclipselink/test-classes</target>
+                            <persistenceInfoLocation>${project.build.directory}/eclipselink/test-classes</persistenceInfoLocation>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>modelgen</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>modelgen</goal>
+                        </goals>
+                        <configuration>
+                            <source>${project.build.testSourceDirectory}</source>
+                            <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.hibernate.orm.tooling</groupId>
+                <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                <executions>
+                  <execution>
+                      <id>Statically enhance JPA entities for Hibernate</id>
+                      <phase>process-test-classes</phase>
+                      <goals>
+                        <goal>enhance</goal>
+                      </goals>
+                      <configuration>
+                          <base>${project.build.directory}/hibernate/test-classes</base>
+                          <dir>${project.build.directory}/hibernate/test-classes</dir>
+                          <failOnError>true</failOnError>
+                          <enableAssociationManagement>true</enableAssociationManagement>
+                          <enableDirtyTracking>true</enableDirtyTracking>
+                          <enableExtendedEnhancement>true</enableExtendedEnhancement>
+                          <enableLazyInitialization>true</enableLazyInitialization>
+                      </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>io.helidon.integrations.cdi:helidon-integrations-cdi-hibernate</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.hibernate:hibernate-core</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                    <reportNameSuffix>eclipselink</reportNameSuffix>
+                    <skip>true</skip>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
+                    <testClassesDirectory>${project.build.directory}/eclipselink/test-classes</testClassesDirectory>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-cli</id>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>hibernate</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>io.helidon.integrations.cdi:helidon-integrations-cdi-eclipselink</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.eclipse.persistence:org.eclipse.persistence.jpa</classpathDependencyExclude>
+                            </classpathDependencyExcludes>
+                            <reportNameSuffix>hibernate</reportNameSuffix>
+                            <skip>false</skip>
+                            <testClassesDirectory>${project.build.directory}/hibernate/test-classes</testClassesDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
