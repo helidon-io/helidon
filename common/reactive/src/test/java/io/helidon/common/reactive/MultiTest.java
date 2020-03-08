@@ -145,9 +145,7 @@ public class MultiTest {
     public void testFirst() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
         Multi.just("foo", "bar").first().subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems().get(0), is(equalTo("foo")));
+        subscriber.assertResult("foo");
     }
 
     @Test
@@ -210,7 +208,7 @@ public class MultiTest {
             }
         }).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
@@ -429,7 +427,8 @@ public class MultiTest {
         CompletableFuture<Throwable> beenError = new CompletableFuture<>();
         Multi.<Integer>error(new RuntimeException())
                 .onError(beenError::complete)
-                .collectList();
+                .collectList()
+                .subscribe(e -> { });
 
         beenError.get(1, TimeUnit.SECONDS);
     }
@@ -457,7 +456,8 @@ public class MultiTest {
 
         Multi.<Integer>error(new RuntimeException())
                 .onTerminate(() -> beenError.complete(null))
-                .first();
+                .first()
+                .subscribe(e -> { });
 
         beenError.get(1, TimeUnit.SECONDS);
         completed.get(1, TimeUnit.SECONDS);
@@ -503,7 +503,7 @@ public class MultiTest {
     @Test
     void requestOneOfOneExpectComplete() {
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Multi.just("foo").subscribe(subscriber);
+        Multi.singleton("foo").subscribe(subscriber);
         subscriber.request1();
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -542,7 +542,7 @@ public class MultiTest {
     public void testDoubleSubscribe() {
         TestSubscriber<Integer> subscriber1 = new TestSubscriber<>();
         TestSubscriber<Integer> subscriber2 = new TestSubscriber<>();
-        Multi<Integer> multi = Multi.just(1);
+        Multi<Integer> multi = Multi.singleton(1);
         multi.subscribe(subscriber1);
         multi.subscribe(subscriber2);
 

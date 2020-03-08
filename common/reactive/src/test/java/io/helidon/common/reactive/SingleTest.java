@@ -97,14 +97,13 @@ public class SingleTest {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
             @Override
             public void onSubscribe(Subscription subscription) {
+                super.onSubscribe(subscription);
                 subscription.request(1);
                 subscription.request(1);
             }
         };
         Single.<String>just("foo").subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
+        subscriber.assertResult("foo");
     }
 
     @Test
@@ -121,6 +120,7 @@ public class SingleTest {
         SingleTestSubscriber<Object> subscriber = new SingleTestSubscriber<Object>() {
             @Override
             public void onSubscribe(Subscription subscription) {
+                super.onSubscribe(subscription);
                 subscription.cancel();
             }
         };
@@ -172,7 +172,7 @@ public class SingleTest {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("bar").map((s) -> (String)null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
@@ -284,9 +284,7 @@ public class SingleTest {
     public void testFlatMapMapperNullValue() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("bar").flatMap((s) -> (Multi<String>) null).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), is(empty()));
+        subscriber.assertFailure(NullPointerException.class);
     }
 
     @Test

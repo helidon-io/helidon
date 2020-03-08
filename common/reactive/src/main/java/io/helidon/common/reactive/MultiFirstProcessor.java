@@ -36,6 +36,7 @@ final class MultiFirstProcessor<T> extends BaseProcessor<T, T> implements Single
 
     @Override
     protected void next(T item) {
+        cancel();
         super.next(item);
         super.complete();
     }

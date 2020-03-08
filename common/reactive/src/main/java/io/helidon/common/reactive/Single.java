@@ -44,9 +44,8 @@ public interface Single<T> extends Subscribable<T> {
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Single<U> map(Mapper<T, U> mapper) {
-        SingleMappingProcessor<T, U> processor = new SingleMappingProcessor<>(mapper);
-        this.subscribe(processor);
-        return processor;
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleMapperPublisher<>(this, mapper);
     }
 
     /**
@@ -71,10 +70,21 @@ public interface Single<T> extends Subscribable<T> {
      * @return Publisher
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Multi<U> flatMap(Function<T, Publisher<U>> mapper) {
-        var processor = MultiFlatMapProcessor.fromPublisherMapper(mapper);
-        map(item -> item).subscribe(processor);
-        return processor;
+    default <U> Multi<U> flatMap(Function<? super T, ? extends Publisher<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleFlatMapMulti<>(this, mapper);
+    }
+
+    /**
+     * Map this {@link Single} instance to a {@link Single} using the given {@link Mapper}.
+     *
+     * @param <U>    mapped items type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapSingle(Function<T, Single<U>> mapper) {
+        return new SingleFlatMapSingle<>(this, mapper);
     }
 
     /**

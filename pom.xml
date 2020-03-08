@@ -79,6 +79,7 @@
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <version.lib.weld>3.1.2.Final</version.lib.weld>
+        <version.lib.jmh>1.23</version.lib.jmh>
         <!--
         !Version statement! - end
         -->
@@ -98,6 +99,7 @@
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.helidon-build-tools>2.0.0-M1</version.plugin.helidon-build-tools>
+        <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
@@ -568,6 +570,11 @@
                     <version>${version.plugin.eclipselink}</version>
                 </plugin>
                 <plugin>
+                  <groupId>org.hibernate.orm.tooling</groupId>
+                  <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                  <version>${version.plugin.hibernate-enhance}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.jvnet.jaxb2.maven2</groupId>
                     <artifactId>maven-jaxb2-plugin</artifactId>
                     <version>${version.plugin.jaxb}</version>
@@ -923,6 +930,17 @@
                 <artifactId>awaitility</artifactId>
                 <version>${version.lib.awaitility}</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${version.lib.jmh}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${version.lib.jmh}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

@@ -152,12 +152,7 @@ public class BaseProcessorTest {
     @Test
     public void testDeferredOnSubscribe() {
         TestProcessor<String> processor = new TestProcessor<>();
-        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.request(1);
-            }
-        };
+        TestSubscriber<String> subscriber = new TestSubscriber<String>(1L);
         processor.subscribe(subscriber);
         processor.onSubscribe(new Subscription() {
             @Override
@@ -171,9 +166,7 @@ public class BaseProcessorTest {
             }
         });
 
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
+        subscriber.assertResult("foo");
     }
 
     @Test
