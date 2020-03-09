@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [next-release]
+## [1.4.3]
+### Notes
+
+This is a bug fix release of Helidon. It includes a fix for a Helidon MP JPA/JTA regression
+that occured in 1.4.2. If you use JPA/JTA then it is strongly recommended that you upgrade
+to this release.
+
+### Fixes
+
+- JPA/JTA: Resolve JTA/JPA transaction synchronization issues [1476](https://github.com/oracle/helidon/pull/1476)
+- OpenAPI: Remove dependency on Jackson [1457](https://github.com/oracle/helidon/pull/1457)
+
+## [1.4.2]
 ### Notes
 
 This is a bug fix release of Helidon.
@@ -614,6 +626,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.3]: https://github.com/oracle/helidon/compare/1.4.2..1.4.3
+[1.4.2]: https://github.com/oracle/helidon/compare/1.4.1..1.4.2
 [1.4.1]: https://github.com/oracle/helidon/compare/1.4.0..1.4.1
 [1.4.0]: https://github.com/oracle/helidon/compare/1.3.1...1.4.0
 [1.3.1]: https://github.com/oracle/helidon/compare/1.3.0...1.3.1
