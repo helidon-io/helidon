@@ -94,7 +94,7 @@ public final class MediaSupport {
      * Create a new instance with the default readers and writers registered on
      * the contexts.
      * @param config a {@link Config} that will be passed to {@link
-     * Builder#registerDefaults(Config)}
+     * Builder#registerDefaults()}
      * @return MediaSupport
      */
     public static MediaSupport createWithDefaults(Config config) {
