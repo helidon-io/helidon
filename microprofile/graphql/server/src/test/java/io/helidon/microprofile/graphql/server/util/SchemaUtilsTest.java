@@ -31,6 +31,7 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestNoEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAndNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.types.Address;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.InnerClass;
@@ -76,7 +77,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testGettersPerson() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveBeanMethods(Person.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Person.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(11));
 
@@ -96,7 +97,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testMultipleLevels() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveBeanMethods(Level0.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Level0.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
         assertDiscoveredMethod(mapMethods.get("id"), "id", STRING, null, false, false, false);
@@ -105,7 +106,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithIdOnMethod() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveBeanMethods(TypeWithIdOnMethod.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(TypeWithIdOnMethod.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
         assertDiscoveredMethod(mapMethods.get("name"), "name", STRING, null, false, false, false);
@@ -114,7 +115,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithIdOnField() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveBeanMethods(TypeWithIdOnField.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(TypeWithIdOnField.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
         assertDiscoveredMethod(mapMethods.get("name"), "name", STRING, null, false, false, false);
@@ -124,7 +125,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
     @Test
     public void testTypeWithNameAndJsonbProperty() throws IntrospectionException {
         Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
-                .retrieveBeanMethods(TypeWithNameAndJsonbProperty.class);
+                .retrieveGetterBeanMethods(TypeWithNameAndJsonbProperty.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(6));
         assertDiscoveredMethod(mapMethods.get("newFieldName1"), "newFieldName1", STRING, null, false, false, false);
@@ -137,7 +138,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceDiscovery() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveBeanMethods(Vehicle.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Vehicle.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(6));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -151,7 +152,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceImplementorDiscovery1() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveBeanMethods(Car.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Car.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -166,7 +167,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceImplementorDiscovery2() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveBeanMethods(Motorbike.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Motorbike.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -206,6 +207,20 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertThat(schemaUtils.getSimpleName(SchemaUtils.BOOLEAN), is(SchemaUtils.BOOLEAN));
         assertThat(schemaUtils.getSimpleName(SchemaUtils.FLOAT), is(SchemaUtils.FLOAT));
         assertThat(schemaUtils.getSimpleName(SchemaUtils.STRING), is(SchemaUtils.STRING));
+    }
+
+    @Test
+    public void testAllMethods() throws IntrospectionException {
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
+        assertThat(mapMethods, is(notNullValue()));
+        assertThat(mapMethods.size(), is(7));
+        assertDiscoveredMethod(mapMethods.get("hero"), "hero", STRING, null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("episodeCount"), "episodeCount", "int", null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("numberOfStars"), "numberOfStars", Long.class.getName(), null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("badGuy"), "badGuy", STRING, null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("allPeople"), "allPeople", Person.class.getName(), COLLECTION, false, true, false);
+        assertDiscoveredMethod(mapMethods.get("returnCurrentDate"), "returnCurrentDate", LocalDate.class.getName(), null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("returnMediumSize"), "returnMediumSize", EnumTestWithEnumName.class.getName(), null, false, false, false);
     }
   
     private void assertDiscoveredMethod(SchemaUtils.DiscoveredMethod discoveredMethod,

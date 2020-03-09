@@ -133,6 +133,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <!-- for IntelliJ to work only -->
+                    <argLine>
+                        --add-opens helidon.microprofile.graphql.server/io.helidon.microprofile.graphql.server.test.types=graphql.java
+                    </argLine>
                     <reuseForks>false</reuseForks>
                     <includes>
                         <include>**/*IT.java</include>

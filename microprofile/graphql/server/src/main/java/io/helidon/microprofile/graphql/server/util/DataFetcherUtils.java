@@ -18,6 +18,8 @@ package io.helidon.microprofile.graphql.server.util;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import graphql.schema.DataFetcher;
 
@@ -36,12 +38,12 @@ public class DataFetcherUtils {
      * Create a new {@link DataFetcher} for a {@link Class} and {@link Method}.
      * @param clazz    {@link Class}
      * @param method   {@link Method}
-     * @param args     Optional arguments
+     * @param args     Optional argument names
      * @param <V>      value type
      * @return a new {@link DataFetcher}
      */
     @SuppressWarnings("unchecked")
-    public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, Object... args) {
+    public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, String... args) {
         return environment -> {
             Constructor constructor = clazz.getConstructor();
             if (constructor == null) {
@@ -49,7 +51,12 @@ public class DataFetcherUtils {
                 + " must have a no-args constructor");
             }
 
-            return (V) method.invoke(constructor.newInstance());
+            ArrayList<Object> listArgumentValues = new ArrayList<>();
+            if (args.length > 0) {
+                Arrays.stream(args).forEach(a -> listArgumentValues.add(environment.getArgument(a)));
+            }
+
+            return (V) method.invoke(constructor.newInstance(), listArgumentValues.toArray());
         };
     }
 }

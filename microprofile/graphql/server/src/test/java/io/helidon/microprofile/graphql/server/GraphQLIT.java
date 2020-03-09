@@ -17,6 +17,7 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import javax.ws.rs.client.Entity;
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.util.JsonUtils;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -46,19 +48,33 @@ public class GraphQLIT extends AbstractGraphQLIT {
     }
 
     @Test
-    public void basicEndpointTests() throws InterruptedException, JsonProcessingException {
+    public void basicEndpointTests() throws InterruptedException, JsonProcessingException, UnsupportedEncodingException {
         // test /graphql endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL);
-        System.err.println(webTarget.getUri());
         Map<String, Object> mapRequest = generateJsonRequest(QUERY_INTROSPECT, null, null);
-        Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(JsonUtils.convertMapToJson(mapRequest)));
+
+        // test POST
+        Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.json(JsonUtils.convertMapToJson(mapRequest)));
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
-        
+
         Map<String, Object> graphQLResults = getJsonResponse(response);
         System.err.println(JsonUtils.convertMapToJson(graphQLResults));
-       // assertThat(graphQLResults.size(), CoreMatchers.is(1));
+        assertThat(graphQLResults.size(), CoreMatchers.is(1));
 
+        // test GET
+        webTarget = getGraphQLWebTarget().path(GRAPHQL)
+                .queryParam(QUERY, encode((String) mapRequest.get(QUERY)))
+                .queryParam(OPERATION, encode((String) mapRequest.get(OPERATION)))
+                .queryParam(VARIABLES, encode((String) mapRequest.get(VARIABLES)));
+
+        response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+        assertThat(response, is(notNullValue()));
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+        graphQLResults = getJsonResponse(response);
+        System.err.println(JsonUtils.convertMapToJson(graphQLResults));
+        assertThat(graphQLResults.size(), CoreMatchers.is(1));
     }
 
     @Test

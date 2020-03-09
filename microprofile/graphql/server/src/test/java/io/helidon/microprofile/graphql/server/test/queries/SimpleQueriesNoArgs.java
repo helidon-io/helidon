@@ -16,8 +16,15 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import java.time.LocalDate;
+import java.util.Collection;
+
+import javax.inject.Inject;
 import javax.json.bind.annotation.JsonbProperty;
 
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
+import io.helidon.microprofile.graphql.server.test.types.Person;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
@@ -28,8 +35,11 @@ import org.eclipse.microprofile.graphql.Query;
 @GraphQLApi
 public class SimpleQueriesNoArgs {
 
+    @Inject
+    private TestDB testDB;
+
     @Query
-    public String getHero() {
+    public String hero() {
         return "R2-D2";
     }
 
@@ -48,5 +58,23 @@ public class SimpleQueriesNoArgs {
     @Query("badGuy")
     public String getVillain() {
         return "Darth Vader";
+    }
+
+    @Query("allPeople")
+    public Collection<Person> findAllPeople() {
+        return new TestDB().getAllPeople();
+        // TODO: Need to figure out why CDI not working for
+        // return testDB.getAllPeople();
+    }
+
+    @Query
+    public LocalDate returnCurrentDate() {
+        return  LocalDate.now();
+    }
+
+    @Query
+    @Name("returnMediumSize")
+    public EnumTestWithEnumName getEnumMedium() {
+        return EnumTestWithEnumName.M;
     }
 }

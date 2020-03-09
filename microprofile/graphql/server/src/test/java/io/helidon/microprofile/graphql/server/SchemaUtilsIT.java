@@ -19,11 +19,19 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import graphql.ExecutionResult;
+
 import io.helidon.microprofile.graphql.server.model.Schema;
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
@@ -37,6 +45,7 @@ import io.helidon.microprofile.graphql.server.util.SchemaUtils;
 import io.helidon.microprofile.graphql.server.util.SchemaUtilsTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -55,7 +64,8 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     @BeforeEach
     public void setupTest() throws IOException {
         System.clearProperty(JandexUtils.PROP_INDEX_FILE);
-        indexFileName = getTempIndexFile();;
+        indexFileName = getTempIndexFile();
+        ;
         indexFile = null;
     }
 
@@ -141,10 +151,10 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     }
 
     @Test
-    public void testSimpleQueryGenerationNoArgs() throws IOException, IntrospectionException, ClassNotFoundException {
+    @SuppressWarnings("unchecked")
+    public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
-      //  displaySchema(executionContext.getGraphQLSchema());
         ExecutionResult result = executionContext.execute("query { hero }");
 
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -161,6 +171,72 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("badGuy"), is("Darth Vader"));
+
+        result = executionContext.execute("query { allPeople { personId } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        ArrayList<Map<String, Object>> arrayList = (ArrayList<Map<String, Object>>) mapResults.get("allPeople");
+        assertThat(arrayList.size(), is(TestDB.MAX_PEOPLE));
+
+        result = executionContext.execute("query { returnMediumSize }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnMediumSize"), is("M"));
+
+        result = executionContext.execute("query { returnCurrentDate }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnCurrentDate"), is(notNullValue()));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testSimpleQueryGenerationWithArgs() throws IOException {
+        setupIndex(indexFileName, SimpleQueriesWithArgs.class, Car.class, AbstractVehicle.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+
+        ExecutionResult result = executionContext.execute("query { hero(heroType: \"human\") }");
+        Map<String, Object> mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("hero"), is("Luke"));
+
+        result = executionContext.execute("query { hero(heroType: \"droid\") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("hero"), is("R2-D2"));
+
+        result = executionContext.execute("query { multiply(arg0: 10, arg1: 10) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("multiply"), is(BigInteger.valueOf(100)));
+
+        result = executionContext.execute("query { findAPerson(personId: 1) { personId creditLimit workAddress { city state zipCode } } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("findAPerson"), is(notNullValue()));
+
+        result = executionContext.execute("query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("findPeopleFromState"), is(notNullValue()));
+
+        ArrayList<Map<String, Object>> arrayList = (ArrayList<Map<String, Object>>) mapResults.get("findPeopleFromState");
+        assertThat(arrayList, is(notNullValue()));
+        // since its random data we can't be sure if anyone was created in MA
+        assertThat(arrayList.size() >= 0, is(true));
+
+        result = executionContext.execute("query { findLocalDates(numberOfValues: 10) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("findLocalDates"), is(notNullValue()));
+        List<LocalDate> listLocalDate = (List<LocalDate>) mapResults.get("findLocalDates");
+        assertThat(listLocalDate.size(), is(10));
+//
+//        result = executionContext.execute("query { findEnums(arg0: M) }");
+//        mapResults = getAndAssertResult(result);
+//        assertThat(mapResults.size(), is(1));
+//        assertThat(mapResults.get("findEnums"), is(notNullValue()));
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
