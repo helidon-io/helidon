@@ -51,7 +51,7 @@ paths:
                 summary: Example greeting message to update
                 value: New greeting message
       responses:
-        200:
+        "200":
           description: OK
           content:
             application/json: {}
