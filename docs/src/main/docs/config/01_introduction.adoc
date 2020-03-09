@@ -23,7 +23,7 @@
 :keywords: helidon, config
 
 The config component provides a Java API to load and process
-configuration properties in key/value form into a `Config` object which the
+configuration properties from various sources into a `Config` object which the
 application can use to retrieve config data.
 
 == Getting Started
@@ -35,17 +35,44 @@ than one of these parts.
 
 image::config/overview.png["Configuration Overview",align="center"]
 
-The system reads configuration from a _config source_, a physical location (such as a file,
-a URL, or a `String`) which holds config data. Each config source works with a 
-_config parser_ which translates a particular text format (for example, Java properties or YAML)
-into an in-memory tree which represents the configuration's structure and values.
-An optional _polling strategy_ detects and publishes changes to the underlying config source
-so the config source itself or your application can respond.
+These are the main parts of the configuration system:
 
-Your application uses the `Config` 
-object which results from building that in-memory tree to retrieve config data. 
-The app can navigate explicitly among the nodes in the tree and fetch a node's
-value
+- `Config` system - allows you to read configuration data in an application
+- A config source - a location containing configuration data (File, Map, Properties etc.)
+- A config parser - a component capable of transforming bytes into configuration data (such as JSON content, YAML etc.)
+
+The `Config` system handles configuration data in an in-memory tree that represents the configuration structure and values.
+
+This approach allows us to take any source data, be it a flat properties file or an object structure such as JSON, and
+transform it into a single tree that allows for overriding of values using heterogeneous config sources.
+
+We are using the `.` as a separator of tree structure.
+
+Example of two config sources that can be used by `Config` with the same data tree in different formats:
+
+A Properties source:
+[source,properties]
+----
+web.page-size=25
+----
+
+A YAML source:
+[source,yaml]
+----
+web:
+  page-size: 25
+----
+
+The configuration has the same internal representation in `Config` and can be accessed using
+the `Config` API as follows:
+[source,java]
+----
+int pageSize = config.get("web.page-size")
+        .asInt()
+        .orElse(20);
+----
+
+Or using the tree node approach:
 [source,java]
 ----
 int pageSize = config
@@ -54,37 +81,22 @@ int pageSize = config
                 .asInt()
                 .orElse(20);
 ----
-or it can address a node in the tree using the config key's dotted name 
-[source,java]
-----
-int pageSize = config
-                .get("web.page-size")
-                .asInt()
-                .orElse(20);
-----
-As part of
-retrieving a value from a node, the config system applies _config filters_
-which can change what values are returned for selected keys. 
 
-The `Config` object lets your application retrieve config data as a typed ConfigValue.
+For this first example we can see the basic features of `Config`:
 
-ConfigValue<T> can be used to obtain:
-* an `Optional<T>` value _from a single node_,
-* the `T` value _from a single node_ interpreted as a basic Java type
-(primitive or simple object) already known to the config system (such as
-a `boolean` or a `Double`), or
-* a complex Java type _from a subtree_ of the config tree.
-+
-The config system automatically knows how to return `List` and `Map` complex types, 
-and you can provide _config mappers_ to convert a config subtree to whatever
-Java types your application needs.
+- Configuration is a tree of `Config` nodes
+- You can use `.` as a tree separator when requesting node values
+- Each config value can be retrieved as a typed object, with shortcut methods for the most
+    commonly used types, such as `int`, `String`, `long` and other
+- You can immediately provide a default value for the cases the configuration option is not defined
+    in any source
 
 === Your First Config Application
 An easy way to start with the link:{javadoc-base-url-api}/Config.html[Config] API
 is to follow these four steps:
 
 1. <<maven-coords,add config-related dependencies to your `pom.xml`>>
-2. <<update-module-info, revise your `module-info.java` to refer to config (if you are using Java 11)>>
+2. <<update-module-info, revise your `module-info.java` to refer to config (if you are using Java 9+)>>
 3. <<create-simple-config-props, create a simple config properties file>>
 4. <<Config-Basics-DefaultConfig, retrieve and use the default `Config` from your app>>
 
@@ -153,10 +165,10 @@ System.out.println(String.format(
 ----
 <1> Import `Config`.
 <2> Create the root of the `Config` tree from the default sources.
-<3> Retrieve various values by their dotted names and decode them as the appropriate 
+<3> Retrieve various values by their dotted names and decode them as the appropriate
 Java types, providing default values if the property is missing.
 <4> Retrieve the value (and fail with a runtime exception if missing)
- 
+
 When you build and run your project, the output will look like this:
 [source]
 ----
@@ -169,25 +181,36 @@ origin is props
 java.home is /Library/Java/JavaVirtualMachines/jdk-10.0.1.jdk/Contents/Home
 ----
 
-===== Config Sources for the Default Config [[config-sources-default-config]]
-The default config uses the following config sources, listed here from most to least important:
 
-. Java system properties
-. Environment variables
-. `application.properties`, if on the classpath.
+=== Overriding Values
 
-The priority (most to least important) means that if a given config key appears in
-more than one source, the value assigned in a more important source overrules the
-value from a less important source.
+The `Config` system treats config sources as a hierarchy, where the first source that
+has a specific configuration key "wins" and its value is used, other sources are not even queried for it.
 
-Verify this by noting that the program has displayed your actual `java.home` which
-Java set as a system property, not the value set in the example `application.properties`
-file.
+For example the default configuration when you use `Config.create()` uses the following config sources:
 
-===== Built-in Support for Config Formats [[built-in-formats]]
+1. System properties config source
+2. Environment variables config source
+3. A classpath config source called `application.?` where the `?` depends on supported media types
+    currently on the classpath. By default it is `properties`, if you have YAML support on classpath,
+    it would be `application.yaml`
+
+Let's consider the following keys:
+
+1. System property `answer=42`
+2. Environment variable `ANSWER=38`
+3. A key in a configuration file `answer=36`
+
+When you request `config.get(`answer`).asInt().orElse(25)`, you would get `42`
+
+This allows you to configure environment specific configuration values through
+system properties, environment variables, or through files available on each environment (be it
+a physical machine, a Kubernetes pod, or a docker image) without changing your source code.
+
+=== Built-in Support for Config Formats [[built-in-formats]]
 If you add additional Helidon config maven artifacts to your dependencies, then the
 config system can read formats other than Java properties format and the default
-configuration will search for other `application` file types 
+configuration will search for other `application` file types
 in the following order. Note that the default configuration _stops_ once it finds
 one of the files below; it _does not_ merge all such files it can find.
 
@@ -200,6 +223,67 @@ one of the files below; it _does not_ merge all such files it can find.
 |`application.json` |`helidon-config-hocon` |JSON format https://json.org/
 |`application.properties` |`helidon-config` |Java properties format
 |===
+
+
+=== Config Filters
+
+Config system applies configured _config filters_ on each value when it is requested
+for the first time.
+
+There is a built-in filter called `ValueResolvingFilter` (enabled by default, can be disabled through API)
+ that resolves references to other keys in values in configuration.
+
+Example:
+Let's consider the following example properties file
+[source,properties]
+----
+host=localhost
+first-service.host=${host}/firstservice
+second-service.host=${host}/secondservice
+----
+
+The filter resolves the `${host}` reference to the `localhost` value.
+
+This makes it easier to override values in testing and production, as you can just
+override the `host` key and leave the URIs same.
+
+=== Change Support
+
+Config is an immutable in-memory tree. Nevertheless we know that configuration sometimes changes,
+ and we may want to react to such changes.
+
+In `Config` system, you can do this through change support provided by these components:
+
+1. `Config.onChange()` API - you can use to add your listener, to be notified of configuration changes
+2. `PollingStrategy` - a component providing regular events to check if a source has changed. This
+        requires support in config sources themselves (see `PollableSource`)
+3. `ChangeWatcher` - a component watching the underlying source for changes. This requires support
+        in config sources themselves (see `WatchableSource`)
+4. `EventConfigSource` - an event source that is capable of notifying about changes iteslf
+
+
+If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
+
+=== Typed config values
+
+The `Config` object lets your application retrieve config data as a typed ConfigValue.
+
+You can retrieve a `ConfigValue<T>` using the following `as` methods in `Config`:
+* `asString()` - to get a string config value
+* `asBoolean()` and other accessors for primitive types
+* `as(Class)` - to get a value for a type that has a mapper configured
+* `as(Generic)` - to get a value for a type supporting generics (such as `Set<String>`)
+* `asMap()` - to get a map of key to value pairs
+* `asList(Class)` - to get a list of typed values
+* `as(Function<Config,T>)` - to get a typed value providing a mapper function
+
+ConfigValue<T> can be used to obtain:
+* an `Optional<T>` value _from a single node_,
+* the `T` value _from a single node_ interpreted as a basic Java type (primitive or simple object) already known to the config system (such as a `boolean` or a `Double`), or
+* a complex Java type _from a subtree_ of the config tree.
++
+The config system automatically knows how to return `List` and `Map` complex types, and you can provide _config mappers_ to convert a config subtree to whatever
+Java types your application needs.
 
 == Next Steps
 Although the default configuration is very simple to use, your
@@ -258,191 +342,3 @@ other config topics.
 
 | Writing extensions |<<config/07_extensions.adoc,Extensions>>
 |===
-
-////
-
-The `Config` API covers the following use cases:
-
-- *accessors* - The basic value type is `String`, and accessor methods 
- map a value into `boolean`, `int`, `long`, `double`. You can also use
- `Optional` variants of accessor methods.
-- *mappers* - You can map a single value or a complex Config node
- into a custom Java type.
-- *tree-like structure* - The configuration tree 
-includes  _object_ and _list_ configuration node types.
-- *watchers* - You can subscribe to source changes.
-
-The Configuration `Builder` API lets you build a new instance of `Config` and bootstrap
- it using appropriate SPI (Service Provider Interface) implementations.
-
-The Config component supports the following SPIs:
-
-- *config source* - implement a custom mechanism to load configuration
- raw data from any source.
-- *config parser* - provide a custom configuration format parser.
-- *config filter* - filter configuration values before it will be
- accessible via Config API.
-- *config overrides* - allows overriding existing configuration values with new
- ones. Keys are specified by wildcards.
-- *config mapper provider* - register a custom config mapper
- implementation to map a configuration value or hierarchy to a Java type.
-
-
-
-
-
-
-
-[NOTE]
-=========
-The advanced feature of loading the configuration from an externalized list of sources
- (also known as meta-configuration) by the `Config.create()` method is described in
- <<config/06_advanced-configuration.adoc#Config-Advanced-Config-MetaConfig,Create Config from meta-configuration>>.
-=========
-
-
-Let's walk through an example. This
- `application.properties` file is on the application classpath.
-
-[source,properties] <<app-properties-example>>
-.`application.properties` file
-----
-greeting = Hello
-
-web.debug = true
-web.page-size = 20
-web.ratio = 1.3
-
-bl.initial-id = 10000000000
-
-----
-
-Let's get the `greeting`
- property value from the loaded configuration.
-
-[source,java]
-.Retrieve configuration property as a `String`
-----
-String greeting = config
-        .get("greeting") // <1>
-        .asString();     // <2>
-
-System.out.println("greeting: " + greeting);
-assert greeting.equals("Hello");
-----
-
-<1> retrieve configuration node that represents the `greeting`
- property.
-<2> return the property value as a `String`.
-
-You can override the value loaded from
- `application.properties` by system properties or by environment variables
- (the top priority).
-
-[source,sh]
-.Override `greeting` value using Java system property
-----
-java -Dgreeting=Hi -jar app-fat.jar
-----
-
-In this case, `greeting: Hi` is printed to console.
-
-[source,sh]
-.Override `greeting` value by environment variable
-----
-greeting=Ciao java -Dgreeting=Hi -jar app-fat.jar
-----
-
-`greeting: Ciao` is printed to console, even if the Java system
- property is also used.
-
-== Working with different types
-
-Not all configuration properties are `String` types. You can also get a
- property value as `boolean`, `int`, `long`, `double`, etc. 
-
-[source,java]
-.Access configuration properties values as different Java types
-----
-boolean debug = config.get("web.debug").asBoolean();   // <1>
-assert debug == true;
-
-int pageSize = config.get("web.page-size").asInt();    // <2>
-assert pageSize == 20;
-
-double ratio = config.get("web.ratio").asDouble();     // <3>
-assert ratio == 1.3;
-
-long initialId = config.get("bl.initial-id").asLong(); // <4>
-assert initialId == 10000000000L;
-----
-
-<1> Method `asBoolean()` returns `web.debug` property as a `boolean` value.
-<2> Method `asInt()` returns `web.page-size` property as a `int` value.
-<3> Method `asDouble()` returns `web.ratio` property as a `double` value.
-<4> Method `asLong()` returns `bl.initial-id` property as a `long` value.
-
-For more options, see 
- <<config/04_property-mapping.adoc,Property Mapping>>.
-
-== Accessor Exceptions
-
-Accessor methods can throw two exceptions:
-
-. link:{javadoc-base-url-api}/MissingValueException.html[MissingValueException] is
- thrown if the `as*` method is invoked on a property that does not have a value set.
-. link:{javadoc-base-url-api}/ConfigMappingException.html[ConfigMappingException]
- is thrown if a property can't be converted into the requested type.
-
-[source,java]
-.Requesting wrong property type
-----
-config.get("greeting")
-        .asInt();      // <1>
-----
-<1> Property `greeting` cannot be mapped to `int`, so the 
- `asInt()` method throws `ConfigMappingException`.
-
-[start=2]
-[source,java]
-.Accessing value on not set property
-----
-config.get("NOT-SET-PROPERTY")
-        .asString();           // <1>
-----
-<1> Property `NOT-SET-PROPERTY` is missing, and the `asString()` method throws
- `MissingValueException`.
-
-
-== Supplying default values
-
-To avoid unset values, specify the default value of a property programmatically. 
-
-[source,java]
-.Specify default value 
-----
-String notSet = config.get("NOT-SET-PROPERTY")
-        .asString("default-val");                  // <1>
-
-assert notSet.equals("default-val");
-----
-
-<1> The `asString` method accepts a default value as the first parameter.
-
-The same pattern is applied on each `as*` accessor method. 
-
-The default value is ignored if the property exists.
-
-[source,java]
-.Specify default value for existing property
-----
-greeting = config.get("greeting")
-        .asString("Ahoj");        // <1>
-
-assert greeting.equals("Hello");  // <2>
-----
-
-<1> Specify default value for `greeting` property.
-<2> The `greeting` property is loaded from `application.properties`.
-
-////

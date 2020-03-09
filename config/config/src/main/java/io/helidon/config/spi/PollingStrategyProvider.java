@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  */
 package io.helidon.config.spi;
 
-import java.util.function.Function;
-
 /**
  * Java service loader service to create a polling strategy factory based on meta configuration.
  */
-public interface PollingStrategyProvider extends MetaConfigurableProvider<Function<Object, PollingStrategy>> {
+public interface PollingStrategyProvider extends MetaConfigurableProvider<PollingStrategy> {
 }

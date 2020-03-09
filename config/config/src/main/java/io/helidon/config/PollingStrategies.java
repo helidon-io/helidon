@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,11 @@
 
 package io.helidon.config;
 
-import java.nio.file.Path;
-import java.nio.file.WatchEvent.Modifier;
-import java.nio.file.WatchService;
 import java.time.Duration;
-import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.Builder;
-import io.helidon.config.internal.FilesystemWatchPollingStrategy;
-import io.helidon.config.internal.ScheduledPollingStrategy;
-import io.helidon.config.internal.ScheduledPollingStrategy.RegularRecurringPolicy;
+import io.helidon.config.ScheduledPollingStrategy.RegularRecurringPolicy;
 import io.helidon.config.spi.PollingStrategy;
 
 /**
@@ -36,7 +30,6 @@ import io.helidon.config.spi.PollingStrategy;
  * {@link PollingStrategy} implementations.
  *
  * @see #regular(java.time.Duration)
- * @see #watch(java.nio.file.Path)
  * @see #nop()
  * @see io.helidon.config.spi.PollingStrategy
  */
@@ -63,16 +56,6 @@ public final class PollingStrategies {
      */
     public static ScheduledBuilder regular(Duration interval) {
         return new ScheduledBuilder(new RegularRecurringPolicy(interval));
-    }
-
-    /**
-     * Provides a filesystem watch polling strategy with a specified watched path.
-     *
-     * @param watchedPath a path which should be watched
-     * @return a filesystem watching polling strategy
-     */
-    public static FilesystemWatchBuilder watch(Path watchedPath) {
-        return new FilesystemWatchBuilder(watchedPath);
     }
 
     /**
@@ -140,66 +123,6 @@ public final class PollingStrategies {
     }
 
     /**
-     * A builder for a filesystem watch polling strategy.
-     */
-    public static final class FilesystemWatchBuilder implements Builder<PollingStrategy> {
-
-        private final Path path;
-        private ScheduledExecutorService executor = null;
-        private Modifier[] modifiers = null;
-
-        /*private*/ FilesystemWatchBuilder(Path path) {
-            this.path = path;
-        }
-
-        /**
-         * Sets a custom {@link ScheduledExecutorService executor} used to watch filesystem changes on.
-         * <p>
-         * By default single-threaded executor is used.
-         *
-         * @param executor the custom scheduled executor service
-         * @return a modified builder instance
-         */
-        public FilesystemWatchBuilder executor(ScheduledExecutorService executor) {
-            this.executor = executor;
-            return this;
-        }
-
-        /**
-         * Add modifiers to be used when registering the {@link java.nio.file.WatchService}.
-         * See {@link Path#register(WatchService, java.nio.file.WatchEvent.Kind[], Modifier...)}
-         * Path.register}.
-         *
-         * @param modifiers the modifiers to add
-         * @return a modified builder instance
-         */
-        public FilesystemWatchBuilder modifiers(Modifier... modifiers){
-            this.modifiers = modifiers;
-            return this;
-        }
-
-        /**
-         * Builds a new polling strategy.
-         *
-         * @return the new instance
-         */
-        @Override
-        public PollingStrategy build() {
-            FilesystemWatchPollingStrategy strategy =
-                    new FilesystemWatchPollingStrategy(path, executor);
-            if (modifiers != null && modifiers.length > 0) {
-                strategy.initWatchServiceModifiers(modifiers);
-            }
-            return strategy;
-        }
-
-        @Override
-        public PollingStrategy get() {
-            return build();
-        }
-    }
-
-    /**
      * Holder of singleton instance of NOP implementation of {@link PollingStrategy}.
      * Returned strategy does not fire an event at all.
      */
@@ -212,7 +135,8 @@ public final class PollingStrategies {
         /**
          * NOP singleton instance.
          */
-        private static final PollingStrategy NOP = () -> Flow.Subscriber::onComplete;
+        private static final PollingStrategy NOP = polled -> {
+        };
     }
 
 }

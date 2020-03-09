@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,7 @@ public class ConfigMappersFailingTest {
     @ParameterizedTest
     @MethodSource("builtInMapperTypes")
     public void testMappingFails(Class<?> type) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
 
         String key = "config.key.with.wrong.format";
         Config config = Config.builder()

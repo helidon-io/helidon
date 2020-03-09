@@ -1,0 +1,10 @@
+{
+    "resources": [
+        {
+            "pattern": "application.yaml"
+        },
+        {
+            "pattern": "meta-config.yaml"
+        }
+    ]
+}

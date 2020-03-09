@@ -47,7 +47,7 @@ enum SubscriptionHelper implements Flow.Subscription {
      * {@link Long#MAX_VALUE}.
      * @param field the target field to update
      * @param n the request amount to add, must be positive (not verified)
-     * @return the new request amount after the operation
+     * @return the old request amount after the operation
      */
     public static long addRequest(AtomicLong field, long n) {
         for (;;) {
@@ -60,7 +60,7 @@ enum SubscriptionHelper implements Flow.Subscription {
                 update = Long.MAX_VALUE;
             }
             if (field.compareAndSet(current, update)) {
-                return update;
+                return current;
             }
         }
     }

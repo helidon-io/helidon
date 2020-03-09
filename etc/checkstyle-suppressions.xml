@@ -22,6 +22,10 @@
         "http://checkstyle.sourceforge.net/dtds/suppressions_1_1.dtd">
 
 <suppressions>
+    <!-- to do comment suppression for to do project -->
+    <suppress checks="TodoComment"
+            files="examples/todo-app/.*"/>
+
     <suppress checks="FileLength"
             files="config/config/src/main/java/io/helidon/config/Config.java|integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
             lines="1"/>
