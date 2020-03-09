@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019,2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.openapi;
 
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.CharBuffer;
@@ -216,6 +217,14 @@ public class TestUtil {
     public static JsonStructure jsonFromResponse(HttpURLConnection cnx) throws IOException {
         JsonReader reader = JSON_READER_FACTORY.createReader(cnx.getInputStream());
         JsonStructure result = reader.read();
+        reader.close();
+        return result;
+    }
+
+    static JsonStructure jsonFromReader(Reader reader) {
+        JsonReader jsonReader = JSON_READER_FACTORY.createReader(reader);
+        JsonStructure result = jsonReader.read();
+        jsonReader.close();
         return result;
     }
 
