@@ -37,8 +37,8 @@
             <exclusions>
                 <exclusion>
                     <!-- TCK requires Jackson, not JSON-B -->
-                    <groupId>org.glassfish.jersey.media</groupId>
-                    <artifactId>jersey-media-json-binding</artifactId>
+                    <groupId>jakarta.json.bind</groupId>
+                    <artifactId>jakarta.json.bind-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
