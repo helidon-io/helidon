@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,9 @@ import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
 import javax.transaction.UserTransaction;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
+
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
 
@@ -54,12 +57,13 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * 2.0 SE environment</a>.
  */
 public final class NarayanaExtension implements Extension {
-
+    static {
+        HelidonFeatures.register(HelidonFlavor.MP, "JTA");
+    }
 
     /*
      * Static fields.
      */
-
 
     /**
      * The {@link Logger} for use by all instances of {@link

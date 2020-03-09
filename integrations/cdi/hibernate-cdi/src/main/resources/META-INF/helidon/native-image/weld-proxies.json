@@ -1,0 +1,8 @@
+[
+    {
+        "bean-class": "io.helidon.integrations.cdi.hibernate.HibernateJtaPlatform",
+        "ifaces": [
+            "io.helidon.integrations.cdi.hibernate.HibernateJtaPlatform"
+        ]
+    }
+]

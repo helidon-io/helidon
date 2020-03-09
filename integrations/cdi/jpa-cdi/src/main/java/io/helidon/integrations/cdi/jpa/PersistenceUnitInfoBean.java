@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1215,11 +1215,13 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         }
 
         if (tempClassLoaderSupplier == null) {
-            if (classLoader instanceof URLClassLoader) {
-                tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
-            } else {
-                tempClassLoaderSupplier = () -> classLoader;
-            }
+            tempClassLoaderSupplier = () -> {
+                if (classLoader instanceof URLClassLoader) {
+                    return new URLClassLoader(((URLClassLoader) classLoader).getURLs());
+                } else {
+                    return classLoader;
+                }
+            };
         }
 
         final PersistenceUnitInfoBean returnValue =

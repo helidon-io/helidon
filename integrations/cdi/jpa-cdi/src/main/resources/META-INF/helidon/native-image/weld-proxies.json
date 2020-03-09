@@ -1,0 +1,59 @@
+[
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.JtaTransactionSupport",
+        "ifaces": [
+            "io.helidon.integrations.cdi.jpa.TransactionSupport"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
+        "ifaces": [
+            "org.hibernate.jpa.HibernatePersistenceProvider"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
+        "ifaces": [
+            "javax.persistence.EntityManager"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
+        "ifaces": [
+            "javax.persistence.EntityManagerFactory"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean",
+        "ifaces": [
+            "javax.persistence.spi.PersistenceUnitInfo"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
+        "ifaces": [
+            "javax.persistence.EntityManager",
+            "io.helidon.integrations.cdi.jpa.CdiTransactionScopedEntityManager",
+            "java.lang.AutoCloseable",
+            "io.helidon.integrations.cdi.jpa.DelegatingEntityManager"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
+        "ifaces": [
+            "javax.persistence.EntityManager",
+            "io.helidon.integrations.cdi.jpa.NonTransactionalEntityManager",
+            "java.lang.AutoCloseable",
+            "io.helidon.integrations.cdi.jpa.DelegatingEntityManager"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
+        "ifaces": [
+            "javax.persistence.EntityManager",
+            "io.helidon.integrations.cdi.jpa.JpaTransactionScopedEntityManager",
+            "java.lang.AutoCloseable",
+            "io.helidon.integrations.cdi.jpa.DelegatingEntityManager"
+        ]
+    }
+]

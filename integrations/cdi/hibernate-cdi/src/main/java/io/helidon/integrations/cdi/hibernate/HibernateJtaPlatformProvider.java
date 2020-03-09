@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,13 @@ import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider;
  *
  * @see JtaPlatform
  *
- * @see CDISEJtaPlatform
+ * @see HibernateJtaPlatform
  */
-public final class CDISEJtaPlatformProvider implements JtaPlatformProvider {
-
+public final class HibernateJtaPlatformProvider implements JtaPlatformProvider {
   /**
-   * Creates a new {@link CDISEJtaPlatformProvider}.
+   * Creates a new {@link HibernateJtaPlatformProvider}.
    */
-  public CDISEJtaPlatformProvider() {
+  public HibernateJtaPlatformProvider() {
     super();
   }
 

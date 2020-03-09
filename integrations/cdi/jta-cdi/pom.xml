@@ -87,6 +87,11 @@
             <artifactId>cdi</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
