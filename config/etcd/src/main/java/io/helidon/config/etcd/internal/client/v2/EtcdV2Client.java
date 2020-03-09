@@ -153,7 +153,6 @@ public class EtcdV2Client implements EtcdClient {
 
         private void waitForChange() throws EtcdClientException {
             try {
-                //TODO customize executor used by EtcdClient to process waitForChange operation - Issue #21
                 etcd.get(key).waitForChange().send().addListener(this);
             } catch (IOException e) {
                 throw new EtcdClientException("Cannot register listener on key " + key, e);
@@ -162,7 +161,6 @@ public class EtcdV2Client implements EtcdClient {
 
         private void waitForChange(long waitIndex) throws EtcdClientException {
             try {
-                //TODO customize executor used by EtcdClient to process waitForChange operation - Issue #21
                 etcd.get(key).waitForChange(waitIndex).send().addListener(this);
             } catch (IOException e) {
                 throw new EtcdClientException("Cannot register listener on key " + key + " and index " + waitIndex + ".", e);

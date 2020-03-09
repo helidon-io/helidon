@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.config.internal.MapConfigSource;
-
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,8 +66,11 @@ public class MpConfigTest {
         }
 
         assertThat(asList, hasSize(2));
-        assertThat(asList.get(0), instanceOf(ClasspathConfigSource.class));
-        assertThat(asList.get(1), instanceOf(MapConfigSource.class));
+
+        ConfigSourceRuntimeImpl helidonWrapper = (ConfigSourceRuntimeImpl) asList.get(0);
+        assertThat(helidonWrapper.unwrap(), instanceOf(ClasspathConfigSource.class));
+        helidonWrapper = (ConfigSourceRuntimeImpl) asList.get(1);
+        assertThat(helidonWrapper.unwrap(), instanceOf(MapConfigSource.class));
 
         ConfigSource classpath = asList.get(0);
         assertThat(classpath.getValue("app.storageEnabled"), is("true"));

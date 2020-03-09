@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,12 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Objects;
 
+import io.helidon.common.Builder;
+import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.eclipse.jgit.transport.CredentialsProvider;
@@ -56,15 +58,15 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
  * A specified directory, that is not empty, must be a valid git repository, otherwise an exception is thrown.
  * If the directory nor the uri is not set, an exception is thrown.
  * <p>
- * If Git ConfigSource is {@code mandatory} and a {@code uri} is not responsive or {@code key} does not exist
- * then {@link ConfigSource#load} throws {@link io.helidon.config.ConfigException}.
- * <p>
  * One of {@code media-type} and {@code parser} properties must be set to be clear how to parse the content. If both of them
  * are set, then {@code parser} has precedence.
  */
 public final class GitConfigSourceBuilder
-        extends
-        AbstractParsableConfigSource.Builder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint, GitConfigSource> {
+        extends AbstractConfigSourceBuilder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint>
+        implements Builder<GitConfigSource>,
+                   PollableSource.Builder<GitConfigSourceBuilder>,
+                   ParsableSource.Builder<GitConfigSourceBuilder> {
+
 
     private static final String PATH_KEY = "path";
     private static final String URI_KEY = "uri";
@@ -79,8 +81,6 @@ public final class GitConfigSourceBuilder
     private CredentialsProvider credentialsProvider;
 
     GitConfigSourceBuilder() {
-        super(GitEndpoint.class);
-
         this.credentialsProvider = CredentialsProvider.getDefault();
     }
 
@@ -93,6 +93,16 @@ public final class GitConfigSourceBuilder
     public GitConfigSourceBuilder path(String path) {
         this.path = path;
         return this;
+    }
+
+
+    @Override
+    public GitConfigSource build() {
+        if (null == path) {
+            throw new IllegalArgumentException("git path must be defined");
+        }
+
+        return new GitConfigSource(this, target());
     }
 
     /**
@@ -130,7 +140,21 @@ public final class GitConfigSourceBuilder
     }
 
     @Override
-    protected GitEndpoint target() {
+    public GitConfigSourceBuilder parser(ConfigParser parser) {
+        return super.parser(parser);
+    }
+
+    @Override
+    public GitConfigSourceBuilder mediaType(String mediaType) {
+        return super.mediaType(mediaType);
+    }
+
+    @Override
+    public GitConfigSourceBuilder pollingStrategy(PollingStrategy pollingStrategy) {
+        return super.pollingStrategy(pollingStrategy);
+    }
+
+    GitEndpoint target() {
         return new GitEndpoint(uri, branch, directory, path, credentialsProvider);
     }
 
@@ -189,19 +213,6 @@ public final class GitConfigSourceBuilder
     public GitConfigSourceBuilder credentialsProvider(CredentialsProvider credentialsProvider) {
         this.credentialsProvider = credentialsProvider;
         return this;
-    }
-
-    PollingStrategy pollingStrategyInternal() { //just for testing purposes
-        return super.pollingStrategy();
-    }
-
-    @Override
-    public GitConfigSource build() {
-        if (null == path) {
-            throw new IllegalArgumentException("git path must be defined");
-        }
-
-        return new GitConfigSource(this, target());
     }
 
     /**

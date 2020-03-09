@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
 
@@ -56,19 +55,13 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
 
     @Override
     public final Optional<String> value() throws ConfigMappingException {
-        String value = node().get();
-        if (null != value) {
-            return Optional.ofNullable(filter.apply(realKey(), value));
-        } else {
-            // even if this is a tree node, we want to return empty, as this node does not have a value
-            // and that is a good state (as complex nodes are allowed to have a direct value)
-            return Optional.empty();
-        }
+        return node.value()
+                .map(it -> filter.apply(realKey(), it));
     }
 
     @Override
     public boolean hasValue() {
-        return null != node().get();
+        return node().value().isPresent();
     }
 
     @Override

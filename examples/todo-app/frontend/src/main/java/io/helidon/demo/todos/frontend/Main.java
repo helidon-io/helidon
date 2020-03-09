@@ -26,7 +26,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
+import io.helidon.config.FileSystemWatcher;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -179,7 +179,7 @@ public final class Main {
                         // expected on development machine
                         // to override props for dev
                         file("dev.yaml")
-                                .pollingStrategy(PollingStrategies::watch)
+                                .changeWatcher(FileSystemWatcher.create())
                                 .optional(),
                         // expected in k8s runtime
                         // to configure testing/production values

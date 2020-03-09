@@ -125,7 +125,6 @@ public class EtcdV3Client implements EtcdClient {
         WatchCreateRequest.Builder builder = WatchCreateRequest.newBuilder().setKey(ByteString.copyFromUtf8(key));
         WatchRequest watchRequest = WatchRequest.newBuilder().setCreateRequest(builder).build();
 
-        //TODO customize executor used by WatchStub to process watch operation - Issue #21
         StreamObserver<WatchRequest> requestObserver = watchStub.watch(responseObserver);
         requestObserver.onNext(watchRequest);
 
