@@ -33,12 +33,16 @@ class XADataSourceWrappingDataSource extends AbstractDataSource {
 
     private final XADataSource xaDataSource;
 
+    private final String dataSourceName;
+
     private final TransactionManager tm;
 
     XADataSourceWrappingDataSource(final XADataSource xaDataSource,
+                                   final String dataSourceName,
                                    final TransactionManager transactionManager) {
         super();
         this.xaDataSource = Objects.requireNonNull(xaDataSource);
+        this.dataSourceName = dataSourceName;
         this.tm = Objects.requireNonNull(transactionManager);
     }
 
