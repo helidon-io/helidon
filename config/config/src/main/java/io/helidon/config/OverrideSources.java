@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,11 @@
 package io.helidon.config;
 
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.config.internal.FileOverrideSource;
-import io.helidon.config.internal.UrlOverrideSource;
-import io.helidon.config.spi.AbstractOverrideSource;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.OverrideSource;
 
 /**
@@ -72,8 +69,7 @@ public final class OverrideSources {
      * @param resourceName a name of the resource
      * @return new Builder instance
      */
-    public static AbstractOverrideSource.Builder
-            <? extends AbstractOverrideSource.Builder<?, Path>, Path> classpath(String resourceName) {
+    public static ClasspathOverrideSource.Builder classpath(String resourceName) {
         return ClasspathOverrideSource.builder().resource(resourceName);
     }
 
@@ -83,8 +79,7 @@ public final class OverrideSources {
      * @param file a file with an override value map
      * @return an instance of builder
      */
-    public static AbstractOverrideSource.Builder
-            <? extends AbstractOverrideSource.Builder<?, Path>, Path> file(String file) {
+    public static FileOverrideSource.Builder file(String file) {
         return FileOverrideSource.builder().path(Paths.get(file));
     }
 
@@ -94,8 +89,7 @@ public final class OverrideSources {
      * @param url an URL with an override value map
      * @return an instance of builder
      */
-    public static AbstractOverrideSource.Builder
-            <? extends AbstractOverrideSource.Builder<?, URL>, URL> url(URL url) {
+    public static UrlOverrideSource.Builder url(URL url) {
         return UrlOverrideSource.builder().url(url);
     }
 
@@ -109,12 +103,27 @@ public final class OverrideSources {
         /**
          * EMPTY singleton instance.
          */
-        private static final OverrideSource EMPTY = Optional::empty;
+        private static final OverrideSource EMPTY = new EmptyOverrideSource();
 
         private OverridingSourceHolder() {
             throw new AssertionError("Instantiation not allowed.");
         }
-
     }
 
+    private static final class EmptyOverrideSource implements OverrideSource {
+        @Override
+        public Optional<ConfigContent.OverrideContent> load() throws ConfigException {
+            return Optional.empty();
+        }
+
+        @Override
+        public String toString() {
+            return "EmptyOverrideSource";
+        }
+
+        @Override
+        public boolean optional() {
+            return true;
+        }
+    }
 }

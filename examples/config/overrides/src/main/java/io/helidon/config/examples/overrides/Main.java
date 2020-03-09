@@ -55,7 +55,7 @@ import static io.helidon.config.PollingStrategies.regular;
  * pods
  * {@code test.*.logging.level} to {@code FINE}.
  */
-public class Main {
+public final class Main {
 
     private Main() {
     }

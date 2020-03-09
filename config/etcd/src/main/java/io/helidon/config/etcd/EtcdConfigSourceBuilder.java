@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,19 @@ package io.helidon.config.etcd;
 
 import java.net.URI;
 
+import io.helidon.common.Builder;
+import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClientFactory;
 import io.helidon.config.etcd.internal.client.v2.EtcdV2ClientFactory;
 import io.helidon.config.etcd.internal.client.v3.EtcdV3ClientFactory;
-import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.WatchableSource;
 
 /**
  * Etcd ConfigSource builder.
@@ -42,14 +45,14 @@ import io.helidon.config.spi.PollingStrategy;
  * <li>{@code parser} - or directly set {@link ConfigParser} instance to be used to parse the source;</li>
  * </ul>
  * <p>
- * If the Etcd ConfigSource is {@code mandatory} and a {@code uri} is not responsive or {@code key} does not exist
- * then {@link ConfigSource#load} throws {@link ConfigException}.
- * <p>
  * One of {@code media-type} and {@code parser} properties must be set to be clear how to parse the content. If both of them
  * are set, then {@code parser} has precedence.
  */
-public final class EtcdConfigSourceBuilder
-        extends AbstractParsableConfigSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint, EtcdConfigSource> {
+public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<EtcdConfigSourceBuilder, EtcdEndpoint>
+        implements PollableSource.Builder<EtcdConfigSourceBuilder>,
+                   WatchableSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint>,
+                   ParsableSource.Builder<EtcdConfigSourceBuilder>,
+                   Builder<EtcdConfigSource> {
 
     /**
      * Default Etcd API version ({@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi#v2}).
@@ -71,7 +74,61 @@ public final class EtcdConfigSourceBuilder
     private EtcdApi version = DEFAULT_VERSION;
 
     EtcdConfigSourceBuilder() {
-        super(EtcdEndpoint.class);
+    }
+
+    /**
+     * Builds new instance of Etcd ConfigSource.
+     *
+     * @return new instance of Etcd ConfigSource.
+     */
+    @Override
+    public EtcdConfigSource build() {
+        // ensure endpoint is configured
+        target();
+
+        return new EtcdConfigSource(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <ul>
+     * <li>{@code uri} - type {@link URI} - Etcd instance remote URI</li>
+     * <li>{@code key} - type {@code String} - Etcd key the configuration is associated with</li>
+     * <li>{@code api} - type {@link EtcdApi} - Etcd API version such as {@code v3}</li>
+     * </ul>
+     * Optional {@code properties}: see {@link #config(Config)}.
+     *
+     * @param metaConfig meta-configuration used to update the builder instance from
+     * @return updated builder instance
+     * @see #config(Config)
+     */
+    @Override
+    public EtcdConfigSourceBuilder config(Config metaConfig) {
+        metaConfig.get(URI_KEY).as(URI.class).ifPresent(this::uri);
+        metaConfig.get(KEY_KEY).asString().ifPresent(this::key);
+        metaConfig.get(API_KEY).asString().as(EtcdApi::valueOf).ifPresent(this::api);
+
+        return super.config(metaConfig);
+    }
+
+    @Override
+    public EtcdConfigSourceBuilder parser(ConfigParser parser) {
+        return super.parser(parser);
+    }
+
+    @Override
+    public EtcdConfigSourceBuilder mediaType(String mediaType) {
+        return super.mediaType(mediaType);
+    }
+
+    @Override
+    public EtcdConfigSourceBuilder pollingStrategy(PollingStrategy pollingStrategy) {
+        return super.pollingStrategy(pollingStrategy);
+    }
+
+    @Override
+    public EtcdConfigSourceBuilder changeWatcher(ChangeWatcher<EtcdEndpoint> changeWatcher) {
+        return super.changeWatcher(changeWatcher);
     }
 
     /**
@@ -107,30 +164,7 @@ public final class EtcdConfigSourceBuilder
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     * <ul>
-     * <li>{@code uri} - type {@link URI} - Etcd instance remote URI</li>
-     * <li>{@code key} - type {@code String} - Etcd key the configuration is associated with</li>
-     * <li>{@code api} - type {@link EtcdApi} - Etcd API version such as {@code v3}</li>
-     * </ul>
-     * Optional {@code properties}: see {@link #config(Config)}.
-     *
-     * @param metaConfig meta-configuration used to update the builder instance from
-     * @return updated builder instance
-     * @see #config(Config)
-     */
-    @Override
-    public EtcdConfigSourceBuilder config(Config metaConfig) {
-        metaConfig.get(URI_KEY).as(URI.class).ifPresent(this::uri);
-        metaConfig.get(KEY_KEY).asString().ifPresent(this::key);
-        metaConfig.get(API_KEY).asString().as(EtcdApi::valueOf).ifPresent(this::api);
-
-        return super.config(metaConfig);
-    }
-
-    @Override
-    protected EtcdEndpoint target() {
+    EtcdEndpoint target() {
         if (null == etcdEndpoint) {
             if (null == uri) {
                 throw new IllegalArgumentException("etcd URI must be defined");
@@ -144,26 +178,6 @@ public final class EtcdConfigSourceBuilder
             this.etcdEndpoint = new EtcdEndpoint(uri, key, version);
         }
         return etcdEndpoint;
-    }
-
-    PollingStrategy pollingStrategyInternal() { //just for testing purposes
-        return super.pollingStrategy();
-    }
-
-    /**
-     * Builds new instance of Etcd ConfigSource.
-     * <p>
-     * If the Etcd ConfigSource is {@code mandatory} and a {@code uri} is not responsive or {@code key} does not exist
-     * then {@link ConfigSource#load} throws {@link ConfigException}.
-     *
-     * @return new instance of Etcd ConfigSource.
-     */
-    @Override
-    public EtcdConfigSource build() {
-        // ensure endpoint is configured
-        target();
-
-        return new EtcdConfigSource(this);
     }
 
     /**
@@ -193,7 +207,7 @@ public final class EtcdConfigSourceBuilder
          * The client factory for this version of etcd.
          * @return client factory
          */
-        public EtcdClientFactory clientFactory() {
+        EtcdClientFactory clientFactory() {
             return clientFactory;
         }
     }

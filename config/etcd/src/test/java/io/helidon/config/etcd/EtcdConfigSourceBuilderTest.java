@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,12 @@ package io.helidon.config.etcd;
 import java.net.URI;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Flow;
-import java.util.function.Function;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MetaConfig;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
-import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
@@ -116,15 +113,7 @@ public class EtcdConfigSourceBuilderTest {
                 .uri(uri)
                 .key("/registry")
                 .api(EtcdApi.v2)
-                .pollingStrategy(TestingEtcdEndpointPollingStrategy::new);
-
-        assertThat(builder.pollingStrategyInternal(), is(instanceOf(TestingEtcdEndpointPollingStrategy.class)));
-        EtcdEndpoint strategyEndpoint = ((TestingEtcdEndpointPollingStrategy) builder.pollingStrategyInternal())
-                .etcdEndpoint();
-
-        assertThat(strategyEndpoint.uri(), is(uri));
-        assertThat(strategyEndpoint.key(), is("/registry"));
-        assertThat(strategyEndpoint.api(), is(EtcdApi.v2));
+                .pollingStrategy(new TestingEtcdEndpointPollingStrategy());
     }
 
     @Test
@@ -159,14 +148,6 @@ public class EtcdConfigSourceBuilderTest {
         assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
         assertThat(builder.target().key(), is("/registry"));
         assertThat(builder.target().api(), is(EtcdApi.v3));
-
-        assertThat(builder.pollingStrategyInternal(), is(instanceOf(TestingEtcdEndpointPollingStrategy.class)));
-        EtcdEndpoint strategyEndpoint = ((TestingEtcdEndpointPollingStrategy) builder.pollingStrategyInternal())
-                .etcdEndpoint();
-
-        assertThat(strategyEndpoint.uri(), is(URI.create("http://localhost:2379")));
-        assertThat(strategyEndpoint.key(), is("/registry"));
-        assertThat(strategyEndpoint.api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -176,19 +157,11 @@ public class EtcdConfigSourceBuilderTest {
                         "uri", "http://localhost:2379",
                         "key", "/registry",
                         "api", "v3",
-                        "polling-strategy.type", EtcdPollingStrategyProvider.TYPE))));
+                        "change-watcher.type", EtcdWatcherProvider.TYPE))));
 
         assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
         assertThat(builder.target().key(), is("/registry"));
         assertThat(builder.target().api(), is(EtcdApi.v3));
-
-        assertThat(builder.pollingStrategyInternal(), is(instanceOf(EtcdWatchPollingStrategy.class)));
-        EtcdEndpoint strategyEndpoint = ((EtcdWatchPollingStrategy) builder.pollingStrategyInternal())
-                .etcdEndpoint();
-
-        assertThat(strategyEndpoint.uri(), is(URI.create("http://localhost:2379")));
-        assertThat(strategyEndpoint.key(), is("/registry"));
-        assertThat(strategyEndpoint.api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -202,7 +175,7 @@ public class EtcdConfigSourceBuilderTest {
                                                                                .build())
                                                                        .build()));
 
-        ConfigSource source = MetaConfig.configSource(metaConfig);
+        ConfigSource source = MetaConfig.configSource(metaConfig).get(0);
 
         assertThat(source, is(instanceOf(EtcdConfigSource.class)));
 
@@ -223,7 +196,7 @@ public class EtcdConfigSourceBuilderTest {
                                                                                .build())
                                                                        .build()));
 
-        ConfigSource source = MetaConfig.configSource(metaConfig);
+        ConfigSource source = MetaConfig.configSource(metaConfig).get(0);
 
         assertThat(source.get(), is(instanceOf(EtcdConfigSource.class)));
 
@@ -242,17 +215,8 @@ public class EtcdConfigSourceBuilderTest {
         }
 
         @Override
-        public Function<Object, PollingStrategy> create(String type, Config metaConfig) {
-            return object -> {
-                if (!(object instanceof EtcdEndpoint)) {
-                    throw new IllegalArgumentException("This polling strategy expects "
-                                                               + EtcdEndpoint.class.getName()
-                                                               + " as parameter, but got: "
-                                                               + (null == object ? "null" : object.getClass().getName()));
-                }
-
-                return new TestingEtcdEndpointPollingStrategy((EtcdEndpoint) object);
-            };
+        public PollingStrategy create(String type, Config metaConfig) {
+            return new TestingEtcdEndpointPollingStrategy();
         }
 
         @Override
@@ -262,21 +226,11 @@ public class EtcdConfigSourceBuilderTest {
     }
 
     public static class TestingEtcdEndpointPollingStrategy implements PollingStrategy {
-        private final EtcdEndpoint etcdEndpoint;
-
-        public TestingEtcdEndpointPollingStrategy(EtcdEndpoint etcdEndpoint) {
-            this.etcdEndpoint = etcdEndpoint;
-
-            assertThat(etcdEndpoint, notNullValue());
+        TestingEtcdEndpointPollingStrategy() {
         }
 
         @Override
-        public Flow.Publisher<PollingEvent> ticks() {
-            return Flow.Subscriber::onComplete;
-        }
-
-        public EtcdEndpoint etcdEndpoint() {
-            return etcdEndpoint;
+        public void start(Polled polled) {
         }
     }
 

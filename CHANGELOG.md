@@ -43,6 +43,7 @@ Notable changes:
 
 - Helidon DB Client [657](https://github.com/oracle/helidon/pull/657) [1329](https://github.com/oracle/helidon/pull/1329)
 - Native image: Helidon MP support [1328](https://github.com/oracle/helidon/pull/1328) [1295](https://github.com/oracle/helidon/pull/1295) [1259](https://github.com/oracle/helidon/pull/1259)
+- Config: Helidon Config now implements MicroProfile config, so you can cast between these two types
 - Security: Basic auth and OIDC in MP native image [1330](https://github.com/oracle/helidon/pull/1330)
 - Security: JWT and OIDC security providers now support groups claim. [1324](https://github.com/oracle/helidon/pull/1324)
 - Support for Helidon Features [1240](https://github.com/oracle/helidon/pull/1240)
@@ -112,17 +113,55 @@ Here are the details:
 - If you use the `TracerBuilder` abstraction in Helidon and have no custom Spans, there is no change required    
 
 #### Config
-Meta configuration has been refactored to be done through `ServiceLoader` services. If you created
-a custom `ConfigSource`, `PollingStrategy` or `RetryPolicy`, please have a look at the new documentation.
 
-Config now implements MicroProfile config (not explicitly, you can cast between MP Config and Helidon Config).
-There is a very small behavior change between MP methods and SE methods of config related to system
-property handling:
+##### Helidon MP
+When using MP Config through the API, there are no backward incompatible changes in Helidon.
 
+##### Helidon SE Config Usage
+
+The following changes are relevant when using Helidon Config:
+
+1. File watching is now done through a `ChangeWatcher` - use of `PollingStrategies.watch()` needs to be refactored to
+    `FileSystemWatcher.create()` and the method to configure it on config source builder has changed to 
+    `changeWatcher(ChangeWatcher)`
+2. Methods on `ConfigSources` now return specific builders (they use to return `AbstractParsableConfigSource.Builder` with
+    a complex type declaration). If you store such a builder in a variable, either change it to the correct type, or use `var`
+3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. When using Git config source, or etcd
+    config source, the factory methods moved to the config source itself, and the builder now accepts all configuration
+    options through methods
+4. The API of config source builders has been cleaned, so now only methods that are relevant to a specific config source type
+    can be invoked on such a builder. Previously you could configure a polling strategy on a source that did not support 
+    polling
+5. There is a small change in behavior of Helidon Config vs. MicroProfile config: 
     The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
     must be used), so MP Config methods work in this manner (with a certain performance overhead).
-    Helidon Config treats System properties as a mutable config source, with a time based polling strategy. So
+    Helidon Config treats System properties as a mutable config source, with a (optional) time based polling strategy. So
     the change is reflected as well, though not immediately (this is only relevant if you use change notifications). 
+6. `CompositeConfigSource` has been removed from `Config`. If you need to configure `MerginStrategy`, you can do it now on 
+    `Config` `Builder`
+
+##### Helidon SE Config Extensibility
+
+1. Meta configuration has been refactored to be done through `ServiceLoader` services. If you created
+a custom `ConfigSource`, `PollingStrategy` or `RetryPolicy`, please have a look at the new documentation.
+2. To implement a custom config source, you need to choose appropriate (new) interface(s) to implement. This is the choice:
+    From "how we obtain the source of data" point of view:
+    * `ParsableSource` - for sources that provide bytes (used to be reader, now `InputStream`)
+    * `NodeConfigSource` - for sources that provide a tree structure directly
+    * `LazyConfigSource` - for sources that cannot read the full config tree in advance
+    From mutability point of view (immutable config sources can ignore this):
+    * `PollableSource` - a config source that is capable of identifying a change based on a data "stamp"
+    * `WatchableSource` - a config source using a target that can be watched for changes without polling (such as `Path`)
+    * `EventConfigSource` - a config source that can trigger change events on its own 
+3. `AbstractConfigSource` and `AbstractConfigSourceBuilder` are now in package `io.helidon.config`
+4. `ConfigContext` no longer contains method to obtain a `ConfigParser`, as this is no longer responsibility of 
+    a config source
+5.  Do not throw an exception when config source does not exist, just return
+    an empty `Optional` from `load` method, or `false` from `exists()` method
+6.  Overall change support is handled by the config module and is no longer the responsibility
+    of the config source, just implement appropriate SPI methods if changes are supported,
+    such as `PollableSource.isModified(Object stamp)`
+ 
 
 #### Metrics
 Helidon now supports only MicroProfile Metrics 2.x. Modules for Metrics 1.x were removed, and 

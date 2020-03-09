@@ -16,25 +16,30 @@
 
 package io.helidon.config;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.internal.FileSourceHelper;
-import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.FileSourceHelper.DataAndDigest;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.WatchableSource;
 
 /**
  * {@link ConfigSource} implementation that loads configuration content from a file on a filesystem.
  *
- * @see FileBuilder
+ * @see io.helidon.config.FileConfigSource.Builder
  */
-public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
+public class FileConfigSource extends AbstractConfigSource
+        implements WatchableSource<Path>, ParsableSource, PollableSource<byte[]> {
 
     private static final Logger LOGGER = Logger.getLogger(FileConfigSource.class.getName());
     private static final String PATH_KEY = "path";
@@ -46,7 +51,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      *
      * @param builder builder with configured path and other options of this source
      */
-    protected FileConfigSource(FileBuilder builder) {
+    FileConfigSource(Builder builder) {
         super(builder);
 
         this.filePath = builder.path;
@@ -59,7 +64,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * <ul>
      * <li>{@code path} - type {@link Path}</li>
      * </ul>
-     * Optional {@code properties}: see {@link AbstractParsableConfigSource.Builder#config(Config)}.
+     * Optional {@code properties}: see {@link AbstractConfigSourceBuilder#config(Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -68,7 +73,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#file(String)
-     * @see AbstractParsableConfigSource.Builder#config(Config)
+     * @see AbstractConfigSourceBuilder#config(Config)
      */
     public static FileConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return FileConfigSource.builder()
@@ -80,8 +85,8 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * Get a builder instance to create a new config source.
      * @return a fluent API builder
      */
-    public static FileBuilder builder() {
-        return new FileBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -90,30 +95,64 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    protected Optional<String> mediaType() {
-        return super.mediaType()
-                .or(this::probeContentType);
-    }
-
-    private Optional<String> probeContentType() {
-        return MediaTypes.detectType(filePath);
+    public boolean isModified(byte[] stamp) {
+        return FileSourceHelper.isModified(filePath, stamp);
     }
 
     @Override
-    protected Optional<byte[]> dataStamp() {
-        return Optional.ofNullable(FileSourceHelper.digest(filePath));
+    public Path target() {
+        return filePath;
     }
 
     @Override
-    protected Content<byte[]> content() throws ConfigException {
+    public Optional<ConfigParser.Content> load() throws ConfigException {
         LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
 
-        Content.Builder<byte[]> builder = Content.builder(new StringReader(FileSourceHelper.safeReadContent(filePath)));
+        // now we need to create all the necessary steps in one go, to make sure the digest matches the file
+        Optional<DataAndDigest> dataAndDigest = FileSourceHelper.readDataAndDigest(filePath);
 
-        dataStamp().ifPresent(builder::stamp);
-        mediaType().ifPresent(builder::mediaType);
+        if (dataAndDigest.isEmpty()) {
+            return Optional.empty();
+        }
 
-        return builder.build();
+        DataAndDigest dad = dataAndDigest.get();
+        InputStream dataStream = new ByteArrayInputStream(dad.data());
+
+        /*
+         * Build the content
+         */
+        var builder = ConfigParser.Content.builder()
+                .stamp(dad.digest())
+                .data(dataStream);
+
+        MediaTypes.detectType(filePath).ifPresent(builder::mediaType);
+
+        return Optional.of(builder.build());
+    }
+
+    @Override
+    public Optional<ConfigParser> parser() {
+        return super.parser();
+    }
+
+    @Override
+    public Optional<String> mediaType() {
+        return super.mediaType();
+    }
+
+    @Override
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
+    @Override
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
+        return super.changeWatcher();
+    }
+
+    @Override
+    public boolean exists() {
+        return Files.exists(filePath);
     }
 
     /**
@@ -122,21 +161,22 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * It allows to configure following properties:
      * <ul>
      * <li>{@code path} - configuration file path;</li>
-     * <li>{@code mandatory} - is existence of configuration resource mandatory (by default) or is {@code optional}?</li>
+     * <li>{@code optional} - is existence of configuration resource optional, or mandatory (by default)?</li>
      * <li>{@code media-type} - configuration content media type to be used to look for appropriate {@link ConfigParser};</li>
      * <li>{@code parser} - or directly set {@link ConfigParser} instance to be used to parse the source;</li>
      * </ul>
      * <p>
-     * If the File ConfigSource is {@code mandatory} and a {@code file} does not exist
-     * then {@link ConfigSource#load} throws {@link ConfigException}.
-     * <p>
      * If {@code media-type} not set it tries to guess it from file extension.
      */
-    public static final class FileBuilder extends Builder<FileBuilder, Path, FileConfigSource> {
+    public static final class Builder extends AbstractConfigSourceBuilder<Builder, Path>
+            implements PollableSource.Builder<Builder>,
+                       WatchableSource.Builder<Builder, Path>,
+                       ParsableSource.Builder<Builder>,
+                       io.helidon.common.Builder<FileConfigSource> {
+
         private Path path;
 
-        private FileBuilder() {
-            super(Path.class);
+        private Builder() {
         }
 
         /**
@@ -145,7 +185,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
          * @param path path of a file to use
          * @return updated builder instance
          */
-        public FileBuilder path(Path path) {
+        public Builder path(Path path) {
             this.path = path;
             return this;
         }
@@ -160,14 +200,29 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
          * @return modified builder instance
          */
         @Override
-        public FileBuilder config(Config metaConfig) {
+        public Builder config(Config metaConfig) {
             metaConfig.get(PATH_KEY).as(Path.class).ifPresent(this::path);
             return super.config(metaConfig);
         }
 
         @Override
-        protected Path target() {
-            return path;
+        public Builder parser(ConfigParser parser) {
+            return super.parser(parser);
+        }
+
+        @Override
+        public Builder mediaType(String mediaType) {
+            return super.mediaType(mediaType);
+        }
+
+        @Override
+        public Builder changeWatcher(ChangeWatcher<Path> changeWatcher) {
+            return super.changeWatcher(changeWatcher);
+        }
+
+        @Override
+        public Builder pollingStrategy(PollingStrategy pollingStrategy) {
+            return super.pollingStrategy(pollingStrategy);
         }
 
         /**
@@ -177,15 +232,12 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
          *
          * @return new instance of File ConfigSource.
          */
+        @Override
         public FileConfigSource build() {
             if (null == path) {
                 throw new IllegalArgumentException("File path cannot be null");
             }
             return new FileConfigSource(this);
-        }
-
-        PollingStrategy pollingStrategyInternal() { //just for testing purposes
-            return super.pollingStrategy();
         }
     }
 }
