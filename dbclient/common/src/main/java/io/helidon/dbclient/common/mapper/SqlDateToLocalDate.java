@@ -21,7 +21,7 @@ import java.time.LocalDate;
 import io.helidon.common.mapper.Mapper;
 
 /**
- * Maps {@link java.sql.Date} to {@link java.time.LocalDate} with zone set to UTC.
+ * Maps {@link java.sql.Date} to {@link java.time.LocalDate}.
  */
 public class SqlDateToLocalDate implements Mapper<Date, LocalDate> {
 

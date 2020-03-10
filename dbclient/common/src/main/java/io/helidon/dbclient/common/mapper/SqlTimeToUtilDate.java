@@ -21,7 +21,7 @@ import java.util.Date;
 import io.helidon.common.mapper.Mapper;
 
 /**
- * Maps {@link java.sql.Time} to {@link java.util.Date} with zone set to UTC.
+ * Maps {@link java.sql.Time} to {@link java.util.Date}.
  */
 public class SqlTimeToUtilDate implements Mapper<Time, Date> {
 
