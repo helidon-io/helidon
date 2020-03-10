@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.server;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,6 +29,7 @@ import static io.helidon.config.testing.OptionalMatcher.empty;
 import static io.helidon.config.testing.OptionalMatcher.value;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link io.helidon.microprofile.server.JaxRsCdiExtension}.
@@ -156,5 +158,19 @@ public class JaxRsCdiExtensionTest {
 
         Optional<String> contextRoot = extension.findContextRoot(EMPTY_CONFIG, app);
         assertThat(contextRoot, value(is("/myApp")));
+    }
+
+    @Test
+    void testAppsNotModifiableAfterUse() {
+        JaxRsCdiExtension ext = new JaxRsCdiExtension();
+        ext.fixApps(new Object());
+
+        assertThrows(IllegalStateException.class, () -> ext.addApplication(new JaxRsApplicationTest.MyApplication()));
+        assertThrows(IllegalStateException.class, () -> ext.addApplication("/", new JaxRsApplicationTest.MyApplication()));
+        assertThrows(IllegalStateException.class, () -> ext.addApplications(List.of()));
+        assertThrows(IllegalStateException.class, () -> ext.addResourceClasses(List.of()));
+        assertThrows(IllegalStateException.class, () -> ext.addSyntheticApplication(List.of()));
+        assertThrows(IllegalStateException.class, ext::removeApplications);
+        assertThrows(IllegalStateException.class, ext::removeResourceClasses);
     }
 }
