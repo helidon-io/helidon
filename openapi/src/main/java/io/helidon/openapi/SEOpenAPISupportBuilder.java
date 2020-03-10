@@ -16,12 +16,15 @@
  */
 package io.helidon.openapi;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
+import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import org.jboss.jandex.IndexView;
 
 /**
@@ -61,8 +64,8 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
     }
 
     @Override
-    public IndexView indexView() {
-        return null;
+    public List<FilteredIndexView> filteredIndexViews() {
+        return Collections.emptyList();
     }
 
     /**
