@@ -48,36 +48,62 @@ public class DbClientMapperProvider implements MapperProvider {
         // * Mappers for java.sql.Timestamp source
         Map<Class<?>, Mapper<Timestamp, Object>> sqlTimestampMap = new HashMap<>(4);
         //   - Mapper for java.sql.Timestamp to java.util.Date
-        sqlTimestampMap.put(Date.class, source -> source);
+        sqlTimestampMap.put(
+                Date.class,
+                source -> source);
         //   - Mapper for java.sql.Timestamp to java.time.LocalDateTime
-        sqlTimestampMap.put(LocalDateTime.class,
-                (Timestamp source) -> source != null ? source.toLocalDateTime() : null);
+        sqlTimestampMap.put(
+                LocalDateTime.class,
+                (Timestamp source) -> source != null
+                        ? source.toLocalDateTime()
+                        : null);
         //   - Mapper for java.sql.Timestamp to java.time.ZonedDateTime
-        sqlTimestampMap.put(ZonedDateTime.class,
+        sqlTimestampMap.put(
+                ZonedDateTime.class,
                 (Timestamp source) -> source != null
                         ? ZonedDateTime.ofInstant(source.toInstant(), ZoneOffset.UTC)
                         : null);
         //   - Mapper for java.sql.Timestamp to java.util.Calendar
-        sqlTimestampMap.put(Calendar.class, DbClientMapperProvider::sqlTimestampToGregorianCalendar);
+        sqlTimestampMap.put(
+                Calendar.class,
+                DbClientMapperProvider::sqlTimestampToGregorianCalendar);
         //   - Mapper for java.sql.Timestamp to java.util.GregorianCalendar
-        sqlTimestampMap.put(GregorianCalendar.class, DbClientMapperProvider::sqlTimestampToGregorianCalendar);
-        mappers.put(Timestamp.class, Collections.unmodifiableMap(sqlTimestampMap));
+        sqlTimestampMap.put(
+                GregorianCalendar.class,
+                DbClientMapperProvider::sqlTimestampToGregorianCalendar);
+        mappers.put(
+                Timestamp.class,
+                Collections.unmodifiableMap(sqlTimestampMap));
         // * Mappers for java.sql.Date source
         Map<Class<?>, Mapper<java.sql.Date, Object>> sqlDateMap = new HashMap<>(2);
         //   - Mapper for java.sql.Date to java.util.Date
-        sqlDateMap.put(Date.class, source -> source);
+        sqlDateMap.put(
+                Date.class,
+                source -> source);
         //   - Mapper for java.sql.Date to java.time.LocalDate
-        sqlDateMap.put(LocalDate.class,
-                (java.sql.Date source) -> source != null ? source.toLocalDate() : null);
-        mappers.put(java.sql.Date.class, Collections.unmodifiableMap(sqlDateMap));
+        sqlDateMap.put(
+                LocalDate.class,
+                (java.sql.Date source) -> source != null
+                        ? source.toLocalDate()
+                        : null);
+        mappers.put(
+                java.sql.Date.class,
+                Collections.unmodifiableMap(sqlDateMap));
         // * Mappers for java.sql.Time source
         Map<Class<?>, Mapper<java.sql.Time, Object>> sqlTimeMap = new HashMap<>(2);
         //   - Mapper for java.sql.Time to java.util.Date
-        sqlTimeMap.put(Date.class, source -> source);
+        sqlTimeMap.put(
+                Date.class,
+                source -> source);
         //   - Mapper for java.sql.Time to java.time.LocalTime
-        sqlTimeMap.put(LocalTime.class,
-                (java.sql.Time source) -> source != null ? source.toLocalTime() : null);
-        mappers.put(java.sql.Time.class, Collections.unmodifiableMap(sqlTimeMap));
+        sqlTimeMap.put(
+                LocalTime.class,
+                (java.sql.Time source) -> source != null
+                        ? source.toLocalTime()
+                        : null);
+        mappers.put(
+                java.sql.Time.class,
+                Collections.unmodifiableMap(sqlTimeMap));
         return Collections.unmodifiableMap(mappers);
     }
 
@@ -94,10 +120,10 @@ public class DbClientMapperProvider implements MapperProvider {
     /**
      * Maps {@link java.sql.Timestamp} to {@link java.util.Calendar} with zone set to UTC.
      */
-        private static GregorianCalendar sqlTimestampToGregorianCalendar(Timestamp source) {
-            return source != null
-                    ? GregorianCalendar.from(ZonedDateTime.ofInstant(source.toInstant(), ZoneOffset.UTC))
-                    : null;
-        }
+    private static GregorianCalendar sqlTimestampToGregorianCalendar(Timestamp source) {
+        return source != null
+                ? GregorianCalendar.from(ZonedDateTime.ofInstant(source.toInstant(), ZoneOffset.UTC))
+                : null;
+    }
 
 }
