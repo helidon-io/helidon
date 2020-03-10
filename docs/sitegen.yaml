@@ -188,6 +188,14 @@ backend:
               items:
                 - includes:
                     - "se/websocket/*.adoc"
+            - title: "Reactive Operators"
+              pathprefix: "/se/operators"
+              glyph:
+                type: "icon"
+                value: "fa-filter"
+              items:
+                - includes:
+                    - "mp/reactive/*.adoc"
         - title: "Helidon MP"
           items:
             - title: "Introduction"
@@ -326,6 +334,22 @@ backend:
               items:
                 - includes:
                     - "mp/websocket/*.adoc"
+            - title: "Reactive Operators"
+              pathprefix: "/mp/operators"
+              glyph:
+                type: "icon"
+                value: "fa-filter"
+              items:
+                - includes:
+                    - "mp/reactive/*.adoc"
+            - title: "Reactive Messaging"
+              pathprefix: "/mp/messaging"
+              glyph:
+                type: "icon"
+                value: "email"
+              items:
+                - includes:
+                    - "mp/messaging/*.adoc"
         - title: "Additional resources"
           items:
             - title: "Javadocs"
