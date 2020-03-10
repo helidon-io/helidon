@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
@@ -76,8 +78,13 @@ final class WebClientResponseImpl implements WebClientResponse {
     }
 
     @Override
-    public void close() {
-        responseCloser.close().addListener(future -> LOGGER.finest("Response has been closed."));
+    public CompletionStage<Void> close() {
+        CompletableFuture<Void> toReturn = new CompletableFuture<>();
+        responseCloser.close().addListener(future -> {
+            LOGGER.finest("Response has been closed.");
+            toReturn.complete(null);
+        });
+        return toReturn;
     }
 
     @Override

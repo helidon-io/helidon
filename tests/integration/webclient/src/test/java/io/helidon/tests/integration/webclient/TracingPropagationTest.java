@@ -69,7 +69,7 @@ class TracingPropagationTest {
 
         client.get()
                 .request()
-                .thenAccept(WebClientResponse::close)
+                .thenCompose(WebClientResponse::close)
                 .toCompletableFuture()
                 .get();
 

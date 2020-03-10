@@ -78,7 +78,7 @@ public class MetricsTest extends TestParent {
             webClient.get()
                     .path("/error")
                     .request()
-                    .thenAccept(WebClientResponse::close)
+                    .thenCompose(WebClientResponse::close)
                     .toCompletableFuture()
                     .get();
             assertThat(counterAll.getCount(), is(2L));
@@ -127,7 +127,7 @@ public class MetricsTest extends TestParent {
             webClient.get()
                     .path("/error")
                     .request()
-                    .thenAccept(WebClientResponse::close)
+                    .thenCompose(WebClientResponse::close)
                     .toCompletableFuture()
                     .get();
             assertThat(meterAll.getCount(), is(2L));
@@ -171,7 +171,7 @@ public class MetricsTest extends TestParent {
         assertThat(progressPut.getCount(), is(0L));
         webClient.get()
                 .request()
-                .thenAccept(WebClientResponse::close)
+                .thenCompose(WebClientResponse::close)
                 .toCompletableFuture()
                 .get();
         assertThat(progressAll.getCount(), is(0L));
@@ -208,7 +208,7 @@ public class MetricsTest extends TestParent {
             webClient.get()
                     .path("/invalid")
                     .request()
-                    .thenAccept(WebClientResponse::close)
+                    .thenCompose(WebClientResponse::close)
                     .toCompletableFuture()
                     .get();
             assertThat(counterAll.getCount(), is(1L));
@@ -217,7 +217,7 @@ public class MetricsTest extends TestParent {
             webClient.put()
                     .path("/invalid")
                     .submit()
-                    .thenAccept(WebClientResponse::close)
+                    .thenCompose(WebClientResponse::close)
                     .toCompletableFuture()
                     .get();
             assertThat(counterAll.getCount(), is(2L));

@@ -15,6 +15,8 @@
  */
 package io.helidon.webclient;
 
+import java.util.concurrent.CompletionStage;
+
 import io.helidon.common.http.Http;
 import io.helidon.media.common.MessageBodyReadableContent;
 
@@ -60,5 +62,5 @@ public interface WebClientResponse {
      * This needs to be called when user
      * TODO upravit
      */
-    void close();
+    CompletionStage<Void> close();
 }
