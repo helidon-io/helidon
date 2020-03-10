@@ -59,8 +59,9 @@ public interface WebClientResponse {
 
     /**
      * Closes created response.
-     * This needs to be called when user
-     * TODO upravit
+     * This needs to be called when user handles response himself.
+     *
+     * @return completion stage of the closing process
      */
     CompletionStage<Void> close();
 }
