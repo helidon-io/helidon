@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.dbclient.common.mapper.DbClientMapperProvider
+io.helidon.dbclient.common.DbClientMapperProvider
