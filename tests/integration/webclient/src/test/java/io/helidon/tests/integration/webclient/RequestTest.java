@@ -53,49 +53,37 @@ public class RequestTest extends TestParent {
     }
 
     @Test
-    public void testHelloWorld(){
-        try {
-            webClient.get()
-                    .request(JsonObject.class)
-                    .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
-                    .toCompletableFuture()
-                    .get();
-        } catch (Exception e) {
-            fail(e);
-        }
+    public void testHelloWorld() throws ExecutionException, InterruptedException {
+        webClient.get()
+                .request(JsonObject.class)
+                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
-    public void testIncorrect() {
-        try {
-            webClient.get()
-                    .path("/incorrect")
-                    .request()
-                    .thenAccept(response -> {
-                        if (response.status() != Http.Status.NOT_FOUND_404) {
-                            fail("This request should be 404!");
-                        }
-                        response.close();
-                    })
-                    .toCompletableFuture()
-                    .get();
-        } catch (Exception e) {
-            fail(e);
-        }
+    public void testIncorrect() throws ExecutionException, InterruptedException {
+        webClient.get()
+                .path("/incorrect")
+                .request()
+                .thenAccept(response -> {
+                    if (response.status() != Http.Status.NOT_FOUND_404) {
+                        fail("This request should be 404!");
+                    }
+                    response.close();
+                })
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
-    public void testFollowRedirect() {
-        try {
-            webClient.get()
-                    .path("/redirect")
-                    .request(JsonObject.class)
-                    .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
-                    .toCompletableFuture()
-                    .get();
-        } catch (Exception e) {
-            fail(e);
-        }
+    public void testFollowRedirect() throws ExecutionException, InterruptedException {
+        webClient.get()
+                .path("/redirect")
+                .request(JsonObject.class)
+                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
