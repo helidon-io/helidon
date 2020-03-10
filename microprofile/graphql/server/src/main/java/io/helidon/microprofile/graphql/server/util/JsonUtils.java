@@ -45,5 +45,15 @@ public class JsonUtils {
     public static String convertMapToJson(Map map) {
         return JSONB.toJson(map);
     }
+
+    /**
+     * Concert a Json object into the representative Java object
+     * @param json  the json
+     * @param clazz {@link Class} to convert to
+     * @return a new {@link Class} instance
+     */
+    public static Object convertFromJson(String json, Class<?> clazz) {
+        return JSONB.fromJson(json, clazz);
+    }
 }
 

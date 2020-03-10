@@ -36,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class SchemaTest extends AbstractGraphQLTest {
 
+    private static final Class<?> STRING = String.class;
+    
     @Test
     public void testEmptySchemaAsString() {
         Schema schema = new Schema();
@@ -56,7 +58,7 @@ class SchemaTest extends AbstractGraphQLTest {
 
         SchemaDirective schemaDirective = new SchemaDirective("format");
         schemaDirective.addLocation(FIELD_DEFINITION.name());
-        schemaDirective.addArgument(new SchemaArgument("dateFormat", "String", true, null));
+        schemaDirective.addArgument(new SchemaArgument("dateFormat", "String", true, null, STRING));
         schema.addDirective(schemaDirective);
 
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-04.txt");

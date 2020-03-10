@@ -20,8 +20,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
 import graphql.schema.DataFetcher;
+import io.helidon.microprofile.graphql.server.model.SchemaArgument;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -36,24 +38,41 @@ public class DataFetcherUtils {
 
     /**
      * Create a new {@link DataFetcher} for a {@link Class} and {@link Method}.
-     * @param clazz    {@link Class}
-     * @param method   {@link Method}
-     * @param args     Optional argument names
-     * @param <V>      value type
+     *
+     * @param clazz  {@link Class} to call
+     * @param method {@link Method} to call
+     * @param args   optional {@link SchemaArgument}s
+     * @param <V>    value type
      * @return a new {@link DataFetcher}
      */
-    @SuppressWarnings("unchecked")
-    public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, String... args) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, SchemaArgument... args) {
         return environment -> {
             Constructor constructor = clazz.getConstructor();
             if (constructor == null) {
                 throw new IllegalArgumentException("Class " + clazz.getName()
-                + " must have a no-args constructor");
+                                                           + " must have a no-args constructor");
             }
 
             ArrayList<Object> listArgumentValues = new ArrayList<>();
             if (args.length > 0) {
-                Arrays.stream(args).forEach(a -> listArgumentValues.add(environment.getArgument(a)));
+                for (SchemaArgument argument : args) {
+                    Object key = environment.getArgument(argument.getArgumentName());
+                    if (key instanceof Map) {
+                        // this means the type is an input type so convert it to the correct class instance
+                        listArgumentValues.add(JsonUtils.convertFromJson(JsonUtils.convertMapToJson((Map) key),
+                                                                         argument.getOriginalType()));
+                    } else {
+                        // standard type or enum
+                        Class<?> originalType = argument.getOriginalType();
+                        if (originalType.isEnum()) {
+                            Class<? extends Enum> enumClass = (Class<? extends Enum>) originalType;
+                            listArgumentValues.add(Enum.valueOf(enumClass, key.toString()));
+                        } else {
+                            listArgumentValues.add(key);
+                        }
+                    }
+                }
             }
 
             return (V) method.invoke(constructor.newInstance(), listArgumentValues.toArray());

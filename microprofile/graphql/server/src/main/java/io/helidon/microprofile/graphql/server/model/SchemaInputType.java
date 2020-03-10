@@ -48,4 +48,6 @@ public class SchemaInputType extends SchemaType {
     public String toString() {
         return "InputType" + toStringInternal();
     }
+
+
 }

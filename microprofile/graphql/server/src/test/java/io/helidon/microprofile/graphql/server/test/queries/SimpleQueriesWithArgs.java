@@ -28,7 +28,6 @@ import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
-import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
@@ -40,8 +39,8 @@ import org.eclipse.microprofile.graphql.Query;
 @GraphQLApi
 public class SimpleQueriesWithArgs {
 
-    @Inject
-    private TestDB testDB;
+    //    @Inject
+    private TestDB testDB = new TestDB();
 
     @Query
     public String hero(@Name("heroType") String heroType) {
@@ -58,16 +57,16 @@ public class SimpleQueriesWithArgs {
     @Query
     @Name("findAPerson")
     public Person findPerson(@Name("personId") int personId) {
-        return new TestDB().getPerson(personId);
+        return testDB.getPerson(personId);
     }
 
-    // query with arguments as types, enums and scalars
+    // query with arguments a and scalars
     // query with Collection, List and Map as return type
     // query with ID as param
 
     @Query
     public Collection<Person> findPeopleFromState(@Name("state") String state) {
-        return new TestDB().getAllPeople()
+        return testDB.getAllPeople()
                 .stream().filter(p -> p.getHomeAddress().getState().equals(state))
                 .collect(Collectors.toList());
     }
@@ -81,16 +80,65 @@ public class SimpleQueriesWithArgs {
         return localDates;
     }
 
-//    @Query
-//    public boolean canFindCar(@Name("carToFind") Car car) {
-//        return false;
-//    }
-//
-//    @Query
-//    @JsonbProperty("findEnums")
-//    public Collection<EnumTestWithNameAnnotation> findEnumValues(EnumTestWithNameAnnotation enum1) {
-//        return Arrays.stream(EnumTestWithNameAnnotation.values()).filter(e -> e.equals(enum1)).collect(Collectors.toList());
-//    }
+    @Query("getMonthFromDate")
+    public String returnDateAsLong(@Name("date") LocalDate localDate) {
+        return localDate.getMonth().toString();
+    }
 
+    @Query
+    public boolean canFindContact(@Name("contact") SimpleContact contact) {
+        return false;
+    }
 
+    @Query
+    @JsonbProperty("findEnums")
+    public String findEnumValue(EnumTestWithNameAnnotation enum1) {
+        return enum1.name();
+    }
+
+    // Currently doesn't work as Car Input should also create Vehicle Input
+    //    @Query
+    //    public boolean canFindCar(@Name("carToFind") Car car) {
+    //        return false;
+    //    }
+    //
+
+    public static class SimpleContact {
+        private String id;
+        private String name;
+        private int age;
+
+        public SimpleContact(String id, String name, int age) {
+            this.id = id;
+            this.name = name;
+            this.age = age;
+        }
+
+        public SimpleContact() {
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+    }
 }

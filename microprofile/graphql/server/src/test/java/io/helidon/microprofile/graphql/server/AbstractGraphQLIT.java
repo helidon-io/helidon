@@ -88,7 +88,6 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
 
         Main.main(new String[0]);
 
-        // server = Server.create().start();
         graphQLUrl= "http://127.0.0.1:7001/";
         
         System.out.println("GraphQL URL: " + graphQLUrl);

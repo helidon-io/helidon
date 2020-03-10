@@ -35,8 +35,8 @@ import org.eclipse.microprofile.graphql.Query;
 @GraphQLApi
 public class SimpleQueriesNoArgs {
 
-    @Inject
-    private TestDB testDB;
+  //  @Inject
+    private TestDB testDB = new TestDB();
 
     @Query
     public String hero() {
@@ -62,7 +62,7 @@ public class SimpleQueriesNoArgs {
 
     @Query("allPeople")
     public Collection<Person> findAllPeople() {
-        return new TestDB().getAllPeople();
+        return testDB.getAllPeople();
         // TODO: Need to figure out why CDI not working for
         // return testDB.getAllPeople();
     }

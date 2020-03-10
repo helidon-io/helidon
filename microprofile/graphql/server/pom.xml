@@ -40,10 +40,10 @@
             <groupId>com.graphql-java</groupId>
             <artifactId>graphql-java-extended-scalars</artifactId>
         </dependency>
-        <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>javax.enterprise</groupId>-->
+<!--            <artifactId>cdi-api</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>jakarta.json.bind</groupId>
             <artifactId>jakarta.json.bind-api</artifactId>
@@ -55,16 +55,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.spec.javax.el</groupId>
-                    <artifactId>jboss-el-api_3.0_spec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jboss.spec.javax.interceptor</groupId>
-                    <artifactId>jboss-interceptors-api_1.2_spec</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
@@ -85,11 +75,6 @@
         </dependency>
 
         <!-- test dependencies -->
-        <dependency>
-            <groupId>org.jboss.weld</groupId>
-            <artifactId>weld-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
@@ -133,10 +118,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <!-- for IntelliJ to work only -->
-                    <argLine>
-                        --add-opens helidon.microprofile.graphql.server/io.helidon.microprofile.graphql.server.test.types=graphql.java
-                    </argLine>
                     <reuseForks>false</reuseForks>
                     <includes>
                         <include>**/*IT.java</include>

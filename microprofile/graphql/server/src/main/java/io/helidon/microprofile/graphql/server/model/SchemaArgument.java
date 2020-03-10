@@ -44,18 +44,25 @@ public class SchemaArgument extends AbstractDescriptiveElement
     private final Object defaultValue;
 
     /**
+     * Original argument type before it was converted to a GraphQL representation.
+     */
+    private final Class<?> originalType;
+
+    /**
      * Construct a {@link SchemaArgument} instance.
      *
      * @param argumentName name of the argument
      * @param argumentType type of the argument
      * @param isMandatory  indicates if the argument is mandatory
      * @param defaultValue  default value for the argument
+     * @param originalType  original argument type before it was converted to a GraphQL representation.
      */
-    public SchemaArgument(String argumentName, String argumentType, boolean isMandatory, Object defaultValue) {
+    public SchemaArgument(String argumentName, String argumentType, boolean isMandatory, Object defaultValue, Class<?> originalType) {
         this.argumentName = argumentName;
         this.argumentType = argumentType;
         this.isMandatory = isMandatory;
         this.defaultValue = defaultValue;
+        this.originalType = originalType;
     }
 
     /**
@@ -137,6 +144,15 @@ public class SchemaArgument extends AbstractDescriptiveElement
         return defaultValue;
     }
 
+    /**
+     * Retrieve the original argument type.
+     *
+     * @return the original argument type
+     */
+    public Class<?> getOriginalType() {
+        return originalType;
+    }
+
     @Override
     public String toString() {
         return "Argument{"
@@ -144,6 +160,7 @@ public class SchemaArgument extends AbstractDescriptiveElement
                 + ", argumentType='" + argumentType + '\''
                 + ", isMandatory=" + isMandatory
                 + ", defaultValue=" + defaultValue
+                + ", originalType=" + originalType
                 + ", description='" + getDescription() + '\'' + '}';
     }
 
@@ -162,12 +179,13 @@ public class SchemaArgument extends AbstractDescriptiveElement
         return isMandatory == schemaArgument.isMandatory
                 && Objects.equals(argumentName, schemaArgument.argumentName)
                 && Objects.equals(argumentType, schemaArgument.argumentType)
+                && Objects.equals(originalType, schemaArgument.originalType)
                 && Objects.equals(getDescription(), schemaArgument.getDescription())
                 && Objects.equals(defaultValue, schemaArgument.defaultValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), argumentName, argumentType, isMandatory, defaultValue, getDescription());
+        return Objects.hash(super.hashCode(), argumentName, argumentType, isMandatory, defaultValue, getDescription(), originalType);
     }
 }

@@ -19,17 +19,19 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.enterprise.inject.se.SeContainerInitializer;
+
 import graphql.ExecutionResult;
 
 import io.helidon.microprofile.graphql.server.model.Schema;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
@@ -44,8 +46,8 @@ import io.helidon.microprofile.graphql.server.util.JandexUtils;
 import io.helidon.microprofile.graphql.server.util.SchemaUtils;
 import io.helidon.microprofile.graphql.server.util.SchemaUtilsTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -61,11 +63,15 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     private File indexFile = null;
     private DummyContext dummyContext = new DummyContext("Dummy");
 
+    @BeforeAll
+    public static void initialize() {
+        SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
+    }
+
     @BeforeEach
     public void setupTest() throws IOException {
         System.clearProperty(JandexUtils.PROP_INDEX_FILE);
         indexFileName = getTempIndexFile();
-        ;
         indexFile = null;
     }
 
@@ -201,6 +207,11 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("hero"), is("Luke"));
 
+        result = executionContext.execute("query { canFindContact(contact: { id: \"10\" name: \"tim\" age: 52 }) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("canFindContact"), is(false));
+
         result = executionContext.execute("query { hero(heroType: \"droid\") }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
@@ -211,12 +222,14 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("multiply"), is(BigInteger.valueOf(100)));
 
-        result = executionContext.execute("query { findAPerson(personId: 1) { personId creditLimit workAddress { city state zipCode } } }");
+        result = executionContext
+                .execute("query { findAPerson(personId: 1) { personId creditLimit workAddress { city state zipCode } } }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("findAPerson"), is(notNullValue()));
 
-        result = executionContext.execute("query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
+        result = executionContext.execute(
+                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("findPeopleFromState"), is(notNullValue()));
@@ -232,11 +245,16 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         assertThat(mapResults.get("findLocalDates"), is(notNullValue()));
         List<LocalDate> listLocalDate = (List<LocalDate>) mapResults.get("findLocalDates");
         assertThat(listLocalDate.size(), is(10));
-//
-//        result = executionContext.execute("query { findEnums(arg0: M) }");
-//        mapResults = getAndAssertResult(result);
-//        assertThat(mapResults.size(), is(1));
-//        assertThat(mapResults.get("findEnums"), is(notNullValue()));
+
+        result = executionContext.execute("query { findEnums(arg0: S) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("findEnums"), is(notNullValue()));
+
+        result = executionContext.execute("query { getMonthFromDate(date: \"2020-12-20\") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("getMonthFromDate"), is("DECEMBER"));
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {

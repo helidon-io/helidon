@@ -29,7 +29,10 @@ import static org.hamcrest.Matchers.notNullValue;
  * Tests for {@link SchemaScalar} class.
  */
 class SchemaDirectiveTest {
-
+    
+    private static final Class<?> STRING = String.class;
+    private static final Class<?> INTEGER = Integer.class;
+    
     @Test
     public void testConstructors() {
         SchemaDirective schemaDirective = new SchemaDirective("auth");
@@ -37,7 +40,7 @@ class SchemaDirectiveTest {
         assertThat(schemaDirective.getArguments().size(), is(0));
         assertThat(schemaDirective.getLocations().size(), is(0));
 
-        SchemaArgument arg = new SchemaArgument("name", "String", true, null);
+        SchemaArgument arg = new SchemaArgument("name", "String", true, null, STRING);
         schemaDirective.addArgument(arg);
         assertThat(schemaDirective.getArguments().contains(arg), is(true));
 
@@ -56,7 +59,7 @@ class SchemaDirectiveTest {
 
     @Test
     public void testDirectiveWith1Argument1Location() {
-        SchemaArgument arg = new SchemaArgument("name", "String", true, null);
+        SchemaArgument arg = new SchemaArgument("name", "String", true, null, STRING);
         SchemaDirective schemaDirective = new SchemaDirective("directiveName");
         schemaDirective.addArgument(arg);
         schemaDirective.addLocation(FIELD_DEFINITION.name());
@@ -65,8 +68,8 @@ class SchemaDirectiveTest {
 
     @Test
     public void testDirectiveWith2Argument1Location() {
-        SchemaArgument arg1 = new SchemaArgument("name", "String", true, null);
-        SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null);
+        SchemaArgument arg1 = new SchemaArgument("name", "String", true, null, STRING);
+        SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null, INTEGER);
         SchemaDirective schemaDirective = new SchemaDirective("directiveName");
         schemaDirective.addArgument(arg1);
         schemaDirective.addArgument(arg2);
@@ -77,8 +80,8 @@ class SchemaDirectiveTest {
 
     @Test
     public void testDirectiveWith2Argument2Location() {
-        SchemaArgument arg1 = new SchemaArgument("name", "String", true, null);
-        SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null);
+        SchemaArgument arg1 = new SchemaArgument("name", "String", true, null, STRING);
+        SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null,INTEGER);
         SchemaDirective schemaDirective = new SchemaDirective("directiveName");
         schemaDirective.addArgument(arg1);
         schemaDirective.addArgument(arg2);

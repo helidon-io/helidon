@@ -43,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.json.bind.annotation.JsonbProperty;
 
@@ -151,6 +152,15 @@ public class SchemaUtils {
         put("[I", "int");
         put("[J", "long");
         put("[S", "short");
+    }};
+
+    /**
+     * List of all Java primitive objects.
+     */
+    private static final List<String> JAVA_PRIMITIVE_OBJECTS = new ArrayList<>() {{
+        addAll(STRING_LIST);
+        addAll(FLOAT_LIST);
+        addAll(INTEGER_LIST);
     }};
 
     /**
@@ -294,15 +304,14 @@ public class SchemaUtils {
             setUnresolvedTypes.remove(returnType);
             try {
                 String simpleName = getSimpleName(returnType);
-                //String simpleName = getSimpleName(returnType);
 
                 SchemaScalar scalar = getScalar(returnType);
                 if (scalar != null) {
                     if (!schema.containsScalarWithName(scalar.getName())) {
                         schema.addScalar(scalar);
-                        // update the return type with the scalar
-                        updateLongTypes(schema, returnType, scalar.getName());
                     }
+                    // update the return type with the scalar
+                    updateLongTypes(schema, returnType, scalar.getName());
                 } else if (isEnumClass(returnType)) {
                     SchemaEnum newEnum = generateEnum(Class.forName(returnType));
                     if (!schema.containsEnumWithName(simpleName)) {
@@ -319,8 +328,6 @@ public class SchemaUtils {
                         // update any return types to the discovered scalars
                         checkScalars(schema, newType);
                         schema.addType(newType);
-
-                        // schema.addType(newType.createInputType("Input"));
                     }
                     // need to update any FieldDefinitions that contained the original "long" type of c
                     updateLongTypes(schema, returnType, simpleName);
@@ -394,30 +401,66 @@ public class SchemaUtils {
      */
     @SuppressWarnings("rawtypes")
     private void addRootQueriesToSchema(SchemaType schemaType, Schema schema, Class<?> clazz)
-            throws IntrospectionException {
+            throws IntrospectionException, ClassNotFoundException {
         for (Map.Entry<String, DiscoveredMethod> entry : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
             DiscoveredMethod discoveredMethod = entry.getValue();
             Method method = discoveredMethod.getMethod();
 
             SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, getMethodName(method));
 
-            ArrayList<String> argumentNames = new ArrayList<>();
-
             // add all the arguments and check to see if they contain types that are not yet known
             for (SchemaArgument a : discoveredMethod.getArguments()) {
                 String originalTypeName = a.getArgumentType();
                 String typeName = getGraphQLType(originalTypeName);
-                a.setArgumentType(typeName);
-                fd.addArgument(a);
-                argumentNames.add(a.getArgumentName());
 
-                // type name has not changed, so must require adding of unresolved type
-                if (originalTypeName.equals(a.getArgumentType())) {
-                    setUnresolvedTypes.add(typeName);
+                a.setArgumentType(typeName);
+                String returnType = a.getArgumentType();
+
+                if (originalTypeName.equals(returnType)) {
+                    // type name has not changed, so this must be either a Scalar, Enum or a Type
+                    // Note: Interfaces are not currently supported as InputTypes in 1.0 of the Specification
+                    // if is Scalar or enum then add to unresolved types and they will be dealt with
+                    if (getScalar(returnType) != null || isEnumClass(returnType)) {
+                        setUnresolvedTypes.add(returnType);
+                    } else {
+                        // create the input Type here
+                        SchemaInputType inputType = generateType(returnType).createInputType("Input");
+                        schema.addInputType(inputType);
+                        a.setArgumentType(inputType.getName());
+
+                        // if this new Type contains any types, then they must also have
+                        // InputTypes created for them if they are not enums or scalars
+                        //                        Set<SchemaInputType> setInputTypes = new HashSet<>();
+                        //                        setInputTypes.add(inputType);
+                        //
+                        //                        while (setInputTypes.size() > 0) {
+                        //                            SchemaInputType type = setInputTypes.iterator().next();
+                        //                            setInputTypes.remove(type);
+                        //                            // check each field definition to see if any return types are unknown
+                        //                           InputTypes
+                        //                            type.getFieldDefinitions().forEach(fdi -> {
+                        //                                String fdReturnType = fdi.getReturnType();
+                        //                                String fdTypeName = getGraphQLType(fdReturnType);
+                        //                                if (fdTypeName.equals(fdi.getReturnType())) {
+                        //                                    // has not changed so must be either an unknown input type or
+                        //                                   Scalar or enum
+                        //                                    if (getScalar(fdReturnType) != null || isEnumClass(fdReturnType)) {
+                        //                                        setUnresolvedTypes.add(fdReturnType);
+                        //                                    }
+                        //                                    else {
+                        //                                        SchemaInputType newInputType = generateType(fdReturnType)
+                        //                                       .createInputType("Input");
+                        //                                    }
+                        //                                }
+                        //                            });
+                        //                        }
+                    }
                 }
+                fd.addArgument(a);
             }
 
-            DataFetcher dataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, argumentNames.toArray(new String[0]));
+            DataFetcher dataFetcher = DataFetcherUtils
+                    .newMethodDataFetcher(clazz, method, fd.getArguments().toArray(new SchemaArgument[0]));
             fd.setDataFetcher(dataFetcher);
 
             schemaType.addFieldDefinition(fd);
@@ -626,7 +669,10 @@ public class SchemaUtils {
      * @param shortReturnType short return type
      */
     private void updateLongTypes(Schema schema, String longReturnType, String shortReturnType) {
-        schema.getTypes().forEach(t -> {
+        // concatenate both the SchemaType and SchemaInputType
+        Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
+        Stream<SchemaType> streamAll = Stream.concat(streamInputTypes, schema.getTypes().stream());
+        streamAll.forEach(t -> {
             t.getFieldDefinitions().forEach(fd -> {
                 if (fd.getReturnType().equals(longReturnType)) {
                     fd.setReturnType(shortReturnType);
@@ -841,12 +887,13 @@ public class SchemaUtils {
                         ? paramNameAnnotation.value()
                         : parameter.getName();
                 DefaultValue defaultValueAnnotations = parameter.getAnnotation(DefaultValue.class);
-                // TODO: Add default value processing
+                // TODO: Add default value processing here
                 Class<?> paramType = parameter.getType();
 
                 ReturnType returnType = getReturnType(paramType, genericParameterTypes[i++]);
 
-                discoveredMethod.addArgument(new SchemaArgument(parameterName, returnType.getReturnClass(), false, null));
+                discoveredMethod
+                        .addArgument(new SchemaArgument(parameterName, returnType.getReturnClass(), false, null, paramType));
             }
         }
 
@@ -972,6 +1019,15 @@ public class SchemaUtils {
         } catch (NoSuchFieldException e) {
             return null;
         }
+    }
+
+    /**
+     * Return the list of Java primitive types which are Objects.
+     *
+     * @return the list of Java primitive types
+     */
+    public static List<String> getJavaPrimitiveObjects() {
+        return JAVA_PRIMITIVE_OBJECTS;
     }
 
     /**
@@ -1146,7 +1202,7 @@ public class SchemaUtils {
         }
 
         /**
-         * INdicates if the method is a collection type.
+         * Indicates if the method is a collection type.
          *
          * @return if the method is a collection type
          */
@@ -1183,6 +1239,7 @@ public class SchemaUtils {
 
         /**
          * Add a {@link SchemaArgument}.
+         *
          * @param argument a {@link SchemaArgument}
          */
         public void addArgument(SchemaArgument argument) {

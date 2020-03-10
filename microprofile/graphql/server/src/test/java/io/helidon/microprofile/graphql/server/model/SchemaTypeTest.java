@@ -27,6 +27,9 @@ import static org.hamcrest.Matchers.nullValue;
  * Tests for {@link SchemaType} and {@link SchemaInputType} classes.
  */
 class SchemaTypeTest {
+    
+    private static final Class<?> STRING = String.class;
+    private static final Class<?> INTEGER = Integer.class;
 
     @Test
     public void testConstructors() {
@@ -39,7 +42,7 @@ class SchemaTypeTest {
         schemaType.addFieldDefinition(new SchemaFieldDefinition("personId", "Integer", false, true));
         schemaType.addFieldDefinition(new SchemaFieldDefinition("personId", "Integer", false, true));
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("orders", "Order", true, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null));
+        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         assertThat(schemaType.getFieldDefinitions().size(), is(4));
@@ -54,8 +57,8 @@ class SchemaTypeTest {
     public void testImplementingInterface() {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null));
-        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null));
+        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
         schemaType.setImplementingInterface("Contact");
 
@@ -68,7 +71,7 @@ class SchemaTypeTest {
     public void testTypeSchemaOutput() {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null));
+        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         assertThat(schemaType.getFieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
@@ -83,7 +86,7 @@ class SchemaTypeTest {
     public void testTypeSchemaOutputWithDescription() {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null));
+        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
         schemaType.setDescription("Type Description");
 
@@ -99,8 +102,8 @@ class SchemaTypeTest {
     public void testTypeStringOutputWith2Arguments() {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null));
-        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null));
+        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
@@ -112,11 +115,11 @@ class SchemaTypeTest {
     public void testTypeStringOutputWith2ArgumentsWithArgumentDescriptions() {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null);
+        SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
         schemaArgument1.setDescription("Argument1 Description");
         schemaFieldDefinition.addArgument(schemaArgument1);
 
-        SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null);
+        SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
         schemaArgument2.setDescription("Argument 2 Description");
         schemaFieldDefinition.addArgument(schemaArgument2);
         schemaType.addFieldDefinition(schemaFieldDefinition);
@@ -130,8 +133,8 @@ class SchemaTypeTest {
     public void testTypeInterfaceStringOutputWith2Arguments() {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null));
-        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, 30));
+        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, 30, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
         schemaType.setIsInterface(true);
         assertThat(schemaType.getGraphQLName(), is("interface"));
@@ -146,12 +149,12 @@ class SchemaTypeTest {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
 
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("personId", "String", true, null));
+        schemaFieldDefinition.addArgument(new SchemaArgument("personId", "String", true, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         SchemaFieldDefinition schemaFieldDefinition2 = new SchemaFieldDefinition("people", "Person", true, false);
-        schemaFieldDefinition2.addArgument(new SchemaArgument("filter", "String", false, null));
-        schemaFieldDefinition2.addArgument(new SchemaArgument("age", "Int", true, null));
+        schemaFieldDefinition2.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition2.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition2);
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
@@ -165,7 +168,7 @@ class SchemaTypeTest {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
 
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
-        schemaFieldDefinition.addArgument(new SchemaArgument("personId", "String", true, null));
+        schemaFieldDefinition.addArgument(new SchemaArgument("personId", "String", true, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         SchemaInputType inputType = schemaType.createInputType("Input");
