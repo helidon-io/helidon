@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,7 @@ final class MetaConfigFinder {
         source = validSuffixes.stream()
                 .map(suf -> configPrefix + suf)
                 .map(it -> findFile(it, type))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst();
 
         if (source.isPresent()) {
@@ -105,8 +104,7 @@ final class MetaConfigFinder {
         return validSuffixes.stream()
                 .map(suf -> configPrefix + suf)
                 .map(resource -> MetaConfigFinder.findClasspath(cl, resource, type))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst();
     }
 

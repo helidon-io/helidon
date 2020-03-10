@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,6 @@
 package io.helidon.config;
 
 import java.util.Map;
-
-import io.helidon.config.internal.AutoLoadedConfigFilter;
-import io.helidon.config.internal.AutoLoadedConfigHighPriority;
-import io.helidon.config.internal.AutoLoadedConfigPriority;
 
 import org.junit.jupiter.api.Test;
 

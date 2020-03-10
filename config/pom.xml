@@ -61,7 +61,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
-                    <excludePackageNames>*.internal,io.helidon.config.examples,io.helidon.config.tests</excludePackageNames>
+                    <excludePackageNames>*.internal.*,io.helidon.config.examples,io.helidon.config.tests</excludePackageNames>
                 </configuration>
             </plugin>
             <plugin>

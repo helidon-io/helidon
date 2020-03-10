@@ -284,9 +284,7 @@ public class SingleTest {
     public void testFlatMapMapperNullValue() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("bar").flatMap((s) -> (Multi<String>) null).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), is(empty()));
+        subscriber.assertFailure(NullPointerException.class);
     }
 
     @Test

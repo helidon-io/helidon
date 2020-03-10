@@ -17,44 +17,46 @@
 package io.helidon.config;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.spi.WatchableSource;
 
 /**
  * {@link ConfigSource} implementation that loads configuration content from specified endpoint URL.
  *
- * @see AbstractParsableConfigSource.Builder
+ * @see AbstractConfigSourceBuilder
  */
-public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
+public final class UrlConfigSource extends AbstractConfigSource
+        implements WatchableSource<URL>, ParsableSource, PollableSource<Instant> {
 
     private static final Logger LOGGER = Logger.getLogger(UrlConfigSource.class.getName());
 
-    private static final String HEAD_METHOD = "HEAD";
     private static final String GET_METHOD = "GET";
     private static final String URL_KEY = "url";
+    private static final int STATUS_NOT_FOUND = 404;
 
     private final URL url;
 
-    UrlConfigSource(UrlBuilder builder, URL url) {
+    private UrlConfigSource(Builder builder) {
         super(builder);
 
-        this.url = url;
+        this.url = builder.url;
     }
 
     /**
@@ -64,7 +66,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      * <ul>
      * <li>{@code url} - type {@link URL}</li>
      * </ul>
-     * Optional {@code properties}: see {@link AbstractParsableConfigSource.Builder#config(Config)}.
+     * Optional {@code properties}: see {@link AbstractConfigSourceBuilder#config(Config)}.
      *
      * @param metaConfig meta-configuration used to initialize returned config source instance from.
      * @return new instance of config source described by {@code metaConfig}
@@ -73,7 +75,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
      * @see io.helidon.config.ConfigSources#url(URL)
-     * @see AbstractParsableConfigSource.Builder#config(Config)
+     * @see AbstractConfigSourceBuilder#config(Config)
      */
     public static UrlConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return builder()
@@ -86,8 +88,8 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      *
      * @return a new builder instance
      */
-    public static UrlBuilder builder() {
-        return new UrlBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -96,8 +98,42 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
     }
 
     @Override
-    protected ConfigParser.Content<Instant> content() throws ConfigException {
-        // assumption about HTTP URL connection is wrong here
+    public URL target() {
+        return url;
+    }
+
+    @Override
+    public Class<URL> targetType() {
+        return URL.class;
+    }
+
+    @Override
+    public Optional<ConfigParser> parser() {
+        return super.parser();
+    }
+
+    @Override
+    public Optional<String> mediaType() {
+        return super.mediaType();
+    }
+
+    @Override
+    public Optional<PollingStrategy> pollingStrategy() {
+        return super.pollingStrategy();
+    }
+
+    @Override
+    public Optional<ChangeWatcher<Object>> changeWatcher() {
+        return super.changeWatcher();
+    }
+
+    @Override
+    public boolean isModified(Instant stamp) {
+        return UrlHelper.isModified(url, stamp);
+    }
+
+    @Override
+    public Optional<Content> load() throws ConfigException {
         try {
             URLConnection urlConnection = url.openConnection();
 
@@ -109,53 +145,61 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ConfigException("Configuration at url '" + url + "' GET is not accessible.", ex);
+            throw new ConfigException("Configuration at url '" + url + "' is not accessible.", ex);
         }
     }
 
-    private ConfigParser.Content<Instant> genericContent(URLConnection urlConnection) throws IOException, URISyntaxException {
-        Reader reader = new InputStreamReader(urlConnection.getInputStream(),
-                                              StandardCharsets.UTF_8);
+    private Optional<Content> genericContent(URLConnection urlConnection) throws IOException {
+        InputStream is = urlConnection.getInputStream();
 
-        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
-        builder.stamp(Instant.now());
-        mediaType()
-                .or(this::probeContentType)
-                .ifPresent(builder::mediaType);
+        Content.Builder builder = Content.builder()
+                .data(is)
+                .stamp(Instant.now());
 
-        return builder.build();
+        this.probeContentType().ifPresent(builder::mediaType);
+
+        return Optional.ofNullable(builder.build());
     }
 
-    private ConfigParser.Content<Instant> httpContent(HttpURLConnection connection) throws IOException, URISyntaxException {
+    private Optional<Content> httpContent(HttpURLConnection connection) throws IOException {
         connection.setRequestMethod(GET_METHOD);
+
+        try {
+            connection.connect();
+        } catch (IOException e) {
+            // considering this to be unavailable
+            LOGGER.log(Level.FINEST, "Failed to connect to " + url + ", considering this source to be missing", e);
+            return Optional.empty();
+        }
+
+        if (STATUS_NOT_FOUND == connection.getResponseCode()) {
+            return Optional.empty();
+        }
 
         Optional<String> mediaType = mediaType(connection.getContentType());
         final Instant timestamp;
-        if (connection.getLastModified() != 0) {
-            timestamp = Instant.ofEpochMilli(connection.getLastModified());
-        } else {
+        if (connection.getLastModified() == 0) {
             timestamp = Instant.now();
             LOGGER.fine("Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
                                 + timestamp + "' as a content timestamp.");
+        } else {
+            timestamp = Instant.ofEpochMilli(connection.getLastModified());
         }
 
-        Reader reader = new InputStreamReader(connection.getInputStream(),
-                                              ConfigUtils.getContentCharset(connection.getContentEncoding()));
+        InputStream inputStream = connection.getInputStream();
+        Charset charset = ConfigUtils.getContentCharset(connection.getContentEncoding());
 
-        ConfigParser.Content.Builder<Instant> builder = ConfigParser.Content.builder(reader);
+        Content.Builder builder = Content.builder();
 
+        builder.data(inputStream);
+        builder.charset(charset);
         builder.stamp(timestamp);
         mediaType.ifPresent(builder::mediaType);
 
-        return builder.build();
+        return Optional.of(builder.build());
     }
 
-    @Override
-    protected Optional<String> mediaType() {
-        return super.mediaType();
-    }
-
-    private Optional<String> mediaType(String responseMediaType) throws URISyntaxException {
+    private Optional<String> mediaType(String responseMediaType) {
         return mediaType()
                 .or(() -> Optional.ofNullable(responseMediaType))
                 .or(() -> {
@@ -171,33 +215,6 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         return MediaTypes.detectType(url);
     }
 
-    @Override
-    protected Optional<Instant> dataStamp() {
-        // the URL may not be an HTTP URL
-        try {
-            URLConnection urlConnection = url.openConnection();
-            if (urlConnection instanceof HttpURLConnection) {
-                HttpURLConnection connection = (HttpURLConnection) urlConnection;
-                try {
-                    connection.setRequestMethod(HEAD_METHOD);
-
-                    if (connection.getLastModified() != 0) {
-                        return Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
-                    }
-                } finally {
-                    connection.disconnect();
-                }
-            }
-        } catch (IOException ex) {
-            LOGGER.log(Level.FINE, ex, () -> "Configuration at url '" + url + "' HEAD is not accessible.");
-        }
-
-        Optional<Instant> timestamp = Optional.of(Instant.MAX);
-        LOGGER.finer("Missing HEAD '" + url + "' response header 'Last-Modified'. Used time '"
-                             + timestamp + "' as a content timestamp.");
-        return timestamp;
-    }
-
     /**
      * Url ConfigSource Builder.
      * <p>
@@ -209,20 +226,20 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      * <li>{@code parser} - or directly set {@link ConfigParser} instance to be used to parse the source;</li>
      * </ul>
      * <p>
-     * If the Url ConfigSource is {@code mandatory} and a {@code url} endpoint does not exist
-     * then {@link ConfigSource#load} throws {@link ConfigException}.
-     * <p>
      * If {@code media-type} not set it uses HTTP response header {@code content-type}.
      * If {@code media-type} not returned it tries to guess it from url suffix.
      */
-    public static final class UrlBuilder extends Builder<UrlBuilder, URL, UrlConfigSource> {
+    public static final class Builder extends AbstractConfigSourceBuilder<Builder, URL>
+            implements PollableSource.Builder<Builder>,
+                       WatchableSource.Builder<Builder, URL>,
+                       ParsableSource.Builder<Builder>,
+                       io.helidon.common.Builder<UrlConfigSource> {
         private URL url;
 
         /**
          * Initialize builder.
          */
-        private UrlBuilder() {
-            super(URL.class);
+        private Builder() {
         }
 
         /**
@@ -231,7 +248,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
          * @param url of configuration source
          * @return updated builder instance
          */
-        public UrlBuilder url(URL url) {
+        public Builder url(URL url) {
             this.url = url;
             return this;
         }
@@ -245,14 +262,9 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
          * @return updated builder instance
          */
         @Override
-        public UrlBuilder config(Config metaConfig) {
+        public Builder config(Config metaConfig) {
             metaConfig.get(URL_KEY).as(URL.class).ifPresent(this::url);
             return super.config(metaConfig);
-        }
-
-        @Override
-        protected URL target() {
-            return url;
         }
 
         /**
@@ -262,15 +274,32 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
          *
          * @return new instance of Url ConfigSource.
          */
+        @Override
         public UrlConfigSource build() {
             if (null == url) {
                 throw new IllegalArgumentException("url must be provided");
             }
-            return new UrlConfigSource(this, url);
+            return new UrlConfigSource(this);
         }
 
-        PollingStrategy pollingStrategyInternal() { //just for testing purposes
-            return super.pollingStrategy();
+        @Override
+        public Builder parser(ConfigParser parser) {
+            return super.parser(parser);
+        }
+
+        @Override
+        public Builder mediaType(String mediaType) {
+            return super.mediaType(mediaType);
+        }
+
+        @Override
+        public Builder changeWatcher(ChangeWatcher<URL> changeWatcher) {
+            return super.changeWatcher(changeWatcher);
+        }
+
+        @Override
+        public Builder pollingStrategy(PollingStrategy pollingStrategy) {
+            return super.pollingStrategy(pollingStrategy);
         }
     }
 }

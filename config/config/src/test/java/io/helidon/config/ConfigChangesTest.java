@@ -25,14 +25,15 @@ import java.util.function.Consumer;
 
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.TestingConfigSource;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests related to {@link Config#onChange(java.util.function.Consumer)}.
@@ -44,7 +45,10 @@ public class ConfigChangesTest {
     @Test
     public void testChangesFromMissingToObjectNode() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .optional()
+                .build();
 
         // config
         Config config = Config.builder()
@@ -120,8 +124,13 @@ public class ConfigChangesTest {
     @Test
     public void testChangesSubscribeOnLeafNode() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder().addValue("key-1-1.key-2-1", "item 1").build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .objectNode(
+                        ObjectNode.builder()
+                                .addValue("key-1-1.key-2-1", "item 1")
+                                .build())
+                .build();
 
         // config
         Config config = Config.builder()
@@ -181,8 +190,13 @@ public class ConfigChangesTest {
     @Test
     public void testChangesSubscribeOnParentNode() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder().addValue("key-1-1.key-2-1", "item 1").build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .objectNode(
+                        ObjectNode.builder()
+                                .addValue("key-1-1.key-2-1", "item 1")
+                                .build())
+                .build();
 
         // config
         Config config = Config.builder()
@@ -195,7 +209,7 @@ public class ConfigChangesTest {
         ConfigChangeListener subscriber1 = new ConfigChangeListener();
         config.get("key-1-1")
                 .onChange(subscriber1::onChange);
-        
+
         // register subscriber2 on DETACHED leaf
         ConfigChangeListener subscriber2 = new ConfigChangeListener();
         config.get("key-1-1")
@@ -230,8 +244,13 @@ public class ConfigChangesTest {
     @Test
     public void testChangesSubscribeOnRootNode() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder().addValue("key-1-1.key-2-1", "item 1").build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .objectNode(
+                        ObjectNode.builder()
+                                .addValue("key-1-1.key-2-1", "item 1")
+                                .build())
+                .build();
 
         // config
         Config config = Config.builder()
@@ -243,7 +262,7 @@ public class ConfigChangesTest {
         // register subscriber1
         ConfigChangeListener subscriber1 = new ConfigChangeListener();
         config.onChange(subscriber1::onChange);
-        
+
         // change config source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         configSource.changeLoadedObjectNode(
@@ -262,7 +281,10 @@ public class ConfigChangesTest {
     @Test
     public void testChangesJustSingleSubscriptionOnConfigSource() throws InterruptedException {
         //config source
-        TestingConfigSource configSource = TestingConfigSource.builder().build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .optional()
+                .build();
 
         AbstractConfigImpl config = (AbstractConfigImpl) Config.builder()
                 .disableEnvironmentVariablesSource()
@@ -281,7 +303,10 @@ public class ConfigChangesTest {
     @Test
     public void testChangesFromMissingToListNode() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .optional()
+                .build();
 
         // config
         Config config = Config.builder().sources(configSource).build();
@@ -315,7 +340,10 @@ public class ConfigChangesTest {
     @Test
     public void testChangesFromMissingToValueNode() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .optional()
+                .build();
 
         // config
         Config config = Config.builder().sources(configSource).build();
@@ -346,12 +374,15 @@ public class ConfigChangesTest {
     @Test
     public void testChangesFromObjectNodeToMissing() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder()
-                        .addObject("key1", ObjectNode.builder()
-                                .addValue("sub1", "string value")
-                                .build())
-                        .build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .optional()
+                .objectNode(ObjectNode.builder()
+                                    .addObject("key1", ObjectNode.builder()
+                                            .addValue("sub1", "string value")
+                                            .build())
+                                    .build())
+                .build();
 
         // config
         Config config = Config.builder(configSource)
@@ -382,13 +413,16 @@ public class ConfigChangesTest {
     @Test
     public void testChangesFromListNodeToMissing() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder()
-                        .addList("key1", ConfigNode.ListNode.builder()
-                                .addValue("item 1")
-                                .addValue("item 2")
-                                .build())
-                        .build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .optional()
+                .objectNode(ObjectNode.builder()
+                                    .addList("key1", ConfigNode.ListNode.builder()
+                                            .addValue("item 1")
+                                            .addValue("item 2")
+                                            .build())
+                                    .build())
+                .build();
 
         // config
         Config config = Config.builder()
@@ -420,10 +454,14 @@ public class ConfigChangesTest {
     @Test
     public void testChangesFromValueNodeToMissing() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder()
-                        .addValue("key1", "string value")
-                        .build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .optional()
+                .objectNode(
+                        ObjectNode.builder()
+                                .addValue("key1", "string value")
+                                .build())
+                .build();
 
         // config
         Config config = Config.builder()
@@ -455,8 +493,13 @@ public class ConfigChangesTest {
     @Test
     public void testOnChangeValueChanged() throws InterruptedException {
         // config source
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder().addValue("key1", "string value").build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .objectNode(
+                        ObjectNode.builder()
+                                .addValue("key1", "string value")
+                                .build())
+                .build();
 
         // config
         Config config = Config.builder()
@@ -473,9 +516,10 @@ public class ConfigChangesTest {
         //MOCK onNextFunction
         CountDownLatch onNextLatch = new CountDownLatch(1);
         AtomicReference<Config> newConfigReference = new AtomicReference<>();
+
         Consumer<Config> onNextFunction = aConfig -> {
-            onNextLatch.countDown();
             newConfigReference.set(aConfig);
+            onNextLatch.countDown();
         };
 
         // register subscriber
@@ -484,16 +528,19 @@ public class ConfigChangesTest {
         TimeUnit.MILLISECONDS.sleep(20);
 
         // change config source
-        TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         configSource.changeLoadedObjectNode(
                 ObjectNode.builder().addValue("key1", "string value 2").build());
 
         // wait for event
-        onNextLatch.await(2, TimeUnit.SECONDS);
+        int changeTimeout = 3;
+        if (!onNextLatch.await(changeTimeout, TimeUnit.SECONDS)) {
+            fail("Change did not come within the expected timeout of " + changeTimeout + " seconds");
+        }
 
         // verify event
         Config newConfig = newConfigReference.get();
 
+        assertThat(newConfig, notNullValue());
         // new: key does exist
         assertThat(newConfig.exists(), is(true));
         assertThat(newConfig.type(), is(Config.Type.VALUE));
@@ -506,8 +553,12 @@ public class ConfigChangesTest {
         String fullKey = "parent." + key1;
         /////////////////////// subscribe before any change
         // create new config v1
-        TestingConfigSource configSource = TestingConfigSource.builder().objectNode(
-                ObjectNode.builder().addValue(fullKey, "value").build()).build();
+        TestingConfigSource configSource = TestingConfigSource.builder()
+                .testingPollingStrategy()
+                .objectNode(ObjectNode.builder()
+                                    .addValue(fullKey, "value")
+                                    .build())
+                .build();
         Config v1 = Config.builder()
                 .sources(configSource)
                 .disableEnvironmentVariablesSource()
@@ -530,16 +581,8 @@ public class ConfigChangesTest {
         assertThat(v2.get(key1).asString().get(), is("value 2"));
         s1.reset();
 
-        ///////////////////// subscribing on old Config -> subscriber receives (OLD) already fired event
-        // subscribe s2 on v1
         ConfigChangeListener s2 = new ConfigChangeListener();
         v1.onChange(s2::onChange);
-        // s2 receives v2
-        Config s2v2 = s2.get(1200, true);
-        assertThat(s2v2.get(key1).asString(), is(ConfigValues.simpleValue("value 2")));
-        //same v2s
-        assertThat(v2, is(s2v2));
-        s2.reset();
 
         ///////////////////////////// another change -> BOTH subscribers receives NEW event
         // change source => config v3
@@ -561,26 +604,11 @@ public class ConfigChangesTest {
         // subscribe s3 on v1
         ConfigChangeListener s3 = new ConfigChangeListener();
         v1.onChange(s3::onChange);
-        // s3 receives v3
-        Config s3v3 = s3.get(200, true);
-        assertThat(s3v3.get(key1).asString(), is(ConfigValues.simpleValue("value 3")));
-        s3.reset();
-        //same v3s
-        assertThat(v3, is(s2v3));
-        assertThat(v3, is(s3v3));
 
         ///////////////////// new subscriber on V2 receives also JUST the last event V3
         // subscribe s4 on v2
         ConfigChangeListener s4 = new ConfigChangeListener();
         v2.onChange(s4::onChange);
-        // s4 receives v3
-        Config s4v3 = s4.get(200, true);
-        assertThat(s4v3.get(key1).asString(), is(ConfigValues.simpleValue("value 3")));
-        s4.reset();
-        //same v3s
-        assertThat(v3, is(s2v3));
-        assertThat(v3, is(s3v3));
-        assertThat(v3, is(s4v3));
 
         ///////////////////////////// another change -> ALL subscribers receives NEW event, no matter what ver. they subscribed on
         // change source => config v4

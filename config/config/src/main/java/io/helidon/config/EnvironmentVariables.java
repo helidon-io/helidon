@@ -50,9 +50,8 @@ import static java.util.Collections.unmodifiableMap;
  * an additional mapping is required to produce a matching alias. Given that it must map from legal environment variable names
  * and reduce the chances of inadvertent mappings, a verbose mapping is used: {@code "_dash_"} substrings (upper and lower case)
  * are first replaced by {@code '-'}. See {@link #expand()} for the aliases produced.
- *
  */
-public class EnvironmentVariables {
+public final class EnvironmentVariables {
     private static final Pattern DASH_PATTERN = Pattern.compile("_dash_|_DASH_");
     private static final String UNDERSCORE = "_";
     private static final String DOUBLE_UNDERSCORE = "__";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ import org.hamcrest.Description;
  * Hamcrest {@link org.hamcrest.Matcher} implementation that matches {@link ConfigNode.ValueNode} value.
  */
 public class ValueNodeMatcher extends BaseMatcher<ConfigNode> {
-    //??? There is io.helidon.config.testing module that provides this matcher too BUT it depends on io.helidon.config module! Cycle!!! :(
+    //??? There is io.helidon.config.testing module that provides this matcher too BUT it depends on io.helidon.config module!
+    // Cycle!!! :(
 
     private String expectedValue;
 

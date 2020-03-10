@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,10 @@ public class RsaLegacySecureConfigTest {
         config = Config.create().get("rsa-legacy");
 
         configRequiresEncryption = Config.builder()
-                .sources(ConfigSources.create(
-                        //override require encryption
-                        ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
-                        ConfigSources.classpath("application.yaml")))
-                .build().get("rsa-legacy");
+                .addSource(ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")))
+                .addSource(ConfigSources.classpath("application.yaml"))
+                .build()
+                .get("rsa-legacy");
 
         assertThat("We must have the correct configuration file", config.get("pwd3").type().isLeaf());
         assertThat("We must have the correct configuration file", configRequiresEncryption.get("pwd3").type().isLeaf());

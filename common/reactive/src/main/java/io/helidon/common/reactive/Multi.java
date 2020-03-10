@@ -100,10 +100,9 @@ public interface Multi<T> extends Subscribable<T> {
      * @param predicate predicate to filter stream with
      * @return Multi
      */
-    default Multi<T> dropWhile(Predicate<T> predicate) {
-        MultiDropWhileProcessor<T> processor = MultiDropWhileProcessor.create(predicate);
-        this.subscribe(processor);
-        return processor;
+    default Multi<T> dropWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return new MultiDropWhilePublisher<>(this, predicate);
     }
 
     /**
@@ -161,10 +160,23 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <U>            output item type
      * @return Multi
      */
-    default <U> Multi<U> flatMapIterable(Function<T, Iterable<U>> iterableMapper) {
-        MultiFlatMapProcessor<T, U> processor = MultiFlatMapProcessor.fromIterableMapper(iterableMapper);
-        this.subscribe(processor);
-        return processor;
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper) {
+        return flatMapIterable(iterableMapper, 32);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
+     *
+     * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
+     * @param prefetch the number of upstream items to request upfront, then 75% of this value after
+     *                 75% received and mapped
+     * @param <U>            output item type
+     * @return Multi
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper,
+                                         int prefetch) {
+        Objects.requireNonNull(iterableMapper, "iterableMapper is null");
+        return new MultiFlatMapIterable<>(this, iterableMapper, prefetch);
     }
 
     /**
@@ -235,9 +247,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      */
     default Single<T> first() {
-        MultiFirstProcessor<T> processor = MultiFirstProcessor.create();
-        this.subscribe(processor);
-        return processor;
+        return new MultiFirstPublisher<>(this);
     }
 
     /**
@@ -275,7 +285,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>   item type
      * @param items items to publish
      * @return Multi
-     * @throws NullPointerException if items is {@code null}
+     * @throws NullPointerException if {@code items} is {@code null}
      */
     static <T> Multi<T> just(Collection<T> items) {
         return Multi.from(items);
@@ -287,11 +297,29 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>   item type
      * @param items items to publish
      * @return Multi
-     * @throws NullPointerException if items is {@code null}
+     * @throws NullPointerException if {@code items} is {@code null}
      */
     @SafeVarargs
     static <T> Multi<T> just(T... items) {
-        return Multi.from(List.of(items));
+        if (items.length == 0) {
+            return empty();
+        }
+        if (items.length == 1) {
+            return singleton(items[0]);
+        }
+        return new MultiFromArrayPublisher<>(items);
+    }
+
+    /**
+     * Create a {@link Multi} that emits a pre-existing item and then completes.
+     * @param item the item to emit.
+     * @param <T> the type of the item
+     * @return Multi
+     * @throws NullPointerException if {@code item} is {@code null}
+     */
+    static <T> Multi<T> singleton(T item) {
+        Objects.requireNonNull(item, "item is null");
+        return new MultiJustPublisher<>(item);
     }
 
     /**
@@ -385,5 +413,45 @@ public interface Multi<T> extends Subscribable<T> {
                 null,
                 null,
                 null);
+    }
+
+    /**
+     * Emits a range of ever increasing integers.
+     * @param start the initial integer value
+     * @param count the number of integers to emit
+     * @return Multi
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    static Multi<Integer> range(int start, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count >= required");
+        }
+        if (count == 0) {
+            return empty();
+        }
+        if (count == 1) {
+            return singleton(start);
+        }
+        return new MultiRangePublisher(start, start + count);
+    }
+
+    /**
+     * Emits a range of ever increasing longs.
+     * @param start the initial long value
+     * @param count the number of longs to emit
+     * @return Multi
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    static Multi<Long> rangeLong(long start, long count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count >= required");
+        }
+        if (count == 0) {
+            return empty();
+        }
+        if (count == 1) {
+            return singleton(start);
+        }
+        return new MultiRangeLongPublisher(start, start + count);
     }
 }
