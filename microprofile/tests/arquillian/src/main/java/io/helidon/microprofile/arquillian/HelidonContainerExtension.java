@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.arquillian;
 
 import javax.enterprise.context.control.RequestContextController;
 import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 
@@ -49,7 +50,10 @@ class HelidonContainerExtension implements LoadableExtension {
             if (beanManager == null) {
                 CDI<Object> cdi = CDI.current();
                 if (cdi != null) {
-                    beanManager = cdi.getBeanManager();
+                    SeContainer container = (SeContainer) cdi;
+                    if (container.isRunning()) {
+                        beanManager = container.getBeanManager();
+                    }
                 }
             }
             return beanManager;
