@@ -55,11 +55,6 @@
                 </dependencies>
             </plugin>
         </plugins>
-        <testResources>
-            <testResource>
-                <directory>${project.basedir}/src/test/resources</directory>
-            </testResource>
-        </testResources>
     </build>
 
     <dependencies>
