@@ -162,15 +162,12 @@ public interface Single<T> extends Subscribable<T> {
      * @return Single
      * @throws NullPointerException if source is {@code null}
      */
-    @SuppressWarnings("unchecked")
     static <T> Single<T> from(Publisher<T> source) {
         Objects.requireNonNull(source, "source is null!");
         if (source instanceof Single) {
             return (Single<T>) source;
         }
-        SingleExactlyOneProcessor<T> processor = new SingleExactlyOneProcessor<>();
-        source.subscribe(processor);
-        return processor;
+        return new SingleFromPublisher<>(source);
     }
 
     /**
