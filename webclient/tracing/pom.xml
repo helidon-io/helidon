@@ -28,9 +28,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-webclient-tracing</artifactId>
-    <name>Helidon Web Client Tracing</name>
+    <name>Helidon WebClient Tracing</name>
 
-    <description>Tracing support for Helidon Web client</description>
+    <description>Tracing support for Helidon WebClient</description>
 
     <dependencies>
         <dependency>

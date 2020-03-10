@@ -28,9 +28,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-webclient-metrics</artifactId>
-    <name>Helidon Web Client Metrics</name>
+    <name>Helidon WebClient Metrics</name>
 
-    <description>Metrics support for Helidon Web client</description>
+    <description>Metrics support for Helidon WebClient</description>
 
     <dependencies>
         <dependency>
