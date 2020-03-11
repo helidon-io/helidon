@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server.application;
 
+import java.util.Collections;
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -30,7 +31,7 @@ import javax.ws.rs.core.Application;
 public class GraphQLApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
-        return Set.of(
+        return Collections.singleton(
                 GraphQLResource.class
         );
     }

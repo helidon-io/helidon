@@ -22,9 +22,12 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 
 import graphql.ExecutionResult;
@@ -45,6 +48,7 @@ import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 import io.helidon.microprofile.graphql.server.util.JandexUtils;
 import io.helidon.microprofile.graphql.server.util.SchemaUtils;
 import io.helidon.microprofile.graphql.server.util.SchemaUtilsTest;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,9 +67,17 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     private File indexFile = null;
     private DummyContext dummyContext = new DummyContext("Dummy");
 
+    private static SeContainer container;
+
     @BeforeAll
     public static void initialize() {
         SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
+        container = seContainerInitializer.initialize();
+    }
+
+    @AfterAll
+    public static void teardown() {
+        container.close();
     }
 
     @BeforeEach
@@ -255,6 +267,45 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("getMonthFromDate"), is("DECEMBER"));
+
+        result = executionContext.execute("query { findOneEnum(enum: XL) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        Collection<String> listEnums = (Collection<String>) mapResults.get("findOneEnum");
+        assertThat(listEnums.size(), is(1));
+        assertThat(listEnums.iterator().next(), is(EnumTestWithNameAnnotation.XL.toString()));
+
+        result = executionContext.execute("query { returnIntegerAsId(param1: 123) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnIntegerAsId"), is(123));
+
+        result = executionContext.execute("query { returnIntAsId(param1: 124) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnIntAsId"), is(124));
+
+        result = executionContext.execute("query { returnStringAsId(param1: \"StringValue\") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnStringAsId"), is("StringValue"));
+
+        result = executionContext.execute("query { returnLongAsId(param1: " + Long.MAX_VALUE + ") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnLongAsId"), is(BigInteger.valueOf(Long.MAX_VALUE)));
+
+        result = executionContext.execute("query { returnLongPrimitiveAsId(param1: " + Long.MAX_VALUE + ") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnLongPrimitiveAsId"), is(BigInteger.valueOf(Long.MAX_VALUE)));
+
+        UUID uuid = UUID.randomUUID();
+        result = executionContext.execute("query { returnUUIDAsId(param1: \"" + uuid.toString() + "\") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("returnUUIDAsId"), is(uuid.toString()));
+
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {

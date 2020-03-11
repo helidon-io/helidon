@@ -19,10 +19,10 @@ package io.helidon.microprofile.graphql.server.util;
 import java.beans.IntrospectionException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Map;   
 
 import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
 import io.helidon.microprofile.graphql.server.model.SchemaEnum;
@@ -79,7 +79,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
     public void testGettersPerson() throws IntrospectionException {
         Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Person.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(11));
+        assertThat(mapMethods.size(), is(12));
 
         assertDiscoveredMethod(mapMethods.get("personId"), "personId", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("name"), "name", STRING, null, false, false, false);
@@ -93,6 +93,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("stringArray"), "stringArray", STRING, null, true, false, false);
         assertDiscoveredMethod(mapMethods.get("addressMap"), "addressMap", ADDRESS, null, false, false, true);
         assertDiscoveredMethod(mapMethods.get("localDate"), "localDate", LOCALDATE, null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("longValue"), "longValue", long.class.getName(), null, false, false, false);
     }
 
     @Test
@@ -211,7 +212,8 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testAllMethods() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
+                .retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("hero"), "hero", STRING, null, false, false, false);
@@ -219,10 +221,12 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("numberOfStars"), "numberOfStars", Long.class.getName(), null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("badGuy"), "badGuy", STRING, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("allPeople"), "allPeople", Person.class.getName(), COLLECTION, false, true, false);
-        assertDiscoveredMethod(mapMethods.get("returnCurrentDate"), "returnCurrentDate", LocalDate.class.getName(), null, false, false, false);
-        assertDiscoveredMethod(mapMethods.get("returnMediumSize"), "returnMediumSize", EnumTestWithEnumName.class.getName(), null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("returnCurrentDate"), "returnCurrentDate", LocalDate.class.getName(), null, false,
+                               false, false);
+        assertDiscoveredMethod(mapMethods.get("returnMediumSize"), "returnMediumSize", EnumTestWithEnumName.class.getName(), null,
+                               false, false, false);
     }
-  
+
     private void assertDiscoveredMethod(SchemaUtils.DiscoveredMethod discoveredMethod,
                                         String name,
                                         String returnType,
@@ -250,7 +254,8 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertThat(schemaEnumResult, is(notNullValue()));
         assertThat(schemaEnumResult.getValues().size(), is(6));
 
-        Set.of("S", "M", "L", "XL", "XXL", "XXXL").forEach(v -> assertThat(schemaEnumResult.getValues().contains(v), is(true)));
+        Arrays.stream(new String[] { "S", "M", "L", "XL", "XXL", "XXXL" })
+                .forEach(v -> assertThat(schemaEnumResult.getValues().contains(v), is(true)));
     }
 
 }

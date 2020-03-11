@@ -20,9 +20,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.bind.annotation.JsonbProperty;
 
@@ -30,6 +33,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import org.eclipse.microprofile.graphql.GraphQLApi;
+import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
@@ -37,10 +41,45 @@ import org.eclipse.microprofile.graphql.Query;
  * Class that holds simple query definitions with various numbers of arguments.
  */
 @GraphQLApi
+@ApplicationScoped
 public class SimpleQueriesWithArgs {
 
-    //    @Inject
-    private TestDB testDB = new TestDB();
+    public SimpleQueriesWithArgs() {
+    }
+
+    @Inject
+    private TestDB testDB;
+
+    // tests for ID
+    @Query
+    public Integer returnIntegerAsId(@Name("param1") @Id Integer value) {
+        return value;
+    }
+
+    @Query
+    public Integer returnIntAsId(@Name("param1") @Id int value) {
+        return value;
+    }
+
+    @Query
+    public String returnStringAsId(@Name("param1") @Id String value) {
+        return value;
+    }
+
+    @Query
+    public Long returnLongAsId(@Name("param1") @Id Long value) {
+        return value;
+    }
+
+    @Query
+    public long returnLongPrimitiveAsId(@Name("param1") @Id long value) {
+        return value;
+    }
+
+    @Query
+    public UUID returnUUIDAsId(@Name("param1") @Id UUID value) {
+        return value;
+    }
 
     @Query
     public String hero(@Name("heroType") String heroType) {
@@ -59,10 +98,6 @@ public class SimpleQueriesWithArgs {
     public Person findPerson(@Name("personId") int personId) {
         return testDB.getPerson(personId);
     }
-
-    // query with arguments a and scalars
-    // query with Collection, List and Map as return type
-    // query with ID as param
 
     @Query
     public Collection<Person> findPeopleFromState(@Name("state") String state) {
@@ -83,6 +118,11 @@ public class SimpleQueriesWithArgs {
     @Query("getMonthFromDate")
     public String returnDateAsLong(@Name("date") LocalDate localDate) {
         return localDate.getMonth().toString();
+    }
+
+    @Query
+    public Collection<EnumTestWithNameAnnotation> findOneEnum(@Name("enum") EnumTestWithNameAnnotation enum1) {
+        return Collections.singleton(enum1);
     }
 
     @Query

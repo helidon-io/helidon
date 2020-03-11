@@ -33,6 +33,7 @@ import io.helidon.microprofile.graphql.server.test.types.Person;
  * An injectable datasource for integration tests.
  */
 @ApplicationScoped
+@SuppressWarnings("unchecked")
 public class TestDB {
 
     /**
@@ -73,7 +74,7 @@ public class TestDB {
             Person person = new Person(i, "Person " + i, homeAddress, workAddress, new BigDecimal(RANDOM.nextFloat()),
                                        List.of("BA", "BA Hon"),
                                        List.of(prevAddress1, prevAddress2), new int[0], new String[0], EMPTY_MAP,
-                                       LocalDate.now());
+                                       LocalDate.now(), System.nanoTime());
             allPeople.put(person.getPersonId(), person);
         }
     }

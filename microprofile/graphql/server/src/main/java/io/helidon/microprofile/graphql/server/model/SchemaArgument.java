@@ -57,7 +57,8 @@ public class SchemaArgument extends AbstractDescriptiveElement
      * @param defaultValue  default value for the argument
      * @param originalType  original argument type before it was converted to a GraphQL representation.
      */
-    public SchemaArgument(String argumentName, String argumentType, boolean isMandatory, Object defaultValue, Class<?> originalType) {
+    public SchemaArgument(String argumentName, String argumentType,
+                          boolean isMandatory, Object defaultValue, Class<?> originalType) {
         this.argumentName = argumentName;
         this.argumentType = argumentType;
         this.isMandatory = isMandatory;
@@ -186,6 +187,7 @@ public class SchemaArgument extends AbstractDescriptiveElement
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), argumentName, argumentType, isMandatory, defaultValue, getDescription(), originalType);
+        return Objects.hash(super.hashCode(), argumentName, argumentType,
+                            isMandatory, defaultValue, getDescription(), originalType);
     }
 }

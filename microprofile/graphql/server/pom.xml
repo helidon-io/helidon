@@ -40,10 +40,6 @@
             <groupId>com.graphql-java</groupId>
             <artifactId>graphql-java-extended-scalars</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>javax.enterprise</groupId>-->
-<!--            <artifactId>cdi-api</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>jakarta.json.bind</groupId>
             <artifactId>jakarta.json.bind-api</artifactId>

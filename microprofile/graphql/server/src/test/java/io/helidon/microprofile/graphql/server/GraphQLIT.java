@@ -48,7 +48,7 @@ public class GraphQLIT extends AbstractGraphQLIT {
     }
 
     @Test
-    public void basicEndpointTests() throws InterruptedException, JsonProcessingException, UnsupportedEncodingException {
+    public void basicEndpointTests() throws UnsupportedEncodingException {
         // test /graphql endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL);
         Map<String, Object> mapRequest = generateJsonRequest(QUERY_INTROSPECT, null, null);

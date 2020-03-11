@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server.test.queries;
 import java.time.LocalDate;
 import java.util.Collection;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.bind.annotation.JsonbProperty;
 
@@ -33,10 +34,14 @@ import org.eclipse.microprofile.graphql.Query;
  * Class that holds simple query definitions with no-argument.
  */
 @GraphQLApi
+@ApplicationScoped
 public class SimpleQueriesNoArgs {
 
-  //  @Inject
-    private TestDB testDB = new TestDB();
+    public SimpleQueriesNoArgs() {
+    }
+
+    @Inject
+    private TestDB testDB;
 
     @Query
     public String hero() {
@@ -69,7 +74,7 @@ public class SimpleQueriesNoArgs {
 
     @Query
     public LocalDate returnCurrentDate() {
-        return  LocalDate.now();
+        return LocalDate.now();
     }
 
     @Query

@@ -47,7 +47,7 @@ public class JsonUtils {
     }
 
     /**
-     * Concert a Json object into the representative Java object
+     * Concert a Json object into the representative Java object.
      * @param json  the json
      * @param clazz {@link Class} to convert to
      * @return a new {@link Class} instance

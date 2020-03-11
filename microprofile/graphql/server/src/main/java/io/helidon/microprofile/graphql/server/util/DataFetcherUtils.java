@@ -19,11 +19,16 @@ package io.helidon.microprofile.graphql.server.util;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
+
+import javax.enterprise.inject.spi.CDI;
+
+import io.helidon.microprofile.graphql.server.model.SchemaArgument;
 
 import graphql.schema.DataFetcher;
-import io.helidon.microprofile.graphql.server.model.SchemaArgument;
+
+import static io.helidon.microprofile.graphql.server.util.SchemaUtils.ID;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -47,12 +52,9 @@ public class DataFetcherUtils {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, SchemaArgument... args) {
+        Object instance = CDI.current().select(clazz).get();
+
         return environment -> {
-            Constructor constructor = clazz.getConstructor();
-            if (constructor == null) {
-                throw new IllegalArgumentException("Class " + clazz.getName()
-                                                           + " must have a no-args constructor");
-            }
 
             ArrayList<Object> listArgumentValues = new ArrayList<>();
             if (args.length > 0) {
@@ -68,14 +70,35 @@ public class DataFetcherUtils {
                         if (originalType.isEnum()) {
                             Class<? extends Enum> enumClass = (Class<? extends Enum>) originalType;
                             listArgumentValues.add(Enum.valueOf(enumClass, key.toString()));
+                        } else if (argument.getArgumentType().equals(ID)) {
+                            // convert back to original data type
+                            listArgumentValues.add(getOriginalValue(originalType, (String) key));
                         } else {
                             listArgumentValues.add(key);
                         }
                     }
                 }
             }
-
-            return (V) method.invoke(constructor.newInstance(), listArgumentValues.toArray());
+            
+            return (V) method.invoke(instance, listArgumentValues.toArray());
         };
+    }
+
+    /**
+     * Convert the ID type back to the original type for the method call.
+     * @param originalType  original type
+     * @param key           the key value passed in
+     * @return the value as the original type
+     */
+    private static Object getOriginalValue(Class<?> originalType, String key) {
+        if (originalType.equals(Long.class) || originalType.equals(long.class)) {
+            return Long.parseLong(key);
+        } else if (originalType.equals(Integer.class) || originalType.equals(int.class)) {
+            return Integer.parseInt(key);
+        } else if (originalType.equals(java.util.UUID.class)) {
+            return UUID.fromString(key);
+        } else {
+            return key;
+        }
     }
 }

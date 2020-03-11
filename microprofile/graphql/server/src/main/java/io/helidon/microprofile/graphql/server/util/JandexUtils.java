@@ -73,7 +73,7 @@ public class JandexUtils {
         if (file.isAbsolute()) {
             actualFile = indexFile;
         } else {
-            URL resource = JandexUtils.class.getResource(indexFile);
+            URL resource = JandexUtils.class.getClassLoader().getResource(indexFile);
             if (resource == null) {
                 return;
             }

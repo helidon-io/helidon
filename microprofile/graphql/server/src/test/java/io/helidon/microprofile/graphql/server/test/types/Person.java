@@ -41,6 +41,7 @@ public class Person {
     private String[] stringArray;
     private Map<String, Address> addressMap;
     private LocalDate localDate;
+    private long longValue;
 
     public Person(int personId,
                   String name,
@@ -51,7 +52,7 @@ public class Person {
                   List<Address> previousAddresses,
                   int[] intArray,
                   String[] stringArray,
-                  Map<String, Address> addressMap, LocalDate localDate) {
+                  Map<String, Address> addressMap, LocalDate localDate, long longValue) {
         this.personId = personId;
         this.name = name;
         this.homeAddress = homeAddress;
@@ -63,6 +64,15 @@ public class Person {
         this.stringArray = stringArray;
         this.addressMap = addressMap;
         this.localDate = localDate;
+        this.longValue = longValue;
+    }
+
+    public long getLongValue() {
+        return longValue;
+    }
+
+    public void setLongValue(long longValue) {
+        this.longValue = longValue;
     }
 
     public int getPersonId() {
@@ -166,6 +176,7 @@ public class Person {
                 ", intArray=" + Arrays.toString(intArray) +
                 ", stringArray=" + Arrays.toString(stringArray) +
                 ", addressMap=" + addressMap +
+                ", longValue=" + longValue +
                 ", localDate=" + localDate +
                 '}';
     }

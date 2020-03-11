@@ -55,7 +55,6 @@ import io.helidon.microprofile.graphql.server.model.SchemaInputType;
 import io.helidon.microprofile.graphql.server.model.SchemaScalar;
 import io.helidon.microprofile.graphql.server.model.SchemaType;
 
-import graphql.GraphQLException;
 import graphql.Scalars;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
@@ -94,7 +93,7 @@ public class SchemaUtils {
         put(LocalDate.class.getName(), new SchemaScalar("Date", LocalDate.class.getName(), ExtendedScalars.Date));
         put(BigDecimal.class.getName(), new SchemaScalar("BigDecimal", Long.class.getName(), Scalars.GraphQLBigDecimal));
         put(BigInteger.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
-        put("long", new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
+        put(long.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
         put(Long.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
     }};
 
@@ -189,6 +188,16 @@ public class SchemaUtils {
     protected static final String BOOLEAN = "Boolean";
 
     /**
+     * Class for long primitive.
+     */
+    protected static final String LONG_PRIMITIVE = long.class.getName();
+
+    /**
+     * Class for Long object.
+     */
+    protected static final String LONG_OBJECT = Long.class.getName();
+
+    /**
      * {@link JandexUtils} instance to hold indexes.
      */
     private JandexUtils jandexUtils;
@@ -218,6 +227,9 @@ public class SchemaUtils {
      * @return a {@link Schema}
      */
     public Schema generateSchema() throws IntrospectionException, ClassNotFoundException {
+        if (!jandexUtils.hasIndex()) {
+            return generateSchemaFromClasses();
+        }
 
         List<Class<?>> listClasses = jandexUtils.getIndex()
                 .getKnownClasses()
@@ -243,6 +255,7 @@ public class SchemaUtils {
         SchemaType rootQueryType = new SchemaType(schema.getQueryName(), null);
 
         for (Class<?> clazz : clazzes) {
+            LOGGER.info("processing class " + clazz.getName());
             // only include interfaces and concrete classes/enums
             if (clazz.isInterface() || (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()))) {
                 // Discover Enum via annotation
@@ -259,7 +272,7 @@ public class SchemaUtils {
                 if (typeAnnotation != null || interfaceAnnotation != null) {
                     // interface or type
                     if (interfaceAnnotation != null && !clazz.isInterface()) {
-                        throw new GraphQLException("Class " + clazz.getName() + " has been annotated with"
+                        throw new RuntimeException("Class " + clazz.getName() + " has been annotated with"
                                                            + " @Interface but is not one");
                     }
 
@@ -303,6 +316,7 @@ public class SchemaUtils {
 
             setUnresolvedTypes.remove(returnType);
             try {
+                LOGGER.info("Checking unresolved type " + returnType);
                 String simpleName = getSimpleName(returnType);
 
                 SchemaScalar scalar = getScalar(returnType);
@@ -369,12 +383,12 @@ public class SchemaUtils {
      * @throws ClassNotFoundException
      */
     private SchemaType generateType(String realReturnType)
-            throws IntrospectionException, ClassNotFoundException {
+            throws IntrospectionException, ClassNotFoundException {                             
 
         String simpleName = getSimpleName(realReturnType);
         SchemaType type = new SchemaType(simpleName, realReturnType);
         Description descriptionAnnotation = Class.forName(realReturnType).getAnnotation(Description.class);
-        if (descriptionAnnotation != null && !descriptionAnnotation.value().isBlank()) {
+        if (descriptionAnnotation != null && !"".equals(descriptionAnnotation.value())) {
             type.setDescription(descriptionAnnotation.value());
         }
 
@@ -385,6 +399,8 @@ public class SchemaUtils {
             type.addFieldDefinition(fd);
 
             if (discoveredMethod.getReturnType().equals(fd.getReturnType())) {
+                LOGGER.info("Adding unresolved type of " + valueTypeName + " for method "
+                                    + discoveredMethod.getName() + " on type " + realReturnType);
                 // value class was unchanged meaning we need to resolve
                 setUnresolvedTypes.add(valueTypeName);
             }
@@ -416,7 +432,7 @@ public class SchemaUtils {
                 a.setArgumentType(typeName);
                 String returnType = a.getArgumentType();
 
-                if (originalTypeName.equals(returnType)) {
+                if (originalTypeName.equals(returnType) && !ID.equals(returnType)) {
                     // type name has not changed, so this must be either a Scalar, Enum or a Type
                     // Note: Interfaces are not currently supported as InputTypes in 1.0 of the Specification
                     // if is Scalar or enum then add to unresolved types and they will be dealt with
@@ -602,7 +618,7 @@ public class SchemaUtils {
      */
     protected String getNameAnnotationValue(Class<?> clazz) {
         Name nameAnnotation = clazz.getAnnotation(Name.class);
-        if (nameAnnotation != null && !nameAnnotation.value().isBlank()) {
+        if (nameAnnotation != null && !"".equals(nameAnnotation.value())) {
             return nameAnnotation.value();
         }
         return null;
@@ -634,7 +650,7 @@ public class SchemaUtils {
             name = queryAnnotation.value();
         }
 
-        if (name.isBlank()) {
+        if ("".equals(name)) {
             name = getNameAnnotationValue(clazz);
         }
 
@@ -652,7 +668,8 @@ public class SchemaUtils {
             throws ClassNotFoundException {
         if (INT.equals(className)
                 || FLOAT.equals(className) || ID.equals(className)
-                || STRING.equals(className) || BOOLEAN.equalsIgnoreCase(className)) {
+                || STRING.equals(className) || BOOLEAN.equalsIgnoreCase(className)
+                || LONG_OBJECT.equals(className) || LONG_PRIMITIVE.equals(className)) {
             return className;
         }
         // return the type name taking into account any annotations
@@ -668,6 +685,7 @@ public class SchemaUtils {
      * @param longReturnType  long return type
      * @param shortReturnType short return type
      */
+    @SuppressWarnings("unchecked")
     private void updateLongTypes(Schema schema, String longReturnType, String shortReturnType) {
         // concatenate both the SchemaType and SchemaInputType
         Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
@@ -865,6 +883,9 @@ public class SchemaUtils {
             }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
+                if (!isValidIDType(returnClazz)) {
+                    throw new RuntimeException("A class of type " + returnClazz + " is not allowed to be an @Id");
+                }
                 returnClazzName = ID;
             }
         }
@@ -888,9 +909,16 @@ public class SchemaUtils {
                         : parameter.getName();
                 DefaultValue defaultValueAnnotations = parameter.getAnnotation(DefaultValue.class);
                 // TODO: Add default value processing here
+
                 Class<?> paramType = parameter.getType();
 
                 ReturnType returnType = getReturnType(paramType, genericParameterTypes[i++]);
+                if (parameter.getAnnotation(Id.class) != null) {
+                    if (!isValidIDType(paramType)) {
+                        throw new RuntimeException("A class of type " + paramType + " is not allowed to be an @Id");
+                    }
+                    returnType.setReturnClass(ID);
+                }
 
                 discoveredMethod
                         .addArgument(new SchemaArgument(parameterName, returnType.getReturnClass(), false, null, paramType));
@@ -911,6 +939,18 @@ public class SchemaUtils {
         }
 
         return discoveredMethod;
+    }
+
+    /**
+     * Return true if the {@link Class} is a valid {@link Class} to apply the {@link Id} annotation.
+     *
+     * @param clazz {@link Class} to check
+     * @return true if the {@link Class} is a valid {@link Class} to apply the {@link Id} annotation
+     */
+    private static boolean isValidIDType(Class<?> clazz) {
+        return clazz.equals(Long.class) || clazz.equals(Integer.class)
+                || clazz.equals(java.util.UUID.class) || clazz.equals(int.class)
+                || clazz.equals(String.class) || clazz.equals(long.class);
     }
 
     /**
