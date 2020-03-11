@@ -454,4 +454,24 @@ public interface Multi<T> extends Subscribable<T> {
         }
         return new MultiRangeLongPublisher(start, start + count);
     }
+
+    /**
+     * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
+     *
+     * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
+     * @return Multi
+     */
+    default Multi<T> onErrorResume(Function<? super Throwable, ? extends T> onError) {
+        return onErrorResumeWith(e -> Multi.singleton(onError.apply(e)));
+    }
+
+    /**
+     * Resume stream from supplied publisher if onError signal is intercepted.
+     *
+     * @param onError supplier of new stream publisher
+     * @return Multi
+     */
+    default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
+        return new MultiOnErrorResumeWith<>(this, onError);
+    }
 }
