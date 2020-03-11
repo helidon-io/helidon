@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.internal;
 
+import java.util.HashMap;
 import java.util.Objects;
 
 import io.helidon.config.spi.ConfigNode.ValueNode;
@@ -70,14 +71,40 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
     public MergeableNode merge(MergeableNode node) {
         switch (node.nodeType()) {
         case OBJECT:
-            return node.merge(this);
+            return mergeWithObjectNode((ObjectNodeImpl) node);
         case LIST:
-            return node.merge(this);
+            return mergeWithListNode((ListNodeImpl) node);
         case VALUE:
             return node;
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }
+    }
+
+    private MergeableNode mergeWithListNode(ListNodeImpl node) {
+        if (node.hasValue()) {
+            // will not merge, as the new node has priority over this node and we only have a value
+            return node;
+        }
+
+        // and this will work fine, as the list node does not have a value, so we just add a value from this node
+        return node.merge(this);
+    }
+
+    private MergeableNode mergeWithObjectNode(ObjectNodeImpl node) {
+        // merge this value node with an object node
+        ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(new HashMap<>());
+
+        node.forEach((name, member) -> builder
+                .deepMerge(AbstractNodeBuilderImpl.MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
+
+        if (node.hasValue()) {
+            builder.value(node.get());
+        } else if (this.hasValue()) {
+            builder.value(get());
+        }
+
+        return builder.build();
     }
 
     @Override

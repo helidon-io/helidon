@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,9 +122,9 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         node.forEach((name, member) -> builder.deepMerge(MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
 
         if (node.hasValue()) {
-            builder.value(node.value);
-        } else if (hasValue()) {
-            builder.value(value);
+            builder.value(node.get());
+        } else if (this.hasValue()) {
+            builder.value(get());
         }
 
         return builder.build();
