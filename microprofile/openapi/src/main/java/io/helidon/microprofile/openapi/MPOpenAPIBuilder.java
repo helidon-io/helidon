@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.spi.CDI;
@@ -71,8 +72,18 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
                 .getExtension(JaxRsCdiExtension.class);
 
         /*
+         * There are two cases that return a default filtered index view. Don't create it yet, just declare a supplier for it.
+         */
+        Supplier<List<FilteredIndexView>> defaultResultSupplier = () -> List.of(new FilteredIndexView(indexView.get(),
+                openAPIConfig.get()));
+
+        /*
          * Each set in the list holds the classes related to one app.
          */
+        List<JaxRsApplication> appsToRun = ext.applicationsToRun();
+        if (appsToRun.size() <= 1) {
+            return defaultResultSupplier.get();
+        }
         List<Set<Class<?>>> appClassesToScan = ext.applicationsToRun().stream()
                 .map(JaxRsApplication::applicationClass)
                 .flatMap(Optional::stream)
@@ -84,7 +95,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
              * Use normal scanning with a FilteredIndexView containing no class restrictions (beyond what might already be in
              * the configuration).
              */
-            return List.of(new FilteredIndexView(indexView.get(), openAPIConfig.get()));
+            return defaultResultSupplier.get();
         }
         return appClassesToScan.stream()
                 .map(this::appRelatedClassesToFilteredIndexView)
