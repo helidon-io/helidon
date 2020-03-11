@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,20 @@
 
 package io.helidon.messaging.kafka.connector;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.event.Observes;
-
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.messaging.kafka.SimpleKafkaConsumer;
 import io.helidon.messaging.kafka.SimpleKafkaProducer;
+
+import java.util.Collection;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.BeforeDestroyed;
+import javax.enterprise.event.Observes;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
@@ -50,8 +53,8 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
      */
     public static final String CONNECTOR_NAME = "helidon-kafka";
 
-    private List<SimpleKafkaConsumer<Object, Object>> consumers = new CopyOnWriteArrayList<>();
-    private ThreadPoolSupplier threadPoolSupplier = null;
+    private Queue<SimpleKafkaConsumer<Object, Object>> consumers = new ConcurrentLinkedQueue<>();
+    private static final Logger LOGGER = Logger.getLogger(KafkaConnectorFactory.class.getName());
 
     /**
      * Called when container is terminated.
@@ -59,10 +62,13 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
      * @param event termination event
      */
     public void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        consumers.forEach(SimpleKafkaConsumer::close);
+        SimpleKafkaConsumer<Object, Object> consumer;
+        while ((consumer = consumers.poll()) != null) {
+            consumer.close();
+        }
     }
 
-    public List<SimpleKafkaConsumer<Object, Object>> getConsumers() {
+    public Collection<SimpleKafkaConsumer<Object, Object>> getConsumers() {
         return consumers;
     }
 
@@ -71,7 +77,7 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
         Config helidonConfig = (Config) config;
         SimpleKafkaConsumer<Object, Object> simpleKafkaConsumer = new SimpleKafkaConsumer<>(helidonConfig);
         consumers.add(simpleKafkaConsumer);
-        return simpleKafkaConsumer.createPushPublisherBuilder(getThreadPoolSupplier(helidonConfig).get());
+        return simpleKafkaConsumer.createPushPublisherBuilder(ThreadPoolSupplier.create(helidonConfig.get("executor-service")).get());
     }
 
     @Override
@@ -89,15 +95,13 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
 
             @Override
             public void onNext(Message<?> message) {
-                //TODO: Future!!!
                 simpleKafkaProducer.produce(message.getPayload());
                 message.ack();
             }
 
             @Override
             public void onError(Throwable t) {
-                //TODO properly propagate!!!
-                throw new RuntimeException(t);
+                LOGGER.log(Level.SEVERE, "The Kafka subscription has failed", t);
             }
 
             @Override
@@ -105,15 +109,5 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
                 simpleKafkaProducer.close();
             }
         });
-    }
-
-    private ThreadPoolSupplier getThreadPoolSupplier(Config config) {
-        synchronized (this) {
-            if (this.threadPoolSupplier != null) {
-                return this.threadPoolSupplier;
-            }
-            this.threadPoolSupplier = ThreadPoolSupplier.create(config.get("executor-service"));
-            return threadPoolSupplier;
-        }
     }
 }
