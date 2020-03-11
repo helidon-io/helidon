@@ -122,7 +122,6 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     }
 
     @Test
-    @Disabled
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
         SchemaUtils schemaUtils = new SchemaUtils();

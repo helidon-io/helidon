@@ -51,6 +51,16 @@ public interface SchemaGenerator {
     String SPACER = " ";
 
     /**
+     * Open square bracket.
+     */
+    String OPEN_SQUARE = "[";
+
+    /**
+     * Close square bracket.
+     */
+    String CLOSE_SQUARE = "]";
+
+    /**
      * Newline.
      */
     char NEWLINE = '\n';
@@ -79,16 +89,6 @@ public interface SchemaGenerator {
      * Close curly bracket.
      */
     char CLOSE_CURLY = '}';
-
-    /**
-     * Open square bracket.
-     */
-    char OPEN_SQUARE = '[';
-
-    /**
-     * Close square bracket.
-     */
-    char CLOSE_SQUARE = ']';
 
     /**
      * Open parenthesis.

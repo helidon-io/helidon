@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
-import io.helidon.microprofile.graphql.server.SchemaEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

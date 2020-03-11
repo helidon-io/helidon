@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import io.helidon.microprofile.graphql.server.SchemaArgument;
-import io.helidon.microprofile.graphql.server.SchemaDirective;
-import io.helidon.microprofile.graphql.server.SchemaScalar;
 import org.junit.jupiter.api.Test;
 
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD;

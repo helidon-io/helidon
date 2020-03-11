@@ -19,7 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.util.Date;
 
 import graphql.scalars.ExtendedScalars;
-import io.helidon.microprofile.graphql.server.SchemaScalar;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

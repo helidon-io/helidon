@@ -27,7 +27,7 @@ import graphql.schema.DataFetcher;
  */
 public class SchemaFieldDefinition extends AbstractDescriptiveElement
         implements SchemaGenerator {
-     /**
+    /**
      * Name of the field definition.
      */
     private final String name;
@@ -41,6 +41,11 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
      * Indicates if the return type is an array type such as a native array([]) or a List, Collection, etc.
      */
     private final boolean isArrayReturnType;
+
+    /**
+     * The number of array levels if return type is an array.
+     */
+    private final int arrayLevels;
 
     /**
      * Indicates if the return type is mandatory.
@@ -60,17 +65,24 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
     /**
      * Construct a {@link SchemaFieldDefinition}.
      *
-     * @param name                   field definition name
-     * @param returnType             return type
-     * @param isArrayReturnType      indicates if the return type is an array type such as a native array([]) or a List, Collection, etc
-     * @param isReturnTypeMandatory  indicates if the return type is mandatory.
+     * @param name                  field definition name
+     * @param returnType            return type
+     * @param isArrayReturnType     indicates if the return type is an array type such as a native array([]) or a List,
+     *                              Collection, etc
+     * @param isReturnTypeMandatory indicates if the return type is mandatory.
+     * @param arrayLevels           the number of array levels if return type is an array.
      */
-    public SchemaFieldDefinition(String name, String returnType, boolean isArrayReturnType, boolean isReturnTypeMandatory) {
-        this.name                  = name;
-        this.returnType            = returnType;
+    public SchemaFieldDefinition(String name,
+                                 String returnType,
+                                 boolean isArrayReturnType,
+                                 boolean isReturnTypeMandatory,
+                                 int arrayLevels) {
+        this.name = name;
+        this.returnType = returnType;
         this.listSchemaArguments = new ArrayList<>();
-        this.isArrayReturnType     = isArrayReturnType;
+        this.isArrayReturnType = isArrayReturnType;
         this.isReturnTypeMandatory = isReturnTypeMandatory;
+        this.arrayLevels = arrayLevels;
     }
 
     @Override
@@ -80,17 +92,20 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
         if (listSchemaArguments.size() > 0) {
             sb.append(OPEN_PARENTHESES)
-              .append(NEWLINE)
-              .append(listSchemaArguments.stream()
-                              .map(SchemaArgument::getSchemaAsString)
-                              .collect(Collectors.joining(COMMA_SPACE + NEWLINE)));
+                    .append(NEWLINE)
+                    .append(listSchemaArguments.stream()
+                                    .map(SchemaArgument::getSchemaAsString)
+                                    .collect(Collectors.joining(COMMA_SPACE + NEWLINE)));
             sb.append(NEWLINE).append(CLOSE_PARENTHESES);
         }
 
         sb.append(COLON);
 
         if (isArrayReturnType()) {
-            sb.append(SPACER).append(OPEN_SQUARE).append(getReturnType()).append(CLOSE_SQUARE);
+            int count = getArrayLevels();
+            sb.append(SPACER).append(repeat(count, OPEN_SQUARE))
+                    .append(getReturnType())
+                    .append(repeat(count, CLOSE_SQUARE));
         } else {
             sb.append(SPACER).append(getReturnType());
         }
@@ -103,9 +118,20 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
     }
 
     /**
+     * Repeate create a {@link String} with the value repeated the requested number of times.
+     *
+     * @param count  number of times to repeat
+     * @param string {@link String} to repeat
+     * @return a new {@link String}
+     */
+    private String repeat(int count, String string) {
+        return new String(new char[count]).replace("\0", string);
+    }
+
+    /**
      * Return the name for the field definition.
      *
-     * @return  the name for the field definition
+     * @return the name for the field definition
      */
     public String getName() {
         return name;
@@ -113,6 +139,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
     /**
      * Return the {@link List} of {@link SchemaArgument}s.
+     *
      * @return the {@link List} of {@link SchemaArgument}s
      */
     public List<SchemaArgument> getArguments() {
@@ -121,6 +148,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
     /**
      * Return the return type.
+     *
      * @return the return type
      */
     public String getReturnType() {
@@ -129,7 +157,8 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
     /**
      * Indicates if the return type is an array type.
-     * @return  if the return type is an array type
+     *
+     * @return if the return type is an array type
      */
     public boolean isArrayReturnType() {
         return isArrayReturnType;
@@ -137,7 +166,8 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
     /**
      * Indicates if the return type is mandatory.
-     * @return  if the return type is mandatory
+     *
+     * @return if the return type is mandatory
      */
     public boolean isReturnTypeMandatory() {
         return isReturnTypeMandatory;
@@ -145,6 +175,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
     /**
      * Return the {@link DataFetcher} for this {@link SchemaFieldDefinition}.
+     *
      * @return he {@link DataFetcher} for this {@link SchemaFieldDefinition}
      */
     public DataFetcher getDataFetcher() {
@@ -153,6 +184,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
     /**
      * Set the return type.
+     *
      * @param sReturnType the return type
      */
     public void setReturnType(String sReturnType) {
@@ -161,7 +193,8 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
 
     /**
      * Set the {@link DataFetcher} which will override the default {@link DataFetcher} for the field.
-     * @param dataFetcher  the {@link DataFetcher}
+     *
+     * @param dataFetcher the {@link DataFetcher}
      */
     public void setDataFetcher(DataFetcher dataFetcher) {
         this.dataFetcher = dataFetcher;
@@ -176,6 +209,15 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
         listSchemaArguments.add(schemaArgument);
     }
 
+    /**
+     * Return the number of array levels if return type is an array.
+     *
+     * @return the number of array levels if return type is an array
+     */
+    public int getArrayLevels() {
+        return arrayLevels;
+    }
+
     @Override
     public String toString() {
         return "FieldDefinition{"
@@ -184,6 +226,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement
                 + ", isArrayReturnType=" + isArrayReturnType
                 + ", isReturnTypeMandatory=" + isReturnTypeMandatory
                 + ", listArguments=" + listSchemaArguments
+                + ", arrayLevels=" + arrayLevels
                 + ", description='" + getDescription() + '\'' + '}';
     }
 }

@@ -37,11 +37,12 @@ class SchemaFieldDefinitionTest {
 
     @Test
     public void testConstructors() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("name", "Integer", true, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("name", "Integer", true, true, 1);
         assertThat(schemaFieldDefinition.getName(), is("name"));
         assertThat(schemaFieldDefinition.getReturnType(), is("Integer"));
         assertThat(schemaFieldDefinition.getArguments(), is(notNullValue()));
         assertThat(schemaFieldDefinition.isArrayReturnType(), is(true));
+        assertThat(schemaFieldDefinition.getArrayLevels(), is(1));
 
         SchemaArgument schemaArgument = new SchemaArgument("filter", "String", false, null, STRING);
         schemaFieldDefinition.addArgument(schemaArgument);
@@ -53,11 +54,12 @@ class SchemaFieldDefinitionTest {
         assertThat(schemaFieldDefinition.getArguments().size(), is(2));
         assertThat(schemaFieldDefinition.getArguments().contains(schemaArgument2), is(true));
 
-        schemaFieldDefinition = new SchemaFieldDefinition("name2", "String", false, false);
+        schemaFieldDefinition = new SchemaFieldDefinition("name2", "String", false, false, 0);
         assertThat(schemaFieldDefinition.getName(), is("name2"));
         assertThat(schemaFieldDefinition.getReturnType(), is("String"));
         assertThat(schemaFieldDefinition.isArrayReturnType(), is(false));
         assertThat(schemaFieldDefinition.isReturnTypeMandatory(), is(false));
+        assertThat(schemaFieldDefinition.getArrayLevels(), is(0));
 
         schemaFieldDefinition.setReturnType("BLAH");
         assertThat(schemaFieldDefinition.getReturnType(), is("BLAH"));
@@ -65,33 +67,45 @@ class SchemaFieldDefinitionTest {
 
     @Test
     public void testFieldDefinitionWithNoArguments() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person: Person!"));
     }
 
     @Test
     public void testFieldDefinitionWithNoArgumentsAndDescription() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         schemaFieldDefinition.setDescription("Description");
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("\"Description\"\nperson: Person!"));
     }
 
     @Test
-    public void testFieldDefinitionWithNoArgumentsAndArrayType() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true);
+    public void testFieldDefinitionWithNoArgumentsAndArrayType1ArrayLevel() {
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true, 1);
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person: [Person]!"));
     }
 
     @Test
+    public void testFieldDefinitionWithNoArgumentsAndArrayType2ArrayLevels() {
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true, 2);
+        assertThat(schemaFieldDefinition.getSchemaAsString(), is("person: [[Person]]!"));
+    }
+
+    @Test
+    public void testFieldDefinitionWithNoArgumentsAndArrayType3ArrayLevels() {
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("result", "String", true, true, 3);
+        assertThat(schemaFieldDefinition.getSchemaAsString(), is("result: [[[String]]]!"));
+    }
+
+    @Test
     public void testFieldDefinitionWith1Argument() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String\n): Person!"));
     }
 
     @Test
     public void testFieldDefinitionWith1ArgumentAndDescription() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         SchemaArgument schemaArgument = new SchemaArgument("filter", "String", false, null, STRING);
         schemaArgument.setDescription("Optional Filter");
         schemaFieldDefinition.addArgument(schemaArgument);
@@ -100,28 +114,28 @@ class SchemaFieldDefinitionTest {
 
     @Test
     public void testFieldDefinitionWith1ArgumentAndArrayType() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true, 1);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String\n): [Person]!"));
     }
 
     @Test
     public void testFieldDefinitionWith1MandatoryArgument() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", true, null, STRING));
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String!\n): Person!"));
     }
 
     @Test
     public void testFieldDefinitionWith1MandatoryArgumentAndArrayType() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true, 1);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String\n): [Person]!"));
     }
 
     @Test
     public void testFieldDefinitionWithMultipleArguments() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String, \nage: Int!\n): Person!"));
@@ -129,7 +143,7 @@ class SchemaFieldDefinitionTest {
 
     @Test
     public void testFieldDefinitionWithMultipleArgumentsAndDescription() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
         schemaArgument1.setDescription("Optional filter");
         SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
@@ -142,7 +156,7 @@ class SchemaFieldDefinitionTest {
 
     @Test
     public void testFieldDefinitionWithMultipleArgumentsAndBothDescriptions() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         schemaFieldDefinition.setDescription("Description of field definition");
         SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
         schemaArgument1.setDescription("Optional filter");
@@ -157,7 +171,7 @@ class SchemaFieldDefinitionTest {
 
     @Test
     public void testFieldDefinitionWithMultipleArgumentsWithArray() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, false);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, false, 1);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
         schemaFieldDefinition.addArgument(new SchemaArgument("job", "String", false, null, STRING));
@@ -167,7 +181,7 @@ class SchemaFieldDefinitionTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testDataFetchers() {
-        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, false);
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, false, 0);
         assertThat(schemaFieldDefinition.getDataFetcher(), is(nullValue()));
         schemaFieldDefinition.setDataFetcher(new StaticDataFetcher("Value"));
         DataFetcher dataFetcher = schemaFieldDefinition.getDataFetcher();

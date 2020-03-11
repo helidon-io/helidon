@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,8 @@ import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
+
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.OPEN_SQUARE;
 
 /**
  * Helper class for {@link SchemaUtils}.
@@ -379,4 +383,70 @@ public class SchemaUtilsHelper {
         });
     }
 
+    /**
+     * Return the number of array levels in the class.
+     *
+     * @param clazz the class name retrieved via Class.getName()
+     * @return the number of array levels in the class
+     */
+    protected static int getArrayLevels(String clazz) {
+        int c = 0;
+        for (int i = 0; i < clazz.length(); i++) {
+            if (clazz.charAt(i) == '[') {
+                c++;
+            }
+        }
+        return c;
+    }
+
+    /**
+     * Indicates if the class is an array type.
+     * @param clazz the class name retrieved via Class.getName()
+     * @return true if the class is an array type
+     */
+    protected static boolean isArrayType(String clazz) {
+        return clazz.startsWith(OPEN_SQUARE);
+    }
+
+    /**
+     * Return the root array class from the given class.
+     *
+     * @param clazz the class name retrieved via Class.getName()
+     * @return the root class name
+     */
+    protected static String getRootArrayClass(String clazz) {
+        if (clazz == null || "".equals(clazz.trim()) || clazz.length() < 2) {
+            throw new IllegalArgumentException("Class must be not null");
+        }
+        // check to see if it is a primitive array
+        String type = PRIMITIVE_ARRAY_MAP.get(clazz.substring(clazz.length() - 2));
+        if (type != null) {
+            return type;
+        }
+        // must be an object
+        return clazz.replaceAll("\\[", "").replaceAll(";", "").replaceAll("^L", "");
+    }
+
+    /**
+     * Return the inner most root type such as {@link String} for
+     * <pre>List<List<String>></String></pre>
+     *
+     * @param genericReturnType the {@link java.lang.reflect.Type}
+     * @param index the index to use, either 0 for {@link Collection} or 1 for {@link Map}
+     * @return the inner most root type
+     */
+    protected static String getRootTypeName(java.lang.reflect.Type genericReturnType, int index) {
+        if (genericReturnType instanceof ParameterizedType) {
+            ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
+            // loop until we get the actual return type in the case we have List<List<Type>>
+            java.lang.reflect.Type actualTypeArgument = paramReturnType.getActualTypeArguments()[index];
+            while (actualTypeArgument instanceof ParameterizedType) {
+                ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
+                actualTypeArgument = parameterizedType2.getActualTypeArguments()[index];
+            }
+            return ((Class<?>) actualTypeArgument).getName();
+        } else {
+            return ((Class<?>) genericReturnType).getName();
+        }
+    }
 }

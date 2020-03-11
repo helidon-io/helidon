@@ -17,8 +17,13 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.beans.IntrospectionException;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -49,6 +54,7 @@ import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getRootTypeName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -225,8 +231,18 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
                                false, false, false);
         assertDiscoveredMethod(mapMethods.get("returnTypeWithIDs"), "returnTypeWithIDs", TypeWithIDs.class.getName(), null,
                                false, false, false);
-        assertDiscoveredMethod(mapMethods.get("getMultiLevelList"), "getMultiLevelList", MultiLevelListsAndArrays.class.getName(), null,
+        assertDiscoveredMethod(mapMethods.get("getMultiLevelList"), "getMultiLevelList", MultiLevelListsAndArrays.class.getName(),
+                               null,
                                false, false, false);
+    }
+
+    @Test
+    public void testArrayDiscoveredMethods() throws IntrospectionException {
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
+                .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
+        assertThat(mapMethods, is(notNullValue()));
+        assertThat(mapMethods.size(), is(9));
+        assertDiscoveredMethod(mapMethods.get("multiStringArray"), "multiStringArray", STRING, null, true, false, false);
     }
 
     private void assertDiscoveredMethod(SchemaUtils.DiscoveredMethod discoveredMethod,
@@ -252,8 +268,50 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
-//        Schema schema = schemaUtils.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
-//        generateGraphQLSchema(schema);
+        //        Schema schema = schemaUtils.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
+        //        generateGraphQLSchema(schema);
+    }
+
+    @Test
+    public void testArrayLevelsAndRootArray() {
+        String[] oneLevelString = new String[1];
+        String[][] twoLevelString = new String[2][1];
+        String[][][] threeLevelString = new String[2][1][2];
+        int[] oneLevelInt = new int[1];
+        int[][] twoLevelInt = new int[1][1];
+        int[][][] threeLevelInt = new int[1][1][2];
+
+        assertThat(SchemaUtilsHelper.getArrayLevels(oneLevelString.getClass().getName()), is(1));
+        assertThat(SchemaUtilsHelper.getArrayLevels(twoLevelString.getClass().getName()), is(2));
+        assertThat(SchemaUtilsHelper.getArrayLevels(threeLevelString.getClass().getName()), is(3));
+        assertThat(SchemaUtilsHelper.getArrayLevels(oneLevelInt.getClass().getName()), is(1));
+        assertThat(SchemaUtilsHelper.getArrayLevels(twoLevelInt.getClass().getName()), is(2));
+        assertThat(SchemaUtilsHelper.getArrayLevels(threeLevelInt.getClass().getName()), is(3));
+
+        assertThat(SchemaUtilsHelper.getRootArrayClass(oneLevelString.getClass().getName()), is(String.class.getName()));
+        assertThat(SchemaUtilsHelper.getRootArrayClass(twoLevelString.getClass().getName()), is(String.class.getName()));
+        assertThat(SchemaUtilsHelper.getRootArrayClass(threeLevelString.getClass().getName()), is(String.class.getName()));
+        assertThat(SchemaUtilsHelper.getRootArrayClass(oneLevelInt.getClass().getName()), is(int.class.getName()));
+        assertThat(SchemaUtilsHelper.getRootArrayClass(twoLevelInt.getClass().getName()), is(int.class.getName()));
+        assertThat(SchemaUtilsHelper.getRootArrayClass(threeLevelInt.getClass().getName()), is(int.class.getName()));
+    }
+
+    private List<String[]> listStringArray = new ArrayList<>();
+    private List<String> listString = new ArrayList<>();
+    private List<List<String>> listListString = new ArrayList<>();
+
+    @Test
+    public void testGetRootType() throws NoSuchFieldException {
+        ParameterizedType stringArrayListType = getParameterizedType("listStringArray");
+        assertThat(getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0), is(String.class.getName()));
+
+        ParameterizedType stringListType = getParameterizedType("listString");
+        assertThat(getRootTypeName(stringListType.getActualTypeArguments()[0], 0), is(String.class.getName()));
+    }
+
+    private ParameterizedType getParameterizedType(String fieldName) throws NoSuchFieldException {
+        Field listStringArray = SchemaUtilsTest.class.getDeclaredField(fieldName);
+        return (ParameterizedType) listStringArray.getGenericType();
     }
 
     private void testEnum(Class<?> clazz, String expectedName) throws IntrospectionException, ClassNotFoundException {

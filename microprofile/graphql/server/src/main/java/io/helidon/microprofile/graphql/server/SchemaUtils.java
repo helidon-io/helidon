@@ -54,14 +54,18 @@ import static io.helidon.microprofile.graphql.server.SchemaUtils.DiscoveredMetho
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.PRIMITIVE_ARRAY_MAP;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.checkScalars;
+import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getFieldName;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getMethodName;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getNameAnnotationValue;
+import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getRootArrayClass;
+import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getRootTypeName;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getSafeClass;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getScalar;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getSimpleName;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getTypeName;
+import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.isArrayType;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.isEnumClass;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.isValidIDType;
 
@@ -261,7 +265,7 @@ public class SchemaUtils {
      * @throws ClassNotFoundException
      */
     private SchemaType generateType(String realReturnType)
-            throws IntrospectionException, ClassNotFoundException {                             
+            throws IntrospectionException, ClassNotFoundException {
 
         String simpleName = getSimpleName(realReturnType);
         SchemaType type = new SchemaType(simpleName, realReturnType);
@@ -464,11 +468,11 @@ public class SchemaUtils {
                                                                      : method.name,
                                                              getGraphQLType(sValueClassName),
                                                              isArrayReturnType,
-                                                             false);
+                                                             false,
+                                                             method.getArrayLevels());
         fd.setDataFetcher(dataFetcher);
         return fd;
     }
-
 
     /**
      * Look in the given {@link Schema} for any field definitions, arguments and key value classes that contain the return type of
@@ -498,7 +502,6 @@ public class SchemaUtils {
             });
         });
     }
-
 
     /**
      * Return a {@link Map} of all the discovered methods which have the {@link Query} annotation.
@@ -672,6 +675,8 @@ public class SchemaUtils {
             discoveredMethod.setMethod(method);
         }
 
+        discoveredMethod.setArrayLevels(realReturnType.getArrayLevels());
+
         return discoveredMethod;
     }
 
@@ -687,50 +692,25 @@ public class SchemaUtils {
         String returnClazzName = returnClazz.getName();
         if (Collection.class.isAssignableFrom(returnClazz)) {
             actualReturnType.setCollectionType(returnClazzName);
-            if (genericReturnType instanceof ParameterizedType) {
-                ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
-                // loop until we get the actual return type in the case we have List<List<Type>>
-                java.lang.reflect.Type actualTypeArgument = paramReturnType.getActualTypeArguments()[0];
-                while (actualTypeArgument instanceof ParameterizedType) {
-                    ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
-                    actualTypeArgument = parameterizedType2.getActualTypeArguments()[0];
-                }
-
-                actualReturnType.setReturnClass(actualTypeArgument.getTypeName());
+            String rootType = getRootTypeName(genericReturnType, 0);
+            if (isArrayType(rootType)) {
+                actualReturnType.setReturnClass(getRootArrayClass(rootType));
             } else {
-                actualReturnType.setReturnClass(Object.class.getName());
+                actualReturnType.setReturnClass(rootType);
             }
         } else if (Map.class.isAssignableFrom(returnClazz)) {
             actualReturnType.setMap(true);
-            if (genericReturnType instanceof ParameterizedType) {
-                ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
-                // we are only interested in the value type as for this implementation we return a collection of values()
-                actualReturnType.setReturnClass(paramReturnType.getActualTypeArguments()[1].getTypeName());
+            String rootType = getRootTypeName(genericReturnType, 1);
+            if (isArrayType(rootType)) {
+                actualReturnType.setReturnClass(getRootArrayClass(rootType));
             } else {
-                actualReturnType.setReturnClass(Object.class.getName());
+                actualReturnType.setReturnClass(rootType);
             }
         } else if (!returnClazzName.isEmpty() && returnClazzName.startsWith("[")) {
-            // return type is array of either primitives or Objects/Interfaces.
+            // return type is array of either primitives or Objects/Interface/Enum.
             actualReturnType.setArrayType(true);
-            String sPrimitiveType = PRIMITIVE_ARRAY_MAP.get(returnClazzName);
-            if (sPrimitiveType != null) {
-                actualReturnType.setReturnClass(sPrimitiveType);
-            } else {
-                // Array of Object/Interface
-                // We are only supporting single level arrays currently
-                int cArrayCount = 0;
-                for (int i = 0; i < returnClazzName.length(); i++) {
-                    if (returnClazzName.charAt(i) == '[') {
-                        cArrayCount++;
-                    }
-                }
-
-                if (cArrayCount > 1) {
-                    LOGGER.warning("Multi-dimension arrays are not yet supported. Ignoring class " + returnClazzName);
-                } else {
-                    actualReturnType.setReturnClass(returnClazzName.substring(2, returnClazzName.length() - 1));
-                }
-            }
+            actualReturnType.setArrayLevels(getArrayLevels(returnClazzName));
+            actualReturnType.setReturnClass(getRootArrayClass(returnClazzName));
         } else {
             actualReturnType.setReturnClass(returnClazzName);
         }
@@ -793,6 +773,11 @@ public class SchemaUtils {
          * The actual method.
          */
         private Method method;
+
+        /**
+         * Number of levels in the Array.
+         */
+        private int arrayLevels = 0;
 
         /**
          * Default constructor.
@@ -945,6 +930,24 @@ public class SchemaUtils {
         }
 
         /**
+         * Return the number of levels in the Array.
+         *
+         * @return Return the number of levels in the Array
+         */
+        public int getArrayLevels() {
+            return arrayLevels;
+        }
+
+        /**
+         * Sets the number of levels in the Array.
+         *
+         * @param arrayLevels the number of levels in the Array
+         */
+        public void setArrayLevels(int arrayLevels) {
+            this.arrayLevels = arrayLevels;
+        }
+
+        /**
          * Add a {@link SchemaArgument}.
          *
          * @param argument a {@link SchemaArgument}
@@ -963,6 +966,7 @@ public class SchemaUtils {
                     + ", isArrayReturnType=" + isArrayReturnType
                     + ", isMap=" + isMap
                     + ", listArguments=" + listArguments
+                    + ", arrayLevels=" + arrayLevels
                     + ", method=" + method + '}';
         }
 
@@ -978,6 +982,7 @@ public class SchemaUtils {
             return methodType == that.methodType
                     && isArrayReturnType == that.isArrayReturnType
                     && isMap == that.isMap
+                    && arrayLevels == that.arrayLevels
                     && Objects.equals(name, that.name)
                     && Objects.equals(returnType, that.returnType)
                     && Objects.equals(method, that.method)
@@ -986,7 +991,7 @@ public class SchemaUtils {
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, returnType, methodType, method,
+            return Objects.hash(name, returnType, methodType, method, arrayLevels,
                                 collectionType, isArrayReturnType, isMap);
         }
     }
@@ -1101,6 +1106,7 @@ public class SchemaUtils {
 
         /**
          * Return the level of arrays or 0 if not an array.
+         *
          * @return the level of arrays
          */
         public int getArrayLevels() {
@@ -1109,6 +1115,7 @@ public class SchemaUtils {
 
         /**
          * Set the level of arrays or 0 if not an array.
+         *
          * @param arrayLevels the level of arrays or 0 if not an array
          */
         public void setArrayLevels(int arrayLevels) {

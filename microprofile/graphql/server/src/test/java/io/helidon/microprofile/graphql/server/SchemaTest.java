@@ -21,14 +21,7 @@ import java.util.Date;
 import java.util.List;
 
 import graphql.scalars.ExtendedScalars;
-import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
-import io.helidon.microprofile.graphql.server.Schema;
-import io.helidon.microprofile.graphql.server.SchemaArgument;
-import io.helidon.microprofile.graphql.server.SchemaDirective;
-import io.helidon.microprofile.graphql.server.SchemaEnum;
-import io.helidon.microprofile.graphql.server.SchemaInputType;
-import io.helidon.microprofile.graphql.server.SchemaScalar;
-import io.helidon.microprofile.graphql.server.SchemaType;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
