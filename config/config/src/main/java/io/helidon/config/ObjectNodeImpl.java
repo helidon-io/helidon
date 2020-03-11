@@ -121,11 +121,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(members, resolveTokenFunction);
         node.forEach((name, member) -> builder.deepMerge(MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
 
-        if (node.hasValue()) {
-            builder.value(node.value);
-        } else if (hasValue()) {
-            builder.value(value);
-        }
+        node.value().or(this::value).ifPresent(builder::value);
 
         return builder.build();
     }
