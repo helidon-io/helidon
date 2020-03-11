@@ -16,8 +16,6 @@
 
 package io.helidon.config;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +42,7 @@ final class ConfigFactory {
     private final ConfigFilter filter;
     private final ProviderImpl provider;
     private final Function<String, List<String>> aliasGenerator;
-    private final ConcurrentMap<PrefixedKey, Reference<AbstractConfigImpl>> configCache;
+    private final ConcurrentMap<PrefixedKey, AbstractConfigImpl> configCache;
     private final Instant timestamp;
     private final List<ConfigSourceRuntimeBase> configSources;
     private final List<org.eclipse.microprofile.config.spi.ConfigSource> mpConfigSources;
@@ -85,7 +83,7 @@ final class ConfigFactory {
                 .collect(Collectors.toList());
     }
 
-    public Instant timestamp() {
+    Instant timestamp() {
         return timestamp;
     }
 
@@ -94,7 +92,7 @@ final class ConfigFactory {
      *
      * @return root {@link Config}
      */
-    public AbstractConfigImpl config() {
+    AbstractConfigImpl config() {
         return config(ConfigKeyImpl.of(), ConfigKeyImpl.of());
     }
 
@@ -105,16 +103,10 @@ final class ConfigFactory {
      * @param key    config key
      * @return {@code key} specific instance of {@link Config}
      */
-    public AbstractConfigImpl config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+    AbstractConfigImpl config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         PrefixedKey prefixedKey = new PrefixedKey(prefix, key);
-        Reference<AbstractConfigImpl> reference = configCache.compute(prefixedKey, (k, v) -> {
-            if (v == null || v.get() == null) {
-                return new SoftReference<>(createConfig(prefix, key));
-            } else {
-                return v;
-            }
-        });
-        return reference.get();
+
+        return configCache.computeIfAbsent(prefixedKey, it -> createConfig(prefix, key));
     }
 
     /**
