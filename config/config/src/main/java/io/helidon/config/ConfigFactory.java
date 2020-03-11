@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.config;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.List;
@@ -49,7 +47,7 @@ final class ConfigFactory {
     private final ConfigFilter filter;
     private final ProviderImpl provider;
     private final Function<String, List<String>> aliasGenerator;
-    private final ConcurrentMap<PrefixedKey, Reference<Config>> configCache;
+    private final ConcurrentMap<PrefixedKey, Config> configCache;
     private final Flow.Publisher<ConfigDiff> changesPublisher;
     private final Instant timestamp;
 
@@ -136,14 +134,8 @@ final class ConfigFactory {
      */
     public Config config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         PrefixedKey prefixedKey = new PrefixedKey(prefix, key);
-        Reference<Config> reference = configCache.compute(prefixedKey, (k, v) -> {
-            if (v == null || v.get() == null) {
-                return new SoftReference<>(createConfig(prefix, key));
-            } else {
-                return v;
-            }
-        });
-        return reference.get();
+
+        return configCache.computeIfAbsent(prefixedKey, it -> createConfig(prefix, key));
     }
 
     /**
