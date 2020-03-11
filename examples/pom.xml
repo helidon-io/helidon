@@ -51,6 +51,7 @@
         <module>integrations</module>
         <module>employee-app</module>
         <module>dbclient</module>
+        <module>webclient</module>
     </modules>
 
     <build>

@@ -34,6 +34,10 @@
 
     <modules>
         <module>jaxrs</module>
+        <module>webclient</module>
+        <module>metrics</module>
+        <module>security</module>
+        <module>tracing</module>
     </modules>
 
 </project>

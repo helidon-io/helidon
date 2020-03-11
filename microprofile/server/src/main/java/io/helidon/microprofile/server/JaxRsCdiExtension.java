@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
@@ -45,6 +49,8 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.server.ResourceConfig;
 
+import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+
 /**
  * Configure Jersey related things.
  */
@@ -59,6 +65,7 @@ public class JaxRsCdiExtension implements Extension {
 
     private final Set<Class<? extends Application>> applications = new LinkedHashSet<>();
     private final Set<Class<?>> resources = new HashSet<>();
+    private final AtomicBoolean setInStone = new AtomicBoolean(false);
 
     private void collectApplications(@Observes ProcessAnnotatedType<? extends Application> applicationType) {
         applications.add(applicationType.getAnnotatedType().getJavaClass());
@@ -74,12 +81,26 @@ public class JaxRsCdiExtension implements Extension {
         resources.add(resourceClass);
     }
 
+    // once application scoped starts, we do not allow modification of applications
+    void fixApps(@Observes @Priority(PLATFORM_BEFORE) @Initialized(ApplicationScoped.class) Object event) {
+        this.setInStone.set(true);
+    }
+
     /**
      * List of applications including discovered and explicitly configured applications.
+     * <p>
+     * This method should only be called in {@code Initialized(ApplicationScoped.class)} observer methods,
+     *  that have a higher priority than {@link io.helidon.microprofile.server.ServerCdiExtension} start server
+     *  method.
      *
      * @return list of applications found by CDI
+     * @throws java.lang.IllegalStateException in case the list of applications is not yet fixed
      */
-    public List<JaxRsApplication> applicationsToRun() {
+    public List<JaxRsApplication> applicationsToRun() throws IllegalStateException {
+        if (!setInStone.get()) {
+            throw new IllegalStateException("Applications are not yet fixed. This method is only available in "
+                                                    + "@Initialized(ApplicationScoped.class) event, before server is started");
+        }
         if (applications.isEmpty() && applicationMetas.isEmpty()) {
             // create a synthetic application from all resource classes
             // the classes set must be created before the lambda, as resources are cleared later on
@@ -117,15 +138,21 @@ public class JaxRsCdiExtension implements Extension {
 
     /**
      * Remove all discovered applications (configured applications are not removed).
+     *
+     * @throws java.lang.IllegalStateException in case applications are already started
      */
-    public void removeApplications() {
+    public void removeApplications() throws IllegalStateException {
+        mutateApps();
         this.applications.clear();
     }
 
     /**
      * Remove all discovered and configured resource classes.
+     *
+     * @throws java.lang.IllegalStateException in case applications are already started
      */
-    public void removeResourceClasses() {
+    public void removeResourceClasses() throws IllegalStateException {
+        mutateApps();
         this.resources.clear();
     }
 
@@ -135,8 +162,10 @@ public class JaxRsCdiExtension implements Extension {
      * on other configuration.
      *
      * @param resourceClasses resource classes to add
+     * @throws java.lang.IllegalStateException in case applications are already started
      */
-    public void addResourceClasses(List<Class<?>> resourceClasses) {
+    public void addResourceClasses(List<Class<?>> resourceClasses) throws IllegalStateException {
+        mutateApps();
         this.resources.addAll(resourceClasses);
     }
 
@@ -144,9 +173,12 @@ public class JaxRsCdiExtension implements Extension {
      * Add all application metadata from the provided list.
      *
      * @param applications application metadata
+     * @throws java.lang.IllegalStateException in case applications are already started
+     *
      * @see io.helidon.microprofile.server.JaxRsApplication
      */
-    public void addApplications(List<JaxRsApplication> applications) {
+    public void addApplications(List<JaxRsApplication> applications) throws IllegalStateException {
+        mutateApps();
         this.applicationMetas.addAll(applications);
     }
 
@@ -155,8 +187,10 @@ public class JaxRsCdiExtension implements Extension {
      * You can also use {@link #addApplication(String, Application)}.
      *
      * @param application configured as needed
+     * @throws java.lang.IllegalStateException in case applications are already started
      */
-    public void addApplication(Application application) {
+    public void addApplication(Application application) throws IllegalStateException {
+        mutateApps();
         this.applicationMetas.add(JaxRsApplication.create(application));
     }
 
@@ -165,23 +199,14 @@ public class JaxRsCdiExtension implements Extension {
      *
      * @param contextRoot Context root to use for this application ({@link javax.ws.rs.ApplicationPath} is ignored)
      * @param application configured as needed
+     * @throws java.lang.IllegalStateException in case applications are already started
      */
-    public void addApplication(String contextRoot, Application application) {
+    public void addApplication(String contextRoot, Application application) throws IllegalStateException {
+        mutateApps();
         this.applicationMetas.add(JaxRsApplication.builder()
                                           .application(application)
                                           .contextRoot(contextRoot)
                                           .build());
-    }
-
-    /**
-     * Access existing applications explicitly configured. Does not include discovered applications.
-     *
-     * @return list of all applications
-     */
-    public List<ResourceConfig> applications() {
-        return applicationMetas.stream()
-                .map(JaxRsApplication::resourceConfig)
-                .collect(Collectors.toList());
     }
 
     /**
@@ -215,8 +240,10 @@ public class JaxRsCdiExtension implements Extension {
      * Create an application from the provided resource classes and add it to the list of applications.
      *
      * @param resourceClasses resource classes to create a synthetic application from
+     * @throws java.lang.IllegalStateException in case applications are already started
      */
-    public void addSyntheticApplication(List<Class<?>> resourceClasses) {
+    public void addSyntheticApplication(List<Class<?>> resourceClasses) throws IllegalStateException {
+        mutateApps();
         this.applicationMetas.add(JaxRsApplication.builder()
                                           .applicationClass(Application.class)
                                           .config(ResourceConfig.forApplication(new Application() {
@@ -264,5 +291,12 @@ public class JaxRsCdiExtension implements Extension {
         return config.get(jaxRsApplication.appClassName() + "." + RoutingName.CONFIG_KEY_REQUIRED)
                 .asBoolean()
                 .orElseGet(jaxRsApplication::routingNameRequired);
+    }
+
+    private void mutateApps() {
+        if (setInStone.get()) {
+            throw new IllegalStateException("You are attempting to modify applications in JAX-RS after they were registered "
+                                                    + "with the server");
+        }
     }
 }
