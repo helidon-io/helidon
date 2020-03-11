@@ -24,6 +24,7 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.mapper.Mapper;
@@ -161,15 +162,12 @@ public interface Single<T> extends Subscribable<T> {
      * @return Single
      * @throws NullPointerException if source is {@code null}
      */
-    @SuppressWarnings("unchecked")
     static <T> Single<T> from(Publisher<T> source) {
         Objects.requireNonNull(source, "source is null!");
         if (source instanceof Single) {
             return (Single<T>) source;
         }
-        SingleExactlyOneProcessor<T> processor = new SingleExactlyOneProcessor<>();
-        source.subscribe(processor);
-        return processor;
+        return new SingleFromPublisher<>(source);
     }
 
     /**
@@ -215,5 +213,64 @@ public interface Single<T> extends Subscribable<T> {
      */
     static <T> Single<T> never() {
         return SingleNever.<T>instance();
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Single
+     */
+    default Single<T> onTerminate(Runnable onTerminate) {
+        return new SingleTappedPublisher<>(this,
+                null,
+                null,
+                e -> onTerminate.run(),
+                onTerminate,
+                null,
+                onTerminate);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Single
+     */
+    default Single<T> onComplete(Runnable onTerminate) {
+        return new SingleTappedPublisher<>(this,
+                null,
+                null,
+                null,
+                onTerminate,
+                null,
+                null);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onError signal is received.
+     *
+     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
+     * @return Single
+     */
+    default Single<T> onError(Consumer<Throwable> onErrorConsumer) {
+        return new SingleTappedPublisher<>(this,
+                null,
+                null,
+                onErrorConsumer,
+                null,
+                null,
+                null);
+    }
+
+    /**
+     * Invoke provided consumer for the item in stream.
+     *
+     * @param consumer consumer to be invoked
+     * @return Single
+     */
+    default Single<T> peek(Consumer<T> consumer) {
+        return new SingleTappedPublisher<>(this, null, consumer,
+                null, null, null, null);
     }
 }

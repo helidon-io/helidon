@@ -71,47 +71,6 @@ public interface Subscribable<T> extends Publisher<T> {
     }
 
     /**
-     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
-     *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onTerminate(Runnable onTerminate) {
-        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
-                .onComplete(onTerminate)
-                .onCancel((s) -> onTerminate.run())
-                .onError((t) -> onTerminate.run());
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
-     *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onComplete(Runnable onTerminate) {
-        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
-                .onComplete(onTerminate);
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onError signal is received.
-     *
-     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
-        MultiTappedProcessor<T> processor = MultiTappedProcessor.<T>create()
-                .onError(onErrorConsumer);
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
      * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
      *
      * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.

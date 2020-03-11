@@ -626,8 +626,15 @@
 
             <!-- Reactive Streams Operators -->
             <dependency>
-                <groupId>io.helidon.microprofile</groupId>
+                <groupId>io.helidon.microprofile.reactive-streams</groupId>
                 <artifactId>helidon-microprofile-reactive-streams</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Reactive Messaging -->
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging</groupId>
+                <artifactId>helidon-microprofile-messaging</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

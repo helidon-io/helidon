@@ -391,22 +391,6 @@ public class EngineTest {
     }
 
     @Test
-    @Disabled
-        //TODO: Is this valid scenario?
-    void publisherToSubscriber() throws InterruptedException, ExecutionException, TimeoutException {
-        CompletionSubscriber<Object, Optional<Object>> subscriber = ReactiveStreams.builder()
-                .limit(5L)
-                .findFirst()
-                .build();
-        ReactiveStreams.of(1, 2, 3)
-                .to(subscriber)
-                .run()
-                .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
-        assertEquals(1, subscriber.getCompletion().toCompletableFuture().get(1, TimeUnit.SECONDS).get());
-    }
-
-    @Test
     void filterExceptionCancelUpstream() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Void> cancelled = new CompletableFuture<>();
         CompletionStage<List<Integer>> result = ReactiveStreams.of(1, 2, 3).onTerminate(() -> {

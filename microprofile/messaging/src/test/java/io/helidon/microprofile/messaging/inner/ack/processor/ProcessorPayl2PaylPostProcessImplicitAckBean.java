@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,15 @@ import org.reactivestreams.Publisher;
 @ApplicationScoped
 public class ProcessorPayl2PaylPostProcessImplicitAckBean implements AssertableTestBean {
 
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of("test-data", () -> {
+            ackFuture.complete(null);
+            return CompletableFuture.completedStage(null);
+        })).buildRs();
     }
 
     @Incoming("inner-processor")

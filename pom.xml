@@ -98,7 +98,7 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>1.1.1</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>2.0.0-M1</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
@@ -526,6 +526,11 @@
                     </dependencies>
                 </plugin>
                 <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
                     <version>${version.plugin.protobuf}</version>
@@ -848,6 +853,16 @@
                 <groupId>org.eclipse.microprofile.openapi</groupId>
                 <artifactId>microprofile-openapi-tck</artifactId>
                 <version>${version.lib.microprofile-openapi-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                <artifactId>microprofile-reactive-streams-operators-tck</artifactId>
+                <version>${version.lib.microprofile-reactive-streams-operators-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
+                <artifactId>microprofile-reactive-messaging-tck</artifactId>
+                <version>${version.lib.microprofile-reactive-messaging-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>

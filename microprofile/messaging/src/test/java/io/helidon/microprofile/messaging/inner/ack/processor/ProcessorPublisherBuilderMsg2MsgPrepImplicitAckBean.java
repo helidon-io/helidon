@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public class ProcessorPublisherBuilderMsg2MsgPrepImplicitAckBean implements Asse
 
     @Incoming("inner-processor")
     @Outgoing("inner-consumer")
+    @SuppressWarnings("unchecked")
     public PublisherBuilder<Message<String>> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());
         return ReactiveStreams.of(msg, msg);
