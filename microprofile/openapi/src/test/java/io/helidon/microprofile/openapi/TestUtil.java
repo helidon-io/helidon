@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019,2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,16 +43,18 @@ public class TestUtil {
      * <p>
      * The server will use the default MP config.
      *
-     * @param appClass application class to serve
+     * @param appClasses application classes to serve
      * @return the started MP {@code Server} instance
      */
-    public static Server startServer(Class<? extends Application> appClass) {
-        return Server.builder()
-                .port(0)
-                .addApplication(appClass)
+    public static Server startServer(Class<? extends Application>... appClasses) {
+        Server.Builder builder = Server.builder()
+                .port(0);
+        for (Class<? extends Application> appClass : appClasses) {
+            builder.addApplication(appClass);
+        }
+        return builder
                 .build()
-                .start();
-    }
+                .start();    }
 
     /**
      * Stops the previously-started MP server.

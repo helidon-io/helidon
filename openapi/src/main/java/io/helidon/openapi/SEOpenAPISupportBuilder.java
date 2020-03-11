@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019,2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
-import org.jboss.jandex.IndexView;
 
 /**
  * Builds {@link OpenAPISupport} in a Helidon SE environment.

@@ -17,14 +17,14 @@
 package io.helidon.microprofile.openapi;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.enterprise.inject.spi.CDI;
+import javax.ws.rs.core.Application;
 
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -36,9 +36,6 @@ import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import org.eclipse.microprofile.config.Config;
 import org.jboss.jandex.IndexView;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.core.Application;
-
 /**
  * Fluent builder for OpenAPISupport in Helidon MP.
  */
@@ -46,7 +43,6 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
     private Optional<OpenApiConfig> openAPIConfig;
     private Optional<IndexView> indexView;
-    private final Map<Class<? extends Application>, Set<Class<?>>> appClassesToClassesToScan = new HashMap<>();
     private List<FilteredIndexView> filteredIndexViews = null;
     private Config mpConfig;
 
@@ -66,46 +62,59 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
     private List<FilteredIndexView> buildFilteredIndexViews() {
         /*
-         * Build a sequence of filtered views, each restricted to the application and resources associated with
+         * The JaxRsCdiExtension knows about all the apps in the system. For each app find out the classes related to that
+         * app -- the application class itself and any resource classes reported by its getClasses() or getSingletons()
+         * methods -- and create a FilteredIndexView that will be used to restrict scanning to only those classes for that app.
          */
-        if (appClassesToClassesToScan.size() <= 1) {
-            /*
-             * Use the default processing for this case.
-             */
-            return List.of(new FilteredIndexView(indexView.get(), openAPIConfig.get()));
-        }
-        List<FilteredIndexView> result = new ArrayList<>();
-
         JaxRsCdiExtension ext = CDI.current()
                 .getBeanManager()
                 .getExtension(JaxRsCdiExtension.class);
-        List<JaxRsApplication> apps = ext.applicationsToRun();
 
-        return apps.stream()
+        /*
+         * Each set in the list holds the classes related to one app.
+         */
+        List<Set<Class<?>>> appClassesToScan = ext.applicationsToRun().stream()
                 .map(JaxRsApplication::applicationClass)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(this::appClassToFilteredIndexView)
+                .flatMap(Optional::stream)
+                .map(this::classesToScanForAppClass)
+                .collect(Collectors.toList());
+
+        if (appClassesToScan.size() <= 1) {
+            /*
+             * Use normal scanning with a FilteredIndexView containing no class restrictions.
+             */
+            return List.of(new FilteredIndexView(indexView.get(), openAPIConfig.get()));
+        }
+        return appClassesToScan.stream()
+                .map(this::appRelatedClassesToFilteredIndexView)
                 .collect(Collectors.toList());
     }
 
-    private <T extends Application> FilteredIndexView appClassToFilteredIndexView(Class<T> appClass) {
-        Set<Class<?>> classesToScanForThisApp = appClassesToClassesToScan.computeIfAbsent(appClass, c -> new HashSet<>());
-        classesToScanForThisApp.add(appClass);
-        T app = instantiate(appClass);
-        classesToScanForThisApp.addAll(app.getClasses());
-        app.getSingletons().forEach(s -> classesToScanForThisApp.add(s.getClass()));
+    private <T extends Application> Set<Class<?>> classesToScanForAppClass(Class<T> appClass) {
+        Set<Class<?>> classesToScanForThisApp = new HashSet<>();
+        Application app = instantiate(appClass);
 
+        classesToScanForThisApp.add(appClass);
+        classesToScanForThisApp.addAll(app.getClasses());
+        app.getSingletons().stream()
+                .map(Object::getClass)
+                .forEach(classesToScanForThisApp::add);
+        return classesToScanForThisApp;
+    }
+
+    private FilteredIndexView appRelatedClassesToFilteredIndexView(Set<Class<?>> appRelatedClassesToScan) {
         /*
-         * Create an OpenAPIConfig instance to limit scanning to this app's classes.
+         * Create an OpenAPIConfig instance to limit scanning to this app's classes by overriding any inclusions of classes or
+         * packages specified in the config with our own inclusions based on this app's classes.
          */
         OpenApiConfigImpl openAPIFilteringConfig = new OpenApiConfigImpl(mpConfig);
-        openAPIFilteringConfig.scanClasses().clear();
+        Set<String> scanClasses = openAPIFilteringConfig.scanClasses();
+        scanClasses.clear();
         openAPIFilteringConfig.scanPackages().clear();
-        openAPIFilteringConfig.scanClasses().addAll(
-            classesToScanForThisApp.stream()
-                    .map(Class::getName)
-                    .collect(Collectors.toSet()));
+
+        appRelatedClassesToScan.stream()
+                .map(Class::getName)
+                .forEach(scanClasses::add);
 
         FilteredIndexView result = new FilteredIndexView(indexView.get(), openAPIFilteringConfig);
         return result;

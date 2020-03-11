@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019,2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 
 import io.helidon.common.http.MediaType;
+import io.helidon.microprofile.openapi.other.TestApp2;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -51,7 +52,7 @@ public class BasicServerTest {
      */
     @BeforeAll
     public static void startServer() throws Exception {
-        server = TestUtil.startServer(TestApp.class);
+        server = TestUtil.startServer(TestApp.class, TestApp3.class);
         HttpURLConnection cnx = TestUtil.getURLConnection(
                 server.port(),
                 "GET",
@@ -83,5 +84,11 @@ public class BasicServerTest {
     public void simpleTest() throws Exception {
         String goSummary = TestUtil.fromYaml(yaml, "paths./testapp/go.get.summary", String.class);
         assertEquals(TestApp.GO_SUMMARY, goSummary);
+    }
+
+    @Test
+    public void testMultipleApps() {
+        String goSummary3 = TestUtil.fromYaml(yaml, "paths./testapp3/go3.get.summary", String.class);
+        assertEquals(TestApp3.GO_SUMMARY, goSummary3);
     }
 }

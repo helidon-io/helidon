@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,6 +62,8 @@ import io.helidon.webserver.Service;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
+import io.smallrye.openapi.api.models.OpenAPIImpl;
+import io.smallrye.openapi.api.util.MergeUtil;
 import io.smallrye.openapi.runtime.OpenApiProcessor;
 import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
@@ -75,8 +78,6 @@ import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -275,12 +276,19 @@ public class OpenAPISupport implements Service {
         if (filteredIndexViews.isEmpty() || config.scanDisable()) {
             return;
         }
-        List<AnnotationScannerExtension> scannerExtensions =
-                List.of(new HelidonAnnotationScannerExtension());
+
+        /*
+         * Conduct a SmallRye OpenAPI annotation scan for each filtered index view, merging the resulting OpenAPI models into one.
+         * The AtomicReference is effectively final so we can update the actual reference from inside the lambda.
+         */
+        AtomicReference<OpenAPIImpl> aggregateModelRef = new AtomicReference<>(new OpenAPIImpl()); // Start with skeletal model
         filteredIndexViews.forEach(filteredIndexView -> {
-                OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, filteredIndexView, scannerExtensions);
-                OpenApiDocument.INSTANCE.modelFromAnnotations(scanner.scan());
+                OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, filteredIndexView,
+                        List.of(new HelidonAnnotationScannerExtension()));
+                OpenAPIImpl modelForApp = scanner.scan();
+                aggregateModelRef.set(MergeUtil.merge(aggregateModelRef.get(), modelForApp));
             });
+        OpenApiDocument.INSTANCE.modelFromAnnotations(aggregateModelRef.get());
     }
 
     private static ClassLoader getContextClassLoader() {
