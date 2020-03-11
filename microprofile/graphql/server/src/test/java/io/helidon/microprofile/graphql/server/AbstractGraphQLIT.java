@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -29,11 +28,8 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.helidon.microprofile.cdi.Main;
-import io.helidon.microprofile.graphql.server.util.JandexUtils;
-import io.helidon.microprofile.graphql.server.util.JsonUtils;
-import io.helidon.microprofile.server.Server;
+
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.junit.jupiter.api.AfterAll;

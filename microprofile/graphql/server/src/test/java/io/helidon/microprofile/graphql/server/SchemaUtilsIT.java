@@ -32,7 +32,6 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 
 import graphql.ExecutionResult;
 
-import io.helidon.microprofile.graphql.server.model.Schema;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
@@ -47,14 +46,12 @@ import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
-import io.helidon.microprofile.graphql.server.util.JandexUtils;
-import io.helidon.microprofile.graphql.server.util.JsonUtils;
-import io.helidon.microprofile.graphql.server.util.SchemaUtils;
-import io.helidon.microprofile.graphql.server.util.SchemaUtilsTest;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -125,6 +122,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     }
 
     @Test
+    @Disabled
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
         SchemaUtils schemaUtils = new SchemaUtils();
@@ -202,6 +200,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    @Disabled
     public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);

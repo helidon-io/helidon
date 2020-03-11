@@ -28,8 +28,7 @@ import java.util.Map;
 import graphql.ExecutionResult;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
-import io.helidon.microprofile.graphql.server.model.Schema;
-import io.helidon.microprofile.graphql.server.util.JandexUtils;
+
 import org.hamcrest.CoreMatchers;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexWriter;

@@ -30,24 +30,33 @@ public class MultiLevelListsAndArrays {
     private List<List<BigDecimal>> listOfListOfBigDecimal;
     private List<List<Person>> listOfListOfPerson;
     private List<List<Integer>> listOfListOfInteger;
+    private int[][] intMultiLevelArray;
+    private Person[][] personMultiLevelArray;
+    private List<String[]> listOfStringArrays;
+    private String[][][] multiStringArray;
 
     public MultiLevelListsAndArrays(List<List<BigDecimal>> listOfListOfBigDecimal,
                                     List<List<Person>> listOfListOfPerson,
-                                    List<List<Integer>> listOfListOfInteger) {
+                                    List<List<Integer>> listOfListOfInteger,
+                                    int[][] intMultiLevelArray,
+                                    Person[][] personMultiLevelArray,
+                                    List<String[]> listOfStringArrays,
+                                    String[][][] multiStringArray) {
         this.listOfListOfBigDecimal = listOfListOfBigDecimal;
         this.listOfListOfPerson = listOfListOfPerson;
         this.listOfListOfInteger = listOfListOfInteger;
-    }
-
-    public MultiLevelListsAndArrays() {
+        this.intMultiLevelArray = intMultiLevelArray;
+        this.personMultiLevelArray = personMultiLevelArray;
+        this.listOfStringArrays = listOfStringArrays;
+        this.multiStringArray = multiStringArray;
     }
 
     public List<List<BigDecimal>> getListOfListOfBigDecimal() {
         return listOfListOfBigDecimal;
     }
 
-    public void setListOfListOfBigDecimal(List<List<BigDecimal>> listOfListOfBigDecimaal) {
-        this.listOfListOfBigDecimal = listOfListOfBigDecimaal;
+    public void setListOfListOfBigDecimal(List<List<BigDecimal>> listOfListOfBigDecimal) {
+        this.listOfListOfBigDecimal = listOfListOfBigDecimal;
     }
 
     public List<List<Person>> getListOfListOfPerson() {
@@ -64,5 +73,37 @@ public class MultiLevelListsAndArrays {
 
     public void setListOfListOfInteger(List<List<Integer>> listOfListOfInteger) {
         this.listOfListOfInteger = listOfListOfInteger;
+    }
+
+    public int[][] getIntMultiLevelArray() {
+        return intMultiLevelArray;
+    }
+
+    public void setIntMultiLevelArray(int[][] intMultiLevelArray) {
+        this.intMultiLevelArray = intMultiLevelArray;
+    }
+
+    public Person[][] getPersonMultiLevelArray() {
+        return personMultiLevelArray;
+    }
+
+    public void setPersonMultiLevelArray(Person[][] personMultiLevelArray) {
+        this.personMultiLevelArray = personMultiLevelArray;
+    }
+
+    public List<String[]> getListOfStringArrays() {
+        return listOfStringArrays;
+    }
+
+    public void setListOfStringArrays(List<String[]> listOfStringArrays) {
+        this.listOfStringArrays = listOfStringArrays;
+    }
+
+    public String[][][] getMultiStringArray() {
+        return multiStringArray;
+    }
+
+    public void setMultiStringArray(String[][][] multiStringArray) {
+        this.multiStringArray = multiStringArray;
     }
 }

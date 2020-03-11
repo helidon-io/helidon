@@ -67,16 +67,26 @@ public class TestDB {
 
     public TestDB() {
         for (int i = 1; i <= MAX_PEOPLE; i++) {
-            Address homeAddress = generateHomeAddress();
-            Address workAddress = generateWorkAddress();
-            Address prevAddress1 = generateWorkAddress();
-            Address prevAddress2 = generateWorkAddress();
-            Person person = new Person(i, "Person " + i, homeAddress, workAddress, new BigDecimal(RANDOM.nextFloat()),
-                                       List.of("BA", "BA Hon"),
-                                       List.of(prevAddress1, prevAddress2), new int[0], new String[0], EMPTY_MAP,
-                                       LocalDate.now(), System.nanoTime(), BigDecimal.valueOf(10));
-            allPeople.put(person.getPersonId(), person);
+            Person p = generatePerson(i);
+            allPeople.put(p.getPersonId(), p);
+
         }
+    }
+
+    /**
+     * Generate a random {@link Person}.
+     * @param personId  person id to use
+     * @return  a random {@link Person}
+     */
+    public Person generatePerson(int personId) {
+        Address homeAddress = generateHomeAddress();
+        Address workAddress = generateWorkAddress();
+        Address prevAddress1 = generateWorkAddress();
+        Address prevAddress2 = generateWorkAddress();
+        return new Person(personId, "Person " + personId, homeAddress, workAddress, BigDecimal.valueOf(RANDOM.nextFloat()),
+                          List.of("BA", "BA Hon"),
+                          List.of(prevAddress1, prevAddress2), new int[0], new String[0], EMPTY_MAP,
+                          LocalDate.now(), System.nanoTime(), BigDecimal.valueOf(10));
     }
 
     public Person getPerson(int personId) {

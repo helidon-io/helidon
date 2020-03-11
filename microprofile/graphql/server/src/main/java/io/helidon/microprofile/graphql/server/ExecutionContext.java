@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import io.helidon.microprofile.graphql.server.model.Schema;
-import io.helidon.microprofile.graphql.server.util.SchemaUtils;
-
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;

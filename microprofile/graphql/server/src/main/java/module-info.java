@@ -33,7 +33,7 @@ module helidon.microprofile.graphql.server {
     requires graphql.java.extended.scalars;
     requires microprofile.graphql.api;
 
-    exports io.helidon.microprofile.graphql.server.application;
+    exports io.helidon.microprofile.graphql.server;
 
-    opens io.helidon.microprofile.graphql.server.application to weld.core.impl;
+    opens io.helidon.microprofile.graphql.server to weld.core.impl;
 }

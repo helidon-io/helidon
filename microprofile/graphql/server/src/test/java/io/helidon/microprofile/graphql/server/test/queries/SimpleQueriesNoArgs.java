@@ -44,11 +44,11 @@ import org.eclipse.microprofile.graphql.Query;
 @ApplicationScoped
 public class SimpleQueriesNoArgs {
 
-    public SimpleQueriesNoArgs() {
-    }
-
     @Inject
     private TestDB testDB;
+
+    public SimpleQueriesNoArgs() {
+    }
 
     @Query
     public String hero() {
@@ -98,6 +98,18 @@ public class SimpleQueriesNoArgs {
     public MultiLevelListsAndArrays returnLists() {
         List<List<BigDecimal>> listListBigDecimal = new ArrayList<>();
         listListBigDecimal.add(Collections.singletonList(new BigDecimal(100)));
-        return new MultiLevelListsAndArrays(listListBigDecimal, null, null);
+        int[][] intMultiLevelArray = new int[2][];
+        intMultiLevelArray[0] = new int[] { 1, 2, 3 };
+        intMultiLevelArray[1] = new int[] { 4, 5, 6 };
+        Person[][] personMultiLevelArray = new Person[3][];
+        personMultiLevelArray[0] = new Person[] { testDB.generatePerson(1), testDB.generatePerson(2)};
+        personMultiLevelArray[1] = new Person[] { testDB.generatePerson(3), testDB.generatePerson(4)};
+        List<String[]> listOfStringArrays = new ArrayList<>();
+        listOfStringArrays.add(new String[] {"one", "two", "three"});
+        listOfStringArrays.add(new String[] {"four", "five"});
+        String[][][] multiStringArray =  { { { "one", "two" }, { "three", "four" } }, { { "five", "six" }, { "seven", "eight" } } };
+
+        return new MultiLevelListsAndArrays(listListBigDecimal, null, null, intMultiLevelArray,
+                                            personMultiLevelArray, listOfStringArrays, multiStringArray);
     }
 }

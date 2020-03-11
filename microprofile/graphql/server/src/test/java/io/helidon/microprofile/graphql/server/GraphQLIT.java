@@ -25,9 +25,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.helidon.microprofile.graphql.server.test.types.Person;
-import io.helidon.microprofile.graphql.server.util.JsonUtils;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
