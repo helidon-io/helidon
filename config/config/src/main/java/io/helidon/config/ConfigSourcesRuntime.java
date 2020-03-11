@@ -216,5 +216,10 @@ final class ConfigSourcesRuntime {
         private Optional<ObjectNode> data() {
             return data;
         }
+
+        @Override
+        public String toString() {
+            return runtime.toString();
+        }
     }
 }
