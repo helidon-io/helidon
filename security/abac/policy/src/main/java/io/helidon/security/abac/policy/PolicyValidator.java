@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,8 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
         }
 
         if (!unvalidatedStatements.isEmpty()) {
-            collector.fatal("Some policy statements were not evaluated, cannot continue: " + unvalidatedStatements);
+            throw new SecurityException("Missing a policy executor for policy statement(s). Statements: " + unvalidatedStatements
+                                                + ", known executors: " + executors);
         }
     }
 
