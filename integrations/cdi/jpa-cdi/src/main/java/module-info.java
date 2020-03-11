@@ -34,6 +34,8 @@ module io.helidon.integrations.cdi.jpa {
     requires javax.inject;
     requires cdi.api;
     requires io.helidon.integrations.cdi.referencecountedcontext;
+    requires io.helidon.integrations.cdi.delegates;
+    requires io.helidon.microprofile.cdi;
 
     exports io.helidon.integrations.cdi.jpa;
 }
