@@ -44,11 +44,11 @@
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
+            <groupId>io.helidon.microprofile.reactive-streams</groupId>
             <artifactId>helidon-microprofile-reactive-streams</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
+            <groupId>io.helidon.microprofile.messaging</groupId>
             <artifactId>helidon-microprofile-messaging</artifactId>
         </dependency>
         <dependency>
