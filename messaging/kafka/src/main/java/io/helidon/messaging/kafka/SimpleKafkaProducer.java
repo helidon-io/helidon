@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,7 @@ public class SimpleKafkaProducer<K, V> implements Closeable {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleKafkaProducer.class.getName());
     private final KafkaConfigProperties properties;
-
-    private KafkaProducer<K, V> producer;
+    private final KafkaProducer<K, V> producer;
 
     /**
      * Kafka producer created from {@link io.helidon.config.Config config} under kafka-producerId,
