@@ -16,8 +16,13 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -25,7 +30,9 @@ import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
+import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
+import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
@@ -68,8 +75,6 @@ public class SimpleQueriesNoArgs {
     @Query("allPeople")
     public Collection<Person> findAllPeople() {
         return testDB.getAllPeople();
-        // TODO: Need to figure out why CDI not working for
-        // return testDB.getAllPeople();
     }
 
     @Query
@@ -81,5 +86,18 @@ public class SimpleQueriesNoArgs {
     @Name("returnMediumSize")
     public EnumTestWithEnumName getEnumMedium() {
         return EnumTestWithEnumName.M;
+    }
+
+    @Query
+    public TypeWithIDs returnTypeWithIDs() {
+        return new TypeWithIDs(1, 2, "string", 10L, 10L, UUID.randomUUID());
+    }
+
+    @Query
+    @Name("getMultiLevelList")
+    public MultiLevelListsAndArrays returnLists() {
+        List<List<BigDecimal>> listListBigDecimal = new ArrayList<>();
+        listListBigDecimal.add(Collections.singletonList(new BigDecimal(100)));
+        return new MultiLevelListsAndArrays(listListBigDecimal, null, null);
     }
 }

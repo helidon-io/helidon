@@ -30,6 +30,9 @@ public class Level2 {
         this.address = address;
     }
 
+    public Level2() {
+    }
+
     public String getCode() {
         return code;
     }

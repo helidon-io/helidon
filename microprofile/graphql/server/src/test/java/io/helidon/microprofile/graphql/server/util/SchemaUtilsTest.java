@@ -22,7 +22,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;   
+import java.util.Map;
 
 import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
 import io.helidon.microprofile.graphql.server.model.SchemaEnum;
@@ -39,9 +39,11 @@ import io.helidon.microprofile.graphql.server.test.types.InterfaceWithTypeValue;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Level1;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
+import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithNameValue;
+import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIdOnField;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIdOnMethod;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
@@ -79,7 +81,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
     public void testGettersPerson() throws IntrospectionException {
         Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Person.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(12));
+        assertThat(mapMethods.size(), is(13));
 
         assertDiscoveredMethod(mapMethods.get("personId"), "personId", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("name"), "name", STRING, null, false, false, false);
@@ -94,6 +96,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("addressMap"), "addressMap", ADDRESS, null, false, false, true);
         assertDiscoveredMethod(mapMethods.get("localDate"), "localDate", LOCALDATE, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("longValue"), "longValue", long.class.getName(), null, false, false, false);
+        assertDiscoveredMethod(mapMethods.get("bigDecimal"), "bigDecimal", BigDecimal.class.getName(), null, false, false, false);
     }
 
     @Test
@@ -215,7 +218,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
                 .retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(7));
+        assertThat(mapMethods.size(), is(9));
         assertDiscoveredMethod(mapMethods.get("hero"), "hero", STRING, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("episodeCount"), "episodeCount", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("numberOfStars"), "numberOfStars", Long.class.getName(), null, false, false, false);
@@ -224,6 +227,10 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("returnCurrentDate"), "returnCurrentDate", LocalDate.class.getName(), null, false,
                                false, false);
         assertDiscoveredMethod(mapMethods.get("returnMediumSize"), "returnMediumSize", EnumTestWithEnumName.class.getName(), null,
+                               false, false, false);
+        assertDiscoveredMethod(mapMethods.get("returnTypeWithIDs"), "returnTypeWithIDs", TypeWithIDs.class.getName(), null,
+                               false, false, false);
+        assertDiscoveredMethod(mapMethods.get("getMultiLevelList"), "getMultiLevelList", MultiLevelListsAndArrays.class.getName(), null,
                                false, false, false);
     }
 
@@ -241,6 +248,17 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         assertThat(discoveredMethod.getName(), is(name));
         assertThat(discoveredMethod.getReturnType(), is(returnType));
         assertThat(discoveredMethod.getCollectionType(), is(collectionType));
+    }
+
+    @Test
+    public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException {
+        SchemaUtils schemaUtils = new SchemaUtils();
+        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
+                .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
+        assertThat(mapMethods, is(notNullValue()));
+        assertThat(mapMethods.size(), is(3));
+        Schema schema = schemaUtils.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
+        generateGraphQLSchema(schema);
     }
 
     private void testEnum(Class<?> clazz, String expectedName) throws IntrospectionException, ClassNotFoundException {

@@ -32,6 +32,9 @@ public class Level0 {
         this.level1 = level1;
     }
 
+    public Level0() {
+    }
+
     public String getId() {
         return id;
     }

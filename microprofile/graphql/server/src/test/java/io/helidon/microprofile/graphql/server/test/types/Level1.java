@@ -16,16 +16,23 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.math.BigDecimal;
+
 /**
  * POJO to test multiple levels of object graph.
  */
 public class Level1 {
     private String code;
     private Level2 level2;
+    private BigDecimal bigDecimal;
 
-    public Level1(String code, Level2 level2) {
+    public Level1(String code, Level2 level2, BigDecimal bigDecimal) {
         this.code = code;
         this.level2 = level2;
+        this.bigDecimal = bigDecimal;
+    }
+
+    public Level1() {
     }
 
     public String getCode() {
@@ -44,4 +51,11 @@ public class Level1 {
         this.level2 = level2;
     }
 
+    public BigDecimal getBigDecimal() {
+        return bigDecimal;
+    }
+
+    public void setBigDecimal(BigDecimal bigDecimal) {
+        this.bigDecimal = bigDecimal;
+    }
 }

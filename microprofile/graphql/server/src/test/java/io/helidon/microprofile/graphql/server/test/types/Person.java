@@ -42,6 +42,7 @@ public class Person {
     private Map<String, Address> addressMap;
     private LocalDate localDate;
     private long longValue;
+    private BigDecimal bigDecimal;
 
     public Person(int personId,
                   String name,
@@ -52,7 +53,7 @@ public class Person {
                   List<Address> previousAddresses,
                   int[] intArray,
                   String[] stringArray,
-                  Map<String, Address> addressMap, LocalDate localDate, long longValue) {
+                  Map<String, Address> addressMap, LocalDate localDate, long longValue, BigDecimal bigDecimal) {
         this.personId = personId;
         this.name = name;
         this.homeAddress = homeAddress;
@@ -65,6 +66,7 @@ public class Person {
         this.addressMap = addressMap;
         this.localDate = localDate;
         this.longValue = longValue;
+        this.bigDecimal = bigDecimal;
     }
 
     public long getLongValue() {
@@ -163,6 +165,14 @@ public class Person {
         this.localDate = localDate;
     }
 
+    public BigDecimal getBigDecimal() {
+        return bigDecimal;
+    }
+
+    public void setBigDecimal(BigDecimal bigDecimal) {
+        this.bigDecimal = bigDecimal;
+    }
+
     @Override
     public String toString() {
         return "Person{" +
@@ -178,6 +188,7 @@ public class Person {
                 ", addressMap=" + addressMap +
                 ", longValue=" + longValue +
                 ", localDate=" + localDate +
+                ", bigDecimal=" + bigDecimal +
                 '}';
     }
 }

@@ -41,11 +41,14 @@ import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
+import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
+import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 import io.helidon.microprofile.graphql.server.util.JandexUtils;
+import io.helidon.microprofile.graphql.server.util.JsonUtils;
 import io.helidon.microprofile.graphql.server.util.SchemaUtils;
 import io.helidon.microprofile.graphql.server.util.SchemaUtilsTest;
 import org.junit.jupiter.api.AfterAll;
@@ -105,8 +108,30 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         Schema schema = schemaUtils.generateSchema();
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));
         assertThat(schema.getTypeByName("Address"), is(notNullValue()));
-        assertThat(schema.getScalars().contains("Date"), is(notNullValue()));
-        assertThat(schema.getScalars().contains("BigDecimal"), is(notNullValue()));
+        assertThat(schema.containsScalarWithName("Date"), is(notNullValue()));
+        assertThat(schema.containsScalarWithName("BigDecimal"), is(notNullValue()));
+        generateGraphQLSchema(schema);
+    }
+
+    @Test
+    public void testLevel0() throws IOException, IntrospectionException, ClassNotFoundException {
+        setupIndex(indexFileName, Level0.class);
+        SchemaUtils schemaUtils = new SchemaUtils();
+        Schema schema = schemaUtils.generateSchema();
+        assertThat(schema.containsTypeWithName("Level0"), is(true));
+        assertThat(schema.containsTypeWithName("Level1"), is(true));
+        assertThat(schema.containsTypeWithName("Level2"), is(true));
+        generateGraphQLSchema(schema);
+    }
+
+    @Test
+    public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException, IOException {
+        setupIndex(indexFileName, MultiLevelListsAndArrays.class);
+        SchemaUtils schemaUtils = new SchemaUtils();
+        Schema schema = schemaUtils.generateSchema();
+        assertThat(schema.containsTypeWithName("MultiLevelListsAndArrays"), is(true));
+        assertThat(schema.containsTypeWithName("Person"), is(true));
+        assertThat(schema.containsScalarWithName("BigDecimal"), is(true));
         generateGraphQLSchema(schema);
     }
 
@@ -169,6 +194,13 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     }
 
     @Test
+    public void testIds() throws IOException {
+        setupIndex(indexFileName, TypeWithIDs.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionResult result = executionContext.execute("query { hero }");
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
@@ -206,6 +238,25 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnCurrentDate"), is(notNullValue()));
+
+        result = executionContext
+                .execute("query { returnTypeWithIDs { intId integerId longId longPrimitiveId stringId uuidId } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        Map<String, Object> results = (Map<String, Object>) mapResults.get("returnTypeWithIDs");
+        TypeWithIDs value = (TypeWithIDs) JsonUtils.convertFromJson(JsonUtils.convertMapToJson(results), TypeWithIDs.class);
+        assertThat(value, is(notNullValue()));
+        assertThat(value.getIntegerId(), is(2));
+        assertThat(value.getIntId(), is(1));
+        assertThat(value.getLongId(), is(10L));
+        assertThat(value.getLongPrimitiveId(), is(10L));
+        assertThat(value.getStringId(), is("string"));
+        assertThat(value.getUuidId(), is(notNullValue()));
+        
+//        result = executionContext.execute("query { getMultiLevelList { listOfListOfBigDecimal } }");
+//        mapResults = getAndAssertResult(result);
+//        assertThat(mapResults.size(), is(1));
+//        assertThat(mapResults.get("getMultiLevelList"), is(notNullValue()));
     }
 
     @Test

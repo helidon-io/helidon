@@ -398,7 +398,7 @@ public class SchemaUtils {
             SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, null);
             type.addFieldDefinition(fd);
 
-            if (discoveredMethod.getReturnType().equals(fd.getReturnType())) {
+            if (!ID.equals(valueTypeName) && valueTypeName.equals(fd.getReturnType())) {
                 LOGGER.info("Adding unresolved type of " + valueTypeName + " for method "
                                     + discoveredMethod.getName() + " on type " + realReturnType);
                 // value class was unchanged meaning we need to resolve
@@ -513,7 +513,7 @@ public class SchemaUtils {
 
             String returnType = v.getReturnType();
             // check to see if this is a known type
-            if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
+            if (!ID.equals(returnType) && returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
                 // value class was unchanged meaning we need to resolve
                 setUnresolvedTypes.add(returnType);
             }
@@ -967,7 +967,14 @@ public class SchemaUtils {
             actualReturnType.setCollectionType(returnClazzName);
             if (genericReturnType instanceof ParameterizedType) {
                 ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
-                actualReturnType.setReturnClass(paramReturnType.getActualTypeArguments()[0].getTypeName());
+                // loop until we get the actual return type in the case we have List<List<Type>>
+                java.lang.reflect.Type actualTypeArgument = paramReturnType.getActualTypeArguments()[0];
+                while (actualTypeArgument instanceof ParameterizedType) {
+                    ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
+                    actualTypeArgument = parameterizedType2.getActualTypeArguments()[0];
+                }
+
+                actualReturnType.setReturnClass(actualTypeArgument.getTypeName());
             } else {
                 actualReturnType.setReturnClass(Object.class.getName());
             }

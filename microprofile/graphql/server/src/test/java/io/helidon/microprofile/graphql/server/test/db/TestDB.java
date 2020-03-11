@@ -74,7 +74,7 @@ public class TestDB {
             Person person = new Person(i, "Person " + i, homeAddress, workAddress, new BigDecimal(RANDOM.nextFloat()),
                                        List.of("BA", "BA Hon"),
                                        List.of(prevAddress1, prevAddress2), new int[0], new String[0], EMPTY_MAP,
-                                       LocalDate.now(), System.nanoTime());
+                                       LocalDate.now(), System.nanoTime(), BigDecimal.valueOf(10));
             allPeople.put(person.getPersonId(), person);
         }
     }
