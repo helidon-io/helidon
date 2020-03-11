@@ -81,7 +81,8 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
         if (appClassesToScan.size() <= 1) {
             /*
-             * Use normal scanning with a FilteredIndexView containing no class restrictions.
+             * Use normal scanning with a FilteredIndexView containing no class restrictions (beyond what might already be in
+             * the configuration).
              */
             return List.of(new FilteredIndexView(indexView.get(), openAPIConfig.get()));
         }
