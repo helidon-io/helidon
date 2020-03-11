@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,40 +17,51 @@
 
 package io.helidon.messaging.kafka.kafka;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
 @ApplicationScoped
-public class KafkaConsumingBean {
+public class KafkaSampleBean {
 
-    static Set<String> TEST_DATA = new HashSet<>(Arrays.asList("test1", "test2", "test3"));
-    static CountDownLatch testChannelLatch = new CountDownLatch(TEST_DATA.size());
+    private CountDownLatch testChannelLatch;
+    private final List<String> consumed = Collections.synchronizedList(new ArrayList<>());
 
     @Incoming("test-channel-1")
     @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-    public CompletionStage<String> receiveMPMessage(Message<ConsumerRecord<Long, String>> msg) {
-        assertTrue(TEST_DATA.contains(msg.getPayload().value()));
-        testChannelLatch.countDown();
+    public CompletionStage<String> channel1(Message<ConsumerRecord<Long, String>> msg) {
+        consumed.add(msg.getPayload().value());
         msg.ack();
+        testChannelLatch.countDown();
         return CompletableFuture.completedFuture(null);
     }
 
-//    @Incoming("test-channel-2")
-//    public void receiveKafkaConsumerRecord(ConsumerRecord<Long, String> msg) {
-//        assertTrue(TEST_DATA.contains(msg.value()));
-//        testChannelLatch.countDown();
-//    }
+    @Incoming("test-channel-2")
+    @Outgoing("test-channel-3")
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    public Message<String> channel2ToChannel3(Message<ConsumerRecord<Long, String>> msg) {
+        msg.ack();
+        return Message.of("Processed" + msg.getPayload().value());
+    }
+
+    public List<String> getConsumed() {
+        return consumed;
+    }
+
+    public void setCountDownLatch(CountDownLatch testChannelLatch) {
+        this.testChannelLatch = testChannelLatch;
+    }
+
 }

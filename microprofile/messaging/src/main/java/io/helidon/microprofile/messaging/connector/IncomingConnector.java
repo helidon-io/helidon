@@ -17,12 +17,13 @@
 
 package io.helidon.microprofile.messaging.connector;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.helidon.config.Config;
 import io.helidon.microprofile.messaging.channel.ChannelRouter;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.reactivestreams.Subscriber;
 
@@ -41,9 +42,9 @@ import org.reactivestreams.Subscriber;
 public class IncomingConnector implements SubscribingConnector {
 
     private final Config config;
-    private String connectorName;
-    private OutgoingConnectorFactory connectorFactory;
-    private Map<String, Subscriber> subscriberMap = new HashMap<>();
+    private final String connectorName;
+    private final OutgoingConnectorFactory connectorFactory;
+    private final Map<String, Subscriber> subscriberMap = new ConcurrentHashMap<>();
 
     /**
      * Create new {@link IncomingConnector}.
@@ -61,11 +62,8 @@ public class IncomingConnector implements SubscribingConnector {
 
     @Override
     public Subscriber getSubscriber(String channelName) {
-        Subscriber subscriber = subscriberMap.get(channelName);
-        if (subscriber == null) {
-            subscriber = connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build();
-            subscriberMap.put(channelName, subscriber);
-        }
+        Subscriber subscriber = subscriberMap.computeIfAbsent(channelName, cn -> connectorFactory
+                .getSubscriberBuilder(getConnectorConfig(cn)).build());
         return subscriber;
     }
 

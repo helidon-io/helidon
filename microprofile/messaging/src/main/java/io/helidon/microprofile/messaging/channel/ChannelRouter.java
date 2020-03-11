@@ -57,7 +57,7 @@ public class ChannelRouter {
     private BeanManager beanManager;
 
     /**
-     * Register bean reference with at least one annotated messaging method method.
+     * Register bean reference with at least one annotated messaging method.
      *
      * @param bean {@link javax.enterprise.inject.spi.Bean} with messaging methods reference
      * @see org.eclipse.microprofile.reactive.messaging.Incoming

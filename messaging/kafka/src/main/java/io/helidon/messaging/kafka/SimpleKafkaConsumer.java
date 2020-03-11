@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
  */
 
 package io.helidon.messaging.kafka;
+
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
+import io.helidon.messaging.kafka.connector.KafkaMessage;
+import io.helidon.messaging.kafka.connector.SimplePublisher;
 
 import java.io.Closeable;
 import java.time.Duration;
@@ -36,12 +42,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
-import io.helidon.messaging.kafka.connector.KafkaMessage;
-import io.helidon.messaging.kafka.connector.SimplePublisher;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -49,6 +49,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 /**
@@ -73,16 +74,13 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
     private static final Logger LOGGER = Logger.getLogger(SimpleKafkaConsumer.class.getName());
     private final KafkaConfigProperties properties;
 
-    private AtomicBoolean closed = new AtomicBoolean(false);
-    private PartitionsAssignedLatch partitionsAssignedLatch = new PartitionsAssignedLatch();
-    private String consumerId;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final PartitionsAssignedLatch partitionsAssignedLatch = new PartitionsAssignedLatch();
+    private final String consumerId;
     private ExecutorService executorService;
     private ExecutorService externalExecutorService;
-    private List<String> topicNameList;
-    private KafkaConsumer<K, V> consumer;
-
-    private final LinkedList<ConsumerRecord<K, V>> backPressureBuffer = new LinkedList<>();
-    private ArrayList<CompletableFuture<Void>> ackFutures = new ArrayList<>();
+    private final List<String> topicNameList;
+    private final KafkaConsumer<K, V> consumer;
 
     /**
      * Kafka consumer created from {@link io.helidon.config.Config config}
@@ -108,11 +106,11 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
      * @see io.helidon.config.Config
      */
     public SimpleKafkaConsumer(String channelName, Config config, String consumerGroupId) {
-        properties = new KafkaConfigProperties(config.get("mp.messaging.incoming").get(channelName));
-        properties.setProperty(KafkaConfigProperties.GROUP_ID, getOrGenerateGroupId(consumerGroupId));
+        this.properties = new KafkaConfigProperties(config.get("mp.messaging.incoming").get(channelName));
+        this.properties.setProperty(KafkaConfigProperties.GROUP_ID, getOrGenerateGroupId(consumerGroupId));
         this.topicNameList = properties.getTopicNameList();
         this.consumerId = channelName;
-        consumer = new KafkaConsumer<>(properties);
+        this.consumer = new KafkaConsumer<>(properties);
     }
 
     /**
@@ -122,11 +120,11 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
      * @param config Helidon {@link io.helidon.config.Config config}
      */
     public SimpleKafkaConsumer(Config config) {
-        properties = new KafkaConfigProperties(config);
-        properties.setProperty(KafkaConfigProperties.GROUP_ID, getOrGenerateGroupId(null));
+        this.properties = new KafkaConfigProperties(config);
+        this.properties.setProperty(KafkaConfigProperties.GROUP_ID, getOrGenerateGroupId(null));
         this.topicNameList = properties.getTopicNameList();
         this.consumerId = null;
-        consumer = new KafkaConsumer<>(properties);
+        this.consumer = new KafkaConsumer<>(properties);
     }
 
     /**
@@ -199,50 +197,11 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                 @Override
                 public void cancel() {
                     SimpleKafkaConsumer.this.close();
+                    LOGGER.log(Level.FINE, "Subscription cancelled.");
                 }
             });
-            externalExecutorService.submit(() -> {
-                consumer.subscribe(topicNameList, partitionsAssignedLatch);
-                try {
-                    while (!closed.get()) {
-                        synchronized (backPressureBuffer) {
-                            waitForAcksAndPoll();
-                            if (backPressureBuffer.isEmpty()) continue;
-                            ConsumerRecord<K, V> cr = backPressureBuffer.poll();
-                            KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
-                            ackFutures.add(kafkaMessage.getAckFuture());
-                            runInNewContext(() -> subscriber.onNext(kafkaMessage));
-                        }
-                    }
-                } catch (WakeupException ex) {
-                    if (!closed.get()) {
-                        throw ex;
-                    }
-                } finally {
-                    LOGGER.info("Closing consumer" + consumerId);
-                    consumer.close();
-                }
-            });
+            externalExecutorService.submit(new BackPressureLayer(subscriber));
         }));
-    }
-
-    /**
-     * Naive impl of back pressure wise lazy poll.
-     * Wait for the last batch of records to be acknowledged before commit and another poll.
-     */
-    private void waitForAcksAndPoll() {
-        if (backPressureBuffer.isEmpty()) {
-            try {
-                if (!ackFutures.isEmpty()) {
-                    CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
-                    consumer.commitSync();
-                }
-                consumer.poll(Duration.ofSeconds(1)).forEach(backPressureBuffer::add);
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.log(Level.SEVERE, "Error when waiting for all polled records acknowledgements.", e);
-            }
-
-        }
     }
 
     private void validateConsumer() {
@@ -278,6 +237,7 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
         this.closed.set(true);
         this.consumer.wakeup();
         Optional.ofNullable(this.executorService).ifPresent(ExecutorService::shutdown);
+        LOGGER.log(Level.FINE, "SimpleKafkaConsumer is closed.");
     }
 
     /**
@@ -303,6 +263,62 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                 .id(String.format("%s:message-%s", parentContext.id(), UUID.randomUUID().toString()))
                 .build();
         Contexts.runInContext(context, runnable);
+    }
+    
+    private final class BackPressureLayer implements Runnable {
+
+        private final LinkedList<ConsumerRecord<K, V>> backPressureBuffer = new LinkedList<>();
+        private final LinkedList<CompletableFuture<Void>> ackFutures = new LinkedList<>();
+        private final Subscriber<? super KafkaMessage<K, V>> subscriber;
+        
+        private BackPressureLayer(Subscriber<? super KafkaMessage<K, V>> subscriber) {
+            this.subscriber = subscriber;
+        }
+        
+        @Override
+        public void run() {
+            consumer.subscribe(topicNameList, partitionsAssignedLatch);
+            try {
+                while (!closed.get()) {
+                    waitForAcksAndPoll();
+                    if (backPressureBuffer.isEmpty()) continue;
+                    ConsumerRecord<K, V> cr = backPressureBuffer.poll();
+                    KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr);
+                    ackFutures.add(kafkaMessage.getAckFuture());
+                    runInNewContext(() -> subscriber.onNext(kafkaMessage));
+                }
+            } catch (WakeupException ex) {
+                if (!closed.get()) {
+                    throw ex;
+                }
+            } finally {
+                LOGGER.info("Closing consumer" + consumerId);
+                consumer.close();
+            }
+        }
+        
+        /**
+         * Naive impl of back pressure wise lazy poll.
+         * Wait for the last batch of records to be acknowledged before commit and another poll.
+         */
+        private void waitForAcksAndPoll() {
+            if (backPressureBuffer.isEmpty()) {
+                try {
+                    if(!ackFutures.isEmpty()) {
+                        CompletableFuture<Void> completable = null;
+                        while ((completable = ackFutures.poll()) != null) {
+                            completable.get();
+                        }
+                        consumer.commitSync();
+                    }
+                    consumer.poll(Duration.ofSeconds(1)).forEach(backPressureBuffer::add);
+                } catch (InterruptedException | ExecutionException e) {
+                    LOGGER.log(Level.SEVERE, "Error when waiting for all polled records acknowledgements.", e);
+                }
+
+            }
+        }
+        
     }
 
 }

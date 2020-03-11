@@ -18,6 +18,7 @@ package io.helidon.microprofile.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.enterprise.event.Observes;
@@ -68,7 +69,7 @@ public class MessagingCdiExtension implements Extension {
         if (!deploymentExceptions.isEmpty()) {
             deploymentExceptions.stream()
                     .skip(1)
-                    .forEach(Throwable::printStackTrace);
+                    .forEach(thrown -> LOGGER.log(Level.SEVERE, thrown.getMessage(), thrown));
             throw deploymentExceptions.get(0);
         }
         LOGGER.info("Final connect");
