@@ -177,7 +177,8 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
         }
 
         if (!unvalidatedStatements.isEmpty()) {
-            collector.fatal("Some policy statements were not evaluated, cannot continue: " + unvalidatedStatements);
+            throw new SecurityException("Missing a policy executor for policy statement(s). Statements: " + unvalidatedStatements
+                                                + ", known executors: " + executors);
         }
     }
 
