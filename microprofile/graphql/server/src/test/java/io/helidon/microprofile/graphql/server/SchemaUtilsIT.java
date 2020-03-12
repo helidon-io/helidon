@@ -127,7 +127,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
         SchemaUtils schemaUtils = new SchemaUtils();
         Schema schema = schemaUtils.generateSchema();
-        assertThat(schema.containsTypeWithName("MultiMLevelListsAndArrays"), is(true));
+        assertThat(schema.containsTypeWithName("MultiLevelListsAndArrays"), is(true));
         assertThat(schema.containsTypeWithName("Person"), is(true));
         assertThat(schema.containsScalarWithName("BigDecimal"), is(true));
         generateGraphQLSchema(schema);

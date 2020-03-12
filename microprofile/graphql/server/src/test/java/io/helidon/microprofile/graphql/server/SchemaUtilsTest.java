@@ -240,7 +240,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(7));
+        assertThat(mapMethods.size(), is(8));
         assertDiscoveredMethod(mapMethods.get("multiStringArray"), "multiStringArray", STRING, null, true, false, false);
     }
 
@@ -266,9 +266,9 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(7));
-        //        Schema schema = schemaUtils.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
-        //        generateGraphQLSchema(schema);
+        assertThat(mapMethods.size(), is(8));
+        Schema schema = schemaUtils.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
+        generateGraphQLSchema(schema);
     }
 
     @Test
