@@ -19,6 +19,7 @@ package io.helidon.microprofile.openapi;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -35,6 +36,7 @@ import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import org.eclipse.microprofile.config.Config;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.jboss.jandex.IndexView;
 
 /**
@@ -85,9 +87,10 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
             return defaultResultSupplier.get();
         }
         List<Set<Class<?>>> appClassesToScan = ext.applicationsToRun().stream()
-                .map(JaxRsApplication::applicationClass)
-                .flatMap(Optional::stream)
-                .map(this::classesToScanForAppClass)
+                .map(JaxRsApplication::resourceConfig)
+                .map(ResourceConfig::getApplication)
+                .filter(Objects::nonNull)
+                .map(this::classesToScanForApp)
                 .collect(Collectors.toList());
 
         if (appClassesToScan.size() <= 1) {
@@ -102,16 +105,14 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
                 .collect(Collectors.toList());
     }
 
-    private <T extends Application> Set<Class<?>> classesToScanForAppClass(Class<T> appClass) {
-        Set<Class<?>> classesToScanForThisApp = new HashSet<>();
-        Application app = instantiate(appClass);
-
-        classesToScanForThisApp.add(appClass);
-        classesToScanForThisApp.addAll(app.getClasses());
+    private <T extends Application> Set<Class<?>> classesToScanForApp(T app) {
+        Set<Class<?>> result = new HashSet<>();
+        result.add(app.getClass());
+        result.addAll(app.getClasses());
         app.getSingletons().stream()
                 .map(Object::getClass)
-                .forEach(classesToScanForThisApp::add);
-        return classesToScanForThisApp;
+                .forEach(result::add);
+        return result;
     }
 
     private FilteredIndexView appRelatedClassesToFilteredIndexView(Set<Class<?>> appRelatedClassesToScan) {
