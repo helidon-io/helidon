@@ -17,13 +17,12 @@
 
 package io.helidon.microprofile.messaging.connector;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.microprofile.messaging.channel.ChannelRouter;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.reactivestreams.Subscriber;
 

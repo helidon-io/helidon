@@ -16,12 +16,6 @@
 
 package io.helidon.messaging.kafka;
 
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
-import io.helidon.messaging.kafka.connector.KafkaMessage;
-import io.helidon.messaging.kafka.connector.SimplePublisher;
-
 import java.io.Closeable;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -41,6 +35,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
+import io.helidon.messaging.kafka.connector.KafkaMessage;
+import io.helidon.messaging.kafka.connector.SimplePublisher;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -264,17 +264,17 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                 .build();
         Contexts.runInContext(context, runnable);
     }
-    
+
     private final class BackPressureLayer implements Runnable {
 
         private final LinkedList<ConsumerRecord<K, V>> backPressureBuffer = new LinkedList<>();
         private final LinkedList<CompletableFuture<Void>> ackFutures = new LinkedList<>();
         private final Subscriber<? super KafkaMessage<K, V>> subscriber;
-        
+
         private BackPressureLayer(Subscriber<? super KafkaMessage<K, V>> subscriber) {
             this.subscriber = subscriber;
         }
-        
+
         @Override
         public void run() {
             consumer.subscribe(topicNameList, partitionsAssignedLatch);
@@ -296,7 +296,7 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
                 consumer.close();
             }
         }
-        
+
         /**
          * Naive impl of back pressure wise lazy poll.
          * Wait for the last batch of records to be acknowledged before commit and another poll.
@@ -304,7 +304,7 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
         private void waitForAcksAndPoll() {
             if (backPressureBuffer.isEmpty()) {
                 try {
-                    if(!ackFutures.isEmpty()) {
+                    if (!ackFutures.isEmpty()) {
                         CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
                         ackFutures.clear();
                         consumer.commitSync();
@@ -316,7 +316,7 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
 
             }
         }
-        
+
     }
 
 }
