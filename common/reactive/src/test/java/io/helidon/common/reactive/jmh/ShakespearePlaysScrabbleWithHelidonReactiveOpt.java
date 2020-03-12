@@ -162,8 +162,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         Function<String, Single<Integer>> bonusForDoubleLetter =
             word -> toBeMaxed.apply(word)
                         .map(scoreOfALetter)
-                    .collectStream(Collectors.summarizingInt(value -> value))
-                    .map(v -> (int)v.getMax())
+                    .reduce(Integer::max)
                     ;
 
         // score of the word put on the board
