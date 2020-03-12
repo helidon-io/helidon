@@ -34,6 +34,7 @@ import io.helidon.messaging.kafka.connector.KafkaConnectorFactory;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -160,10 +161,10 @@ public class KafkaCdiExtensionTest {
     }
 
     @Test
-    public void processor() throws Exception {
+    public void processor() throws InterruptedException {
         // This test pushes in topic 2, it is processed and 
         // pushed in topic 1, and finally check the results coming from topic 1.
-        List<String> testData = IntStream.range(0, 19).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        List<String> testData = IntStream.range(0, 10).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         List<String> expected = testData.stream().map(i -> "Processed" + i).collect(Collectors.toList());
         CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
         KafkaSampleBean kafkaConsumingBean = cdiContainer.select(KafkaSampleBean.class).get();
