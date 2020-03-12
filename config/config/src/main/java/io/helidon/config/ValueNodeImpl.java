@@ -76,13 +76,36 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
     public MergeableNode merge(MergeableNode node) {
         switch (node.nodeType()) {
         case OBJECT:
+            return mergeWithObjectNode((ObjectNodeImpl) node);
         case LIST:
-            return node.merge(this);
+            return mergeWithListNode((ListNodeImpl) node);
         case VALUE:
             return node;
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }
+    }
+
+    private MergeableNode mergeWithListNode(ListNodeImpl node) {
+        if (node.hasValue()) {
+            // will not merge, as the new node has priority over this node and we only have a value
+            return node;
+        }
+
+        // and this will work fine, as the list node does not have a value, so we just add a value from this node
+        return node.merge(this);
+    }
+
+    private MergeableNode mergeWithObjectNode(ObjectNodeImpl node) {
+        // merge this value node with an object node
+        ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create();
+
+        node.forEach((name, member) -> builder
+                .deepMerge(AbstractNodeBuilderImpl.MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
+
+        node.value().or(this::value).ifPresent(builder::value);
+
+        return builder.build();
     }
 
     @Override

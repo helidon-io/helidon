@@ -37,6 +37,7 @@
         <module>mp-security-client</module>
         <module>health</module>
         <module>mp-ws-services</module>
+        <module>webclient</module>
     </modules>
 
     <profiles>
