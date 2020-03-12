@@ -416,6 +416,18 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Relay upstream items until the other source signals an item or completes.
+     * @param other the other sequence to signal the end of the main sequence
+     * @param <U> the element type of the other sequence
+     * @return Multi
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default <U> Multi<T> takeUntil(Flow.Publisher<U> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new MultiTakeUntilPublisher<>(this, other);
+    }
+
+    /**
      * Emits a range of ever increasing integers.
      * @param start the initial integer value
      * @param count the number of integers to emit
