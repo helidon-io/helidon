@@ -53,15 +53,15 @@ import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getRootTypeName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests for {@link SchemaUtils}.
+ * Tests for {@link SchemaGenerator}.
  */
-public class SchemaUtilsTest extends AbstractGraphQLTest {
+public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     private static final String ADDRESS = Address.class.getName();
     private static final String STRING = String.class.getName();
@@ -81,7 +81,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testGettersPerson() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Person.class);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator.retrieveGetterBeanMethods(Person.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(13));
 
@@ -103,7 +103,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testMultipleLevels() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Level0.class);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator.retrieveGetterBeanMethods(Level0.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
         assertDiscoveredMethod(mapMethods.get("id"), "id", STRING, null, false, false, false);
@@ -112,7 +112,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithIdOnMethod() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(TypeWithIdOnMethod.class);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator.retrieveGetterBeanMethods(TypeWithIdOnMethod.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
         assertDiscoveredMethod(mapMethods.get("name"), "name", STRING, null, false, false, false);
@@ -121,7 +121,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithIdOnField() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(TypeWithIdOnField.class);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator.retrieveGetterBeanMethods(TypeWithIdOnField.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
         assertDiscoveredMethod(mapMethods.get("name"), "name", STRING, null, false, false, false);
@@ -130,7 +130,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithNameAndJsonbProperty() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator
                 .retrieveGetterBeanMethods(TypeWithNameAndJsonbProperty.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(6));
@@ -144,7 +144,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceDiscovery() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Vehicle.class);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator.retrieveGetterBeanMethods(Vehicle.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(6));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -158,7 +158,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceImplementorDiscovery1() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Car.class);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator.retrieveGetterBeanMethods(Car.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -173,7 +173,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceImplementorDiscovery2() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils.retrieveGetterBeanMethods(Motorbike.class);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator.retrieveGetterBeanMethods(Motorbike.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -188,34 +188,34 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeNames() {
-        assertThat(SchemaUtilsHelper.getTypeName(Address.class), is("Address"));
-        assertThat(SchemaUtilsHelper.getTypeName(PersonWithName.class), is("Person"));
-        assertThat(SchemaUtilsHelper.getTypeName(Person.class), is("Person"));
-        assertThat(SchemaUtilsHelper.getTypeName(VehicleIncident.class), is("Incident"));
-        assertThat(SchemaUtilsHelper.getTypeName(PersonWithNameValue.class), is("Person"));
-        assertThat(SchemaUtilsHelper.getTypeName(Vehicle.class), is("Vehicle"));
-        assertThat(SchemaUtilsHelper.getTypeName(EnumTestNoEnumName.class), is("EnumTestNoEnumName"));
-        assertThat(SchemaUtilsHelper.getTypeName(EnumTestWithEnumName.class), is("TShirtSize"));
-        assertThat(SchemaUtilsHelper.getTypeName(EnumTestWithNameAndNameAnnotation.class), is("ThisShouldWin"));
-        assertThat(SchemaUtilsHelper.getTypeName(EnumTestWithNameAnnotation.class), is("TShirtSize"));
-        assertThat(SchemaUtilsHelper.getTypeName(InnerClass.AnInnerClass.class), is("AnInnerClass"));
-        assertThat(SchemaUtilsHelper.getTypeName(InnerClass.class), is("InnerClass"));
-        assertThat(SchemaUtilsHelper.getTypeName(InterfaceWithTypeValue.class), is("NewName"));
+        assertThat(SchemaGeneratorHelper.getTypeName(Address.class), is("Address"));
+        assertThat(SchemaGeneratorHelper.getTypeName(PersonWithName.class), is("Person"));
+        assertThat(SchemaGeneratorHelper.getTypeName(Person.class), is("Person"));
+        assertThat(SchemaGeneratorHelper.getTypeName(VehicleIncident.class), is("Incident"));
+        assertThat(SchemaGeneratorHelper.getTypeName(PersonWithNameValue.class), is("Person"));
+        assertThat(SchemaGeneratorHelper.getTypeName(Vehicle.class), is("Vehicle"));
+        assertThat(SchemaGeneratorHelper.getTypeName(EnumTestNoEnumName.class), is("EnumTestNoEnumName"));
+        assertThat(SchemaGeneratorHelper.getTypeName(EnumTestWithEnumName.class), is("TShirtSize"));
+        assertThat(SchemaGeneratorHelper.getTypeName(EnumTestWithNameAndNameAnnotation.class), is("ThisShouldWin"));
+        assertThat(SchemaGeneratorHelper.getTypeName(EnumTestWithNameAnnotation.class), is("TShirtSize"));
+        assertThat(SchemaGeneratorHelper.getTypeName(InnerClass.AnInnerClass.class), is("AnInnerClass"));
+        assertThat(SchemaGeneratorHelper.getTypeName(InnerClass.class), is("InnerClass"));
+        assertThat(SchemaGeneratorHelper.getTypeName(InterfaceWithTypeValue.class), is("NewName"));
     }
 
     @Test
     public void testGetSimpleName() throws ClassNotFoundException {
-        assertThat(SchemaUtilsHelper.getSimpleName(InnerClass.AnInnerClass.class.getName()), is("AnInnerClass"));
-        assertThat(SchemaUtilsHelper.getSimpleName(SchemaUtilsHelper.INT), is((SchemaUtilsHelper.INT)));
-        assertThat(SchemaUtilsHelper.getSimpleName(SchemaUtilsHelper.ID), is(SchemaUtilsHelper.ID));
-        assertThat(SchemaUtilsHelper.getSimpleName(SchemaUtilsHelper.BOOLEAN), is(SchemaUtilsHelper.BOOLEAN));
-        assertThat(SchemaUtilsHelper.getSimpleName(SchemaUtilsHelper.FLOAT), is(SchemaUtilsHelper.FLOAT));
-        assertThat(SchemaUtilsHelper.getSimpleName(SchemaUtilsHelper.STRING), is(SchemaUtilsHelper.STRING));
+        assertThat(SchemaGeneratorHelper.getSimpleName(InnerClass.AnInnerClass.class.getName()), is("AnInnerClass"));
+        assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.INT), is((SchemaGeneratorHelper.INT)));
+        assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.ID), is(SchemaGeneratorHelper.ID));
+        assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.BOOLEAN), is(SchemaGeneratorHelper.BOOLEAN));
+        assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.FLOAT), is(SchemaGeneratorHelper.FLOAT));
+        assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.STRING), is(SchemaGeneratorHelper.STRING));
     }
 
     @Test
     public void testAllMethods() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator
                 .retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(9));
@@ -237,14 +237,14 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testArrayDiscoveredMethods() throws IntrospectionException {
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(8));
         assertDiscoveredMethod(mapMethods.get("multiStringArray"), "multiStringArray", STRING, null, true, false, false);
     }
 
-    private void assertDiscoveredMethod(SchemaUtils.DiscoveredMethod discoveredMethod,
+    private void assertDiscoveredMethod(SchemaGenerator.DiscoveredMethod discoveredMethod,
                                         String name,
                                         String returnType,
                                         String collectionType,
@@ -262,12 +262,12 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException {
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(8));
-        Schema schema = schemaUtils.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
+        Schema schema = schemaGenerator.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
         generateGraphQLSchema(schema);
     }
 
@@ -280,19 +280,19 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         int[][] twoLevelInt = new int[1][1];
         int[][][] threeLevelInt = new int[1][1][2];
 
-        assertThat(SchemaUtilsHelper.getArrayLevels(oneLevelString.getClass().getName()), is(1));
-        assertThat(SchemaUtilsHelper.getArrayLevels(twoLevelString.getClass().getName()), is(2));
-        assertThat(SchemaUtilsHelper.getArrayLevels(threeLevelString.getClass().getName()), is(3));
-        assertThat(SchemaUtilsHelper.getArrayLevels(oneLevelInt.getClass().getName()), is(1));
-        assertThat(SchemaUtilsHelper.getArrayLevels(twoLevelInt.getClass().getName()), is(2));
-        assertThat(SchemaUtilsHelper.getArrayLevels(threeLevelInt.getClass().getName()), is(3));
+        assertThat(SchemaGeneratorHelper.getArrayLevels(oneLevelString.getClass().getName()), is(1));
+        assertThat(SchemaGeneratorHelper.getArrayLevels(twoLevelString.getClass().getName()), is(2));
+        assertThat(SchemaGeneratorHelper.getArrayLevels(threeLevelString.getClass().getName()), is(3));
+        assertThat(SchemaGeneratorHelper.getArrayLevels(oneLevelInt.getClass().getName()), is(1));
+        assertThat(SchemaGeneratorHelper.getArrayLevels(twoLevelInt.getClass().getName()), is(2));
+        assertThat(SchemaGeneratorHelper.getArrayLevels(threeLevelInt.getClass().getName()), is(3));
 
-        assertThat(SchemaUtilsHelper.getRootArrayClass(oneLevelString.getClass().getName()), is(String.class.getName()));
-        assertThat(SchemaUtilsHelper.getRootArrayClass(twoLevelString.getClass().getName()), is(String.class.getName()));
-        assertThat(SchemaUtilsHelper.getRootArrayClass(threeLevelString.getClass().getName()), is(String.class.getName()));
-        assertThat(SchemaUtilsHelper.getRootArrayClass(oneLevelInt.getClass().getName()), is(int.class.getName()));
-        assertThat(SchemaUtilsHelper.getRootArrayClass(twoLevelInt.getClass().getName()), is(int.class.getName()));
-        assertThat(SchemaUtilsHelper.getRootArrayClass(threeLevelInt.getClass().getName()), is(int.class.getName()));
+        assertThat(SchemaGeneratorHelper.getRootArrayClass(oneLevelString.getClass().getName()), is(String.class.getName()));
+        assertThat(SchemaGeneratorHelper.getRootArrayClass(twoLevelString.getClass().getName()), is(String.class.getName()));
+        assertThat(SchemaGeneratorHelper.getRootArrayClass(threeLevelString.getClass().getName()), is(String.class.getName()));
+        assertThat(SchemaGeneratorHelper.getRootArrayClass(oneLevelInt.getClass().getName()), is(int.class.getName()));
+        assertThat(SchemaGeneratorHelper.getRootArrayClass(twoLevelInt.getClass().getName()), is(int.class.getName()));
+        assertThat(SchemaGeneratorHelper.getRootArrayClass(threeLevelInt.getClass().getName()), is(int.class.getName()));
     }
 
     private List<String[]> listStringArray = new ArrayList<>();
@@ -302,7 +302,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
     @Test
     public void testGetRootType() throws NoSuchFieldException {
         ParameterizedType stringArrayListType = getParameterizedType("listStringArray");
-        SchemaUtilsHelper.RootTypeResult rootTypeName = getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0);
+        SchemaGeneratorHelper.RootTypeResult rootTypeName = getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0);
         assertThat(rootTypeName.getRootTypeName(), is(String[].class.getName()));
         assertThat(rootTypeName.getLevels(), is(1));
 
@@ -318,13 +318,13 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
     }
 
     private ParameterizedType getParameterizedType(String fieldName) throws NoSuchFieldException {
-        Field listStringArray = SchemaUtilsTest.class.getDeclaredField(fieldName);
+        Field listStringArray = SchemaGeneratorTest.class.getDeclaredField(fieldName);
         return (ParameterizedType) listStringArray.getGenericType();
     }
 
     private void testEnum(Class<?> clazz, String expectedName) throws IntrospectionException, ClassNotFoundException {
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Schema schema = schemaUtils.generateSchemaFromClasses(clazz);
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchemaFromClasses(clazz);
         assertThat(schema, is(notNullValue()));
 
         assertThat(schema.getEnums().size(), is(1));

@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
@@ -76,6 +78,8 @@ class SchemaTest extends AbstractGraphQLTest {
 
         assertThat(schema.getScalars().contains(schemaScalar1), is(true));
         assertThat(schema.getScalars().contains(schemaScalar2), is(true));
+
+        assertThat(schema.getScalarByActualClass(Date.class.getName()), is(notNullValue()));
     }
 
     @Test
@@ -115,6 +119,8 @@ class SchemaTest extends AbstractGraphQLTest {
         assertThat(schema.getTypes().size(), is(2));
         assertThat(schema.getTypes().contains(schemaType1), is(true));
         assertThat(schema.getTypes().contains(schemaType2), is(true));
+
+        assertThat(schema.getTypeByName("nothing"), is(nullValue()));
     }
 
     @Test
@@ -132,6 +138,9 @@ class SchemaTest extends AbstractGraphQLTest {
         assertThat(schema.getEnums().size(), is(1));
         assertThat(schema.getEnums().contains(schemaEnum1), is(true));
 
+        assertThat(schema.getEnumByName("nothing"), is(nullValue()));
+        assertThat(schema.containsEnumWithName("nothing"), is(false));
+        assertThat(schema.containsEnumWithName("Episode"), is(true));
     }
 
     @Test

@@ -60,9 +60,9 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Integration tests for {@link SchemaUtilsTest}.
+ * Integration tests for {@link SchemaGeneratorTest}.
  */
-public class SchemaUtilsIT extends AbstractGraphQLTest {
+public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     private String indexFileName = null;
     private File indexFile = null;
@@ -102,8 +102,8 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     public void testTypeGenerationWithNoName() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Person.class);
 
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Schema schema = schemaUtils.generateSchema();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));
         assertThat(schema.getTypeByName("Address"), is(notNullValue()));
         assertThat(schema.containsScalarWithName("Date"), is(notNullValue()));
@@ -114,8 +114,8 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     @Test
     public void testLevel0() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Schema schema = schemaUtils.generateSchema();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.containsTypeWithName("Level0"), is(true));
         assertThat(schema.containsTypeWithName("Level1"), is(true));
         assertThat(schema.containsTypeWithName("Level2"), is(true));
@@ -125,8 +125,8 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     @Test
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Schema schema = schemaUtils.generateSchema();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.containsTypeWithName("MultiLevelListsAndArrays"), is(true));
         assertThat(schema.containsTypeWithName("Person"), is(true));
         assertThat(schema.containsScalarWithName("BigDecimal"), is(true));
@@ -139,8 +139,8 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     @Test
     public void testPersonWithName() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, PersonWithName.class);
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Schema schema = schemaUtils.generateSchema();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchema();
 
         assertThat(schema, is(notNullValue()));
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));
@@ -150,8 +150,8 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     @Test
     public void testMultipleLevels() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Schema schema = schemaUtils.generateSchema();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchema();
 
         assertThat(schema, is(notNullValue()));
         assertThat(schema.getTypes().size(), is(5));
@@ -368,8 +368,8 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
-        SchemaUtils schemaUtils = new SchemaUtils();
-        Schema schema = schemaUtils.generateSchema();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchema();
         assertThat(schema, is(notNullValue()));
         assertThat(schema.getTypes().size(), is(5));
         assertThat(schema.getTypeByName("Vehicle"), is(notNullValue()));

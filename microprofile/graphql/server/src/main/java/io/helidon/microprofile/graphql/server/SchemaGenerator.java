@@ -24,7 +24,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,33 +49,33 @@ import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
-import static io.helidon.microprofile.graphql.server.SchemaUtils.DiscoveredMethod.READ;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.ID;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.checkScalars;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getArrayLevels;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getFieldName;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getGraphQLType;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getMethodName;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getNameAnnotationValue;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getRootArrayClass;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getRootTypeName;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getSafeClass;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getScalar;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getSimpleName;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getTypeName;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.isArrayType;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.isEnumClass;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.isValidIDType;
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.READ;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getNameAnnotationValue;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootArrayClass;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getScalar;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSimpleName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getTypeName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isArrayType;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isEnumClass;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isValidIDType;
 
 /**
  * Various utilities for generating {@link Schema}s from classes.
  */
-public class SchemaUtils {
+public class SchemaGenerator {
 
     /**
      * Logger.
      */
-    private static final Logger LOGGER = Logger.getLogger(SchemaUtils.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SchemaGenerator.class.getName());
 
     /**
      * {@link JandexUtils} instance to hold indexes.
@@ -89,9 +88,9 @@ public class SchemaUtils {
     private Set<String> setUnresolvedTypes = new HashSet<>();
 
     /**
-     * Construct a {@link SchemaUtils} instance.
+     * Construct a {@link SchemaGenerator} instance.
      */
-    public SchemaUtils() {
+    public SchemaGenerator() {
         jandexUtils = new JandexUtils();
         jandexUtils.loadIndex();
         if (!jandexUtils.hasIndex()) {
@@ -644,7 +643,6 @@ public class SchemaUtils {
                         ? paramNameAnnotation.value()
                         : parameter.getName();
                 DefaultValue defaultValueAnnotations = parameter.getAnnotation(DefaultValue.class);
-                // TODO: Add default value processing here
 
                 Class<?> paramType = parameter.getType();
 
@@ -688,7 +686,7 @@ public class SchemaUtils {
      */
     private static ReturnType getReturnType(Class<?> returnClazz, java.lang.reflect.Type genericReturnType) {
         ReturnType actualReturnType = new ReturnType();
-        SchemaUtilsHelper.RootTypeResult rootTypeResult = null;
+        SchemaGeneratorHelper.RootTypeResult rootTypeResult = null;
         String returnClazzName = returnClazz.getName();
         if (Collection.class.isAssignableFrom(returnClazz)) {
             actualReturnType.setCollectionType(returnClazzName);

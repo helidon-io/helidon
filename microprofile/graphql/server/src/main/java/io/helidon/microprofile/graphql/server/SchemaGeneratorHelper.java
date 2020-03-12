@@ -48,9 +48,9 @@ import org.eclipse.microprofile.graphql.Type;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
 
 /**
- * Helper class for {@link SchemaUtils}.
+ * Helper class for {@link SchemaGenerator}.
  */
-public class SchemaUtilsHelper {
+public class SchemaGeneratorHelper {
 
     /**
      * List of supported scalars keyed by the full class name.
@@ -61,7 +61,8 @@ public class SchemaUtilsHelper {
         put(OffsetTime.class.getName(), new SchemaScalar("Time", OffsetTime.class.getName(), ExtendedScalars.Time));
         put(LocalTime.class.getName(), new SchemaScalar("Time", OffsetTime.class.getName(), ExtendedScalars.Time));
         // DateTime scalars
-        put(OffsetDateTime.class.getName(), new SchemaScalar("DateTime", OffsetDateTime.class.getName(), ExtendedScalars.DateTime));
+        put(OffsetDateTime.class.getName(),
+            new SchemaScalar("DateTime", OffsetDateTime.class.getName(), ExtendedScalars.DateTime));
         put(ZonedDateTime.class.getName(), new SchemaScalar("DateTime", ZonedDateTime.class.getName(), ExtendedScalars.DateTime));
         put(LocalDateTime.class.getName(), new SchemaScalar("DateTime", LocalDateTime.class.getName(), ExtendedScalars.Date));
         // Date scalar
@@ -87,6 +88,9 @@ public class SchemaUtilsHelper {
         add("java.lang.Number");
     }};
 
+    /**
+     * List of types that should map to a GraphQL Boolean.
+     */
     protected static final List<String> BOOLEAN_LIST = new ArrayList<>() {{
         add("boolean");
         add(Boolean.class.getName());
@@ -177,7 +181,7 @@ public class SchemaUtilsHelper {
     /**
      * Private no-args constructor.
      */
-    private SchemaUtilsHelper() {
+    private SchemaGeneratorHelper() {
     }
 
     /**
@@ -234,7 +238,7 @@ public class SchemaUtilsHelper {
 
     /**
      * Return the field name after checking both the {@link Name} and {@link JsonbProperty} annotations are present on the field
-     * name..<p> Name will take precedence if both are specified.
+     * name.<p> Name will take precedence if both are specified.
      *
      * @param clazz     {@link Class} to check
      * @param fieldName field name to check
@@ -437,8 +441,7 @@ public class SchemaUtilsHelper {
     }
 
     /**
-     * Return the inner most root type such as {@link String} for
-     * <pre>List<List<String>></String></pre>
+     * Return the inner most root type such as {@link String} for a List of List of String.
      *
      * @param genericReturnType the {@link java.lang.reflect.Type}
      * @param index             the index to use, either 0 for {@link Collection} or 1 for {@link Map}

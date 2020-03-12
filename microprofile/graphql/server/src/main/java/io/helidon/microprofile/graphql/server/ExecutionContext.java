@@ -55,9 +55,9 @@ public class ExecutionContext<C> {
     private GraphQLSchema graphQLSchema;
 
     /**
-     * {@link SchemaUtils} instance to use for {@link Schema} generation.
+     * {@link SchemaGenerator} instance to use for {@link Schema} generation.
      */
-    private final SchemaUtils schemaUtils;
+    private final SchemaGenerator schemaGenerator;
 
     /**
      * {@link Schema} used.
@@ -94,8 +94,8 @@ public class ExecutionContext<C> {
      */
     public ExecutionContext(C context) {
         try {
-            this.schemaUtils = new SchemaUtils();
-            this.schema = schemaUtils.generateSchema();
+            this.schemaGenerator = new SchemaGenerator();
+            this.schema = schemaGenerator.generateSchema();
             this.graphQLSchema = schema.generateGraphQLSchema();
             this.context = context;
             SchemaPrinter.Options options = SchemaPrinter.Options

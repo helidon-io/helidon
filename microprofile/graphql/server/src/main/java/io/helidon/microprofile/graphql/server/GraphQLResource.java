@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -38,7 +38,7 @@ import graphql.ExecutionResult;
  * A resource for servicing GraphQL requests.
  */
 @Path("/")
-@RequestScoped
+@ApplicationScoped
 public class GraphQLResource {
 
     private static final Logger LOGGER = Logger.getLogger(GraphQLResource.class.getName());
@@ -129,5 +129,4 @@ public class GraphQLResource {
         }
         return JsonUtils.convertJSONtoMap(String.valueOf(variables));
     }
-
 }

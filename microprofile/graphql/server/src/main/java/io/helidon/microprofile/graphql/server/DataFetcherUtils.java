@@ -25,7 +25,7 @@ import javax.enterprise.inject.spi.CDI;
 
 import graphql.schema.DataFetcher;
 
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.ID;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -76,7 +76,7 @@ public class DataFetcherUtils {
                     }
                 }
             }
-            
+
             return (V) method.invoke(instance, listArgumentValues.toArray());
         };
     }

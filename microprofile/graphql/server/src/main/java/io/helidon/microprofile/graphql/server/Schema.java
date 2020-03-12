@@ -35,7 +35,7 @@ import graphql.schema.idl.TypeRuntimeWiring;
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getSafeClass;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
 
 /**
  * The representation of a GraphQL Schema.
