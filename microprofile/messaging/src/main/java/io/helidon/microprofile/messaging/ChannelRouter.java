@@ -189,12 +189,7 @@ class ChannelRouter {
     }
 
     private UniversalChannel getOrCreateChannel(String channelName) {
-        UniversalChannel universalChannel = channelMap.get(channelName);
-        if (universalChannel == null) {
-            universalChannel = new UniversalChannel(this);
-            channelMap.put(channelName, universalChannel);
-        }
-        return universalChannel;
+        return channelMap.computeIfAbsent(channelName, cn -> new UniversalChannel(this));
     }
 
     @SuppressWarnings("unchecked")
