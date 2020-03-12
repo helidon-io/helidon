@@ -31,7 +31,9 @@ import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
+import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.Person;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Name;
@@ -136,49 +138,9 @@ public class SimpleQueriesWithArgs {
         return enum1.name();
     }
 
-    // Currently doesn't work as Car Input should also create Vehicle Input
-    //    @Query
-    //    public boolean canFindCar(@Name("carToFind") Car car) {
-    //        return false;
-    //    }
-    //
-
-    public static class SimpleContact {
-        private String id;
-        private String name;
-        private int age;
-
-        public SimpleContact(String id, String name, int age) {
-            this.id = id;
-            this.name = name;
-            this.age = age;
-        }
-
-        public SimpleContact() {
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public int getAge() {
-            return age;
-        }
-
-        public void setAge(int age) {
-            this.age = age;
-        }
+    @Query("canFindContactRelationship")
+    public boolean getContactRelationships(@Name("relationship") ContactRelationship relationship) {
+        return false;
     }
+
 }

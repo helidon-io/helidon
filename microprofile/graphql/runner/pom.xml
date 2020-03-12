@@ -103,6 +103,7 @@
                             <arguments>
                                 <argument>-classpath</argument>
                                 <classpath/>
+                                <argument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005</argument>
                                 <argument>io.helidon.microprofile.cdi.Main</argument>
                             </arguments>
                         </configuration>

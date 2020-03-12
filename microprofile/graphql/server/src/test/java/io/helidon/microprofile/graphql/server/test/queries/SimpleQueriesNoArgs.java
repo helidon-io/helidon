@@ -32,6 +32,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
@@ -93,6 +94,14 @@ public class SimpleQueriesNoArgs {
         return new TypeWithIDs(1, 2, "string", 10L, 10L, UUID.randomUUID());
     }
 
+    @Query
+    SimpleContactWithSelf returnSimpleContactWithSelf() {
+        SimpleContactWithSelf spouse = new SimpleContactWithSelf("c1", "contact1", 30);
+        SimpleContactWithSelf contact = new SimpleContactWithSelf("c2", "contact2", 33);
+        contact.setSpouse(spouse);
+        return contact;
+    }
+    
     @Query
     @Name("getMultiLevelList")
     public MultiLevelListsAndArrays returnLists() {

@@ -17,7 +17,7 @@
 package io.helidon.microprofile.graphql.server.test.queries;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -29,7 +29,7 @@ import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
- * Class that holds simple query definitions with no-argument.
+ * Class that holds array, {@link java.util.Collection} and {@link java.util.Map} queries.
  */
 @GraphQLApi
 @ApplicationScoped
@@ -48,7 +48,7 @@ public class ArrayAndListQueries {
     }
 
     @Query("returnListOfStringArrays")
-    public List<String[]> getListOfStringArrays() {
+    public Collection<String[]> getListOfStringArrays() {
         ArrayList<String[]> arrayList = new ArrayList<>();
         arrayList.add(new String[] { "one", "two"});
         arrayList.add(new String[] { "three", "four", "five"});

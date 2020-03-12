@@ -237,6 +237,18 @@ public class SchemaGeneratorHelper {
     }
 
     /**
+     * Return true if the type type is a GraphQLType.
+     *
+     * @param type the type to check
+     * @return true if the type type is a GraphQLType
+     */
+    protected static boolean isGraphQLType(String type) {
+        return INT.equals(type) || FLOAT.equals(type)
+                || BOOLEAN.equals(type) || STRING.equals(type)
+                || ID.equals(type);
+    }
+
+    /**
      * Return the field name after checking both the {@link Name} and {@link JsonbProperty} annotations are present on the field
      * name.<p> Name will take precedence if both are specified.
      *

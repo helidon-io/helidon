@@ -39,11 +39,14 @@ import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
+import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
@@ -194,6 +197,13 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testIds() throws IOException {
         setupIndex(indexFileName, TypeWithIDs.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionResult result = executionContext.execute("query { hero }");
+    }
+
+    @Test
+    public void testSimpleContactWithSelf() throws IOException {
+        setupIndex(indexFileName, SimpleContactWithSelf.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
         ExecutionResult result = executionContext.execute("query { hero }");
     }
@@ -395,6 +405,34 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(arrayList, is(notNullValue()));
         // since its random data we can't be sure if anyone was created in MA
         assertThat(arrayList.size() >= 0, is(true));
+
+        result = executionContext.execute(
+                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
+        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53);
+        ContactRelationship relationship = new ContactRelationship(contact1, contact2, "married");
+
+        String json = "relationship: {"
+                + "   contact1: " + getContactAsQueryInput(contact1)
+                + "   contact2: " + getContactAsQueryInput(contact2)
+                + "   relationship: \"married\""
+                + "}";
+        result = executionContext.execute("query { canFindContactRelationship( "
+                                                  + json +
+                                                  ") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+    }
+
+    private String getContactAsQueryInput(SimpleContact contact) {
+        return new StringBuilder("{")
+                .append("id: \"").append(contact.getId()).append("\"")
+                .append("name: \"").append(contact.getName()).append("\"")
+                .append("age: ").append(contact.getAge())
+                .append("} ").toString();
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {

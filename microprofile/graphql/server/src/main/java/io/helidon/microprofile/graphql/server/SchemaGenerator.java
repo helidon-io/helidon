@@ -65,6 +65,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSi
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getTypeName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isArrayType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isEnumClass;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isValidIDType;
 
 /**
@@ -196,7 +197,7 @@ public class SchemaGenerator {
 
             setUnresolvedTypes.remove(returnType);
             try {
-                LOGGER.info("Checking unresolved type " + returnType);
+                //LOGGER.info("Checking unresolved type " + returnType);
                 String simpleName = getSimpleName(returnType);
 
                 SchemaScalar scalar = getScalar(returnType);
@@ -279,7 +280,7 @@ public class SchemaGenerator {
             type.addFieldDefinition(fd);
 
             if (!ID.equals(valueTypeName) && valueTypeName.equals(fd.getReturnType())) {
-                LOGGER.info("Adding unresolved type of " + valueTypeName + " for method "
+                LOGGER.info("In generateTpye: Adding unresolved type of " + valueTypeName + " for method "
                                     + discoveredMethod.getName() + " on type " + realReturnType);
                 // value class was unchanged meaning we need to resolve
                 setUnresolvedTypes.add(valueTypeName);
@@ -326,30 +327,36 @@ public class SchemaGenerator {
 
                         // if this new Type contains any types, then they must also have
                         // InputTypes created for them if they are not enums or scalars
-                        //                        Set<SchemaInputType> setInputTypes = new HashSet<>();
-                        //                        setInputTypes.add(inputType);
-                        //
-                        //                        while (setInputTypes.size() > 0) {
-                        //                            SchemaInputType type = setInputTypes.iterator().next();
-                        //                            setInputTypes.remove(type);
-                        //                            // check each field definition to see if any return types are unknown
-                        //                           InputTypes
-                        //                            type.getFieldDefinitions().forEach(fdi -> {
-                        //                                String fdReturnType = fdi.getReturnType();
-                        //                                String fdTypeName = getGraphQLType(fdReturnType);
-                        //                                if (fdTypeName.equals(fdi.getReturnType())) {
-                        //                                    // has not changed so must be either an unknown input type or
-                        //                                   Scalar or enum
-                        //                                    if (getScalar(fdReturnType) != null || isEnumClass(fdReturnType)) {
-                        //                                        setUnresolvedTypes.add(fdReturnType);
-                        //                                    }
-                        //                                    else {
-                        //                                        SchemaInputType newInputType = generateType(fdReturnType)
-                        //                                       .createInputType("Input");
-                        //                                    }
-                        //                                }
-                        //                            });
-                        //                        }
+                        Set<SchemaInputType> setInputTypes = new HashSet<>();
+                        setInputTypes.add(inputType);
+
+                        // setInputTypes contains all InputTypes that need to be checked for types other than
+                        // Enum, Scalar or GraphQL Type
+                        while (setInputTypes.size() > 0) {
+                            SchemaInputType type = setInputTypes.iterator().next();
+                            setInputTypes.remove(type);
+                            // check each field definition to see if any return types are unknownInputTypes
+                            for (SchemaFieldDefinition fdi : type.getFieldDefinitions()) {
+                                String fdReturnType = fdi.getReturnType();
+
+                                if (!isGraphQLType(fdReturnType)) {
+                                    // must be either an unknown input type, Scalar or Enum
+                                    if (getScalar(fdReturnType) != null || isEnumClass(fdReturnType)) {
+                                        setUnresolvedTypes.add(fdReturnType);
+                                    } else {
+                                        // must be a type, create a new input Type but do not add it to
+                                        // the schema if it already exists 
+                                        SchemaInputType newInputType = generateType(fdReturnType)
+                                                .createInputType("Input");
+                                        if (!schema.containsInputTypeWithName(newInputType.getName())) {
+                                            schema.addInputType(newInputType);
+                                            setInputTypes.add(newInputType);
+                                        }
+                                        fdi.setReturnType(newInputType.getName());
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 fd.addArgument(a);

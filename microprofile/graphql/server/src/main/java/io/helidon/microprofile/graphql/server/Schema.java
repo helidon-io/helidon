@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import graphql.GraphQLException;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
@@ -235,6 +236,12 @@ public class Schema
         // register the scalars
         getScalars().forEach(s -> builder.scalar(s.getGraphQLScalarType()));
 
+        // register extended scalars
+        builder.scalar(ExtendedScalars.DateTime)
+                .scalar(ExtendedScalars.Date)
+                .scalar(ExtendedScalars.Object)
+                .scalar(ExtendedScalars.Time);
+
         // we should now have the query runtime binding
         builder.type(typeRuntimeBuilder);
 
@@ -307,6 +314,16 @@ public class Schema
      */
     public boolean containsTypeWithName(String type) {
         return listSchemaTypes.stream().filter(t -> t.getName().equals(type)).count() == 1;
+    }
+
+    /**
+     * Returns true of the {@link SchemaInputType} with the the given name is present for this {@link Schema}.
+     *
+     * @param type type name to search for
+     * @return true if the type name is contained within the input type list
+     */
+    public boolean containsInputTypeWithName(String type) {
+        return listInputTypes.stream().filter(t -> t.getName().equals(type)).count() == 1;
     }
 
     /**
