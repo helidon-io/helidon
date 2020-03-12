@@ -162,7 +162,7 @@ public final class JavaxElPolicyExecutor implements PolicyExecutor {
                     expressionFactory = ExpressionFactory.newInstance();
                 } catch (ELException e) {
                     throw new SecurityException("Failed to configure ABAC Policy support for Jakarta Expression Language,"
-                                                        + " no implementation found through service loader.");
+                                                        + " no implementation found through service loader.", e);
                 }
             }
             return new JavaxElPolicyExecutor(this);
