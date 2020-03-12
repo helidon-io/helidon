@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -35,6 +36,19 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> item type
  */
 public interface Single<T> extends Subscribable<T> {
+
+    /**
+     * Call the given supplier function for each individual downstream Subscriber
+     * to return a Flow.Publisher to subscribe to.
+     * @param supplier the callback to return a Flow.Publisher for each Subscriber
+     * @param <T> the element type of the sequence
+     * @return Multi
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    static <T> Single<T> defer(Supplier<? extends Single<? extends T>> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new SingleDefer<>(supplier);
+    }
 
     /**
      * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Mapper}.
