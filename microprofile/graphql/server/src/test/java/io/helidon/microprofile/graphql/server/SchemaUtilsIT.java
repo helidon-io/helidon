@@ -34,6 +34,7 @@ import graphql.ExecutionResult;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
+import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
@@ -126,7 +127,7 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
         SchemaUtils schemaUtils = new SchemaUtils();
         Schema schema = schemaUtils.generateSchema();
-        assertThat(schema.containsTypeWithName("MultiLevelListsAndArrays"), is(true));
+        assertThat(schema.containsTypeWithName("MultiMLevelListsAndArrays"), is(true));
         assertThat(schema.containsTypeWithName("Person"), is(true));
         assertThat(schema.containsScalarWithName("BigDecimal"), is(true));
         generateGraphQLSchema(schema);
@@ -250,11 +251,22 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         assertThat(value.getLongPrimitiveId(), is(10L));
         assertThat(value.getStringId(), is("string"));
         assertThat(value.getUuidId(), is(notNullValue()));
-        
-//        result = executionContext.execute("query { getMultiLevelList { listOfListOfBigDecimal } }");
-//        mapResults = getAndAssertResult(result);
-//        assertThat(mapResults.size(), is(1));
-//        assertThat(mapResults.get("getMultiLevelList"), is(notNullValue()));
+
+        result = executionContext.execute("query { getMultiLevelList { listOfListOfBigDecimal } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("getMultiLevelList"), is(notNullValue()));
+    }
+
+    @Test
+    public void testMultiLevelListsAndArraysQueries() throws IOException {
+        setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+
+        ExecutionResult result = executionContext.execute("query { getMultiLevelList { intMultiLevelArray } }");
+        Map<String, Object> mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+       // assertThat(mapResults.get("hero"), is("Luke"));
     }
 
     @Test
@@ -267,6 +279,13 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         Map<String, Object> mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("hero"), is("Luke"));
+
+        result = executionContext.execute("query { findLocalDates(numberOfValues: 10) }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("findLocalDates"), is(notNullValue()));
+        List<LocalDate> listLocalDate = (List<LocalDate>) mapResults.get("findLocalDates");
+        assertThat(listLocalDate.size(), is(10));
 
         result = executionContext.execute("query { canFindContact(contact: { id: \"10\" name: \"tim\" age: 52 }) }");
         mapResults = getAndAssertResult(result);
@@ -288,24 +307,6 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("findAPerson"), is(notNullValue()));
-
-        result = executionContext.execute(
-                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
-        mapResults = getAndAssertResult(result);
-        assertThat(mapResults.size(), is(1));
-        assertThat(mapResults.get("findPeopleFromState"), is(notNullValue()));
-
-        ArrayList<Map<String, Object>> arrayList = (ArrayList<Map<String, Object>>) mapResults.get("findPeopleFromState");
-        assertThat(arrayList, is(notNullValue()));
-        // since its random data we can't be sure if anyone was created in MA
-        assertThat(arrayList.size() >= 0, is(true));
-
-        result = executionContext.execute("query { findLocalDates(numberOfValues: 10) }");
-        mapResults = getAndAssertResult(result);
-        assertThat(mapResults.size(), is(1));
-        assertThat(mapResults.get("findLocalDates"), is(notNullValue()));
-        List<LocalDate> listLocalDate = (List<LocalDate>) mapResults.get("findLocalDates");
-        assertThat(listLocalDate.size(), is(10));
 
         result = executionContext.execute("query { findEnums(arg0: S) }");
         mapResults = getAndAssertResult(result);
@@ -355,6 +356,15 @@ public class SchemaUtilsIT extends AbstractGraphQLTest {
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnUUIDAsId"), is(uuid.toString()));
 
+        result = executionContext.execute(
+                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("findPeopleFromState"), is(notNullValue()));
+        ArrayList<Map<String, Object>> arrayList = (ArrayList<Map<String, Object>>) mapResults.get("findPeopleFromState");
+        assertThat(arrayList, is(notNullValue()));
+        // since its random data we can't be sure if anyone was created in MA
+        assertThat(arrayList.size() >= 0, is(true));
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {

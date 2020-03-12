@@ -18,7 +18,7 @@ package io.helidon.microprofile.graphql.server.test.queries;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

@@ -401,6 +401,7 @@ public class SchemaUtilsHelper {
 
     /**
      * Indicates if the class is an array type.
+     *
      * @param clazz the class name retrieved via Class.getName()
      * @return true if the class is an array type
      */
@@ -432,21 +433,68 @@ public class SchemaUtilsHelper {
      * <pre>List<List<String>></String></pre>
      *
      * @param genericReturnType the {@link java.lang.reflect.Type}
-     * @param index the index to use, either 0 for {@link Collection} or 1 for {@link Map}
+     * @param index             the index to use, either 0 for {@link Collection} or 1 for {@link Map}
      * @return the inner most root type
      */
-    protected static String getRootTypeName(java.lang.reflect.Type genericReturnType, int index) {
+    protected static RootTypeResult getRootTypeName(java.lang.reflect.Type genericReturnType, int index) {
+        int level = 1;
         if (genericReturnType instanceof ParameterizedType) {
             ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
             // loop until we get the actual return type in the case we have List<List<Type>>
             java.lang.reflect.Type actualTypeArgument = paramReturnType.getActualTypeArguments()[index];
             while (actualTypeArgument instanceof ParameterizedType) {
+                level++;
                 ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
                 actualTypeArgument = parameterizedType2.getActualTypeArguments()[index];
             }
-            return ((Class<?>) actualTypeArgument).getName();
+            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level);
         } else {
-            return ((Class<?>) genericReturnType).getName();
+            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level);
+        }
+    }
+
+    /**
+     * Represents a result for the method getRootTypeName.
+     */
+    public static class RootTypeResult {
+
+        /**
+         * The root type of the {@link Collection} or {@link Map}.
+         */
+        private final String rootTypeName;
+
+        /**
+         * The number of levels in total.
+         */
+        private final int levels;
+
+        /**
+         * Construct a root type result.
+         *
+         * @param rootTypeName root type of the {@link Collection} or {@link Map}
+         * @param levels       number of levels in total
+         */
+        public RootTypeResult(String rootTypeName, int levels) {
+            this.rootTypeName = rootTypeName;
+            this.levels = levels;
+        }
+
+        /**
+         * Return the root type of the {@link Collection} or {@link Map}.
+         *
+         * @return root type of the {@link Collection} or {@link Map}
+         */
+        public String getRootTypeName() {
+            return rootTypeName;
+        }
+
+        /**
+         * Return the number of levels in total.
+         *
+         * @return the number of levels in total
+         */
+        public int getLevels() {
+            return levels;
         }
     }
 }

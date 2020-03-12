@@ -61,7 +61,7 @@ public class TestDB {
     /**
      * Maximum number people to create.
      */
-    public static final int MAX_PEOPLE = 100;
+    public static final int MAX_PEOPLE = 1000;
 
     private final Map<Integer, Person> allPeople = new HashMap<>();
 

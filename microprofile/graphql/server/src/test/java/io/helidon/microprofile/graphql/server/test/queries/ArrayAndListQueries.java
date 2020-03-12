@@ -42,55 +42,12 @@ import org.eclipse.microprofile.graphql.Query;
  */
 @GraphQLApi
 @ApplicationScoped
-public class SimpleQueriesNoArgs {
+public class ArrayAndListQueries {
 
     @Inject
     private TestDB testDB;
 
-    public SimpleQueriesNoArgs() {
-    }
-
-    @Query
-    public String hero() {
-        return "R2-D2";
-    }
-
-    @Query
-    @Name("episodeCount")
-    public int getNumberOfEpisodes() {
-        return 9;
-    }
-
-    @Query
-    @JsonbProperty("numberOfStars")
-    public Long getTheNumberOfStars() {
-        return Long.MAX_VALUE;
-    }
-
-    @Query("badGuy")
-    public String getVillain() {
-        return "Darth Vader";
-    }
-
-    @Query("allPeople")
-    public Collection<Person> findAllPeople() {
-        return testDB.getAllPeople();
-    }
-
-    @Query
-    public LocalDate returnCurrentDate() {
-        return LocalDate.now();
-    }
-
-    @Query
-    @Name("returnMediumSize")
-    public EnumTestWithEnumName getEnumMedium() {
-        return EnumTestWithEnumName.M;
-    }
-
-    @Query
-    public TypeWithIDs returnTypeWithIDs() {
-        return new TypeWithIDs(1, 2, "string", 10L, 10L, UUID.randomUUID());
+    public ArrayAndListQueries() {
     }
 
     @Query

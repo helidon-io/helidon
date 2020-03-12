@@ -17,6 +17,7 @@
 package io.helidon.microprofile.graphql.server.test.types;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 
 import org.eclipse.microprofile.graphql.Type;
@@ -30,9 +31,10 @@ public class MultiLevelListsAndArrays {
     private List<List<BigDecimal>> listOfListOfBigDecimal;
     private List<List<Person>> listOfListOfPerson;
     private List<List<Integer>> listOfListOfInteger;
+    private List<String[]> listOfStringArrays;
+    private Collection<Collection<Collection<String>>> colColColString;
     private int[][] intMultiLevelArray;
     private Person[][] personMultiLevelArray;
-    private List<String[]> listOfStringArrays;
     private String[][][] multiStringArray;
 
     public MultiLevelListsAndArrays(List<List<BigDecimal>> listOfListOfBigDecimal,
@@ -41,7 +43,8 @@ public class MultiLevelListsAndArrays {
                                     int[][] intMultiLevelArray,
                                     Person[][] personMultiLevelArray,
                                     List<String[]> listOfStringArrays,
-                                    String[][][] multiStringArray) {
+                                    String[][][] multiStringArray,
+                                    Collection<Collection<Collection<String>>> colColColString) {
         this.listOfListOfBigDecimal = listOfListOfBigDecimal;
         this.listOfListOfPerson = listOfListOfPerson;
         this.listOfListOfInteger = listOfListOfInteger;
@@ -49,6 +52,7 @@ public class MultiLevelListsAndArrays {
         this.personMultiLevelArray = personMultiLevelArray;
         this.listOfStringArrays = listOfStringArrays;
         this.multiStringArray = multiStringArray;
+        this.colColColString = colColColString;
     }
 
     public List<List<BigDecimal>> getListOfListOfBigDecimal() {
@@ -105,5 +109,13 @@ public class MultiLevelListsAndArrays {
 
     public void setMultiStringArray(String[][][] multiStringArray) {
         this.multiStringArray = multiStringArray;
+    }
+
+    public Collection<Collection<Collection<String>>> getColColColString() {
+        return colColColString;
+    }
+
+    public void setColColColString(Collection<Collection<Collection<String>>> colColColString) {
+        this.colColColString = colColColString;
     }
 }

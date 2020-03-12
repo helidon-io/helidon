@@ -19,8 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -241,7 +240,7 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
         Map<String, SchemaUtils.DiscoveredMethod> mapMethods = SchemaUtils
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(9));
+        assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("multiStringArray"), "multiStringArray", STRING, null, true, false, false);
     }
 
@@ -298,15 +297,24 @@ public class SchemaUtilsTest extends AbstractGraphQLTest {
 
     private List<String[]> listStringArray = new ArrayList<>();
     private List<String> listString = new ArrayList<>();
-    private List<List<String>> listListString = new ArrayList<>();
+    private List<List<List<String>>> listListString = new ArrayList<>();
 
     @Test
     public void testGetRootType() throws NoSuchFieldException {
         ParameterizedType stringArrayListType = getParameterizedType("listStringArray");
-        assertThat(getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0), is(String.class.getName()));
+        SchemaUtilsHelper.RootTypeResult rootTypeName = getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0);
+        assertThat(rootTypeName.getRootTypeName(), is(String[].class.getName()));
+        assertThat(rootTypeName.getLevels(), is(1));
 
         ParameterizedType stringListType = getParameterizedType("listString");
-        assertThat(getRootTypeName(stringListType.getActualTypeArguments()[0], 0), is(String.class.getName()));
+                rootTypeName = getRootTypeName(stringListType.getActualTypeArguments()[0], 0);
+        assertThat(rootTypeName.getRootTypeName(), is(String.class.getName()));
+        assertThat(rootTypeName.getLevels(), is(1));
+
+        ParameterizedType listListStringType = getParameterizedType("listListString");
+                rootTypeName = getRootTypeName(listListStringType.getActualTypeArguments()[0], 0);
+        assertThat(rootTypeName.getRootTypeName(), is(String.class.getName()));
+        assertThat(rootTypeName.getLevels(), is(2));
     }
 
     private ParameterizedType getParameterizedType(String fieldName) throws NoSuchFieldException {
