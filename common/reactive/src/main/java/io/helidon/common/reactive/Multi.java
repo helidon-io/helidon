@@ -23,6 +23,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -239,6 +240,40 @@ public interface Multi<T> extends Subscribable<T> {
     default <A, R> Single<R> collectStream(java.util.stream.Collector<T, A, R> collector) {
         Objects.requireNonNull(collector, "collector is null");
         return new MultiCollectorPublisher<>(this, collector);
+    }
+
+    /**
+     * Combine subsequent items via a callback function and emit
+     * the final value result as a Single.
+     * <p>
+     *     If the upstream is empty, the resulting Single is also empty.
+     *     If the upstream contains only one item, the reducer function
+     *     is not invoked and the resulting Single will have only that
+     *     single item.
+     * </p>
+     * @param reducer the function called with the first value or the previous result,
+     *                the current upstream value and should return a new value
+     * @return Single
+     */
+    default Single<T> reduce(BiFunction<T, T, T> reducer) {
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduce<>(this, reducer);
+    }
+
+    /**
+     * Combine every upstream item with an accumulator value to produce a new accumulator
+     * value and emit the final accumulator value as a Single.
+     * @param supplier the function to return the initial accumulator value for each incoming
+     *                 Subscriber
+     * @param reducer the function that receives the current accumulator value, the current
+     *                upstream value and should return a new accumulator value
+     * @param <R> the accumulator and result type
+     * @return Single
+     */
+    default <R> Single<R> reduce(Supplier<? extends R> supplier, BiFunction<R, T, R> reducer) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduceFull<>(this, supplier, reducer);
     }
 
     /**
