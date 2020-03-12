@@ -1,6 +1,6 @@
 [
     {
-        "name": "io.helidon.integrations.cdi.hibernate.HibernateJtaPlatform",
+        "name": "io.helidon.integrations.cdi.hibernate.CDISEJtaPlatform",
         "allDeclaredFields": true,
         "allDeclaredMethods": true,
         "allPublicMethods": true,

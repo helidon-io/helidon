@@ -29,13 +29,13 @@ import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatfor
  * An {@link AbstractJtaPlatform} that is an {@link ApplicationScoped}
  * CDI managed bean that supplies {@link TransactionManager} and
  * {@link UserTransaction} instances that are supplied to it at
- * {@linkplain #HibernateJtaPlatform(TransactionManager, UserTransaction)
+ * {@linkplain #CDISEJtaPlatform(TransactionManager, UserTransaction)
  * construction time}.
  *
  * @see AbstractJtaPlatform
  */
 @ApplicationScoped
-public class HibernateJtaPlatform extends AbstractJtaPlatform {
+public class CDISEJtaPlatform extends AbstractJtaPlatform {
 
   private final TransactionManager transactionManager;
 
@@ -44,7 +44,7 @@ public class HibernateJtaPlatform extends AbstractJtaPlatform {
   private static final long serialVersionUID = 1L;
 
   /**
-   * Creates a new {@link HibernateJtaPlatform}.
+   * Creates a new {@link CDISEJtaPlatform}.
    *
    * @param transactionManager the {@link TransactionManager} to use;
    * must not be {@code null}
@@ -56,8 +56,8 @@ public class HibernateJtaPlatform extends AbstractJtaPlatform {
    * transactionManager} or {@code userTransaction} is {@code null}
    */
   @Inject
-  public HibernateJtaPlatform(final TransactionManager transactionManager,
-                              final UserTransaction userTransaction) {
+  public CDISEJtaPlatform(final TransactionManager transactionManager,
+                          final UserTransaction userTransaction) {
     super();
     this.transactionManager = Objects.requireNonNull(transactionManager);
     this.userTransaction = Objects.requireNonNull(userTransaction);
@@ -77,14 +77,14 @@ public class HibernateJtaPlatform extends AbstractJtaPlatform {
 
   /**
    * Returns the {@link UserTransaction} instance supplied at
-   * {@linkplain #HibernateJtaPlatform(TransactionManager,
+   * {@linkplain #CDISEJtaPlatform(TransactionManager,
    * UserTransaction) construction time}.
    *
    * <p>This method never returns {@code null}.</p>
    *
    * @return a non-{@code null} {@link UserTransaction}
    *
-   * @see #HibernateJtaPlatform(TransactionManager, UserTransaction)
+   * @see #CDISEJtaPlatform(TransactionManager, UserTransaction)
    */
   @Override
   protected UserTransaction locateUserTransaction() {
@@ -93,14 +93,14 @@ public class HibernateJtaPlatform extends AbstractJtaPlatform {
 
   /**
    * Returns the {@link TransactionManager} instance supplied at
-   * {@linkplain #HibernateJtaPlatform(TransactionManager,
+   * {@linkplain #CDISEJtaPlatform(TransactionManager,
    * UserTransaction) construction time}.
    *
    * <p>This method never returns {@code null}.</p>
    *
    * @return a non-{@code null} {@link TransactionManager}
    *
-   * @see #HibernateJtaPlatform(TransactionManager, UserTransaction)
+   * @see #CDISEJtaPlatform(TransactionManager, UserTransaction)
    */
   @Override
   protected TransactionManager locateTransactionManager() {

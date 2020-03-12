@@ -30,13 +30,13 @@ import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider;
  *
  * @see JtaPlatform
  *
- * @see HibernateJtaPlatform
+ * @see CDISEJtaPlatform
  */
-public final class HibernateJtaPlatformProvider implements JtaPlatformProvider {
+public final class CDISEJtaPlatformProvider implements JtaPlatformProvider {
   /**
-   * Creates a new {@link HibernateJtaPlatformProvider}.
+   * Creates a new {@link CDISEJtaPlatformProvider}.
    */
-  public HibernateJtaPlatformProvider() {
+  public CDISEJtaPlatformProvider() {
     super();
   }
 

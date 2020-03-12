@@ -19,8 +19,8 @@
  * href="http://hibernate.org/orm/" target="_parent">Hibernate</a> in
  * CDI.
  *
- * @see io.helidon.integrations.cdi.hibernate.HibernateJtaPlatformProvider
+ * @see io.helidon.integrations.cdi.hibernate.CDISEJtaPlatformProvider
  *
- * @see io.helidon.integrations.cdi.hibernate.HibernateJtaPlatform
+ * @see io.helidon.integrations.cdi.hibernate.CDISEJtaPlatform
  */
 package io.helidon.integrations.cdi.hibernate;
