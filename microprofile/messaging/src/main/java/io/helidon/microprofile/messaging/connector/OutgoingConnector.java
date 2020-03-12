@@ -17,8 +17,8 @@
 
 package io.helidon.microprofile.messaging.connector;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.messaging.channel.ChannelRouter;
