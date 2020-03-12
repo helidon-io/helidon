@@ -21,16 +21,18 @@ import java.util.Map;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
 
 /**
  * Various Json utilities.
  */
 public class JsonUtils {
-
+    
     /**
      * JSONB instance.
      */
-    private static final Jsonb JSONB = JsonbBuilder.create();
+    private static final Jsonb JSONB = JsonbBuilder.newBuilder().withConfig(
+            new JsonbConfig().withNullValues(true)).build();
 
     /**
      * Private constructor for utilities class.
@@ -64,6 +66,7 @@ public class JsonUtils {
 
     /**
      * Concert a Json object into the representative Java object.
+     *
      * @param json  the json
      * @param clazz {@link Class} to convert to
      * @return a new {@link Class} instance
