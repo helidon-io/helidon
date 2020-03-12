@@ -28,7 +28,8 @@ import javax.ws.rs.core.Application;
  */
 @ApplicationScoped
 @ApplicationPath("/graphql")
-public class GraphQLApplication extends Application {
+public class GraphQLApplication
+        extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         return Collections.singleton(

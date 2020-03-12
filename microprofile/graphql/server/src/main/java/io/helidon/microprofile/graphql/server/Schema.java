@@ -40,7 +40,8 @@ import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getSafeCl
 /**
  * The representation of a GraphQL Schema.
  */
-public class Schema implements SchemaGenerator {
+public class Schema
+        implements ElementGenerator {
 
     private static final Logger LOGGER = Logger.getLogger(Schema.class.getName());
 
@@ -200,17 +201,6 @@ public class Schema implements SchemaGenerator {
         }
 
         final TypeRuntimeWiring.Builder typeRuntimeBuilder = newTypeWiring(getQueryName());
-//
-//        queryType.getFieldDefinitions().forEach(fd -> {
-//            String cacheMapping = fd.getCacheMapping();
-//            if (fd.isArrayReturnType()) {
-//                typeRuntimeBuilder.dataFetcher(fd.getName(),
-//                                               DataFetcherUtils.newGenericFilterDataFetcher(cacheMapping));
-//            } else {
-//                typeRuntimeBuilder.dataFetcher(fd.getName(),
-//                                               DataFetcherUtils.newGenericSingleKeyDataFetcher(cacheMapping, "key"));
-//            }
-//        });
 
         // register a type resolver for any interfaces if we have at least one
         Set<SchemaType> setInterfaces = getTypes().stream().filter(SchemaType::isInterface).collect(Collectors.toSet());

@@ -25,8 +25,9 @@ import graphql.schema.DataFetcher;
 /**
  * The representation of a GraphQL Field Definition.
  */
-public class SchemaFieldDefinition extends AbstractDescriptiveElement
-        implements SchemaGenerator {
+public class SchemaFieldDefinition
+        extends AbstractDescriptiveElement
+        implements ElementGenerator {
     /**
      * Name of the field definition.
      */

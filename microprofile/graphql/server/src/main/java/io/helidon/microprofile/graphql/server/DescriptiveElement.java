@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.NEWLINE;
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.NOTHING;
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.QUOTE;
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.TRIPLE_QUOTE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.NEWLINE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.NOTHING;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.QUOTE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.TRIPLE_QUOTE;
 
 /**
  * Describes an element that has a description.

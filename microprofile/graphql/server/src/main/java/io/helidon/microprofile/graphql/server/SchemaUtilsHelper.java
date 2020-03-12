@@ -45,7 +45,7 @@ import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.OPEN_SQUARE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
 
 /**
  * Helper class for {@link SchemaUtils}.

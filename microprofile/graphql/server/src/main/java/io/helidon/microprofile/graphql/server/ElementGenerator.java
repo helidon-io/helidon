@@ -17,9 +17,10 @@
 package io.helidon.microprofile.graphql.server;
 
 /**
- * An interface to represent a element that can generate a schema.
+ * An interface representing a class which can generate
+ * a GraphQL representation of it's state.
  */
-public interface SchemaGenerator {
+public interface ElementGenerator {
     /**
      * Empty string.
      */
@@ -29,11 +30,6 @@ public interface SchemaGenerator {
      * Comma and space.
      */
     String COMMA_SPACE = ", ";
-
-    /**
-     * Comma.
-     */
-    String COMMA = ",";
 
     /**
      * Triple quote.

@@ -24,7 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,7 +52,6 @@ import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.SchemaUtils.DiscoveredMethod.READ;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.ID;
-import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.PRIMITIVE_ARRAY_MAP;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaUtilsHelper.getFieldName;
