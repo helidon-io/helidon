@@ -688,25 +688,21 @@ public class SchemaGenerator {
         ReturnType actualReturnType = new ReturnType();
         SchemaGeneratorHelper.RootTypeResult rootTypeResult = null;
         String returnClazzName = returnClazz.getName();
-        if (Collection.class.isAssignableFrom(returnClazz)) {
-            actualReturnType.setCollectionType(returnClazzName);
-
-            rootTypeResult = getRootTypeName(genericReturnType, 0);
-            String rootType = rootTypeResult.getRootTypeName();
-            // set the initial number of array levels to the levels of the root type
-            int arrayLevels = rootTypeResult.getLevels();
-
-            if (isArrayType(rootType)) {
-                actualReturnType.setReturnClass(getRootArrayClass(rootType));
-                arrayLevels += getArrayLevels(rootType);
-            } else {
-                actualReturnType.setReturnClass(rootType);
+        boolean isCollection = Collection.class.isAssignableFrom(returnClazz);
+        boolean isMap = Map.class.isAssignableFrom(returnClazz);
+        // deal with Collection or Map
+        if (isCollection || isMap) {
+            if (isCollection) {
+                actualReturnType.setCollectionType(returnClazzName);
             }
-            actualReturnType.setArrayLevels(arrayLevels);
-        } else if (Map.class.isAssignableFrom(returnClazz)) {
-            actualReturnType.setMap(true);
-            rootTypeResult = getRootTypeName(genericReturnType, 1);
+
+            actualReturnType.setMap(isMap);
+            // index is 0 for Collection and 1 for Map which assumes
+            // we are not interested in the map K, just the map V
+            rootTypeResult = getRootTypeName(genericReturnType, isCollection ? 0 : 1);
             String rootType = rootTypeResult.getRootTypeName();
+
+            // set the initial number of array levels to the levels of the root type
             int arrayLevels = rootTypeResult.getLevels();
 
             if (isArrayType(rootType)) {

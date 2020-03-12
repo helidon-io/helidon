@@ -16,23 +16,14 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
-import io.helidon.microprofile.graphql.server.test.types.Person;
-import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
@@ -53,22 +44,14 @@ public class ArrayAndListQueries {
     @Query
     @Name("getMultiLevelList")
     public MultiLevelListsAndArrays returnLists() {
-        List<List<BigDecimal>> listListBigDecimal = new ArrayList<>();
-        listListBigDecimal.add(Collections.singletonList(new BigDecimal(100)));
-        int[][] intMultiLevelArray = new int[2][];
-        intMultiLevelArray[0] = new int[] { 1, 2, 3 };
-        intMultiLevelArray[1] = new int[] { 4, 5, 6 };
-        Person[][] personMultiLevelArray = new Person[3][];
-        personMultiLevelArray[0] = new Person[] { testDB.generatePerson(1), testDB.generatePerson(2)};
-        personMultiLevelArray[1] = new Person[] { testDB.generatePerson(3), testDB.generatePerson(4)};
-        List<String[]> listOfStringArrays = new ArrayList<>();
-        listOfStringArrays.add(new String[] {"one", "two", "three"});
-        listOfStringArrays.add(new String[] {"four", "five"});
-        String[][][] multiStringArray =  { { { "one", "two" }, { "three", "four" } }, { { "five", "six" }, { "seven", "eight" } } };
-        Collection<Collection<Collection<String>>> colColColString = new ArrayList<>();
-        colColColString.add(Collections.singletonList(Collections.singleton("a")));
+        return testDB.getMultiLevelListsAndArrays();
+    }
 
-        return new MultiLevelListsAndArrays(listListBigDecimal, null, null, intMultiLevelArray,
-                                            personMultiLevelArray, listOfStringArrays, multiStringArray, colColColString);
+    @Query("returnListOfStringArrays")
+    public List<String[]> getListOfStringArrays() {
+        ArrayList<String[]> arrayList = new ArrayList<>();
+        arrayList.add(new String[] { "one", "two"});
+        arrayList.add(new String[] { "three", "four", "five"});
+        return arrayList;
     }
 }

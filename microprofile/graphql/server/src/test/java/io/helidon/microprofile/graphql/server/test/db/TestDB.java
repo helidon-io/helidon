@@ -18,7 +18,9 @@ package io.helidon.microprofile.graphql.server.test.db;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import java.util.Random;
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.Address;
+import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 
 /**
@@ -75,8 +78,9 @@ public class TestDB {
 
     /**
      * Generate a random {@link Person}.
-     * @param personId  person id to use
-     * @return  a random {@link Person}
+     *
+     * @param personId person id to use
+     * @return a random {@link Person}
      */
     public Person generatePerson(int personId) {
         Address homeAddress = generateHomeAddress();
@@ -95,6 +99,27 @@ public class TestDB {
 
     public Collection<Person> getAllPeople() {
         return allPeople.values();
+    }
+
+    public MultiLevelListsAndArrays getMultiLevelListsAndArrays() {
+        List<List<BigDecimal>> listListBigDecimal = new ArrayList<>();
+        listListBigDecimal.add(Collections.singletonList(new BigDecimal(100)));
+        int[][] intMultiLevelArray = new int[2][];
+        intMultiLevelArray[0] = new int[] { 1, 2, 3 };
+        intMultiLevelArray[1] = new int[] { 4, 5, 6 };
+        Person[][] personMultiLevelArray = new Person[3][];
+        personMultiLevelArray[0] = new Person[] { generatePerson(1), generatePerson(2) };
+        personMultiLevelArray[1] = new Person[] { generatePerson(3), generatePerson(4) };
+        List<String[]> listOfStringArrays = new ArrayList<>();
+        listOfStringArrays.add(new String[] { "one", "two", "three" });
+        listOfStringArrays.add(new String[] { "four", "five" });
+        String[][][] multiStringArray = { { { "one", "two" }, { "three", "four" } },
+                { { "five", "six" }, { "seven", "eight" } } };
+        Collection<Collection<Collection<String>>> colColColString = new ArrayList<>();
+        colColColString.add(Collections.singletonList(Collections.singleton("a")));
+
+        return new MultiLevelListsAndArrays(listListBigDecimal, null, null, intMultiLevelArray,
+                                            personMultiLevelArray, listOfStringArrays, multiStringArray, colColColString);
     }
 
     /**

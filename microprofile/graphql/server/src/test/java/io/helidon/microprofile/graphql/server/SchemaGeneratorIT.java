@@ -259,6 +259,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testMultiLevelListsAndArraysQueries() throws IOException {
         setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
@@ -266,7 +267,36 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         ExecutionResult result = executionContext.execute("query { getMultiLevelList { intMultiLevelArray } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
-       // assertThat(mapResults.get("hero"), is("Luke"));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("getMultiLevelList");
+        ArrayList<ArrayList<Integer>> intArrayList = (ArrayList<ArrayList<Integer>>) mapResults2.get("intMultiLevelArray");
+        assertThat(intArrayList, is(notNullValue()));
+        ArrayList<Integer> integerArrayList1 = intArrayList.get(0);
+        assertThat(integerArrayList1, is(notNullValue()));
+        assertThat(integerArrayList1.contains(1), is(true));
+        assertThat(integerArrayList1.contains(2), is(true));
+        assertThat(integerArrayList1.contains(3), is(true));
+
+        ArrayList<Integer> integerArrayList2 = intArrayList.get(1);
+        assertThat(integerArrayList2, is(notNullValue()));
+        assertThat(integerArrayList2.contains(4), is(true));
+        assertThat(integerArrayList2.contains(5), is(true));
+        assertThat(integerArrayList2.contains(6), is(true));
+
+        result = executionContext.execute("query { returnListOfStringArrays }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        ArrayList<ArrayList<String>> stringArrayList = (ArrayList<ArrayList<String>>) mapResults.get("returnListOfStringArrays");
+        assertThat(stringArrayList, is(notNullValue()));
+
+        List<String> stringList1 = stringArrayList.get(0);
+        assertThat(stringList1, is(notNullValue()));
+        assertThat(stringList1.contains("one"), is(true));
+        assertThat(stringList1.contains("two"), is(true));
+        List<String> stringList2 = stringArrayList.get(1);
+        assertThat(stringList2, is(notNullValue()));
+        assertThat(stringList2.contains("three"), is(true));
+        assertThat(stringList2.contains("four"), is(true));
+        assertThat(stringList2.contains("five"), is(true));
     }
 
     @Test
