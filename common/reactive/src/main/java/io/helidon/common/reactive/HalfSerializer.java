@@ -123,14 +123,14 @@ final class HalfSerializer {
      *     Do not leak this instance!
      * </p>
      */
-    private static final TerminatedException TERMINATED_EXCEPTION = new TerminatedException();
+    private static final TerminatedThrowable TERMINATED_EXCEPTION = new TerminatedThrowable();
 
     /**
      * Indicates no further exceptions should be stored.
      */
-    static final class TerminatedException extends Throwable {
+    static final class TerminatedThrowable extends Throwable {
 
-        TerminatedException() {
+        TerminatedThrowable() {
             super("Terminated");
         }
 
