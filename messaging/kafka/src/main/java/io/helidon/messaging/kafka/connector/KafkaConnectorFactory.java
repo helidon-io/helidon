@@ -16,11 +16,6 @@
 
 package io.helidon.messaging.kafka.connector;
 
-import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.config.Config;
-import io.helidon.messaging.kafka.SimpleKafkaConsumer;
-import io.helidon.messaging.kafka.SimpleKafkaProducer;
-
 import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -30,6 +25,11 @@ import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.event.Observes;
+
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.Config;
+import io.helidon.messaging.kafka.SimpleKafkaConsumer;
+import io.helidon.messaging.kafka.SimpleKafkaProducer;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
