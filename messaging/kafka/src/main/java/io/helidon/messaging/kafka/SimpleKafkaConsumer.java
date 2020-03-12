@@ -305,10 +305,8 @@ public class SimpleKafkaConsumer<K, V> implements Closeable {
             if (backPressureBuffer.isEmpty()) {
                 try {
                     if(!ackFutures.isEmpty()) {
-                        CompletableFuture<Void> completable = null;
-                        while ((completable = ackFutures.poll()) != null) {
-                            completable.get();
-                        }
+                        CompletableFuture.allOf(ackFutures.toArray(new CompletableFuture[0])).get();
+                        ackFutures.clear();
                         consumer.commitSync();
                     }
                     consumer.poll(Duration.ofSeconds(1)).forEach(backPressureBuffer::add);
