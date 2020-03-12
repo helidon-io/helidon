@@ -25,8 +25,6 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -37,14 +35,14 @@ import org.reactivestreams.Publisher;
 @ApplicationScoped
 public class ProcessorMsg2MsgNoneAckBean implements AssertableTestBean {
 
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of("test-data", () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
@@ -64,7 +62,7 @@ public class ProcessorMsg2MsgNoneAckBean implements AssertableTestBean {
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
+        assertWithOrigin("Message should not be acked!", !ackFuture.isDone());
+        assertWithOrigin("Should be acked in consumer pre-process!", !completedBeforeProcessor.get());
     }
 }

@@ -18,19 +18,13 @@
 package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -44,15 +38,15 @@ import org.reactivestreams.Publisher;
 public class ProcessorPublisherBuilderMsg2MsgManualAckBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<String> receiveFuture = new CompletableFuture<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
@@ -69,18 +63,14 @@ public class ProcessorPublisherBuilderMsg2MsgManualAckBean implements Assertable
     @Incoming("inner-consumer")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
     public void receiveMessage(String msg) {
-        RESULT_DATA.add(msg);
+        receiveFuture.complete(msg);
     }
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertFalse(completedBeforeProcessor.get());
-        assertEquals(2, RESULT_DATA.size());
-        RESULT_DATA.forEach(s -> assertEquals(TEST_DATA, s));
+        await("Message not acked!", ackFuture);
+        var msg = await("Message not received in time!", receiveFuture);
+        assertWithOrigin("Shouldn't be acked before manual ack!", !completedBeforeProcessor.get());
+        assertWithOrigin("Payload corruption!", msg, is(TEST_DATA));
     }
 }

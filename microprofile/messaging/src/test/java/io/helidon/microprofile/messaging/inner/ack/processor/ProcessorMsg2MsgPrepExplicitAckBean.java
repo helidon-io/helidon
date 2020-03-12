@@ -19,17 +19,11 @@ package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -41,14 +35,14 @@ import org.reactivestreams.Publisher;
 @ApplicationScoped
 public class ProcessorMsg2MsgPrepExplicitAckBean implements AssertableTestBean {
 
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of("test-data", () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
@@ -68,11 +62,7 @@ public class ProcessorMsg2MsgPrepExplicitAckBean implements AssertableTestBean {
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertTrue(completedBeforeProcessor.get());
+        await("Message not acked!", ackFuture);
+        assertWithOrigin("Should be acked in pre-process!", completedBeforeProcessor.get());
     }
 }

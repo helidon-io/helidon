@@ -19,15 +19,10 @@ package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -55,10 +50,6 @@ public class IncomingMsgPostProcessImplicitAckBean implements AssertableTestBean
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
+        await("Message not acked!", ackFuture);
     }
 }

@@ -19,13 +19,10 @@ package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -37,24 +34,27 @@ import org.reactivestreams.Publisher;
 @ApplicationScoped
 public class IncomingMsgNoneAckBean implements AssertableTestBean {
 
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final CompletableFuture<Void> receiveFuture = new CompletableFuture<>();
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of("test-data", () -> {
+            ackFuture.complete(null);
+            return CompletableFuture.completedStage(null);
+        })).buildRs();
     }
 
     @Incoming("test-channel")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        completedBeforeProcessor.set(ackFuture.isDone());
+        receiveFuture.complete(null);
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
+        await("Consuming method not invoked!", receiveFuture);
+        assertWithOrigin("Message shouldn't be acked!", !ackFuture.isDone());
     }
 }

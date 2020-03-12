@@ -36,7 +36,7 @@ import org.reactivestreams.Subscriber;
 @ApplicationScoped
 public class SubscriberPublToSubsBean implements AssertableTestBean {
 
-    CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
 
     @Outgoing("subscriber-message")
     public Publisher<Message<String>> sourceForSubscriberMessage() {
@@ -48,13 +48,13 @@ public class SubscriberPublToSubsBean implements AssertableTestBean {
     @Incoming("subscriber-message")
     public Subscriber<Message<String>> subscriberOfMessages() {
         return ReactiveStreams.<Message<String>>builder()
-                .forEach(m -> RESULT_DATA.add(m.getPayload()))
+                .forEach(m -> resultData.add(m.getPayload()))
                 .build();
     }
 
     @Override
     public void assertValid() {
-        assertTrue(RESULT_DATA.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), RESULT_DATA.size());
+        assertTrue(resultData.containsAll(TEST_DATA));
+        assertEquals(TEST_DATA.size(), resultData.size());
     }
 }

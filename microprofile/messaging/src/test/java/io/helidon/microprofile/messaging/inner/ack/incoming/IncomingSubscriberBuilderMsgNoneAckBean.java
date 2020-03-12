@@ -18,14 +18,12 @@
 package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -39,9 +37,8 @@ import org.reactivestreams.Publisher;
 public class IncomingSubscriberBuilderMsgNoneAckBean implements AssertableTestBean {
 
     private static final String TEST_MSG = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private AtomicBoolean interceptedMessage = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final CompletableFuture<String> consumed = new CompletableFuture<>();
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
@@ -56,15 +53,14 @@ public class IncomingSubscriberBuilderMsgNoneAckBean implements AssertableTestBe
     public SubscriberBuilder<Message<String>, Void> receiveMessage() {
         return ReactiveStreams.<Message<String>>builder()
                 .forEach(m -> {
-                    completedBeforeProcessor.set(ackFuture.isDone());
-                    interceptedMessage.set(TEST_MSG.equals(m.getPayload()));
+                    consumed.complete(m.getPayload());
                 });
     }
 
     @Override
     public void assertValid() {
-        assertFalse(completedBeforeProcessor.get());
-        assertFalse(ackFuture.isDone());
-        assertTrue(interceptedMessage.get());
+        await("Message was not intercepted!", consumed);
+        assertWithOrigin("Shouldn't be acked!", !ackFuture.isDone());
+        assertWithOrigin("Payload corruption!", consumed.getNow(null), is(TEST_MSG));
     }
 }

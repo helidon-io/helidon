@@ -17,22 +17,19 @@
 
 package io.helidon.microprofile.messaging.inner.ack.processor;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
+import io.helidon.microprofile.messaging.AsyncTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -42,19 +39,19 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean {
+public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean, AsyncTestBean {
 
     public static final String TEST_DATA = "test-data";
     private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
     private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
-    private final CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<String> resultData = new CopyOnWriteArrayList<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
@@ -63,27 +60,23 @@ public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean {
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public CompletionStage<Message<String>> process(Message<String> msg) {
         completedBeforeProcessor.set(ackFuture.isDone());
-        return CompletableFuture.supplyAsync(() -> Message.of(msg.getPayload(), msg::ack));
+        return CompletableFuture.supplyAsync(() -> Message.of(msg.getPayload(), msg::ack), executor);
     }
 
     @Incoming("inner-consumer")
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        RESULT_DATA.add(msg.getPayload());
+        resultData.add(msg.getPayload());
         countDownLatch.countDown();
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.get(1, TimeUnit.SECONDS);
-            countDownLatch.await(2, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertTrue(completedBeforeProcessor.get());
-        assertEquals(1, RESULT_DATA.size());
-        RESULT_DATA.forEach(s -> assertEquals(TEST_DATA, s));
+        awaitShutdown();
+        await("Message not acked!", ackFuture);
+        await("Message not consumed!", countDownLatch);
+        assertWithOrigin("Should be acked in pre-process!", completedBeforeProcessor.get());
+        assertWithOrigin("Payload corruption!", resultData, is(List.of(TEST_DATA)));
     }
 }

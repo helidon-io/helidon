@@ -17,22 +17,22 @@
 
 package io.helidon.microprofile.messaging.inner.publisher;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
+import javax.enterprise.context.ApplicationScoped;
+
+import io.helidon.microprofile.messaging.AsyncTestBean;
+import io.helidon.microprofile.messaging.inner.AbstractShapeTestBean;
+
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
-import javax.enterprise.context.ApplicationScoped;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executors;
-
-import io.helidon.microprofile.messaging.inner.AbstractShapeTestBean;
-
 @ApplicationScoped
-public class PublisherPayloadV6Bean extends AbstractShapeTestBean {
+public class PublisherPayloadV6Bean extends AbstractShapeTestBean implements AsyncTestBean {
 
     @Outgoing("cs-string-payload")
     public Publisher<Message<String>> sourceForCsStringPayload() {
@@ -44,7 +44,7 @@ public class PublisherPayloadV6Bean extends AbstractShapeTestBean {
         return CompletableFuture.supplyAsync(() -> {
             testLatch.countDown();
             return "something";
-        }, Executors.newSingleThreadExecutor());
+        }, executor);
     }
-    
+
 }

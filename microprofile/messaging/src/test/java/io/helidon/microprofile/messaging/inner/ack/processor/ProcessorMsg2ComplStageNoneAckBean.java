@@ -40,15 +40,15 @@ import org.reactivestreams.Publisher;
 public class ProcessorMsg2ComplStageNoneAckBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 

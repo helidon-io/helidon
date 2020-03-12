@@ -19,14 +19,12 @@ package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -40,15 +38,15 @@ import org.reactivestreams.Publisher;
 public class ProcessorProcessorBuilderPayl2PaylNoneAckBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private AtomicReference<String> RESULT_DATA = new AtomicReference<>();
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<String> receiveFuture = new CompletableFuture<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
@@ -63,13 +61,15 @@ public class ProcessorProcessorBuilderPayl2PaylNoneAckBean implements Assertable
     @Incoming("inner-consumer")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
     public void receiveMessage(String msg) {
-        RESULT_DATA.set(msg);
+        receiveFuture.complete(msg);
     }
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
-        assertEquals(TEST_DATA, RESULT_DATA.get());
+        await("Consuming method not invoked!", receiveFuture);
+        var msg = await("Message not received in time!", receiveFuture);
+        assertWithOrigin("Message should not be acked!", !ackFuture.isDone());
+        assertWithOrigin("Shouldn't be acked!", !completedBeforeProcessor.get());
+        assertWithOrigin("Payload corruption!", msg, is(TEST_DATA));
     }
 }

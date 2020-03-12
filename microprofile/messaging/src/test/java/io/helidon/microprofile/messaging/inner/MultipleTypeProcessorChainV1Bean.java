@@ -49,7 +49,7 @@ public class MultipleTypeProcessorChainV1Bean implements CountableTestBean {
     @Incoming("inner-processor")
     @Outgoing("inner-processor-2")
     public PublisherBuilder<String> process(PublisherBuilder<String> msg) {
-        return msg.map(s -> s.toLowerCase());
+        return msg.map(String::toLowerCase);
     }
 
     @Incoming("inner-processor-2")

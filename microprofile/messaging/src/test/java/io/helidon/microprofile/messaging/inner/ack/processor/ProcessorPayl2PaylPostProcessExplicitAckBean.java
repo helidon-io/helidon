@@ -19,17 +19,11 @@ package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -67,11 +61,7 @@ public class ProcessorPayl2PaylPostProcessExplicitAckBean implements AssertableT
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertFalse(completedBeforeProcessor.get());
+        await("Message not acked!", ackFuture);
+        assertWithOrigin("Should be acked in post-process!", !completedBeforeProcessor.get());
     }
 }

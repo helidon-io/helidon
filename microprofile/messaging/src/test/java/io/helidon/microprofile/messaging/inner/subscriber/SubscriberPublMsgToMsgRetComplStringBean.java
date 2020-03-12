@@ -21,17 +21,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
+import io.helidon.microprofile.messaging.AsyncTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -41,9 +38,9 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
-public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestBean {
+public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestBean, AsyncTestBean {
 
-    CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
     private final CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
 
     @Outgoing("cs-string-message")
@@ -56,20 +53,21 @@ public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestB
     @Incoming("cs-string-message")
     public CompletionStage<String> consumeMessageAndReturnCompletionStageOfString(Message<String> message) {
         return CompletableFuture.supplyAsync(() -> {
-            RESULT_DATA.add(message.getPayload());
+            resultData.add(message.getPayload());
             countDownLatch.countDown();
             return "test";
-        }, Executors.newSingleThreadExecutor());
+        }, executor);
     }
 
     @Override
-    public void assertValid() {
+    public void assertValid(){
+        awaitShutdown();
         try {
             countDownLatch.await(2, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             fail(e);
         }
-        assertTrue(RESULT_DATA.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), RESULT_DATA.size());
+
+        assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
     }
 }

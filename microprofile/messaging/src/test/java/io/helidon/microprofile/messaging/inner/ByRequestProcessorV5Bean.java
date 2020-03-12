@@ -17,21 +17,22 @@
 
 package io.helidon.microprofile.messaging.inner;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+
+import javax.enterprise.context.ApplicationScoped;
+
+import io.helidon.microprofile.messaging.AsyncTestBean;
 import io.helidon.microprofile.messaging.CountableTestBean;
+
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 
-import javax.enterprise.context.ApplicationScoped;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-
 @ApplicationScoped
-public class ByRequestProcessorV5Bean implements CountableTestBean {
+public class ByRequestProcessorV5Bean implements CountableTestBean, AsyncTestBean {
 
     public static CountDownLatch testLatch = new CountDownLatch(10);
 
@@ -43,7 +44,7 @@ public class ByRequestProcessorV5Bean implements CountableTestBean {
     @Incoming("publisher-asynchronous-payload")
     @Outgoing("asynchronous-payload")
     public CompletionStage<String> payloadAsynchronous(int value) {
-        return CompletableFuture.supplyAsync(() -> Integer.toString(value + 1), Executors.newSingleThreadExecutor());
+        return CompletableFuture.supplyAsync(() -> Integer.toString(value + 1), executor);
     }
 
     @Incoming("asynchronous-payload")

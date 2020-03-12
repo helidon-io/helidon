@@ -19,17 +19,10 @@ package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -42,30 +35,23 @@ import org.reactivestreams.Publisher;
 public class IncomingMsgManualAckBean implements AssertableTestBean {
 
     private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of("test-data", () -> ackFuture)).buildRs();
+        return ReactiveStreams.of(Message.of("test-data", () -> {
+            ackFuture.complete(null);
+            return CompletableFuture.completedStage(null);
+        })).buildRs();
     }
 
     @Incoming("test-channel")
     @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
-        completedBeforeProcessor.set(ackFuture.isDone());
-
-        CompletionStage<Void> ack = msg.ack();
-        ack.toCompletableFuture().complete(null);
-        return CompletableFuture.completedFuture(null);
+        return msg.ack();
     }
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertFalse(completedBeforeProcessor.get());
+        await("Message not acked!", ackFuture);
     }
 }

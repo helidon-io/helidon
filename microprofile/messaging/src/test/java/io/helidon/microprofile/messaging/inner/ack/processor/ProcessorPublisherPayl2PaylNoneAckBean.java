@@ -17,14 +17,17 @@
 
 package io.helidon.microprofile.messaging.inner.ack.processor;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -39,15 +42,16 @@ import org.reactivestreams.Publisher;
 public class ProcessorPublisherPayl2PaylNoneAckBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CopyOnWriteArrayList<String> resultData = new CopyOnWriteArrayList<>();
+    private final CountDownLatch receivedAllLatch = new CountDownLatch(2);
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
@@ -62,14 +66,15 @@ public class ProcessorPublisherPayl2PaylNoneAckBean implements AssertableTestBea
     @Incoming("inner-consumer")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
     public void receiveMessage(String msg) {
-        RESULT_DATA.add(msg);
+        resultData.add(msg);
+        receivedAllLatch.countDown();
     }
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
-        assertEquals(2, RESULT_DATA.size());
-        RESULT_DATA.forEach(s -> assertEquals(TEST_DATA, s));
+        await("Message not received in time!", receivedAllLatch);
+        assertWithOrigin("Message should not be acked!", !ackFuture.isDone());
+        assertWithOrigin("Shouldn't be acked!", !completedBeforeProcessor.get());
+        assertWithOrigin("Payload corruption!", resultData, is(List.of(TEST_DATA, TEST_DATA)));
     }
 }

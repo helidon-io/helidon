@@ -67,11 +67,7 @@ public class ProcessorPayl2PaylPostProcessImplicitAckBean implements AssertableT
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertFalse(completedBeforeProcessor.get());
+        await("Message not acked!", ackFuture);
+        assertWithOrigin("Should be acked in post-process!", !completedBeforeProcessor.get());
     }
 }

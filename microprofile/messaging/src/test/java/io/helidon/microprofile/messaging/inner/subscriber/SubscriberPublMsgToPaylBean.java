@@ -23,8 +23,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -35,7 +34,7 @@ import org.reactivestreams.Publisher;
 @ApplicationScoped
 public class SubscriberPublMsgToPaylBean implements AssertableTestBean {
 
-    CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
 
     @Outgoing("void-payload")
     public Publisher<Message<String>> sourceForVoidPayload() {
@@ -46,12 +45,11 @@ public class SubscriberPublMsgToPaylBean implements AssertableTestBean {
 
     @Incoming("void-payload")
     public void consumePayload(String payload) {
-        RESULT_DATA.add(payload);
+        resultData.add(payload);
     }
 
     @Override
     public void assertValid() {
-        assertTrue(RESULT_DATA.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), RESULT_DATA.size());
+        assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
     }
 }

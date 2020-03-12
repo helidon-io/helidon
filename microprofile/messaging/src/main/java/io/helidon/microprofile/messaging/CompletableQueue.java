@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 
@@ -32,7 +33,7 @@ import java.util.function.BiConsumer;
  */
 class CompletableQueue<T> {
 
-    private static final long MAX_QUEUE_SIZE = 1024;
+    private static final long MAX_QUEUE_SIZE = 2048;
     private final ReentrantLock queueLock = new ReentrantLock();
     private final LinkedList<Item<T>> queue = new LinkedList<>();
     private long size = 0;
@@ -75,6 +76,16 @@ class CompletableQueue<T> {
             queueLock.lock();
             queue.add(Item.create(future, metadata));
             if (++size > MAX_QUEUE_SIZE) {
+                // Last resort before killing the thread
+                emergencyBlock(200L);
+                tryFlush();
+            }
+            if (size > MAX_QUEUE_SIZE) {
+                var idx = new AtomicInteger();
+                System.out.println("First is " + queue.getFirst().getCompletableFuture());
+                queue.forEach(t -> {
+                    System.out.println(idx.incrementAndGet() + ">" + t.getCompletableFuture());
+                });
                 throw ExceptionUtils.createCompletableQueueOverflow(MAX_QUEUE_SIZE);
             }
             future.whenComplete((t, u) -> tryFlush());
@@ -107,11 +118,20 @@ class CompletableQueue<T> {
                     item.setValue(item.getCompletableFuture().get());
                     onEachComplete.accept(item, null);
                 }
+                return;
             } catch (InterruptedException | ExecutionException e) {
                 onEachComplete.accept(null, e);
             }
         } finally {
             queueLock.unlock();
+        }
+    }
+
+    private void emergencyBlock(long milis) {
+        try {
+            Thread.sleep(milis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
