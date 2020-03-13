@@ -41,6 +41,7 @@ import org.eclipse.microprofile.graphql.Enum;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
+import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
@@ -291,10 +292,14 @@ public class SchemaGeneratorHelper {
      */
     protected static String getMethodName(Method method) {
         Query queryAnnotation = method.getAnnotation(Query.class);
+        Mutation mutationAnnotation = method.getAnnotation(Mutation.class);
         Name nameAnnotation = method.getAnnotation(Name.class);
         JsonbProperty jsonbPropertyAnnotation = method.getAnnotation(JsonbProperty.class);
         if (queryAnnotation != null && !queryAnnotation.value().isBlank()) {
             return queryAnnotation.value();
+        }
+        if (mutationAnnotation != null && !mutationAnnotation.value().isBlank()) {
+            return mutationAnnotation.value();
         }
         if (nameAnnotation != null && !nameAnnotation.value().isBlank()) {
             // Name annotation is specified so use this and don't bother checking JsonbProperty

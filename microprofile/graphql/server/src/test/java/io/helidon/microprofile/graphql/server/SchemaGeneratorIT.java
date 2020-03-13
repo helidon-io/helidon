@@ -34,9 +34,12 @@ import graphql.ExecutionResult;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
+import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
+import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
+import io.helidon.microprofile.graphql.server.test.queries.VoidQueries;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
@@ -56,12 +59,12 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Integration tests for {@link SchemaGeneratorTest}.
@@ -157,7 +160,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         Schema schema = schemaGenerator.generateSchema();
 
         assertThat(schema, is(notNullValue()));
-        assertThat(schema.getTypes().size(), is(5));
+        assertThat(schema.getTypes().size(), is(6));
         assertThat(schema.getTypeByName("Level0"), is(notNullValue()));
         assertThat(schema.getTypeByName("Level1"), is(notNullValue()));
         assertThat(schema.getTypeByName("Level2"), is(notNullValue()));
@@ -209,10 +212,22 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     }
 
     @Test
+    public void testVoidMutations() throws IOException {
+        setupIndex(indexFileName, VoidMutations.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(dummyContext));
+    }
+
+    @Test
+    public void testVoidQueries() throws IOException {
+        setupIndex(indexFileName, VoidQueries.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(dummyContext));
+    }
+
+    @Test
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
-        
+
         ExecutionResult result = executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
@@ -224,7 +239,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         result = executionContext.execute("query { dateAndTimePOJOQuery { zonedDateTime } }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
-        
+
         result = executionContext.execute("query { dateAndTimePOJOQuery { localDate } }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
@@ -240,7 +255,40 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    @Disabled
+    public void testSimpleMutations() throws IOException {
+        setupIndex(indexFileName, SimpleMutations.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+
+        ExecutionResult result = executionContext.execute("mutation { createNewContact { id name age } }");
+        Map<String, Object> mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("createNewContact");
+
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("id"), is(notNullValue()));
+        assertThat(mapResults2.get("name"), is(notNullValue()));
+        assertThat(((String) mapResults2.get("name")).startsWith("Name"), is(true));
+        assertThat(mapResults2.get("age"), is(notNullValue()));
+
+        result = executionContext.execute("mutation { createContactWithName(name: \"tim\") { id name age } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        mapResults2 = (Map<String, Object>) mapResults.get("createContactWithName");
+
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("id"), is(notNullValue()));
+        assertThat(mapResults2.get("name"), is("tim"));
+        ;
+        assertThat(mapResults2.get("age"), is(notNullValue()));
+
+        result = executionContext.execute("mutation { echoStringValue(value: \"echo\") }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("echoStringValue"), is("echo"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
@@ -469,7 +517,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema, is(notNullValue()));
-        assertThat(schema.getTypes().size(), is(5));
+        assertThat(schema.getTypes().size(), is(6));
         assertThat(schema.getTypeByName("Vehicle"), is(notNullValue()));
         assertThat(schema.getTypeByName("Car"), is(notNullValue()));
         assertThat(schema.getTypeByName("Motorbike"), is(notNullValue()));

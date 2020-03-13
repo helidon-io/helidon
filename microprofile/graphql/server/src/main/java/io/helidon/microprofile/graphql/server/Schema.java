@@ -239,11 +239,11 @@ public class Schema
             builder.scalar(s.getGraphQLScalarType());
         });
 
-//        // register extended scalars
-//        builder.scalar(ExtendedScalars.DateTime)
-//                .scalar(ExtendedScalars.Date)
-//                .scalar(ExtendedScalars.Object)
-//                .scalar(ExtendedScalars.Time);
+        //        // register extended scalars
+        //        builder.scalar(ExtendedScalars.DateTime)
+        //                .scalar(ExtendedScalars.Date)
+        //                .scalar(ExtendedScalars.Object)
+        //                .scalar(ExtendedScalars.Time);
 
         // we should now have the query runtime binding
         builder.type(typeRuntimeBuilder);
@@ -446,5 +446,14 @@ public class Schema
      */
     public String getQueryName() {
         return queryName;
+    }
+
+    /**
+     * Return the mutation name.
+     *
+     * @return the mutation name.
+     */
+    public String getMutationName() {
+        return mutationName;
     }
 }

@@ -102,7 +102,7 @@ public class SimpleQueriesNoArgs {
     }
 
     @Query
-    SimpleContactWithSelf returnSimpleContactWithSelf() {
+    public SimpleContactWithSelf returnSimpleContactWithSelf() {
         SimpleContactWithSelf spouse = new SimpleContactWithSelf("c1", "contact1", 30);
         SimpleContactWithSelf contact = new SimpleContactWithSelf("c2", "contact2", 33);
         contact.setSpouse(spouse);

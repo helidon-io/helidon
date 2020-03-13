@@ -25,12 +25,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.Address;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 
 /**
  * An injectable datasource for integration tests.
@@ -120,6 +122,14 @@ public class TestDB {
 
         return new MultiLevelListsAndArrays(listListBigDecimal, null, null, intMultiLevelArray,
                                             personMultiLevelArray, listOfStringArrays, multiStringArray, colColColString);
+    }
+
+    public SimpleContact createRandomContact() {
+        return new SimpleContact(UUID.randomUUID().toString(), "Name-" + RANDOM.nextInt(10000), RANDOM.nextInt(100) + 1);
+    }
+
+    public SimpleContact createContactWithName(String name) {
+        return new SimpleContact(UUID.randomUUID().toString(), name, RANDOM.nextInt(100) + 1);
     }
 
     /**

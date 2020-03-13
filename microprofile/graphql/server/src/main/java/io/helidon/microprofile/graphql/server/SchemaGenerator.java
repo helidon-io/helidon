@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,11 +46,13 @@ import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
+import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.READ;
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
@@ -72,6 +75,21 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isVal
  * Various utilities for generating {@link Schema}s from classes.
  */
 public class SchemaGenerator {
+
+    /**
+     * Constant "is".
+     */
+    private static final String IS = "is";
+
+    /**
+     * Constant "get".
+     */
+    private static final String GET = "get";
+
+    /**
+     * Constant "set".
+     */
+    private static final String SET = "set";
 
     /**
      * Logger.
@@ -134,9 +152,11 @@ public class SchemaGenerator {
         setUnresolvedTypes.clear();
 
         SchemaType rootQueryType = new SchemaType(schema.getQueryName(), null);
+        SchemaType rootMutationType = new SchemaType(schema.getMutationName(), null);
 
+        // process any specific classes with the Input, Type or Interface annotations
         for (Class<?> clazz : clazzes) {
-            LOGGER.info("processing class " + clazz.getName());
+            LOGGER.log(Level.FINER, "Processing class " + clazz.getName());
             // only include interfaces and concrete classes/enums
             if (clazz.isInterface() || (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()))) {
                 // Discover Enum via annotation
@@ -183,12 +203,13 @@ public class SchemaGenerator {
 
                 // obtain top level query API's
                 if (clazz.isAnnotationPresent(GraphQLApi.class)) {
-                    addRootQueriesToSchema(rootQueryType, schema, clazz);
+                    processGraphQLApiAnnotations(rootQueryType, rootMutationType, schema, clazz);
                 }
             }
         }
 
         schema.addType(rootQueryType);
+        schema.addType(rootMutationType);
 
         // create any types that are still unresolved. e.g. an Order that contains OrderLine objects
         // we must also ensure if the unresolved type contains another unresolved type then we process it
@@ -290,20 +311,27 @@ public class SchemaGenerator {
     }
 
     /**
-     * Add all the queries in the annotated class to the root query defined by the {@link SchemaType}.
+     * Process a class with a {@link GraphQLApi} annotation.
      *
-     * @param schemaType the root query type
-     * @param clazz      {@link Class} to introspect
+     * @param rootQueryType    the root query type
+     * @param rootMutationType the root mutation type
+     * @param clazz            {@link Class} to introspect
      * @throws IntrospectionException
      */
     @SuppressWarnings("rawtypes")
-    private void addRootQueriesToSchema(SchemaType schemaType, Schema schema, Class<?> clazz)
+    private void processGraphQLApiAnnotations(SchemaType rootQueryType,
+                                              SchemaType rootMutationType,
+                                              Schema schema,
+                                              Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
         for (Map.Entry<String, DiscoveredMethod> entry : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
             DiscoveredMethod discoveredMethod = entry.getValue();
             Method method = discoveredMethod.getMethod();
 
             SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, getMethodName(method));
+            SchemaType schemaType = discoveredMethod.methodType == QUERY_TYPE
+                    ? rootQueryType
+                    : rootMutationType;
 
             // add all the arguments and check to see if they contain types that are not yet known
             for (SchemaArgument a : discoveredMethod.getArguments()) {
@@ -519,8 +547,14 @@ public class SchemaGenerator {
             throws IntrospectionException {
         Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
         for (Method m : getAllMethods(clazz)) {
-            if (m.getAnnotation(Query.class) != null) {
+            boolean isQuery = m.getAnnotation(Query.class) != null;
+            boolean isMutation = m.getAnnotation(Mutation.class) != null;
+            if (isMutation && isQuery) {
+                throw new RuntimeException("A class may not have both a Query and Mutation annotation");
+            }
+            if (isQuery || isMutation) {
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null);
+                discoveredMethod.setMethodType(isQuery ? QUERY_TYPE : MUTATION_TYPE);
                 mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
             }
         }
@@ -581,13 +615,15 @@ public class SchemaGenerator {
         String name = method.getName();
         String varName;
 
-        if (pd != null) {
+        if (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET)) {
             // this is a getter method
             String prefix = null;
-            if (name.startsWith("is")) {
-                prefix = "is";
-            } else if (name.startsWith("get")) {
-                prefix = "get";
+            if (name.startsWith(IS)) {
+                prefix = IS;
+            } else if (name.startsWith(GET)) {
+                prefix = GET;
+            } else if (name.startsWith(SET)) {
+                prefix = SET;
             }
 
             // remove the prefix and make first letter lowercase
@@ -612,6 +648,12 @@ public class SchemaGenerator {
 
         Class<?> returnClazz = method.getReturnType();
         String returnClazzName = returnClazz.getName();
+        if ("void".equals(returnClazzName)) {
+            String message = "void is not a valid return type for a Query or Mutation for method "
+                    + method.getName() + " on class " + clazz.getName();
+            LOGGER.warning(message);
+            throw new RuntimeException(message);
+        }
 
         if (pd != null) {
             boolean fieldHasIdAnnotation = false;
@@ -634,7 +676,6 @@ public class SchemaGenerator {
 
         DiscoveredMethod discoveredMethod = new DiscoveredMethod();
         discoveredMethod.setName(varName);
-        discoveredMethod.setMethodType(READ);
         discoveredMethod.setMethod(method);
 
         Parameter[] parameters = method.getParameters();
@@ -736,14 +777,14 @@ public class SchemaGenerator {
     public static class DiscoveredMethod {
 
         /**
-         * Indicates read method.
+         * Indicates query Type.
          */
-        public static final int READ = 0;
+        public static final int QUERY_TYPE = 0;
 
         /**
          * Indicates write method.
          */
-        public static final int WRITE = 1;
+        public static final int MUTATION_TYPE = 1;
 
         /**
          * Name of the discovered method.
