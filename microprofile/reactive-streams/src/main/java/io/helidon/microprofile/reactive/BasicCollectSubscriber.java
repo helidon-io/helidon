@@ -17,6 +17,9 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
@@ -111,5 +114,17 @@ implements Flow.Subscriber<T> {
             }
             completable.complete(r);
         }
+    }
+
+    // Workaround for SpotBugs, Flow classes should never get serialized
+    private void writeObject(ObjectOutputStream stream)
+            throws IOException {
+        stream.defaultWriteObject();
+    }
+
+    // Workaround for SpotBugs, Flow classes should never get serialized
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
     }
 }

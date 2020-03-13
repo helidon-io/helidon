@@ -17,6 +17,9 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -69,5 +72,17 @@ final class BasicFindFirstSubscriber<T> extends AtomicReference<Flow.Subscriptio
             lazySet(SubscriptionHelper.CANCELED);
             completable.complete(Optional.empty());
         }
+    }
+
+    // Workaround for SpotBugs, Flow classes should never get serialized
+    private void writeObject(ObjectOutputStream stream)
+            throws IOException {
+        stream.defaultWriteObject();
+    }
+
+    // Workaround for SpotBugs, Flow classes should never get serialized
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
     }
 }
