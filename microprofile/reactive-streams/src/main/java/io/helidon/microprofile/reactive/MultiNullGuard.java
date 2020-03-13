@@ -17,11 +17,11 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.helidon.common.reactive.Multi;
 
 /**
  * Ensures the intermediate Subscriber throws {@link NullPointerException}
@@ -30,12 +30,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class MultiNullGuard<T> implements Multi<T> {
 
-    final Flow.Publisher<T> source;
-    
+    private final Flow.Publisher<T> source;
+
     MultiNullGuard(Flow.Publisher<T> source) {
         this.source = source;
     }
-    
+
     @Override
     public void subscribe(Flow.Subscriber<? super T> s) {
         source.subscribe(new NullGuard<>(s));
@@ -45,7 +45,7 @@ final class MultiNullGuard<T> implements Multi<T> {
 
         private static final long serialVersionUID = -5247348177689779682L;
 
-        final Flow.Subscriber<? super T> downstream;
+        private final Flow.Subscriber<? super T> downstream;
 
         NullGuard(Flow.Subscriber<? super T> downstream) {
             this.downstream = downstream;
@@ -74,9 +74,8 @@ final class MultiNullGuard<T> implements Multi<T> {
                 downstream.onSubscribe(s);
             } else {
                 s.cancel();
-                throw new IllegalStateException("Subscription already set!");
+                //throw new IllegalStateException("Subscription already set!");
             }
         }
-        
     }
 }

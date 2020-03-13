@@ -17,35 +17,37 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-
 import java.util.Objects;
-import java.util.concurrent.Flow.*;
+import java.util.concurrent.Flow.Processor;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.reactive.Multi;
 
 /**
  * A processor that once subscribed by the downstream and connected to the upstream,
  * relays signals between the two.
  * @param <T> the element type of the flow
  */
-final class DeferredProcessor<T>implements Multi<T>, Processor<T, T>, Subscription {
+final class DeferredProcessor<T> implements Multi<T>, Processor<T, T>, Subscription {
 
-    final AtomicBoolean once = new AtomicBoolean();
+    private final AtomicBoolean once = new AtomicBoolean();
 
-    final AtomicReference<Subscription> upstreamDeferred = new AtomicReference<>();
+    private final AtomicReference<Subscription> upstreamDeferred = new AtomicReference<>();
 
-    final AtomicReference<Subscription> upstreamActual = new AtomicReference<>();
+    private final AtomicReference<Subscription> upstreamActual = new AtomicReference<>();
 
-    final AtomicLong requested = new AtomicLong();
+    private final AtomicLong requested = new AtomicLong();
 
-    final AtomicReference<Subscriber<? super T>> downstream = new AtomicReference<>();
+    private final AtomicReference<Subscriber<? super T>> downstream = new AtomicReference<>();
 
-    final AtomicInteger wip = new AtomicInteger();
+    private final AtomicInteger wip = new AtomicInteger();
 
-    Throwable error;
+    private Throwable error;
 
     @Override
     public void onSubscribe(Subscription s) {
@@ -137,7 +139,7 @@ final class DeferredProcessor<T>implements Multi<T>, Processor<T, T>, Subscripti
             subscriber.onSubscribe(this);
             if (downstream.compareAndSet(null, subscriber)) {
                 Subscription s = upstreamActual.get();
-                if (s != null 
+                if (s != null
                         && s != SubscriptionHelper.CANCELED
                         && upstreamActual.compareAndSet(s, SubscriptionHelper.CANCELED)) {
                     SubscriptionHelper.deferredSetOnce(upstreamDeferred, requested, s);
@@ -198,7 +200,7 @@ final class DeferredProcessor<T>implements Multi<T>, Processor<T, T>, Subscripti
                 break;
             }
         }
-        
+
         SubscriptionHelper.cancel(upstreamActual);
         SubscriptionHelper.cancel(upstreamDeferred);
     }

@@ -17,13 +17,6 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-import org.eclipse.microprofile.reactive.streams.operators.spi.*;
-import org.reactivestreams.FlowAdapters;
-import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -32,6 +25,18 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import io.helidon.common.reactive.Multi;
+
+import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
+import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
+import org.eclipse.microprofile.reactive.streams.operators.spi.Stage;
+import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
+import org.eclipse.microprofile.reactive.streams.operators.spi.UnsupportedStageException;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
 /**
  * Implementation of {@link org.reactivestreams Reactive Streams} with operators
@@ -67,21 +72,22 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
 
     @SuppressWarnings("unchecked")
     <T> Publisher<T> buildPublisher(Iterable<Stage> stages) throws UnsupportedStageException {
-        return (Publisher<T>)build(stages, Mode.PUBLISHER);
+        return (Publisher<T>) build(stages, Mode.PUBLISHER);
     }
 
     @SuppressWarnings("unchecked")
     <T, R> Processor<T, R> buildProcessor(Iterable<Stage> stages) throws UnsupportedStageException {
-        return (Processor<T, R>)build(stages, Mode.PROCESSOR);
+        return (Processor<T, R>) build(stages, Mode.PROCESSOR);
     }
 
     @SuppressWarnings("unchecked")
     <T, R> SubscriberWithCompletionStage<T, R> buildSubscriber(Iterable<Stage> stages) throws UnsupportedStageException {
-        return (SubscriberWithCompletionStage<T, R>)build(stages, Mode.SUBSCRIBER);
+        return (SubscriberWithCompletionStage<T, R>) build(stages, Mode.SUBSCRIBER);
     }
+
     @SuppressWarnings("unchecked")
-    public <T> CompletionStage<T> buildCompletion(Iterable<Stage> stages) throws UnsupportedStageException {
-        return (CompletionStage<T>)build(stages, Mode.COMPLETION);
+    <T> CompletionStage<T> buildCompletion(Iterable<Stage> stages) throws UnsupportedStageException {
+        return (CompletionStage<T>) build(stages, Mode.COMPLETION);
     }
 
     /**
@@ -164,14 +170,14 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                 if (stage instanceof Stage.PublisherStage) {
                     requireNullSource(result, stage);
 
-                    Publisher publisher = ((Stage.PublisherStage)stage).getRsPublisher();
+                    Publisher publisher = ((Stage.PublisherStage) stage).getRsPublisher();
                     result = Multi.from(FlowAdapters.toFlowPublisher(publisher));
                     continue;
                 }
                 if (stage instanceof Stage.Of) {
                     requireNullSource(result, stage);
 
-                    Iterable iterable = ((Stage.Of)stage).getElements();
+                    Iterable iterable = ((Stage.Of) stage).getElements();
                     result = Multi.from(iterable);
                     continue;
                 }
@@ -179,12 +185,12 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                     if (result == null) {
                         requireNullFront(graphInlet, stage);
                         // act as a source
-                        Processor processor = ((Stage.ProcessorStage)stage).getRsProcessor();
+                        Processor processor = ((Stage.ProcessorStage) stage).getRsProcessor();
                         graphInlet = FlowAdapters.toFlowSubscriber(processor);
                         result = Multi.from(FlowAdapters.toFlowPublisher(processor));
                     } else {
                         // act as a middle operator
-                        Processor processor = ((Stage.ProcessorStage)stage).getRsProcessor();
+                        Processor processor = ((Stage.ProcessorStage) stage).getRsProcessor();
                         // FIXME should this be deferred for when the downstream actually subscribes?
                         result = new DeferredViaProcessor(result, FlowAdapters.toFlowProcessor(processor));
                     }
@@ -193,17 +199,17 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                 if (stage instanceof Stage.Failed) {
                     requireNullSource(result, stage);
 
-                    Throwable throwable = ((Stage.Failed)stage).getError();
+                    Throwable throwable = ((Stage.Failed) stage).getError();
                     result = Multi.error(throwable);
                     continue;
                 }
                 if (stage instanceof Stage.Concat) {
                     requireNullSource(result, stage);
-                    Graph g1 = ((Stage.Concat)stage).getFirst();
-                    Graph g2 = ((Stage.Concat)stage).getSecond();
+                    Graph g1 = ((Stage.Concat) stage).getFirst();
+                    Graph g2 = ((Stage.Concat) stage).getSecond();
                     result = Multi.concat(
-                            FlowAdapters.toFlowPublisher((Publisher)build(g1.getStages(), Mode.PUBLISHER)),
-                            FlowAdapters.toFlowPublisher((Publisher)build(g2.getStages(), Mode.PUBLISHER)));
+                            FlowAdapters.toFlowPublisher((Publisher) build(g1.getStages(), Mode.PUBLISHER)),
+                            FlowAdapters.toFlowPublisher((Publisher) build(g2.getStages(), Mode.PUBLISHER)));
                     continue;
                 }
                 if (stage instanceof Stage.FromCompletionStage) {
@@ -224,10 +230,11 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                         requireNullFront(graphInlet, stage);
                     }
 
-                    Flow.Subscriber s = FlowAdapters.toFlowSubscriber(((SubscriberWithCompletionStage)build(
+                    Flow.Subscriber s = FlowAdapters.toFlowSubscriber(((SubscriberWithCompletionStage) build(
                             coupled.getSubscriber().getStages(), Mode.SUBSCRIBER))
                             .getSubscriber());
-                    Multi f = Multi.from(FlowAdapters.toFlowPublisher((Publisher)build(coupled.getPublisher().getStages(), Mode.PUBLISHER)));
+                    Multi f = Multi.from(FlowAdapters.toFlowPublisher(
+                            (Publisher) build(coupled.getPublisher().getStages(), Mode.PUBLISHER)));
 
                     Flow.Processor processor = coupledBuildProcessor(s, f);
                     if (result == null) {
@@ -259,28 +266,28 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                 if (stage instanceof Stage.Filter) {
                     requireSource(result, stage);
 
-                    Predicate predicate = ((Stage.Filter)stage).getPredicate();
+                    Predicate predicate = ((Stage.Filter) stage).getPredicate();
                     result = result.filter(predicate);
                     continue;
                 }
                 if (stage instanceof Stage.DropWhile) {
                     requireSource(result, stage);
 
-                    Predicate predicate = ((Stage.DropWhile)stage).getPredicate();
+                    Predicate predicate = ((Stage.DropWhile) stage).getPredicate();
                     result = result.dropWhile(predicate);
                     continue;
                 }
                 if (stage instanceof Stage.Skip) {
                     requireSource(result, stage);
 
-                    long n = ((Stage.Skip)stage).getSkip();
+                    long n = ((Stage.Skip) stage).getSkip();
                     result = result.skip(n);
                     continue;
                 }
                 if (stage instanceof Stage.Limit) {
                     requireSource(result, stage);
 
-                    long n = ((Stage.Limit)stage).getLimit();
+                    long n = ((Stage.Limit) stage).getLimit();
                     result = result.limit(n);
                     continue;
                 }
@@ -293,7 +300,7 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                 if (stage instanceof Stage.TakeWhile) {
                     requireSource(result, stage);
 
-                    Predicate predicate = ((Stage.TakeWhile)stage).getPredicate();
+                    Predicate predicate = ((Stage.TakeWhile) stage).getPredicate();
                     result = result.takeWhile(predicate);
                     continue;
                 }
@@ -304,7 +311,7 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                     // FIXME dedicated concatMap
                     result = result.flatMap(v -> new MultiNullGuard<>(
                             FlowAdapters.toFlowPublisher(
-                                    (Publisher)build(((Graph)mapper.apply(v)).getStages(), Mode.PUBLISHER)
+                                    (Publisher) build(((Graph) mapper.apply(v)).getStages(), Mode.PUBLISHER)
                             )
                     ), 1, false, Flow.defaultBufferSize());
                     continue;
@@ -314,7 +321,7 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
 
                     Function mapper = ((Stage.FlatMapCompletionStage) stage).getMapper();
                     // FIXME dedicated concatMap
-                    result = result.flatMap(v -> Multi.from((CompletionStage)mapper.apply(v)), 1, false, 1);
+                    result = result.flatMap(v -> Multi.from((CompletionStage) mapper.apply(v)), 1, false, 1);
                     continue;
                 }
                 if (stage instanceof Stage.FlatMapIterable) {
@@ -349,13 +356,7 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                     requireSource(result, stage);
 
                     Function mapper = ((Stage.OnErrorResume) stage).getFunction();
-                    result = result.onErrorResumeWith(e -> {
-                        try {
-                            return Multi.singleton(mapper.apply(e));
-                        } catch (Throwable ex) {
-                            return Multi.error(ex);
-                        }
-                    });
+                    result = result.onErrorResume(mapper);
                     continue;
                 }
                 if (stage instanceof Stage.OnErrorResumeWith) {
@@ -363,14 +364,9 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
 
                     Function mapper = ((Stage.OnErrorResumeWith) stage).getFunction();
                     result = result.onErrorResumeWith(e -> {
-                        Graph g;
-                        try {
-                            g = (Graph) mapper.apply(e);
-                        } catch (Throwable ex) {
-                            return Multi.error(ex);
-                        }
+                        Graph g = (Graph) mapper.apply(e);
                         return FlowAdapters.toFlowPublisher(
-                                (Publisher)build(g.getStages(), Mode.PUBLISHER));
+                                (Publisher) build(g.getStages(), Mode.PUBLISHER));
                     });
                     continue;
                 }
@@ -392,7 +388,8 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
 
                         continue;
                     }
-                    throw new IllegalArgumentException("Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
+                    throw new IllegalArgumentException(
+                            "Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
                 }
                 if (stage instanceof Stage.SubscriberStage) {
                     if (mode == Mode.SUBSCRIBER || mode == Mode.COMPLETION) {
@@ -411,7 +408,8 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                         }
                         continue;
                     }
-                    throw new IllegalArgumentException("Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
+                    throw new IllegalArgumentException(
+                            "Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
                 }
                 if (stage instanceof Stage.Collect) {
                     if (mode == Mode.SUBSCRIBER || mode == Mode.COMPLETION) {
@@ -430,7 +428,8 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                         }
                         continue;
                     }
-                    throw new IllegalArgumentException("Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
+                    throw new IllegalArgumentException(
+                            "Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
                 }
                 if (stage instanceof Stage.Cancel) {
                     if (mode == Mode.SUBSCRIBER || mode == Mode.COMPLETION) {
@@ -449,7 +448,8 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
 
                         continue;
                     }
-                    throw new IllegalArgumentException("Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
+                    throw new IllegalArgumentException(
+                            "Stage.FindFirst is only supported when building via buildSubscriber or buildCompletion");
                 }
 
                 throw new UnsupportedStageException(stage);
@@ -483,9 +483,9 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
     static final class InnerSubscriberWithCompletionStage<T, R>
             implements SubscriberWithCompletionStage<T, R> {
 
-        final CompletionStage<R> completion;
+        private final CompletionStage<R> completion;
 
-        final Subscriber<T> front;
+        private final Subscriber<T> front;
 
         InnerSubscriberWithCompletionStage(Flow.Subscriber<T> front, CompletionStage<R> completion) {
             this.front = FlowAdapters.toSubscriber(front);
@@ -520,8 +520,7 @@ public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
                 .onComplete(() -> complete(publisherActivity))
                 .onError(e -> fail(publisherActivity, e))
                 .takeUntil(Multi.from(subscriberActivity, true))
-                .onCancel(() -> complete(publisherActivity))
-                ;
+                .onCancel(() -> complete(publisherActivity));
 
         return new BridgeProcessor<>(inlet, outlet);
     }

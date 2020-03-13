@@ -29,23 +29,23 @@ import java.util.concurrent.Flow;
 final class BasicCompletionSubscriber<T>
 implements Flow.Subscriber<T>, Flow.Subscription {
 
-    final Flow.Subscriber<? super T> subscriber;
+    private final Flow.Subscriber<? super T> subscriber;
 
-    final CompletableFuture<Void> completable;
+    private final CompletableFuture<Void> completable;
 
-    Flow.Subscription upstream;
+    private Flow.Subscription upstream;
 
     BasicCompletionSubscriber(Flow.Subscriber<? super T> subscriber) {
         this.subscriber = subscriber;
         this.completable = new CompletableFuture<>();
     }
 
-    public final CompletionStage<Void> completable() {
+    public CompletionStage<Void> completable() {
         return completable;
     }
 
     @Override
-    public final void request(long n) {
+    public void request(long n) {
         Flow.Subscription s = upstream;
         if (s != null) {
             s.request(n);
@@ -53,7 +53,7 @@ implements Flow.Subscriber<T>, Flow.Subscription {
     }
 
     @Override
-    public final void cancel() {
+    public void cancel() {
         Flow.Subscription s = upstream;
         if (s != null) {
             upstream = SubscriptionHelper.CANCELED;
@@ -63,27 +63,27 @@ implements Flow.Subscriber<T>, Flow.Subscription {
     }
 
     @Override
-    public final void onSubscribe(Flow.Subscription s) {
+    public void onSubscribe(Flow.Subscription s) {
         SubscriptionHelper.validate(upstream, s);
         upstream = s;
         subscriber.onSubscribe(this);
     }
 
     @Override
-    public final void onNext(T t) {
+    public void onNext(T t) {
         Objects.requireNonNull(t, "t is null");
         subscriber.onNext(t);
     }
 
     @Override
-    public final void onError(Throwable t) {
+    public void onError(Throwable t) {
         Objects.requireNonNull(t, "t is null");
         subscriber.onError(t);
         completable.completeExceptionally(t);
     }
 
     @Override
-    public final void onComplete() {
+    public void onComplete() {
         subscriber.onComplete();
         completable.complete(null);
     }

@@ -266,4 +266,20 @@ public class MultiFlatMapPublisherTest {
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
     }
+
+    @Test
+    public void flatMapCompletionStage() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>();
+
+        Multi.just(CompletableFuture.completedFuture(1), CompletableFuture.completedFuture(2))
+                .flatMap(Multi::from, 1, false, 1)
+                .subscribe(ts);
+
+        ts.assertEmpty();
+
+        ts.request(1)
+        .assertValuesOnly(1)
+        .request(1)
+        .assertResult(1, 2);
+    }
 }

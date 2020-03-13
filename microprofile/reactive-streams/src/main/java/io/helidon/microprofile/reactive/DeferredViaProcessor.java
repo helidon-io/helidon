@@ -17,10 +17,10 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.helidon.common.reactive.Multi;
 
 /**
  * Lets the downstream subscribe to the Processor first, then
@@ -30,12 +30,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class DeferredViaProcessor<T, R> implements Multi<R> {
 
-    final Multi<T> source;
-    
-    final Flow.Processor<T, R> processor;
-    
-    final AtomicBoolean once;
-    
+    private final Multi<T> source;
+
+    private final Flow.Processor<T, R> processor;
+
+    private final AtomicBoolean once;
+
     DeferredViaProcessor(Multi<T> source, Flow.Processor<T, R> processor) {
         this.source = source;
         this.processor = processor;
@@ -47,7 +47,7 @@ final class DeferredViaProcessor<T, R> implements Multi<R> {
             Flow.Subscriber<? super R> subscriber) {
 
         processor.subscribe(subscriber);
-        
+
         if (!once.get() && once.compareAndSet(false, true)) {
             source.subscribe(processor);
         }

@@ -17,6 +17,13 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreamsFactory;
@@ -24,12 +31,6 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 /**
  * Singleton factory for creating various builders out of sources.
@@ -42,17 +43,20 @@ public enum HelidonReactivePublisherFactory implements ReactiveStreamsFactory {
 
     @Override
     public <T> PublisherBuilder<T> fromPublisher(Publisher<? extends T> publisher) {
+        Objects.requireNonNull(publisher, "publisher is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSPublisher(publisher));
     }
 
     @Override
     public <T> PublisherBuilder<T> of(T t) {
+        Objects.requireNonNull(t, "t is null");
         return fromIterable(Collections.singletonList(t));
     }
 
     @Override
     @SafeVarargs
     public final <T> PublisherBuilder<T> of(T... ts) {
+        Objects.requireNonNull(ts, "ts is null");
         return fromIterable(Arrays.asList(ts));
     }
 
@@ -68,11 +72,13 @@ public enum HelidonReactivePublisherFactory implements ReactiveStreamsFactory {
 
     @Override
     public <T> PublisherBuilder<T> fromIterable(Iterable<? extends T> ts) {
+        Objects.requireNonNull(ts, "ts is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSIterable(ts));
     }
 
     @Override
     public <T> PublisherBuilder<T> failed(Throwable t) {
+        Objects.requireNonNull(t, "t is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSFailed(t));
     }
 
@@ -83,26 +89,32 @@ public enum HelidonReactivePublisherFactory implements ReactiveStreamsFactory {
 
     @Override
     public <T, R> ProcessorBuilder<T, R> fromProcessor(Processor<? super T, ? extends R> processor) {
+        Objects.requireNonNull(processor, "processor is null");
         return new HelidonReactiveProcessorBuilder<>(new HelidonReactiveStage.HRSProcessor(processor));
     }
 
     @Override
     public <T> SubscriberBuilder<T, Void> fromSubscriber(Subscriber<? extends T> subscriber) {
+        Objects.requireNonNull(subscriber, "subscriber is null");
         return new HelidonReactiveSubscriberBuilder<>(new HelidonReactiveStage.HRSSubscriber(subscriber));
     }
 
     @Override
     public <T> PublisherBuilder<T> iterate(T seed, UnaryOperator<T> f) {
+        Objects.requireNonNull(f, "f is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSIterate<>(seed, f));
     }
 
     @Override
     public <T> PublisherBuilder<T> generate(Supplier<? extends T> s) {
+        Objects.requireNonNull(s, "s is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSGenerate<>(s));
     }
 
     @Override
     public <T> PublisherBuilder<T> concat(PublisherBuilder<? extends T> a, PublisherBuilder<? extends T> b) {
+        Objects.requireNonNull(a, "a is null");
+        Objects.requireNonNull(b, "b is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSConcat(
                 HelidonReactiveStage.getGraph(a), HelidonReactiveStage.getGraph(b)
         ));
@@ -110,24 +122,31 @@ public enum HelidonReactivePublisherFactory implements ReactiveStreamsFactory {
 
     @Override
     public <T> PublisherBuilder<T> fromCompletionStage(CompletionStage<? extends T> completionStage) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSCompletionStage(completionStage));
     }
 
     @Override
     public <T> PublisherBuilder<T> fromCompletionStageNullable(CompletionStage<? extends T> completionStage) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
         return new HelidonReactivePublisherBuilder<>(new HelidonReactiveStage.HRSCompletionStageNullable(completionStage));
     }
 
     @Override
     public <T, R> ProcessorBuilder<T, R> coupled(SubscriberBuilder<? super T, ?> subscriber,
                                                  PublisherBuilder<? extends R> publisher) {
+        Objects.requireNonNull(subscriber, "subscriber is null");
+        Objects.requireNonNull(publisher, "publisher is null");
         return new HelidonReactiveProcessorBuilder<>(new HelidonReactiveStage.HRSCoupled(
                 HelidonReactiveStage.getGraph(subscriber), HelidonReactiveStage.getGraph(publisher)
         ));
     }
 
     @Override
-    public <T, R> ProcessorBuilder<T, R> coupled(Subscriber<? super T> subscriber, Publisher<? extends R> publisher) {
+    public <T, R> ProcessorBuilder<T, R> coupled(Subscriber<? super T> subscriber,
+                                                 Publisher<? extends R> publisher) {
+        Objects.requireNonNull(subscriber, "subscriber is null");
+        Objects.requireNonNull(publisher, "publisher is null");
         return new HelidonReactiveProcessorBuilder<>(new HelidonReactiveStage.HRSCoupled(
                 subscriber, publisher
         ));

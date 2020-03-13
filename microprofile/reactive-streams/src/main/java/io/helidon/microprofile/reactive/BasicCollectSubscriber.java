@@ -112,5 +112,4 @@ implements Flow.Subscriber<T> {
             completable.complete(r);
         }
     }
-
 }

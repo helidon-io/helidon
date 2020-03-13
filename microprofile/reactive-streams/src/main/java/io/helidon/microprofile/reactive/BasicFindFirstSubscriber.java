@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * item is received.
  * @param <T> the element type
  */
-final class BasicFindFirstSubscriber<T>extends AtomicReference<Flow.Subscription>
+final class BasicFindFirstSubscriber<T> extends AtomicReference<Flow.Subscription>
         implements Flow.Subscriber<T> {
 
     private static final long serialVersionUID = -1718297417587197143L;

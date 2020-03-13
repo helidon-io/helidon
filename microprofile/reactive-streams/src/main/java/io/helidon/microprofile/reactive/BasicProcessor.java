@@ -17,10 +17,10 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-
 import java.util.Objects;
 import java.util.concurrent.Flow;
+
+import io.helidon.common.reactive.Multi;
 
 /**
  * Implements a Processor over the Flowable API that simply stores one
@@ -32,7 +32,7 @@ import java.util.concurrent.Flow;
  */
 final class BasicProcessor<T> implements Multi<T>, Flow.Processor<T, T> {
 
-    Flow.Subscriber<? super T> downstream;
+    private Flow.Subscriber<? super T> downstream;
 
     @Override
     public void onSubscribe(Flow.Subscription s) {

@@ -17,6 +17,23 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
+
+
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
@@ -26,12 +43,6 @@ import org.eclipse.microprofile.reactive.streams.operators.spi.ToGraphable;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-
-import java.util.*;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.*;
-import java.util.stream.Collector;
 
 /**
  * Named stage-type implementations for better debugging.
@@ -45,21 +56,21 @@ final class HelidonReactiveStage {
 
     static Graph getGraph(PublisherBuilder<?> builder) {
         if (builder instanceof ToGraphable) {
-            return ((ToGraphable)builder).toGraph();
+            return ((ToGraphable) builder).toGraph();
         }
         return HelidonReactiveGraphCaptureEngine.capture(builder);
     }
 
     static Graph getGraph(ProcessorBuilder<?, ?> builder) {
         if (builder instanceof ToGraphable) {
-            return ((ToGraphable)builder).toGraph();
+            return ((ToGraphable) builder).toGraph();
         }
         return HelidonReactiveGraphCaptureEngine.capture(builder);
     }
 
     static Graph getGraph(SubscriberBuilder<?, ?> builder) {
         if (builder instanceof ToGraphable) {
-            return ((ToGraphable)builder).toGraph();
+            return ((ToGraphable) builder).toGraph();
         }
         return HelidonReactiveGraphCaptureEngine.capture(builder);
     }
@@ -355,7 +366,7 @@ final class HelidonReactiveStage {
 
         private final Function<? super T, ? extends PublisherBuilder<? extends S>> field;
 
-        HRSFlatMap(Function<? super T,? extends  PublisherBuilder<? extends S>> field) {
+        HRSFlatMap(Function<? super T, ? extends  PublisherBuilder<? extends S>> field) {
             this.field = field;
         }
 
@@ -410,7 +421,7 @@ final class HelidonReactiveStage {
         @Override
         @SuppressWarnings({ "unchecked", "rawtypes" })
         public Function<?, CompletionStage<?>> getMapper() {
-            return (Function)field;
+            return (Function) field;
         }
     }
 
@@ -430,7 +441,7 @@ final class HelidonReactiveStage {
         @Override
         @SuppressWarnings({ "unchecked", "rawtypes" })
         public Function<?, Iterable<?>> getMapper() {
-            return (Function)mapper;
+            return (Function) mapper;
         }
     }
 
@@ -616,14 +627,13 @@ final class HelidonReactiveStage {
     static final class HRSForEach<T> implements Stage.Collect,
             Collector<Object, Object, Object>,
             BiConsumer<Object, Object>,
-            Function<Object, Object>
-    {
+            Function<Object, Object> {
 
         private final Consumer<Object> field;
 
         @SuppressWarnings("unchecked")
         HRSForEach(Consumer<? super T> field) {
-            this.field = (Consumer<Object>)field;
+            this.field = (Consumer<Object>) field;
         }
 
         @Override
@@ -638,7 +648,7 @@ final class HelidonReactiveStage {
 
         @Override
         public BiConsumer<Object, Object> accumulator() {
-            return null;
+            return this;
         }
 
         @Override
@@ -689,8 +699,7 @@ final class HelidonReactiveStage {
     enum HRSIgnore implements Stage.Collect,
             Collector<Object, Object, Object>,
             BiConsumer<Object, Object>,
-            Function<Object, Object>
-    {
+            Function<Object, Object> {
         INSTANCE;
 
         @Override
@@ -705,7 +714,7 @@ final class HelidonReactiveStage {
 
         @Override
         public BiConsumer<Object, Object> accumulator() {
-            return null;
+            return this;
         }
 
         @Override
@@ -790,14 +799,14 @@ final class HelidonReactiveStage {
         @Override
         @SuppressWarnings("unchecked")
         public void accept(Object o, Object o2) {
-            AtomicReference<T> ref = (AtomicReference<T>)o;
-            ref.lazySet(accumulator.apply(ref.get(), (T)o2));
+            AtomicReference<T> ref = (AtomicReference<T>) o;
+            ref.lazySet(accumulator.apply(ref.get(), (T) o2));
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public Object apply(Object o) {
-            return ((AtomicReference<Object>)o).get();
+            return ((AtomicReference<Object>) o).get();
         }
 
         @Override
@@ -855,14 +864,18 @@ final class HelidonReactiveStage {
         @Override
         @SuppressWarnings("unchecked")
         public void accept(Object o, Object o2) {
-            AtomicReference<T> ref = (AtomicReference<T>)o;
-            ref.lazySet(accumulator.apply(ref.get(), (T)o2));
+            AtomicReference<T> ref = (AtomicReference<T>) o;
+            if (ref.get() == null) {
+                ref.lazySet((T) o2);
+            } else {
+                ref.lazySet(accumulator.apply(ref.get(), (T) o2));
+            }
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public Object apply(Object o) {
-            return Optional.ofNullable(((AtomicReference<Object>)o).get());
+            return Optional.ofNullable(((AtomicReference<Object>) o).get());
         }
 
         @Override
@@ -877,7 +890,6 @@ final class HelidonReactiveStage {
      */
     static final class HRSCollectFull<T, R> implements Stage.Collect,
             Collector<Object, Object, Object>,
-            BiConsumer<Object, Object>,
             Function<Object, Object> {
 
         private final Supplier<R> identity;
@@ -897,12 +909,13 @@ final class HelidonReactiveStage {
         @Override
         @SuppressWarnings("unchecked")
         public Supplier<Object> supplier() {
-            return (Supplier<Object>)identity;
+            return (Supplier<Object>) identity;
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public BiConsumer<Object, Object> accumulator() {
-            return this;
+            return (BiConsumer<Object, Object>) accumulator;
         }
 
         @Override
@@ -921,13 +934,6 @@ final class HelidonReactiveStage {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public void accept(Object o, Object o2) {
-            accumulator.accept((R)o, (T)o2);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
         public Object apply(Object o) {
             return o;
         }

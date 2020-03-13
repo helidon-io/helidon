@@ -17,10 +17,10 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-
 import java.util.Objects;
 import java.util.concurrent.Flow;
+
+import io.helidon.common.reactive.Multi;
 
 /**
  * Combines a Subscriber and a Multi into a single processor.
@@ -29,10 +29,10 @@ import java.util.concurrent.Flow;
  */
 final class BridgeProcessor<T, R> implements Multi<R>, Flow.Processor<T, R> {
 
-    final Flow.Subscriber<? super T> front;
-    
-    final Multi<? extends R> tail;
-    
+    private final Flow.Subscriber<? super T> front;
+
+    private final Multi<? extends R> tail;
+
     BridgeProcessor(Flow.Subscriber<? super T> front, Multi<? extends R> tail) {
         this.front = front;
         this.tail = tail;
