@@ -18,11 +18,9 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 /**
@@ -31,21 +29,56 @@ import java.util.function.Function;
  * @param <T> input item type
  * @param <X> output item type
  */
-public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<X> {
-
-    private static final int DEFAULT_BUFFER_SIZE = 64;
+public class MultiFlatMapProcessor<T, X> extends BaseProcessor<T, X> implements Multi<X> {
+    private static final int INNER_COMPLETE = 1;
+    private static final int OUTER_COMPLETE = 2;
+    private static final int NOT_STARTED = 4;
+    private static final int INNER_SUBSCRIBED = 8;
+    private static final int ALL_COMPLETE = INNER_COMPLETE | OUTER_COMPLETE;
 
     private Function<T, Flow.Publisher<X>> mapper;
-    private SubscriberReference<? super X> subscriber;
-    private Flow.Subscription subscription;
-    private RequestedCounter requestCounter = new RequestedCounter();
-    private Flow.Subscription innerSubscription;
-    private AtomicBoolean onCompleteReceivedAlready = new AtomicBoolean(false);
-    private PublisherBuffer<T> buffer;
-    private Optional<Throwable> error = Optional.empty();
+    private final AtomicInteger active = new AtomicInteger(NOT_STARTED | INNER_COMPLETE);
+    private final Inner inner = new Inner();
 
-    private MultiFlatMapProcessor() {
-        buffer = new PublisherBuffer<>();
+    private volatile Backpressure backp = new Backpressure(new Flow.Subscription() {
+        @Override
+        public void request(long n) {
+            if (n <= 0) {
+                // let the Subscription deal with bad requests
+                getSubscription().request(n);
+                return;
+            }
+
+            int a;
+            do {
+                a = active.get();
+                if ((a & NOT_STARTED) == 0) {
+                    return;
+                }
+            } while (!active.compareAndSet(a, a - NOT_STARTED));
+
+            getSubscription().request(1);
+        }
+
+        @Override
+        public void cancel() {
+        }
+    });
+
+    /**
+     * Create new {@link MultiFlatMapProcessor}.
+     */
+    protected MultiFlatMapProcessor() {
+    }
+
+    /**
+     * Create new {@link MultiFlatMapProcessor} with item to {@link java.lang.Iterable} mapper.
+     *
+     * @param mapper to provide iterable for every item from upstream
+     */
+    protected MultiFlatMapProcessor(Function<T, Flow.Publisher<X>> mapper) {
+        Objects.requireNonNull(mapper);
+        this.mapper = mapper;
     }
 
     /**
@@ -56,11 +89,8 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
      * @param <R>    output item type
      * @return {@link MultiFlatMapProcessor}
      */
-    @SuppressWarnings("unchecked")
     public static <T, R> MultiFlatMapProcessor<T, R> fromIterableMapper(Function<T, Iterable<R>> mapper) {
-        MultiFlatMapProcessor<T, R> flatMapProcessor = new MultiFlatMapProcessor<>();
-        flatMapProcessor.mapper = o -> (Multi<R>) Multi.from(mapper.apply(o));
-        return flatMapProcessor;
+        return new MultiFlatMapProcessor<>(o -> Multi.from(mapper.apply(o)));
     }
 
     /**
@@ -71,176 +101,171 @@ public class MultiFlatMapProcessor<T, X> implements Flow.Processor<T, X>, Multi<
      * @param <U>    output item type
      * @return {@link MultiFlatMapProcessor}
      */
-    @SuppressWarnings("unchecked")
     public static <T, U> MultiFlatMapProcessor<T, U> fromPublisherMapper(Function<T, Flow.Publisher<U>> mapper) {
-        MultiFlatMapProcessor<T, U> flatMapProcessor = new MultiFlatMapProcessor<>();
-        flatMapProcessor.mapper = t -> (Flow.Publisher<U>) mapper.apply(t);
-        return flatMapProcessor;
+        return new MultiFlatMapProcessor<>(mapper);
     }
 
-    private class FlatMapSubscription implements Flow.Subscription {
-        @Override
-        public void request(long n) {
-            if (buffer.isComplete() || Objects.isNull(innerSubscription)) {
-                subscription.request(n);
-            } else {
-                requestCounter.increment(n, MultiFlatMapProcessor.this::onError);
-                innerSubscription.request(n);
-            }
-        }
 
-        @Override
-        public void cancel() {
-            subscription.cancel();
-            Optional.ofNullable(innerSubscription).ifPresent(Flow.Subscription::cancel);
-            // https://github.com/reactive-streams/reactive-streams-jvm#3.13
-            subscriber.releaseReference();
-        }
+    /**
+     * Set mapper used for publisher creation.
+     *
+     * @param mapper function used for publisher creation
+     * @return {@link MultiFlatMapProcessor}
+     */
+    protected MultiFlatMapProcessor<T, X> mapper(Function<T, Flow.Publisher<X>> mapper) {
+        Objects.requireNonNull(mapper);
+        this.mapper = mapper;
+        return this;
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super X> subscriber) {
-        this.subscriber = SubscriberReference.create(subscriber);
-        if (Objects.nonNull(this.subscription)) {
-            subscriber.onSubscribe(new FlatMapSubscription());
-        }
-        error.ifPresent(subscriber::onError);
-    }
-
-    @Override
-    public void onSubscribe(Flow.Subscription subscription) {
-        if (Objects.nonNull(this.subscription)) {
-            subscription.cancel();
-            return;
-        }
-        this.subscription = subscription;
-        if (Objects.nonNull(subscriber)) {
-            subscriber.onSubscribe(new FlatMapSubscription());
-        }
-    }
-
-    @Override
-    public void onNext(T o) {
-        Objects.requireNonNull(o);
+    protected void submit(T item) {
+        // clear INNER_COMPLETE, if set; no other flags are set
+        active.set(0);
         try {
-            buffer.offer(o);
+            var mapperReturnedPublisher = mapper.apply(item);
+            if (Objects.isNull(mapperReturnedPublisher)) {
+                throw new IllegalStateException("Mapper returned a null value!");
+            }
+            mapperReturnedPublisher.subscribe(inner);
         } catch (Throwable t) {
-            onError(t);
+            getSubscription().cancel();
+            active.set(ALL_COMPLETE);
+            getSubscriber().onError(t);
         }
     }
 
     @Override
-    public void onError(Throwable t) {
-        this.error = Optional.of(t);
-        if (Objects.nonNull(subscriber)) {
-            subscriber.onError(t);
+    protected void complete() {
+        // if INNER_COMPLETE was set, no one is racing to observe INNER_COMPLETE;
+        // if INNER_COMPLETE was not set, no need to preserve it.
+        int a = active.getAndUpdate(o -> o | OUTER_COMPLETE);
+
+        // OUTER_COMPLETE may have been set by inner onError, so check OUTER_COMPLETE
+        // is not set.
+        // the one who sets the second bit in ALL_COMPLETE must call super.complete
+        // bit masking, because maybe also NOT_STARTED
+        if ((a & ALL_COMPLETE) == INNER_COMPLETE) {
+            super.complete();
         }
     }
 
     @Override
-    public void onComplete() {
-        onCompleteReceivedAlready.set(true);
-        if (buffer.isComplete()) {
-            //Have to wait for all Publishers to be finished
-            subscriber.onComplete();
+    public void request(long n) {
+        while (!backp.maybeRequest(n)) {
+            // race against Publisher setting a new backp
         }
     }
 
-    private class PublisherBuffer<U> {
+    @Override
+    public void cancel() {
+        backp.cancel();
+        super.cancel();
+    }
 
-        private int bufferSize = Integer.parseInt(
-                System.getProperty("helidon.common.reactive.flatMap.buffer.size", String.valueOf(DEFAULT_BUFFER_SIZE)));
-        private BlockingQueue<U> buffer = new ArrayBlockingQueue<>(bufferSize);
-        private InnerSubscriber<? super X> lastSubscriber = null;
+    static class Backpressure {
+        private final AtomicLong requested = new AtomicLong(0);
+        private final Flow.Subscription sub;
 
-        public boolean isComplete() {
-            return Objects.isNull(lastSubscriber) || (lastSubscriber.isDone() && buffer.isEmpty());
+        Backpressure(Flow.Subscription sub) {
+            this.sub = sub;
         }
 
-        public void tryNext() {
-            U nextItem = buffer.poll();
-            if (Objects.nonNull(nextItem)) {
-                lastSubscriber = executeMapper(nextItem);
-            } else if (onCompleteReceivedAlready.get()) {
-                // Received onComplete and all Publishers are done
-                subscriber.onComplete();
+        boolean maybeRequest(long n) {
+            if (n <= 0) {
+                // let the Subscription deal with bad requests
+                sub.request(n);
+                return true;
             }
+
+            long r;
+            do {
+                r = requested.get();
+                if (r < 0) {
+                    return false;
+                }
+            } while (!requested.compareAndSet(r, Long.MAX_VALUE - r > n ? r + n : Long.MAX_VALUE));
+            sub.request(n);
+            return true;
         }
 
-        public void offer(U o) {
-            if (buffer.isEmpty() && (Objects.isNull(lastSubscriber) || lastSubscriber.isDone())) {
-                lastSubscriber = executeMapper(o);
-            } else {
-                buffer.add(o);
-            }
+        void deliver() {
+            long r;
+            do {
+                r = requested.get();
+            } while (r != Long.MAX_VALUE && !requested.compareAndSet(r, r - 1));
         }
 
-        @SuppressWarnings("unchecked")
-        public InnerSubscriber<? super X> executeMapper(U item) {
-            InnerSubscriber<? super X> innerSubscriber = null;
-            try {
-                innerSubscriber = new InnerSubscriber<>();
-                innerSubscriber.whenComplete(this::tryNext);
-                mapper.apply((T) item).subscribe(innerSubscriber);
-            } catch (Throwable t) {
-                subscription.cancel();
-                subscriber.onError(t);
-            }
-            return innerSubscriber;
+        long terminate() {
+            return requested.getAndSet(-1);
+        }
+
+        void cancel() {
+            sub.cancel();
         }
     }
 
-    private class InnerSubscriber<R> implements Flow.Subscriber<R> {
-
-        private AtomicBoolean subscriptionAcked = new AtomicBoolean(false);
-        private AtomicBoolean done = new AtomicBoolean(false);
-
-        private Optional<Runnable> whenCompleteObserver = Optional.empty();
+    class Inner implements Flow.Subscriber<X> {
 
         @Override
-        public void onSubscribe(Flow.Subscription innerSubscription) {
-            Objects.requireNonNull(innerSubscription);
-            if (subscriptionAcked.get()) {
-                innerSubscription.cancel();
+        public void onSubscribe(Flow.Subscription sub) {
+            var a = active.getAndUpdate(o -> o | INNER_SUBSCRIBED);
+            if ((a & INNER_SUBSCRIBED) == INNER_SUBSCRIBED) {
+                sub.cancel();
                 return;
             }
-            subscriptionAcked.set(true);
-            MultiFlatMapProcessor.this.innerSubscription = innerSubscription;
-            innerSubscription.request(Long.MAX_VALUE);
+
+            Backpressure old = backp;
+            backp = new Backpressure(sub);
+            long unused = old.terminate();
+
+            if (unused == 0) {
+                return;
+            }
+
+            request(unused);
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public void onNext(R o) {
-            Objects.requireNonNull(o);
-            MultiFlatMapProcessor.this.subscriber.onNext((X) o);
-            //just counting leftovers
-            requestCounter.tryDecrement();
+        public void onNext(X item) {
+            Objects.requireNonNull(item);
+            backp.deliver();
+            MultiFlatMapProcessor.this.getSubscriber().onNext(item);
         }
 
         @Override
-        public void onError(Throwable t) {
-            Objects.requireNonNull(t);
-            MultiFlatMapProcessor.this.subscription.cancel();
-            MultiFlatMapProcessor.this.onError(t);
+        public void onError(Throwable th) {
+            Objects.requireNonNull(th);
+            // NOT_STARTED is clear.
+            //
+            // the one who sets the second bit in ALL_COMPLETE must call super.complete
+            // set always succeeds to do this; should not wait for upstream to complete
+            // i.e. it may be that active is either 0 or OUTER_COMPLETE;
+            // MultiFlatMapProcessor.complete cannot enter super.complete, because it
+            // cannot see INNER_COMPLETE set; and when it does, it will see both bits
+            // are set.
+            active.set(ALL_COMPLETE);
+            MultiFlatMapProcessor.super.getSubscription().cancel();
+            MultiFlatMapProcessor.super.complete(th);
         }
 
         @Override
         public void onComplete() {
-            done.set(true);
-            whenCompleteObserver.ifPresent(Runnable::run);
-            long requestCount = requestCounter.get();
-            if (requestCount > 0) {
-                subscription.request(requestCount);
+            // NOT_STARTED is clear.
+            //
+            // if OUTER_COMPLETE is set, there will be no one to observe OUTER_COMPLETE;
+            // if OUTER_COMPLETE is not set, not preserving OUTER_COMPLETE is ok.
+            // So it is ok to getAndSet
+            int a = active.getAndSet(INNER_COMPLETE);
+
+            // the one who sets the second bit in ALL_COMPLETE must call super.complete
+            if ((a & OUTER_COMPLETE) == OUTER_COMPLETE) {
+                MultiFlatMapProcessor.this.complete();
+                return;
             }
-        }
 
-        private void whenComplete(Runnable whenCompleteObserver) {
-            this.whenCompleteObserver = Optional.of(whenCompleteObserver);
-        }
-
-        private boolean isDone() {
-            return done.get();
+            MultiFlatMapProcessor.this.getSubscription().request(1);
         }
     }
 }
+

@@ -17,7 +17,6 @@
 
 package io.helidon.microprofile.reactive.hybrid;
 
-import java.security.InvalidParameterException;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 
@@ -28,19 +27,7 @@ import org.reactivestreams.Subscription;
  * or {@link io.helidon.common.reactive Helidon reactive streams} {@link java.util.concurrent.Flow.Subscription},
  * to be used interchangeably.
  */
-public class HybridSubscription implements Flow.Subscription, Subscription {
-
-    private Flow.Subscription flowSubscription;
-    private Subscription reactiveSubscription;
-    private Optional<Runnable> onCancel = Optional.empty();
-
-    private HybridSubscription(Flow.Subscription flowSubscription) {
-        this.flowSubscription = flowSubscription;
-    }
-
-    private HybridSubscription(Subscription reactiveSubscription) {
-        this.reactiveSubscription = reactiveSubscription;
-    }
+public interface HybridSubscription extends Flow.Subscription, Subscription {
 
     /**
      * Create new {@link HybridSubscription}
@@ -51,8 +38,28 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    public static HybridSubscription from(Flow.Subscription subscription) {
-        return new HybridSubscription(subscription);
+    static HybridSubscription from(Flow.Subscription subscription) {
+        return new HybridSubscription() {
+
+            private Optional<Runnable> onCancel = Optional.empty();
+
+            @Override
+            public HybridSubscription onCancel(Runnable runnable) {
+                this.onCancel = Optional.of(runnable);
+                return this;
+            }
+
+            @Override
+            public void request(long n) {
+                subscription.request(n);
+            }
+
+            @Override
+            public void cancel() {
+                subscription.cancel();
+                onCancel.ifPresent(Runnable::run);
+            }
+        };
     }
 
     /**
@@ -64,35 +71,35 @@ public class HybridSubscription implements Flow.Subscription, Subscription {
      * compatible with {@link org.reactivestreams Reactive Streams}
      * and {@link io.helidon.common.reactive Helidon reactive streams}
      */
-    public static HybridSubscription from(Subscription subscription) {
-        return new HybridSubscription(subscription);
+    static HybridSubscription from(Subscription subscription) {
+        return new HybridSubscription() {
+
+            private Optional<Runnable> onCancel = Optional.empty();
+
+            @Override
+            public HybridSubscription onCancel(Runnable runnable) {
+                this.onCancel = Optional.of(runnable);
+                return this;
+            }
+
+            @Override
+            public void request(long n) {
+                subscription.request(n);
+            }
+
+            @Override
+            public void cancel() {
+                subscription.cancel();
+                onCancel.ifPresent(Runnable::run);
+            }
+        };
     }
 
-    HybridSubscription onCancel(Runnable runnable) {
-        this.onCancel = Optional.of(runnable);
-        return this;
-    }
-
-    @Override
-    public void request(long n) {
-        if (flowSubscription != null) {
-            flowSubscription.request(n);
-        } else if (reactiveSubscription != null) {
-            reactiveSubscription.request(n);
-        } else {
-            throw new InvalidParameterException("Hybrid subscription has no subscription");
-        }
-    }
-
-    @Override
-    public void cancel() {
-        if (flowSubscription != null) {
-            flowSubscription.cancel();
-        } else if (reactiveSubscription != null) {
-            reactiveSubscription.cancel();
-        } else {
-            throw new InvalidParameterException("Hybrid subscription has no subscription");
-        }
-        onCancel.ifPresent(Runnable::run);
-    }
+    /**
+     * Runnable to be invoked after cancel is called.
+     *
+     * @param runnable invoked after cancel is called
+     * @return this
+     */
+    HybridSubscription onCancel(Runnable runnable);
 }

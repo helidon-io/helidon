@@ -17,15 +17,32 @@
 
 package io.helidon.microprofile.reactive;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
+
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreamsFactory;
+import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.eclipse.microprofile.reactive.streams.operators.tck.ReactiveStreamsTck;
+import org.eclipse.microprofile.reactive.streams.operators.tck.api.ReactiveStreamsApiVerification;
 import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CoupledStageVerification;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.FlatMapStageVerification;
+import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CustomCoupledStageVerification;
+import org.eclipse.microprofile.reactive.streams.operators.tck.spi.ReactiveStreamsSpiVerification;
 import org.reactivestreams.tck.TestEnvironment;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.Factory;
 
 public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamEngine> {
 
+    private static final TestEnvironment testEnvironment = new TestEnvironment(200);
+    private HelidonReactiveStreamEngine engine;
+    private ReactiveStreamsFactory rs;
+    private ScheduledExecutorService executorService;
+
     public HelidonReactiveStreamsTckTest() {
-        super(new TestEnvironment(200, 200, false));
+        super(testEnvironment);
     }
 
     @Override
@@ -33,12 +50,45 @@ public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonRea
         return new HelidonReactiveStreamEngine();
     }
 
+    @Factory
     @Override
-    protected boolean isEnabled(Object test) {
-        // Remove when TCK test issues are solved
-        // https://github.com/eclipse/microprofile-reactive-streams-operators/issues/133
-        return !(test instanceof FlatMapStageVerification.InnerSubscriberVerification)
-                // https://github.com/eclipse/microprofile-reactive-streams-operators/issues/131
-                && !(test instanceof CoupledStageVerification.ProcessorVerification);
+    public Object[] allTests() {
+        engine = createEngine();
+        rs = createFactory();
+        executorService = Executors.newScheduledThreadPool(4);
+
+        ReactiveStreamsApiVerification apiVerification = new ReactiveStreamsApiVerification(rs);
+        ReactiveStreamsSpiVerification spiVerification = new CustomReactiveStreamsSpiVerification(testEnvironment, rs, engine, executorService);
+
+        List<Object> allTests = new ArrayList<>();
+        allTests.addAll(apiVerification.allTests());
+        allTests.addAll(spiVerification.allTests());
+        return allTests.stream().filter(this::isEnabled).toArray();
+    }
+
+    @AfterSuite(alwaysRun = true)
+    public void shutdownEngine() {
+        if (engine != null) {
+            shutdownEngine(engine);
+        }
+        executorService.shutdown();
+    }
+
+    static class CustomReactiveStreamsSpiVerification extends ReactiveStreamsSpiVerification {
+
+        public CustomReactiveStreamsSpiVerification(TestEnvironment testEnvironment, ReactiveStreamsFactory rs,
+                                                    ReactiveStreamsEngine engine, ScheduledExecutorService executorService) {
+            super(testEnvironment, rs, engine, executorService);
+        }
+
+        @Override
+        public List<Object> allTests() {
+            VerificationDeps deps = new VerificationDeps();
+            CoupledStageVerification.ProcessorVerification processorVerification =
+                    new CustomCoupledStageVerification(deps).getProcessorVerification();
+            return super.allTests().stream()
+                    .map(o -> o instanceof CoupledStageVerification.ProcessorVerification ? processorVerification : o)
+                    .collect(Collectors.toList());
+        }
     }
 }

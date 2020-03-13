@@ -24,6 +24,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.reactive.MultiTappedProcessor;
+import io.helidon.common.reactive.SequentialSubscriber;
 import io.helidon.microprofile.reactive.hybrid.HybridProcessor;
 
 import org.reactivestreams.Processor;
@@ -44,10 +45,14 @@ class CumulativeProcessor implements Processor<Object, Object> {
      * @param precedingProcessorList ordered list of {@link java.util.concurrent.Flow.Processor}s
      */
     CumulativeProcessor(List<Flow.Processor<Object, Object>> precedingProcessorList) {
-        //preceding processors
+        this.processorList.add(HybridProcessor.from(MultiTappedProcessor.create()
+                .whenSubscribe(SequentialSubscriber::create)
+        ));
         precedingProcessorList.forEach(fp -> this.processorList.add(HybridProcessor.from(fp)));
-        //pass-thru if no processors provided
-        this.processorList.add(HybridProcessor.from(MultiTappedProcessor.create()));
+        if (precedingProcessorList.isEmpty()) return;
+        this.processorList.add(HybridProcessor.from(MultiTappedProcessor.create()
+                .whenSubscribe(SequentialSubscriber::create)
+        ));
     }
 
     @Override
