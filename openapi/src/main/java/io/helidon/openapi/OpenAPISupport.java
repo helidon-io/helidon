@@ -131,7 +131,7 @@ public class OpenAPISupport implements Service {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
-        model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.filteredIndexViews());
+        model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.perAppFilteredIndexViews());
     }
 
     @Override
@@ -707,7 +707,7 @@ public class OpenAPISupport implements Service {
          *
          * @return possibly empty {@code List} of {@code FilteredIndexView} objects
          */
-        public abstract List<FilteredIndexView> filteredIndexViews();
+        public abstract List<FilteredIndexView> perAppFilteredIndexViews();
 
         private OpenApiStaticFile getExplicitStaticFile() {
             Path path = Paths.get(staticFilePath.get());

@@ -63,7 +63,7 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
     }
 
     @Override
-    public List<FilteredIndexView> filteredIndexViews() {
+    public List<FilteredIndexView> perAppFilteredIndexViews() {
         return Collections.emptyList();
     }
 

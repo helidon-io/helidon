@@ -46,9 +46,8 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
     private Optional<OpenApiConfig> openAPIConfig;
     private Optional<IndexView> indexView;
-    private List<FilteredIndexView> filteredIndexViews = null;
+    private List<FilteredIndexView> perAppFilteredIndexViews = null;
     private Config mpConfig;
-
 
     @Override
     public OpenApiConfig openAPIConfig() {
@@ -56,14 +55,14 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
     }
 
     @Override
-    public synchronized List<FilteredIndexView> filteredIndexViews() {
-        if (filteredIndexViews == null) {
-            filteredIndexViews = buildFilteredIndexViews();
+    public synchronized List<FilteredIndexView> perAppFilteredIndexViews() {
+        if (perAppFilteredIndexViews == null) {
+            perAppFilteredIndexViews = buildPerAppFilteredIndexViews();
         }
-        return filteredIndexViews;
+        return perAppFilteredIndexViews;
     }
 
-    private List<FilteredIndexView> buildFilteredIndexViews() {
+    private List<FilteredIndexView> buildPerAppFilteredIndexViews() {
         /*
          * The JaxRsCdiExtension knows about all the apps in the system. For each app find out the classes related to that
          * app -- the application class itself and any resource classes reported by its getClasses() or getSingletons()
@@ -87,7 +86,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
             return defaultResultSupplier.get();
         }
         List<Set<Class<?>>> appClassesToScan = appsToRun.stream()
-                .filter(MPOpenAPIBuilder::isSynthetic)
+                .filter(MPOpenAPIBuilder::isNonSynthetic)
                 .map(JaxRsApplication::applicationClass)
                 .flatMap(Optional::stream)
                 .map(this::classesToScanForAppClass)
@@ -105,10 +104,9 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
                 .collect(Collectors.toList());
     }
 
-    private static boolean isSynthetic(JaxRsApplication jaxRsApp) {
-        return jaxRsApp.getClass()
-                .getName()
-                .equals(SYNTHETIC_APP_CLASS_NAME);
+    private static boolean isNonSynthetic(JaxRsApplication jaxRsApp) {
+        Class<?> appClass = jaxRsApp.applicationClass().orElse(null);
+        return appClass == null || !appClass.getName().equals(SYNTHETIC_APP_CLASS_NAME);
     }
 
     private <T extends Application> Set<Class<?>> classesToScanForAppClass(Class<T> appClass) {
