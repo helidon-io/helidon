@@ -42,8 +42,6 @@ import org.jboss.jandex.IndexView;
  */
 public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
-    private static final String SYNTHETIC_APP_CLASS_NAME = "org.glassfish.jersey.server.ResourceConfig$WrappingResourceConfig";
-
     private Optional<OpenApiConfig> openAPIConfig;
     private Optional<IndexView> indexView;
     private List<FilteredIndexView> perAppFilteredIndexViews = null;
@@ -85,11 +83,15 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         if (appsToRun.size() <= 1) {
             return defaultResultSupplier.get();
         }
+        /*
+         * Some JaxRsApplication instances might have an application instance already associated with them. Others might not in
+         * which case we'll try to instantiate them ourselves (unless they are synthetic apps or lack no-args constructors).
+         */
         List<Set<Class<?>>> appClassesToScan = appsToRun.stream()
                 .filter(MPOpenAPIBuilder::isNonSynthetic)
-                .map(JaxRsApplication::applicationClass)
+                .map(this::appInstance)
                 .flatMap(Optional::stream)
-                .map(this::classesToScanForAppClass)
+                .map(this::classesToScanForApp)
                 .collect(Collectors.toList());
 
         if (appClassesToScan.size() <= 1) {
@@ -105,20 +107,25 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
     }
 
     private static boolean isNonSynthetic(JaxRsApplication jaxRsApp) {
-        Class<?> appClass = jaxRsApp.applicationClass().orElse(null);
-        return appClass == null || !appClass.getName().equals(SYNTHETIC_APP_CLASS_NAME);
+        return !jaxRsApp.synthetic();
     }
 
-    private <T extends Application> Set<Class<?>> classesToScanForAppClass(Class<T> appClass) {
-        Set<Class<?>> classesToScanForThisApp = new HashSet<>();
-        Application app = instantiate(appClass);
+    private Optional<? extends Application> appInstance(JaxRsApplication jaxRsApp) {
+        Application preexistingApp = jaxRsApp.resourceConfig().getApplication();
+        if (preexistingApp != null) {
+            return Optional.of(preexistingApp);
+        }
+        return instantiate(jaxRsApp.applicationClass());
+    }
 
-        classesToScanForThisApp.add(appClass);
-        classesToScanForThisApp.addAll(app.getClasses());
+    private <T extends Application> Set<Class<?>> classesToScanForApp(Application app) {
+        Set<Class<?>> result = new HashSet<>();
+        result.add(app.getClass());
+        result.addAll(app.getClasses());
         app.getSingletons().stream()
                 .map(Object::getClass)
-                .forEach(classesToScanForThisApp::add);
-        return classesToScanForThisApp;
+                .forEach(result::add);
+        return result;
     }
 
     private FilteredIndexView appRelatedClassesToFilteredIndexView(Set<Class<?>> appRelatedClassesToScan) {
@@ -157,11 +164,20 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         return this;
     }
 
-    private static <T> T instantiate(Class<T> cl) {
+    private static Optional<? extends Application> instantiate(Optional<Class<? extends Application>> optionalAppClass) {
         try {
-            return cl.getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            if (optionalAppClass.isPresent()) {
+                return Optional.of(optionalAppClass.get()
+                        .getConstructor()
+                        .newInstance());
+            } else {
+                return Optional.empty();
+            }
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            // Wrapper app does not have a no-args constructor so we canont instantiate it.
+            return Optional.empty();
         }
     }
 
