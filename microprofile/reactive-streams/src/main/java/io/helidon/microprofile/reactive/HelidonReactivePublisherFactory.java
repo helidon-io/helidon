@@ -36,10 +36,10 @@ import org.reactivestreams.Subscriber;
  * Singleton factory for creating various builders out of sources.
  * @see #INSTANCE
  */
-public enum HelidonReactivePublisherFactory implements ReactiveStreamsFactory {
+public final class HelidonReactivePublisherFactory implements ReactiveStreamsFactory {
 
     /** The singleton instance. */
-    INSTANCE;
+    public static final HelidonReactivePublisherFactory INSTANCE = new HelidonReactivePublisherFactory();
 
     @Override
     public <T> PublisherBuilder<T> fromPublisher(Publisher<? extends T> publisher) {

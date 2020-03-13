@@ -45,10 +45,10 @@ import org.reactivestreams.Subscriber;
  * @see #INSTANCE
  * @see org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine
  */
-public enum HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
+public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine {
 
     /** The singleton instance. */
-    INSTANCE;
+    public static final HelidonReactiveStreamsEngine INSTANCE = new HelidonReactiveStreamsEngine();
 
     @Override
     public <T> Publisher<T> buildPublisher(Graph graph) throws UnsupportedStageException {
