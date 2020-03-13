@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.TimeUnit;
@@ -213,6 +214,18 @@ public interface Single<T> extends Subscribable<T> {
      */
     static <T> Single<T> never() {
         return SingleNever.<T>instance();
+    }
+
+    /**
+     * Relay upstream items until the other source signals an item or completes.
+     * @param other the other sequence to signal the end of the main sequence
+     * @param <U> the element type of the other sequence
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default <U> Single<T> takeUntil(Flow.Publisher<U> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleTakeUntilPublisher<>(this, other);
     }
 
     /**
