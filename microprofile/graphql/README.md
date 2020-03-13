@@ -22,7 +22,7 @@ Access the UI via http://127.0.0.1:7001/ui/
 
 Click on `Docs` link on top right for schema.
 
-Past the following in and then click on the `Run` button and choose the operation.
+Paste the following in and then click on the `Run` button and choose the operation.
 
 ```bash
 query allHeros  {
