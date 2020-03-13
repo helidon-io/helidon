@@ -19,7 +19,6 @@ package io.helidon.microprofile.openapi;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -36,13 +35,14 @@ import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import org.eclipse.microprofile.config.Config;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.jboss.jandex.IndexView;
 
 /**
  * Fluent builder for OpenAPISupport in Helidon MP.
  */
 public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
+
+    private static final String SYNTHETIC_APP_CLASS_NAME = "org.glassfish.jersey.server.ResourceConfig$WrappingResourceConfig";
 
     private Optional<OpenApiConfig> openAPIConfig;
     private Optional<IndexView> indexView;
@@ -86,11 +86,11 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         if (appsToRun.size() <= 1) {
             return defaultResultSupplier.get();
         }
-        List<Set<Class<?>>> appClassesToScan = ext.applicationsToRun().stream()
-                .map(JaxRsApplication::resourceConfig)
-                .map(ResourceConfig::getApplication)
-                .filter(Objects::nonNull)
-                .map(this::classesToScanForApp)
+        List<Set<Class<?>>> appClassesToScan = appsToRun.stream()
+                .filter(MPOpenAPIBuilder::isSynthetic)
+                .map(JaxRsApplication::applicationClass)
+                .flatMap(Optional::stream)
+                .map(this::classesToScanForAppClass)
                 .collect(Collectors.toList());
 
         if (appClassesToScan.size() <= 1) {
@@ -105,14 +105,22 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
                 .collect(Collectors.toList());
     }
 
-    private <T extends Application> Set<Class<?>> classesToScanForApp(T app) {
-        Set<Class<?>> result = new HashSet<>();
-        result.add(app.getClass());
-        result.addAll(app.getClasses());
+    private static boolean isSynthetic(JaxRsApplication jaxRsApp) {
+        return jaxRsApp.getClass()
+                .getName()
+                .equals(SYNTHETIC_APP_CLASS_NAME);
+    }
+
+    private <T extends Application> Set<Class<?>> classesToScanForAppClass(Class<T> appClass) {
+        Set<Class<?>> classesToScanForThisApp = new HashSet<>();
+        Application app = instantiate(appClass);
+
+        classesToScanForThisApp.add(appClass);
+        classesToScanForThisApp.addAll(app.getClasses());
         app.getSingletons().stream()
                 .map(Object::getClass)
-                .forEach(result::add);
-        return result;
+                .forEach(classesToScanForThisApp::add);
+        return classesToScanForThisApp;
     }
 
     private FilteredIndexView appRelatedClassesToFilteredIndexView(Set<Class<?>> appRelatedClassesToScan) {
