@@ -125,8 +125,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
                             Multi.from(histoOfLetters.apply(word))
                             .flatMapIterable(HashMap::entrySet)
                             .map(blank)
-                            .collectStream(Collectors.summarizingLong(value -> value))
-                            .map(LongSummaryStatistics::getSum)
+                            .reduce(Long::sum)
                     ;
 
 
@@ -143,8 +142,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
                                     HashMap::entrySet
                             )
                             .map(letterScore)
-                            .collectStream(Collectors.summarizingInt(value -> value))
-                            .map(v -> (int)v.getSum())
+                            .reduce(Integer::sum)
                             ;
 
         // Placing the word on the board
@@ -164,8 +162,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         Function<String, Single<Integer>> bonusForDoubleLetter =
             word -> toBeMaxed.apply(word)
                         .map(scoreOfALetter)
-                    .collectStream(Collectors.summarizingInt(value -> value))
-                    .map(v -> (int)v.getMax())
+                    .reduce(Integer::max)
                     ;
 
         // score of the word put on the board
@@ -175,11 +172,8 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
                     Multi.from(score2.apply(word)),
                     Multi.from(bonusForDoubleLetter.apply(word))
                 )
-                .collectStream(Collectors.summarizingInt(value -> value))
-                .map(w -> {
-                    int v = (int) w.getSum();
-                    return v * 2 + (word.length() == 7 ? 50 : 0);
-                })
+                .reduce(Integer::sum)
+                .map(v -> v * 2 + (word.length() == 7 ? 50 : 0))
                 ;
 
         Function<Function<String, Single<Integer>>, Single<TreeMap<Integer, List<String>>>> buildHistoOnScore =
