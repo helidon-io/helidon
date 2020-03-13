@@ -23,6 +23,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -36,6 +37,19 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> item type
  */
 public interface Multi<T> extends Subscribable<T> {
+
+    /**
+     * Call the given supplier function for each individual downstream Subscriber
+     * to return a Flow.Publisher to subscribe to.
+     * @param supplier the callback to return a Flow.Publisher for each Subscriber
+     * @param <T> the element type of the sequence
+     * @return Multi
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    static <T> Multi<T> defer(Supplier<? extends Flow.Publisher<? extends T>> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new MultiDefer<>(supplier);
+    }
 
     /**
      * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Mapper}.
@@ -242,6 +256,40 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Combine subsequent items via a callback function and emit
+     * the final value result as a Single.
+     * <p>
+     *     If the upstream is empty, the resulting Single is also empty.
+     *     If the upstream contains only one item, the reducer function
+     *     is not invoked and the resulting Single will have only that
+     *     single item.
+     * </p>
+     * @param reducer the function called with the first value or the previous result,
+     *                the current upstream value and should return a new value
+     * @return Single
+     */
+    default Single<T> reduce(BiFunction<T, T, T> reducer) {
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduce<>(this, reducer);
+    }
+
+    /**
+     * Combine every upstream item with an accumulator value to produce a new accumulator
+     * value and emit the final accumulator value as a Single.
+     * @param supplier the function to return the initial accumulator value for each incoming
+     *                 Subscriber
+     * @param reducer the function that receives the current accumulator value, the current
+     *                upstream value and should return a new accumulator value
+     * @param <R> the accumulator and result type
+     * @return Single
+     */
+    default <R> Single<R> reduce(Supplier<? extends R> supplier, BiFunction<R, T, R> reducer) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduceFull<>(this, supplier, reducer);
+    }
+
+    /**
      * Get the first item of this {@link Multi} instance as a {@link Single}.
      *
      * @return Single
@@ -413,6 +461,18 @@ public interface Multi<T> extends Subscribable<T> {
                 null,
                 null,
                 null);
+    }
+
+    /**
+     * Relay upstream items until the other source signals an item or completes.
+     * @param other the other sequence to signal the end of the main sequence
+     * @param <U> the element type of the other sequence
+     * @return Multi
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default <U> Multi<T> takeUntil(Flow.Publisher<U> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new MultiTakeUntilPublisher<>(this, other);
     }
 
     /**
