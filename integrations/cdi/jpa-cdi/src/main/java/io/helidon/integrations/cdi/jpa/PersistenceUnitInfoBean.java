@@ -814,7 +814,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
     }
 
     /**
-     * Creates and returns a {@link Collection} of {@link {@link
+     * Creates and returns a {@link Collection} of {@link
      * PersistenceUnitInfoBean} instances from a supplied {@link
      * Persistence} object.
      *
@@ -961,8 +961,8 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      * META-INF/persistence.xml} resource), a {@link URL} representing
      * the persistence unit's root, a {@link Map} of unlisted managed
      * classes (entity classes, mapped superclasses and so on) indexed
-     * by persistence unit name, and a {@link
-     * DataSourceProviderSupplier} that can supply {@link
+     * by persistence unit name, and a {@code
+     * DataSourceProviderSupplier} that can supply {@code
      * DataSourceProvider} instances, returns a {@link
      * PersistenceUnitInfoBean} representing the persistence unit in
      * question.

@@ -28,6 +28,10 @@
     <artifactId>helidon-jersey-server</artifactId>
     <name>Helidon Jersey Server</name>
 
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>

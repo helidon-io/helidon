@@ -28,6 +28,14 @@
     <artifactId>helidon-mp-graal-native-image-extension</artifactId>
     <name>Helidon MP Integrations Graal Native Image Extension</name>
 
+    <properties>
+        <!--
+         To build javadocs we need to have a valid module-info file. But com.oracle.substratevm:svm appears
+         to have a bad module-info.  So for now we skip generating javadocs.
+        -->
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.integrations.graal</groupId>
@@ -54,4 +62,31 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>empty-javadoc-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>javadoc</classifier>
+                                    <classesDirectory>${project.build.directory}/javadoc</classesDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

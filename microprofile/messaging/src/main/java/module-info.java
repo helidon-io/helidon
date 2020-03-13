@@ -25,6 +25,9 @@ module io.helidon.microprofile.messaging {
     requires static java.activation;
     requires javax.interceptor.api;
     requires io.helidon.config;
+    requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.microprofile.reactive;
     requires org.reactivestreams;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;

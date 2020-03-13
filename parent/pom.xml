@@ -123,6 +123,7 @@
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.install>3.0.0-M1</version.plugin.install>
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
+        <version.plugin.site>3.8.2</version.plugin.site>
     </properties>
 
     <build>
@@ -149,6 +150,28 @@
                     <version>${version.plugin.gpg}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${version.plugin.site}</version>
+                    <configuration>
+                        <skip>true</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>site-jar</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                            <phase>site</phase>
+                            <configuration>
+                                <archiveExcludes>
+                                    <exclude>.asciidoctor/**</exclude>
+                                </archiveExcludes>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${version.plugin.nexus-staging}</version>
@@ -163,6 +186,10 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <reporting>
+        <excludeDefaults>true</excludeDefaults>
+    </reporting>
 
     <profiles>
         <profile>
