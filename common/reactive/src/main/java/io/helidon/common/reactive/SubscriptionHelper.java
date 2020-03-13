@@ -90,17 +90,13 @@ enum SubscriptionHelper implements Flow.Subscription {
     }
 
     /**
-     * Atomically sets the only upstream subscription in the field and then requests
-     * the amount accumulated in the requestedField.
+     * Atomically sets the only upstream subscription in the field.
      * @param subscriptionField the field to store the only upstream subscription
-     * @param requestedField the request amounts accumulated so far
      * @param upstream the only upstream to set and request from
-     * @return true if the operation succeeded, false if the field indicated the upstream
-     *         should be cancelled immediately
+     * @return true if the operation succeeded, false if the field holds the cancellation indicator
      * @throws IllegalStateException if the subscriptionField already contains a non-canceled subscription instance
      */
-    public static boolean deferredSetOnce(AtomicReference<Flow.Subscription> subscriptionField,
-                                          AtomicLong requestedField, Flow.Subscription upstream) {
+    public static boolean setOnce(AtomicReference<Flow.Subscription> subscriptionField, Flow.Subscription upstream) {
         Objects.requireNonNull(upstream);
         for (;;) {
             Flow.Subscription current = subscriptionField.get();
@@ -114,13 +110,31 @@ enum SubscriptionHelper implements Flow.Subscription {
             }
 
             if (subscriptionField.compareAndSet(null, upstream)) {
-                long requested = requestedField.getAndSet(0L);
-                if (requested != 0L) {
-                    upstream.request(requested);
-                }
                 return true;
             }
         }
+    }
+
+    /**
+     * Atomically sets the only upstream subscription in the field and then requests
+     * the amount accumulated in the requestedField.
+     * @param subscriptionField the field to store the only upstream subscription
+     * @param requestedField the request amounts accumulated so far
+     * @param upstream the only upstream to set and request from
+     * @return true if the operation succeeded, false if the field indicated the upstream
+     *         should be cancelled immediately
+     * @throws IllegalStateException if the subscriptionField already contains a non-canceled subscription instance
+     */
+    public static boolean deferredSetOnce(AtomicReference<Flow.Subscription> subscriptionField,
+                                          AtomicLong requestedField, Flow.Subscription upstream) {
+        if (setOnce(subscriptionField, upstream)) {
+            long requested = requestedField.getAndSet(0L);
+            if (requested != 0L) {
+                upstream.request(requested);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -128,7 +142,7 @@ enum SubscriptionHelper implements Flow.Subscription {
      * then requests this accumulated amount and forwards subsequent requests to it.
      * @param subscriptionField the field possibly containing a Subscription instance.
      * @param requestedField the field used for accumulating requests until the Subscription instance arrives
-     * @param n the request amount to accumulate or forward
+     * @param n the request amount to accumulate or forward, must be positive (not verified)
      */
     public static void deferredRequest(AtomicReference<Flow.Subscription> subscriptionField,
                                        AtomicLong requestedField, long n) {

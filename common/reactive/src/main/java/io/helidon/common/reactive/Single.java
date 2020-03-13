@@ -273,4 +273,25 @@ public interface Single<T> extends Subscribable<T> {
         return new SingleTappedPublisher<>(this, null, consumer,
                 null, null, null, null);
     }
+
+    /**
+     * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
+     *
+     * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
+     * @return Single
+     */
+    default Single<T> onErrorResume(Function<? super Throwable, ? extends T> onError) {
+        return new SingleOnErrorResume<>(this, onError);
+    }
+
+
+    /**
+     * Resume stream from supplied publisher if onError signal is intercepted.
+     *
+     * @param onError supplier of new stream publisher
+     * @return Single
+     */
+    default Single<T> onErrorResumeWith(Function<? super Throwable, ? extends Single<? extends T>> onError) {
+        return new SingleOnErrorResumeWith<>(this, onError);
+    }
 }
