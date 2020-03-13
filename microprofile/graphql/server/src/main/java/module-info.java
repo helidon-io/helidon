@@ -35,5 +35,8 @@ module helidon.microprofile.graphql.server {
 
     exports io.helidon.microprofile.graphql.server;
 
+    provides javax.enterprise.inject.spi.Extension with
+            io.helidon.microprofile.graphql.server.GraphQLCdiExtension;
+
     opens io.helidon.microprofile.graphql.server to weld.core.impl;
 }

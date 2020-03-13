@@ -218,7 +218,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator
                 .retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(9));
+        assertThat(mapMethods.size(), is(10));
         assertDiscoveredMethod(mapMethods.get("hero"), "hero", STRING, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("episodeCount"), "episodeCount", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("numberOfStars"), "numberOfStars", Long.class.getName(), null, false, false, false);

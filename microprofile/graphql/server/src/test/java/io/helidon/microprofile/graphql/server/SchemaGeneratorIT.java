@@ -40,6 +40,7 @@ import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
+import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
@@ -75,8 +76,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     @BeforeAll
     public static void initialize() {
-        SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
-        container = seContainerInitializer.initialize();
+        container = SeContainerInitializer.newInstance().initialize();
     }
 
     @AfterAll
@@ -206,6 +206,36 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         setupIndex(indexFileName, SimpleContactWithSelf.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
         ExecutionResult result = executionContext.execute("query { hero }");
+    }
+
+    @Test
+    public void testDateAndTime() throws IOException {
+        setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        
+        ExecutionResult result = executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime } }");
+        Map<String, Object> mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        result = executionContext.execute("query { dateAndTimePOJOQuery { offsetTime } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        result = executionContext.execute("query { dateAndTimePOJOQuery { zonedDateTime } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        
+        result = executionContext.execute("query { dateAndTimePOJOQuery { localDate } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        result = executionContext.execute("query { dateAndTimePOJOQuery { localTime } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        result = executionContext.execute("query { dateAndTimePOJOQuery { localDateTime } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
     }
 
     @Test

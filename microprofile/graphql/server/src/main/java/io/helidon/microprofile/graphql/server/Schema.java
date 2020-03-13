@@ -234,13 +234,16 @@ public class Schema
         }
 
         // register the scalars
-        getScalars().forEach(s -> builder.scalar(s.getGraphQLScalarType()));
+        getScalars().forEach(s -> {
+            LOGGER.info("Register Scalar: " + s);
+            builder.scalar(s.getGraphQLScalarType());
+        });
 
-        // register extended scalars
-        builder.scalar(ExtendedScalars.DateTime)
-                .scalar(ExtendedScalars.Date)
-                .scalar(ExtendedScalars.Object)
-                .scalar(ExtendedScalars.Time);
+//        // register extended scalars
+//        builder.scalar(ExtendedScalars.DateTime)
+//                .scalar(ExtendedScalars.Date)
+//                .scalar(ExtendedScalars.Object)
+//                .scalar(ExtendedScalars.Time);
 
         // we should now have the query runtime binding
         builder.type(typeRuntimeBuilder);

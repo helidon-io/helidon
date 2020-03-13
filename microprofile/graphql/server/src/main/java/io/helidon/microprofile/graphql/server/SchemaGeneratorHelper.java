@@ -56,19 +56,24 @@ public class SchemaGeneratorHelper {
      * List of supported scalars keyed by the full class name.
      */
     private static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
+        // Object Scalar
         put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object));
+
         // Time scalars
-        put(OffsetTime.class.getName(), new SchemaScalar("Time", OffsetTime.class.getName(), ExtendedScalars.Time));
-        put(LocalTime.class.getName(), new SchemaScalar("Time", OffsetTime.class.getName(), ExtendedScalars.Time));
+        put(OffsetTime.class.getName(), new SchemaScalar("Time", OffsetTime.class.getName(), CustomTimeScalar.INSTANCE));
+        put(LocalTime.class.getName(), new SchemaScalar("Time", LocalTime.class.getName(), CustomTimeScalar.INSTANCE));
+
         // DateTime scalars
-        put(OffsetDateTime.class.getName(),
-            new SchemaScalar("DateTime", OffsetDateTime.class.getName(), ExtendedScalars.DateTime));
-        put(ZonedDateTime.class.getName(), new SchemaScalar("DateTime", ZonedDateTime.class.getName(), ExtendedScalars.DateTime));
-        put(LocalDateTime.class.getName(), new SchemaScalar("DateTime", LocalDateTime.class.getName(), ExtendedScalars.Date));
+        put(OffsetDateTime.class.getName(), new SchemaScalar("DateTime", OffsetDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+        put(ZonedDateTime.class.getName(), new SchemaScalar("DateTime", ZonedDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+        put(LocalDateTime.class.getName(), new SchemaScalar("DateTime", LocalDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+
         // Date scalar
         put(LocalDate.class.getName(), new SchemaScalar("Date", LocalDate.class.getName(), ExtendedScalars.Date));
+
         // BigDecimal scalars
         put(BigDecimal.class.getName(), new SchemaScalar("BigDecimal", Long.class.getName(), Scalars.GraphQLBigDecimal));
+        
         // BigInter scalars
         put(BigInteger.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
         put(long.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));

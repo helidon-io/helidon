@@ -18,6 +18,12 @@ package io.helidon.microprofile.graphql.server.test.queries;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +36,7 @@ import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
+import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
@@ -122,5 +129,11 @@ public class SimpleQueriesNoArgs {
 
         return new MultiLevelListsAndArrays(listListBigDecimal, null, null, intMultiLevelArray,
                                             personMultiLevelArray, listOfStringArrays, multiStringArray, colColColString);
+    }
+
+    @Query("dateAndTimePOJOQuery")
+    public DateTimePojo DateTimePojo() {
+        return new DateTimePojo(LocalDate.now(), LocalTime.now(), OffsetTime.now(),
+                                LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now());
     }
 }
