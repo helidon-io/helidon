@@ -290,18 +290,11 @@ public class MultiTappedPublisherTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        new MultiTappedPublisher<>(
-                Multi.singleton(1),
-                null,
-                null,
-                null,
-                null,
-                null,
-                () -> {
-                    calls.getAndIncrement();
-                    throw new IllegalArgumentException();
-                }
-        )
+        Multi.singleton(1).onCancel(
+        () -> {
+            calls.getAndIncrement();
+            throw new IllegalArgumentException();
+        })
         .subscribe(ts);
 
         ts.getSubcription().cancel();

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
@@ -264,6 +265,34 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * <p>
+     *     A null result from the CompletionStage will yield a
+     *     {@link NullPointerException} signal.
+     * </p>
+     * @param completionStage the CompletionStage to
+     * @param <T> the element type of the stage and result
+     * @return Multi
+     * @see #from(CompletionStage, boolean)
+     */
+    static <T> Multi<T> from(CompletionStage<T> completionStage) {
+        return from(completionStage, false);
+    }
+
+    /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * @param completionStage the CompletionStage to
+     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
+     *                       if false, the resulting sequence fails with {@link NullPointerException}
+     * @param <T> the element type of the stage and result
+     * @return Multi
+     */
+    static <T> Multi<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
+        return new MultiFromCompletionStage<>(completionStage, nullMeansEmpty);
+    }
+
+    /**
      * Create a {@link Multi} instance wrapped around the given publisher.
      *
      * @param <T>    item type
@@ -376,7 +405,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>         item type
      * @return Multi
      */
-    static <T> Multi<T> concat(Multi<T> firstMulti, Multi<T> secondMulti) {
+    static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti) {
         return ConcatPublisher.create(firstMulti, secondMulti);
     }
 
@@ -399,15 +428,15 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onComplete signal is received.
      *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @param onComplete {@link java.lang.Runnable} to be executed.
      * @return Multi
      */
-    default Multi<T> onComplete(Runnable onTerminate) {
+    default Multi<T> onComplete(Runnable onComplete) {
         return new MultiTappedPublisher<>(this,
                 null,
                 null,
                 null,
-                onTerminate,
+                onComplete,
                 null,
                 null);
     }
@@ -415,7 +444,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onError signal is received.
      *
-     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
+     * @param onErrorConsumer {@link Consumer} to be executed.
      * @return Multi
      */
     default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
@@ -426,6 +455,22 @@ public interface Multi<T> extends Subscribable<T> {
                 null,
                 null,
                 null);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when a cancel signal is received.
+     *
+     * @param onCancel {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onCancel(Runnable onCancel) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                null,
+                null,
+                null,
+                onCancel);
     }
 
     /**

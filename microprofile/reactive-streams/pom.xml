@@ -49,9 +49,8 @@
             <artifactId>microprofile-reactive-streams-operators-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
+            <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+            <artifactId>microprofile-reactive-streams-operators-tck</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
