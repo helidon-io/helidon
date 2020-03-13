@@ -324,9 +324,13 @@ public class SchemaGenerator {
                                               Schema schema,
                                               Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
+
+        LOGGER.info("Processing " + clazz.getName());
         for (Map.Entry<String, DiscoveredMethod> entry : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
             DiscoveredMethod discoveredMethod = entry.getValue();
             Method method = discoveredMethod.getMethod();
+
+            LOGGER.info("Processing method " + discoveredMethod.getName() + ", " + discoveredMethod.getReturnType());
 
             SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, getMethodName(method));
             SchemaType schemaType = discoveredMethod.methodType == QUERY_TYPE
@@ -350,7 +354,9 @@ public class SchemaGenerator {
                     } else {
                         // create the input Type here
                         SchemaInputType inputType = generateType(returnType).createInputType("Input");
-                        schema.addInputType(inputType);
+                        if (!schema.containsInputTypeWithName(inputType.getName())) {
+                            schema.addInputType(inputType);
+                        }
                         a.setArgumentType(inputType.getName());
 
                         // if this new Type contains any types, then they must also have
@@ -363,6 +369,7 @@ public class SchemaGenerator {
                         while (setInputTypes.size() > 0) {
                             SchemaInputType type = setInputTypes.iterator().next();
                             setInputTypes.remove(type);
+                            LOGGER.info("Checking input type: " + type.getName());
                             // check each field definition to see if any return types are unknownInputTypes
                             for (SchemaFieldDefinition fdi : type.getFieldDefinitions()) {
                                 String fdReturnType = fdi.getReturnType();
@@ -373,17 +380,21 @@ public class SchemaGenerator {
                                         setUnresolvedTypes.add(fdReturnType);
                                     } else {
                                         // must be a type, create a new input Type but do not add it to
-                                        // the schema if it already exists 
+                                        // the schema if it already exists
                                         SchemaInputType newInputType = generateType(fdReturnType)
                                                 .createInputType("Input");
                                         if (!schema.containsInputTypeWithName(newInputType.getName())) {
                                             schema.addInputType(newInputType);
                                             setInputTypes.add(newInputType);
+                                            LOGGER.info("Adding new input type " + newInputType.getName());
+                                        } else {
+                                            LOGGER.info("Ignoring: " + newInputType.getName());
                                         }
                                         fdi.setReturnType(newInputType.getName());
                                     }
                                 }
                             }
+                            int i = 0;
                         }
                     }
                 }
@@ -553,6 +564,7 @@ public class SchemaGenerator {
                 throw new RuntimeException("A class may not have both a Query and Mutation annotation");
             }
             if (isQuery || isMutation) {
+                LOGGER.info("Processing Query or Mutation " + m.getName());
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null);
                 discoveredMethod.setMethodType(isQuery ? QUERY_TYPE : MUTATION_TYPE);
                 mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);

@@ -67,4 +67,15 @@ public class SimpleMutations {
     public String setEchoStringValue(@Name("value") String value) {
         return value;
     }
+
+    @Mutation
+    public String testId(@Name("name") String name, @Name("id") Long idNumber) {
+        return "OK";
+    }
+
+    @Mutation("createAndReturnNewContact")
+    public SimpleContact createNewContact(@Name("newContact") SimpleContact contact) {
+        return contact;
+    }
+
 }
