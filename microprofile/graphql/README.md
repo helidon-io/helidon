@@ -70,4 +70,12 @@ fragment teamFields on Team {
 }
 ```
 
+1. Run the `allHeros` query to see all the Hero's.
 
+1. Run the `updateBankBalance` and re-run `allHeros` to see update bank balance.
+
+1. Run `allTeams` and notice it uses a fragment which is where you can specify common fields. 
+
+1. Run `addStarLordToXMenTeam` to add Star Lord to the X-Men.  Notice it returns the updated team.
+
+1. Re-run `allTeams`
