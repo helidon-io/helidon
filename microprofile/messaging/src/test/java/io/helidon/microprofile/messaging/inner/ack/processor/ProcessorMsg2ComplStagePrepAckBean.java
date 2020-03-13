@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package io.helidon.microprofile.messaging.inner.ack.processor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -44,9 +45,10 @@ import org.reactivestreams.Publisher;
 public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CountDownLatch countDownLatch = new CountDownLatch(1);
+    private final CopyOnWriteArrayList<String> RESULT_DATA = new CopyOnWriteArrayList<>();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
@@ -68,13 +70,15 @@ public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean {
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public CompletionStage<Void> receiveMessage(Message<String> msg) {
         RESULT_DATA.add(msg.getPayload());
+        countDownLatch.countDown();
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void assertValid() {
         try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            ackFuture.get(1, TimeUnit.SECONDS);
+            countDownLatch.await(2, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e);
         }

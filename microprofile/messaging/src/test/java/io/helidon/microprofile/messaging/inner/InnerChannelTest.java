@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,8 @@ public class InnerChannelTest extends AbstractCDITest {
                 .findAllClassesInPackage(
                         InnerChannelTest.class.getPackage().getName(),
                         ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
-                .stream().map(CdiTestCase::from);
+                .stream()
+                .map(CdiTestCase::from);
     }
 
     @ParameterizedTest
