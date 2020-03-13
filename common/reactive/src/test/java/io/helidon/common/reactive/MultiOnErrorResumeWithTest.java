@@ -99,4 +99,15 @@ public class MultiOnErrorResumeWithTest {
         .request(2)
         .assertResult(1, 2, 3, 4, 5);
     }
+
+    @Test
+    public void noSelfSuppressionFailure() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>();
+
+        Multi.<Integer>error(new IllegalArgumentException())
+                .onErrorResumeWith(e -> { throw (IllegalArgumentException)e; })
+                .subscribe(ts);
+
+        ts.assertFailure(IllegalArgumentException.class);
+    }
 }
