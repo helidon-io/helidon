@@ -19,6 +19,7 @@ package io.helidon.microprofile.messaging.inner;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -34,6 +35,7 @@ import org.reactivestreams.Subscriber;
 public class CompletionStageV1Bean extends AbstractShapeTestBean implements AsyncTestBean {
 
     AtomicInteger testSequence = new AtomicInteger();
+    private final ExecutorService executor = createExecutor();
 
     @Outgoing("generator-payload-async")
     public CompletionStage<Integer> getPayloadAsync() {
@@ -48,4 +50,8 @@ public class CompletionStageV1Bean extends AbstractShapeTestBean implements Asyn
                 .build();
     }
 
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
+    }
 }

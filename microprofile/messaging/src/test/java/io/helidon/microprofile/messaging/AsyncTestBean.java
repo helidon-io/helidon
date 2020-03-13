@@ -21,20 +21,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public interface AsyncTestBean {
-    ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    default ExecutorService getExecutor() {
-        return executor;
+    default ExecutorService createExecutor() {
+        return Executors.newSingleThreadExecutor();
     }
 
-    default void awaitShutdown() {
+    default void awaitShutdown(ExecutorService executor) {
+        executor.shutdown();
+        var msg = "Executor of test bean " + this.getClass().getSimpleName() + " didn't shutdown in time.";
         try {
-            getExecutor().awaitTermination(500, TimeUnit.MILLISECONDS);
+            assertThat(msg, executor.awaitTermination(500, TimeUnit.MILLISECONDS));
         } catch (InterruptedException e) {
-            fail("Executor of test bean " + this.getClass().getSimpleName() + " didn't shutdown in time.", e);
+            fail(msg, e);
         }
     }
+
+    void tearDown();
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -46,6 +47,8 @@ public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean, A
     private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final CopyOnWriteArrayList<String> resultData = new CopyOnWriteArrayList<>();
+
+    private ExecutorService executor = createExecutor();
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
@@ -73,10 +76,14 @@ public class ProcessorMsg2ComplStagePrepAckBean implements AssertableTestBean, A
 
     @Override
     public void assertValid() {
-        awaitShutdown();
         await("Message not acked!", ackFuture);
         await("Message not consumed!", countDownLatch);
         assertWithOrigin("Should be acked in pre-process!", completedBeforeProcessor.get());
         assertWithOrigin("Payload corruption!", resultData, is(List.of(TEST_DATA)));
+    }
+
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
     }
 }

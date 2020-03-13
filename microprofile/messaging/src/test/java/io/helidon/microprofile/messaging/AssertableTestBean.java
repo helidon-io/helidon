@@ -39,7 +39,7 @@ public interface AssertableTestBean {
 
     default void await(String msg, CountDownLatch countDownLatch) {
         try {
-            countDownLatch.await(500, TimeUnit.MILLISECONDS);
+            assertThat(msg + composeOrigin(), countDownLatch.await(500, TimeUnit.MILLISECONDS));
         } catch (InterruptedException e) {
             fail(msg + composeOrigin(), e);
         }

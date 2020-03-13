@@ -20,6 +20,7 @@ package io.helidon.microprofile.messaging.inner.subscriber;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -39,6 +40,8 @@ public class SubscriberPublMsgToMsgRetComplBean implements AssertableTestBean, A
 
     CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
 
+    private final ExecutorService executor = createExecutor();
+
     @Outgoing("cs-void-message")
     public Publisher<Message<String>> sourceForCsVoidMessage() {
         return ReactiveStreams.fromIterable(TEST_DATA)
@@ -53,7 +56,11 @@ public class SubscriberPublMsgToMsgRetComplBean implements AssertableTestBean, A
 
     @Override
     public void assertValid() {
-        awaitShutdown();
         assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
+    }
+
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
     }
 }

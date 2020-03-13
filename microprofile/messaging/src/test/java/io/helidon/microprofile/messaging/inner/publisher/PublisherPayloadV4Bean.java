@@ -19,6 +19,7 @@ package io.helidon.microprofile.messaging.inner.publisher;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -34,6 +35,8 @@ import org.reactivestreams.Publisher;
 @ApplicationScoped
 public class PublisherPayloadV4Bean extends AbstractShapeTestBean implements AsyncTestBean {
 
+    private final ExecutorService executor = createExecutor();
+
     @Outgoing("cs-void-payload")
     public Publisher<Message<String>> sourceForCsVoidPayload() {
         return ReactiveStreams.fromIterable(TEST_DATA).map(Message::of).buildRs();
@@ -45,4 +48,8 @@ public class PublisherPayloadV4Bean extends AbstractShapeTestBean implements Asy
         return CompletableFuture.runAsync(() -> testLatch.countDown(), executor);
     }
 
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
+    }
 }

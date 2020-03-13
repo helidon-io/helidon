@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -29,7 +29,6 @@ import io.helidon.microprofile.messaging.AssertableTestBean;
 import io.helidon.microprofile.messaging.AsyncTestBean;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -42,6 +41,7 @@ public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestB
 
     CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
     private final CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
+    private final ExecutorService executor = createExecutor();
 
     @Outgoing("cs-string-message")
     public Publisher<Message<String>> sourceForCsStringMessage() {
@@ -60,14 +60,13 @@ public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestB
     }
 
     @Override
-    public void assertValid(){
-        awaitShutdown();
-        try {
-            countDownLatch.await(2, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            fail(e);
-        }
-
+    public void assertValid() {
+        await("Messages not delivered in time!", countDownLatch);
         assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
+    }
+
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
     }
 }

@@ -20,6 +20,7 @@ package io.helidon.microprofile.messaging.inner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -35,6 +36,7 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 public class ByRequestProcessorV5Bean implements CountableTestBean, AsyncTestBean {
 
     public static CountDownLatch testLatch = new CountDownLatch(10);
+    private final ExecutorService executor = createExecutor();
 
     @Outgoing("publisher-asynchronous-payload")
     public PublisherBuilder<Integer> streamForProcessorBuilderOfPayloads() {
@@ -55,5 +57,10 @@ public class ByRequestProcessorV5Bean implements CountableTestBean, AsyncTestBea
     @Override
     public CountDownLatch getTestLatch() {
         return testLatch;
+    }
+
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
     }
 }
