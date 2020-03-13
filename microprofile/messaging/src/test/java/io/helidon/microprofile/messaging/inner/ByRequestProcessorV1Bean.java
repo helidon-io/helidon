@@ -17,9 +17,10 @@
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.microprofile.reactive.MultiRS;
+import io.helidon.common.reactive.Multi;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -34,7 +35,7 @@ public class ByRequestProcessorV1Bean {
 
     @Outgoing("inner-processor")
     public Publisher<Integer> produceMessage() {
-        return MultiRS.just(IntStream.range(0, 10).boxed());
+        return FlowAdapters.toPublisher(Multi.range(0, 10));
     }
 
     @Incoming("inner-processor")
