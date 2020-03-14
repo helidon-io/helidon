@@ -598,6 +598,11 @@
                     <artifactId>wiremock-maven-plugin</artifactId>
                     <version>${version.plugin.wiremock}</version>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -944,7 +949,6 @@
                 <artifactId>jmh-generator-annprocess</artifactId>
                 <version>${version.lib.jmh}</version>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 
