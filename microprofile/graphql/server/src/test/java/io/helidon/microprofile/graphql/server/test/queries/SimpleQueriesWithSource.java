@@ -30,6 +30,7 @@ import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
+import io.helidon.microprofile.graphql.server.test.types.Address;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
@@ -69,5 +70,10 @@ public class SimpleQueriesWithSource {
     @Name("findContact")
     public SimpleContact retrieveSimpleContact() {
         return testDB.createRandomContact();
+    }
+
+    @Name("lastAddress")
+    public Address returnTheLastAddress(@Source @Name("contact") SimpleContact contact) {
+        return testDB.generateWorkAddress();
     }
 }

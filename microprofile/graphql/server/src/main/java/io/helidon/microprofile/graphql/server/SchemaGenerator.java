@@ -278,16 +278,21 @@ public class SchemaGenerator {
         });
 
         // process any additional methods requires via the @Source annotation
-        setAdditionalMethods.forEach(dm -> {
-            // add the discovered method to the type
+        for (DiscoveredMethod dm : setAdditionalMethods) {// add the discovered method to the type
             SchemaType type = schema.getTypeByClass(dm.source);
             if (type != null) {
                 SchemaFieldDefinition fd = newFieldDefinition(dm, null);
                 fd.setDataFetcher(DataFetcherUtils.newSourceMethodDataFetcher(
                         dm.method.getDeclaringClass(), dm.method, dm.getSource()));
                 type.addFieldDefinition(fd);
+
+                String simpleName = getSimpleName(fd.getReturnType());
+                String returnType = fd.getReturnType();
+                if (!simpleName.equals(returnType)) {
+                    updateLongTypes(schema, returnType, simpleName);
+                }
             }
-        });
+        }
 
         // process the @GraphQLApi annotated classes
         if (rootQueryType.getFieldDefinitions().size() == 0) {
@@ -362,9 +367,15 @@ public class SchemaGenerator {
             if (source == null || discoveredMethod.isQueryAnnotated()) {
                 fd = newFieldDefinition(discoveredMethod, getMethodName(method));
             }
+
             // if the source was not null, save it for later processing on the correct type
             if (source != null) {
+                String additionReturnType = getGraphQLType(discoveredMethod.getReturnType());
                 setAdditionalMethods.add(discoveredMethod);
+                // add the unresolved type for the source
+                if (!isGraphQLType(additionReturnType)) {
+                    setUnresolvedTypes.add(additionReturnType);
+                }
             }
 
             SchemaType schemaType = discoveredMethod.methodType == QUERY_TYPE

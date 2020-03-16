@@ -166,12 +166,12 @@ public class TestDB {
         return new String(ach);
     }
 
-    public static Address generateHomeAddress() {
+    public Address generateHomeAddress() {
         return new Address("1234 Railway Parade", null, getRandomName(),
                            getRandomState(), getRandomZip(), "US");
     }
 
-    public static Address generateWorkAddress() {
+    public Address generateWorkAddress() {
         return new Address("8 Yawkey Way", null, getRandomName(),
                            getRandomState(), getRandomZip(), "US");
     }
