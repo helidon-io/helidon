@@ -65,6 +65,17 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
+     * @return Multi
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
+     */
+    default Multi<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new MultiDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
      * Invoke provided consumer for every item in stream.
      *
      * @param consumer consumer to be invoked

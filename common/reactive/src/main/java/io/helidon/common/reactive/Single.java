@@ -65,6 +65,17 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
+     * @return Single
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
+     */
+    default Single<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new SingleDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
      * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
      *
      * @param <U>    mapped items type
