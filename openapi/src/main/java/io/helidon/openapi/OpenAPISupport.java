@@ -620,7 +620,7 @@ public class OpenAPISupport implements Service {
          * <p>
          * The {@code Config} object can specify {@value #CONFIG_PREFIX}.web-context
          * and {@value #CONFIG_PREFIX}.static-file in addition to settings
-         * supported by {@link OpenAPIConfigImpl.Builder}.
+         * supported by {@code OpenAPIConfigImpl.Builder}.
          *
          * @param config the {@code Config} object possibly containing settings
          * @exception NullPointerException if the provided {@code Config} is null
