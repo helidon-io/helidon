@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -513,6 +515,20 @@ public interface Multi<T> extends Subscribable<T> {
             return singleton(start);
         }
         return new MultiRangeLongPublisher(start, start + count);
+    }
+
+    /**
+     * Signal 0L and complete the sequence after the given time elapsed.
+     * @param time the time to wait before signaling 0L and completion
+     * @param unit the unit of time
+     * @param executor the executor to run the waiting on
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> timer(long time, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiTimer(time, unit, executor);
     }
 
     /**
