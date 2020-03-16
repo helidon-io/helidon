@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,11 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
      * Request one item.
      */
     public void request1() {
-        this.subcription.request(1);
+        this.request(1);
+    }
+
+    public void request(long n) {
+        this.subcription.request(n);
     }
 
     /**
@@ -62,6 +66,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
 
     /**
      * Indicates completeness.
+     *
      * @return {@code true} if complete, {@code false} otherwise
      */
     public boolean isComplete() {
@@ -75,6 +80,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
 
     /**
      * Get the items accumulated by this subscriber.
+     *
      * @return list of items
      */
     public List<T> getItems() {
@@ -83,6 +89,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
 
     /**
      * Get the last item accumulated by this subscriber.
+     *
      * @return last item, or {@code null} or this subscriber has not
      * received any items yet
      */
@@ -92,6 +99,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
 
     /**
      * Get the last error received by this subscriber.
+     *
      * @return a {@code Throwable} or {@code null} or this subscriber has not
      * received any
      */
@@ -101,6 +109,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
 
     /**
      * Get the subscription set on this subscriber.
+     *
      * @return a {@code Flow.Subscription} or {@code null} if onSubcribe has not
      * been called
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
     private Subscription subscription;
     private final SingleSubscriberHolder<U> subscriber;
     private final RequestedCounter requested;
+    private final RequestedCounter ableToSubmit;
     private final AtomicBoolean ready;
     private final AtomicBoolean subscribed;
     private volatile boolean done;
@@ -41,6 +42,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     BaseProcessor() {
         requested = new RequestedCounter();
+        ableToSubmit = new RequestedCounter();
         ready = new AtomicBoolean();
         subscribed = new AtomicBoolean();
         subscriber = new SingleSubscriberHolder<>();
@@ -48,8 +50,12 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     @Override
     public final void request(long n) {
-        requested.increment(n, ex -> onError(ex));
-        tryRequest(subscription);
+        ableToSubmit.increment(n, this::onError);
+        if (subscription != null && !subscriber.isClosed()) {
+            subscription.request(n);
+        } else {
+            requested.increment(n, this::onError);
+        }
         if (done) {
             tryComplete();
         }
@@ -108,10 +114,11 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     /**
      * Submit an item to the subscriber.
+     *
      * @param item item to be submitted
      */
     protected void submit(U item) {
-        if (requested.tryDecrement()) {
+        if (ableToSubmit.tryDecrement()) {
             try {
                 subscriber.get().onNext(item);
             } catch (InterruptedException ex) {
@@ -156,7 +163,12 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
             delegate.subscribe(new Subscriber<U>() {
                 @Override
                 public void onSubscribe(Subscription subscription) {
-                    tryRequest(subscription);
+                    if (subscription != null && !subscriber.isClosed()) {
+                        long n = ableToSubmit.get();
+                        if (n > 0) {
+                            subscription.request(n);
+                        }
+                    }
                 }
 
                 @Override
@@ -200,7 +212,7 @@ abstract class BaseProcessor<T, U> implements Processor<T, U>, Subscription {
 
     private void tryRequest(Subscription s) {
         if (s != null && !subscriber.isClosed()) {
-            long n = requested.get();
+            long n = requested.getAndReset();
             if (n > 0) {
                 s.request(n);
             }
