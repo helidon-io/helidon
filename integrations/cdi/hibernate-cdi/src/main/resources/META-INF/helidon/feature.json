@@ -1,5 +1,35 @@
 {
     "name": "Hibernate JPA",
-    "path": ["JPA", "Hibernate"]
+    "paths": [
+        {"path": ["JPA", "Hibernate"]}
+    ],
+    "path": ["JPA", "Hibernate"],
+    "provides": "JPA",
+    "requires": [
 
+    ]
+
+    "jpa": {
+        "uses": {
+            "feature": "JPA",
+            "type": "exclusive"
+        }
+    }
+    // 1:x exclusive
+    // 1:x multiple-choice
+        // basically "uses a Service"
+        // another "provides a Service"
+    // requires
+    // based on existing
+
+
+    // parser yaml, hocon
+    // sources git
+    // security providers
+    //
+    // tracing/jersey client -> client-tracing
+    "prereqs": [
+        "Security",
+        "Jersey"
+    ]
 }
