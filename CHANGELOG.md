@@ -19,6 +19,70 @@ This is the second milestone release of Helidon 2.0.
 
 ### Backward incompatible changes
 
+#### Resource class when loaded from Config
+The configuration approach to `Resource` class was using prefixes which was not aligned with our approach to configuration.
+All usages were refactored as follows:
+
+1. The `Resource` class expects a config node `resource` that will be used to read it
+2. The feature set remains unchanged - we support path, classpath, url, content as plain text, and content as base64
+3. Classes using resources are changed as well, such as `KeyConfig` - see details below
+
+##### OidcConfig
+Configuration has been updated to use the new `Resource` approach:
+
+1. `oidc-metadata.resource` is the new key for loading `oidc-metadata` from local resource
+2. `sign-jwk.resource` is the new key for loading signing JWK resource
+
+##### JwtProvider and JwtAuthProvider
+Configuration has been updated to use the new `Resource` approach:
+
+1. `jwk.resource` is the new key for loading JWK for verifying signatures
+2. `jwt.resource` is also used for outbound as key for loading JWK for signing tokens
+
+##### GrpcTlsDescriptor
+Configuration has been updated to use the new `Resource` approach:
+
+1. `tls-cert.resource` is the new key for certificate
+2. `tls-key.resource` is the new key for private key
+3. `tl-ca-cert` is the the new key for certificate 
+
+##### KeyConfig
+
+The configuration has been updated to have a nicer tree structure:
+
+Example of a public key from keystore:
+```yaml
+ssl:
+  keystore:
+    cert.alias: "service_cert"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
+```
+
+Example of a private key from keystore:
+```yaml
+ssl:
+  keystore:
+    key:
+      alias: "myPrivateKey"
+      passphrase: "password"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
+```
+
+Example of a pem resource with private key and certificate chain:
+```yaml
+ssl:
+  pem:
+    key:
+      passphrase: "password"
+      resource.resource-path: "keystore/id_rsa.p8"
+    cert-chain:
+      resource.resource-path: "keystore/public_key_cert.pem"
+```
+
 ## [2.0.0-M1] 
 
 ### Notes
