@@ -105,6 +105,20 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Maps the single upstream value into an {@link Iterable} and relays its
+     * items to the downstream.
+     * @param mapper the function that receives the single upstream value and
+     *               should return an Iterable instance
+     * @param <U> the result type
+     * @return Multi
+     * @throws NullPointerException if {@code mapper} is {@code null}
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleFlatMapIterable<>(this, mapper);
+    }
+
+    /**
      * Exposes this {@link Single} instance as a {@link CompletionStage}.
      * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
      * exceptionally with an {@link IllegalStateException}
