@@ -102,6 +102,7 @@ public class OpenApiCdiExtension implements Extension {
             OpenAPISupport openApiSupport = new MPOpenAPIBuilder()
                     .openAPIConfig(new OpenApiConfigImpl(mpConfig))
                     .indexView(indexView())
+                    .helidonConfig(config)
                     .build();
 
             openApiSupport.configureEndpoint(RoutingBuilders.create(config.get("openapi")).routingBuilder());

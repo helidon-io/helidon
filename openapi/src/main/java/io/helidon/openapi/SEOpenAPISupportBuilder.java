@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import org.jboss.jandex.IndexView;
  */
 public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
 
-    private static final String CONFIG_PREFIX = "openapi";
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
 
     /**
@@ -49,8 +48,7 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
      * @return updated builder instance
      */
     public SEOpenAPISupportBuilder helidonConfig(Config config) {
-        config.get(CONFIG_PREFIX + ".web-context").asString().ifPresent(this::webContext);
-        config.get(CONFIG_PREFIX + ".static-file").asString().ifPresent(this::staticFile);
+        super.helidonConfig(config);
         apiConfigBuilder.config(config);
         return this;
     }

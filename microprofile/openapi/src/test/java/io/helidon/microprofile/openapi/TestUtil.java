@@ -17,6 +17,7 @@
 package io.helidon.microprofile.openapi;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -27,6 +28,7 @@ import java.util.Map;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
 import org.yaml.snakeyaml.Yaml;
@@ -54,13 +56,28 @@ public class TestUtil {
                 .start();
     }
 
+    public static Server startServer(Class<? extends Application> appClass, Config helidonConfig) {
+        return Server.builder()
+                .config(helidonConfig)
+                .port(0)
+                .addApplication(appClass)
+                .build()
+                .start();
+    }
+
     /**
-     * Stops the previously-started MP server.
+     * Cleans up, stopping the server and disconnecting the connection.
      *
      * @param server the {@code Server} to stop
+     * @param cnx the connection to disconnect
      */
-    public static void stopServer(Server server) {
-        server.stop();
+    public static void cleanup(Server server, HttpURLConnection cnx) {
+        if (cnx != null) {
+            cnx.disconnect();
+        }
+        if (server != null) {
+            server.stop();
+        }
     }
 
     /**
@@ -163,7 +180,9 @@ public class TestUtil {
         if (returnedMediaType.charset().isPresent()) {
             cs = Charset.forName(returnedMediaType.charset().get());
         }
-        return (Map<String, Object>) yaml.load(new InputStreamReader(cnx.getInputStream(), cs));
+        try (InputStream is = cnx.getInputStream(); InputStreamReader isr =  new InputStreamReader(is, cs)) {
+            return (Map<String, Object>) yaml.load(isr);
+        }
     }
 
     /**
