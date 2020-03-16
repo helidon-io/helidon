@@ -39,11 +39,14 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.json.bind.annotation.JsonbTransient;
+
 import graphql.schema.DataFetcher;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
+import org.eclipse.microprofile.graphql.Ignore;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Mutation;
@@ -590,11 +593,23 @@ public class SchemaGenerator {
             Optional<PropertyDescriptor> optionalPd = Arrays.stream(Introspector.getBeanInfo(clazz).getPropertyDescriptors())
                     .filter(p -> p.getReadMethod() != null && p.getReadMethod().getName().equals(m.getName())).findFirst();
             if (optionalPd.isPresent()) {
+                PropertyDescriptor propertyDescriptor = optionalPd.get();
+                try {
+                    // check to see if field is annotated with @Ignore or @JsonbTransient
+                    Field field = clazz.getDeclaredField(propertyDescriptor.getName());
+                    if (field != null
+                            && (field.getAnnotation(Ignore.class) != null
+                                        || field.getAnnotation(JsonbTransient.class) != null)) {
+                        continue;
+                    }
+                } catch (NoSuchFieldException e) {
+                    // ignore check if no field exists
+                }
+
                 // this is a getter method, include it here
-                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, optionalPd.get());
+                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor);
                 mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
             }
-
         }
         return mapDiscoveredMethods;
     }

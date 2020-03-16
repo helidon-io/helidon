@@ -47,6 +47,7 @@ import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
+import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFields;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
@@ -60,6 +61,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -198,15 +200,8 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     }
 
     @Test
-    public void testIds() throws IOException {
-        setupIndex(indexFileName, TypeWithIDs.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
-        ExecutionResult result = executionContext.execute("query { hero }");
-    }
-
-    @Test
-    public void testSimpleContactWithSelf() throws IOException {
-        setupIndex(indexFileName, SimpleContactWithSelf.class);
+    public void testObjectWithIgnorableFieldsf() throws IOException {
+        setupIndex(indexFileName, ObjectWithIgnorableFields.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
         ExecutionResult result = executionContext.execute("query { hero }");
     }
@@ -221,6 +216,13 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     public void testVoidQueries() throws IOException {
         setupIndex(indexFileName, VoidQueries.class);
         assertThrows(RuntimeException.class, () -> new ExecutionContext<>(dummyContext));
+    }
+
+    @Test
+    public void testSimpleContactWithSelf() throws IOException {
+        setupIndex(indexFileName, SimpleContactWithSelf.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionResult result = executionContext.execute("query { hero }");
     }
 
     @Test
@@ -344,6 +346,21 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("getMultiLevelList"), is(notNullValue()));
+
+        result = executionContext.execute("query { testIgnorableFields { id dontIgnore } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("testIgnorableFields");
+        assertThat(mapResults2.size(), is(2));
+        assertThat(mapResults2.get("id"), is("id"));
+        assertThat(mapResults2.get("dontIgnore"), is(true));
+
+        // ensure getting the fields generates an error that is caught by the getAndAssertResult
+        final ExecutionResult result2 = executionContext.execute("query { testIgnorableFields { id dontIgnore pleaseIgnore ignoreThisAsWell } }");
+        assertThrows(AssertionFailedError.class, () -> getAndAssertResult(result2));
+
+
     }
 
     @Test

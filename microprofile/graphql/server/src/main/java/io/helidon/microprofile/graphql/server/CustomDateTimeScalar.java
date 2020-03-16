@@ -18,9 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -41,8 +39,14 @@ import static graphql.scalars.util.Kit.typeName;
  */
 public class CustomDateTimeScalar extends GraphQLScalarType {
 
-    public static GraphQLScalarType INSTANCE = new CustomDateTimeScalar();
+    /**
+     * Instance of the scalar.
+     */
+    public static final GraphQLScalarType INSTANCE = new CustomDateTimeScalar();
 
+    /**
+     * Construct a new scalar.
+     */
     public CustomDateTimeScalar() {
         super("DateTime", "An RFC-3339 compliant DateTime Scalar", new Coercing<OffsetDateTime, String>() {
             @Override

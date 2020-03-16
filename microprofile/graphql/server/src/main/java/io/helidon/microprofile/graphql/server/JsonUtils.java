@@ -27,7 +27,7 @@ import javax.json.bind.JsonbConfig;
  * Various Json utilities.
  */
 public class JsonUtils {
-    
+
     /**
      * JSONB instance.
      */

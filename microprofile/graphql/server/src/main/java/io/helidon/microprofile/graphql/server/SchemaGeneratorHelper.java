@@ -65,16 +65,19 @@ public class SchemaGeneratorHelper {
         put(LocalTime.class.getName(), new SchemaScalar("Time", LocalTime.class.getName(), CustomTimeScalar.INSTANCE));
 
         // DateTime scalars
-        put(OffsetDateTime.class.getName(), new SchemaScalar("DateTime", OffsetDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
-        put(ZonedDateTime.class.getName(), new SchemaScalar("DateTime", ZonedDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
-        put(LocalDateTime.class.getName(), new SchemaScalar("DateTime", LocalDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+        put(OffsetDateTime.class.getName(),
+            new SchemaScalar("DateTime", OffsetDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+        put(ZonedDateTime.class.getName(),
+            new SchemaScalar("DateTime", ZonedDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+        put(LocalDateTime.class.getName(),
+            new SchemaScalar("DateTime", LocalDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
 
         // Date scalar
         put(LocalDate.class.getName(), new SchemaScalar("Date", LocalDate.class.getName(), ExtendedScalars.Date));
 
         // BigDecimal scalars
         put(BigDecimal.class.getName(), new SchemaScalar("BigDecimal", Long.class.getName(), Scalars.GraphQLBigDecimal));
-        
+
         // BigInter scalars
         put(BigInteger.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
         put(long.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));

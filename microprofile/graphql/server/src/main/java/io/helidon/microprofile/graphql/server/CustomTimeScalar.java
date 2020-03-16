@@ -36,12 +36,17 @@ import static graphql.scalars.util.Kit.typeName;
 /**
  * Custom Time scalar. Copied initially from graphql.scalars.datetime.TimeScalar from extend scalars package.
  */
-public class CustomTimeScalar extends GraphQLScalarType {
-    private final static DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_OFFSET_TIME;
-    private static final DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
+public class CustomTimeScalar
+        extends GraphQLScalarType {
 
-    public static GraphQLScalarType INSTANCE = new CustomTimeScalar();
+    /**
+     * Instance of the scalar.
+     */
+    public static final GraphQLScalarType INSTANCE = new CustomTimeScalar();
 
+    /**
+     * Construct a new scalar.
+     */
     public CustomTimeScalar() {
         super("Time", "An Customized RFC-3339 compliant Full Time Scalar", new Coercing<OffsetTime, String>() {
             @Override
@@ -58,8 +63,8 @@ public class CustomTimeScalar extends GraphQLScalarType {
                 }
                 try {
                     return input instanceof LocalTime
-                            ? timeFormatter.format(temporalAccessor)
-                            : dateFormatter.format(temporalAccessor);
+                            ? DateTimeFormatter.ISO_LOCAL_TIME.format(temporalAccessor)
+                            : DateTimeFormatter.ISO_OFFSET_TIME.format(temporalAccessor);
                 } catch (DateTimeException e) {
                     throw new CoercingSerializeException(
                             "Unable to turn TemporalAccessor into full time because of : '" + e.getMessage() + "'."
@@ -100,7 +105,7 @@ public class CustomTimeScalar extends GraphQLScalarType {
 
             private OffsetTime parseOffsetTime(String s, Function<String, RuntimeException> exceptionMaker) {
                 try {
-                    TemporalAccessor temporalAccessor = dateFormatter.parse(s);
+                    TemporalAccessor temporalAccessor = DateTimeFormatter.ISO_OFFSET_TIME.parse(s);
                     return OffsetTime.from(temporalAccessor);
                 } catch (DateTimeParseException e) {
                     throw exceptionMaker

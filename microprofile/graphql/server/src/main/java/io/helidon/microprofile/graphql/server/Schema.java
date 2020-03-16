@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import graphql.GraphQLException;
-import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
