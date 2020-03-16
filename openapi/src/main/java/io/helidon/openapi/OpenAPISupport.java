@@ -701,7 +701,8 @@ public class OpenAPISupport implements Service {
         public Builder webContext(String path) {
             if (!path.startsWith("/")) {
                 path = "/" + path;
-            }this.webContext = Optional.of(path);
+            }
+            this.webContext = Optional.of(path);
             return this;
         }
 
