@@ -52,6 +52,7 @@ import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
+import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
@@ -110,6 +111,11 @@ public class SchemaGenerator {
     private Set<String> setUnresolvedTypes = new HashSet<>();
 
     /**
+     * Holds the {@link Set} of additional methods that need to be added to types.
+     */
+    private Set<DiscoveredMethod> setAdditionalMethods = new HashSet<>();
+
+    /**
      * Construct a {@link SchemaGenerator} instance.
      */
     public SchemaGenerator() {
@@ -153,6 +159,7 @@ public class SchemaGenerator {
         Schema schema = new Schema();
         List<SchemaType> listSchemaTypes = new ArrayList<>();
         setUnresolvedTypes.clear();
+        setAdditionalMethods.clear();
 
         SchemaType rootQueryType = new SchemaType(schema.getQueryName(), null);
         SchemaType rootMutationType = new SchemaType(schema.getMutationName(), null);
@@ -270,6 +277,18 @@ public class SchemaGenerator {
             });
         });
 
+        // process any additional methods requires via the @Source annotation
+        setAdditionalMethods.forEach(dm -> {
+            // add the discovered method to the type
+            SchemaType type = schema.getTypeByClass(dm.source);
+            if (type != null) {
+                SchemaFieldDefinition fd = newFieldDefinition(dm, null);
+                fd.setDataFetcher(DataFetcherUtils.newSourceMethodDataFetcher(
+                        dm.method.getDeclaringClass(), dm.method, dm.getSource()));
+                type.addFieldDefinition(fd);
+            }
+        });
+
         // process the @GraphQLApi annotated classes
         if (rootQueryType.getFieldDefinitions().size() == 0) {
             LOGGER.warning("Unable to find any classes with @GraphQLApi annotation."
@@ -304,7 +323,7 @@ public class SchemaGenerator {
             type.addFieldDefinition(fd);
 
             if (!ID.equals(valueTypeName) && valueTypeName.equals(fd.getReturnType())) {
-                LOGGER.info("In generateTpye: Adding unresolved type of " + valueTypeName + " for method "
+                LOGGER.info("In generateType: Adding unresolved type of " + valueTypeName + " for method "
                                     + discoveredMethod.getName() + " on type " + realReturnType);
                 // value class was unchanged meaning we need to resolve
                 setUnresolvedTypes.add(valueTypeName);
@@ -335,12 +354,25 @@ public class SchemaGenerator {
 
             LOGGER.info("Processing method " + discoveredMethod.getName() + ", " + discoveredMethod.getReturnType());
 
-            SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, getMethodName(method));
+            SchemaFieldDefinition fd = null;
+
+            // only include discovered methods in the original type where either the source is null
+            // or the source is not null and it had a query annotation
+            String source = discoveredMethod.getSource();
+            if (source == null || discoveredMethod.isQueryAnnotated()) {
+                fd = newFieldDefinition(discoveredMethod, getMethodName(method));
+            }
+            // if the source was not null, save it for later processing on the correct type
+            if (source != null) {
+                setAdditionalMethods.add(discoveredMethod);
+            }
+
             SchemaType schemaType = discoveredMethod.methodType == QUERY_TYPE
                     ? rootQueryType
                     : rootMutationType;
 
             // add all the arguments and check to see if they contain types that are not yet known
+            // this check is done no matter if the field definition is going to be created or not
             for (SchemaArgument a : discoveredMethod.getArguments()) {
                 String originalTypeName = a.getArgumentType();
                 String typeName = getGraphQLType(originalTypeName);
@@ -397,27 +429,30 @@ public class SchemaGenerator {
                                     }
                                 }
                             }
-                            int i = 0;
                         }
                     }
                 }
-                fd.addArgument(a);
+                if (fd != null) {
+                    fd.addArgument(a);
+                }
             }
 
-            DataFetcher dataFetcher = DataFetcherUtils
-                    .newMethodDataFetcher(clazz, method, fd.getArguments().toArray(new SchemaArgument[0]));
-            fd.setDataFetcher(dataFetcher);
+            if (fd != null) {
+                DataFetcher dataFetcher = DataFetcherUtils
+                        .newMethodDataFetcher(clazz, method, fd.getArguments().toArray(new SchemaArgument[0]));
+                fd.setDataFetcher(dataFetcher);
 
-            schemaType.addFieldDefinition(fd);
+                schemaType.addFieldDefinition(fd);
 
-            // check for scalar return type
-            checkScalars(schema, schemaType);
+                // check for scalar return type
+                checkScalars(schema, schemaType);
 
-            String returnType = discoveredMethod.getReturnType();
-            // check to see if this is a known type
-            if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
-                // value class was unchanged meaning we need to resolve
-                setUnresolvedTypes.add(returnType);
+                String returnType = discoveredMethod.getReturnType();
+                // check to see if this is a known type
+                if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
+                    // value class was unchanged meaning we need to resolve
+                    setUnresolvedTypes.add(returnType);
+                }
             }
         }
     }
@@ -563,10 +598,11 @@ public class SchemaGenerator {
         for (Method m : getAllMethods(clazz)) {
             boolean isQuery = m.getAnnotation(Query.class) != null;
             boolean isMutation = m.getAnnotation(Mutation.class) != null;
+            boolean hasSourceAnnotation = Arrays.stream(m.getParameters()).anyMatch(p -> p.getAnnotation(Source.class) != null);
             if (isMutation && isQuery) {
                 throw new RuntimeException("A class may not have both a Query and Mutation annotation");
             }
-            if (isQuery || isMutation) {
+            if (isQuery || isMutation || hasSourceAnnotation) {
                 LOGGER.info("Processing Query or Mutation " + m.getName());
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null);
                 discoveredMethod.setMethodType(isQuery ? QUERY_TYPE : MUTATION_TYPE);
@@ -598,8 +634,9 @@ public class SchemaGenerator {
                     // check to see if field is annotated with @Ignore or @JsonbTransient
                     Field field = clazz.getDeclaredField(propertyDescriptor.getName());
                     if (field != null
-                            && (field.getAnnotation(Ignore.class) != null
-                                        || field.getAnnotation(JsonbTransient.class) != null)) {
+                            && (
+                            field.getAnnotation(Ignore.class) != null
+                                    || field.getAnnotation(JsonbTransient.class) != null)) {
                         continue;
                     }
                 } catch (NoSuchFieldException e) {
@@ -718,7 +755,6 @@ public class SchemaGenerator {
                         ? paramNameAnnotation.value()
                         : parameter.getName();
                 DefaultValue defaultValueAnnotations = parameter.getAnnotation(DefaultValue.class);
-
                 Class<?> paramType = parameter.getType();
 
                 ReturnType returnType = getReturnType(paramType, genericParameterTypes[i++]);
@@ -727,6 +763,12 @@ public class SchemaGenerator {
                         throw new RuntimeException("A class of type " + paramType + " is not allowed to be an @Id");
                     }
                     returnType.setReturnClass(ID);
+                }
+
+                Source sourceAnnotation = parameter.getAnnotation(Source.class);
+                if (sourceAnnotation != null) {
+                    discoveredMethod.setSource(returnType.getReturnClass());
+                    discoveredMethod.setQueryAnnotated(method.getAnnotation(Query.class) != null);
                 }
 
                 discoveredMethod
@@ -859,6 +901,17 @@ public class SchemaGenerator {
          * Number of levels in the Array.
          */
         private int arrayLevels = 0;
+
+        /**
+         * The source on which the method should be added.
+         */
+        private String source;
+
+        /**
+         * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
+         * If true, then this indicates that a top level query shoudl also be created as well as the field in the type.
+         */
+        private boolean isQueryAnnotated = false;
 
         /**
          * Default constructor.
@@ -1037,6 +1090,42 @@ public class SchemaGenerator {
             listArguments.add(argument);
         }
 
+        /**
+         * Return the source on which the method should be added.
+         *
+         * @return source on which the method should be added
+         */
+        public String getSource() {
+            return source;
+        }
+
+        /**
+         * Set the source on which the method should be added.
+         *
+         * @param source source on which the method should be added
+         */
+        public void setSource(String source) {
+            this.source = source;
+        }
+
+        /**
+         * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
+         *
+         * @return true if the {@Link Query} annotation was present
+         */
+        public boolean isQueryAnnotated() {
+            return isQueryAnnotated;
+        }
+
+        /**
+         * Set if the method containing the {@link Source} annotation was * also annotated with the {@link Query} annotation.
+         *
+         * @param queryAnnotated true if the {@Link Query} annotation was present
+         */
+        public void setQueryAnnotated(boolean queryAnnotated) {
+            isQueryAnnotated = queryAnnotated;
+        }
+
         @Override
         public String toString() {
             return "DiscoveredMethod{"
@@ -1048,6 +1137,8 @@ public class SchemaGenerator {
                     + ", isMap=" + isMap
                     + ", listArguments=" + listArguments
                     + ", arrayLevels=" + arrayLevels
+                    + ", source=" + source
+                    + ", isQueryAnnotated=" + isQueryAnnotated
                     + ", method=" + method + '}';
         }
 
@@ -1066,14 +1157,16 @@ public class SchemaGenerator {
                     && arrayLevels == that.arrayLevels
                     && Objects.equals(name, that.name)
                     && Objects.equals(returnType, that.returnType)
+                    && Objects.equals(source, that.source)
+                    && Objects.equals(isQueryAnnotated, that.isQueryAnnotated)
                     && Objects.equals(method, that.method)
                     && Objects.equals(collectionType, that.collectionType);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, returnType, methodType, method, arrayLevels,
-                                collectionType, isArrayReturnType, isMap);
+            return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
+                                collectionType, isArrayReturnType, isMap, source);
         }
     }
 

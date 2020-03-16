@@ -82,9 +82,30 @@ public class DataFetcherUtils {
     }
 
     /**
+     * Create a new {@link DataFetcher} for a {@link Class} and {@link Method} which accepts the source as an argument.
+     *
+     * @param clazz  {@link Class} to call
+     * @param method {@link Method} to call
+     * @param sourceClass the source class for the environment.getSource()
+     * @return a new {@link DataFetcher}
+     */
+    public static  DataFetcher newSourceMethodDataFetcher(Class<?> clazz, Method method, String sourceClass) {
+        Object instance = CDI.current().select(clazz).get();
+        Class<?> sourceClazz;
+        try {
+            sourceClazz = Class.forName(sourceClass);
+        } catch (ClassNotFoundException e) {
+            // this should not happen
+            throw new RuntimeException("Cannot find class " + sourceClass);
+        }
+        return environment -> method.invoke(instance, (sourceClazz.cast(environment.getSource())));
+    }
+
+    /**
      * Convert the ID type back to the original type for the method call.
-     * @param originalType  original type
-     * @param key           the key value passed in
+     *
+     * @param originalType original type
+     * @param key          the key value passed in
      * @return the value as the original type
      */
     private static Object getOriginalValue(Class<?> originalType, String key) {

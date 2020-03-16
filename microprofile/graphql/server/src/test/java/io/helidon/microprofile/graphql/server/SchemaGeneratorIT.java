@@ -39,6 +39,7 @@ import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
 import io.helidon.microprofile.graphql.server.test.queries.VoidQueries;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
@@ -357,10 +358,50 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(mapResults2.get("dontIgnore"), is(true));
 
         // ensure getting the fields generates an error that is caught by the getAndAssertResult
-        final ExecutionResult result2 = executionContext.execute("query { testIgnorableFields { id dontIgnore pleaseIgnore ignoreThisAsWell } }");
+        final ExecutionResult result2 = executionContext
+                .execute("query { testIgnorableFields { id dontIgnore pleaseIgnore ignoreThisAsWell } }");
         assertThrows(AssertionFailedError.class, () -> getAndAssertResult(result2));
+    }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testSimpleQueriesWithSource() throws IOException {
+        setupIndex(indexFileName, SimpleQueriesWithSource.class, SimpleContact.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
 
+        // since there is a @Source annotation in SimpleQueriesWithSource, then this should add a field
+        // idAndName to the SimpleContact type
+        ExecutionResult result = executionContext.execute("query { findContact { id idAndName } }");
+
+        Map<String, Object> mapResults = getAndAssertResult(result);
+
+        assertThat(mapResults.size(), is(1));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("findContact");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("id"), is(notNullValue()));
+        assertThat(mapResults2.get("idAndName"), is(notNullValue()));
+
+        // test the query at the top level
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
+
+        String json = "contact: " + getContactAsQueryInput(contact1);
+
+        result = executionContext.execute("query { currentJob (" + json + ") }");
+        mapResults = getAndAssertResult(result);
+
+        assertThat(mapResults.size(), is(1));
+        String currentJob = (String) mapResults.get("currentJob");
+        assertThat(currentJob, is(notNullValue()));
+
+        // test the query from the object
+        result = executionContext.execute("query { findContact { id idAndName currentJob } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        mapResults2 = (Map<String, Object>) mapResults.get("findContact");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("id"), is(notNullValue()));
+        assertThat(mapResults2.get("idAndName"), is(notNullValue()));
+        assertThat(mapResults2.get("currentJob"), is(notNullValue()));
     }
 
     @Test

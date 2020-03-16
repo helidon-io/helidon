@@ -238,12 +238,6 @@ public class Schema
             builder.scalar(s.getGraphQLScalarType());
         });
 
-        //        // register extended scalars
-        //        builder.scalar(ExtendedScalars.DateTime)
-        //                .scalar(ExtendedScalars.Date)
-        //                .scalar(ExtendedScalars.Object)
-        //                .scalar(ExtendedScalars.Time);
-
         // we should now have the query runtime binding
         builder.type(typeRuntimeBuilder);
 
@@ -272,6 +266,21 @@ public class Schema
     public SchemaType getTypeByName(String typeName) {
         for (SchemaType schemaType : listSchemaTypes) {
             if (schemaType.getName().equals(typeName)) {
+                return schemaType;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Return a {@link SchemaType} that matches the given class.
+     *
+     * @param clazz the class to find
+     * @return a {@link SchemaType} that matches the given class or null if none found
+     */
+    public SchemaType getTypeByClass(String clazz) {
+        for (SchemaType schemaType : listSchemaTypes) {
+            if (clazz.equals(schemaType.getValueClassName())) {
                 return schemaType;
             }
         }
