@@ -20,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 
 import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -53,7 +54,7 @@ public class BasicServerTest {
      */
     @BeforeAll
     public static void startServer() throws Exception {
-        server = TestUtil.startServer(TestApp.class);
+        server = TestUtil.startServer(TestApp.class, Config.create());
         cnx = TestUtil.getURLConnection(
                 server.port(),
                 "GET",
