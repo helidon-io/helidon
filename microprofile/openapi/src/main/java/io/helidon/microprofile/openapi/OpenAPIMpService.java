@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public class OpenAPIMpService implements MpService {
             openAPISupport = new MPOpenAPIBuilder()
                     .openAPIConfig(new OpenApiConfigImpl(context.config()))
                     .indexView(indexBuilder.indexView())
+                    .helidonConfig(context.helidonConfig())
                     .build();
         } catch (IOException ex) {
             throw new RuntimeException(ex);

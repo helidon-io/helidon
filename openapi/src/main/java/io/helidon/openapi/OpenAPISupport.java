@@ -604,6 +604,8 @@ public class OpenAPISupport implements Service {
      */
     public abstract static class Builder implements io.helidon.common.Builder<OpenAPISupport> {
 
+        static final String CONFIG_PREFIX = "openapi";
+
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
 
@@ -611,6 +613,27 @@ public class OpenAPISupport implements Service {
         public OpenAPISupport build() {
             validate();
             return new OpenAPISupport(this);
+        }
+
+        /**
+         * Set various builder attributes from the specified {@code Config} object.
+         * <p>
+         * The {@code Config} object can specify {@value #CONFIG_PREFIX}.web-context
+         * and {@value #CONFIG_PREFIX}.static-file in addition to settings
+         * supported by {@link OpenAPIConfigImpl.Builder}.
+         *
+         * @param config the {@code Config} object possibly containing settings
+         * @exception NullPointerException if the provided {@code Config} is null
+         * @return updated builder instance
+         */
+        public Builder helidonConfig(Config config) {
+            config.get(CONFIG_PREFIX + ".web-context")
+                    .asString()
+                    .ifPresent(this::webContext);
+            config.get(CONFIG_PREFIX + ".static-file")
+                    .asString()
+                    .ifPresent(this::staticFile);
+            return this;
         }
 
         /**
@@ -676,7 +699,9 @@ public class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         public Builder webContext(String path) {
-            this.webContext = Optional.of(path);
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }this.webContext = Optional.of(path);
             return this;
         }
 
