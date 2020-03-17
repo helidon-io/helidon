@@ -77,6 +77,17 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Switch to the other Single if the upstream is empty.
+     * @param other the Single to switch to if the upstream is empty.
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Single<T> switchIfEmpty(Single<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleSwitchIfEmpty<>(this, other);
+    }
+
+    /**
      * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
      *
      * @param <U>    mapped items type
