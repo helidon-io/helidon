@@ -352,10 +352,10 @@ public interface Multi<T> extends Subscribable<T> {
      *     fails or the flow gets canceled. To avoid closing the stream automatically,
      *     it is recommended to turn the {@link Stream} into an {@link Iterable}
      *     via {@link Stream#iterator()} and use {@link #from(Iterable)}:
-     *     <pre><code>
-     *     Stream&lt;T&gt; stream = ...
-     *     Multi&lt;T&gt; multi = Multi.from(stream::iterator);
-     *     </code></pre>
+     *     <pre>{@code
+     *     Stream<T> stream = ...
+     *     Multi<T> multi = Multi.from(stream::iterator);
+     *     }</pre>
      * </p>
      * @param <T>      item type
      * @param stream the Stream to publish
