@@ -543,6 +543,43 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Signal 0L, 1L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param period the initial and in-between time
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long period, TimeUnit unit, ScheduledExecutorService executor) {
+        return interval(period, period, unit, executor);
+    }
+
+    /**
+     * Signal 0L after an initial delay, then 1L, 2L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param initialDelay the time before signaling 0L
+     * @param period the in-between wait time for values 1L, 2L and so on
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long initialDelay, long period, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiInterval(initialDelay, period, unit, executor);
+    }
+
+    /**
      * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
      *
      * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
