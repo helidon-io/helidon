@@ -122,11 +122,10 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         // number of blanks for a given word
         Function<String, Single<Long>> nBlanks =
                 word ->
-                            Multi.from(histoOfLetters.apply(word))
+                            histoOfLetters.apply(word)
                             .flatMapIterable(HashMap::entrySet)
                             .map(blank)
-                            .collectStream(Collectors.summarizingLong(value -> value))
-                            .map(LongSummaryStatistics::getSum)
+                            .reduce(Long::sum)
                     ;
 
 
@@ -138,13 +137,12 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         // score taking blanks into account letterScore1
         Function<String, Single<Integer>> score2 =
                 word ->
-                        Multi.from(histoOfLetters.apply(word))
+                        histoOfLetters.apply(word)
                             .flatMapIterable(
                                     HashMap::entrySet
                             )
                             .map(letterScore)
-                            .collectStream(Collectors.summarizingInt(value -> value))
-                            .map(v -> (int)v.getSum())
+                            .reduce(Integer::sum)
                             ;
 
         // Placing the word on the board
@@ -164,8 +162,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         Function<String, Single<Integer>> bonusForDoubleLetter =
             word -> toBeMaxed.apply(word)
                         .map(scoreOfALetter)
-                    .collectStream(Collectors.summarizingInt(value -> value))
-                    .map(v -> (int)v.getMax())
+                    .reduce(Integer::max)
                     ;
 
         // score of the word put on the board
@@ -175,11 +172,8 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
                     Multi.from(score2.apply(word)),
                     Multi.from(bonusForDoubleLetter.apply(word))
                 )
-                .collectStream(Collectors.summarizingInt(value -> value))
-                .map(w -> {
-                    int v = (int) w.getSum();
-                    return v * 2 + (word.length() == 7 ? 50 : 0);
-                })
+                .reduce(Integer::sum)
+                .map(v -> v * 2 + (word.length() == 7 ? 50 : 0))
                 ;
 
         Function<Function<String, Single<Integer>>, Single<TreeMap<Integer, List<String>>>> buildHistoOnScore =
@@ -201,7 +195,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
 
         // best key / value pairs
         List<Entry<Integer, List<String>>> finalList2 =
-                    Multi.from(buildHistoOnScore.apply(score3))
+                    buildHistoOnScore.apply(score3)
                     .flatMapIterable(
                             TreeMap::entrySet
                     )

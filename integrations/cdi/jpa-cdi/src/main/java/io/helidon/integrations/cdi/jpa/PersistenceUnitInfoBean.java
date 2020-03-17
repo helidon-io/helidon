@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -814,7 +814,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
     }
 
     /**
-     * Creates and returns a {@link Collection} of {@link {@link
+     * Creates and returns a {@link Collection} of {@link
      * PersistenceUnitInfoBean} instances from a supplied {@link
      * Persistence} object.
      *
@@ -961,8 +961,8 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      * META-INF/persistence.xml} resource), a {@link URL} representing
      * the persistence unit's root, a {@link Map} of unlisted managed
      * classes (entity classes, mapped superclasses and so on) indexed
-     * by persistence unit name, and a {@link
-     * DataSourceProviderSupplier} that can supply {@link
+     * by persistence unit name, and a {@code
+     * DataSourceProviderSupplier} that can supply {@code
      * DataSourceProvider} instances, returns a {@link
      * PersistenceUnitInfoBean} representing the persistence unit in
      * question.
@@ -1215,11 +1215,13 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         }
 
         if (tempClassLoaderSupplier == null) {
-            if (classLoader instanceof URLClassLoader) {
-                tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
-            } else {
-                tempClassLoaderSupplier = () -> classLoader;
-            }
+            tempClassLoaderSupplier = () -> {
+                if (classLoader instanceof URLClassLoader) {
+                    return new URLClassLoader(((URLClassLoader) classLoader).getURLs());
+                } else {
+                    return classLoader;
+                }
+            };
         }
 
         final PersistenceUnitInfoBean returnValue =

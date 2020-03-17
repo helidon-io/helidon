@@ -19,19 +19,15 @@ package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 import io.helidon.microprofile.messaging.MessagingException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -41,11 +37,15 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class ProcessorComplStageQueueOverflowBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private static final long QUEUE_MAX_SIZE = 1024;
+    private static final long QUEUE_MAX_SIZE = 2048;
     private final CompletableFuture<Throwable> overflowFuture = new CompletableFuture<>();
     private final CompletableFuture<String> forbiddenCall = new CompletableFuture<>();
 
@@ -90,19 +90,10 @@ public class ProcessorComplStageQueueOverflowBean implements AssertableTestBean 
 
     @Override
     public void assertValid() {
-        try {
-            Throwable throwable = overflowFuture.get(2, TimeUnit.SECONDS);
-            assertEquals(MessagingException.class, throwable.getClass());
-            assertTrue(throwable.getMessage().contains("Maximum size"));
-            assertFalse(forbiddenCall.isDone(), () -> {
-                try {
-                    return forbiddenCall.get(1, TimeUnit.SECONDS);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    return String.format("Unexpected assertion state %s", e.getMessage());
-                }
-            });
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
+        await("Buffer overflow expected!", overflowFuture);
+        Throwable t = overflowFuture.getNow(null);
+        assertWithOrigin("Wrong exception intercepted!", t, instanceOf(MessagingException.class));
+        assertWithOrigin("Wrong exception message!", t.getMessage(), containsString("Maximum size"));
+        assertFalse(forbiddenCall.isDone(), () -> await("Unexpected test state!", forbiddenCall));
     }
 }

@@ -23,7 +23,10 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -62,6 +65,17 @@ public interface Multi<T> extends Subscribable<T> {
     default <U> Multi<U> map(Mapper<T, U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new MultiMapperPublisher<>(this, mapper);
+    }
+
+    /**
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
+     * @return Multi
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
+     */
+    default Multi<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new MultiDefaultIfEmpty<>(this, defaultItem);
     }
 
     /**
@@ -253,6 +267,40 @@ public interface Multi<T> extends Subscribable<T> {
     default <A, R> Single<R> collectStream(java.util.stream.Collector<T, A, R> collector) {
         Objects.requireNonNull(collector, "collector is null");
         return new MultiCollectorPublisher<>(this, collector);
+    }
+
+    /**
+     * Combine subsequent items via a callback function and emit
+     * the final value result as a Single.
+     * <p>
+     *     If the upstream is empty, the resulting Single is also empty.
+     *     If the upstream contains only one item, the reducer function
+     *     is not invoked and the resulting Single will have only that
+     *     single item.
+     * </p>
+     * @param reducer the function called with the first value or the previous result,
+     *                the current upstream value and should return a new value
+     * @return Single
+     */
+    default Single<T> reduce(BiFunction<T, T, T> reducer) {
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduce<>(this, reducer);
+    }
+
+    /**
+     * Combine every upstream item with an accumulator value to produce a new accumulator
+     * value and emit the final accumulator value as a Single.
+     * @param supplier the function to return the initial accumulator value for each incoming
+     *                 Subscriber
+     * @param reducer the function that receives the current accumulator value, the current
+     *                upstream value and should return a new accumulator value
+     * @param <R> the accumulator and result type
+     * @return Single
+     */
+    default <R> Single<R> reduce(Supplier<? extends R> supplier, BiFunction<R, T, R> reducer) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduceFull<>(this, supplier, reducer);
     }
 
     /**
@@ -523,6 +571,20 @@ public interface Multi<T> extends Subscribable<T> {
             return singleton(start);
         }
         return new MultiRangeLongPublisher(start, start + count);
+    }
+
+    /**
+     * Signal 0L and complete the sequence after the given time elapsed.
+     * @param time the time to wait before signaling 0L and completion
+     * @param unit the unit of time
+     * @param executor the executor to run the waiting on
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> timer(long time, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiTimer(time, unit, executor);
     }
 
     /**

@@ -39,8 +39,7 @@ class InternalSubscriber implements Subscriber<Object> {
     @Override
     public void onSubscribe(Subscription s) {
         subscription = s;
-        // request one by one
-        subscription.request(1);
+        subscription.request(Long.MAX_VALUE);
     }
 
     @Override
@@ -51,7 +50,6 @@ class InternalSubscriber implements Subscriber<Object> {
             Object preProcessedMessage = preProcess(message, paramType);
             Object methodResult = method.invoke(incomingMethod.getBeanInstance(), preProcessedMessage);
             postProcess(message, methodResult);
-            subscription.request(1);
         } catch (Exception e) {
             // Notify publisher to stop sending
             subscription.cancel();

@@ -21,18 +21,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
+import io.helidon.microprofile.messaging.AsyncTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -40,11 +36,16 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
-public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestBean {
+public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestBean, AsyncTestBean {
 
-    CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
     private final CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
+    private final ExecutorService executor = createExecutor();
 
     @Outgoing("cs-string-message")
     public Publisher<Message<String>> sourceForCsStringMessage() {
@@ -56,20 +57,20 @@ public class SubscriberPublMsgToMsgRetComplStringBean implements AssertableTestB
     @Incoming("cs-string-message")
     public CompletionStage<String> consumeMessageAndReturnCompletionStageOfString(Message<String> message) {
         return CompletableFuture.supplyAsync(() -> {
-            RESULT_DATA.add(message.getPayload());
+            resultData.add(message.getPayload());
             countDownLatch.countDown();
             return "test";
-        }, Executors.newSingleThreadExecutor());
+        }, executor);
     }
 
     @Override
     public void assertValid() {
-        try {
-            countDownLatch.await(2, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            fail(e);
-        }
-        assertTrue(RESULT_DATA.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), RESULT_DATA.size());
+        await("Messages not delivered in time!", countDownLatch);
+        assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
+    }
+
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
     }
 }

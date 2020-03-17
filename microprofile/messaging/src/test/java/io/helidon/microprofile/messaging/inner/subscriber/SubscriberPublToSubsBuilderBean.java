@@ -33,10 +33,14 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Publisher;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class SubscriberPublToSubsBuilderBean implements AssertableTestBean {
 
-    CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
 
     @Outgoing("subscriber-builder-message")
     public Publisher<Message<String>> sourceForSubscriberBuilderMessage() {
@@ -48,12 +52,12 @@ public class SubscriberPublToSubsBuilderBean implements AssertableTestBean {
     @Incoming("subscriber-builder-message")
     public SubscriberBuilder<Message<String>, Void> subscriberBuilderOfMessages() {
         return ReactiveStreams.<Message<String>>builder()
-                .forEach(m -> RESULT_DATA.add(m.getPayload()));
+                .forEach(m -> resultData.add(m.getPayload()));
     }
 
     @Override
     public void assertValid() {
-        assertTrue(RESULT_DATA.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), RESULT_DATA.size());
+        assertTrue(resultData.containsAll(TEST_DATA));
+        assertEquals(TEST_DATA.size(), resultData.size());
     }
 }
