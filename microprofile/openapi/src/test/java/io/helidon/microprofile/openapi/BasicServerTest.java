@@ -55,7 +55,7 @@ public class BasicServerTest {
      */
     @BeforeAll
     public static void startServer() throws Exception {
-        server = TestUtil.startServer(TestApp.class, , TestApp3.class, Config.create());
+        server = TestUtil.startServer(Config.create(), TestApp.class, TestApp3.class);
         cnx = TestUtil.getURLConnection(
                 server.port(),
                 "GET",

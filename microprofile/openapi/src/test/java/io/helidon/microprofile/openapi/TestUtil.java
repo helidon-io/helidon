@@ -45,25 +45,18 @@ public class TestUtil {
      * <p>
      * The server will use the default MP config.
      *
+     * @param helidonConfig the Helidon configuration to use in preparing the server
      * @param appClasses application classes to serve
      * @return the started MP {@code Server} instance
      */
-    public static Server startServer(Class<? extends Application>... appClasses) {
+    public static Server startServer(Config helidonConfig, Class<? extends Application>... appClasses) {
         Server.Builder builder = Server.builder()
-                .port(0);
+                .port(0)
+                .config(helidonConfig);
         for (Class<? extends Application> appClass : appClasses) {
             builder.addApplication(appClass);
         }
         return builder
-                .build()
-                .start();
-    }
-
-    public static Server startServer(Class<? extends Application> appClass, Config helidonConfig) {
-        return Server.builder()
-                .config(helidonConfig)
-                .port(0)
-                .addApplication(appClass)
                 .build()
                 .start();
     }

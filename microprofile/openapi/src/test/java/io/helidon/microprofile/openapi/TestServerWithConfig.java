@@ -45,7 +45,7 @@ public class TestServerWithConfig {
     @BeforeAll
     public static void startServer() throws Exception {
         Config helidonConfig = Config.builder().addSource(ClasspathConfigSource.create("/serverConfig.yml")).build();
-        server = TestUtil.startServer(TestApp.class, helidonConfig);
+        server = TestUtil.startServer(helidonConfig, TestApp.class);
         cnx = TestUtil.getURLConnection(
                 server.port(),
                 "GET",
