@@ -104,7 +104,7 @@
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
+        <version.plugin.javadoc>3.2.0</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
@@ -669,13 +669,11 @@
                     <siteDirectory>docs</siteDirectory>
                 </configuration>
                 <dependencies>
-                    <!--
                     <dependency>
                         <groupId>io.helidon.build-tools</groupId>
                         <artifactId>sitegen-maven-plugin</artifactId>
                         <version>${version.plugin.helidon-build-tools}</version>
                     </dependency>
-                    -->
                     <dependency>
                         <groupId>org.asciidoctor</groupId>
                         <artifactId>asciidoctorj-diagram</artifactId>
