@@ -36,13 +36,8 @@ import org.testng.annotations.Factory;
 
 public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
-    private static final TestEnvironment testEnvironment = new TestEnvironment(200);
-    private HelidonReactiveStreamsEngine engine;
-    private ReactiveStreamsFactory rs;
-    private ScheduledExecutorService executorService;
-
     public HelidonReactiveStreamsTckTest() {
-        super(testEnvironment);
+        super(new TestEnvironment(200));
     }
 
     @Override
@@ -50,45 +45,4 @@ public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonRea
         return new HelidonReactiveStreamsEngine();
     }
 
-    @Factory
-    @Override
-    public Object[] allTests() {
-        engine = createEngine();
-        rs = createFactory();
-        executorService = Executors.newScheduledThreadPool(4);
-
-        ReactiveStreamsApiVerification apiVerification = new ReactiveStreamsApiVerification(rs);
-        ReactiveStreamsSpiVerification spiVerification = new CustomReactiveStreamsSpiVerification(testEnvironment, rs, engine, executorService);
-
-        List<Object> allTests = new ArrayList<>();
-        allTests.addAll(apiVerification.allTests());
-        allTests.addAll(spiVerification.allTests());
-        return allTests.stream().filter(this::isEnabled).toArray();
-    }
-
-    @AfterSuite(alwaysRun = true)
-    public void shutdownEngine() {
-        if (engine != null) {
-            shutdownEngine(engine);
-        }
-        executorService.shutdown();
-    }
-
-    static class CustomReactiveStreamsSpiVerification extends ReactiveStreamsSpiVerification {
-
-        public CustomReactiveStreamsSpiVerification(TestEnvironment testEnvironment, ReactiveStreamsFactory rs,
-                                                    ReactiveStreamsEngine engine, ScheduledExecutorService executorService) {
-            super(testEnvironment, rs, engine, executorService);
-        }
-
-        @Override
-        public List<Object> allTests() {
-            VerificationDeps deps = new VerificationDeps();
-            CoupledStageVerification.ProcessorVerification processorVerification =
-                    new CustomCoupledStageVerification(deps).getProcessorVerification();
-            return super.allTests().stream()
-                    .map(o -> o instanceof CoupledStageVerification.ProcessorVerification ? processorVerification : o)
-                    .collect(Collectors.toList());
-        }
-    }
 }
