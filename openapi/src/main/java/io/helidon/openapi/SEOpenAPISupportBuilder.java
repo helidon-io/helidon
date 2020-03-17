@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,23 +34,38 @@ import org.jboss.jandex.IndexView;
  */
 public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
 
-    private static final String CONFIG_PREFIX = "openapi";
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
 
     /**
      * Set various builder attributes from the specified {@code Config} object.
      * <p>
-     * The {@code Config} object can specify {@value #CONFIG_PREFIX}.web-context
-     * and {@value #CONFIG_PREFIX}.static-file in addition to settings
+     * The {@code Config} object can specify {@value #CONFIG_KEY}.web-context
+     * and {@value #CONFIG_KEY}.static-file in addition to settings
      * supported by {@link OpenAPIConfigImpl.Builder}.
      *
      * @param config the {@code Config} object possibly containing settings
      * @exception NullPointerException if the provided {@code Config} is null
      * @return updated builder instance
      */
+    @Deprecated
     public SEOpenAPISupportBuilder helidonConfig(Config config) {
-        config.get(CONFIG_PREFIX + ".web-context").asString().ifPresent(this::webContext);
-        config.get(CONFIG_PREFIX + ".static-file").asString().ifPresent(this::staticFile);
+        super.helidonConfig(config);
+        apiConfigBuilder.config(config.get(OpenAPISupport.Builder.CONFIG_KEY));
+        return this;
+    }
+
+    /**
+     * Set various builder attributes from the specified openapi {@code Config} object.
+     * <p>
+     * The {@code Config} object can specify web-context and static-file in addition to settings
+     * supported by {@link OpenAPIConfigImpl.Builder}.
+     *
+     * @param config the openapi {@code Config} object possibly containing settings
+     * @exception NullPointerException if the provided {@code Config} is null
+     * @return updated builder instance
+     */
+    public SEOpenAPISupportBuilder config(Config config) {
+        super.config(config);
         apiConfigBuilder.config(config);
         return this;
     }

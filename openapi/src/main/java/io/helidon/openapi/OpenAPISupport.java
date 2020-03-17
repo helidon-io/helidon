@@ -604,6 +604,11 @@ public class OpenAPISupport implements Service {
      */
     public abstract static class Builder implements io.helidon.common.Builder<OpenAPISupport> {
 
+        /**
+         * Config key for locating openapi settings within a Helidon config object.
+         */
+        public static final String CONFIG_KEY = "openapi";
+
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
 
@@ -611,6 +616,48 @@ public class OpenAPISupport implements Service {
         public OpenAPISupport build() {
             validate();
             return new OpenAPISupport(this);
+        }
+
+        /**
+         * Set various builder attributes from the specified {@code Config} object.
+         * <p>
+         * The {@code Config} object can specify {@value #CONFIG_KEY}.web-context
+         * and {@value #CONFIG_KEY}.static-file in addition to settings
+         * supported by {@code OpenAPIConfigImpl.Builder}.
+         *
+         * @param config the {@code Config} object possibly containing settings
+         * @exception NullPointerException if the provided {@code Config} is null
+         * @return updated builder instance
+         */
+        @Deprecated
+        public Builder helidonConfig(Config config) {
+            config.get(CONFIG_KEY + ".web-context")
+                    .asString()
+                    .ifPresent(this::webContext);
+            config.get(CONFIG_KEY + ".static-file")
+                    .asString()
+                    .ifPresent(this::staticFile);
+            return this;
+        }
+
+        /**
+         * Set various builder attributes from the specified openapi {@code Config} object.
+         * <p>
+         * The {@code Config} object can specify web-context and static-file in addition to settings
+         * supported by {@code OpenAPIConfigImpl.Builder}.
+         *
+         * @param config the openapi {@code Config} object possibly containing settings
+         * @exception NullPointerException if the provided {@code Config} is null
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("web-context")
+                    .asString()
+                    .ifPresent(this::webContext);
+            config.get(".static-file")
+                    .asString()
+                    .ifPresent(this::staticFile);
+            return this;
         }
 
         /**
@@ -676,6 +723,9 @@ public class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         public Builder webContext(String path) {
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }
             this.webContext = Optional.of(path);
             return this;
         }
