@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -65,6 +66,28 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
+     * @return Single
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
+     */
+    default Single<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new SingleDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
+     * Switch to the other Single if the upstream is empty.
+     * @param other the Single to switch to if the upstream is empty.
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Single<T> switchIfEmpty(Single<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleSwitchIfEmpty<>(this, other);
+    }
+
+    /**
      * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
      *
      * @param <U>    mapped items type
@@ -101,6 +124,20 @@ public interface Single<T> extends Subscribable<T> {
      */
     default <U> Single<U> flatMapSingle(Function<T, Single<U>> mapper) {
         return new SingleFlatMapSingle<>(this, mapper);
+    }
+
+    /**
+     * Maps the single upstream value into an {@link Iterable} and relays its
+     * items to the downstream.
+     * @param mapper the function that receives the single upstream value and
+     *               should return an Iterable instance
+     * @param <U> the result type
+     * @return Multi
+     * @throws NullPointerException if {@code mapper} is {@code null}
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleFlatMapIterable<>(this, mapper);
     }
 
     /**
@@ -228,6 +265,21 @@ public interface Single<T> extends Subscribable<T> {
      */
     static <T> Single<T> never() {
         return SingleNever.<T>instance();
+    }
+
+
+    /**
+     * Signal 0L and complete the sequence after the given time elapsed.
+     * @param time the time to wait before signaling 0L and completion
+     * @param unit the unit of time
+     * @param executor the executor to run the waiting on
+     * @return Single
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Single<Long> timer(long time, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new SingleTimer(time, unit, executor);
     }
 
     /**

@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.reactive.RequestedCounter;
+
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -37,6 +39,7 @@ class InternalPublisher implements Publisher<Object>, Subscription {
     private final Object beanInstance;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final CompletableQueue<Object> completableQueue;
+    private final RequestedCounter requestedCounter = new RequestedCounter();
 
     InternalPublisher(Method method, Object beanInstance) {
         this.method = method;
@@ -44,6 +47,7 @@ class InternalPublisher implements Publisher<Object>, Subscription {
         completableQueue = CompletableQueue.create((o, throwable) -> {
             if (Objects.isNull(throwable)) {
                 subscriber.onNext(o.getValue());
+                trySubmit();
             } else {
                 subscriber.onError(throwable);
             }
@@ -57,10 +61,15 @@ class InternalPublisher implements Publisher<Object>, Subscription {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void request(long n) {
+        requestedCounter.increment(n, subscriber::onError);
+        trySubmit();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void trySubmit() {
         try {
-            for (long i = 0; i < n && !closed.get(); i++) {
+            while (!completableQueue.isBackPressureLimitReached() && requestedCounter.tryDecrement() && !closed.get()) {
                 Object result = method.invoke(beanInstance);
                 if (result instanceof CompletionStage) {
                     CompletionStage<Object> completionStage = (CompletionStage<Object>) result;

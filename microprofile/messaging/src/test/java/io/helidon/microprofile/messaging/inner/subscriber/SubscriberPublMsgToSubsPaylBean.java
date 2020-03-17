@@ -23,8 +23,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -33,10 +32,14 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class SubscriberPublMsgToSubsPaylBean implements AssertableTestBean {
 
-    CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
 
     @Outgoing("subscriber-payload")
     public Publisher<Message<String>> sourceForSubscribePayload() {
@@ -48,13 +51,12 @@ public class SubscriberPublMsgToSubsPaylBean implements AssertableTestBean {
     @Incoming("subscriber-payload")
     public Subscriber<String> subscriberOfPayloads() {
         return ReactiveStreams.<String>builder()
-                .forEach(p -> RESULT_DATA.add(p))
+                .forEach(p -> resultData.add(p))
                 .build();
     }
 
     @Override
     public void assertValid() {
-        assertTrue(RESULT_DATA.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), RESULT_DATA.size());
+        assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
     }
 }

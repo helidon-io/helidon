@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,8 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 import io.helidon.integrations.cdi.referencecountedcontext.ReferenceCounted;
@@ -117,11 +119,13 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  */
 public class JpaExtension implements Extension {
 
+    static {
+        HelidonFeatures.register(HelidonFlavor.MP, "JPA");
+    }
 
     /*
      * Static fields.
      */
-
 
     /**
      * The {@link Logger} for use by all instances of this class.
@@ -1447,12 +1451,14 @@ public class JpaExtension implements Extension {
         Objects.requireNonNull(event);
 
         if (urls != null && urls.hasMoreElements()) {
-            final Supplier<? extends ClassLoader> tempClassLoaderSupplier;
-            if (classLoader instanceof URLClassLoader) {
-                tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
-            } else {
-                tempClassLoaderSupplier = () -> classLoader;
-            }
+            final Supplier<? extends ClassLoader> tempClassLoaderSupplier = () -> {
+                if (classLoader instanceof URLClassLoader) {
+                    return new URLClassLoader(((URLClassLoader) classLoader).getURLs());
+                } else {
+                    return classLoader;
+                }
+            };
+
             // We use StAX for XML loading because it is the same XML
             // parsing strategy used by all known CDI implementations.
             // If the end user wants to customize the StAX

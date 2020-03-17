@@ -19,6 +19,7 @@ package io.helidon.common;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -26,8 +27,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
+import io.helidon.common.spi.HelidonFeatureProvider;
+
 /**
- * A java service loader interface defining a Helidon feature.
+ * Helidon Features support.
+ * <p>
+ * A feature can register using either {@link #register(HelidonFlavor, String...)} or {@link #register(String...)} methods
+ * on this class, or using the {@link io.helidon.common.spi.HelidonFeatureProvider} service loader interface.
+ * <p>
+ * All registered features can be printed using {@link #print(HelidonFlavor, boolean)} as a simple line such as:
+ * <br>
+ * {@code Helidon MP 2.0.0 features: [CDI, Config, JAX-RS, JPA, JTA, Server]}
+ * <br>
+ * Using this class' logger.
+ * <p>
+ * When details are enabled, an additional log statement is logged, such as:
+ * <pre>
+ * Detailed feature tree:
+ * CDI
+ * Config
+ *   YAML
+ * JAX-RS
+ * JPA
+ *   Hibernate
+ * JTA
+ * Server
+ * </pre>
  */
 public final class HelidonFeatures {
     private static final Logger LOGGER = Logger.getLogger(HelidonFeatures.class.getName());
@@ -123,6 +148,10 @@ public final class HelidonFeatures {
      * @param details set to {@code true} to print the tree structure of sub-features
      */
     public static void print(HelidonFlavor flavor, boolean details) {
+        // First scan all features
+        ServiceLoader.load(HelidonFeatureProvider.class)
+                .forEach(HelidonFeatureProvider::register);
+
         CURRENT_FLAVOR.compareAndSet(null, HelidonFlavor.SE);
 
         HelidonFlavor currentFlavor = CURRENT_FLAVOR.get();
