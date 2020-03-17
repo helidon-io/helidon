@@ -346,7 +346,6 @@ public interface Multi<T> extends Subscribable<T> {
      *     Note that Streams can be only consumed once, therefore, the
      *     returned Multi will signal {@link IllegalStateException} if
      *     multiple subscribers try to consume it.
-     * </p>
      * <p>
      *     The operator calls {@link Stream#close()} when the stream finishes,
      *     fails or the flow gets canceled. To avoid closing the stream automatically,
@@ -356,7 +355,7 @@ public interface Multi<T> extends Subscribable<T> {
      *     Stream<T> stream = ...
      *     Multi<T> multi = Multi.from(stream::iterator);
      *     }</pre>
-     * </p>
+     *
      * @param <T>      item type
      * @param stream the Stream to publish
      * @return Multi
