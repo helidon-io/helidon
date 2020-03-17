@@ -17,17 +17,20 @@
 
 package io.helidon.microprofile.messaging.inner.publisher;
 
+import javax.enterprise.context.ApplicationScoped;
+
+import io.helidon.microprofile.messaging.inner.AbstractShapeTestBean;
+
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
 
-import javax.enterprise.context.ApplicationScoped;
-
-import io.helidon.microprofile.messaging.inner.AbstractShapeTestBean;
-
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class PublisherPayloadV1Bean extends AbstractShapeTestBean {
 
