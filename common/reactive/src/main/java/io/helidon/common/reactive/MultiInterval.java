@@ -76,7 +76,8 @@ final class MultiInterval implements Multi<Long> {
 
         @Override
         public void run() {
-            available = available + 1;
+            long next = available + 1;
+            available = next;
             drain();
         }
 
