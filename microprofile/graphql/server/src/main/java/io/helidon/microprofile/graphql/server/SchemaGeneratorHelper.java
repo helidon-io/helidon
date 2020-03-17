@@ -87,7 +87,7 @@ public class SchemaGeneratorHelper {
     /**
      * List of types the should map to a GraphQL Float.
      */
-    protected static final List<String> FLOAT_LIST = new ArrayList<>() {{
+    static final List<String> FLOAT_LIST = new ArrayList<>() {{
         add("double");
         add("Double");
         add("java.lang.Double");
@@ -100,7 +100,7 @@ public class SchemaGeneratorHelper {
     /**
      * List of types that should map to a GraphQL Boolean.
      */
-    protected static final List<String> BOOLEAN_LIST = new ArrayList<>() {{
+    static final List<String> BOOLEAN_LIST = new ArrayList<>() {{
         add("boolean");
         add(Boolean.class.getName());
     }};
@@ -268,19 +268,17 @@ public class SchemaGeneratorHelper {
     protected static String getFieldName(Class<?> clazz, String fieldName) {
         try {
             Field field = clazz.getDeclaredField(fieldName);
-            if (field != null) {
-                Name nameAnnotation = field.getAnnotation(Name.class);
-                // Name annotation is specified so use this and don't bother checking JsonbProperty
-                if (nameAnnotation != null && !nameAnnotation.value().isBlank()) {
-                    return nameAnnotation.value();
-                }
-                // check for JsonbProperty
-                JsonbProperty jsonbPropertyAnnotation = field.getAnnotation(JsonbProperty.class);
-                return jsonbPropertyAnnotation != null && !jsonbPropertyAnnotation.value().isBlank()
-                        ? jsonbPropertyAnnotation.value()
-                        : null;
+            Name nameAnnotation = field.getAnnotation(Name.class);
+            // Name annotation is specified so use this and don't bother checking JsonbProperty
+            if (nameAnnotation != null && !nameAnnotation.value().isBlank()) {
+                return nameAnnotation.value();
             }
-            return null;
+            // check for JsonbProperty
+            JsonbProperty jsonbPropertyAnnotation = field.getAnnotation(JsonbProperty.class);
+            return jsonbPropertyAnnotation != null && !jsonbPropertyAnnotation.value().isBlank()
+                    ? jsonbPropertyAnnotation.value()
+                    : null;
+
         } catch (NoSuchFieldException e) {
             return null;
         }

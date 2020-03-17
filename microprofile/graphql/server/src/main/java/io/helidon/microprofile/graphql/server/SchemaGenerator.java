@@ -63,7 +63,6 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getAr
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getNameAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootArrayClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
@@ -157,7 +156,6 @@ public class SchemaGenerator {
      */
     protected Schema generateSchemaFromClasses(Class<?>... clazzes) throws IntrospectionException, ClassNotFoundException {
         Schema schema = new Schema();
-        List<SchemaType> listSchemaTypes = new ArrayList<>();
         setUnresolvedTypes.clear();
         setAdditionalMethods.clear();
 

@@ -17,7 +17,6 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -25,7 +24,6 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.execution.SubscriptionExecutionStrategy;
-import graphql.execution.instrumentation.Instrumentation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
 
