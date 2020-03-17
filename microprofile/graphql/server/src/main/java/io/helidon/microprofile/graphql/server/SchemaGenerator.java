@@ -221,47 +221,8 @@ public class SchemaGenerator {
         schema.addType(rootQueryType);
         schema.addType(rootMutationType);
 
-        // create any types that are still unresolved. e.g. an Order that contains OrderLine objects
-        // we must also ensure if the unresolved type contains another unresolved type then we process it
-        while (setUnresolvedTypes.size() > 0) {
-            String returnType = setUnresolvedTypes.iterator().next();
-
-            setUnresolvedTypes.remove(returnType);
-            try {
-                //LOGGER.info("Checking unresolved type " + returnType);
-                String simpleName = getSimpleName(returnType);
-
-                SchemaScalar scalar = getScalar(returnType);
-                if (scalar != null) {
-                    if (!schema.containsScalarWithName(scalar.getName())) {
-                        schema.addScalar(scalar);
-                    }
-                    // update the return type with the scalar
-                    updateLongTypes(schema, returnType, scalar.getName());
-                } else if (isEnumClass(returnType)) {
-                    SchemaEnum newEnum = generateEnum(Class.forName(returnType));
-                    if (!schema.containsEnumWithName(simpleName)) {
-                        schema.addEnum(newEnum);
-                    }
-                    updateLongTypes(schema, returnType, newEnum.getName());
-                } else {
-                    // we will either know this type already or need to add it
-                    boolean fExists = schema.getTypes().stream()
-                            .filter(t -> t.getName().equals(simpleName)).count() > 0;
-                    if (!fExists) {
-                        SchemaType newType = generateType(returnType);
-
-                        // update any return types to the discovered scalars
-                        checkScalars(schema, newType);
-                        schema.addType(newType);
-                    }
-                    // need to update any FieldDefinitions that contained the original "long" type of c
-                    updateLongTypes(schema, returnType, simpleName);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Cannot get GraphQL type for " + returnType, e);
-            }
-        }
+        // process unresolved types
+        processUnresolvedTypes(schema);
 
         // look though all of interface type and see if any of the known types implement
         // the interface and if so, add the interface to the type
@@ -309,6 +270,55 @@ public class SchemaGenerator {
         }
 
         return schema;
+    }
+
+    /**
+     * Process any unresolved types.
+     *
+     * @param schema {@link Schema} to add types to
+     */
+    private void processUnresolvedTypes(Schema schema) {
+        // create any types that are still unresolved. e.g. an Order that contains OrderLine objects
+        // also ensure if the unresolved type contains another unresolved type then we process it
+        while (setUnresolvedTypes.size() > 0) {
+            String returnType = setUnresolvedTypes.iterator().next();
+
+            setUnresolvedTypes.remove(returnType);
+            try {
+                //LOGGER.info("Checking unresolved type " + returnType);
+                String simpleName = getSimpleName(returnType);
+
+                SchemaScalar scalar = getScalar(returnType);
+                if (scalar != null) {
+                    if (!schema.containsScalarWithName(scalar.getName())) {
+                        schema.addScalar(scalar);
+                    }
+                    // update the return type with the scalar
+                    updateLongTypes(schema, returnType, scalar.getName());
+                } else if (isEnumClass(returnType)) {
+                    SchemaEnum newEnum = generateEnum(Class.forName(returnType));
+                    if (!schema.containsEnumWithName(simpleName)) {
+                        schema.addEnum(newEnum);
+                    }
+                    updateLongTypes(schema, returnType, newEnum.getName());
+                } else {
+                    // we will either know this type already or need to add it
+                    boolean fExists = schema.getTypes().stream()
+                            .filter(t -> t.getName().equals(simpleName)).count() > 0;
+                    if (!fExists) {
+                        SchemaType newType = generateType(returnType);
+
+                        // update any return types to the discovered scalars
+                        checkScalars(schema, newType);
+                        schema.addType(newType);
+                    }
+                    // need to update any FieldDefinitions that contained the original "long" type of c
+                    updateLongTypes(schema, returnType, simpleName);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Cannot get GraphQL type for " + returnType, e);
+            }
+        }
     }
 
     /**
