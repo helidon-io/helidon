@@ -63,7 +63,7 @@ final class MultiInterval implements Multi<Long> {
 
         private volatile int canceled;
 
-        private volatile long emitted;
+        private long emitted;
 
         private static final int NORMAL_CANCEL = 1;
         private static final int BAD_REQUEST = 2;
