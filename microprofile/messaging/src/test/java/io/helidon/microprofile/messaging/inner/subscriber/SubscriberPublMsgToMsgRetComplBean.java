@@ -20,14 +20,14 @@ package io.helidon.microprofile.messaging.inner.subscriber;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
+import io.helidon.microprofile.messaging.AsyncTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -35,10 +35,16 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
-public class SubscriberPublMsgToMsgRetComplBean implements AssertableTestBean {
+public class SubscriberPublMsgToMsgRetComplBean implements AssertableTestBean, AsyncTestBean {
 
-    CopyOnWriteArraySet<String> RESULT_DATA = new CopyOnWriteArraySet<>();
+    CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
+
+    private final ExecutorService executor = createExecutor();
 
     @Outgoing("cs-void-message")
     public Publisher<Message<String>> sourceForCsVoidMessage() {
@@ -49,12 +55,16 @@ public class SubscriberPublMsgToMsgRetComplBean implements AssertableTestBean {
 
     @Incoming("cs-void-message")
     public CompletionStage<Void> consumeMessageAndReturnCompletionStageOfVoid(Message<String> message) {
-        return CompletableFuture.runAsync(() -> RESULT_DATA.add(message.getPayload()), Executors.newSingleThreadExecutor());
+        return CompletableFuture.runAsync(() -> resultData.add(message.getPayload()), executor);
     }
 
     @Override
     public void assertValid() {
-        assertTrue(RESULT_DATA.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), RESULT_DATA.size());
+        assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
+    }
+
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
     }
 }

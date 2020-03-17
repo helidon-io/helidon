@@ -23,14 +23,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.LogManager;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
@@ -177,19 +176,24 @@ public abstract class AbstractCDITest {
         }
 
         @SuppressWarnings("unchecked")
-        public List<Class<? extends CountableTestBean>> getCountableBeanClasses() {
+        public Stream<Class<? extends AsyncTestBean>> getAsyncBeanClasses() {
             return Arrays.stream(clazzes)
-                    .filter(CountableTestBean.class::isAssignableFrom)
-                    .map(c -> (Class<? extends CountableTestBean>) c)
-                    .collect(Collectors.toList());
+                    .filter(AsyncTestBean.class::isAssignableFrom)
+                    .map(c -> (Class<? extends AsyncTestBean>) c);
         }
 
         @SuppressWarnings("unchecked")
-        public List<Class<? extends AssertableTestBean>> getCompletableBeanClasses() {
+        public Stream<Class<? extends CountableTestBean>> getCountableBeanClasses() {
+            return Arrays.stream(clazzes)
+                    .filter(CountableTestBean.class::isAssignableFrom)
+                    .map(c -> (Class<? extends CountableTestBean>) c);
+        }
+
+        @SuppressWarnings("unchecked")
+        public Stream<Class<? extends AssertableTestBean>> getCompletableBeanClasses() {
             return Arrays.stream(clazzes)
                     .filter(AssertableTestBean.class::isAssignableFrom)
-                    .map(c -> (Class<? extends AssertableTestBean>) c)
-                    .collect(Collectors.toList());
+                    .map(c -> (Class<? extends AssertableTestBean>) c);
         }
     }
 }

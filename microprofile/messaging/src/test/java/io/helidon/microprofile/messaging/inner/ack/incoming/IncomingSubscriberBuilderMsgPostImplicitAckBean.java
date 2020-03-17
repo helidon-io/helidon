@@ -18,18 +18,14 @@
 package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -38,13 +34,17 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Publisher;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class IncomingSubscriberBuilderMsgPostImplicitAckBean implements AssertableTestBean {
 
     private static final String TEST_MSG = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private AtomicBoolean interceptedMessage = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final AtomicReference<String> interceptedMessage = new AtomicReference<>();
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
@@ -59,18 +59,14 @@ public class IncomingSubscriberBuilderMsgPostImplicitAckBean implements Assertab
         return ReactiveStreams.<Message<String>>builder()
                 .forEach(m -> {
                     completedBeforeProcessor.set(ackFuture.isDone());
-                    interceptedMessage.set(TEST_MSG.equals(m.getPayload()));
+                    interceptedMessage.set(m.getPayload());
                 });
     }
 
     @Override
     public void assertValid() {
-        try {
-            ackFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            fail(e);
-        }
-        assertFalse(completedBeforeProcessor.get());
-        assertTrue(interceptedMessage.get());
+        await("Message not acked!", ackFuture);
+        assertWithOrigin("Should be acked in post-process!", !completedBeforeProcessor.get());
+        assertWithOrigin("Payload corruption!", interceptedMessage.get(), is(TEST_MSG));
     }
 }
