@@ -27,6 +27,5 @@ module io.helidon.microprofile.reactive {
     requires transitive microprofile.reactive.streams.operators.api;
 
     exports io.helidon.microprofile.reactive;
-    exports io.helidon.microprofile.reactive.hybrid;
 
 }
