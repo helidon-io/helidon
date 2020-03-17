@@ -39,16 +39,33 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
     /**
      * Set various builder attributes from the specified {@code Config} object.
      * <p>
-     * The {@code Config} object can specify {@value #CONFIG_PREFIX}.web-context
-     * and {@value #CONFIG_PREFIX}.static-file in addition to settings
+     * The {@code Config} object can specify {@value #CONFIG_KEY}.web-context
+     * and {@value #CONFIG_KEY}.static-file in addition to settings
      * supported by {@link OpenAPIConfigImpl.Builder}.
      *
      * @param config the {@code Config} object possibly containing settings
      * @exception NullPointerException if the provided {@code Config} is null
      * @return updated builder instance
      */
+    @Deprecated
     public SEOpenAPISupportBuilder helidonConfig(Config config) {
         super.helidonConfig(config);
+        apiConfigBuilder.config(config.get(OpenAPISupport.Builder.CONFIG_KEY));
+        return this;
+    }
+
+    /**
+     * Set various builder attributes from the specified openapi {@code Config} object.
+     * <p>
+     * The {@code Config} object can specify web-context and static-file in addition to settings
+     * supported by {@link OpenAPIConfigImpl.Builder}.
+     *
+     * @param config the openapi {@code Config} object possibly containing settings
+     * @exception NullPointerException if the provided {@code Config} is null
+     * @return updated builder instance
+     */
+    public SEOpenAPISupportBuilder config(Config config) {
+        super.config(config);
         apiConfigBuilder.config(config);
         return this;
     }
