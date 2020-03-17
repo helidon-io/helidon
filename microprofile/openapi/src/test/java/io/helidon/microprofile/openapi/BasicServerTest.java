@@ -21,6 +21,7 @@ import java.util.Map;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.microprofile.openapi.other.TestApp2;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -54,7 +55,7 @@ public class BasicServerTest {
      */
     @BeforeAll
     public static void startServer() throws Exception {
-        server = TestUtil.startServer(TestApp.class, Config.create());
+        server = TestUtil.startServer(Config.create(), TestApp.class, TestApp3.class);
         cnx = TestUtil.getURLConnection(
                 server.port(),
                 "GET",
@@ -83,5 +84,11 @@ public class BasicServerTest {
     public void simpleTest() throws Exception {
         String goSummary = TestUtil.fromYaml(yaml, "paths./testapp/go.get.summary", String.class);
         assertEquals(TestApp.GO_SUMMARY, goSummary);
+    }
+
+    @Test
+    public void testMultipleApps() {
+        String goSummary3 = TestUtil.fromYaml(yaml, "paths./testapp3/go3.get.summary", String.class);
+        assertEquals(TestApp3.GO_SUMMARY, goSummary3);
     }
 }
