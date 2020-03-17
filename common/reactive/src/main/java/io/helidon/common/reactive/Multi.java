@@ -78,6 +78,17 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Switch to the other publisher if the upstream is empty.
+     * @param other the publisher to switch to if the upstream is empty.
+     * @return Multi
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Multi<T> switchIfEmpty(Flow.Publisher<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new MultiSwitchIfEmpty<>(this, other);
+    }
+
+    /**
      * Invoke provided consumer for every item in stream.
      *
      * @param consumer consumer to be invoked
