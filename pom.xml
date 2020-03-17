@@ -668,13 +668,11 @@
                     <siteDirectory>docs</siteDirectory>
                 </configuration>
                 <dependencies>
-                    <!--
                     <dependency>
                         <groupId>io.helidon.build-tools</groupId>
                         <artifactId>sitegen-maven-plugin</artifactId>
                         <version>${version.plugin.helidon-build-tools}</version>
                     </dependency>
-                    -->
                     <dependency>
                         <groupId>org.asciidoctor</groupId>
                         <artifactId>asciidoctorj-diagram</artifactId>
