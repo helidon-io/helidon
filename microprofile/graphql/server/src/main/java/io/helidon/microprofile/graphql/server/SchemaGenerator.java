@@ -278,12 +278,20 @@ public class SchemaGenerator {
         });
 
         // process any additional methods requires via the @Source annotation
-        for (DiscoveredMethod dm : setAdditionalMethods) {// add the discovered method to the type
+        for (DiscoveredMethod dm : setAdditionalMethods) {
+            // add the discovered method to the type
             SchemaType type = schema.getTypeByClass(dm.source);
             if (type != null) {
                 SchemaFieldDefinition fd = newFieldDefinition(dm, null);
-                fd.setDataFetcher(DataFetcherUtils.newSourceMethodDataFetcher(
-                        dm.method.getDeclaringClass(), dm.method, dm.getSource()));
+                // add all arguments which are not source arguments
+                if (dm.getArguments().size() > 0) {
+                    dm.getArguments().stream().filter(a -> !a.isSourceArgument())
+                            .forEach(fd::addArgument);
+                }
+
+                fd.setDataFetcher(DataFetcherUtils.newMethodDataFetcher(
+                        dm.method.getDeclaringClass(), dm.method, dm.getSource(),
+                        fd.getArguments().toArray(new SchemaArgument[0])));
                 type.addFieldDefinition(fd);
 
                 String simpleName = getSimpleName(fd.getReturnType());
@@ -450,7 +458,7 @@ public class SchemaGenerator {
 
             if (fd != null) {
                 DataFetcher dataFetcher = DataFetcherUtils
-                        .newMethodDataFetcher(clazz, method, fd.getArguments().toArray(new SchemaArgument[0]));
+                        .newMethodDataFetcher(clazz, method, null, fd.getArguments().toArray(new SchemaArgument[0]));
                 fd.setDataFetcher(dataFetcher);
 
                 schemaType.addFieldDefinition(fd);
@@ -616,7 +624,7 @@ public class SchemaGenerator {
             if (isQuery || isMutation || hasSourceAnnotation) {
                 LOGGER.info("Processing Query or Mutation " + m.getName());
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null);
-                discoveredMethod.setMethodType(isQuery ? QUERY_TYPE : MUTATION_TYPE);
+                discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
             }
         }
@@ -776,14 +784,16 @@ public class SchemaGenerator {
                     returnType.setReturnClass(ID);
                 }
 
+                SchemaArgument argument = new SchemaArgument(parameterName, returnType.getReturnClass(), false, null, paramType);
+
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
                     discoveredMethod.setSource(returnType.getReturnClass());
                     discoveredMethod.setQueryAnnotated(method.getAnnotation(Query.class) != null);
+                    argument.setSourceArgument(true);
                 }
 
-                discoveredMethod
-                        .addArgument(new SchemaArgument(parameterName, returnType.getReturnClass(), false, null, paramType));
+                discoveredMethod.addArgument(argument);
             }
         }
 

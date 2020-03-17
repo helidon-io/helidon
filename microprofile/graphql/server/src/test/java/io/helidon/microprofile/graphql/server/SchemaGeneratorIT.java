@@ -388,7 +388,6 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
         result = executionContext.execute("query { currentJob (" + json + ") }");
         mapResults = getAndAssertResult(result);
-
         assertThat(mapResults.size(), is(1));
         String currentJob = (String) mapResults.get("currentJob");
         assertThat(currentJob, is(notNullValue()));
@@ -402,6 +401,17 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(mapResults2.get("id"), is(notNullValue()));
         assertThat(mapResults2.get("idAndName"), is(notNullValue()));
         assertThat(mapResults2.get("currentJob"), is(notNullValue()));
+
+        // test the query from the object
+        result = executionContext.execute("query { findContact { id lastNAddress(count: 1) { city } } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        mapResults2 = (Map<String, Object>) mapResults.get("findContact");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("id"), is(notNullValue()));
+        assertThat(mapResults2.get("lastNAddress"), is(notNullValue()));
+
+        // lastNAddress on top level query
     }
 
     @Test
@@ -565,8 +575,8 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     private String getContactAsQueryInput(SimpleContact contact) {
         return new StringBuilder("{")
-                .append("id: \"").append(contact.getId()).append("\"")
-                .append("name: \"").append(contact.getName()).append("\"")
+                .append("id: \"").append(contact.getId()).append("\" ")
+                .append("name: \"").append(contact.getName()).append("\" ")
                 .append("age: ").append(contact.getAge())
                 .append("} ").toString();
     }

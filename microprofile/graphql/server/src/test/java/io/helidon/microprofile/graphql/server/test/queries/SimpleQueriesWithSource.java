@@ -20,7 +20,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -75,5 +77,13 @@ public class SimpleQueriesWithSource {
     @Name("lastAddress")
     public Address returnTheLastAddress(@Source @Name("contact") SimpleContact contact) {
         return testDB.generateWorkAddress();
+    }
+
+    @Name("lastNAddress")
+    public Collection<Address> returnTheLastNAddress(@Source @Name("contact") SimpleContact contact, @Name("count") int count) {
+        Set<Address> setAddresses = new HashSet<>();
+        setAddresses.add(testDB.generateWorkAddress());
+        setAddresses.add(testDB.generateHomeAddress());
+        return setAddresses;
     }
 }

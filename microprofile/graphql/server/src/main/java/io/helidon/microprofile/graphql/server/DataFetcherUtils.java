@@ -43,17 +43,28 @@ public class DataFetcherUtils {
      *
      * @param clazz  {@link Class} to call
      * @param method {@link Method} to call
+     * @param source defines the source for a @Source annotation - may be null
      * @param args   optional {@link SchemaArgument}s
      * @param <V>    value type
      * @return a new {@link DataFetcher}
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, SchemaArgument... args) {
+    public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, String source, SchemaArgument... args) {
         Object instance = CDI.current().select(clazz).get();
 
         return environment -> {
-
             ArrayList<Object> listArgumentValues = new ArrayList<>();
+            // only one @Source annotation should be present and it should be the first argument
+            if (source != null) {
+                Class<?> sourceClazz;
+                try {
+                    sourceClazz = Class.forName(source);
+                    listArgumentValues.add(sourceClazz.cast(environment.getSource()));
+                } catch (ClassNotFoundException e) {
+                    // this should not happen
+                }
+            }
+
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
                     Object key = environment.getArgument(argument.getArgumentName());
@@ -79,26 +90,6 @@ public class DataFetcherUtils {
 
             return (V) method.invoke(instance, listArgumentValues.toArray());
         };
-    }
-
-    /**
-     * Create a new {@link DataFetcher} for a {@link Class} and {@link Method} which accepts the source as an argument.
-     *
-     * @param clazz  {@link Class} to call
-     * @param method {@link Method} to call
-     * @param sourceClass the source class for the environment.getSource()
-     * @return a new {@link DataFetcher}
-     */
-    public static  DataFetcher newSourceMethodDataFetcher(Class<?> clazz, Method method, String sourceClass) {
-        Object instance = CDI.current().select(clazz).get();
-        Class<?> sourceClazz;
-        try {
-            sourceClazz = Class.forName(sourceClass);
-        } catch (ClassNotFoundException e) {
-            // this should not happen
-            throw new RuntimeException("Cannot find class " + sourceClass);
-        }
-        return environment -> method.invoke(instance, (sourceClazz.cast(environment.getSource())));
     }
 
     /**

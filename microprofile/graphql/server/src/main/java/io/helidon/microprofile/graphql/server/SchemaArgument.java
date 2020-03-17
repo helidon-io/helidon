@@ -50,6 +50,12 @@ public class SchemaArgument
     private final Class<?> originalType;
 
     /**
+     * Indicates if this argument is a source argument, which should be excluded from the
+     * query parameters.
+     */
+    private boolean sourceArgument;
+
+    /**
      * Construct a {@link SchemaArgument} instance.
      *
      * @param argumentName name of the argument
@@ -155,6 +161,22 @@ public class SchemaArgument
         return originalType;
     }
 
+    /**
+     * Indicates if the argument is a source argument.
+     * @return  if the argument is a source argument.
+     */
+    public boolean isSourceArgument() {
+        return sourceArgument;
+    }
+
+    /**
+     * Set if the argument is a source argument.
+     * @param sourceArgument if the argument is a source argument.
+     */
+    public void setSourceArgument(boolean sourceArgument) {
+        this.sourceArgument = sourceArgument;
+    }
+
     @Override
     public String toString() {
         return "Argument{"
@@ -163,6 +185,7 @@ public class SchemaArgument
                 + ", isMandatory=" + isMandatory
                 + ", defaultValue=" + defaultValue
                 + ", originalType=" + originalType
+                + ", sourceArgument=" + sourceArgument
                 + ", description='" + getDescription() + '\'' + '}';
     }
 
@@ -182,13 +205,14 @@ public class SchemaArgument
                 && Objects.equals(argumentName, schemaArgument.argumentName)
                 && Objects.equals(argumentType, schemaArgument.argumentType)
                 && Objects.equals(originalType, schemaArgument.originalType)
+                && Objects.equals(sourceArgument, schemaArgument.sourceArgument)
                 && Objects.equals(getDescription(), schemaArgument.getDescription())
                 && Objects.equals(defaultValue, schemaArgument.defaultValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), argumentName, argumentType,
+        return Objects.hash(super.hashCode(), argumentName, argumentType, sourceArgument,
                             isMandatory, defaultValue, getDescription(), originalType);
     }
 }

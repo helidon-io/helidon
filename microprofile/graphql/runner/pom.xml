@@ -55,7 +55,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- This will get the app part of the tck so that we can deploy it, ignoring all the test stuff -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

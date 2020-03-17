@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
+<?xml version="1.0" encoding="UTF-8"?><!--
   ~ Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +27,18 @@
     <name>Helidon Microprofile GraphQL TCK</name>
     <description>The microprofile GraphQL TCK implementation</description>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>1.4.0.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.graphql</groupId>
@@ -39,11 +50,9 @@
             <artifactId>microprofile-graphql-tck</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- test dependencies -->
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>internal-test-libs</artifactId>
+            <groupId>org.jboss.arquillian.testng</groupId>
+            <artifactId>arquillian-testng-container</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -70,13 +79,6 @@
                     <dependenciesToScan>
                         <dependency>org.eclipse.microprofile.graphql:microprofile-graphql-tck</dependency>
                     </dependenciesToScan>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <configuration>
-                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
         </plugins>
