@@ -17,22 +17,29 @@
 
 package io.helidon.microprofile.messaging.inner.publisher;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+
+import javax.enterprise.context.ApplicationScoped;
+
+import io.helidon.microprofile.messaging.AsyncTestBean;
+import io.helidon.microprofile.messaging.inner.AbstractShapeTestBean;
+
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
-import javax.enterprise.context.ApplicationScoped;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executors;
-
-import io.helidon.microprofile.messaging.inner.AbstractShapeTestBean;
-
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
-public class PublisherPayloadV6Bean extends AbstractShapeTestBean {
+public class PublisherPayloadV6Bean extends AbstractShapeTestBean implements AsyncTestBean {
+
+    private final ExecutorService executor = createExecutor();
 
     @Outgoing("cs-string-payload")
     public Publisher<Message<String>> sourceForCsStringPayload() {
@@ -44,7 +51,11 @@ public class PublisherPayloadV6Bean extends AbstractShapeTestBean {
         return CompletableFuture.supplyAsync(() -> {
             testLatch.countDown();
             return "something";
-        }, Executors.newSingleThreadExecutor());
+        }, executor);
     }
-    
+
+    @Override
+    public void tearDown() {
+        awaitShutdown(executor);
+    }
 }

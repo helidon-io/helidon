@@ -19,14 +19,12 @@ package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -36,19 +34,24 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class ProcessorProcessorMsg2MsgNoneAckBean implements AssertableTestBean {
 
     public static final String TEST_DATA = "test-data";
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private AtomicReference<String> RESULT_DATA = new AtomicReference<>();
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<String> receiveFuture = new CompletableFuture<>();
+
 
     @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
         return ReactiveStreams.of(Message.of(TEST_DATA, () -> {
             ackFuture.complete(null);
-            return ackFuture;
+            return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
@@ -64,13 +67,14 @@ public class ProcessorProcessorMsg2MsgNoneAckBean implements AssertableTestBean 
     @Incoming("inner-consumer")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
     public void receiveMessage(String msg) {
-        RESULT_DATA.set(msg);
+        receiveFuture.complete(msg);
     }
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
-        assertEquals(TEST_DATA, RESULT_DATA.get());
+        var msg = await("Message not received in time!", receiveFuture);
+        assertWithOrigin("Message should not be acked!", !ackFuture.isDone());
+        assertWithOrigin("Shouldn't be acked!", !completedBeforeProcessor.get());
+        assertWithOrigin("Payload corruption!", msg, is(TEST_DATA));
     }
 }
