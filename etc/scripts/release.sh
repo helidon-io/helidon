@@ -199,6 +199,36 @@ update_version(){
   fi
 }
 
+release_site(){
+    if [ -n "${STAGING_REPO_ID}" ] ; then
+        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deployByRepositoryId/${STAGING_REPO_ID}/"
+    else
+        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+    fi
+
+    # Generate site
+    mvn -B site -Dversion.plugin.javadoc=3.2.0
+
+    # Sign site jar
+    # --default-key 0E59CB5C
+    gpg --pinentry-mode loopback --passphrase "${GPG_PASSPHRASE}" -ab ${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar
+
+    # Deploy site.jar and signature file explicitly using deploy-file
+    mvn -B deploy:deploy-file \
+      -Dfile=${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar \
+      -Dfiles=${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar.asc \
+      -Dclassifier=site \
+      -Dclassifiers=site \
+      -Dtypes=jar.asc \
+      -DgeneratePom=false \
+      -DgroupId=io.helidon \
+      -DartifactId=helidon-project \
+      -Dversion=${FULL_VERSION} \
+      -Durl=${MAVEN_REPO_URL} \
+      -DrepositoryId=ossrh \
+      -DretryFailedDeploymentCount=10
+}
+
 release_build(){
     # Inject credentials in CI env
     inject_credentials
@@ -236,7 +266,6 @@ release_build(){
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
-    # TODO add site site-deploy
     mvn -B clean deploy -Prelease,archetypes -DskipTests \
       -Dgpg.passphrase="${GPG_PASSPHRASE}" \
       -DstagingRepositoryId=${STAGING_REPO_ID} \
@@ -248,6 +277,9 @@ release_build(){
         bash "${perform_hook}"
       done
     fi
+
+    # Release site (documentation, javadocs)
+    release_site
 
     # Close the nexus staging repository
     mvn nexus-staging:rc-close \
