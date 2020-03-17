@@ -112,10 +112,9 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
     private Optional<? extends Application> appInstance(JaxRsApplication jaxRsApp) {
         Application preexistingApp = jaxRsApp.resourceConfig().getApplication();
-        if (preexistingApp != null) {
-            return Optional.of(preexistingApp);
-        }
-        return instantiate(jaxRsApp.applicationClass());
+        return preexistingApp != null ? Optional.of(preexistingApp)
+                : jaxRsApp.applicationClass()
+                        .flatMap(MPOpenAPIBuilder::instantiate);
     }
 
     private <T extends Application> Set<Class<?>> classesToScanForApp(Application app) {
@@ -164,15 +163,9 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         return this;
     }
 
-    private static Optional<? extends Application> instantiate(Optional<Class<? extends Application>> optionalAppClass) {
+    private static Optional<? extends Application> instantiate(Class<? extends Application> appClass) {
         try {
-            if (optionalAppClass.isPresent()) {
-                return Optional.of(optionalAppClass.get()
-                        .getConstructor()
-                        .newInstance());
-            } else {
-                return Optional.empty();
-            }
+            return Optional.of(appClass.getConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         } catch (NoSuchMethodException e) {
