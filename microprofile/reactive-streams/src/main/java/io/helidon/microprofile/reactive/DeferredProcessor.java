@@ -171,7 +171,11 @@ final class DeferredProcessor<T> implements Multi<T>, Processor<T, T>, Subscript
 
     @Override
     public void request(long n) {
-        SubscriptionHelper.deferredRequest(upstreamDeferred, requested, n);
+        if (n <= 0L && upstreamDeferred.get() == null) {
+            onError(new IllegalArgumentException("Rule §3.9 violated: non-positive requests are forbidden"));
+        } else {
+            SubscriptionHelper.deferredRequest(upstreamDeferred, requested, n);
+        }
     }
 
     @Override
