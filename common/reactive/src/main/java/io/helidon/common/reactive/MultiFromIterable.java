@@ -83,12 +83,12 @@ final class MultiFromIterable<T> implements Multi<T> {
                 n = 1; // for cleanup
             }
 
-            // TODO replace this with SubscriptionHelper.addRequest
-            if (addRequest(n) != 0L) {
+            if (SubscriptionHelper.addRequest(this, n) != 0L) {
                 return;
             }
 
             long emitted = 0L;
+            Flow.Subscriber<? super T> downstream = this.downstream;
 
             for (;;) {
                 while (emitted != n) {
@@ -150,8 +150,7 @@ final class MultiFromIterable<T> implements Multi<T> {
 
                 n = get();
                 if (n == emitted) {
-                    // TODO replace this with SubscriptionHelper.produced
-                    n = produced(emitted);
+                    n = SubscriptionHelper.produced(this, emitted);
                     if (n == 0L) {
                         return;
                     }
@@ -164,38 +163,6 @@ final class MultiFromIterable<T> implements Multi<T> {
         public void cancel() {
             canceled = NORMAL_CANCEL;
             request(1); // for cleanup
-        }
-
-        private long addRequest(long n) {
-            for (;;) {
-                long current = get();
-                if (current == Long.MAX_VALUE) {
-                    return Long.MAX_VALUE;
-                }
-                long update = current + n;
-                if (update < 0L) {
-                    update = Long.MAX_VALUE;
-                }
-                if (compareAndSet(current, update)) {
-                    return current;
-                }
-            }
-        }
-
-        private long produced(long n) {
-            for (;;) {
-                long current = get();
-                if (current == Long.MAX_VALUE) {
-                    return Long.MAX_VALUE;
-                }
-                long update = current - n;
-                if (update < 0L) {
-                    throw new IllegalStateException("More produced than requested!");
-                }
-                if (compareAndSet(current, update)) {
-                    return update;
-                }
-            }
         }
     }
 }

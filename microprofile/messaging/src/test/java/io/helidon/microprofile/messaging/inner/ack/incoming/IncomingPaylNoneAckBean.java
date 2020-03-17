@@ -18,13 +18,10 @@
 package io.helidon.microprofile.messaging.inner.ack.incoming;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -33,11 +30,15 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class IncomingPaylNoneAckBean implements AssertableTestBean {
 
-    private CompletableFuture<Void> ackFuture = new CompletableFuture<>();
-    private AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
+    private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+    private final CompletableFuture<Void> consumerFuture = new CompletableFuture<>();
 
     @Outgoing("test-channel")
     public Publisher<Message<String>> produceMessage() {
@@ -47,12 +48,12 @@ public class IncomingPaylNoneAckBean implements AssertableTestBean {
     @Incoming("test-channel")
     @Acknowledgment(Acknowledgment.Strategy.NONE)
     public void receiveMessage(String msg) {
-        completedBeforeProcessor.set(ackFuture.isDone());
+        consumerFuture.complete(null);
     }
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
+        await("Consuming method not invoked in time!", consumerFuture);
+        assertWithOrigin("Shouldn't be acked!", !ackFuture.isDone());
     }
 }

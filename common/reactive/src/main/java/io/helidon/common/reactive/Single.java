@@ -20,12 +20,15 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -35,6 +38,19 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> item type
  */
 public interface Single<T> extends Subscribable<T> {
+
+    /**
+     * Call the given supplier function for each individual downstream Subscriber
+     * to return a Flow.Publisher to subscribe to.
+     * @param supplier the callback to return a Flow.Publisher for each Subscriber
+     * @param <T> the element type of the sequence
+     * @return Multi
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    static <T> Single<T> defer(Supplier<? extends Single<? extends T>> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new SingleDefer<>(supplier);
+    }
 
     /**
      * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Mapper}.
@@ -47,6 +63,28 @@ public interface Single<T> extends Subscribable<T> {
     default <U> Single<U> map(Mapper<T, U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new SingleMapperPublisher<>(this, mapper);
+    }
+
+    /**
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
+     * @return Single
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
+     */
+    default Single<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new SingleDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
+     * Switch to the other Single if the upstream is empty.
+     * @param other the Single to switch to if the upstream is empty.
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Single<T> switchIfEmpty(Single<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleSwitchIfEmpty<>(this, other);
     }
 
     /**
@@ -86,6 +124,20 @@ public interface Single<T> extends Subscribable<T> {
      */
     default <U> Single<U> flatMapSingle(Function<T, Single<U>> mapper) {
         return new SingleFlatMapSingle<>(this, mapper);
+    }
+
+    /**
+     * Maps the single upstream value into an {@link Iterable} and relays its
+     * items to the downstream.
+     * @param mapper the function that receives the single upstream value and
+     *               should return an Iterable instance
+     * @param <U> the result type
+     * @return Multi
+     * @throws NullPointerException if {@code mapper} is {@code null}
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleFlatMapIterable<>(this, mapper);
     }
 
     /**
@@ -215,6 +267,33 @@ public interface Single<T> extends Subscribable<T> {
         return SingleNever.<T>instance();
     }
 
+
+    /**
+     * Signal 0L and complete the sequence after the given time elapsed.
+     * @param time the time to wait before signaling 0L and completion
+     * @param unit the unit of time
+     * @param executor the executor to run the waiting on
+     * @return Single
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Single<Long> timer(long time, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new SingleTimer(time, unit, executor);
+    }
+
+    /**
+     * Relay upstream items until the other source signals an item or completes.
+     * @param other the other sequence to signal the end of the main sequence
+     * @param <U> the element type of the other sequence
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default <U> Single<T> takeUntil(Flow.Publisher<U> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleTakeUntilPublisher<>(this, other);
+    }
+
     /**
      * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
      *
@@ -272,5 +351,26 @@ public interface Single<T> extends Subscribable<T> {
     default Single<T> peek(Consumer<T> consumer) {
         return new SingleTappedPublisher<>(this, null, consumer,
                 null, null, null, null);
+    }
+
+    /**
+     * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
+     *
+     * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
+     * @return Single
+     */
+    default Single<T> onErrorResume(Function<? super Throwable, ? extends T> onError) {
+        return new SingleOnErrorResume<>(this, onError);
+    }
+
+
+    /**
+     * Resume stream from supplied publisher if onError signal is intercepted.
+     *
+     * @param onError supplier of new stream publisher
+     * @return Single
+     */
+    default Single<T> onErrorResumeWith(Function<? super Throwable, ? extends Single<? extends T>> onError) {
+        return new SingleOnErrorResumeWith<>(this, onError);
     }
 }

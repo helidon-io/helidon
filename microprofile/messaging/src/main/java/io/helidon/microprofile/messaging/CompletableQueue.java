@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 
@@ -32,10 +33,11 @@ import java.util.function.BiConsumer;
  */
 class CompletableQueue<T> {
 
-    private static final long MAX_QUEUE_SIZE = 1024;
+    private static final long MAX_QUEUE_SIZE = 2048;
+    private static final long BACK_PRESSURE_LIMIT = MAX_QUEUE_SIZE - (MAX_QUEUE_SIZE >> 2);
     private final ReentrantLock queueLock = new ReentrantLock();
     private final LinkedList<Item<T>> queue = new LinkedList<>();
-    private long size = 0;
+    private final AtomicLong size = new AtomicLong();
     private volatile BiConsumer<Item<T>, ? super Throwable> onEachComplete;
 
     private CompletableQueue(final BiConsumer<Item<T>, ? super Throwable> onEachComplete) {
@@ -63,6 +65,15 @@ class CompletableQueue<T> {
     }
 
     /**
+     * If limit for safe prefetch is reached applying back-pressure is advised.
+     *
+     * @return true if limit reached
+     */
+    boolean isBackPressureLimitReached() {
+        return BACK_PRESSURE_LIMIT <= size.get();
+    }
+
+    /**
      * Add completable to the queue, if completed {@code onEachComplete} is invoked only after all older completables
      * invoked {@code onEachComplete}.
      * If {@code onEachComplete} is not provided, all completables has to wait till {@code onEachComplete method is invoked}.
@@ -74,7 +85,7 @@ class CompletableQueue<T> {
         try {
             queueLock.lock();
             queue.add(Item.create(future, metadata));
-            if (++size > MAX_QUEUE_SIZE) {
+            if (size.incrementAndGet() > MAX_QUEUE_SIZE) {
                 throw ExceptionUtils.createCompletableQueueOverflow(MAX_QUEUE_SIZE);
             }
             future.whenComplete((t, u) -> tryFlush());
@@ -103,10 +114,11 @@ class CompletableQueue<T> {
                 while (!queue.isEmpty() && queue.getFirst().getCompletableFuture().isDone()) {
                     var item = queue.poll();
                     if (Objects.isNull(item)) return;
-                    size--;
+                    size.decrementAndGet();
                     item.setValue(item.getCompletableFuture().get());
                     onEachComplete.accept(item, null);
                 }
+                return;
             } catch (InterruptedException | ExecutionException e) {
                 onEachComplete.accept(null, e);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019,2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 
 import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
 import io.helidon.microprofile.openapi.other.TestApp2;
 import io.helidon.microprofile.server.Server;
 
@@ -39,6 +40,8 @@ public class BasicServerTest {
 
     private static Server server;
 
+    private static HttpURLConnection cnx;
+
     private static Map<String, Object> yaml;
 
     public BasicServerTest() {
@@ -52,8 +55,8 @@ public class BasicServerTest {
      */
     @BeforeAll
     public static void startServer() throws Exception {
-        server = TestUtil.startServer(TestApp.class, TestApp3.class);
-        HttpURLConnection cnx = TestUtil.getURLConnection(
+        server = TestUtil.startServer(TestApp.class, , TestApp3.class, Config.create());
+        cnx = TestUtil.getURLConnection(
                 server.port(),
                 "GET",
                 OPENAPI_PATH,
@@ -67,10 +70,7 @@ public class BasicServerTest {
      */
     @AfterAll
     public static void stopServer() {
-        if (server != null) {
-            server.stop();
-            server = null;
-        }
+        TestUtil.cleanup(server, cnx);
     }
 
     /**

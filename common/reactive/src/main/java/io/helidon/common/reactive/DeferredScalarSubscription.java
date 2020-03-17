@@ -50,7 +50,7 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
     }
 
     @Override
-    public void request(long n) {
+    public final void request(long n) {
         if (n <= 0L) {
             if (getAndSet(CANCELED) != CANCELED) {
                 downstream.onError(
@@ -92,7 +92,7 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
      * </p>
      * @param item the item to signal and then complete the downstream
      */
-    public void complete(T item) {
+    public final void complete(T item) {
         for (;;) {
             int state = get();
             if (state == NO_VALUE_HAS_REQUEST) {
@@ -119,8 +119,54 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
         }
     }
 
+    /**
+     * Calls onSubscribe of the downstream with {@code this}.
+     */
+    protected final void subscribeSelf() {
+        downstream.onSubscribe(this);
+    }
+
+    /**
+     * Returns the downstream reference.
+     * @return the downstream reference
+     */
     protected final Flow.Subscriber<? super T> downstream() {
         return downstream;
+    }
+
+    /**
+     * Complete the downstream without emitting any items.
+     */
+    public final void complete() {
+        for (;;) {
+            int state = get();
+            if (state == NO_VALUE_NO_REQUEST || state == NO_VALUE_HAS_REQUEST) {
+                if (compareAndSet(state, COMPLETE)) {
+                    downstream.onComplete();
+                    return;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Signal error to the downstream without emitting any items.
+     * @param throwable the error to signal
+     */
+    public final void error(Throwable throwable) {
+        for (;;) {
+            int state = get();
+            if (state == NO_VALUE_NO_REQUEST || state == NO_VALUE_HAS_REQUEST) {
+                if (compareAndSet(state, COMPLETE)) {
+                    downstream.onError(throwable);
+                    return;
+                }
+            } else {
+                break;
+            }
+        }
     }
 
     // Workaround for SpotBugs, Flow classes should never get serialized

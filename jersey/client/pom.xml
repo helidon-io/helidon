@@ -28,6 +28,10 @@
     <artifactId>helidon-jersey-client</artifactId>
     <name>Helidon Jersey Client</name>
 
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>

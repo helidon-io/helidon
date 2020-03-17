@@ -55,6 +55,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.openapi.internal.OpenAPIConfigImpl;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -598,7 +599,7 @@ public class OpenAPISupport implements Service {
      * helidonConfig settings
      */
     public static OpenAPISupport create(Config config) {
-        return builderSE().helidonConfig(config).build();
+        return builderSE().config(config).build();
     }
 
     /**
@@ -620,6 +621,11 @@ public class OpenAPISupport implements Service {
      */
     public abstract static class Builder implements io.helidon.common.Builder<OpenAPISupport> {
 
+        /**
+         * Config key to select the openapi node from Helidon config.
+         */
+        public static final String CONFIG_KEY = "openapi";
+
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
 
@@ -627,6 +633,26 @@ public class OpenAPISupport implements Service {
         public OpenAPISupport build() {
             validate();
             return new OpenAPISupport(this);
+        }
+
+        /**
+         * Set various builder attributes from the specified {@code Config} object.
+         * <p>
+         * The {@code Config} object can specify web-context and static-file in addition to settings
+         * supported by {@link OpenAPIConfigImpl.Builder}.
+         *
+         * @param config the openapi {@code Config} object possibly containing settings
+         * @exception NullPointerException if the provided {@code Config} is null
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("web-context")
+                    .asString()
+                    .ifPresent(this::webContext);
+            config.get("static-file")
+                    .asString()
+                    .ifPresent(this::staticFile);
+            return this;
         }
 
         /**
@@ -684,6 +710,9 @@ public class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         public Builder webContext(String path) {
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }
             this.webContext = Optional.of(path);
             return this;
         }

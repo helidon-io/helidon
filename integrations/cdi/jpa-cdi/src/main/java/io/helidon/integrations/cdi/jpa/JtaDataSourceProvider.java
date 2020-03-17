@@ -82,6 +82,8 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      */
     private final TransactionManager transactionManager;
 
+    private final TransactionSynchronizationRegistry tsr;
+
     /**
      * A thread-safe {@link Map} (usually a {@link ConcurrentHashMap})
      * that stores {@link JtaDataSource} instances under their names.
@@ -123,14 +125,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * 3.15 of the CDI specification</a> and for no other purpose.</p>
      *
      * @deprecated Please use the {@link
-     * #JtaDataSourceProvider(Instance, TransactionManager)}
-     * constructor instead.
+     * #JtaDataSourceProvider(Instance, TransactionManager,
+     * TransactionSynchronizationRegistry)} constructor instead.
      */
     @Deprecated
     JtaDataSourceProvider() {
         super();
         this.objects = null;
         this.transactionManager = null;
+        this.tsr = null;
         this.dataSourcesByName = null;
     }
 
@@ -143,15 +146,20 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @param transactionManager a {@link TransactionManager}; must
      * not be {@code null}
      *
+     * @param tsr a {@link TransactionSynchronizationRegistry}; must
+     * not be {@code null}
+     *
      * @exception NullPointerException if either {@code objects} or
-     * {@code transactionManager} is {@code null}
+     * {@code transactionManager} or {@code tsr} is {@code null}
      */
     @Inject
     JtaDataSourceProvider(final Instance<Object> objects,
-                          final TransactionManager transactionManager) {
+                          final TransactionManager transactionManager,
+                          final TransactionSynchronizationRegistry tsr) {
         super();
         this.objects = Objects.requireNonNull(objects);
         this.transactionManager = Objects.requireNonNull(transactionManager);
+        this.tsr = Objects.requireNonNull(tsr);
         this.dataSourcesByName = new ConcurrentHashMap<>();
     }
 
@@ -298,8 +306,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
                                                        ignoredKey -> new JtaDataSource(dataSource,
                                                                                        dataSourceName,
                                                                                        this.transactionManager));
+            this.registerSynchronizationIfTransactionIsActive(returnValue);
         }
         return returnValue;
+    }
+
+    private void registerSynchronizationIfTransactionIsActive(final Object dataSource) {
+        if (dataSource instanceof Synchronization && this.tsr.getTransactionStatus() == Status.STATUS_ACTIVE) {
+            this.tsr.registerInterposedSynchronization((Synchronization) dataSource);
+        }
     }
 
     /*
@@ -319,10 +334,6 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      *
      * @param event ignored by this method
      *
-     * @param tsr a {@link TransactionSynchronizationRegistry} for
-     * housing what are effectively transaction event listeners; must
-     * not be {@code null}
-     *
      * @exception NullPointerException if {@code tsr} is {@code null}
      * for any reason
      *
@@ -333,15 +344,8 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @see
      * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
      */
-    private void whenTransactionStarts(@Observes @Initialized(TransactionScoped.class) final Object event,
-                                       final TransactionSynchronizationRegistry tsr) {
-        assert tsr != null;
-        assert tsr.getTransactionStatus() == Status.STATUS_ACTIVE;
-        this.dataSourcesByName.forEach((ignoredKey, dataSource) -> {
-                if (dataSource instanceof Synchronization) {
-                    tsr.registerInterposedSynchronization((Synchronization) dataSource);
-                }
-            });
+    private void whenTransactionStarts(@Observes @Initialized(TransactionScoped.class) final Object event) {
+        this.dataSourcesByName.forEach((ignoredKey, dataSource) -> this.registerSynchronizationIfTransactionIsActive(dataSource));
     }
 
     /**

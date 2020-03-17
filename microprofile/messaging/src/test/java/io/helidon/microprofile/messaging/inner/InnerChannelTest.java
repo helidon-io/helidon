@@ -27,7 +27,7 @@ import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
 import io.helidon.microprofile.messaging.AssertableTestBean;
-import io.helidon.microprofile.messaging.CountableTestBean;
+import io.helidon.microprofile.messaging.AsyncTestBean;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -61,15 +61,16 @@ public class InnerChannelTest extends AbstractCDITest {
                     cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes()));
         } else {
             cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes());
-            testCase.getCountableBeanClasses().forEach(c -> {
-                CountableTestBean countableTestBean = CDI.current().select(c).get();
-                // Wait till all messages are delivered
-                assertAllReceived(countableTestBean);
-            });
-            testCase.getCompletableBeanClasses().forEach(c -> {
-                AssertableTestBean assertableTestBean = CDI.current().select(c).get();
-                assertableTestBean.assertValid();
-            });
+            testCase.getAsyncBeanClasses()
+                    .map(c -> CDI.current().select(c).get())
+                    .forEach(AsyncTestBean::tearDown);
+            // Wait till all messages are delivered
+            testCase.getCountableBeanClasses()
+                    .map(c -> CDI.current().select(c).get())
+                    .forEach(this::assertAllReceived);
+            testCase.getCompletableBeanClasses()
+                    .map(c -> CDI.current().select(c).get())
+                    .forEach(AssertableTestBean::assertValid);
         }
     }
 }

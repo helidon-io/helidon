@@ -180,17 +180,15 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      */
     public static final class Builder implements io.helidon.common.Builder<OpenApiConfig> {
 
-        private static final String CONFIG_PREFIX = "openapi.";
-
         // Key names are inspired by the MP OpenAPI config key names
-        static final String MODEL_READER = CONFIG_PREFIX + "model.reader";
-        static final String FILTER = CONFIG_PREFIX + "filter";
-        static final String SERVERS = CONFIG_PREFIX + "servers";
-        static final String SERVERS_PATH = CONFIG_PREFIX + "servers.path";
-        static final String SERVERS_OPERATION = CONFIG_PREFIX + "servers.operation";
-        static final String SCHEMA_REFERENCES_ENABLE = CONFIG_PREFIX + "schema-references.enable";
-        static final String CUSTOM_SCHEMA_REGISTRY_CLASS = CONFIG_PREFIX + "custom-schema-registry.class";
-        static final String APPLICATION_PATH_DISABLE = CONFIG_PREFIX + "application-path.disable";
+        static final String MODEL_READER = "model.reader";
+        static final String FILTER = "filter";
+        static final String SERVERS = "servers";
+        static final String SERVERS_PATH = "servers.path";
+        static final String SERVERS_OPERATION = "servers.operation";
+        static final String SCHEMA_REFERENCES_ENABLE = "schema-references.enable";
+        static final String CUSTOM_SCHEMA_REGISTRY_CLASS = "custom-schema-registry.class";
+        static final String APPLICATION_PATH_DISABLE = "application-path.disable";
 
         static final List<String> CONFIG_KEYS = Arrays.asList(new String[] {MODEL_READER, FILTER, SERVERS});
 
@@ -214,9 +212,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
         /**
          * Sets the builder's attributes according to the corresponding entries
-         * (if present) in the specified {@link Config} object.
+         * (if present) in the specified openapi {@link Config} object.
          *
-         * @param config {@code} Config object to process
+         * @param config {@code} openapi Config object to process
          * @return updated builder
          */
         public Builder config(Config config) {

@@ -18,7 +18,6 @@ package io.helidon.common.reactive;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Decorated publisher that allows subscribing to individual events with java functions.
@@ -68,29 +67,5 @@ public interface Subscribable<T> extends Publisher<T> {
             Consumer<? super Flow.Subscription> subscriptionConsumer) {
 
         this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, subscriptionConsumer));
-    }
-
-    /**
-     * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
-     *
-     * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
-     * @return Multi
-     */
-    default Multi<T> onErrorResume(Function<Throwable, T> onError) {
-        MultiOnErrorResumeProcessor<T> processor = MultiOnErrorResumeProcessor.resume(onError);
-        this.subscribe(processor);
-        return processor;
-    }
-
-    /**
-     * Resume stream from supplied publisher if onError signal is intercepted.
-     *
-     * @param onError supplier of new stream publisher
-     * @return Multi
-     */
-    default Multi<T> onErrorResumeWith(Function<Throwable, Publisher<T>> onError) {
-        MultiOnErrorResumeProcessor<T> processor = MultiOnErrorResumeProcessor.resumeWith(onError);
-        this.subscribe(processor);
-        return processor;
     }
 }

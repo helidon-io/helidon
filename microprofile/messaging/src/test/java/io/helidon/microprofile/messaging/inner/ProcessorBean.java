@@ -26,6 +26,10 @@ import org.reactivestreams.Processor;
 
 import javax.enterprise.context.ApplicationScoped;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class ProcessorBean extends AbstractShapeTestBean {
 
