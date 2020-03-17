@@ -108,7 +108,7 @@ public class SchemaGeneratorHelper {
     /**
      * List of types that should map to a GraphQL Int.
      */
-    protected static final List<String> INTEGER_LIST = new ArrayList<>() {{
+    static final List<String> INTEGER_LIST = new ArrayList<>() {{
         add("short");
         add("int");
         add("Short");
@@ -122,7 +122,7 @@ public class SchemaGeneratorHelper {
     /**
      * List of types that should map to a GraphQL String.
      */
-    protected static final List<String> STRING_LIST = new ArrayList<>() {{
+    static final List<String> STRING_LIST = new ArrayList<>() {{
         add("java.lang.String");
         add("java.lang.Character");
         add("char");
@@ -132,7 +132,7 @@ public class SchemaGeneratorHelper {
      * List of array primitive types and their array mapping. See https://docs.oracle.com/javase/6/docs/api/java/lang/Class
      * .html#getName%28%29
      */
-    protected static final Map<String, String> PRIMITIVE_ARRAY_MAP = new HashMap<>() {{
+    static final Map<String, String> PRIMITIVE_ARRAY_MAP = new HashMap<>() {{
         put("[Z", "boolean");
         put("[B", "byte");
         put("[C", "char");
@@ -146,7 +146,7 @@ public class SchemaGeneratorHelper {
     /**
      * List of all Java primitive objects.
      */
-    protected static final List<String> JAVA_PRIMITIVE_OBJECTS = new ArrayList<>() {{
+    static final List<String> JAVA_PRIMITIVE_OBJECTS = new ArrayList<>() {{
         addAll(STRING_LIST);
         addAll(FLOAT_LIST);
         addAll(INTEGER_LIST);

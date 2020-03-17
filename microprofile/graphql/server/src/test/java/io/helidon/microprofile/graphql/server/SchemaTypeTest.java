@@ -51,6 +51,9 @@ class SchemaTypeTest {
         assertThat(schemaType.getImplementingInterface(), is(nullValue()));
         schemaType.setImplementingInterface("Contact");
         assertThat(schemaType.getImplementingInterface(), is("Contact"));
+
+        schemaType.setName("Name");
+        assertThat(schemaType.getName(), is("Name"));
     }
 
     @Test

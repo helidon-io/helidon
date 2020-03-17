@@ -52,6 +52,10 @@ import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFiel
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputType;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithAddress;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithName;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithNameValue;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
@@ -410,8 +414,20 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(mapResults2, is(notNullValue()));
         assertThat(mapResults2.get("id"), is(notNullValue()));
         assertThat(mapResults2.get("lastNAddress"), is(notNullValue()));
+    }
 
-        // lastNAddress on top level query
+    @Test
+    public void testInputType() throws IOException {
+        setupIndex(indexFileName, SimpleContactInputType.class, SimpleContactInputTypeWithName.class,
+                   SimpleContactInputTypeWithNameValue.class, SimpleContactInputTypeWithAddress.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        Schema schema = executionContext.getSchema();
+        assertThat(schema.getInputTypes().size(), is(5));
+        assertThat(schema.containsInputTypeWithName("MyInputType"), is(true));
+        assertThat(schema.containsInputTypeWithName("SimpleContactInputTypeInput"), is(true));
+        assertThat(schema.containsInputTypeWithName("NameInput"), is(true));
+        assertThat(schema.containsInputTypeWithName("SimpleContactInputTypeWithAddressInput"), is(true));
+        assertThat(schema.containsInputTypeWithName("AddressInput"), is(true));
     }
 
     @Test

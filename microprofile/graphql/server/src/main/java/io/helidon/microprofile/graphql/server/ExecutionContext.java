@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -42,7 +43,7 @@ public class ExecutionContext<C> {
     /**
      * An empty map.
      */
-    protected static final Map<String, Object> EMPTY_MAP = new HashMap<>();
+    static final Map<String, Object> EMPTY_MAP = Collections.emptyMap();
 
     /**
      * {@link GraphQL} instance to use for execution.
@@ -107,11 +108,11 @@ public class ExecutionContext<C> {
             GraphQL.Builder builder = GraphQL.newGraphQL(this.graphQLSchema)
                     .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
 
-            Instrumentation instrumentation = null; // getInstrumentation();
-
-            if (instrumentation != null) {
-                builder.instrumentation(instrumentation);
-            }
+//            Instrumentation instrumentation = null; // getInstrumentation();
+//
+//            if (instrumentation != null) {
+//                builder.instrumentation(instrumentation);
+//            }
 
             graphQL = builder.build();
 

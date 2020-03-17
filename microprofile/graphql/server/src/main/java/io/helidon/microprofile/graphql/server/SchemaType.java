@@ -30,7 +30,7 @@ public class SchemaType
     /**
      * Name of the type.
      */
-    private final String name;
+    private String name;
 
     /**
      * Value class name.
@@ -120,6 +120,14 @@ public class SchemaType
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Set the name of the {@link SchemaType}.
+     * @param name the name of the {@link SchemaType}
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**

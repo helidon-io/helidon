@@ -205,10 +205,18 @@ public class SchemaGenerator {
 
                     }
                 } else if (inputAnnotation != null) {
-                    // InputType
-                    String inputTypeName = inputAnnotation.value();
-                    listSchemaTypes.add(new SchemaInputType(inputTypeName.isBlank() ? clazz.getSimpleName() : inputTypeName,
-                                                            clazz.getName()));
+                    String clazzName = clazz.getName();
+                    String simpleName = clazz.getSimpleName();
+
+                    SchemaInputType inputType = generateType(clazzName).createInputType("");
+                    // if the name of the InputType was not changed then append "Input"
+                    if (inputType.getName().equals(simpleName)) {
+                        inputType.setName(inputType.getName() + "Input");
+                    }
+                    if (!schema.containsInputTypeWithName(inputType.getName())) {
+                        schema.addInputType(inputType);
+                        checkInputType(schema, inputType);
+                    }
                 }
 
                 // obtain top level query API's
@@ -423,42 +431,8 @@ public class SchemaGenerator {
                         }
                         a.setArgumentType(inputType.getName());
 
-                        // if this new Type contains any types, then they must also have
-                        // InputTypes created for them if they are not enums or scalars
-                        Set<SchemaInputType> setInputTypes = new HashSet<>();
-                        setInputTypes.add(inputType);
-
-                        // setInputTypes contains all InputTypes that need to be checked for types other than
-                        // Enum, Scalar or GraphQL Type
-                        while (setInputTypes.size() > 0) {
-                            SchemaInputType type = setInputTypes.iterator().next();
-                            setInputTypes.remove(type);
-                            LOGGER.info("Checking input type: " + type.getName());
-                            // check each field definition to see if any return types are unknownInputTypes
-                            for (SchemaFieldDefinition fdi : type.getFieldDefinitions()) {
-                                String fdReturnType = fdi.getReturnType();
-
-                                if (!isGraphQLType(fdReturnType)) {
-                                    // must be either an unknown input type, Scalar or Enum
-                                    if (getScalar(fdReturnType) != null || isEnumClass(fdReturnType)) {
-                                        setUnresolvedTypes.add(fdReturnType);
-                                    } else {
-                                        // must be a type, create a new input Type but do not add it to
-                                        // the schema if it already exists
-                                        SchemaInputType newInputType = generateType(fdReturnType)
-                                                .createInputType("Input");
-                                        if (!schema.containsInputTypeWithName(newInputType.getName())) {
-                                            schema.addInputType(newInputType);
-                                            setInputTypes.add(newInputType);
-                                            LOGGER.info("Adding new input type " + newInputType.getName());
-                                        } else {
-                                            LOGGER.info("Ignoring: " + newInputType.getName());
-                                        }
-                                        fdi.setReturnType(newInputType.getName());
-                                    }
-                                }
-                            }
-                        }
+                        //check the input type for any other input types
+                        checkInputType(schema, inputType);
                     }
                 }
                 if (fd != null) {
@@ -487,11 +461,60 @@ public class SchemaGenerator {
     }
 
     /**
+     * Check this new {@link SchemaInputType} contains any types, then they must also have InputTypes created for them if they are
+     * not enums or scalars.
+     *
+     * @param schema          {@link Schema} to add to
+     * @param schemaInputType {@link SchemaInputType} to check
+     * @throws IntrospectionException if issues with introspection
+     * @throws ClassNotFoundException if class not found
+     */
+    private void checkInputType(Schema schema, SchemaInputType schemaInputType)
+            throws IntrospectionException, ClassNotFoundException {
+        // if this new Type contains any types, then they must also have
+        // InputTypes created for them if they are not enums or scalars
+        Set<SchemaInputType> setInputTypes = new HashSet<>();
+        setInputTypes.add(schemaInputType);
+
+        // setInputTypes contains all InputTypes that need to be checked for types other than
+        // Enum, Scalar or GraphQL Type
+        while (setInputTypes.size() > 0) {
+            SchemaInputType type = setInputTypes.iterator().next();
+            setInputTypes.remove(type);
+            LOGGER.info("Checking input type: " + type.getName());
+            // check each field definition to see if any return types are unknownInputTypes
+            for (SchemaFieldDefinition fdi : type.getFieldDefinitions()) {
+                String fdReturnType = fdi.getReturnType();
+
+                if (!isGraphQLType(fdReturnType)) {
+                    // must be either an unknown input type, Scalar or Enum
+                    if (getScalar(fdReturnType) != null || isEnumClass(fdReturnType)) {
+                        setUnresolvedTypes.add(fdReturnType);
+                    } else {
+                        // must be a type, create a new input Type but do not add it to
+                        // the schema if it already exists
+                        SchemaInputType newInputType = generateType(fdReturnType)
+                                .createInputType("Input");
+                        if (!schema.containsInputTypeWithName(newInputType.getName())) {
+                            schema.addInputType(newInputType);
+                            setInputTypes.add(newInputType);
+                            LOGGER.info("Adding new input type " + newInputType.getName());
+                        } else {
+                            LOGGER.info("Ignoring: " + newInputType.getName());
+                        }
+                        fdi.setReturnType(newInputType.getName());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Add the given {@link SchemaType} to the {@link Schema}.
      *
      * @param schema the {@link Schema} to add to
-     * @throws IntrospectionException
-     * @throws ClassNotFoundException
+     * @throws IntrospectionException if issues with introspection
+     * @throws ClassNotFoundException if class not found
      */
     private void addTypeToSchema(Schema schema, SchemaType type)
             throws IntrospectionException, ClassNotFoundException {
@@ -530,19 +553,6 @@ public class SchemaGenerator {
      */
     private SchemaEnum generateEnum(Class<?> clazz) {
         if (clazz.isEnum()) {
-            // check for the Enum annotation as this method may be called from different paths
-            org.eclipse.microprofile.graphql.Enum annotation = clazz
-                    .getAnnotation(org.eclipse.microprofile.graphql.Enum.class);
-            String name = annotation == null ? "" : annotation.value();
-
-            // only check for Name annotation if the Enum didn't have a value
-            if ("".equals(name)) {
-                // check to see if this class has @Name annotation
-                String nameValue = getNameAnnotationValue(clazz);
-                if (nameValue != null) {
-                    name = nameValue;
-                }
-            }
             SchemaEnum newSchemaEnum = new SchemaEnum(getTypeName(clazz));
 
             Arrays.stream(clazz.getEnumConstants())
@@ -717,6 +727,8 @@ public class SchemaGenerator {
                 prefix = GET;
             } else if (name.startsWith(SET)) {
                 prefix = SET;
+            } else {
+                prefix = "";
             }
 
             // remove the prefix and make first letter lowercase
