@@ -354,7 +354,8 @@ public interface Multi<T> extends Subscribable<T> {
      *     via {@link Stream#iterator()} and use {@link #from(Iterable)}:
      *     <pre><code>
      *     Stream&lt;T&gt; stream = ...
-     *     Multi&lt;T&gt; multi = Multi.from(stream::iterator);</code></pre>
+     *     Multi&lt;T&gt; multi = Multi.from(stream::iterator);
+     *     </code></pre>
      * </p>
      * @param <T>      item type
      * @param stream the Stream to publish
