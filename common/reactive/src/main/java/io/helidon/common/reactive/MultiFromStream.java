@@ -21,19 +21,20 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 /**
- * Publisher from iterable, implemented as trampoline stack-less recursion.
+ * Publisher from a {@link Stream}, implemented as trampoline stack-less recursion.
  *
  * @param <T> item type
  */
-final class MultiFromIterable<T> implements Multi<T> {
+final class MultiFromStream<T> implements Multi<T> {
 
-    private final Iterable<T> iterable;
+    private final Stream<T> stream;
 
-    MultiFromIterable(Iterable<T> iterable) {
-        Objects.requireNonNull(iterable, "iterable is null");
-        this.iterable = iterable;
+    MultiFromStream(Stream<T> stream) {
+        Objects.requireNonNull(stream, "stream is null");
+        this.stream = stream;
     }
 
     @Override
@@ -43,21 +44,34 @@ final class MultiFromIterable<T> implements Multi<T> {
         Iterator<T> iterator;
         boolean hasFirst;
         try {
-            iterator = iterable.iterator();
+            iterator = stream.iterator();
             hasFirst = iterator.hasNext();
         } catch (Throwable ex) {
             subscriber.onSubscribe(EmptySubscription.INSTANCE);
+            try {
+                stream.close();
+            } catch (Throwable exc) {
+                if (exc != ex) {
+                    ex.addSuppressed(exc);
+                }
+            }
             subscriber.onError(ex);
             return;
         }
 
         if (!hasFirst) {
             subscriber.onSubscribe(EmptySubscription.INSTANCE);
+            try {
+                stream.close();
+            } catch (Throwable ex) {
+                subscriber.onError(ex);
+                return;
+            }
             subscriber.onComplete();
             return;
         }
 
-        subscriber.onSubscribe(new IteratorSubscription<>(subscriber, iterator));
+        subscriber.onSubscribe(new IteratorSubscription<>(subscriber, iterator, stream));
     }
 
     static final class IteratorSubscription<T> extends AtomicLong implements Flow.Subscription {
@@ -66,14 +80,17 @@ final class MultiFromIterable<T> implements Multi<T> {
 
         private Iterator<T> iterator;
 
+        private AutoCloseable close;
+
         private volatile int canceled;
 
         static final int NORMAL_CANCEL = 1;
         static final int BAD_REQUEST = 2;
 
-        IteratorSubscription(Flow.Subscriber<? super T> downstream, Iterator<T> iterator) {
+        IteratorSubscription(Flow.Subscriber<? super T> downstream, Iterator<T> iterator, AutoCloseable close) {
             this.downstream = downstream;
             this.iterator = iterator;
+            this.close = close;
         }
 
         @Override
@@ -99,6 +116,7 @@ final class MultiFromIterable<T> implements Multi<T> {
                             downstream.onError(new IllegalArgumentException(
                                     "Rule §3.9 violated: non-positive request amount is forbidded"));
                         }
+                        close();
                         return;
                     }
 
@@ -111,6 +129,7 @@ final class MultiFromIterable<T> implements Multi<T> {
                         iterator = null;
                         canceled = NORMAL_CANCEL;
                         downstream.onError(ex);
+                        close();
                         return;
                     }
 
@@ -132,6 +151,7 @@ final class MultiFromIterable<T> implements Multi<T> {
                         iterator = null;
                         canceled = NORMAL_CANCEL;
                         downstream.onError(ex);
+                        close();
                         return;
                     }
 
@@ -142,6 +162,7 @@ final class MultiFromIterable<T> implements Multi<T> {
                     if (!hasNext) {
                         iterator = null;
                         downstream.onComplete();
+                        close();
                         return;
                     }
 
@@ -163,6 +184,19 @@ final class MultiFromIterable<T> implements Multi<T> {
         public void cancel() {
             canceled = NORMAL_CANCEL;
             request(1); // for cleanup
+        }
+
+        void close() {
+            AutoCloseable c = close;
+            close = null;
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (Throwable ex) {
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, ex);
+                }
+            }
         }
     }
 }
