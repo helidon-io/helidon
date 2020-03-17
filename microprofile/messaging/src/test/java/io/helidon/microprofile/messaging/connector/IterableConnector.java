@@ -47,7 +47,6 @@ public class IterableConnector implements IncomingConnectorFactory, OutgoingConn
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
-        //TODO: use ReactiveStreams.of().map when engine is ready(supports more than one stage)
         return ReactiveStreams.of(TEST_DATA).map(Message::of);
     }
 
