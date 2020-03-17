@@ -99,13 +99,15 @@ public class OpenApiCdiExtension implements Extension {
 
     void registerOpenApi(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
         try {
+            Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
             OpenAPISupport openApiSupport = new MPOpenAPIBuilder()
                     .openAPIConfig(new OpenApiConfigImpl(mpConfig))
                     .indexView(indexView())
-                    .helidonConfig(config)
+                    .config(openapiNode)
                     .build();
 
-            openApiSupport.configureEndpoint(RoutingBuilders.create(config.get("openapi")).routingBuilder());
+            openApiSupport.configureEndpoint(
+                    RoutingBuilders.create(openapiNode).routingBuilder());
         } catch (IOException e) {
             throw new DeploymentException("Failed to obtain index view", e);
         }

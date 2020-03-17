@@ -590,7 +590,7 @@ public class OpenAPISupport implements Service {
      * helidonConfig settings
      */
     public static OpenAPISupport create(Config config) {
-        return builderSE().helidonConfig(config).build();
+        return builderSE().config(config).build();
     }
 
     /**
@@ -612,7 +612,10 @@ public class OpenAPISupport implements Service {
      */
     public abstract static class Builder implements io.helidon.common.Builder<OpenAPISupport> {
 
-        static final String CONFIG_PREFIX = "openapi";
+        /**
+         * Config key to select the openapi node from Helidon config.
+         */
+        public static final String CONFIG_KEY = "openapi";
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
@@ -626,19 +629,18 @@ public class OpenAPISupport implements Service {
         /**
          * Set various builder attributes from the specified {@code Config} object.
          * <p>
-         * The {@code Config} object can specify {@value #CONFIG_PREFIX}.web-context
-         * and {@value #CONFIG_PREFIX}.static-file in addition to settings
+         * The {@code Config} object can specify web-context and static-file in addition to settings
          * supported by {@link OpenAPIConfigImpl.Builder}.
          *
-         * @param config the {@code Config} object possibly containing settings
+         * @param config the openapi {@code Config} object possibly containing settings
          * @exception NullPointerException if the provided {@code Config} is null
          * @return updated builder instance
          */
-        public Builder helidonConfig(Config config) {
-            config.get(CONFIG_PREFIX + ".web-context")
+        public Builder config(Config config) {
+            config.get("web-context")
                     .asString()
                     .ifPresent(this::webContext);
-            config.get(CONFIG_PREFIX + ".static-file")
+            config.get("static-file")
                     .asString()
                     .ifPresent(this::staticFile);
             return this;
