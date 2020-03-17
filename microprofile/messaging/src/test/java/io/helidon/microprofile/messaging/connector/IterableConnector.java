@@ -16,6 +16,13 @@
 
 package io.helidon.microprofile.messaging.connector;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+
+import javax.enterprise.context.ApplicationScoped;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
@@ -25,15 +32,10 @@ import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 
-import javax.enterprise.context.ApplicationScoped;
-
-import java.util.Arrays;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 @Connector("iterable-connector")
 public class IterableConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
@@ -46,14 +48,17 @@ public class IterableConnector implements IncomingConnectorFactory, OutgoingConn
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
         //TODO: use ReactiveStreams.of().map when engine is ready(supports more than one stage)
-        return ReactiveStreams.fromIterable(Arrays.stream(TEST_DATA).map(Message::of).collect(Collectors.toSet()));
+        return ReactiveStreams.of(TEST_DATA).map(Message::of);
     }
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config config) {
-        return ReactiveStreams.<Message<?>>builder().forEach(m -> {
-            assertTrue(PROCESSED_DATA.contains(m.getPayload()));
-            LATCH.countDown();
-        });
+        return ReactiveStreams.<Message<?>>builder()
+                .map(Message::getPayload)
+                .forEach(p -> {
+                    if (PROCESSED_DATA.contains(p)) {
+                        LATCH.countDown();
+                    }
+                });
     }
 }

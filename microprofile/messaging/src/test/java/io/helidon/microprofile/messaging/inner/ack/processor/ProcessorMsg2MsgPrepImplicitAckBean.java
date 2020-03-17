@@ -17,7 +17,6 @@
 
 package io.helidon.microprofile.messaging.inner.ack.processor;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,8 +32,10 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
-import static org.hamcrest.Matchers.is;
-
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class ProcessorMsg2MsgPrepImplicitAckBean implements AssertableTestBean {
 

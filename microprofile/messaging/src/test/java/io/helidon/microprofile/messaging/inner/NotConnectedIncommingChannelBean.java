@@ -21,6 +21,10 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import javax.enterprise.context.ApplicationScoped;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 @AssertThrowException(Exception.class)
 public class NotConnectedIncommingChannelBean {

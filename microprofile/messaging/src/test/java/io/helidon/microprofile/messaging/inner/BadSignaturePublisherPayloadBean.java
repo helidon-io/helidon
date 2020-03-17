@@ -26,6 +26,10 @@ import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 //TODO: Uncomment when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
 //@AssertThrowException(Exception.class)

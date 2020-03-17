@@ -34,6 +34,10 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
+/**
+ * This test is modified version of official tck test in version 1.0
+ * https://github.com/eclipse/microprofile-reactive-messaging
+ */
 @ApplicationScoped
 public class IncomingSubscriberMsgPostImplicitAckBean implements AssertableTestBean {
 
