@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class ServerModelReaderTest {
 
     private static final OpenAPISupport.Builder OPENAPI_SUPPORT_BUILDER =
         OpenAPISupport.builderSE()
-                .helidonConfig(Config.create(ConfigSources.classpath("simple.properties")));
+                .config(Config.create(ConfigSources.classpath("simple.properties")).get(OpenAPISupport.Builder.CONFIG_KEY));
 
     private static WebServer webServer;
 
