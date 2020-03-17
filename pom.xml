@@ -45,6 +45,7 @@
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
 
+        <checkstyle.skip>false</checkstyle.skip>
         <!--
         !Version statement! - begin
 
@@ -468,8 +469,7 @@
                         <scmOnly>true</scmOnly>
                         <warn>true</warn>
                         <ignoreYear>false</ignoreYear>
-                        <useComma>true</useComma>
-                        <doHidden>true</doHidden>
+                        <useDash>false</useDash>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -477,6 +477,7 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.plugin.checkstyle}</version>
                     <configuration>
+                        <skip>${checkstyle.skip}</skip>
                         <sourceDirectories>
                             <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                         </sourceDirectories>
