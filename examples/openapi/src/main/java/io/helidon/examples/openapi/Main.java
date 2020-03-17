@@ -105,7 +105,7 @@ public final class Main {
 
         return Routing.builder()
                 .register(JsonSupport.create())
-                .register(OpenAPISupport.create(config))
+                .register(OpenAPISupport.create(config.get(OpenAPISupport.Builder.CONFIG_KEY)))
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"
                 .register("/greet", greetService)
