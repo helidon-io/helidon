@@ -34,10 +34,10 @@ import org.reactivestreams.tck.TestEnvironment;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.Factory;
 
-public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamEngine> {
+public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
     private static final TestEnvironment testEnvironment = new TestEnvironment(200);
-    private HelidonReactiveStreamEngine engine;
+    private HelidonReactiveStreamsEngine engine;
     private ReactiveStreamsFactory rs;
     private ScheduledExecutorService executorService;
 
@@ -46,8 +46,8 @@ public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonRea
     }
 
     @Override
-    protected HelidonReactiveStreamEngine createEngine() {
-        return new HelidonReactiveStreamEngine();
+    protected HelidonReactiveStreamsEngine createEngine() {
+        return new HelidonReactiveStreamsEngine();
     }
 
     @Factory
