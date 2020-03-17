@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -339,6 +340,31 @@ public interface Multi<T> extends Subscribable<T> {
         return new MultiFromIterable<>(iterable);
     }
 
+    /**
+     * Create a {@link Multi} instance that publishes the given {@link Stream}.
+     * <p>
+     *     Note that Streams can be only consumed once, therefore, the
+     *     returned Multi will signal {@link IllegalStateException} if
+     *     multiple subscribers try to consume it.
+     * <p>
+     *     The operator calls {@link Stream#close()} when the stream finishes,
+     *     fails or the flow gets canceled. To avoid closing the stream automatically,
+     *     it is recommended to turn the {@link Stream} into an {@link Iterable}
+     *     via {@link Stream#iterator()} and use {@link #from(Iterable)}:
+     *     <pre>{@code
+     *     Stream<T> stream = ...
+     *     Multi<T> multi = Multi.from(stream::iterator);
+     *     }</pre>
+     *
+     * @param <T>      item type
+     * @param stream the Stream to publish
+     * @return Multi
+     * @throws NullPointerException if {@code stream} is {@code null}
+     */
+    static <T> Multi<T> from(Stream<T> stream) {
+        Objects.requireNonNull(stream, "stream is null");
+        return new MultiFromStream<>(stream);
+    }
 
     /**
      * Create a {@link Multi} instance that publishes the given items to a single subscriber.
