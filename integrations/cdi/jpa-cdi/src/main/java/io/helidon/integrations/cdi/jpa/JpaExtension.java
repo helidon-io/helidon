@@ -93,8 +93,6 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 import io.helidon.integrations.cdi.referencecountedcontext.ReferenceCounted;
@@ -118,11 +116,6 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * @see PersistenceUnitInfoBean
  */
 public class JpaExtension implements Extension {
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "JPA");
-    }
-
     /*
      * Static fields.
      */

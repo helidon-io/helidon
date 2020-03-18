@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 grpcserver:
   ssl:
     enabled: true
-    tls-cert-resource-path: ssl/serverCert.pem
-    tls-key-resource-path: ssl/serverKey.pem
-    tls-ca-cert-resource-path: ssl/ca.pem
+    tls-cert.resource.resource-path: ssl/serverCert.pem
+    tls-key.resource.resource-path: ssl/serverKey.pem
+    tls-ca-cert.resource.resource-path: ssl/ca.pem
     jdk-ssl: false

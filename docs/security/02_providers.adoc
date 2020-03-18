@@ -84,13 +84,13 @@ All configuration options:
 |atn-token | |A group for configuring authentication of the request
 |atn-token.verify-signature |true |Whether to verify signature in incoming JWT. If disabled, _ANY_ JWT will be accepted
 |atn-token.jwt-audience| |Expected audience of the JWT. If not defined, any audience is accepted (and we may accept JWT not inteded for us)
-|atn-token/jwk-* | |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk-path, jwk-resource-path, jwk-url, jwk-content-plain (actual JSON string), jwk-content (base64)
+|atn-token/jwk.resource.* | |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk.resource.path, jwk.resource.resource-path, jwk.resource.url, jwk.resource.content-plain (actual JSON string), jwk.resource.content (base64)
 |atn-token/handler |Authorization bearer |A handler configuration for inbound token - e.g. how to extract it
 |atn-token/handler/header |Authorization |Name of a header the token is expected in
 |atn-token/handler/prefix |bearer  |Prefix before the token value (optional)
 |atn-token/handler/regexp | |Regular expression to obtain the token, first matching group is used (optional)
 |sign-token | |A group for configuring outbound security
-|sign-token/jwk-* | |Configuration of the JWK to use when generating tokens (follows same rules as atn-token/jwk above), this JWK must contain private keys when using asymmetric ciphers
+|sign-token/jwk.resource.* | |Configuration of the JWK to use when generating tokens (follows same rules as atn-token/jwk above), this JWK must contain private keys when using asymmetric ciphers
 |sign-token/jwt-issuer | |When we issue a new token, this is the issuer to be placed into it (validated by target service)
 |sign-token/outbound | |A group for configuring outbound rules (based on transport, host and/or path)
 |sign-token/outbound/name | |A short descriptive name for configured target service(s)
@@ -112,10 +112,10 @@ Example configuration with authentication and outbound security:
 ----
 - jwt:
     atn-token:
-        jwk-path: "/config/securiy/verify-jwk.json"
+        jwk.resource.path: "/config/securiy/verify-jwk.json"
         jwt-audience: "my.service"
     sign-token:
-        jwk-path: "/config/security/sign-jwk.json"
+        jwk.resource.path: "/config/security/sign-jwk.json"
         jwt-issuer: "http://www.example.org/myservice"
         outbound:
          - name: "internal-services"

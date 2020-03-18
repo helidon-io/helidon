@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ security:
         sign-token:
           # JWK configuration (where to get keys for signatures)
           # This is defined only once, as we can have more keys in a single jwk
-          jwk-resource-path: "sign-jwk.json"
+          jwk.resource.resource-path: "sign-jwk.json"
           jwt-issuer: "jwt.example.com"
           outbound:
             - name: "rsa"

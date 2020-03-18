@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -832,13 +832,21 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         private void verifyKeys(Config config) {
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
+
+            // backward compatibility
             Resource.create(config, "jwk").ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
-            // jwk is optional, we may be propagating existing token
-            Resource.create(config, "jwk").ifPresent(this::signJwk);
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
+
+
+            // jwk is optional, we may be propagating existing token
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+            // backward compatibility
+            Resource.create(config, "jwk").ifPresent(this::signJwk);
+
         }
     }
 }
