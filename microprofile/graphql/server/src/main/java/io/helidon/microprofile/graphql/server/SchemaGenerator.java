@@ -61,6 +61,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootArrayClass;
@@ -715,6 +716,7 @@ public class SchemaGenerator {
 
         String name = method.getName();
         String varName;
+        String numberFormat[];
 
         if (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET)) {
             // this is a getter method
@@ -760,10 +762,11 @@ public class SchemaGenerator {
 
         if (pd != null) {
             boolean fieldHasIdAnnotation = false;
+            Field field = null;
             // check for Id annotation on class or field associated with the method
             // and if present change the type to ID
             try {
-                Field field = clazz.getDeclaredField(pd.getName());
+                field = clazz.getDeclaredField(pd.getName());
                 fieldHasIdAnnotation = field != null && field.getAnnotation(Id.class) != null;
             } catch (NoSuchFieldException e) {
                 // ignore
@@ -774,6 +777,11 @@ public class SchemaGenerator {
                     throw new RuntimeException("A class of type " + returnClazz + " is not allowed to be an @Id");
                 }
                 returnClazzName = ID;
+            }
+
+            // check for number format on the property
+            if (field != null) {
+                numberFormat = getFormatAnnotation(field);
             }
         }
 
