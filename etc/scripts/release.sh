@@ -207,10 +207,9 @@ release_site(){
     fi
 
     # Generate site
-    mvn -B site -Dversion.plugin.javadoc=3.2.0
+    mvn -B site
 
     # Sign site jar
-    # --default-key 0E59CB5C
     gpg --pinentry-mode loopback --passphrase "${GPG_PASSPHRASE}" -ab ${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar
 
     # Deploy site.jar and signature file explicitly using deploy-file
