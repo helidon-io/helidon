@@ -382,8 +382,12 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertAnnotation(SimpleContactWithNumberFormats.class, "field", "value", 2, "0 'value'", DEFAULT_LOCALE);
         assertAnnotation(SimpleContactWithNumberFormats.class, "field", "name", 0, null, null);
 
-        assertAnnotation(SimpleContactWithNumberFormats.class, "method", "getFormatMethod", 2, "0 'years old'", DEFAULT_LOCALE,
+        assertAnnotation(SimpleContactWithNumberFormats.class, "methodParam", "getFormatMethod", 2, "0 'years old'",
+                         DEFAULT_LOCALE,
                          int.class);
+        assertAnnotation(SimpleContactWithNumberFormats.class, "methodParam", "getName", 0, null, null);
+
+        assertAnnotation(SimpleContactWithNumberFormats.class, "method", "getId", 2, "0 'id'", DEFAULT_LOCALE);
         assertAnnotation(SimpleContactWithNumberFormats.class, "method", "getName", 0, null, null);
     }
 
@@ -392,7 +396,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
      * annotation is correclty applied.
      *
      * @param clazz          {@link Class} to apply to
-     * @param type           type to check, "field" or "method"
+     * @param type           type to check, "field", "method" or "methodParam"
      * @param name           field name or method name
      * @param expectedLength expected length of format array
      * @param expectedFormat expected value for format
@@ -416,11 +420,17 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
             Field field = clazz.getDeclaredField(name);
             assertThat(field, is(notNullValue()));
             annotation = getFormatAnnotation(field);
-        } else if ("method".equals(type)) {
+        } else if ("methodParam".equals(type)) {
             Method method = clazz.getMethod(name, methodArgs);
             assertThat(method, is(notNullValue()));
             if (expectedLength == 2) {
                 annotation = getFormatAnnotation(method.getParameters()[0]);
+            }
+        } else if ("method".equals(type)) {
+            Method method = clazz.getMethod(name, methodArgs);
+            assertThat(method, is(notNullValue()));
+            if (expectedLength == 2) {
+                annotation = getFormatAnnotation(method);
             }
         } else {
             throw new IllegalArgumentException("Unknown type of " + type);

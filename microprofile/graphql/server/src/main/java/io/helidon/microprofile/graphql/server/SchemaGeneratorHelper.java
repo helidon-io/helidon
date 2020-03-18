@@ -522,34 +522,44 @@ public final class SchemaGeneratorHelper {
      * Return the format and locale for a field if they exist in a {@link String} array.
      *
      * @param field the {@link Field} to check
-     * @return the format and locale for a field in a {@link String} array or an empty array if not
+     * @return the format ([0]) and locale ([1])  for a field in a {@link String} array or an empty array if not
      */
     protected static String[] getFormatAnnotation(Field field) {
-        JsonbNumberFormat jsonbNumberFormat = field.getAnnotation(JsonbNumberFormat.class);
-        org.eclipse.microprofile.graphql.NumberFormat numberFormat = field
-                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class);
-
-        // check @NumberFormat first as this takes precedence
-        if (numberFormat != null) {
-            return new String[] { numberFormat.value(), numberFormat.locale() };
-        }
-        if (jsonbNumberFormat != null) {
-            return new String[] { jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
-        }
-        return new String[0];
+        return getFormatAnnotationInternal(field.getAnnotation(JsonbNumberFormat.class), field
+                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class));
     }
 
     /**
      * Return the format and locale for a parameter if they exist in a {@link String} array.
      *
      * @param parameter the {@link Field} to check
-     * @return the format and locale for a parameter in a {@link String} array or an empty array if not
+     * @return the format ([0]) and locale ([1]) for a parameter in a {@link String} array or an empty array if not
      */
     protected static String[] getFormatAnnotation(Parameter parameter) {
-        JsonbNumberFormat jsonbNumberFormat = parameter.getAnnotation(JsonbNumberFormat.class);
-        org.eclipse.microprofile.graphql.NumberFormat numberFormat = parameter
-                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class);
+        return getFormatAnnotationInternal(parameter.getAnnotation(JsonbNumberFormat.class), parameter
+                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class));
+    }
 
+    /**
+     * Return the format and locale for a method if they exist in a {@link String} array.
+     *
+     * @param method the {@link Method} to check
+     * @return the format ([0]) and locale ([1]) for a method in a {@link String} array or an empty array if not
+     */
+    protected static String[] getFormatAnnotation(Method method) {
+        return getFormatAnnotationInternal(method.getAnnotation(JsonbNumberFormat.class),
+                                           method.getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class));
+    }
+
+    /**
+     * Return the format and locate for the given annotations.
+     *
+     * @param jsonbNumberFormat {@link JsonbNumberFormat} annotation, may be null
+     * @param numberFormat      {@Link org.eclipse.microprofile.graphql.NumberFormat} annotation, may be none
+     * @return the format ([0]) and locale ([1]) for a method in a {@link String} array or an empty array if not
+     */
+    private static String[] getFormatAnnotationInternal(JsonbNumberFormat jsonbNumberFormat,
+                                                        org.eclipse.microprofile.graphql.NumberFormat numberFormat) {
         // check @NumberFormat first as this takes precedence
         if (numberFormat != null) {
             return new String[] { numberFormat.value(), numberFormat.locale() };
@@ -559,7 +569,6 @@ public final class SchemaGeneratorHelper {
         }
         return new String[0];
     }
-
 
     /**
      * Return the inner most root type such as {@link String} for a List of List of String.

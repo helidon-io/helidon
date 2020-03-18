@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Objects;
 
@@ -56,6 +57,7 @@ public class SimpleContactWithNumberFormats {
         this.value = value;
     }
 
+    @NumberFormat("0 'id'")
     public String getId() {
         return id;
     }
