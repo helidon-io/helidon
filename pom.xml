@@ -968,7 +968,7 @@
                         <configuration>
                             <skip>false</skip>
                             <skippedModules>
-helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension,weld-se-core
+helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension,helidon-config-test-infrastructure,helidon-webserver-test-support
                             </skippedModules>
                             <excludePackageNames>io.grpc</excludePackageNames>
                             <sourceFileExcludes>
