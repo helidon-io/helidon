@@ -435,7 +435,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         @Override
         public Enumeration<URL> getResources(String name) throws IOException {
             if (excludePattern == null) {
-                return super.getResources(name);
+                return wrapped.getResources(name);
             }
 
             if ("META-INF/beans.xml".equals(name)) {
