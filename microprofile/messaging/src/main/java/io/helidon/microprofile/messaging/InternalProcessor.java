@@ -20,6 +20,7 @@ package io.helidon.microprofile.messaging;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -91,13 +92,20 @@ class InternalProcessor implements Processor<Object, Object> {
                 } else {
                     publisherBuilder = (PublisherBuilder<?>) processedValue;
                 }
-                publisherBuilder.forEach(subVal -> {
-                    if (!completionStageAwait(incomingValue, subVal)) {
-                        subscriber.onNext(postProcess(incomingValue, subVal));
-                    }
-                }).run();
+                publisherBuilder
+                        .flatMapCompletionStage(o -> {
+                            if (o instanceof CompletionStage) {
+                                return (CompletionStage<?>) o;
+                            } else {
+                                return CompletableFuture.completedStage(o);
+                            }
+                        })
+                        .map(o -> postProcess(incomingValue, o))
+                        .to(subscriber)
+                        .run();
             } else {
                 if (!completionStageAwait(incomingValue, processedValue)) {
+                    //FIXME: apply back-pressure instead of buffering
                     subscriber.onNext(postProcess(incomingValue, processedValue));
                 }
             }

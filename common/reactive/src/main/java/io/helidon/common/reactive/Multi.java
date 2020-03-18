@@ -22,12 +22,15 @@ import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -62,6 +65,28 @@ public interface Multi<T> extends Subscribable<T> {
     default <U> Multi<U> map(Mapper<T, U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new MultiMapperPublisher<>(this, mapper);
+    }
+
+    /**
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
+     * @return Multi
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
+     */
+    default Multi<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new MultiDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
+     * Switch to the other publisher if the upstream is empty.
+     * @param other the publisher to switch to if the upstream is empty.
+     * @return Multi
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Multi<T> switchIfEmpty(Flow.Publisher<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new MultiSwitchIfEmpty<>(this, other);
     }
 
     /**
@@ -326,6 +351,31 @@ public interface Multi<T> extends Subscribable<T> {
         return new MultiFromIterable<>(iterable);
     }
 
+    /**
+     * Create a {@link Multi} instance that publishes the given {@link Stream}.
+     * <p>
+     *     Note that Streams can be only consumed once, therefore, the
+     *     returned Multi will signal {@link IllegalStateException} if
+     *     multiple subscribers try to consume it.
+     * <p>
+     *     The operator calls {@link Stream#close()} when the stream finishes,
+     *     fails or the flow gets canceled. To avoid closing the stream automatically,
+     *     it is recommended to turn the {@link Stream} into an {@link Iterable}
+     *     via {@link Stream#iterator()} and use {@link #from(Iterable)}:
+     *     <pre>{@code
+     *     Stream<T> stream = ...
+     *     Multi<T> multi = Multi.from(stream::iterator);
+     *     }</pre>
+     *
+     * @param <T>      item type
+     * @param stream the Stream to publish
+     * @return Multi
+     * @throws NullPointerException if {@code stream} is {@code null}
+     */
+    static <T> Multi<T> from(Stream<T> stream) {
+        Objects.requireNonNull(stream, "stream is null");
+        return new MultiFromStream<>(stream);
+    }
 
     /**
      * Create a {@link Multi} instance that publishes the given items to a single subscriber.
@@ -513,6 +563,57 @@ public interface Multi<T> extends Subscribable<T> {
             return singleton(start);
         }
         return new MultiRangeLongPublisher(start, start + count);
+    }
+
+    /**
+     * Signal 0L and complete the sequence after the given time elapsed.
+     * @param time the time to wait before signaling 0L and completion
+     * @param unit the unit of time
+     * @param executor the executor to run the waiting on
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> timer(long time, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiTimer(time, unit, executor);
+    }
+
+    /**
+     * Signal 0L, 1L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param period the initial and in-between time
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long period, TimeUnit unit, ScheduledExecutorService executor) {
+        return interval(period, period, unit, executor);
+    }
+
+    /**
+     * Signal 0L after an initial delay, then 1L, 2L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param initialDelay the time before signaling 0L
+     * @param period the in-between wait time for values 1L, 2L and so on
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long initialDelay, long period, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiInterval(initialDelay, period, unit, executor);
     }
 
     /**

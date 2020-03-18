@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ public final class JaxRsApplication {
     private final String routingName;
     private final boolean routingNameRequired;
     private final Class<? extends Application> appClass;
+    private final boolean synthetic;
 
     /**
      * Create a new instance based on an JAX-RS Application class.
@@ -85,6 +86,7 @@ public final class JaxRsApplication {
         this.routingNameRequired = builder.routingNameRequired;
         this.appName = builder.appName;
         this.appClass = builder.appClass;
+        this.synthetic = builder.synthetic;
     }
 
     @Override
@@ -103,6 +105,15 @@ public final class JaxRsApplication {
      */
     public ResourceConfig resourceConfig() {
         return config;
+    }
+
+    /**
+     * Indicates whether this app was identified as synthetic when it was built.
+     *
+     * @return true if synthetic, false otherwise
+     */
+    public boolean synthetic() {
+        return synthetic;
     }
 
     Optional<ExecutorService> executorService() {
@@ -146,6 +157,7 @@ public final class JaxRsApplication {
         private String appClassName;
         private String routingName;
         private boolean routingNameRequired;
+        private boolean synthetic = false;
 
         /**
          * Configure an explicit context root for this application.
@@ -266,6 +278,11 @@ public final class JaxRsApplication {
          */
         public Builder routingNameRequired(boolean routingNameRequired) {
             this.routingNameRequired = routingNameRequired;
+            return this;
+        }
+
+        Builder synthetic(boolean synthetic) {
+            this.synthetic = synthetic;
             return this;
         }
 

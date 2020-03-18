@@ -43,6 +43,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
+import javax.json.stream.JsonParsingException;
 
 import io.helidon.integrations.graal.nativeimage.extension.NativeConfig;
 
@@ -153,7 +154,8 @@ public class WeldFeature implements Feature {
             ClientProxyFactory<?> cpf = new ClientProxyFactory<>(contextId, typeInfo.getSuperClass(), types, theBean);
 
             Class<?> proxyClass = cpf.getProxyClass();
-            trace(() -> "  Registering proxy class " + proxyClass.getClassLoader() + " with types " + types);
+
+            trace(() -> "  Registering proxy class " + proxyClass.getName() + " with types " + types);
             RuntimeReflection.register(proxyClass);
             RuntimeReflection.register(proxyClass.getConstructors());
             RuntimeReflection.register(proxyClass.getDeclaredConstructors());
@@ -205,13 +207,18 @@ public class WeldFeature implements Feature {
         try {
             ClassLoader classLoader = access.findClassByName("io.helidon.config.Config").getClassLoader();
             Enumeration<URL> resources = classLoader
-                    .getResources("META-INF/native-image/weld-proxies.json");
+                    .getResources("META-INF/helidon/native-image/weld-proxies.json");
 
             JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
             List<WeldProxyConfig> weldProxies = new ArrayList<>();
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
-                JsonArray proxies = readerFactory.createReader(url.openStream()).readArray();
+                JsonArray proxies;
+                try {
+                    proxies = readerFactory.createReader(url.openStream()).readArray();
+                } catch (JsonParsingException e) {
+                    throw new NativeImageException("Failed to read JSON config: " + url, e);
+                }
                 proxies.forEach(jsonValue -> {
                     weldProxies.add(new WeldProxyConfig((JsonObject) jsonValue));
                 });

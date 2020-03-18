@@ -122,7 +122,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         // number of blanks for a given word
         Function<String, Single<Long>> nBlanks =
                 word ->
-                            Multi.from(histoOfLetters.apply(word))
+                            histoOfLetters.apply(word)
                             .flatMapIterable(HashMap::entrySet)
                             .map(blank)
                             .reduce(Long::sum)
@@ -137,7 +137,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         // score taking blanks into account letterScore1
         Function<String, Single<Integer>> score2 =
                 word ->
-                        Multi.from(histoOfLetters.apply(word))
+                        histoOfLetters.apply(word)
                             .flatMapIterable(
                                     HashMap::entrySet
                             )
@@ -195,7 +195,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
 
         // best key / value pairs
         List<Entry<Integer, List<String>>> finalList2 =
-                    Multi.from(buildHistoOnScore.apply(score3))
+                    buildHistoOnScore.apply(score3)
                     .flatMapIterable(
                             TreeMap::entrySet
                     )

@@ -6,7 +6,8 @@
         "org.glassfish.jersey.process.internal.RequestScoped",
         "org.glassfish.jersey.spi.Contract",
         "org.glassfish.jersey.internal.inject.PerLookup",
-        "javax.ws.rs.Path"
+        "javax.ws.rs.Path",
+        "javax.ws.rs.ext.Provider"
     ],
     "class-hierarchy": [
         "javax.ws.rs.container.ContainerRequestFilter",

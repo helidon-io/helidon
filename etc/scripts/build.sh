@@ -50,23 +50,6 @@ mvn --version
 echo "========="
 
 
-# Our aggregated javadoc are built as part of the site lifecycle.
-# We require enhancements that are in maven-javadoc-plugin 3.2.0.
-# It isn't released yet, but the source is tagged. So we build it.
-# Ick, I know. But we expect it to be released real-soon-now, so this
-# is a temporary hack.
-readonly VERSION_PLUGIN_JAVADOC="3.2.0"
-build_javadoc_plugin(){
-    readonly JAVADOC_GIT_URL="https://github.com/apache/maven-javadoc-plugin"
-    readonly JAVADOC_PLUGIN_DIR="${WS_DIR}/../maven-javadoc-plugin"
-
-    mkdir -p ${JAVADOC_PLUGIN_DIR}
-    git clone ${JAVADOC_GIT_URL} ${JAVADOC_PLUGIN_DIR}
-    git --work-tree=${JAVADOC_PLUGIN_DIR} --git-dir=${JAVADOC_PLUGIN_DIR}/.git fetch -t
-    git --work-tree=${JAVADOC_PLUGIN_DIR} --git-dir=${JAVADOC_PLUGIN_DIR}/.git checkout tags/maven-javadoc-plugin-3.2.0
-    mvn -f ${JAVADOC_PLUGIN_DIR}/pom.xml clean install -DskipTests=true
-}
-
 mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
     -B \
@@ -75,5 +58,4 @@ mvn -f ${WS_DIR}/pom.xml \
 examples/quickstarts/archetypes/test-archetypes.sh
 
 # Build site and agregated javadocs
-build_javadoc_plugin
-mvn  -f ${WS_DIR}/pom.xml -Dversion.plugin.javadoc=${VERSION_PLUGIN_JAVADOC} site
+mvn  -f ${WS_DIR}/pom.xml site
