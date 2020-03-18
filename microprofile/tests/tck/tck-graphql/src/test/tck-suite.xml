@@ -14,14 +14,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<suite name="microprofile-rest-client-TCK" verbose="2" configfailurepolicy="continue">
+<suite name="microprofile-graphql-TCK" verbose="2" configfailurepolicy="continue">
 
-    <test name="microprofile-rest-client TCK">
+    <test name="microprofile-graphql TCK">
         <packages>
             <package name="org.eclipse.microprofile.graphql.tck.*"/>
         </packages>
 <!--        <classes>-->
-<!--            <class name="org.eclipse.microprofile.rest.client.tck.cditests.HasRequestScopeTest"/>-->
+<!--            <class name="org.eclipse.microprofile.graphql.tck.dynamic.SchemaDynamicValidityTest"/>-->
 <!--        </classes>-->
     </test>
 

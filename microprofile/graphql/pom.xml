@@ -31,8 +31,6 @@
 
     <modules>
         <module>server</module>
-        <module>tck</module>
-        <module>runner</module>
     </modules>
 
 </project>

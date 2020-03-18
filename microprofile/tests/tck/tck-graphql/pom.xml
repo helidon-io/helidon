@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-  ~ Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+  ~ Copyright (c) 2020 Oracle and/or its affiliates.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -16,28 +16,16 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile.graphql</groupId>
-        <artifactId>helidon-microprofile-graphql</artifactId>
+        <groupId>io.helidon.microprofile.tests</groupId>
+        <artifactId>tck-project</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-
-    <artifactId>helidon-microprofile-graphql-tck</artifactId>
-    <name>Helidon Microprofile GraphQL TCK</name>
-    <description>The microprofile GraphQL TCK implementation</description>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.jboss.arquillian</groupId>
-                <artifactId>arquillian-bom</artifactId>
-                <version>1.4.0.Final</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <artifactId>tck-graphql</artifactId>
+    <name>Helidon Microprofile Tests TCK GraphQL</name>
+    <description>The microprofile GraphQL TCK</description>
 
     <dependencies>
         <dependency>
@@ -45,6 +33,17 @@
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <!-- TCK requires Jackson, not JSON-B -->
+                    <groupId>org.glassfish.jersey.media</groupId>
+                    <artifactId>jersey-media-json-binding</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.graphql</groupId>
+            <artifactId>helidon-microprofile-graphql-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.graphql</groupId>
@@ -52,25 +51,22 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.graphql</groupId>
-            <artifactId>helidon-microprofile-graphql-server</artifactId>
-            <version>2.0.0-SNAPSHOT</version>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.jboss.jandex</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
-                        <goals>
-                            <goal>jandex</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                </configuration>
             </plugin>
         </plugins>
     </build>

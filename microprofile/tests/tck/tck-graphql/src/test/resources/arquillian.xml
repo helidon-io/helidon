@@ -29,7 +29,9 @@
         <configuration>
             <property name="addResourcesToApps">false</property>
             <property name="replaceConfigSourcesWithMp">true</property>
-            <property name="useRelativePath">false</property>
+            <!-- to debug - uses target directory to store extracted war -->
+            <property name="useRelativePath">true</property>
+            <property name="excludeArchivePattern">.*/microprofile-graphql-tck-\d+\.\d+.*?\.jar.*</property>
         </configuration>
     </container>
 </arquillian>
