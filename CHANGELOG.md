@@ -5,12 +5,26 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4]
+### Notes
+
+This is a bug fix release of Helidon. It includes another key fix for Helidon MP JPA/JTA support.
+If you use JPA/JTA then it is strongly recommended that you upgrade to this release.
+
+### Fixes
+
+- JPA/JTA: Ensures that JtaDataSource instances that are acquired when a transaction is already active have their Synchronizations registered appropriately [1508](https://github.com/oracle/helidon/pull/1508)
+- Config: Fix merging of value nodes [1490](https://github.com/oracle/helidon/pull/1490)
+- Config: Config cache is not using SoftReference anymore. [1495](https://github.com/oracle/helidon/pull/1495)
+- Security: Fail fast when policy validation fails because of setup/syntax  [1492](https://github.com/oracle/helidon/pull/1492)
+- Reactive: BaseProcessor back-pressure fix [1343](https://github.com/oracle/helidon/pull/1343)
+
 ## [1.4.3]
 ### Notes
 
 This is a bug fix release of Helidon. It includes a fix for a Helidon MP JPA/JTA regression
 that occured in 1.4.2. If you use JPA/JTA then it is strongly recommended that you upgrade
-to this release.
+to this release or newer.
 
 ### Fixes
 
@@ -626,6 +640,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.4]: https://github.com/oracle/helidon/compare/1.4.3..1.4.4
 [1.4.3]: https://github.com/oracle/helidon/compare/1.4.2..1.4.3
 [1.4.2]: https://github.com/oracle/helidon/compare/1.4.1..1.4.2
 [1.4.1]: https://github.com/oracle/helidon/compare/1.4.0..1.4.1
