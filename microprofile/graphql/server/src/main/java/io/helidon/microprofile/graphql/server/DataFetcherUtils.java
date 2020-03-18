@@ -17,15 +17,19 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.lang.reflect.Method;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.enterprise.inject.spi.CDI;
 
 import graphql.schema.DataFetcher;
+import graphql.schema.PropertyDataFetcherHelper;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getCorrectFormat;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -89,6 +93,31 @@ public class DataFetcherUtils {
             }
 
             return (V) method.invoke(instance, listArgumentValues.toArray());
+        };
+    }
+
+    /**
+     * Create a new {@link DataFetcher} which formats a number.
+     *
+     * @param propertyName property to extract
+     * @param type         GraphQL type of the property
+     * @param valueFormat  formatting value
+     * @param locale       formatting locale
+     * @param <S>          type of the source
+     * @return a new {@link DataFetcher}
+     */
+    public static <S> DataFetcher<String> newNumberFormatDataFetcher(String propertyName, String type, String valueFormat, String locale) {
+        NumberFormat numberFormat = getCorrectFormat(type, locale, valueFormat);
+
+        return environment -> {
+            S source = environment.getSource();
+            if (source == null) {
+                return null;
+            }
+            Object rawValue = PropertyDataFetcherHelper
+                    .getPropertyValue(propertyName, source, environment.getFieldType(), environment);
+
+            return rawValue != null ? numberFormat.format(rawValue) : null;
         };
     }
 

@@ -56,6 +56,7 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputType;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithAddress;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithNameValue;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
@@ -228,6 +229,13 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         setupIndex(indexFileName, SimpleContactWithSelf.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
         ExecutionResult result = executionContext.execute("query { hero }");
+    }
+
+    @Test
+    public void testNumberFormats() throws IOException {
+        setupIndex(indexFileName, SimpleContactWithNumberFormats.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        System.out.println("schema=" + executionContext.getSchema());
     }
 
     @Test

@@ -18,9 +18,12 @@ package io.helidon.microprofile.graphql.server;
 
 import java.beans.IntrospectionException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +48,7 @@ import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFiel
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithNameValue;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIdOnField;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIdOnMethod;
@@ -54,7 +58,12 @@ import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BOOLEAN;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAULT_LOCALE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -72,6 +81,10 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     private static final String LIST = List.class.getName();
     private static final String LOCALDATE = LocalDate.class.getName();
     private static final String ID = "ID";
+
+    private List<String[]> listStringArray = new ArrayList<>();
+    private List<String> listString = new ArrayList<>();
+    private List<List<List<String>>> listListString = new ArrayList<>();
 
     @Test
     public void testEnumGeneration() throws IntrospectionException, ClassNotFoundException {
@@ -248,7 +261,8 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("getMultiLevelList"), "getMultiLevelList", MultiLevelListsAndArrays.class.getName(),
                                null,
                                false, false, false);
-        assertDiscoveredMethod(mapMethods.get("testIgnorableFields"), "testIgnorableFields", ObjectWithIgnorableFields.class.getName(),
+        assertDiscoveredMethod(mapMethods.get("testIgnorableFields"), "testIgnorableFields",
+                               ObjectWithIgnorableFields.class.getName(),
                                null,
                                false, false, false);
     }
@@ -313,10 +327,6 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertThat(SchemaGeneratorHelper.getRootArrayClass(threeLevelInt.getClass().getName()), is(int.class.getName()));
     }
 
-    private List<String[]> listStringArray = new ArrayList<>();
-    private List<String> listString = new ArrayList<>();
-    private List<List<List<String>>> listListString = new ArrayList<>();
-
     @Test
     public void testGetRootType() throws NoSuchFieldException {
         ParameterizedType stringArrayListType = getParameterizedType("listStringArray");
@@ -333,6 +343,111 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         rootTypeName = getRootTypeName(listListStringType.getActualTypeArguments()[0], 0);
         assertThat(rootTypeName.getRootTypeName(), is(String.class.getName()));
         assertThat(rootTypeName.getLevels(), is(2));
+    }
+
+    @Test
+    public void testGetCorrectFormat() {
+        NumberFormat numberFormat = SchemaGeneratorHelper.getCorrectFormat(INT, "");
+        assertThat(numberFormat, is(notNullValue()));
+        assertThat(numberFormat.getMaximumFractionDigits(), is(0));
+
+        numberFormat = SchemaGeneratorHelper.getCorrectFormat(BIG_INTEGER, "");
+        assertThat(numberFormat, is(notNullValue()));
+        assertThat(numberFormat.getMaximumFractionDigits(), is(0));
+
+        numberFormat = SchemaGeneratorHelper.getCorrectFormat(FLOAT, "");
+        assertThat(numberFormat, is(notNullValue()));
+        assertThat(numberFormat.getMaximumFractionDigits() > 0, is(true));
+
+        numberFormat = SchemaGeneratorHelper.getCorrectFormat(BIG_DECIMAL, "");
+        assertThat(numberFormat, is(notNullValue()));
+        assertThat(numberFormat.getMaximumFractionDigits() > 0, is(true));
+    }
+
+    @Test
+    public void testFormatting() {
+        assertFormat(FLOAT, "en-ZA", "¤ 000.00", 100.0d, "R 100,00");
+        assertFormat(FLOAT, "en-AU", "¤ 000.00", 100.0d, "$ 100.00");
+        assertFormat(FLOAT, "en-AU", "000.00 'ml'", 125.12d, "125.12 ml");
+        assertFormat(INT, "en-AU", "0 'years'", 52, "52 years");
+        assertFormat(INT, "en-AU", "0 'years old'", 12, "12 years old");
+        assertFormat(BIG_DECIMAL, "en-AU", "###,###.###", 123456.789, "123,456.789");
+        assertFormat(BIG_DECIMAL, "en-AU", "000000.000", 123.78, "000123.780");
+    }
+
+    @Test
+    public void testGetFormatAnnotation() throws NoSuchFieldException, NoSuchMethodException {
+        assertAnnotation(SimpleContactWithNumberFormats.class, "field", "age", 2, "0 'years old'", DEFAULT_LOCALE);
+        assertAnnotation(SimpleContactWithNumberFormats.class, "field", "bankBalance", 2, "¤ 000.00", "en-AU");
+        assertAnnotation(SimpleContactWithNumberFormats.class, "field", "value", 2, "0 'value'", DEFAULT_LOCALE);
+        assertAnnotation(SimpleContactWithNumberFormats.class, "field", "name", 0, null, null);
+
+        assertAnnotation(SimpleContactWithNumberFormats.class, "method", "getFormatMethod", 2, "0 'years old'", DEFAULT_LOCALE,
+                         int.class);
+        assertAnnotation(SimpleContactWithNumberFormats.class, "method", "getName", 0, null, null);
+    }
+
+    /**
+     * Assert that a {@link org.eclipse.microprofile.graphql.NumberFormat} or {@link javax.json.bind.annotation.JsonbNumberFormat}
+     * annotation is correclty applied.
+     *
+     * @param clazz          {@link Class} to apply to
+     * @param type           type to check, "field" or "method"
+     * @param name           field name or method name
+     * @param expectedLength expected length of format array
+     * @param expectedFormat expected value for format
+     * @param expectedLocale expected value for locale
+     * @param methodArgs     arguments ot the method
+     * @throws NoSuchFieldException
+     */
+    private void assertAnnotation(Class<?> clazz,
+                                  String type,
+                                  String name,
+                                  int expectedLength,
+                                  String expectedFormat,
+                                  String expectedLocale,
+                                  Class<?>... methodArgs)
+            throws NoSuchFieldException, NoSuchMethodException {
+        if (expectedLength != 0 && expectedLength != 2) {
+            throw new IllegalArgumentException("Expected length should be 0 or 2");
+        }
+        String[] annotation = new String[0];
+        if ("field".equals(type)) {
+            Field field = clazz.getDeclaredField(name);
+            assertThat(field, is(notNullValue()));
+            annotation = getFormatAnnotation(field);
+        } else if ("method".equals(type)) {
+            Method method = clazz.getMethod(name, methodArgs);
+            assertThat(method, is(notNullValue()));
+            if (expectedLength == 2) {
+                annotation = getFormatAnnotation(method.getParameters()[0]);
+            }
+        } else {
+            throw new IllegalArgumentException("Unknown type of " + type);
+        }
+        assertThat(annotation, is(notNullValue()));
+        assertThat(annotation.length, is(expectedLength));
+        if (expectedLength == 2) {
+            assertThat("Format should be " + expectedFormat + " but is " + annotation[0], annotation[0], is(expectedFormat));
+            assertThat("locale should be " + expectedLocale + " but is " + annotation[1], annotation[1], is(expectedLocale));
+        }
+    }
+
+    /**
+     * Assert formatting is correct.
+     *
+     * @param type           type to format
+     * @param locale         locale to use
+     * @param format         format to apply
+     * @param value          value to format
+     * @param expectedResult expected result
+     */
+    private void assertFormat(String type, String locale, String format, Object value, String expectedResult) {
+        NumberFormat numberFormat = SchemaGeneratorHelper.getCorrectFormat(type, locale, format);
+        assertThat(numberFormat, is(notNullValue()));
+        String formatted = numberFormat.format(value);
+        assertThat(formatted, is(notNullValue()));
+        assertThat(formatted, is(expectedResult));
     }
 
     private ParameterizedType getParameterizedType(String fieldName) throws NoSuchFieldException {

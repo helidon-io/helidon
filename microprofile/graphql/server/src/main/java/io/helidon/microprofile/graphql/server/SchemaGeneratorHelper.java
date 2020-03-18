@@ -18,9 +18,12 @@ package io.helidon.microprofile.graphql.server;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -31,8 +34,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import javax.json.bind.annotation.JsonbNumberFormat;
 import javax.json.bind.annotation.JsonbProperty;
 
 import graphql.Scalars;
@@ -51,12 +56,22 @@ import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUAR
 /**
  * Helper class for {@link SchemaGenerator}.
  */
-public class SchemaGeneratorHelper {
+public final class SchemaGeneratorHelper {
+
+    /**
+     * Defines a {@link BigDecimal} type.
+     */
+    static final String BIG_DECIMAL = "BigDecimal";
+
+    /**
+     * Defines a {@link BigInteger} type.
+     */
+    static final String BIG_INTEGER = "BigInteger";
 
     /**
      * List of supported scalars keyed by the full class name.
      */
-    private static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
+    static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
         // Object Scalar
         put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object));
 
@@ -76,12 +91,12 @@ public class SchemaGeneratorHelper {
         put(LocalDate.class.getName(), new SchemaScalar("Date", LocalDate.class.getName(), ExtendedScalars.Date));
 
         // BigDecimal scalars
-        put(BigDecimal.class.getName(), new SchemaScalar("BigDecimal", Long.class.getName(), Scalars.GraphQLBigDecimal));
+        put(BigDecimal.class.getName(), new SchemaScalar(BIG_DECIMAL, Long.class.getName(), Scalars.GraphQLBigDecimal));
 
         // BigInter scalars
-        put(BigInteger.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
-        put(long.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
-        put(Long.class.getName(), new SchemaScalar("BigInteger", Long.class.getName(), Scalars.GraphQLBigInteger));
+        put(BigInteger.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger));
+        put(long.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger));
+        put(Long.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger));
     }};
 
     /**
@@ -151,6 +166,11 @@ public class SchemaGeneratorHelper {
         addAll(FLOAT_LIST);
         addAll(INTEGER_LIST);
     }};
+
+    /**
+     * Value that indicates that default {@link java.util.Locale}.
+     */
+    static String DEFAULT_LOCALE = "##default";
 
     /**
      * GraphQL Int.
@@ -462,6 +482,84 @@ public class SchemaGeneratorHelper {
         // must be an object
         return clazz.replaceAll("\\[", "").replaceAll(";", "").replaceAll("^L", "");
     }
+
+    /**
+     * Returna {@link NumberFormat} for the given type, locale and format.
+     *
+     * @param type   the GraphQL type or scalar
+     * @param locale the locale, either "" or the correct locale
+     * @param format the format to use, may be null
+     * @return The correct {@link NumberFormat} for the given type and locale
+     */
+    protected static NumberFormat getCorrectFormat(String type, String locale, String format) {
+        Locale actualLocale = DEFAULT_LOCALE.equals(locale) ? Locale.getDefault() : Locale.forLanguageTag(locale);
+        NumberFormat numberFormat;
+        if (FLOAT.equals(type) || BIG_DECIMAL.equals(type)) {
+            numberFormat = NumberFormat.getNumberInstance(actualLocale);
+        } else if (INT.equals(type) || BIG_INTEGER.equals(type)) {
+            numberFormat = NumberFormat.getIntegerInstance(actualLocale);
+        } else {
+            return null;
+        }
+        if (format != null && !format.trim().equals("")) {
+            ((DecimalFormat) numberFormat).applyPattern(format);
+        }
+        return numberFormat;
+    }
+
+    /**
+     * Returna {@link NumberFormat} for the given type and locale.
+     *
+     * @param type   the GraphQL type or scalar
+     * @param locale the locale, either "" or the correct locale
+     * @return The correct {@link NumberFormat} for the given type and locale
+     */
+    protected static NumberFormat getCorrectFormat(String type, String locale) {
+        return getCorrectFormat(type, locale, null);
+    }
+
+    /**
+     * Return the format and locale for a field if they exist in a {@link String} array.
+     *
+     * @param field the {@link Field} to check
+     * @return the format and locale for a field in a {@link String} array or an empty array if not
+     */
+    protected static String[] getFormatAnnotation(Field field) {
+        JsonbNumberFormat jsonbNumberFormat = field.getAnnotation(JsonbNumberFormat.class);
+        org.eclipse.microprofile.graphql.NumberFormat numberFormat = field
+                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class);
+
+        // check @NumberFormat first as this takes precedence
+        if (numberFormat != null) {
+            return new String[] { numberFormat.value(), numberFormat.locale() };
+        }
+        if (jsonbNumberFormat != null) {
+            return new String[] { jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
+        }
+        return new String[0];
+    }
+
+    /**
+     * Return the format and locale for a parameter if they exist in a {@link String} array.
+     *
+     * @param parameter the {@link Field} to check
+     * @return the format and locale for a parameter in a {@link String} array or an empty array if not
+     */
+    protected static String[] getFormatAnnotation(Parameter parameter) {
+        JsonbNumberFormat jsonbNumberFormat = parameter.getAnnotation(JsonbNumberFormat.class);
+        org.eclipse.microprofile.graphql.NumberFormat numberFormat = parameter
+                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class);
+
+        // check @NumberFormat first as this takes precedence
+        if (numberFormat != null) {
+            return new String[] { numberFormat.value(), numberFormat.locale() };
+        }
+        if (jsonbNumberFormat != null) {
+            return new String[] { jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
+        }
+        return new String[0];
+    }
+
 
     /**
      * Return the inner most root type such as {@link String} for a List of List of String.
