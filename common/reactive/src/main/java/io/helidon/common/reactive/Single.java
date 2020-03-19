@@ -26,6 +26,8 @@ import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -372,5 +374,58 @@ public interface Single<T> extends Subscribable<T> {
      */
     default Single<T> onErrorResumeWith(Function<? super Throwable, ? extends Single<? extends T>> onError) {
         return new SingleOnErrorResumeWith<>(this, onError);
+    }
+
+    /**
+     * Retry a failing upstream at most the given number of times before giving up.
+     * @param count the number of times to retry; 0 means no retry at all
+     * @return Single
+     * @throws IllegalArgumentException if {@code count} is negative
+     * @see #retryWhen(BiFunction)
+     */
+    default Single<T> retry(long count) {
+        if (count < 0L) {
+            throw new IllegalArgumentException("count >= 0L required");
+        }
+        return new SingleRetry<>(this, count);
+    }
+
+    /**
+     * Retry a failing upstream if the predicate returns true.
+     * @param predicate the predicate that receives the latest failure {@link Throwable}
+     *                  the number of times the retry happened so far (0-based) and
+     *                  should return {@code true} to retry the upstream again or
+     *                  {@code false} to signal the latest failure
+     * @return Single
+     * @throws NullPointerException if {@code predicate} is {@code null}
+     * @see #retryWhen(BiFunction)
+     */
+    default Single<T> retry(BiPredicate<? super Throwable, ? super Long> predicate) {
+        Objects.requireNonNull(predicate, "whenFunction is null");
+        return new SingleRetry<>(this, predicate);
+    }
+
+    /**
+     * Retry a failing upstream when the given function returns a publisher that
+     * signals an item.
+     * <p>
+     *     If the publisher returned by the function completes, the repetition stops
+     *     and this Single is completed as empty.
+     *     If the publisher signals an error, the repetition stops
+     *     and this Single will signal this error.
+     * </p>
+     * @param whenFunction the function that receives the latest failure {@link Throwable}
+     *                     the number of times the retry happened so far (0-based) and
+     *                     should return a {@link Flow.Publisher} that should signal an item
+     *                     to retry again, complete to stop and complete this Single
+     *                     or signal an error to have this Single emit that error as well.
+     * @param <U> the element type of the retry-signal sequence
+     * @return Single
+     * @throws NullPointerException if {@code whenFunction} is {@code null}
+     */
+    default <U> Single<T> retryWhen(
+            BiFunction<? super Throwable, ? super Long, ? extends Flow.Publisher<U>> whenFunction) {
+        Objects.requireNonNull(whenFunction, "whenFunction is null");
+        return new SingleRetry<>(this, whenFunction);
     }
 }

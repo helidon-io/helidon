@@ -39,4 +39,12 @@ final class SingleError<T> implements Single<T> {
         subscriber.onSubscribe(EmptySubscription.INSTANCE);
         subscriber.onError(error);
     }
+
+    /**
+     * Returns the hosted {@code Throwable} instance.
+     * @return the hosted {@code Throwable} instance
+     */
+    Throwable getError() {
+        return error;
+    }
 }
