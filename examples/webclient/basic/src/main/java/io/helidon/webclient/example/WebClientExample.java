@@ -61,7 +61,9 @@ public class WebClientExample {
                 .build();
     }
 
-    static String url;
+    private static String url;
+
+    private WebClientExample() {}
 
     /**
      * Executes WebClient examples.
@@ -104,7 +106,7 @@ public class WebClientExample {
         followRedirects(webClient);
         getResponseAsAnJsonObject(webClient);
         saveResponseToFile(webClient);
-        registerClientMetric();
+        registerClientMetric(url);
     }
 
     static void performPutMethod(WebClient webClient) throws ExecutionException, InterruptedException {
@@ -180,7 +182,7 @@ public class WebClientExample {
                 .get();
     }
 
-    static void registerClientMetric() throws ExecutionException, InterruptedException {
+    static void registerClientMetric(String url) throws ExecutionException, InterruptedException {
         //This part here is only for verification purposes, it is not needed to be done for actual usage.
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);

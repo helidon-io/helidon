@@ -30,7 +30,7 @@ import io.helidon.webserver.WebServer;
  */
 public final class Server {
 
-    static int serverPort = -1;
+    private static int serverPort = -1;
 
     /**
      * Cannot be instantiated.
@@ -38,8 +38,19 @@ public final class Server {
     private Server() {
     }
 
+
+
     public static void main(String[] args) {
         startServer();
+    }
+
+    /**
+     * Returns current port of the running server.
+     *
+     * @return server port
+     */
+    public static int getServerPort() {
+        return serverPort;
     }
 
     /**

@@ -95,7 +95,7 @@ public class WebClientExampleTest {
 
     @Test
     public void testPerformRedirect() throws ExecutionException, InterruptedException {
-        createWebClient(Server.serverPort, new RedirectClientServiceTest());
+        createWebClient(Server.getServerPort(), new RedirectClientServiceTest());
         WebClientExample.followRedirects(webClient);
     }
 
@@ -108,11 +108,10 @@ public class WebClientExampleTest {
 
     @Test
     public void testMetricsExample() throws ExecutionException, InterruptedException {
-        WebClientExample.url = "http://localhost:" + Server.serverPort + "/greet";
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);
         assertThat("Counter " + counterName + " has not been 0", counter.getCount(), is(0L));
-        WebClientExample.registerClientMetric();
+        WebClientExample.registerClientMetric("http://localhost:" + Server.getServerPort() + "/greet");
         assertThat("Counter " + counterName + " has not been 1", counter.getCount(), is(1L));
     }
 
