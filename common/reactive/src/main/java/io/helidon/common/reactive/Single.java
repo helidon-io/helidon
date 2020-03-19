@@ -313,15 +313,15 @@ public interface Single<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onComplete signal is received.
      *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @param onComplete  {@link java.lang.Runnable} to be executed.
      * @return Single
      */
-    default Single<T> onComplete(Runnable onTerminate) {
+    default Single<T> onComplete(Runnable onComplete) {
         return new SingleTappedPublisher<>(this,
                 null,
                 null,
                 null,
-                onTerminate,
+                onComplete,
                 null,
                 null);
     }
@@ -329,7 +329,7 @@ public interface Single<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onError signal is received.
      *
-     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
+     * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Single
      */
     default Single<T> onError(Consumer<Throwable> onErrorConsumer) {

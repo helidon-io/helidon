@@ -194,6 +194,7 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
                                 hasNext = iterator.hasNext();
                             } catch (Throwable ex) {
                                 canceled = true;
+                                upstream.cancel();
                                 downstream.onError(ex);
                                 continue;
                             }
@@ -222,6 +223,7 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
                                         "The iterator returned a null item");
                             } catch (Throwable ex) {
                                 canceled = true;
+                                upstream.cancel();
                                 downstream.onError(ex);
                                 continue outer;
                             }
@@ -242,6 +244,7 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
                                 hasNext = iterator.hasNext();
                             } catch (Throwable ex) {
                                 canceled = true;
+                                upstream.cancel();
                                 downstream.onError(ex);
                                 continue outer;
                             }
