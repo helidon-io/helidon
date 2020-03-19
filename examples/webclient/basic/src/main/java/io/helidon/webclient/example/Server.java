@@ -37,8 +37,11 @@ public final class Server {
     private Server() {
     }
 
-
-
+    /**
+     * WebServer starting method.
+     *
+     * @param args starting arguments
+     */
     public static void main(String[] args) {
         startServer();
     }

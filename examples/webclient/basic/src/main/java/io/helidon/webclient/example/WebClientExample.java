@@ -63,7 +63,8 @@ public class WebClientExample {
 
     private static String url;
 
-    private WebClientExample() {}
+    private WebClientExample() {
+    }
 
     /**
      * Executes WebClient examples.
