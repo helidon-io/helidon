@@ -179,6 +179,11 @@ public class SchemaGenerator {
                 Interface interfaceAnnotation = clazz.getAnnotation(Interface.class);
                 Input inputAnnotation = clazz.getAnnotation(Input.class);
 
+                if (typeAnnotation != null && inputAnnotation != null) {
+                    throw new RuntimeException("Class " + clazz.getName() + " has been annotated with"
+                                                       + "Type and Input");
+                }
+
                 if (typeAnnotation != null || interfaceAnnotation != null) {
                     // interface or type
                     if (interfaceAnnotation != null && !clazz.isInterface()) {
@@ -187,7 +192,7 @@ public class SchemaGenerator {
                     }
 
                     // assuming value for annotation overrides @Name
-                    String typeName = getTypeName(clazz);
+                    String typeName = getTypeName(clazz, true);
                     SchemaType type = new SchemaType(typeName.isBlank() ? clazz.getSimpleName() : typeName, clazz.getName());
                     type.setIsInterface(clazz.isInterface());
                     Description descriptionAnnotation = clazz.getAnnotation(Description.class);
@@ -207,12 +212,13 @@ public class SchemaGenerator {
                     String clazzName = clazz.getName();
                     String simpleName = clazz.getSimpleName();
 
-                    SchemaInputType inputType = generateType(clazzName).createInputType("");
+                    SchemaInputType inputType = generateType(clazzName, true).createInputType("");
                     // if the name of the InputType was not changed then append "Input"
                     if (inputType.getName().equals(simpleName)) {
                         inputType.setName(inputType.getName() + "Input");
                     }
                     if (!schema.containsInputTypeWithName(inputType.getName())) {
+                        LOGGER.info("Adding annotated input type " + inputType.getName());
                         schema.addInputType(inputType);
                         checkInputType(schema, inputType);
                     }
@@ -262,7 +268,8 @@ public class SchemaGenerator {
                         fd.getArguments().toArray(new SchemaArgument[0])));
                 type.addFieldDefinition(fd);
 
-                String simpleName = getSimpleName(fd.getReturnType());
+                // we are creating this as a type so ignore any Input annotation
+                String simpleName = getSimpleName(fd.getReturnType(), true);
                 String returnType = fd.getReturnType();
                 if (!simpleName.equals(returnType)) {
                     updateLongTypes(schema, returnType, simpleName);
@@ -292,8 +299,8 @@ public class SchemaGenerator {
 
             setUnresolvedTypes.remove(returnType);
             try {
-                //LOGGER.info("Checking unresolved type " + returnType);
-                String simpleName = getSimpleName(returnType);
+                LOGGER.info("Checking unresolved type " + returnType);
+                String simpleName = getSimpleName(returnType, true);
 
                 SchemaScalar scalar = getScalar(returnType);
                 if (scalar != null) {
@@ -313,7 +320,8 @@ public class SchemaGenerator {
                     boolean fExists = schema.getTypes().stream()
                             .filter(t -> t.getName().equals(simpleName)).count() > 0;
                     if (!fExists) {
-                        SchemaType newType = generateType(returnType);
+                        SchemaType newType = generateType(returnType, false);
+                        LOGGER.info("Adding new type of " + newType.getName());
 
                         // update any return types to the discovered scalars
                         checkScalars(schema, newType);
@@ -332,14 +340,17 @@ public class SchemaGenerator {
      * Generate a {@link SchemaType} from a given class.
      *
      * @param realReturnType the class to generate type from
+     * @param isInputType indicates if the type is an input type and if not the Input annotation will be ignored
      * @return a {@link SchemaType}
      * @throws IntrospectionException
      * @throws ClassNotFoundException
      */
-    private SchemaType generateType(String realReturnType)
+    private SchemaType generateType(String realReturnType, boolean isInputType)
             throws IntrospectionException, ClassNotFoundException {
 
-        String simpleName = getSimpleName(realReturnType);
+        // if isInputType=false then we ignore the name annotation in case
+        // an annotated input type was also used as a return type
+        String simpleName = getSimpleName(realReturnType, !isInputType);
         SchemaType type = new SchemaType(simpleName, realReturnType);
         Description descriptionAnnotation = Class.forName(realReturnType).getAnnotation(Description.class);
         if (descriptionAnnotation != null && !"".equals(descriptionAnnotation.value())) {
@@ -424,14 +435,17 @@ public class SchemaGenerator {
                         setUnresolvedTypes.add(returnType);
                     } else {
                         // create the input Type here
-                        SchemaInputType inputType = generateType(returnType).createInputType("Input");
+                        SchemaInputType inputType = generateType(returnType, true).createInputType("");
+                        // if the name of the InputType was not changed then append "Input"
+                        if (inputType.getName().equals(Class.forName(returnType).getSimpleName())) {
+                            inputType.setName(inputType.getName() + "Input");
+                        }
+
                         if (!schema.containsInputTypeWithName(inputType.getName())) {
                             schema.addInputType(inputType);
+                            checkInputType(schema, inputType);
                         }
                         a.setArgumentType(inputType.getName());
-
-                        //check the input type for any other input types
-                        checkInputType(schema, inputType);
                     }
                 }
                 if (fd != null) {
@@ -492,8 +506,13 @@ public class SchemaGenerator {
                     } else {
                         // must be a type, create a new input Type but do not add it to
                         // the schema if it already exists
-                        SchemaInputType newInputType = generateType(fdReturnType)
-                                .createInputType("Input");
+                        SchemaInputType newInputType = generateType(fdReturnType, true).createInputType("");
+
+                        // if the name of the InputType was not changed then append "Input"
+                        if (newInputType.getName().equals(Class.forName(newInputType.getValueClassName()).getSimpleName())) {
+                            newInputType.setName(newInputType.getName() + "Input");
+                        }
+
                         if (!schema.containsInputTypeWithName(newInputType.getName())) {
                             schema.addInputType(newInputType);
                             setInputTypes.add(newInputType);

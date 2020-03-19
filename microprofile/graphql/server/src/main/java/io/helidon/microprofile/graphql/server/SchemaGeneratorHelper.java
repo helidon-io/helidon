@@ -222,6 +222,20 @@ public final class SchemaGeneratorHelper {
      */
     protected static String getSimpleName(String className)
             throws ClassNotFoundException {
+        return getSimpleName(className, false);
+    }
+
+    /**
+     * Return the simple name from a given class as a String. This takes into account any annotations that may be present.
+     *
+     * @param className                 class name
+     * @param ignoreInputNameAnnotation indicates if we should ignore the name from {@link Input} annotation as we should not
+     *                                  change the name of a type if it as and {@link Input} annotation
+     * @return the simple class name
+     * @throws ClassNotFoundException if invalid class name
+     */
+    protected static String getSimpleName(String className, boolean ignoreInputNameAnnotation)
+            throws ClassNotFoundException {
         if (INT.equals(className)
                 || FLOAT.equals(className) || ID.equals(className)
                 || STRING.equals(className) || BOOLEAN.equalsIgnoreCase(className)
@@ -230,7 +244,7 @@ public final class SchemaGeneratorHelper {
         }
         // return the type name taking into account any annotations
         Class<?> clazz = Class.forName(className);
-        return getTypeName(clazz);
+        return getTypeName(clazz, ignoreInputNameAnnotation);
     }
 
     /**
@@ -389,13 +403,25 @@ public final class SchemaGeneratorHelper {
     /**
      * Return correct name for a Type or Enum based upon the value of the annotation or the {@link Name}.
      *
-     * @param clazz {@link Class} to introspect.
+     * @param clazz                     {@link Class} to introspect.
      * @return the correct name
      */
     protected static String getTypeName(Class<?> clazz) {
+        return getTypeName(clazz, false);
+    }
+
+    /**
+     * Return correct name for a Type or Enum based upon the value of the annotation or the {@link Name}.
+     *
+     * @param clazz                     {@link Class} to introspect.
+     * @param ignoreInputNameAnnotation indicates if we should ignore the name from {@link Input} annotation as we should not
+     *                                  change the name of a type if it as and {@link Input} annotation
+     * @return the correct name
+     */
+    protected static String getTypeName(Class<?> clazz, boolean ignoreInputNameAnnotation) {
         Type typeAnnotation = clazz.getAnnotation(Type.class);
         Interface interfaceAnnotation = clazz.getAnnotation(Interface.class);
-        Input inputAnnotation = clazz.getAnnotation(Input.class);
+        Input inputAnnotation = ignoreInputNameAnnotation ? null : clazz.getAnnotation(Input.class);
         Enum enumAnnotation = clazz.getAnnotation(Enum.class);
         Query queryAnnotation = clazz.getAnnotation(Query.class);
 

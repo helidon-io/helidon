@@ -192,6 +192,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
      */
     @Test
     public void testInterfaceDiscoveryWithUnresolvedType() throws IOException, IntrospectionException, ClassNotFoundException {
+        System.out.println("TESTING");
         setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, VehicleIncident.class, AbstractVehicle.class);
         assertInterfaceResults();
     }
@@ -206,7 +207,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     }
 
     @Test
-    public void testObjectWithIgnorableFieldsf() throws IOException {
+    public void testObjectWithIgnorableFields() throws IOException {
         setupIndex(indexFileName, ObjectWithIgnorableFields.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
         ExecutionResult result = executionContext.execute("query { hero }");
@@ -608,13 +609,16 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         Schema schema = schemaGenerator.generateSchema();
+        System.out.println(schema.generateGraphQLSchema());
         assertThat(schema, is(notNullValue()));
+        schema.getTypes().forEach(t -> System.out.println(t.getName()));
         assertThat(schema.getTypes().size(), is(6));
         assertThat(schema.getTypeByName("Vehicle"), is(notNullValue()));
         assertThat(schema.getTypeByName("Car"), is(notNullValue()));
         assertThat(schema.getTypeByName("Motorbike"), is(notNullValue()));
         assertThat(schema.getTypeByName("Incident"), is(notNullValue()));
         assertThat(schema.getTypeByName("Query"), is(notNullValue()));
+        assertThat(schema.getTypeByName("Mutation"), is(notNullValue()));
         generateGraphQLSchema(schema);
     }
 }
