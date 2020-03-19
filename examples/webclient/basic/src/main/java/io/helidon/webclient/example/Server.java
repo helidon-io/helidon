@@ -20,7 +20,6 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.metrics.MetricsSupport;
-import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
@@ -102,7 +101,6 @@ public final class Server {
         GreetService greetService = new GreetService(config);
         return Routing.builder()
                 .register(JsonSupport.create())
-                .register(WebSecurity.create(config.get("security")))
                 .register(metrics)
                 .register("/greet", greetService)
                 .build();
