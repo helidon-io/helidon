@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-handlers = java.util.logging.ConsoleHandler
 
-java.util.logging.ConsoleHandler.level = FINEST
-java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
-java.util.logging.SimpleFormatter.format = [%1$tc] %4$s: %2$s - %5$s %6$s%n
+app:
+  greeting: "Hello"
 
-.level = INFO
+server:
+  port: -1
+  host: 0.0.0.0
 
-io.netty.handler.logging.LoggingHandler.level=FINEST
+client:
+  follow-redirects: true
+  max-redirects: 8

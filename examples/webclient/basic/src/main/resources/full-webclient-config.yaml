@@ -13,10 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-security:
-  providers:
-    - abac:
-
 client:
   event-loop:
     name-prefix: client-thread-
@@ -35,7 +31,7 @@ client:
     - name: "Accept"
       value: ["application/json","text/plain"]
   services:
-    exclude: ["io.helidon.webclient.DefaultServiceRegistry"]
+    exclude: ["som.webclient.service.Provider"]
     config:
       metrics:
         - type: METER
@@ -47,35 +43,33 @@ client:
           type: COUNTER
           errors: false
           name-format: "client.counter.%1$s.success"
-          description: "Counter of successful DML statements"
+          description: "Counter of successful GET requests"
         - methods: ["PUT", "POST", "DELETE"]
           type: COUNTER
           success: false
           name-format: "wc.counter.%1$s.error"
-          description: "Counter of failed DML statements"
+          description: "Counter of failed PUT, POST and DELETE requests"
         - methods: ["GET"]
           type: GAUGE_IN_PROGRESS
           name-format: "client.inprogress.%2$s"
           description: "In progress requests to host"
       tracing:
-  #  proxy:
-  #    use-system-selector: false
-  #    host: "change.this.value"
-  #    port: 80
-  #    no-proxy: ["localhost:8080", ".helidon.io", "www.oracle.com", "192.168.1.1"]
+  proxy:
+    use-system-selector: false
+    host: "hostName"
+    port: 80
+    no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
   ssl:
     server:
-      # service loader based to prevent reflection
       disable-hostname-verification: false
       trust-all: false
       truststore:
-#        keystore-resource-path: "keystore.jks"
+        keystore-resource-path: "path to the keystore"
         keystore-type: "JKS"
         keystore-passphrase: "password"
         trust-store: true
     client:
-      # key store pro private key
       keystore:
-#        keystore-resource-path: "client.p12"
+        keystore-resource-path: "path to client keystore"
         keystore-passphrase: "password"
         trust-store: true

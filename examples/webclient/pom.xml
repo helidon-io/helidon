@@ -32,7 +32,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>standalone</module>
-        <module>webserver</module>
+        <module>basic</module>
     </modules>
 </project>
