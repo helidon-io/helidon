@@ -44,53 +44,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.server</groupId>
-            <artifactId>helidon-microprofile-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.tracing</groupId>
-            <artifactId>helidon-microprofile-tracing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-jaeger</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile</groupId>
-            <artifactId>helidon-microprofile-access-log</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile</groupId>
-            <artifactId>helidon-microprofile-fault-tolerance</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.metrics</groupId>
-            <artifactId>helidon-microprofile-metrics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.health</groupId>
-            <artifactId>helidon-microprofile-health</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.rest-client</groupId>
-            <artifactId>helidon-microprofile-rest-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.jwt</groupId>
-            <artifactId>helidon-microprofile-jwt-auth</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile</artifactId>
             <exclusions>
                 <exclusion>
                     <!-- this library uses method handles and that is not (maybe yet) supported by native-image -->
@@ -100,26 +55,20 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-jaeger</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-http-auth</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-oidc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-binding</artifactId>
+            <groupId>io.helidon.microprofile</groupId>
+            <artifactId>helidon-microprofile-access-log</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <version>2.1.1.Final</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

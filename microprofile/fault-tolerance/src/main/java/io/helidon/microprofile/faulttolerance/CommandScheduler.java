@@ -49,7 +49,7 @@ public class CommandScheduler implements Scheduler {
     public static synchronized CommandScheduler create(int threadPoolSize) {
         if (instance == null) {
             instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
-                    .daemon(false)
+                    .daemon(true)
                     .threadNamePrefix(THREAD_NAME_PREFIX)
                     .corePoolSize(threadPoolSize)
                     .prestart(false)

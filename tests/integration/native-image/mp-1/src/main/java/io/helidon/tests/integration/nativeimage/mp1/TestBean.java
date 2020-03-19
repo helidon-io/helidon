@@ -3,13 +3,17 @@
  */
 package io.helidon.tests.integration.nativeimage.mp1;
 
+import java.net.URI;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
+
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -17,6 +21,7 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 /**
@@ -30,7 +35,10 @@ public class TestBean {
 
     @Inject
     @RestClient
-    private RestClientIface restClient;
+    private RestClientIface restClientInjected;
+
+    @Inject
+    private BeanManager beanManager;
 
     private final AtomicInteger retries = new AtomicInteger();
 
@@ -39,17 +47,27 @@ public class TestBean {
         return message;
     }
 
+    private RestClientIface restClient() {
+        int port = beanManager.getExtension(ServerCdiExtension.class)
+                .port();
+        return RestClientBuilder.newBuilder()
+                .baseUri(URI.create("http://localhost:" + port + "/cdi"))
+                .build(RestClientIface.class);
+    }
+
     public String restClientMessage() {
-        return restClient.message();
+        return restClient().message();
     }
 
     public String restClientJsonP() {
-        return restClient.jsonProcessing()
+        return restClient()
+                .jsonProcessing()
                 .getString("message");
     }
 
     public String restClientJsonB() {
-        return restClient.jsonBinding()
+        return restClient()
+                .jsonBinding()
                 .getMessage();
     }
 

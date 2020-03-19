@@ -121,15 +121,17 @@ public class JerseySupport implements Service {
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
      *
-     * @param application the JAX-RS application to build the Jersey Support from
-     * @param service the executor service that is used for a request handling. If {@code null},
-     * a thread pool of size
-     * {@link Runtime#availableProcessors()} {@code * 8} is used.
+     * @param builder builder with application (the JAX-RS application to build the Jersey Support from),
+     *                executor service (the executor service that is used for a request handling. If {@code null},
+     *                a thread pool of size {@link Runtime#availableProcessors()} {@code * 8} is used),
+     *                and Config
      */
-    private JerseySupport(Application application, ExecutorService service) {
-        ExecutorService executorService = (service != null) ? service : getDefaultThreadPool();
+    private JerseySupport(Builder builder) {
+        ExecutorService executorService = (builder.executorService != null) ? builder.executorService : getDefaultThreadPool();
         this.service = Contexts.wrap(executorService);
-        this.appHandler = new ApplicationHandler(application, new ServerBinder(executorService));
+
+        builder.resourceConfig.register(new AsyncExecutorProvider(builder.config));
+        this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
     }
 
     @Override
@@ -429,6 +431,7 @@ public class JerseySupport implements Service {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
+        private Config config = Config.empty();
 
         private Builder() {
             this(null);
@@ -448,7 +451,7 @@ public class JerseySupport implements Service {
          */
         @Override
         public JerseySupport build() {
-            return new JerseySupport(resourceConfig, executorService);
+            return new JerseySupport(this);
         }
 
         @Override
@@ -531,6 +534,17 @@ public class JerseySupport implements Service {
          */
         public Builder executorService(ExecutorService executorService) {
             this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Update configuration from Config.
+         * Currently used to set up async executor service only.
+         *
+         * @param config configuration at the Jersey configuration node
+         */
+        public Builder config(Config config) {
+            this.config = config;
             return this;
         }
     }

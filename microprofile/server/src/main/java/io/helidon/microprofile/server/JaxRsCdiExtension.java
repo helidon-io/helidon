@@ -260,6 +260,7 @@ public class JaxRsCdiExtension implements Extension {
 
     JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService, JaxRsApplication jaxRsApplication) {
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
+        builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
         builder.register(new ExceptionMapper<Exception>() {
             @Override
