@@ -27,14 +27,14 @@ import io.helidon.webserver.WebServer;
 /**
  * The application main class.
  */
-public final class Server {
+public final class ServerMain {
 
     private static int serverPort = -1;
 
     /**
      * Cannot be instantiated.
      */
-    private Server() {
+    private ServerMain() {
     }
 
     /**

@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 import javax.json.Json;
@@ -47,7 +48,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  *
  * Each of the methods demonstrates different usage of the WebClient.
  */
-public class WebClientExample {
+public class ClientMain {
 
     private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION);
@@ -61,9 +62,7 @@ public class WebClientExample {
                 .build();
     }
 
-    private static String url;
-
-    private WebClientExample() {
+    private ClientMain() {
     }
 
     /**
@@ -80,6 +79,7 @@ public class WebClientExample {
      */
     public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
         Config config = Config.create();
+        String url;
         if (args.length == 0) {
             ConfigValue<Integer> port = config.get("server.port").asInt();
             if (!port.isPresent() || port.get() == -1) {
@@ -102,25 +102,26 @@ public class WebClientExample {
                                       .build())
                 .build();
 
-        performPutMethod(webClient);
-        performGetMethod(webClient);
-        followRedirects(webClient);
-        getResponseAsAnJsonObject(webClient);
-        saveResponseToFile(webClient);
-        registerClientMetric(url);
-    }
-
-    static void performPutMethod(WebClient webClient) throws ExecutionException, InterruptedException {
-        System.out.println("Put request execution.");
-        webClient.put()
-                .path("/greeting")
-                .submit(JSON_NEW_GREETING)
-                .thenAccept(webClientResponse -> System.out.println("PUT request successfully executed."))
+        performPutMethod(webClient)
+                .thenCompose(it -> performGetMethod(webClient))
+                .thenCompose(it -> followRedirects(webClient))
+                .thenCompose(it -> getResponseAsAnJsonObject(webClient))
+                .thenCompose(it -> saveResponseToFile(webClient))
+                .thenCompose(it -> clientMetricsExample(url, config))
+                //Now we need to wait until all requests are done.
                 .toCompletableFuture()
                 .get();
     }
 
-    static String performGetMethod(WebClient webClient) throws ExecutionException, InterruptedException {
+    static CompletionStage<Void> performPutMethod(WebClient webClient) {
+        System.out.println("Put request execution.");
+        return webClient.put()
+                .path("/greeting")
+                .submit(JSON_NEW_GREETING)
+                .thenAccept(webClientResponse -> System.out.println("PUT request successfully executed."));
+    }
+
+    static CompletionStage<String> performGetMethod(WebClient webClient) {
         System.out.println("Get request execution.");
         return webClient.get()
                 .request(String.class)
@@ -128,14 +129,12 @@ public class WebClientExample {
                     System.out.println("GET request successfully executed.");
                     System.out.println(string);
                     return CompletableFuture.completedFuture(string);
-                })
-                .toCompletableFuture()
-                .get();
+                });
     }
 
-    static void followRedirects(WebClient webClient) throws ExecutionException, InterruptedException {
+    static CompletionStage<String> followRedirects(WebClient webClient) {
         System.out.println("Following request redirection.");
-        webClient.get()
+        return webClient.get()
                 .path("/redirect")
                 .request()
                 .thenCompose(response -> {
@@ -144,46 +143,46 @@ public class WebClientExample {
                     }
                     return response.content().as(String.class);
                 })
-                .thenAccept(string -> {
+                .thenCompose(string -> {
                     System.out.println("Redirected request successfully followed.");
                     System.out.println(string);
-                })
-                .toCompletableFuture()
-                .get();
+                    return CompletableFuture.completedFuture(string);
+                });
     }
 
-    static void getResponseAsAnJsonObject(WebClient webClient) throws ExecutionException, InterruptedException {
+    static CompletionStage<JsonObject> getResponseAsAnJsonObject(WebClient webClient) {
         //Support for JsonObject reading from response is not present by default.
         //In case of this example it was registered at creation time of the WebClient instance.
         System.out.println("Requesting from JsonObject.");
-        webClient.get()
+        return webClient.get()
                 .request(JsonObject.class)
-                .thenAccept(jsonObject -> {
+                .thenCompose(jsonObject -> {
                     System.out.println("JsonObject successfully obtained.");
                     System.out.println(jsonObject);
-                })
-                .toCompletableFuture()
-                .get();
+                    return CompletableFuture.completedFuture(jsonObject);
+                });
     }
 
-    static void saveResponseToFile(WebClient webClient) throws ExecutionException, InterruptedException, IOException {
+    static CompletionStage<Void> saveResponseToFile(WebClient webClient) {
         //We have to create file subscriber first. This subscriber will save the content of the response to the file.
         Path file = Paths.get("test.txt");
-        Files.deleteIfExists(file);
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         FileSubscriber fileSubscriber = FileSubscriber.create(file);
 
         //Then it is needed obtain unhandled response content and subscribe file subscriber to it.
         System.out.println("Downloading server response to the file: " + file);
-        webClient.get()
+        return webClient.get()
                 .request()
                 .thenApply(WebClientResponse::content)
                 .thenCompose(fileSubscriber::subscribeTo)
-                .thenAccept(path -> System.out.println("Download complete!"))
-                .toCompletableFuture()
-                .get();
+                .thenAccept(path -> System.out.println("Download complete!"));
     }
 
-    static void registerClientMetric(String url) throws ExecutionException, InterruptedException {
+    static CompletionStage<Void> clientMetricsExample(String url, Config config) {
         //This part here is only for verification purposes, it is not needed to be done for actual usage.
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);
@@ -196,7 +195,6 @@ public class WebClientExample {
                 .build();
 
         //This newly created metric now needs to be registered to WebClient.
-        Config config = Config.create();
         WebClient webClient = WebClient.builder()
                 .baseUri(url)
                 .config(config)
@@ -204,9 +202,8 @@ public class WebClientExample {
                 .build();
 
         //Perform any GET request using this newly created WebClient instance.
-        performGetMethod(webClient);
-
-        //Verification for example purposes that metric has been incremented.
-        System.out.println(counterName + ": " + counter.getCount());
+        return performGetMethod(webClient)
+                //Verification for example purposes that metric has been incremented.
+                .thenAccept(s -> System.out.println(counterName + ": " + counter.getCount()));
     }
 }

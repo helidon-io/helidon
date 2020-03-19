@@ -40,12 +40,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for verification of WebClient example.
  */
-public class WebClientExampleTest {
+public class ClientMainTest {
 
     private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION);
@@ -57,7 +58,7 @@ public class WebClientExampleTest {
     @BeforeEach
     public void beforeEach() throws ExecutionException, InterruptedException {
         testFile = Paths.get("test.txt");
-        Server.startServer()
+        ServerMain.startServer()
                 .thenAccept(webServer -> createWebClient(webServer.port()))
                 .toCompletableFuture()
                 .get();
@@ -86,24 +87,37 @@ public class WebClientExampleTest {
 
     @Test
     public void testPerformPutAndGetMethod() throws ExecutionException, InterruptedException {
-        String response = WebClientExample.performGetMethod(webClient);
-        assertThat(response, is("{\"message\":\"Hello World!\"}"));
-        WebClientExample.performPutMethod(webClient);
-        response = WebClientExample.performGetMethod(webClient);
-        assertThat(response, is("{\"message\":\"Hola World!\"}"));
+        ClientMain.performGetMethod(webClient)
+                .thenAccept(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
+                .thenCompose(it -> ClientMain.performPutMethod(webClient))
+                .thenCompose(it -> ClientMain.performGetMethod(webClient))
+                .thenAccept(it -> assertThat(it, is("{\"message\":\"Hola World!\"}")))
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
     public void testPerformRedirect() throws ExecutionException, InterruptedException {
-        createWebClient(Server.getServerPort(), new RedirectClientServiceTest());
-        WebClientExample.followRedirects(webClient);
+        createWebClient(ServerMain.getServerPort(), new RedirectClientServiceTest());
+        ClientMain.followRedirects(webClient)
+                .thenAccept(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
-    public void testFileDownload() throws InterruptedException, ExecutionException, IOException {
-        WebClientExample.saveResponseToFile(webClient);
-        assertThat(Files.exists(testFile), is(true));
-        assertThat(Files.readString(testFile), is("{\"message\":\"Hello World!\"}"));
+    public void testFileDownload() throws InterruptedException, ExecutionException {
+        ClientMain.saveResponseToFile(webClient)
+                .thenAccept(it -> assertThat(Files.exists(testFile), is(true)))
+                .thenAccept(it -> {
+                    try {
+                        assertThat(Files.readString(testFile), is("{\"message\":\"Hello World!\"}"));
+                    } catch (IOException e) {
+                        fail(e);
+                    }
+                })
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
@@ -111,8 +125,11 @@ public class WebClientExampleTest {
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);
         assertThat("Counter " + counterName + " has not been 0", counter.getCount(), is(0L));
-        WebClientExample.registerClientMetric("http://localhost:" + Server.getServerPort() + "/greet");
-        assertThat("Counter " + counterName + " has not been 1", counter.getCount(), is(1L));
+        ClientMain.clientMetricsExample("http://localhost:" + ServerMain.getServerPort() + "/greet", Config.create())
+                .thenAccept(it -> assertThat("Counter " + counterName + " "
+                                                     + "has not been 1", counter.getCount(), is(1L)))
+                .toCompletableFuture()
+                .get();
     }
 
     private static final class RedirectClientServiceTest implements WebClientService {

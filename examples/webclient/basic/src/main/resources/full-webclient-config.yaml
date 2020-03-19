@@ -31,7 +31,7 @@ client:
     - name: "Accept"
       value: ["application/json","text/plain"]
   services:
-    exclude: ["som.webclient.service.Provider"]
+    exclude: ["some.webclient.service.Provider"]
     config:
       metrics:
         - type: METER
