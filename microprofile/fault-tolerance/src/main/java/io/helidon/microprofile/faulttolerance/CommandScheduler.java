@@ -41,7 +41,7 @@ public class CommandScheduler implements Scheduler {
 
     /**
      * If no command scheduler exists, creates one using default values.
-     * Disables daemon threads.
+     * The created command scheduler uses daemon threads, so the JVM shuts-down if these are the only ones running.
      *
      * @param threadPoolSize Size of thread pool for async commands.
      * @return Existing scheduler or newly created one.
