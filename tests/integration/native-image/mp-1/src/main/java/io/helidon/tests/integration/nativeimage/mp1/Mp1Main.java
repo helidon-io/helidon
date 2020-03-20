@@ -91,6 +91,7 @@ public final class Mp1Main {
         try {
             testBean(server.port(), jwtToken);
         } catch (Exception e) {
+            e.printStackTrace();
             failed = true;
         }
         long time = System.currentTimeMillis() - now;
@@ -101,12 +102,14 @@ public final class Mp1Main {
             System.exit(-1);
             return;
         }
-        try {
-            Thread.sleep(5000);
-            System.setProperty("app.message", "New message through change support");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+
+//        try {
+//            Thread.sleep(5000);
+//            System.setProperty("app.message", "New message through change support");
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     private static String generateJwtToken() {
@@ -244,7 +247,6 @@ public final class Mp1Main {
         testScopeNoAuth(collector, jwtTarget, path);
         testScopeAuth(collector, jwtTarget, path, authorizationHeader, true);
 
-
         // role
         testRoleNoAuth(collector, jwtTarget, path);
         testRoleAuth(collector, jwtTarget, path, authorizationHeader, true);
@@ -274,6 +276,10 @@ public final class Mp1Main {
         // make sure we have all our applications, and for one method check annots are processed
         JsonObject info = openApi.getJsonObject("info");
         String expected = "Generated API";
+        if (null == info) {
+            collector.fatal("OpenAPI", "info from OpenAPI response is null");
+            return;
+        }
         String actual = info.getString("title");
         if (!expected.equals(actual)) {
             collector.fatal("OpenAPI", "info.title should be \"" + expected + "\", but is \"" + actual + "\"");
@@ -288,6 +294,43 @@ public final class Mp1Main {
         checkProtectedApp(collector, actualPaths, "/basic");
         checkProtectedApp(collector, actualPaths, "/jwt");
         checkProtectedApp(collector, actualPaths, "/oidc");
+
+        checkJsonContentType(collector, openApi, "/cdi/jsonb");
+        checkJsonContentType(collector, openApi, "/noncdi/jsonb");
+
+        checkDescription(collector, openApi, "/noncdi", "Hello world message");
+        checkDescription(collector, openApi, "/noncdi/property", "Value of property 'app.message' from config.");
+        checkDescription(collector, openApi, "/cdi", "Hello world message");
+        checkDescription(collector, openApi, "/cdi/property", "Value of property 'app.message' from config.");
+    }
+
+    private static void checkDescription(Errors.Collector collector, JsonObject openApi, String path, String expected) {
+        String actual = openApi.getJsonObject("paths")
+                .getJsonObject(path)
+                .getJsonObject("get")
+                .getJsonObject("responses")
+                .getJsonObject("200")
+                .getString("description");
+
+        if (expected.equals(actual)) {
+            return;
+        }
+
+        collector.fatal("OpenAPI", "Description on path " + path + " should be \""
+                + expected + "\", but is \"" + actual + "\"");
+    }
+
+    private static void checkJsonContentType(Errors.Collector collector, JsonObject openApi, String path) {
+        JsonObject jsonObject = openApi.getJsonObject("paths")
+                .getJsonObject(path)
+                .getJsonObject("get")
+                .getJsonObject("responses")
+                .getJsonObject("200")
+                .getJsonObject("content");
+
+        if (!jsonObject.containsKey("application/json")) {
+            collector.fatal("OpenAPI", "Path " + path + " should have type application/json");
+        }
     }
 
     private static void checkProtectedApp(Errors.Collector collector, Set<String> actualPaths, String path) {
@@ -442,7 +485,6 @@ public final class Mp1Main {
             collector.fatal(assertionName + ", expected \"" + expected + "\", actual: \"" + actual + "\"");
         }
     }
-
 
     private static void testPublic(Errors.Collector collector, WebTarget target, String path) {
         // public

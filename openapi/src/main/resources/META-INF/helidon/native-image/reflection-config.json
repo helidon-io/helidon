@@ -1,0 +1,16 @@
+{
+    "annotated":[
+        "org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition"
+    ],
+    "class-hierarchy": [
+        "io.smallrye.openapi.runtime.scanner.CustomSchemaRegistry",
+        "org.eclipse.microprofile.openapi.models.Constructible",
+        "org.eclipse.microprofile.openapi.models.Extensible",
+        "io.smallrye.openapi.api.models.ModelImpl",
+        "io.smallrye.openapi.api.OpenApiConfig"
+    ],
+    "classes": [
+    ],
+    "exclude": [
+    ]
+}

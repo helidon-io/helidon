@@ -60,6 +60,7 @@ import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
+import org.glassfish.jersey.server.spi.Container;
 
 import static java.util.Objects.requireNonNull;
 
@@ -117,6 +118,7 @@ public class JerseySupport implements Service {
     private final ApplicationHandler appHandler;
     private final ExecutorService service;
     private final JerseyHandler handler = new JerseyHandler();
+    private final HelidonJerseyContainer container;
 
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
@@ -132,11 +134,13 @@ public class JerseySupport implements Service {
 
         builder.resourceConfig.register(new AsyncExecutorProvider(builder.config));
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
+        this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
     }
 
     @Override
     public void update(Routing.Rules routingRules) {
         routingRules.any(handler);
+        appHandler.onStartup(container);
     }
 
     private static ExecutorService getDefaultThreadPool() {
@@ -296,6 +300,14 @@ public class JerseySupport implements Service {
                         return null;
                     });
         }
+    }
+
+    /**
+     * Close this integration with Jersey.
+     * Once closed, this instance is no longer usable.
+     */
+    public void close() {
+        appHandler.onShutdown(container);
     }
 
     /**
@@ -546,6 +558,36 @@ public class JerseySupport implements Service {
         public Builder config(Config config) {
             this.config = config;
             return this;
+        }
+    }
+
+    private static class HelidonJerseyContainer implements Container {
+        private final ApplicationHandler applicationHandler;
+
+        private HelidonJerseyContainer(ApplicationHandler appHandler, ResourceConfig resourceConfig) {
+            this.applicationHandler = appHandler;
+        }
+
+        @Override
+        public ResourceConfig getConfiguration() {
+            return applicationHandler.getConfiguration();
+        }
+
+        @Override
+        public ApplicationHandler getApplicationHandler() {
+            return applicationHandler;
+        }
+
+        @Override
+        public void reload() {
+            // no op
+            throw new UnsupportedOperationException("Reloading is not supported in Helidon");
+        }
+
+        @Override
+        public void reload(ResourceConfig configuration) {
+            // no op
+            throw new UnsupportedOperationException("Reloading is not supported in Helidon");
         }
     }
 }

@@ -20,6 +20,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,6 +91,7 @@ public class ServerCdiExtension implements Extension {
     private volatile int port;
     private volatile String listenHost = "0.0.0.0";
     private volatile boolean started;
+    private final List<JerseySupport> jerseySupports = new LinkedList<>();
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverConfigBuilder.config(config.get("server"));
@@ -227,6 +229,8 @@ public class ServerCdiExtension implements Extension {
             webserver.shutdown()
                     .toCompletableFuture()
                     .get();
+
+            jerseySupports.forEach(JerseySupport::close);
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.log(Level.SEVERE, "Failed to stop web server", e);
         } finally {
@@ -263,6 +267,7 @@ public class ServerCdiExtension implements Extension {
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '/'");
             routing.register(jerseySupport);
         }
+        jerseySupports.add(jerseySupport);
     }
 
     /**
