@@ -203,7 +203,7 @@ public final class HealthSupport implements Service {
     private HcResponse callHealthChecks(HealthCheck hc) {
         try {
             return new HcResponse(hc.call());
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOGGER.log(Level.SEVERE, "Failed to compute health check for " + hc.getClass().getName(), e);
 
             return new HcResponse(HealthCheckResponse

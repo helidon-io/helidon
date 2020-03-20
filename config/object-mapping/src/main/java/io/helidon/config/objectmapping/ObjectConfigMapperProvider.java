@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package io.helidon.config.objectmapping;
 
-import java.lang.invoke.MethodHandle;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
 import io.helidon.config.objectmapping.ObjectConfigMappers.ConfigMethodHandleConfigMapper;
@@ -49,6 +49,10 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static final String METHOD_FROM_STRING = "fromString";
     private static final String METHOD_PARSE = "parse";
     private static final String METHOD_CREATE = "create";
+
+    static {
+        HelidonFeatures.register("Config", "Object Mapping");
+    }
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
@@ -110,7 +114,7 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static <T> Optional<Function<Config, T>> findStaticStringMethodMapper(Class<T> type,
                                                                                   String methodName) {
 
-        Optional<MethodHandle> method = findStaticMethod(type,
+        Optional<HelidonMethodHandle> method = findStaticMethod(type,
                                                          methodName,
                                                          String.class);
 

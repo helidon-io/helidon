@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.quickstart.mp;
+package io.helidon.tests.integration.nativeimage.mp3;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -24,10 +24,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 
 /**
- * Reactive service.
- * <p>
- * Helidon WebServer reactive services can be used in MP as well.
- * Injection is limited to {@link javax.enterprise.context.ApplicationScoped}.
+ * Reactive webserver service.
+ * Supports only injection of {@link javax.enterprise.context.ApplicationScoped} beans.
  */
 @ApplicationScoped
 @RoutingPath("/reactive")
@@ -37,6 +35,6 @@ public class ReactiveService implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get("/", (req, res) -> res.send("Context: " + security));
+        rules.get("/", (req, res) -> res.send("Security: " + security));
     }
 }

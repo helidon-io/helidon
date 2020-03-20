@@ -79,7 +79,7 @@ public final class Mp1Main {
         //Main.main(args);
 
         Server server = Server.builder()
-                .port(0)
+                .port(7001)
                 .applications(new JaxRsApplicationNoCdi())
                 .retainDiscoveredApplications(true)
                 .basePath("/cdi")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.health.checks;
 
 import java.lang.management.ThreadMXBean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -37,6 +39,8 @@ import org.eclipse.microprofile.health.Liveness;
 @ApplicationScoped // this will be ignored if not within CDI
 @BuiltInHealthCheck
 public final class DeadlockHealthCheck implements HealthCheck {
+    private static final Logger LOGGER = Logger.getLogger(DeadlockHealthCheck.class.getName());
+
     /**
      * Used for detecting deadlocks. Injected in the constructor.
      */
@@ -61,8 +65,14 @@ public final class DeadlockHealthCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        // Thanks to https://stackoverflow.com/questions/1102359/programmatic-deadlock-detection-in-java#1102410
-        boolean noDeadLock = (threadBean.findDeadlockedThreads() == null);
+        boolean noDeadLock = false;
+        try {
+            // Thanks to https://stackoverflow.com/questions/1102359/programmatic-deadlock-detection-in-java#1102410
+            noDeadLock = (threadBean.findDeadlockedThreads() == null);
+        } catch (Throwable e) {
+            // ThreadBean does not work - probably in native image
+            LOGGER.log(Level.FINEST, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
+        }
         return HealthCheckResponse.named("deadlock")
                 .state(noDeadLock)
                 .build();
