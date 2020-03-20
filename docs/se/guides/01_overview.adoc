@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Overview
-:description: Helidon guides
+:description: Helidon SE Guides
 :keywords: helidon, java, microservices, microprofile, guides
 
 == Getting Started
@@ -26,106 +26,43 @@
 ====
 [CARD]
 .Quickstart SE
-[link=guides/02_quickstart-se.adoc]
+[link=se/guides/02_quickstart.adoc]
 --
 Create your first Helidon SE application in under 5 minutes.
 --
 
-[CARD]
-.Quickstart MP
-[link=guides/03_quickstart-mp.adoc]
---
-Create your first Helidon MP application in under 5 minutes.
---
 ====
 
-== Basics
+== Helidon SE Guides
 
 [PILLARS]
 ====
 [CARD]
-.MP Health Check Guide
-[link=guides/07_health_mp_guide.adoc]
---
-Learn how to use Helidon MP built-in and custom health checks.
---
-
-[CARD]
-.SE Health Check Guide
-[link=guides/07_health_se_guide.adoc]
---
-Learn how to use Helidon SE built-in and custom health checks.
---
-
-[CARD]
-.MP Metrics Guide
-[link=guides/09_metrics_mp_guide.adoc]
---
-Learn how to use Helidon MP built-in and application metrics.
---
-
-[CARD]
-.SE Metrics Guide
-[link=guides/09_metrics_se_guide.adoc]
---
-Learn how to use Helidon SE built-in and application metrics.
---
-
-[CARD]
-.MP Config Guide
-[link=guides/11_config_mp_guide.adoc]
---
-Learn how to configure a Helidon MP application.
---
-
-[CARD]
-.SE Config Guide
-[link=guides/11_config_se_guide.adoc]
+.Config Guide
+[link=se/guides/03_config.adoc]
 --
 Learn how to configure a Helidon SE application.
 --
 
 [CARD]
-.MP Tracing Guide
-[link=guides/12_tracing_mp_guide.adoc]
+.Health Check Guide
+[link=se/guides/04_health.adoc]
 --
-Learn how to trace a Helidon MP application.
+Learn how to use Helidon SE built-in and custom health checks.
 --
 
 [CARD]
-.SE Tracing Guide
-[link=guides/12_tracing_se_guide.adoc]
+.Metrics Guide
+[link=se/guides/05_metrics.adoc]
+--
+Learn how to use Helidon SE built-in and application metrics.
+--
+
+[CARD]
+.Tracing Guide
+[link=se/guides/06_tracing.adoc]
 --
 Learn how to trace a Helidon SE application.
---
-====
-
-== Persistence
-
-[PILLARS]
-====
-[CARD]
-.Using DataSources
-[link=guides/20_datasource.adoc]
---
-Learn how to configure and use DataSources
-in your Helidon MP application.
---
-
-[CARD]
-.Using Transactions
-[link=guides/22_jta.adoc]
---
-Learn how to configure and use Java Transaction API (JTA)-compliant transactions
-in your Helidon MP application.
---
-
-[CARD]
-.Using JPA
-[link=guides/24_jpa.adoc]
---
-Learn how to configure and use the Java Persistence API (JPA)
-in your Helidon MP application.
 --
 ====
 
@@ -161,17 +98,5 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
 [link=guides/36_graalnative.adoc]
 --
 Learn how to use GraalVM to build a native executable for your Helidon SE application.
---
-====
-
-== Tutorials
-
-[PILLARS]
-====
-[CARD]
-.Helidon MP Tutorial
-[link=guides/91_mp-tutorial.adoc]
---
-Learn how to build a Helidon MicroProfile (MP) application from scratch.
 --
 ====

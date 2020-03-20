@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Quickstart SE
-:description: Helidon SE Quickstart guide
+= Helidon SE Quickstart
+:description: Helidon SE Quickstart Guide
 :keywords: helidon
 
 This guide describes a basic example of an Helidon SE application using Docker

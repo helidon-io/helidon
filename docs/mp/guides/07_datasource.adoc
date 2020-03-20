@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Setting Up Data Sources
+= Helidon MP Data Source Guide
 :description: Helidon MP Data Source Guide
 :keywords: helidon, guide, datasource, microprofile
 

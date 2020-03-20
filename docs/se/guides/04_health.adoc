@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Health Check SE Guide
+= Helidon SE Health Check Guide
 :description: Helidon health-checks
 :keywords: helidon, health-check, health, check
 

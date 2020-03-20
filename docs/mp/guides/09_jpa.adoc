@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Using JPA in Helidon MP
-:description: Helidon JPA Guide
+= Helidon MP JPA Guide
+:description: Helidon MP JPA Guide
 :keywords: helidon, guide, transaction, jpa, microprofile
 
 This guide shows how to configure and use the

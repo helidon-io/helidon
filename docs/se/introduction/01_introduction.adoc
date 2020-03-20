@@ -16,14 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= About Helidon SE
-:description: about Helidon MP
+= Helidon SE Introduction
+:description: Helidon SE Introduction
 :keywords: helidon, java, microservices, microprofile
 
 == Helidon SE
 
 Helidon is a collection of Java libraries for writing microservices. Helidon
-offers two programming models: Helidion SE and <<about/02_mp-about.adoc,Helidon MP>>.
+offers two programming models: Helidion SE and <<mp/introduction/01_introduction.adoc,Helidon MP>>.
 
 Helidon SE is a compact toolkit that embraces the latest Java SE features:
 reactive streams, asynchrous and functional programming, and fluent style

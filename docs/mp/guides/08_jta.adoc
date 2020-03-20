@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Setting Up Transaction Support
-:description: Helidon JTA Guide
+= Helidon MP JTA Guide
+:description: Helidon MP JTA Guide
 :keywords: helidon, guide, transaction, jta, microprofile
 
 This guide shows how to configure and use

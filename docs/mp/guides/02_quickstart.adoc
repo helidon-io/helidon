@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Quickstart MP
+= Helidon MP Quickstart
 :description: Helidon MP Quickstart guide
 :keywords: helidon
 
