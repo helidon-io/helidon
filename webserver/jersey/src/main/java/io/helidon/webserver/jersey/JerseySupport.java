@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -554,6 +554,7 @@ public class JerseySupport implements Service {
          * Currently used to set up async executor service only.
          *
          * @param config configuration at the Jersey configuration node
+         * @return updated builder instance
          */
         public Builder config(Config config) {
             this.config = config;
