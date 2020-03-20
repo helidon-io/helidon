@@ -33,6 +33,5 @@
 
     <modules>
         <module>standalone</module>
-        <module>webserver</module>
     </modules>
 </project>

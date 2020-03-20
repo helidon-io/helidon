@@ -13,69 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-security:
-  providers:
-    - abac:
+
+app:
+  greeting: "Hello"
+
+server:
+  port: -1
+  host: 0.0.0.0
 
 client:
-  event-loop:
-    name-prefix: client-thread-
-    workers: 1
-  connect-timeout-millis: 2000
-  read-timeout-millis: 2000
   follow-redirects: true
-  max-redirects: 5
-  user-agent: "Helidon"
-  cookies:
-    automatic-store-enabled: true
-    default-cookies:
-      - name: "env"
-        value: "dev"
-  headers:
-    - name: "Accept"
-      value: ["application/json","text/plain"]
-  services:
-    exclude: ["io.helidon.webclient.DefaultServiceRegistry"]
-    config:
-      metrics:
-        - type: METER
-          name-format: "client.meter.overall"
-        - type: TIMER
-          # meter per method
-          name-format: "client.meter.%1$s"
-        - methods: ["GET"]
-          type: COUNTER
-          errors: false
-          name-format: "client.counter.%1$s.success"
-          description: "Counter of successful DML statements"
-        - methods: ["PUT", "POST", "DELETE"]
-          type: COUNTER
-          success: false
-          name-format: "wc.counter.%1$s.error"
-          description: "Counter of failed DML statements"
-        - methods: ["GET"]
-          type: GAUGE_IN_PROGRESS
-          name-format: "client.inprogress.%2$s"
-          description: "In progress requests to host"
-      tracing:
-  #  proxy:
-  #    use-system-selector: false
-  #    host: "change.this.value"
-  #    port: 80
-  #    no-proxy: ["localhost:8080", ".helidon.io", "www.oracle.com", "192.168.1.1"]
-  ssl:
-    server:
-      # service loader based to prevent reflection
-      disable-hostname-verification: false
-      trust-all: false
-      truststore:
-#        keystore-resource-path: "keystore.jks"
-        keystore-type: "JKS"
-        keystore-passphrase: "password"
-        trust-store: true
-    client:
-      # key store pro private key
-      keystore:
-#        keystore-resource-path: "client.p12"
-        keystore-passphrase: "password"
-        trust-store: true
+  max-redirects: 8
