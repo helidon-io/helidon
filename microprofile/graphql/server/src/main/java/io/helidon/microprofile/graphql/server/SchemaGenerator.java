@@ -61,7 +61,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFormatAnnotation;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootArrayClass;
@@ -181,7 +181,7 @@ public class SchemaGenerator {
 
                 if (typeAnnotation != null && inputAnnotation != null) {
                     throw new RuntimeException("Class " + clazz.getName() + " has been annotated with"
-                                                       + "Type and Input");
+                                                       + " both Type and Input");
                 }
 
                 if (typeAnnotation != null || interfaceAnnotation != null) {
@@ -251,7 +251,7 @@ public class SchemaGenerator {
             });
         });
 
-        // process any additional methods requires via the @Source annotation
+        // process any additional methods require via the @Source annotation
         for (DiscoveredMethod dm : setAdditionalMethods) {
             // add the discovered method to the type
             SchemaType type = schema.getTypeByClass(dm.source);
@@ -340,7 +340,7 @@ public class SchemaGenerator {
      * Generate a {@link SchemaType} from a given class.
      *
      * @param realReturnType the class to generate type from
-     * @param isInputType indicates if the type is an input type and if not the Input annotation will be ignored
+     * @param isInputType    indicates if the type is an input type and if not the Input annotation will be ignored
      * @return a {@link SchemaType}
      * @throws IntrospectionException
      * @throws ClassNotFoundException
@@ -539,7 +539,6 @@ public class SchemaGenerator {
 
         String valueClassName = type.getValueClassName();
         retrieveGetterBeanMethods(Class.forName(valueClassName)).forEach((k, v) -> {
-
             SchemaFieldDefinition fd = newFieldDefinition(v, null);
             type.addFieldDefinition(fd);
 
@@ -590,7 +589,8 @@ public class SchemaGenerator {
      */
     @SuppressWarnings("rawTypes")
     private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod method, String optionalName) {
-        String sValueClassName = method.getReturnType();
+        String valueClassName = method.getReturnType();
+        String graphQLType = getGraphQLType(valueClassName);
         DataFetcher dataFetcher = null;
         boolean isArrayReturnType = method.isArrayReturnType || method.isCollectionType() || method.isMap();
 
@@ -602,14 +602,27 @@ public class SchemaGenerator {
             }
         }
 
+        // check for format on the return type of methods
+        String[] format = method.getFormat();
+        if (method.getPropertyName() != null && format != null && format.length == 2) {
+            if (!isGraphQLType(valueClassName)) {
+
+                dataFetcher = DataFetcherUtils
+                        .newNumberFormatDataFetcher(method.getPropertyName(), graphQLType, format[0], format[1]);
+                // we must change the type of this to a String but keep the above type for the above data fetcher
+                graphQLType = SchemaGeneratorHelper.STRING;
+            }
+        }
+
         SchemaFieldDefinition fd = new SchemaFieldDefinition(optionalName != null
                                                                      ? optionalName
                                                                      : method.name,
-                                                             getGraphQLType(sValueClassName),
+                                                             graphQLType,
                                                              isArrayReturnType,
                                                              false,
                                                              method.getArrayLevels());
         fd.setDataFetcher(dataFetcher);
+        fd.setFormat(method.getFormat());
         return fd;
     }
 
@@ -735,7 +748,7 @@ public class SchemaGenerator {
 
         String name = method.getName();
         String varName;
-        String numberFormat[];
+        String[] numberFormat = new String[0];
 
         if (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET)) {
             // this is a getter method
@@ -807,6 +820,8 @@ public class SchemaGenerator {
         DiscoveredMethod discoveredMethod = new DiscoveredMethod();
         discoveredMethod.setName(varName);
         discoveredMethod.setMethod(method);
+        discoveredMethod.setFormat(numberFormat);
+        discoveredMethod.setPropertyName(pd != null ? pd.getName() : null);
 
         Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
@@ -832,6 +847,7 @@ public class SchemaGenerator {
                 }
 
                 SchemaArgument argument = new SchemaArgument(parameterName, returnType.getReturnClass(), false, null, paramType);
+                argument.setFormat(getFormatAnnotation(parameter));
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
@@ -976,10 +992,20 @@ public class SchemaGenerator {
         private String source;
 
         /**
+         * The property name if the method is a getter.
+         */
+        private String propertyName;
+
+        /**
          * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
          * If true, then this indicates that a top level query shoudl also be created as well as the field in the type.
          */
         private boolean isQueryAnnotated = false;
+
+        /**
+         * Defines the format for a number or date.
+         */
+        private String[] format;
 
         /**
          * Default constructor.
@@ -1192,6 +1218,42 @@ public class SchemaGenerator {
          */
         public void setQueryAnnotated(boolean queryAnnotated) {
             isQueryAnnotated = queryAnnotated;
+        }
+
+        /**
+         * Return the format for a number or date.
+         *
+         * @return the format for a number or date
+         */
+        public String[] getFormat() {
+            return format;
+        }
+
+        /**
+         * Set the format for a number or date.
+         *
+         * @param format the format for a number or date
+         */
+        public void setFormat(String[] format) {
+            this.format = format;
+        }
+
+        /**
+         * Return the property name if the method is a getter.
+         *
+         * @return property name if the method is a getter
+         */
+        public String getPropertyName() {
+            return propertyName;
+        }
+
+        /**
+         * Set the property name if the method is a getter.
+         *
+         * @param propertyName property name
+         */
+        public void setPropertyName(String propertyName) {
+            this.propertyName = propertyName;
         }
 
         @Override

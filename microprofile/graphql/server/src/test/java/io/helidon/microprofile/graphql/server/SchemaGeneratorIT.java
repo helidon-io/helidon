@@ -37,6 +37,7 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotat
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
+import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueries;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
@@ -77,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Integration tests for {@link SchemaGeneratorTest}.
  */
+@SuppressWarnings("unchecked")
 public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     private String indexFileName = null;
@@ -234,9 +236,18 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     @Test
     public void testNumberFormats() throws IOException {
-        setupIndex(indexFileName, SimpleContactWithNumberFormats.class);
+        setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueries.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
-        System.out.println("schema=" + executionContext.getSchema());
+        ExecutionResult result = executionContext.execute("query { simpleFormattingQuery { id name age bankBalance value longValue } }");
+        Map<String, Object> mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("simpleFormattingQuery");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("age"), is("50 years old"));
+        assertThat(mapResults2.get("bankBalance"), is("$ 1200.00"));
+        assertThat(mapResults2.get("value"), is("10 value"));
+        assertThat(mapResults2.get("longValue"), is("Long-123456789"));
     }
 
     @Test

@@ -64,6 +64,11 @@ public class SchemaFieldDefinition
     private DataFetcher dataFetcher;
 
     /**
+     * Defines the format for a number or date.
+     */
+    private String[] format;
+
+    /**
      * Construct a {@link SchemaFieldDefinition}.
      *
      * @param name                  field definition name
@@ -219,6 +224,24 @@ public class SchemaFieldDefinition
         return arrayLevels;
     }
 
+    /**
+     * Return the format for a number or date.
+     *
+     * @return the format for a number or date
+     */
+    public String[] getFormat() {
+        return format;
+    }
+
+    /**
+     * Set the format for a number or date.
+     *
+     * @param format the format for a number or date
+     */
+    public void setFormat(String[] format) {
+        this.format = format;
+    }
+
     @Override
     public String toString() {
         return "FieldDefinition{"
@@ -228,6 +251,7 @@ public class SchemaFieldDefinition
                 + ", isReturnTypeMandatory=" + isReturnTypeMandatory
                 + ", listArguments=" + listSchemaArguments
                 + ", arrayLevels=" + arrayLevels
+                + ", format=" + format
                 + ", description='" + getDescription() + '\'' + '}';
     }
 }

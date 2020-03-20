@@ -50,10 +50,14 @@ public class SchemaArgument
     private final Class<?> originalType;
 
     /**
-     * Indicates if this argument is a source argument, which should be excluded from the
-     * query parameters.
+     * Indicates if this argument is a source argument, which should be excluded from the query parameters.
      */
     private boolean sourceArgument;
+
+    /**
+     * Defines the format for a number or date.
+     */
+    private String[] format;
 
     /**
      * Construct a {@link SchemaArgument} instance.
@@ -61,8 +65,8 @@ public class SchemaArgument
      * @param argumentName name of the argument
      * @param argumentType type of the argument
      * @param isMandatory  indicates if the argument is mandatory
-     * @param defaultValue  default value for the argument
-     * @param originalType  original argument type before it was converted to a GraphQL representation.
+     * @param defaultValue default value for the argument
+     * @param originalType original argument type before it was converted to a GraphQL representation.
      */
     public SchemaArgument(String argumentName, String argumentType,
                           boolean isMandatory, Object defaultValue, Class<?> originalType) {
@@ -163,7 +167,8 @@ public class SchemaArgument
 
     /**
      * Indicates if the argument is a source argument.
-     * @return  if the argument is a source argument.
+     *
+     * @return if the argument is a source argument.
      */
     public boolean isSourceArgument() {
         return sourceArgument;
@@ -171,10 +176,29 @@ public class SchemaArgument
 
     /**
      * Set if the argument is a source argument.
+     *
      * @param sourceArgument if the argument is a source argument.
      */
     public void setSourceArgument(boolean sourceArgument) {
         this.sourceArgument = sourceArgument;
+    }
+
+    /**
+     * Return the format for a number or date.
+     *
+     * @return the format for a number or date
+     */
+    public String[] getFormat() {
+        return format;
+    }
+
+    /**
+     * Set the format for a number or date.
+     *
+     * @param format the format for a number or date
+     */
+    public void setFormat(String[] format) {
+        this.format = format;
     }
 
     @Override
@@ -186,6 +210,7 @@ public class SchemaArgument
                 + ", defaultValue=" + defaultValue
                 + ", originalType=" + originalType
                 + ", sourceArgument=" + sourceArgument
+                + ", format=" + format
                 + ", description='" + getDescription() + '\'' + '}';
     }
 
@@ -205,6 +230,7 @@ public class SchemaArgument
                 && Objects.equals(argumentName, schemaArgument.argumentName)
                 && Objects.equals(argumentType, schemaArgument.argumentType)
                 && Objects.equals(originalType, schemaArgument.originalType)
+                && Objects.equals(format, schemaArgument.format)
                 && Objects.equals(sourceArgument, schemaArgument.sourceArgument)
                 && Objects.equals(getDescription(), schemaArgument.getDescription())
                 && Objects.equals(defaultValue, schemaArgument.defaultValue);
@@ -213,6 +239,6 @@ public class SchemaArgument
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), argumentName, argumentType, sourceArgument,
-                            isMandatory, defaultValue, getDescription(), originalType);
+                            isMandatory, defaultValue, getDescription(), originalType, format);
     }
 }

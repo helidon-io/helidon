@@ -19,7 +19,6 @@ package io.helidon.microprofile.graphql.server;
 import java.lang.reflect.Method;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,7 +28,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getCorrectFormat;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectFormat;
 
 /**
  * Utilities for working with {@link DataFetcher}s.

@@ -63,6 +63,14 @@ class SchemaFieldDefinitionTest {
 
         schemaFieldDefinition.setReturnType("BLAH");
         assertThat(schemaFieldDefinition.getReturnType(), is("BLAH"));
+
+        assertThat(schemaFieldDefinition.getFormat(), is(nullValue()));
+        schemaFieldDefinition.setFormat(new String[] {"a", "b"});
+        String[] format = schemaFieldDefinition.getFormat();
+        assertThat(format, is(notNullValue()));
+        assertThat(format.length, is(2));
+        assertThat(format[0], is("a"));
+        assertThat(format[1], is("b"));
     }
 
     @Test

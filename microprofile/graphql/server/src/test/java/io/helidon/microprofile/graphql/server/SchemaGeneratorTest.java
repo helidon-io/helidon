@@ -19,7 +19,6 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 
 import java.math.BigDecimal;
@@ -63,7 +62,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_I
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAULT_LOCALE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFormatAnnotation;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -347,19 +346,19 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testGetCorrectFormat() {
-        NumberFormat numberFormat = SchemaGeneratorHelper.getCorrectFormat(INT, "");
+        NumberFormat numberFormat = FormattingHelper.getCorrectFormat(INT, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits(), is(0));
 
-        numberFormat = SchemaGeneratorHelper.getCorrectFormat(BIG_INTEGER, "");
+        numberFormat = FormattingHelper.getCorrectFormat(BIG_INTEGER, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits(), is(0));
 
-        numberFormat = SchemaGeneratorHelper.getCorrectFormat(FLOAT, "");
+        numberFormat = FormattingHelper.getCorrectFormat(FLOAT, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits() > 0, is(true));
 
-        numberFormat = SchemaGeneratorHelper.getCorrectFormat(BIG_DECIMAL, "");
+        numberFormat = FormattingHelper.getCorrectFormat(BIG_DECIMAL, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits() > 0, is(true));
     }
@@ -389,6 +388,13 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
         assertAnnotation(SimpleContactWithNumberFormats.class, "method", "getId", 2, "0 'id'", DEFAULT_LOCALE);
         assertAnnotation(SimpleContactWithNumberFormats.class, "method", "getName", 0, null, null);
+    }
+
+    @Test
+    public void testFormatAnnotationFromSchema() throws IntrospectionException, ClassNotFoundException {
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        Schema schema = schemaGenerator.generateSchemaFromClasses(SimpleContactWithNumberFormats.class);
+        assertThat(schema, is(notNullValue()));
     }
 
     /**
@@ -453,7 +459,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
      * @param expectedResult expected result
      */
     private void assertFormat(String type, String locale, String format, Object value, String expectedResult) {
-        NumberFormat numberFormat = SchemaGeneratorHelper.getCorrectFormat(type, locale, format);
+        NumberFormat numberFormat = FormattingHelper.getCorrectFormat(type, locale, format);
         assertThat(numberFormat, is(notNullValue()));
         String formatted = numberFormat.format(value);
         assertThat(formatted, is(notNullValue()));

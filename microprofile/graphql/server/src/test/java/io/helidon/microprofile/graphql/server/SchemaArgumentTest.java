@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -56,6 +57,14 @@ class SchemaArgumentTest {
         assertThat(schemaArgument.isSourceArgument(), is(false));
         schemaArgument.setSourceArgument(true);
         assertThat(schemaArgument.isSourceArgument(), is(true));
+
+        assertThat(schemaArgument.getFormat(), is(nullValue()));
+        schemaArgument.setFormat(new String[] { "value-1", "value-2"});
+        String[] format = schemaArgument.getFormat();
+        assertThat(format, is(notNullValue()));
+        assertThat(format.length, is(2));
+        assertThat(format[0], is("value-1"));
+        assertThat(format[1], is("value-2"));
     }
 
     @Test
