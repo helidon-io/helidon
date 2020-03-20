@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.webclient.example;
+package io.helidon.examples.webclient.standalone;
 
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;

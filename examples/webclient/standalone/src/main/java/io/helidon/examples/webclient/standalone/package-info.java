@@ -16,4 +16,4 @@
 /**
  * Basic examples of webclient usage.
  */
-package io.helidon.webclient.example;
+package io.helidon.examples.webclient.standalone;
