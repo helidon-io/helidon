@@ -32,6 +32,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>basic</module>
+        <module>standalone</module>
     </modules>
 </project>
