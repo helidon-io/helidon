@@ -97,10 +97,10 @@ public final class Mp1Main {
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
 
+        server.stop();
+
         if (failed) {
-            server.stop();
             System.exit(-1);
-            return;
         }
 
 
