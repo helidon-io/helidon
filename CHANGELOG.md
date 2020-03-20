@@ -11,11 +11,114 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ### Notes
 
-This is the second milestone release of Helidon 2.0. 
+This is the third milestone release of Helidon 2.0. 
 
 ### Improvements
 
 ### Fixes
+
+### Backward incompatible changes
+
+
+## [2.0.0-M2] 
+
+### Notes
+
+This is the second milestone release of Helidon 2.0. It contains significant new features,
+enhancements and fixes. It also contains backward incompatible changes (see section below).
+This milestone release is provided for customers that want early access to Helidon 2.0. It
+should be considered unstable and is not intended for production use. APIs and features might
+not be fully tested and are subject to change. Documentation is incomplete. Those looking for
+a stable release should use a 1.4 release.
+
+### Notable New Features
+
+* Helidon Web Client
+* MicroProfile Reactive Streams Operators
+* MicroProfile Reactive Messaging
+* Multi and Single extended with the set of new reactive operators
+* Preliminary WebSocket support
+* Preliminary jlink image support
+
+### Changes
+
+- Config: Configuration changes [1357](https://github.com/oracle/helidon/pull/1357)
+- Config: Default config now loads without duplicates for MP [1369](https://github.com/oracle/helidon/pull/1369)
+- Config: Fix merging of value nodes in config 2.0 [1488](https://github.com/oracle/helidon/pull/1488)
+- Config: Removed null params and return types from Config API. [1345](https://github.com/oracle/helidon/pull/1345)
+- Config: Resource from config refactoring. [1530](https://github.com/oracle/helidon/pull/1530)
+- Config: Stopped executor service will not cause an error in polling strategy. [1484](https://github.com/oracle/helidon/pull/1484)
+- Config: cache is not using SoftReference anymore. [1494](https://github.com/oracle/helidon/pull/1494)
+- Config: change support refactoring [1417](https://github.com/oracle/helidon/pull/1417)
+- DB Client: Mappers for database date/time/timestamps. [1485](https://github.com/oracle/helidon/pull/1485)
+- Docker Image: Added libstdc++-6-dev to the image [1414](https://github.com/oracle/helidon/pull/1414)
+- Examples: Remove MP quickstart GreetApplication#getClasses method for auto-discovery [1395](https://github.com/oracle/helidon/pull/1395)
+- Examples: Gradle file cleanup. Fix deprecations. [1354](https://github.com/oracle/helidon/pull/1354)
+- Examples: Add OpenAPI annotations to MP quickstart for input and responses on updateGreeting [1394](https://github.com/oracle/helidon/pull/1394)
+- JAX-RS: Safeguard against JAX-RS app modifications after start. [1486](https://github.com/oracle/helidon/pull/1486)
+- JAX-RS: Upgrade Jersey [1438](https://github.com/oracle/helidon/pull/1438)
+- JPA: Resolves JTA/JPA transaction synchronization issues [1473](https://github.com/oracle/helidon/pull/1473)
+- JPA: Ensures that JtaDataSource instances that are acquired when a transaction is already active have their Synchronizations registered appropriately [1497](https://github.com/oracle/helidon/pull/1497)
+- JPA: Added further tests in TestJpaTransactionScopedSynchronizedEntityManager.java [1453](https://github.com/oracle/helidon/pull/1453)
+- JPA: Added more JPA tests [1355](https://github.com/oracle/helidon/pull/1355)
+- JPA: Added small test to verify database changes in existing JPA test [1471](https://github.com/oracle/helidon/pull/1471)
+- Javadoc: Java 11 javadoc fixes. Turn on failOnError [1386](https://github.com/oracle/helidon/pull/1386)
+- Media Support: New media support API. [1356](https://github.com/oracle/helidon/pull/1356)
+- Media Support: Adds Config into MediaSupport#builder() method [1403](https://github.com/oracle/helidon/pull/1403)
+- Messaging: MP Reactive Messaging impl [1287](https://github.com/oracle/helidon/pull/1287)
+- Messaging: Fix completable queue and clean-up of messaging tests [1499](https://github.com/oracle/helidon/pull/1499)
+- Metrics: Prometheus format problems (master) [1440](https://github.com/oracle/helidon/pull/1440)
+- MicroProfile Server now properly fails when CDI is started externally. [1371](https://github.com/oracle/helidon/pull/1371)
+- Native Image: JPA and JTA for native image [1478](https://github.com/oracle/helidon/pull/1478)
+- OpenAPI: Openapi custom context root 2.x [1521](https://github.com/oracle/helidon/pull/1521)
+- OpenAPI: Remove dependency on Jackson via SmallRye -2.x [1458](https://github.com/oracle/helidon/pull/1458)
+- OpenAPI: Support multiple apps in OpenAPI document [1493](https://github.com/oracle/helidon/pull/1493)
+- OpenAPI: Use CONFIG rather than FINE logging for jandex indexes used - 2.x [1405](https://github.com/oracle/helidon/pull/1405)
+- OpenAPI: Use smallrye openapi 1.2.0 (in 2.x) [1422](https://github.com/oracle/helidon/pull/1422)
+- Reactive: Add Helidon-Reactive Scrabble benchmark [1482](https://github.com/oracle/helidon/pull/1482)
+- Reactive: Add JMH Benchmark baseline to reactive [1462](https://github.com/oracle/helidon/pull/1462)
+- Reactive: Add Multi.range and Multi.rangeLong + TCK tests [1475](https://github.com/oracle/helidon/pull/1475)
+- Reactive: Expand TestSubscriber's API, fix a bug in MultiFirstProcessor [1463](https://github.com/oracle/helidon/pull/1463)
+- Reactive: Fix expected exception [1472](https://github.com/oracle/helidon/pull/1472)
+- Reactive: Fix reactive mapper publisher tck test [1447](https://github.com/oracle/helidon/pull/1447)
+- Reactive: Implement Multi.interval() + TCK tests [1526](https://github.com/oracle/helidon/pull/1526)
+- Reactive: Implement Single.flatMapIterable + TCK tests [1517](https://github.com/oracle/helidon/pull/1517)
+- Reactive: Implement defaultIfEmpty() + TCK tests [1520](https://github.com/oracle/helidon/pull/1520)
+- Reactive: Implement defer() + TCK tests [1503](https://github.com/oracle/helidon/pull/1503)
+- Reactive: Implement from(Stream) + TCK tests [1525](https://github.com/oracle/helidon/pull/1525)
+- Reactive: Implement reduce() + TCK tests [1504](https://github.com/oracle/helidon/pull/1504)
+- Reactive: Implement switchIfEmpty + TCK tests [1527](https://github.com/oracle/helidon/pull/1527)
+- Reactive: Implement takeUntil + TCK tests [1502](https://github.com/oracle/helidon/pull/1502)
+- Reactive: Implement timer() + TCK tests [1516](https://github.com/oracle/helidon/pull/1516)
+- Reactive: Improve SingleJust + TCK [1410](https://github.com/oracle/helidon/pull/1410)
+- Reactive: Move onXXX from Subscribable to Single + TCK [1477](https://github.com/oracle/helidon/pull/1477)
+- Reactive: Reactive Streams impl [1282](https://github.com/oracle/helidon/pull/1282)
+- Reactive: Reimplement ConcatPublisher + TCK tests [1452](https://github.com/oracle/helidon/pull/1452)
+- Reactive: Reimplement Multi.dropWhile + TCK test [1464](https://github.com/oracle/helidon/pull/1464)
+- Reactive: Reimplement Multi.first + TCK test [1466](https://github.com/oracle/helidon/pull/1466)
+- Reactive: Reimplement Multi.flatMapIterable + TCK test [1467](https://github.com/oracle/helidon/pull/1467)
+- Reactive: Reimplement Multi.just(T[]), add Multi.singleton(T) + TCK [1461](https://github.com/oracle/helidon/pull/1461)
+- Reactive: Reimplement Single.flatMap(->Publisher) + TCK test [1465](https://github.com/oracle/helidon/pull/1465)
+- Reactive: Reimplement Single.from + TCK tests [1481](https://github.com/oracle/helidon/pull/1481)
+- Reactive: Reimplement Single.map + TCK test [1456](https://github.com/oracle/helidon/pull/1456)
+- Reactive: Reimplement many operators + TCK tests [1442](https://github.com/oracle/helidon/pull/1442)
+- Reactive: Reimplement onErrorResume[With] + TCK tests [1489](https://github.com/oracle/helidon/pull/1489)
+- Reactive: Reimplement the Multi.map() operator + TCK test [1411](https://github.com/oracle/helidon/pull/1411)
+- Reactive: Rewrite collect, add juc.Collector overload + TCK tests [1459](https://github.com/oracle/helidon/pull/1459)
+- Security: public fields for IdcsMtRoleMapperProvider.MtCacheKey [1409](https://github.com/oracle/helidon/pull/1409)
+- Security: Fail fast when policy validation fails because of setup/syntax. [1491](https://github.com/oracle/helidon/pull/1491)
+- Security: PermitAll overridden by JWT [1359](https://github.com/oracle/helidon/pull/1359)
+- WebClient: Webclient implementation (#1205) [1431](https://github.com/oracle/helidon/pull/1431)
+- WebServer: Adds a default send(Throwable) method to ServerResponse.java as the first step in providing an easy facility for reporting exceptions during HTTP processing [1378](https://github.com/oracle/helidon/pull/1378)
+- WebServer: SetCookie test for parse method [1529](https://github.com/oracle/helidon/pull/1529)
+- WebSocket: Integration of WebSockets POC into Helidon 2.0 [1280](https://github.com/oracle/helidon/pull/1280)
+- jlink: jlink-image support. [1398](https://github.com/oracle/helidon/pull/1398)
+- jlink: Update standalone quickstarts to support jlink-image. [1424](https://github.com/oracle/helidon/pull/1424)
+
+#### Thank You!
+
+Thanks to community member David Karnok [akarnokd](https://github.com/akarnokd) for his
+significant contributions to our reactive support.
 
 ### Backward incompatible changes
 
@@ -303,5 +406,6 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0-M1...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0-M2...HEAD
+[2.0.0-M2]: https://github.com/oracle/helidon/compare/2.0.0-M1...2.0.0-M2
 [2.0.0-M1]: https://github.com/oracle/helidon/compare/1.4.0...2.0.0-M1
