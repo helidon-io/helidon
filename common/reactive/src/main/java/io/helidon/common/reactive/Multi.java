@@ -24,6 +24,7 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -614,6 +615,41 @@ public interface Multi<T> extends Subscribable<T> {
         Objects.requireNonNull(unit, "unit is null");
         Objects.requireNonNull(executor, "executor is null");
         return new MultiInterval(initialDelay, period, unit, executor);
+    }
+
+
+    /**
+     * Signals a {@link TimeoutException} if the upstream doesn't signal the next item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiTimeout<>(this, timeout, unit, executor, null);
+    }
+
+
+    /**
+     * Switches to a fallback single if the upstream doesn't signal the next item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @param fallback the Single to switch to if the upstream doesn't signal in time
+     * @return Multi
+     * @throws NullPointerException if {@code unit}, {@code executor}
+     *                              or {@code fallback} is {@code null}
+     */
+    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Flow.Publisher<T> fallback) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        Objects.requireNonNull(fallback, "fallback is null");
+        return new MultiTimeout<>(this, timeout, unit, executor, fallback);
     }
 
     /**

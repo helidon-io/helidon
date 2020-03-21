@@ -283,6 +283,40 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Signals a {@link TimeoutException} if the upstream doesn't signal an item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @return Single
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new SingleTimeout<>(this, timeout, unit, executor, null);
+    }
+
+
+    /**
+     * Switches to a fallback single if the upstream doesn't signal an item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @param fallback the Single to switch to if the upstream doesn't signal in time
+     * @return Single
+     * @throws NullPointerException if {@code unit}, {@code executor}
+     *                              or {@code fallback} is {@code null}
+     */
+    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Single<T> fallback) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        Objects.requireNonNull(fallback, "fallback is null");
+        return new SingleTimeout<>(this, timeout, unit, executor, fallback);
+    }
+
+    /**
      * Relay upstream items until the other source signals an item or completes.
      * @param other the other sequence to signal the end of the main sequence
      * @param <U> the element type of the other sequence
