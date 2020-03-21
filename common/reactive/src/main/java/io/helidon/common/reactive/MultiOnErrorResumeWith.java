@@ -93,7 +93,9 @@ final class MultiOnErrorResumeWith<T> implements Multi<T> {
                 publisher = Objects.requireNonNull(fallbackFunction.apply(throwable),
                         "The fallback function returned a null Flow.Publisher");
             } catch (Throwable ex) {
-                ex.addSuppressed(throwable);
+                if (ex != throwable) {
+                    ex.addSuppressed(throwable);
+                }
                 downstream.onError(ex);
                 return;
             }

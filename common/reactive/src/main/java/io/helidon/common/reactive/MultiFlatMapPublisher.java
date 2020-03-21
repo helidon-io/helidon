@@ -407,11 +407,10 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
                                 continue;
                             }
                         }
-
-                        emitted = e;
                     }
                 }
 
+                emitted = e;
                 missed = addAndGet(-missed);
                 if (missed == 0) {
                     break;

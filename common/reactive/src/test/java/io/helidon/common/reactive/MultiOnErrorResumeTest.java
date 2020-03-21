@@ -76,4 +76,15 @@ public class MultiOnErrorResumeTest {
                 .request(1)
                 .assertResult(1, 2, 3, 4);
     }
+
+    @Test
+    public void noSelfSuppressionFailure() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>();
+
+        Multi.<Integer>error(new IllegalArgumentException())
+                .onErrorResume(e -> { throw (IllegalArgumentException)e; })
+                .subscribe(ts);
+
+        ts.assertFailure(IllegalArgumentException.class);
+    }
 }

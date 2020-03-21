@@ -77,7 +77,9 @@ final class SingleOnErrorResume<T> implements Single<T> {
                 fallback = Objects.requireNonNull(fallbackFunction.apply(throwable),
                         "The fallback function returned a null item");
             } catch (Throwable ex) {
-                ex.addSuppressed(throwable);
+                if (ex != throwable) {
+                    ex.addSuppressed(throwable);
+                }
                 error(ex);
                 return;
             }

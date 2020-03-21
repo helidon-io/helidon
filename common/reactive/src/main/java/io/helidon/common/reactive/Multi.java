@@ -463,7 +463,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T>         item type
      * @return Multi
      */
-    static <T> Multi<T> concat(Multi<T> firstMulti, Multi<T> secondMulti) {
+    static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti) {
         return ConcatPublisher.create(firstMulti, secondMulti);
     }
 
@@ -486,15 +486,15 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onComplete signal is received.
      *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @param onComplete {@link java.lang.Runnable} to be executed.
      * @return Multi
      */
-    default Multi<T> onComplete(Runnable onTerminate) {
+    default Multi<T> onComplete(Runnable onComplete) {
         return new MultiTappedPublisher<>(this,
                 null,
                 null,
                 null,
-                onTerminate,
+                onComplete,
                 null,
                 null);
     }
@@ -502,7 +502,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onError signal is received.
      *
-     * @param onErrorConsumer {@link java.lang.Runnable} to be executed.
+     * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Multi
      */
     default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {

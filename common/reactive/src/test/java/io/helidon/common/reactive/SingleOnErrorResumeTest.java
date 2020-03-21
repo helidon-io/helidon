@@ -55,4 +55,15 @@ public class SingleOnErrorResumeTest {
 
         ts.assertResult();
     }
+
+    @Test
+    public void noSelfSuppressionFailure() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>();
+
+        Single.<Integer>error(new IllegalArgumentException())
+                .onErrorResume(e -> { throw (IllegalArgumentException)e; })
+                .subscribe(ts);
+
+        ts.assertFailure(IllegalArgumentException.class);
+    }
 }
