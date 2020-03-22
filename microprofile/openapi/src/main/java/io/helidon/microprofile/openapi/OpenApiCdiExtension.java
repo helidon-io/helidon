@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
@@ -44,12 +45,13 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.openapi.OpenAPISupport;
 
-import io.smallrye.openapi.api.OpenApiConfigImpl;
 import org.jboss.jandex.CompositeIndex;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
+
+import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * Portable extension to allow construction of a Jandex index (to pass to
@@ -97,14 +99,17 @@ public class OpenApiCdiExtension implements Extension {
         this.config = config;
     }
 
-    void registerOpenApi(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
+    void registerOpenApi(@Observes @Priority(PLATFORM_AFTER) @Initialized(ApplicationScoped.class) Object event, BeanManager bm) {
         try {
+            Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
             OpenAPISupport openApiSupport = new MPOpenAPIBuilder()
-                    .openAPIConfig(new OpenApiConfigImpl(mpConfig))
+                    .config(mpConfig)
                     .indexView(indexView())
+                    .config(openapiNode)
                     .build();
 
-            openApiSupport.configureEndpoint(RoutingBuilders.create(config.get("openapi")).routingBuilder());
+            openApiSupport.configureEndpoint(
+                    RoutingBuilders.create(openapiNode).routingBuilder());
         } catch (IOException e) {
             throw new DeploymentException("Failed to obtain index view", e);
         }

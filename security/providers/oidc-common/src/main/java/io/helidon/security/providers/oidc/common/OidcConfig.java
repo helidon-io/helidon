@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,10 +183,10 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *          defined (e.g. token-endpoint-uri).</td>
  * </tr>
  * <tr>
- *     <td>oidc-metadata</td>
+ *     <td>oidc-metadata.resource</td>
  *     <td>identity-uri/.well-known/openid-configuration</td>
  *     <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information
- *     about the identity server</td>
+ *     about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>token-endpoint-uri</td>
@@ -205,10 +205,11 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *          validate JWT through OIDC Server endpoint "validation-endpoint-uri"</td>
  * </tr>
  * <tr>
- *     <td>sign-jwk</td>
+ *     <td>sign-jwk.resource</td>
  *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed
  *              when jwt validation is done by us</td>
- *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT</td>
+ *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
+ *     See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>introspect-endpoint-uri</td>
@@ -912,8 +913,11 @@ public final class OidcConfig {
 
             // OIDC server configuration
             config.get("base-scopes").asString().ifPresent(this::baseScopes);
+            config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
+            // backward compatibility
             Resource.create(config, "oidc-metadata").ifPresent(this::oidcMetadata);
             config.get("oidc-metadata-well-known").asBoolean().ifPresent(this::oidcMetadataWellKnown);
+            config.get("sign-jwk.resource").as(Resource::create).ifPresent(this::signJwk);
             Resource.create(config, "sign-jwk").ifPresent(this::signJwk);
             config.get("token-endpoint-uri").as(URI.class).ifPresent(this::tokenEndpointUri);
             config.get("authorization-endpoint-uri").as(URI.class).ifPresent(this::authorizationEndpointUri);

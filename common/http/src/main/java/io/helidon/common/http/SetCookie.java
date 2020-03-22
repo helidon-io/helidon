@@ -96,7 +96,7 @@ public class SetCookie {
                 break;
             case "max-age":
                 hasValue(partName, partValue);
-                builder.maxAge(Duration.parse(partValue));
+                builder.maxAge(Duration.ofSeconds(Long.parseLong(partValue)));
                 break;
             case "domain":
                 hasValue(partName, partValue);

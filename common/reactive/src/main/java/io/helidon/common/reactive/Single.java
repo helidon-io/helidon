@@ -26,6 +26,8 @@ import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -74,6 +76,17 @@ public interface Single<T> extends Subscribable<T> {
     default Single<T> defaultIfEmpty(T defaultItem) {
         Objects.requireNonNull(defaultItem, "defaultItem is null");
         return new SingleDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
+     * Switch to the other Single if the upstream is empty.
+     * @param other the Single to switch to if the upstream is empty.
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Single<T> switchIfEmpty(Single<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleSwitchIfEmpty<>(this, other);
     }
 
     /**
@@ -300,6 +313,39 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Signals a {@link TimeoutException} if the upstream doesn't signal an item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @return Single
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new SingleTimeout<>(this, timeout, unit, executor, null);
+    }
+
+    /**
+     * Switches to a fallback single if the upstream doesn't signal an item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @param fallback the Single to switch to if the upstream doesn't signal in time
+     * @return Single
+     * @throws NullPointerException if {@code unit}, {@code executor}
+     *                              or {@code fallback} is {@code null}
+     */
+    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Single<T> fallback) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        Objects.requireNonNull(fallback, "fallback is null");
+        return new SingleTimeout<>(this, timeout, unit, executor, fallback);
+    }
+
+    /**
      * Relay upstream items until the other source signals an item or completes.
      * @param other the other sequence to signal the end of the main sequence
      * @param <U> the element type of the other sequence
@@ -346,7 +392,7 @@ public interface Single<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onError signal is received.
      *
-     * @param onErrorConsumer {@link Consumer} to be executed.
+     * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Single
      */
     default Single<T> onError(Consumer<Throwable> onErrorConsumer) {
@@ -405,5 +451,58 @@ public interface Single<T> extends Subscribable<T> {
      */
     default Single<T> onErrorResumeWith(Function<? super Throwable, ? extends Single<? extends T>> onError) {
         return new SingleOnErrorResumeWith<>(this, onError);
+    }
+
+    /**
+     * Retry a failing upstream at most the given number of times before giving up.
+     * @param count the number of times to retry; 0 means no retry at all
+     * @return Single
+     * @throws IllegalArgumentException if {@code count} is negative
+     * @see #retryWhen(BiFunction)
+     */
+    default Single<T> retry(long count) {
+        if (count < 0L) {
+            throw new IllegalArgumentException("count >= 0L required");
+        }
+        return new SingleRetry<>(this, count);
+    }
+
+    /**
+     * Retry a failing upstream if the predicate returns true.
+     * @param predicate the predicate that receives the latest failure {@link Throwable}
+     *                  the number of times the retry happened so far (0-based) and
+     *                  should return {@code true} to retry the upstream again or
+     *                  {@code false} to signal the latest failure
+     * @return Single
+     * @throws NullPointerException if {@code predicate} is {@code null}
+     * @see #retryWhen(BiFunction)
+     */
+    default Single<T> retry(BiPredicate<? super Throwable, ? super Long> predicate) {
+        Objects.requireNonNull(predicate, "whenFunction is null");
+        return new SingleRetry<>(this, predicate);
+    }
+
+    /**
+     * Retry a failing upstream when the given function returns a publisher that
+     * signals an item.
+     * <p>
+     *     If the publisher returned by the function completes, the repetition stops
+     *     and this Single is completed as empty.
+     *     If the publisher signals an error, the repetition stops
+     *     and this Single will signal this error.
+     * </p>
+     * @param whenFunction the function that receives the latest failure {@link Throwable}
+     *                     the number of times the retry happened so far (0-based) and
+     *                     should return a {@link Flow.Publisher} that should signal an item
+     *                     to retry again, complete to stop and complete this Single
+     *                     or signal an error to have this Single emit that error as well.
+     * @param <U> the element type of the retry-signal sequence
+     * @return Single
+     * @throws NullPointerException if {@code whenFunction} is {@code null}
+     */
+    default <U> Single<T> retryWhen(
+            BiFunction<? super Throwable, ? super Long, ? extends Flow.Publisher<U>> whenFunction) {
+        Objects.requireNonNull(whenFunction, "whenFunction is null");
+        return new SingleRetry<>(this, whenFunction);
     }
 }

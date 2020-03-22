@@ -25,12 +25,15 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -76,6 +79,17 @@ public interface Multi<T> extends Subscribable<T> {
     default Multi<T> defaultIfEmpty(T defaultItem) {
         Objects.requireNonNull(defaultItem, "defaultItem is null");
         return new MultiDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
+     * Switch to the other publisher if the upstream is empty.
+     * @param other the publisher to switch to if the upstream is empty.
+     * @return Multi
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Multi<T> switchIfEmpty(Flow.Publisher<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new MultiSwitchIfEmpty<>(this, other);
     }
 
     /**
@@ -368,6 +382,31 @@ public interface Multi<T> extends Subscribable<T> {
         return new MultiFromIterable<>(iterable);
     }
 
+    /**
+     * Create a {@link Multi} instance that publishes the given {@link Stream}.
+     * <p>
+     *     Note that Streams can be only consumed once, therefore, the
+     *     returned Multi will signal {@link IllegalStateException} if
+     *     multiple subscribers try to consume it.
+     * <p>
+     *     The operator calls {@link Stream#close()} when the stream finishes,
+     *     fails or the flow gets canceled. To avoid closing the stream automatically,
+     *     it is recommended to turn the {@link Stream} into an {@link Iterable}
+     *     via {@link Stream#iterator()} and use {@link #from(Iterable)}:
+     *     <pre>{@code
+     *     Stream<T> stream = ...
+     *     Multi<T> multi = Multi.from(stream::iterator);
+     *     }</pre>
+     *
+     * @param <T>      item type
+     * @param stream the Stream to publish
+     * @return Multi
+     * @throws NullPointerException if {@code stream} is {@code null}
+     */
+    static <T> Multi<T> from(Stream<T> stream) {
+        Objects.requireNonNull(stream, "stream is null");
+        return new MultiFromStream<>(stream);
+    }
 
     /**
      * Create a {@link Multi} instance that publishes the given items to a single subscriber.
@@ -492,7 +531,7 @@ public interface Multi<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onError signal is received.
      *
-     * @param onErrorConsumer {@link Consumer} to be executed.
+     * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Multi
      */
     default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
@@ -588,6 +627,78 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Signal 0L, 1L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param period the initial and in-between time
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long period, TimeUnit unit, ScheduledExecutorService executor) {
+        return interval(period, period, unit, executor);
+    }
+
+    /**
+     * Signal 0L after an initial delay, then 1L, 2L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param initialDelay the time before signaling 0L
+     * @param period the in-between wait time for values 1L, 2L and so on
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long initialDelay, long period, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiInterval(initialDelay, period, unit, executor);
+    }
+
+
+    /**
+     * Signals a {@link TimeoutException} if the upstream doesn't signal the next item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiTimeout<>(this, timeout, unit, executor, null);
+    }
+
+
+    /**
+     * Switches to a fallback single if the upstream doesn't signal the next item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @param fallback the Single to switch to if the upstream doesn't signal in time
+     * @return Multi
+     * @throws NullPointerException if {@code unit}, {@code executor}
+     *                              or {@code fallback} is {@code null}
+     */
+    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Flow.Publisher<T> fallback) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        Objects.requireNonNull(fallback, "fallback is null");
+        return new MultiTimeout<>(this, timeout, unit, executor, fallback);
+    }
+
+    /**
      * {@link java.util.function.Function} providing one item to be submitted as onNext in case of onError signal is received.
      *
      * @param onError Function receiving {@link java.lang.Throwable} as argument and producing one item to resume stream with.
@@ -605,5 +716,58 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
         return new MultiOnErrorResumeWith<>(this, onError);
+    }
+
+    /**
+     * Retry a failing upstream at most the given number of times before giving up.
+     * @param count the number of times to retry; 0 means no retry at all
+     * @return Multi
+     * @throws IllegalArgumentException if {@code count} is negative
+     * @see #retryWhen(BiFunction)
+     */
+    default Multi<T> retry(long count) {
+        if (count < 0L) {
+            throw new IllegalArgumentException("count >= 0L required");
+        }
+        return new MultiRetry<>(this, count);
+    }
+
+    /**
+     * Retry a failing upstream if the predicate returns true.
+     * @param predicate the predicate that receives the latest failure {@link Throwable}
+     *                  the number of times the retry happened so far (0-based) and
+     *                  should return {@code true} to retry the upstream again or
+     *                  {@code false} to signal the latest failure
+     * @return Multi
+     * @throws NullPointerException if {@code predicate} is {@code null}
+     * @see #retryWhen(BiFunction)
+     */
+    default Multi<T> retry(BiPredicate<? super Throwable, ? super Long> predicate) {
+        Objects.requireNonNull(predicate, "whenFunction is null");
+        return new MultiRetry<>(this, predicate);
+    }
+
+    /**
+     * Retry a failing upstream when the given function returns a publisher that
+     * signals an item.
+     * <p>
+     *     If the publisher returned by the function completes, the repetition stops
+     *     and this Multi is completed.
+     *     If the publisher signals an error, the repetition stops
+     *     and this Multi will signal this error.
+     * </p>
+     * @param whenFunction the function that receives the latest failure {@link Throwable}
+     *                     the number of times the retry happened so far (0-based) and
+     *                     should return a {@link Flow.Publisher} that should signal an item
+     *                     to retry again, complete to stop and complete this Multi
+     *                     or signal an error to have this Multi emit that error as well.
+     * @param <U> the element type of the retry-signal sequence
+     * @return Multi
+     * @throws NullPointerException if {@code whenFunction} is {@code null}
+     */
+    default <U> Multi<T> retryWhen(
+            BiFunction<? super Throwable, ? super Long, ? extends Flow.Publisher<U>> whenFunction) {
+        Objects.requireNonNull(whenFunction, "whenFunction is null");
+        return new MultiRetry<>(this, whenFunction);
     }
 }

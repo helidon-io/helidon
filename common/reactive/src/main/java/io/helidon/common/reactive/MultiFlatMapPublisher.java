@@ -407,7 +407,6 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
                                 continue;
                             }
                         }
-
                     }
                 }
 

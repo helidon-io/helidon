@@ -195,4 +195,25 @@ enum SubscriptionHelper implements Flow.Subscription {
             throw new IllegalStateException("Flow.Subscription already set.");
         }
     }
+
+    /**
+     * Atomically swap in the given incoming {@link Flow.Subscription} or cancel
+     * it if the target field is canceled.
+     * @param field the target field
+     * @param incoming the incoming subscription, nulls allowed
+     */
+    public static void replace(AtomicReference<Flow.Subscription> field, Flow.Subscription incoming) {
+        for (;;) {
+            Flow.Subscription current = field.get();
+            if (current == SubscriptionHelper.CANCELED) {
+                if (incoming != null) {
+                    incoming.cancel();
+                }
+                return;
+            }
+            if (field.compareAndSet(current, incoming)) {
+                return;
+            }
+        }
+    }
 }

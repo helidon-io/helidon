@@ -17,13 +17,18 @@
 package io.helidon.common.reactive;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A dummy subscriber for testing purposes.
  */
 class TestSubscriber<T> implements Flow.Subscriber<T> {
+
+    private final CountDownLatch latch;
 
     private final long initialRequest;
 
@@ -54,6 +59,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
         this.upstream = new AtomicReference<>();
         this.items = Collections.synchronizedList(new ArrayList<>());
         this.errors = Collections.synchronizedList(new ArrayList<>());
+        this.latch = new CountDownLatch(1);
     }
 
     @Override
@@ -87,6 +93,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
             errors.add(new IllegalStateException("onSubscribe not called before onError!"));
         }
         errors.add(throwable);
+        latch.countDown();
     }
 
     @Override
@@ -102,6 +109,7 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
             errors.add(new IllegalStateException("onComplete called again"));
         }
         completions = c + 1;
+        latch.countDown();
     }
 
     /**
@@ -424,6 +432,88 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
         if (completions != 0) {
             throw fail("Unexpected completion(s).");
         }
+        return this;
+    }
+
+    /**
+     * Await the termination of this TestSubscriber in a blocking manner.
+     * <p>
+     *     If the timeout elapses first, a {@link TimeoutException}
+     *     is added to the error list.
+     *     If the current thread waiting is interrupted, the
+     *     {@link InterruptedException} is added to the error list
+     * </p>
+     * @param timeout the time to wait
+     * @param unit the time unit
+     * @return this
+     */
+    public final TestSubscriber<T> awaitDone(long timeout, TimeUnit unit) {
+        try {
+            if (!latch.await(timeout, unit)) {
+                cancel();
+                errors.add(new TimeoutException());
+            }
+        } catch (InterruptedException ex) {
+            cancel();
+            errors.add(ex);
+        }
+        return this;
+    }
+
+    /**
+     * Await the upstream to produce at least the given number of items within
+     * 5 seconds, sleeping for 10 milliseconds at a time.
+     * <p>
+     *     If the timeout elapses first, a {@link TimeoutException}
+     *     is added to the error list.
+     *     If the current thread waiting is interrupted, the
+     *     {@link InterruptedException} is added to the error list
+     * </p>
+     * @param count the number of items to wait for
+     * @return this
+     * @see #awaitCount(int, long, long, TimeUnit)
+     */
+    public final TestSubscriber<T> awaitCount(int count) {
+        return awaitCount(count, 10, 5000, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Await the upstream to produce at least the given number of items within the
+     * specified time window.
+     * <p>
+     *     If the timeout elapses first, a {@link TimeoutException}
+     *     is added to the error list.
+     *     If the current thread waiting is interrupted, the
+     *     {@link InterruptedException} is added to the error list
+     * </p>
+     * @param count the number of items to wait for
+     * @param sleep the time to sleep between count checks
+     * @param timeout the maximum time to wait for the items
+     * @param unit the time unit
+     * @return this
+     */
+    public final TestSubscriber<T> awaitCount(int count, long sleep, long timeout, TimeUnit unit) {
+        long end = unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS) + timeout;
+
+        for (;;) {
+            if (items.size() >= count) {
+                break;
+            }
+            long now = unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            if (now > end) {
+                cancel();
+                errors.add(new TimeoutException());
+                break;
+            }
+            try {
+                unit.sleep(sleep);
+            } catch (InterruptedException ex) {
+                cancel();
+                errors.add(ex);
+                break;
+            }
+        }
+
         return this;
     }
 }

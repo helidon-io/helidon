@@ -15,8 +15,8 @@
   limitations under the License.
   -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -26,31 +26,39 @@
     </parent>
 
     <artifactId>helidon-examples-webclient-standalone</artifactId>
+    <name>Helidon WebClient Standalone Example</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-abac</artifactId>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-security</artifactId>
+            <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-metrics</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
 </project>

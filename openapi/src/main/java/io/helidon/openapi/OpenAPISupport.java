@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,6 +55,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.openapi.internal.OpenAPIConfigImpl;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -61,6 +63,8 @@ import io.helidon.webserver.Service;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
+import io.smallrye.openapi.api.models.OpenAPIImpl;
+import io.smallrye.openapi.api.util.MergeUtil;
 import io.smallrye.openapi.runtime.OpenApiProcessor;
 import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
@@ -75,7 +79,6 @@ import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
-import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -129,7 +132,7 @@ public class OpenAPISupport implements Service {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
-        model = prepareModel(builder.openAPIConfig(), builder.indexView(), builder.staticFile());
+        model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.perAppFilteredIndexViews());
     }
 
     @Override
@@ -235,13 +238,14 @@ public class OpenAPISupport implements Service {
      * Prepares the OpenAPI model that later will be used to create the OpenAPI
      * document for endpoints in this application.
      *
-     * @param config {@code OpenApiConfig} object describing paths, servers,
-     * etc.
+     * @param config {@code OpenApiConfig} object describing paths, servers, etc.
+     * @param staticFile the static file, if any, to be included in the resulting model
+     * @param filteredIndexViews possibly empty list of FilteredIndexViews to use in harvesting definitions from the code
      * @return the OpenAPI model
      * @throws RuntimeException in case of errors reading any existing static
      * OpenAPI document
      */
-    private OpenAPI prepareModel(OpenApiConfig config, IndexView indexView, OpenApiStaticFile staticFile) {
+    private OpenAPI prepareModel(OpenApiConfig config, OpenApiStaticFile staticFile, List<FilteredIndexView> filteredIndexViews) {
         try {
             synchronized (OpenApiDocument.INSTANCE) {
                 OpenApiDocument.INSTANCE.reset();
@@ -252,7 +256,7 @@ public class OpenAPISupport implements Service {
                             OpenAPIMediaType.byFormat(staticFile.getFormat())));
                 }
                 if (isAnnotationProcessingEnabled(config)) {
-                    expandModelUsingAnnotations(config, indexView);
+                    expandModelUsingAnnotations(config, filteredIndexViews);
                 } else {
                     LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
                 }
@@ -269,17 +273,23 @@ public class OpenAPISupport implements Service {
         return !config.scanDisable();
     }
 
-    private void expandModelUsingAnnotations(OpenApiConfig config, IndexView indexView) throws IOException {
-        if (indexView != null) {
-            if (config.scanDisable()) {
-                return;
-            }
-            List<AnnotationScannerExtension> scannerExtensions =
-                    List.of(new HelidonAnnotationScannerExtension());
-            OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, new FilteredIndexView(indexView, config),
-                    scannerExtensions);
-            OpenApiDocument.INSTANCE.modelFromAnnotations(scanner.scan());
+    private void expandModelUsingAnnotations(OpenApiConfig config, List<FilteredIndexView> filteredIndexViews) {
+        if (filteredIndexViews.isEmpty() || config.scanDisable()) {
+            return;
         }
+
+        /*
+         * Conduct a SmallRye OpenAPI annotation scan for each filtered index view, merging the resulting OpenAPI models into one.
+         * The AtomicReference is effectively final so we can update the actual reference from inside the lambda.
+         */
+        AtomicReference<OpenAPIImpl> aggregateModelRef = new AtomicReference<>(new OpenAPIImpl()); // Start with skeletal model
+        filteredIndexViews.forEach(filteredIndexView -> {
+                OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, filteredIndexView,
+                        List.of(new HelidonAnnotationScannerExtension()));
+                OpenAPIImpl modelForApp = scanner.scan();
+                aggregateModelRef.set(MergeUtil.merge(aggregateModelRef.get(), modelForApp));
+            });
+        OpenApiDocument.INSTANCE.modelFromAnnotations(aggregateModelRef.get());
     }
 
     private static ClassLoader getContextClassLoader() {
@@ -589,7 +599,7 @@ public class OpenAPISupport implements Service {
      * helidonConfig settings
      */
     public static OpenAPISupport create(Config config) {
-        return builderSE().helidonConfig(config).build();
+        return builderSE().config(config).build();
     }
 
     /**
@@ -611,6 +621,11 @@ public class OpenAPISupport implements Service {
      */
     public abstract static class Builder implements io.helidon.common.Builder<OpenAPISupport> {
 
+        /**
+         * Config key to select the openapi node from Helidon config.
+         */
+        public static final String CONFIG_KEY = "openapi";
+
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
 
@@ -618,6 +633,26 @@ public class OpenAPISupport implements Service {
         public OpenAPISupport build() {
             validate();
             return new OpenAPISupport(this);
+        }
+
+        /**
+         * Set various builder attributes from the specified {@code Config} object.
+         * <p>
+         * The {@code Config} object can specify web-context and static-file in addition to settings
+         * supported by {@link OpenAPIConfigImpl.Builder}.
+         *
+         * @param config the openapi {@code Config} object possibly containing settings
+         * @exception NullPointerException if the provided {@code Config} is null
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("web-context")
+                    .asString()
+                    .ifPresent(this::webContext);
+            config.get("static-file")
+                    .asString()
+                    .ifPresent(this::staticFile);
+            return this;
         }
 
         /**
@@ -659,14 +694,6 @@ public class OpenAPISupport implements Service {
         public abstract OpenApiConfig openAPIConfig();
 
         /**
-         * Returns the Jandex {@link IndexView} containing annotated endpoint
-         * classes.
-         *
-         * @return {@code IndexView} containing endpoint classes
-         */
-        public abstract IndexView indexView();
-
-        /**
          * Makes sure the set-up for OpenAPI is consistent, internally and with
          * the current Helidon runtime environment (SE or MP).
          *
@@ -683,6 +710,9 @@ public class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         public Builder webContext(String path) {
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }
             this.webContext = Optional.of(path);
             return this;
         }
@@ -698,6 +728,15 @@ public class OpenAPISupport implements Service {
             staticFilePath = Optional.of(path);
             return this;
         }
+
+        /**
+         * Returns zero or more {@code FilteredIndexView} instances, each of which to be used in constructing an OpenAPI
+         * model that is merged with the others. This is particularly useful for supporting multiple {@code Application} instances
+         * in a single server.
+         *
+         * @return possibly empty {@code List} of {@code FilteredIndexView} objects
+         */
+        public abstract List<FilteredIndexView> perAppFilteredIndexViews();
 
         private OpenApiStaticFile getExplicitStaticFile() {
             Path path = Paths.get(staticFilePath.get());

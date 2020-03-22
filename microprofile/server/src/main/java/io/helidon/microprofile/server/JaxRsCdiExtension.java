@@ -109,6 +109,7 @@ public class JaxRsCdiExtension implements Extension {
             } else {
                 Set<Class<?>> classes = new HashSet<>(resources);
                 applicationMetas.add(JaxRsApplication.builder()
+                                             .synthetic(true)
                                              .applicationClass(Application.class)
                                              .config(ResourceConfig.forApplication(new Application() {
                                                  @Override
@@ -245,6 +246,7 @@ public class JaxRsCdiExtension implements Extension {
     public void addSyntheticApplication(List<Class<?>> resourceClasses) throws IllegalStateException {
         mutateApps();
         this.applicationMetas.add(JaxRsApplication.builder()
+                                          .synthetic(true)
                                           .applicationClass(Application.class)
                                           .config(ResourceConfig.forApplication(new Application() {
                                               @Override
