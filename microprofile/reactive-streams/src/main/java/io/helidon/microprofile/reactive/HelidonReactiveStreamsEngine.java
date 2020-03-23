@@ -527,21 +527,21 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
     }
 
     static void complete(CompletableFuture<Object> cf) {
-        COUPLED_EXECUTOR.submit(() -> {
+        coupledExecutor.submit(() -> {
             cf.complete(null);
             return null;
         });
     }
 
     static void fail(CompletableFuture<Object> cf, Throwable ex) {
-        COUPLED_EXECUTOR.submit(() -> {
+        coupledExecutor.submit(() -> {
             cf.completeExceptionally(ex);
             return null;
         });
     }
 
     // Workaround for a TCK bug when calling cancel() from any method named onComplete().
-    private static volatile ExecutorService COUPLED_EXECUTOR = ForkJoinPool.commonPool();
+    private static volatile ExecutorService coupledExecutor = ForkJoinPool.commonPool();
 
     /**
      * Override the ExecutorService used by the cross-termination and cross-cancellation
@@ -550,9 +550,9 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
      */
     public static void setCoupledExecutor(ExecutorService executor) {
         if (executor == null) {
-            COUPLED_EXECUTOR = ForkJoinPool.commonPool();
+            coupledExecutor = ForkJoinPool.commonPool();
         } else {
-            COUPLED_EXECUTOR = executor;
+            coupledExecutor = executor;
         }
     }
 }
