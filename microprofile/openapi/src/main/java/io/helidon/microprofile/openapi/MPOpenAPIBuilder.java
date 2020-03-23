@@ -60,16 +60,27 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         return perAppFilteredIndexViews;
     }
 
-    private List<FilteredIndexView> buildPerAppFilteredIndexViews() {
-        /*
-         * The JaxRsCdiExtension knows about all the apps in the system. For each app find out the classes related to that
-         * app -- the application class itself and any resource classes reported by its getClasses() or getSingletons()
-         * methods -- and create a FilteredIndexView that will be used to restrict scanning to only those classes for that app.
-         */
+    /**
+     * Returns those {@code Application} instances that are runnable, according to the server which accepts
+     * dynamically-registered apps as well as ones discovered using annotations.
+     *
+     * @return List of Application instances that are runnable
+     */
+    static List<Application> appInstancesToRun() {
         JaxRsCdiExtension ext = CDI.current()
                 .getBeanManager()
                 .getExtension(JaxRsCdiExtension.class);
 
+        List<JaxRsApplication> appsToRun = ext.applicationsToRun();
+
+        return appsToRun.stream()
+                .filter(MPOpenAPIBuilder::isNonSynthetic)
+                .map(MPOpenAPIBuilder::appInstance)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toList());
+    }
+
+    private List<FilteredIndexView> buildPerAppFilteredIndexViews() {
         /*
          * There are two cases that return a default filtered index view. Don't create it yet, just declare a supplier for it.
          */
@@ -77,20 +88,12 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
                 openAPIConfig.get()));
 
         /*
-         * Each set in the list holds the classes related to one app.
-         */
-        List<JaxRsApplication> appsToRun = ext.applicationsToRun();
-        if (appsToRun.size() <= 1) {
-            return defaultResultSupplier.get();
-        }
-        /*
          * Some JaxRsApplication instances might have an application instance already associated with them. Others might not in
          * which case we'll try to instantiate them ourselves (unless they are synthetic apps or lack no-args constructors).
+         *
+         * Each set in the list holds the classes related to one app.
          */
-        List<Set<Class<?>>> appClassesToScan = appsToRun.stream()
-                .filter(MPOpenAPIBuilder::isNonSynthetic)
-                .map(this::appInstance)
-                .flatMap(Optional::stream)
+        List<Set<Class<?>>> appClassesToScan = appInstancesToRun().stream()
                 .map(this::classesToScanForApp)
                 .collect(Collectors.toList());
 
@@ -110,7 +113,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         return !jaxRsApp.synthetic();
     }
 
-    private Optional<? extends Application> appInstance(JaxRsApplication jaxRsApp) {
+    private static Optional<? extends Application> appInstance(JaxRsApplication jaxRsApp) {
         Application preexistingApp = jaxRsApp.resourceConfig().getApplication();
         return preexistingApp != null ? Optional.of(preexistingApp)
                 : jaxRsApp.applicationClass()
