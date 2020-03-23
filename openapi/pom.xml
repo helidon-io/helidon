@@ -125,11 +125,6 @@
                     <groupId>com.fasterxml.jackson.dataformat</groupId>
                     <artifactId>jackson-dataformat-yaml</artifactId>
                 </exclusion>
-                <!-- Start of exclusions to resolve dependency convergence issues -->
-                <exclusion>
-                    <groupId>org.jboss.logging</groupId>
-                    <artifactId>jboss-logging</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>

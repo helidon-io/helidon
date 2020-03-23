@@ -60,12 +60,14 @@
         <version.lib.interceptor-api>1.2.2</version.lib.interceptor-api>
         <version.lib.jackson>2.10.0</version.lib.jackson>
         <version.lib.jaegertracing>1.1.0</version.lib.jaegertracing>
+        <version.lib.jakarta-json>1.1.5</version.lib.jakarta-json>
         <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
         <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
+        <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
         <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
         <version.lib.jedis>3.1.0</version.lib.jedis>
         <version.lib.jersey>2.30.1</version.lib.jersey>
@@ -665,6 +667,26 @@
                 <groupId>com.oracle.substratevm</groupId>
                 <artifactId>svm</artifactId>
                 <version>${version.lib.graalvm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.lib.jboss.logging}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.json</artifactId>
+                <version>${version.lib.jakarta-json}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.json</groupId>
+                <artifactId>jakarta.json-api</artifactId>
+                <version>${version.lib.jakarta-json}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.json</groupId>
+                <artifactId>jakarta.json</artifactId>
+                <version>${version.lib.jakarta-json}</version>
             </dependency>
 
             <!-- Testing libraries -->

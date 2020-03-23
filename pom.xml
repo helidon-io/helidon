@@ -61,7 +61,6 @@
         <version.lib.jboss-annotations-api_1.3_spec>1.0.0.Final</version.lib.jboss-annotations-api_1.3_spec>
         <version.lib.jboss-el-api_3.0_spec>1.0.0.Final</version.lib.jboss-el-api_3.0_spec>
         <version.lib.jboss-interceptors-api_1.2_spec>1.0.0.Final</version.lib.jboss-interceptors-api_1.2_spec>
-        <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
         <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
@@ -794,11 +793,6 @@
                 <groupId>org.jboss.spec.javax.interceptor</groupId>
                 <artifactId>jboss-interceptors-api_1.2_spec</artifactId>
                 <version>${version.lib.jboss-interceptors-api_1.2_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${version.lib.jboss.logging}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
