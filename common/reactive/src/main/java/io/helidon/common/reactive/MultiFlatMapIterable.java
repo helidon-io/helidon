@@ -19,10 +19,10 @@ package io.helidon.common.reactive;
 
 import java.util.Iterator;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Function;
 
 /**
@@ -52,8 +52,8 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
     }
 
     static final class FlatMapIterableSubscriber<T, R>
-    extends AtomicInteger
-    implements Flow.Subscriber<T>, Flow.Subscription {
+            extends AtomicInteger
+            implements Flow.Subscriber<T>, Flow.Subscription {
 
         private final Flow.Subscriber<? super R> downstream;
 
@@ -63,7 +63,11 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
 
         private final AtomicLong requested;
 
-        private final ConcurrentLinkedQueue<T> queue;
+        private final AtomicReferenceArray<T> queue;
+
+        private final AtomicLong producerIndex;
+
+        private final AtomicLong consumerIndex;
 
         private Flow.Subscription upstream;
 
@@ -85,7 +89,13 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
             this.mapper = mapper;
             this.prefetch = prefetch;
             this.requested = new AtomicLong();
-            this.queue = new ConcurrentLinkedQueue<>();
+            this.queue = new AtomicReferenceArray<>(roundToPowerOfTwo(prefetch));
+            this.producerIndex = new AtomicLong();
+            this.consumerIndex = new AtomicLong();
+        }
+
+        static int roundToPowerOfTwo(final int value) {
+            return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
         }
 
         @Override
@@ -98,7 +108,7 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
 
         @Override
         public void onNext(T item) {
-            queue.offer(item);
+            offer(item);
             drain();
         }
 
@@ -106,12 +116,14 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
         public void onError(Throwable throwable) {
             error = throwable;
             upstreamDone = true;
+            upstream = SubscriptionHelper.CANCELED;
             drain();
         }
 
         @Override
         public void onComplete() {
             upstreamDone = true;
+            upstream = SubscriptionHelper.CANCELED;
             drain();
         }
 
@@ -149,7 +161,7 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
                 if (canceled) {
                     iterator = null;
                     currentIterator = null;
-                    queue.clear();
+                    clear();
                 } else {
                     if (upstreamDone) {
                         Throwable ex = error;
@@ -161,13 +173,13 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
                     }
                     if (iterator == null) {
                         boolean d = upstreamDone;
-                        T item = queue.poll();
+                        T item = poll();
                         boolean empty = item == null;
 
                         if (d && empty) {
                             canceled = true;
                             downstream.onComplete();
-                            continue;
+                            return;
                         }
 
                         if (!empty) {
@@ -186,10 +198,6 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
                                         mapper.apply(item).iterator(),
                                         "The Iterable returned a null iterator"
                                 );
-
-                                if (canceled) {
-                                    continue;
-                                }
 
                                 hasNext = iterator.hasNext();
                             } catch (Throwable ex) {
@@ -265,6 +273,50 @@ final class MultiFlatMapIterable<T, R> implements Multi<R> {
                 emitted = e;
                 missed = addAndGet(-missed);
                 if (missed == 0) {
+                    break;
+                }
+            }
+        }
+
+        void offer(T item) {
+            AtomicReferenceArray<T> queue = this.queue;
+            AtomicLong producerIndex = this.producerIndex;
+
+            long pi = producerIndex.get();
+            int mask = queue.length() - 1;
+            int offset = (int) pi & mask;
+
+            queue.lazySet(offset, item);
+            producerIndex.lazySet(pi + 1);
+        }
+
+        T poll() {
+            AtomicReferenceArray<T> queue = this.queue;
+            AtomicLong consumerIndex = this.consumerIndex;
+
+            long ci = consumerIndex.get();
+            int mask = queue.length() - 1;
+            int offset = (int) ci & mask;
+
+            T item = queue.get(offset);
+            if (item == null) {
+                return null;
+            }
+            queue.lazySet(offset, null);
+            consumerIndex.lazySet(ci + 1);
+            return item;
+        }
+
+        boolean isEmpty() {
+            AtomicLong producerIndex = this.producerIndex;
+            AtomicLong consumerIndex = this.consumerIndex;
+
+            return producerIndex.get() == consumerIndex.get();
+        }
+
+        void clear() {
+            for (;;) {
+                if (poll() == null) {
                     break;
                 }
             }
