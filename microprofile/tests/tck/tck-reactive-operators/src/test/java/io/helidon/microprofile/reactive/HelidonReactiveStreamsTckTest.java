@@ -32,6 +32,7 @@ import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CustomCoupled
 import org.eclipse.microprofile.reactive.streams.operators.tck.spi.ReactiveStreamsSpiVerification;
 import org.reactivestreams.tck.TestEnvironment;
 import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Factory;
 
 public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
@@ -43,6 +44,20 @@ public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonRea
     @Override
     protected HelidonReactiveStreamsEngine createEngine() {
         return new HelidonReactiveStreamsEngine();
+    }
+
+    private ExecutorService executor;
+
+    @BeforeSuite(alwaysRun = true)
+    public void before() {
+        executor = Executors.newSingleThreadExecutor();
+        HelidonReactiveStreamsEngine.setCoupledExecutor(executor);
+    }
+
+    @AfterSuite(alwaysRun = true)
+    public void after() {
+        HelidonReactiveStreamsEngine.setCoupledExecutor(null);
+        executor.shutdown();
     }
 
 }
