@@ -125,6 +125,11 @@
                     <groupId>com.fasterxml.jackson.dataformat</groupId>
                     <artifactId>jackson-dataformat-yaml</artifactId>
                 </exclusion>
+                <!-- Start of exclusions to resolve dependency convergence issues -->
+                <exclusion>
+                    <groupId>org.jboss.logging</groupId>
+                    <artifactId>jboss-logging</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -156,6 +161,10 @@
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
