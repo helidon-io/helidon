@@ -17,9 +17,11 @@
 
 package io.helidon.microprofile.reactive;
 
-
 import java.util.concurrent.CompletionStage;
 
+import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.spi.Graph;
 import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.eclipse.microprofile.reactive.streams.operators.spi.SubscriberWithCompletionStage;
@@ -28,36 +30,54 @@ import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 
 /**
- * Implementation of {@link org.reactivestreams Reactive Streams} with operators
- * backed by {@link io.helidon.common.reactive Helidon reactive streams}.
- *
- * @see org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine
+ * Captures the {@link Graph} instance when used with various build methods.
  */
-public class HelidonReactiveStreamEngine implements ReactiveStreamsEngine {
+final class HelidonReactiveGraphCaptureEngine implements ReactiveStreamsEngine {
+
+    private Graph graph;
+
+    private HelidonReactiveGraphCaptureEngine() {
+    }
+
+    public static Graph capture(PublisherBuilder<?> builder) {
+        HelidonReactiveGraphCaptureEngine engine = new HelidonReactiveGraphCaptureEngine();
+        builder.buildRs(engine);
+        return engine.graph;
+    }
+
+    public static Graph capture(ProcessorBuilder<?, ?> builder) {
+        HelidonReactiveGraphCaptureEngine engine = new HelidonReactiveGraphCaptureEngine();
+        builder.buildRs(engine);
+        return engine.graph;
+    }
+
+    public static Graph capture(SubscriberBuilder<?, ?> builder) {
+        HelidonReactiveGraphCaptureEngine engine = new HelidonReactiveGraphCaptureEngine();
+        builder.build(engine);
+        return engine.graph;
+    }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> Publisher<T> buildPublisher(Graph graph) throws UnsupportedStageException {
-        return GraphBuilder.create().from(graph).getPublisher();
+        this.graph = graph;
+        return null;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T, R> SubscriberWithCompletionStage<T, R> buildSubscriber(Graph graph) throws UnsupportedStageException {
-        return GraphBuilder.create().from(graph).getSubscriberWithCompletionStage();
+        this.graph = graph;
+        return null;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T, R> Processor<T, R> buildProcessor(Graph graph) throws UnsupportedStageException {
-        return GraphBuilder.create().from(graph).getProcessor();
+        this.graph = graph;
+        return null;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> CompletionStage<T> buildCompletion(Graph graph) throws UnsupportedStageException {
-        return GraphBuilder.create().from(graph).getCompletionStage();
+        this.graph = graph;
+        return null;
     }
 }
-
-

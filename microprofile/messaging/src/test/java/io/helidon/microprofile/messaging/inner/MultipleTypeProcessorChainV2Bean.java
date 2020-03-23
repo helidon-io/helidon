@@ -17,11 +17,12 @@
 
 package io.helidon.microprofile.messaging.inner;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.microprofile.messaging.CountableTestBean;
-import io.helidon.microprofile.reactive.MultiRS;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -47,7 +48,7 @@ public class MultipleTypeProcessorChainV2Bean implements CountableTestBean {
 
     @Outgoing("inner-processor")
     public Publisher<String> produceMessage() {
-        return MultiRS.just(TEST_DATA.stream());
+        return FlowAdapters.toPublisher(Multi.from(() -> TEST_DATA.stream().iterator()));
     }
 
     @Incoming("inner-processor")

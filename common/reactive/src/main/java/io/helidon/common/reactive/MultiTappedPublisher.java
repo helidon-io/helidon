@@ -122,6 +122,19 @@ final class MultiTappedPublisher<T> implements Multi<T> {
         );
     }
 
+    @Override
+    public Multi<T> onCancel(Runnable onCancel) {
+        return new MultiTappedPublisher<>(
+                source,
+                onSubscribeCallback,
+                onNextCallback,
+                onErrorCallback,
+                onCompleteCallback,
+                onRequestCallback,
+                RunnableChain.combine(onCancelCallback, onCancel)
+        );
+    }
+
     static final class MultiTappedSubscriber<T> implements Flow.Subscriber<T>, Flow.Subscription {
 
         private final Flow.Subscriber<? super T> downstream;
@@ -163,7 +176,9 @@ final class MultiTappedPublisher<T> implements Multi<T> {
             Objects.requireNonNull(subscription, "subscription is null");
             if (upstream != null) {
                 subscription.cancel();
-                throw new IllegalStateException("Subscription already set!");
+                // FIXME Microprofile RS doesn't like if this throws
+                // throw new IllegalStateException("Subscription already set!");
+                return;
             }
             upstream = subscription;
             if (onSubscribeCallback != null) {

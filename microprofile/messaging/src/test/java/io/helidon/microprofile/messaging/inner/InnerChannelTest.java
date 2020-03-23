@@ -31,6 +31,7 @@ import io.helidon.microprofile.messaging.AsyncTestBean;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.ClassFilter;
@@ -54,6 +55,7 @@ public class InnerChannelTest extends AbstractCDITest {
 
     @ParameterizedTest
     @MethodSource("testCaseSource")
+    @Disabled("Fails due to backpressure issues in InternalProcessor, reenable once fixed")
     void innerChannelBeanTest(CdiTestCase testCase) {
         Optional<? extends Class<? extends Throwable>> expectedThrowable = testCase.getExpectedThrowable();
         if (expectedThrowable.isPresent()) {

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
@@ -356,6 +357,34 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * <p>
+     *     A null result from the CompletionStage will yield a
+     *     {@link NullPointerException} signal.
+     * </p>
+     * @param completionStage the CompletionStage to
+     * @param <T> the element type of the stage and result
+     * @return Multi
+     * @see #from(CompletionStage, boolean)
+     */
+    static <T> Multi<T> from(CompletionStage<T> completionStage) {
+        return from(completionStage, false);
+    }
+
+    /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * @param completionStage the CompletionStage to
+     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
+     *                       if false, the resulting sequence fails with {@link NullPointerException}
+     * @param <T> the element type of the stage and result
+     * @return Multi
+     */
+    static <T> Multi<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
+        return new MultiFromCompletionStage<>(completionStage, nullMeansEmpty);
+    }
+
+    /**
      * Create a {@link Multi} instance wrapped around the given publisher.
      *
      * @param <T>    item type
@@ -543,6 +572,22 @@ public interface Multi<T> extends Subscribable<T> {
                 null,
                 null,
                 null);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when a cancel signal is received.
+     *
+     * @param onCancel {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onCancel(Runnable onCancel) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                null,
+                null,
+                null,
+                onCancel);
     }
 
     /**

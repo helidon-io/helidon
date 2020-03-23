@@ -31,8 +31,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.microprofile.reactive.hybrid.HybridPublisher;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -255,7 +253,7 @@ class MethodSignatureResolverTest {
 
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.OUTGOING_PUBLISHER_PAYL_2_VOID)
-    public HybridPublisher<String> extendedPublisher() {
+    public Publisher<String> extendedPublisher() {
         return null;
     }
 

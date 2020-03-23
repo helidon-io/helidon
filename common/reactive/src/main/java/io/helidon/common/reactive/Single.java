@@ -297,6 +297,34 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * <p>
+     *     A null result from the CompletionStage will yield a
+     *     {@link NullPointerException} signal.
+     * </p>
+     * @param completionStage the CompletionStage to
+     * @param <T> the element type of the stage and result
+     * @return Single
+     * @see #from(CompletionStage, boolean)
+     */
+    static <T> Single<T> from(CompletionStage<T> completionStage) {
+        return from(completionStage, false);
+    }
+
+    /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * @param completionStage the CompletionStage to
+     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
+     *                       if false, the resulting sequence fails with {@link NullPointerException}
+     * @param <T> the element type of the stage and result
+     * @return Single
+     */
+    static <T> Single<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
+        return new SingleFromCompletionStage<>(completionStage, nullMeansEmpty);
+    }
+
+    /**
      * Signals a {@link TimeoutException} if the upstream doesn't signal an item, error
      * or completion within the specified time.
      * @param timeout the time to wait for the upstream to signal
@@ -310,7 +338,6 @@ public interface Single<T> extends Subscribable<T> {
         Objects.requireNonNull(executor, "executor is null");
         return new SingleTimeout<>(this, timeout, unit, executor, null);
     }
-
 
     /**
      * Switches to a fallback single if the upstream doesn't signal an item, error
@@ -361,7 +388,7 @@ public interface Single<T> extends Subscribable<T> {
     /**
      * Executes given {@link java.lang.Runnable} when onComplete signal is received.
      *
-     * @param onComplete  {@link java.lang.Runnable} to be executed.
+     * @param onComplete {@link java.lang.Runnable} to be executed.
      * @return Single
      */
     default Single<T> onComplete(Runnable onComplete) {
@@ -388,6 +415,22 @@ public interface Single<T> extends Subscribable<T> {
                 null,
                 null,
                 null);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when a cancel signal is received.
+     *
+     * @param onCancel {@link java.lang.Runnable} to be executed.
+     * @return Single
+     */
+    default Single<T> onCancel(Runnable onCancel) {
+        return new SingleTappedPublisher<>(this,
+                null,
+                null,
+                null,
+                null,
+                null,
+                onCancel);
     }
 
     /**

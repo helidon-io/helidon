@@ -124,4 +124,17 @@ final class SingleTappedPublisher<T> implements Single<T> {
                 onCancelCallback
         );
     }
+
+    @Override
+    public Single<T> onCancel(Runnable onCancel) {
+        return new SingleTappedPublisher<>(
+                source,
+                onSubscribeCallback,
+                onNextCallback,
+                onErrorCallback,
+                onCompleteCallback,
+                onRequestCallback,
+                RunnableChain.combine(onCancelCallback, onCancel)
+        );
+    }
 }

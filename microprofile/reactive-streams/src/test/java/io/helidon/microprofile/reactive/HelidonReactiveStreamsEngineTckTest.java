@@ -17,32 +17,28 @@
 
 package io.helidon.microprofile.reactive;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
-
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreamsFactory;
-import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.eclipse.microprofile.reactive.streams.operators.tck.ReactiveStreamsTck;
-import org.eclipse.microprofile.reactive.streams.operators.tck.api.ReactiveStreamsApiVerification;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CoupledStageVerification;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CustomCoupledStageVerification;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.ReactiveStreamsSpiVerification;
 import org.reactivestreams.tck.TestEnvironment;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.Factory;
 
-public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
+public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
-    public HelidonReactiveStreamsTckTest() {
-        super(new TestEnvironment(200));
+    public HelidonReactiveStreamsEngineTckTest() {
+        super(new TestEnvironment(50));
     }
 
     @Override
     protected HelidonReactiveStreamsEngine createEngine() {
-        return new HelidonReactiveStreamsEngine();
+        return HelidonReactiveStreamsEngine.INSTANCE;
     }
 
+    @Override
+    protected ReactiveStreamsFactory createFactory() {
+        return HelidonReactivePublisherFactory.INSTANCE;
+    }
+
+    @Override
+    protected boolean isEnabled(Object test) {
+        return true;
+    }
 }

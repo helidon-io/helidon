@@ -48,5 +48,9 @@
     <!-- Webserver project -->
     <suppress id="Javadoc.javadocNoAuthor"
             files="webserver/UriComponent\.java"/>
+
+    <!-- Building a Graph involves a lot of instanceof checks and state manipulation.  -->
+    <suppress checks="MethodLength"
+              files="HelidonReactiveStreamsEngine\.java"/>
 </suppressions>
 
