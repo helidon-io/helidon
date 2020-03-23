@@ -37,6 +37,6 @@ public class ReactiveService implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get("/", (req, res) -> res.send("Context: " + security));
+        rules.get("/", (req, res) -> res.send("Security: " + security));
     }
 }
