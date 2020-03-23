@@ -22,6 +22,7 @@ sources:
       optional: true
       path: "mp-config.yaml"
   - type: "classpath"
+    multi-source: true
     properties:
       resource: "META-INF/microprofile-config.properties"
 

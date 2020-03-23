@@ -28,6 +28,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
  * A resource to test.
@@ -50,6 +51,8 @@ public class JaxRsResource {
     private UriInfo uriInfo;
 
     @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @APIResponse(name="hello", responseCode = "200", description = "Hello world message")
     public String hello() {
         LOGGER.info("This message is here to make sure runtime logging configuration works");
         return "Hello World " + uriInfo.getPath();
@@ -57,6 +60,7 @@ public class JaxRsResource {
 
     @GET
     @Path("/property")
+    @APIResponse(name="normal", responseCode = "200", description = "Value of property 'app.message' from config.")
     public String message() {
         return message;
     }

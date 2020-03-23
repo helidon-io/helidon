@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -77,25 +78,38 @@ public final class Mp1Main {
         // start CDI
         //Main.main(args);
 
-        Server.builder()
-                .port(8087)
+        Server server = Server.builder()
+                .port(0)
                 .applications(new JaxRsApplicationNoCdi())
                 .retainDiscoveredApplications(true)
                 .basePath("/cdi")
                 .build()
                 .start();
 
+        boolean failed = false;
         long now = System.currentTimeMillis();
-        testBean(jwtToken);
+        try {
+            testBean(server.port(), jwtToken);
+        } catch (Exception e) {
+            e.printStackTrace();
+            failed = true;
+        }
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
 
-        try {
-            Thread.sleep(5000);
-            System.setProperty("app.message", "New message through change support");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        server.stop();
+
+        if (failed) {
+            System.exit(-1);
         }
+
+
+//        try {
+//            Thread.sleep(5000);
+//            System.setProperty("app.message", "New message through change support");
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     private static String generateJwtToken() {
@@ -135,9 +149,9 @@ public final class Mp1Main {
         }
     }
 
-    private static void testBean(String jwtToken) {
+    private static void testBean(int port, String jwtToken) {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://localhost:8087");
+        WebTarget target = client.target("http://localhost:" + port);
 
         // select a bean
         Instance<TestBean> select = CDI.current().select(TestBean.class);
@@ -198,6 +212,9 @@ public final class Mp1Main {
         // Health Checks
         validateHealth(collector, target);
 
+        // OpenAPI
+        validateOpenAPI(collector, target);
+
         collector.collect()
                 .checkValid();
     }
@@ -230,7 +247,6 @@ public final class Mp1Main {
         testScopeNoAuth(collector, jwtTarget, path);
         testScopeAuth(collector, jwtTarget, path, authorizationHeader, true);
 
-
         // role
         testRoleNoAuth(collector, jwtTarget, path);
         testRoleAuth(collector, jwtTarget, path, authorizationHeader, true);
@@ -250,6 +266,103 @@ public final class Mp1Main {
             // could not find how to get the actual instance of tracer from API
             collector.fatal(tracer, "This application should be configured with Jaeger tracer, yet it is not: " + tracer);
         }
+    }
+
+    private static void validateOpenAPI(Errors.Collector collector, WebTarget target) {
+        JsonObject openApi = target.path("/openapi")
+                .request(MediaType.APPLICATION_JSON)
+                .get(JsonObject.class);
+
+        // make sure we have all our applications, and for one method check annots are processed
+        JsonObject info = openApi.getJsonObject("info");
+        String expected = "Generated API";
+        if (null == info) {
+            collector.fatal("OpenAPI", "info from OpenAPI response is null");
+            return;
+        }
+        String actual = info.getString("title");
+        if (!expected.equals(actual)) {
+            collector.fatal("OpenAPI", "info.title should be \"" + expected + "\", but is \"" + actual + "\"");
+        }
+        JsonObject paths = openApi.getJsonObject("paths");
+        // each subkey is one path
+        Set<String> actualPaths = paths.keySet();
+
+        // for each application
+        checkPlainApp(collector, actualPaths, "/cdi");
+        checkPlainApp(collector, actualPaths, "/noncdi");
+        checkProtectedApp(collector, actualPaths, "/basic");
+        checkProtectedApp(collector, actualPaths, "/jwt");
+        checkProtectedApp(collector, actualPaths, "/oidc");
+
+        checkJsonContentType(collector, openApi, "/cdi/jsonb");
+        checkJsonContentType(collector, openApi, "/noncdi/jsonb");
+
+        checkDescription(collector, openApi, "/noncdi", "Hello world message");
+        checkDescription(collector, openApi, "/noncdi/property", "Value of property 'app.message' from config.");
+        checkDescription(collector, openApi, "/cdi", "Hello world message");
+        checkDescription(collector, openApi, "/cdi/property", "Value of property 'app.message' from config.");
+    }
+
+    private static void checkDescription(Errors.Collector collector, JsonObject openApi, String path, String expected) {
+        String actual = openApi.getJsonObject("paths")
+                .getJsonObject(path)
+                .getJsonObject("get")
+                .getJsonObject("responses")
+                .getJsonObject("200")
+                .getString("description");
+
+        if (expected.equals(actual)) {
+            return;
+        }
+
+        collector.fatal("OpenAPI", "Description on path " + path + " should be \""
+                + expected + "\", but is \"" + actual + "\"");
+    }
+
+    private static void checkJsonContentType(Errors.Collector collector, JsonObject openApi, String path) {
+        JsonObject jsonObject = openApi.getJsonObject("paths")
+                .getJsonObject(path)
+                .getJsonObject("get")
+                .getJsonObject("responses")
+                .getJsonObject("200")
+                .getJsonObject("content");
+
+        if (!jsonObject.containsKey("application/json")) {
+            collector.fatal("OpenAPI", "Path " + path + " should have type application/json");
+        }
+    }
+
+    private static void checkProtectedApp(Errors.Collector collector, Set<String> actualPaths, String path) {
+        // publicHello()
+        checkPathExists(collector, actualPaths, path + "/public");
+        // scope()
+        checkPathExists(collector, actualPaths, path + "/scope");
+        // role()
+        checkPathExists(collector, actualPaths, path + "/role");
+    }
+
+    private static void checkPlainApp(Errors.Collector collector, Set<String> actualPaths, String path) {
+        // hello()
+        checkPathExists(collector, actualPaths, path);
+        // message()
+        checkPathExists(collector, actualPaths, path + "/property");
+        // jaxRsMessage()
+        checkPathExists(collector, actualPaths, path + "/jaxrsproperty");
+        // number()
+        checkPathExists(collector, actualPaths, path + "/number");
+        // jsonObject()
+        checkPathExists(collector, actualPaths, path + "/jsonp");
+        // jsonBinding()
+        checkPathExists(collector, actualPaths, path + "/jsonb");
+    }
+
+    private static void checkPathExists(Errors.Collector collector, Set<String> actualPaths, String expectedPath) {
+        if (actualPaths.contains(expectedPath)) {
+            return;
+        }
+
+        collector.fatal("openAPI", "OpenAPI document does not contain documentation of endpoint " + expectedPath);
     }
 
     private static void validateHealth(Errors.Collector collector, WebTarget target) {
@@ -372,7 +485,6 @@ public final class Mp1Main {
             collector.fatal(assertionName + ", expected \"" + expected + "\", actual: \"" + actual + "\"");
         }
     }
-
 
     private static void testPublic(Errors.Collector collector, WebTarget target, String path) {
         // public
