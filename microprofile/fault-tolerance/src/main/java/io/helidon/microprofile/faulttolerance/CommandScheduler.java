@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class CommandScheduler implements Scheduler {
 
     /**
      * If no command scheduler exists, creates one using default values.
-     * Disables daemon threads.
+     * The created command scheduler uses daemon threads, so the JVM shuts-down if these are the only ones running.
      *
      * @param threadPoolSize Size of thread pool for async commands.
      * @return Existing scheduler or newly created one.
@@ -49,7 +49,7 @@ public class CommandScheduler implements Scheduler {
     public static synchronized CommandScheduler create(int threadPoolSize) {
         if (instance == null) {
             instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
-                    .daemon(false)
+                    .daemon(true)
                     .threadNamePrefix(THREAD_NAME_PREFIX)
                     .corePoolSize(threadPoolSize)
                     .prestart(false)

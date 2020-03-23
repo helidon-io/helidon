@@ -30,21 +30,21 @@ public class JaxRsProtectedResource {
     @GET
     @Path("/public")
     @PermitAll
-    public String hello() {
+    public String publicHello() {
         return "Hello anybody";
     }
 
     @GET
     @Path("/scope")
     @ScopeValidator.Scope("admin_scope")
-    public String message() {
+    public String scope() {
         return "Hello scope";
     }
 
     @GET
     @Path("/role")
     @RolesAllowed("admin")
-    public String jaxRsMessage() {
+    public String role() {
         return "Hello role";
     }
 }

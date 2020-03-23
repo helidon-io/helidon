@@ -40,6 +40,7 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingBuilders;
@@ -63,6 +64,10 @@ public class OpenApiCdiExtension implements Extension {
     private static final String INDEX_PATH = "META-INF/jandex.idx";
 
     private static final Logger LOGGER = Logger.getLogger(OpenApiCdiExtension.class.getName());
+
+    static {
+        HelidonFeatures.register("OpenAPI");
+    }
 
     private final List<URL> indexURLs;
 
@@ -164,20 +169,29 @@ public class OpenApiCdiExtension implements Extension {
 
     private IndexView indexFromHarvestedClasses() throws IOException {
         Indexer indexer = new Indexer();
-        for (Class<?> c : annotatedTypes) {
-            try (InputStream is = contextClassLoader().getResourceAsStream(resourceNameForClass(c))) {
-                indexer.index(is);
-            } catch (IOException ex) {
-                throw new IOException("Cannot load bytecode from class "
-                                              + c.getName() + " at " + resourceNameForClass(c)
-                                              + " for annotation processing", ex);
-            }
-        }
+        annotatedTypes.forEach(c -> addClassToIndexer(indexer, c));
+
+        /*
+         * Some apps might be added dynamically, not via annotation processing. Add those classes to the index if they are not
+         * already present.
+         */
+        MPOpenAPIBuilder.appInstancesToRun().stream()
+                .filter(c -> !annotatedTypes.contains(c))
+                .forEach(app -> addClassToIndexer(indexer, app.getClass()));
 
         LOGGER.log(Level.CONFIG, "Using internal Jandex index created from CDI bean discovery");
         Index result = indexer.complete();
         dumpIndex(Level.FINER, result);
         return result;
+    }
+
+    private void addClassToIndexer(Indexer indexer, Class<?> c) {
+        try (InputStream is = contextClassLoader().getResourceAsStream(resourceNameForClass(c))) {
+            indexer.index(is);
+        } catch (IOException ex) {
+            throw new RuntimeException(String.format("Cannot load bytecode from class %s at %s for annotation processing",
+                    c.getName(), resourceNameForClass(c)), ex);
+        }
     }
 
     private List<URL> findIndexFiles(String... indexPaths) throws IOException {

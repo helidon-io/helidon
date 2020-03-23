@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
@@ -204,6 +205,35 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper) {
         return flatMapIterable(iterableMapper, 32);
+    }
+
+    /**
+     * Re-emit the upstream's signals to the downstream on the given executor's thread
+     * using a default buffer size of 32 and errors skipping ahead of items.
+     * @param executor the executor to signal the downstream from.
+     * @return Multi
+     * @throws NullPointerException if {@code executor} is {@code null}
+     * @see #observeOn(Executor, int, boolean)
+     */
+    default Multi<T> observeOn(Executor executor) {
+        return observeOn(executor, 32, false);
+    }
+
+    /**
+     * Re-emit the upstream's signals to the downstream on the given executor's thread.
+     * @param executor the executor to signal the downstream from.
+     * @param bufferSize the number of items to prefetch and buffer at a time
+     * @param delayError if {@code true}, errors are emitted after items,
+     *                   if {@code false}, errors may cut ahead of items during emission
+     * @return Multi
+     * @throws NullPointerException if {@code executor} is {@code null}
+     */
+    default Multi<T> observeOn(Executor executor, int bufferSize, boolean delayError) {
+        Objects.requireNonNull(executor, "executor is null");
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("bufferSize > 0 required");
+        }
+        return new MultiObserveOn<>(this, executor, bufferSize, delayError);
     }
 
     /**

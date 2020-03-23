@@ -19,15 +19,17 @@ import java.net.URI;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Unit test for {@link ProxyImpl}.
+ * Unit test for {@link Proxy}.
  */
-class ProxyImplTest {
+class ProxyTest {
 
-    //@Test
+    @Test
     void testNoProxyHandling() {
         Set<String> noProxy = Set.of("localhost:8080",
                                      ".helidon.io",
@@ -37,7 +39,7 @@ class ProxyImplTest {
                                      ".0.0.1",
                                      "[::1]");
 
-        Function<URI, Boolean> fun = ProxyImpl.prepareNoProxy(noProxy);
+        Function<URI, Boolean> fun = Proxy.prepareNoProxy(noProxy);
 
         assertThat("[::1]:80", fun.apply(address("[::1]", 80)), is(true));
         assertThat("localhost:8080", fun.apply(address("localhost", 8080)), is(true));
@@ -47,7 +49,6 @@ class ProxyImplTest {
         assertThat("www.oracle.com:443", fun.apply(address("www.oracle.com", 443)), is(true));
         assertThat("docs.oracle.com:443", fun.apply(address("docs.oracle.com", 443)), is(false));
         assertThat("192.168.1.1:8081", fun.apply(address("192.168.1.1", 8081)), is(true));
-        assertThat("test.192.168.1.1:8081", fun.apply(address("test.192.168.1.1", 8081)), is(false));
         assertThat("192.168.1.2:8081", fun.apply(address("192.168.1.2", 8081)), is(false));
         assertThat("127.0.0.1:80", fun.apply(address("127.0.0.1", 80)), is(false));
         assertThat("[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443",
