@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -84,7 +84,6 @@ $(basename ${0}) [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V
 EOF
 }
 
-readonly SCRATCH=$(mktemp -d /var/tmp/helidon-smoke.XXXX) 
 
 # parse command line args
 ARGS=( "${@}" )
@@ -138,6 +137,10 @@ fi
 
 readonly SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
 
+readonly DATESTAMP=$(date +%Y-%m-%d)
+mkdir -p /var/tmp/helidon-smoke
+readonly SCRATCH=$(mktemp -d /var/tmp/helidon-smoke/${VERSION}-${DATESTAMP}.XXXX)
+
 if [ -z "${GIT_URL}" ] ; then
   cd ${SCRIPT_DIR}
   GIT_URL=$(git remote get-url origin)
@@ -176,6 +179,7 @@ full(){
 
 waituntilready() {
   # Give app a chance to start --retry will retry until it is up
+  # --retry-connrefused requires curl 7.51.0 or newer
   sleep 3
   curl -s --retry-connrefused --retry 3 -X GET http://localhost:8080/health/live
   echo
@@ -260,7 +264,7 @@ echo "===== Log file: ${OUTPUTFILE} ====="
 
 if [ ! -z "${CLEAN_MVN_REPO}" -a -d "${LOCAL_MVN_REPO}" ]; then
   echo "===== Cleaning release from local maven repository ${LOCAL_MVN_REPO}  ====="
-  find -d ${LOCAL_MVN_REPO}/io/helidon  -name ${VERSION} -type d -exec rm -rf {} \; 
+  find ${LOCAL_MVN_REPO}/io/helidon -depth  -name ${VERSION} -type d -exec rm -rf {} \;
 fi
 
 # Invoke command
