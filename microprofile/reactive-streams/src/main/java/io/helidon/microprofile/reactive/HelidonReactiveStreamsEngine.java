@@ -527,16 +527,14 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
     }
 
     static void complete(CompletableFuture<Object> cf) {
-        coupledExecutor.submit(() -> {
+        coupledExecutor.execute(() -> {
             cf.complete(null);
-            return null;
         });
     }
 
     static void fail(CompletableFuture<Object> cf, Throwable ex) {
-        coupledExecutor.submit(() -> {
+        coupledExecutor.execute(() -> {
             cf.completeExceptionally(ex);
-            return null;
         });
     }
 
