@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -836,6 +836,16 @@ public final class Http {
          * Informs the server of proxies through which the request was sent.
          */
         public static final String VIA = "Via";
+        /**
+         * The <code>{@value}</code> header name.
+         * Indicates whether the response can be shared with requesting code from the given origin.
+         */
+        public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+        /**
+         * The <code>{@value}</code> header name.
+         * Specifies the method or methods allowed when accessing the resource in response to a preflight request
+         */
+        public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
         /**
          * The <code>{@value}</code> header name.
          * Specifies which patch document formats this server supports.

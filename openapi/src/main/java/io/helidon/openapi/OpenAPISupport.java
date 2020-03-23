@@ -123,6 +123,7 @@ public class OpenAPISupport implements Service {
     private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = null;
 
     private final String webContext;
+    private final boolean corsEnabled;
 
     private final OpenAPI model;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
@@ -132,6 +133,7 @@ public class OpenAPISupport implements Service {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
+        corsEnabled = builder.isCorsEnabled();
         model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.perAppFilteredIndexViews());
     }
 
@@ -315,6 +317,10 @@ public class OpenAPISupport implements Service {
             final String openAPIDocument = prepareDocument(resultMediaType);
             resp.status(Http.Status.OK_200);
             resp.headers().add(Http.Header.CONTENT_TYPE, resultMediaType.toString());
+            if (corsEnabled) {
+                resp.headers().add(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                resp.headers().add(Http.Header.ACCESS_CONTROL_ALLOW_METHODS, "GET, OPTIONS, HEAD, PUT, POST");
+            }
             resp.send(openAPIDocument);
         } catch (Exception ex) {
             resp.status(Http.Status.INTERNAL_SERVER_ERROR_500);
@@ -628,6 +634,7 @@ public class OpenAPISupport implements Service {
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
+        private Optional<Boolean> corsEnabled = Optional.empty();
 
         @Override
         public OpenAPISupport build() {
@@ -652,6 +659,9 @@ public class OpenAPISupport implements Service {
             config.get("static-file")
                     .asString()
                     .ifPresent(this::staticFile);
+            config.get("cors")
+                    .asBoolean()
+                    .ifPresent(this::enableCors);
             return this;
         }
 
@@ -671,6 +681,15 @@ public class OpenAPISupport implements Service {
                 LOGGER.log(Level.FINE, "OpenAPI path defaulting to {0}", webContextPath);
             }
             return webContextPath;
+        }
+
+        /**
+         * Returns the configuration of CORS support for OpenAPI endpoint.
+         *
+         * @return
+         */
+        boolean isCorsEnabled() {
+            return corsEnabled.orElse(false);
         }
 
         /**
@@ -714,6 +733,17 @@ public class OpenAPISupport implements Service {
                 path = "/" + path;
             }
             this.webContext = Optional.of(path);
+            return this;
+        }
+
+        /**
+         * Enable/Disable CORS support.
+         *
+         * @param enabled Enable/Disable CORS support
+         * @return updated builder instance
+         */
+        public Builder enableCors(Boolean enabled) {
+            this.corsEnabled = Optional.of(enabled);
             return this;
         }
 

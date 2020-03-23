@@ -162,6 +162,7 @@ Helidon SE also supports additional properties.
  `META-INF/openapi.yml`,
  `META-INF/openapi.yaml`, or
  `META-INF/openapi.json`)
+ |`openapi.cors`        | Allows CORS support to be enabled/disabled (default=false)
 |===
 
 Set these config properties in one of the config sources your app uses so the
