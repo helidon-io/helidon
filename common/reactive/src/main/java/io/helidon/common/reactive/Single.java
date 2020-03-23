@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
@@ -140,6 +141,17 @@ public interface Single<T> extends Subscribable<T> {
     default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new SingleFlatMapIterable<>(this, mapper);
+    }
+
+    /**
+     * Re-emit the upstream's signals to the downstream on the given executor's thread.
+     * @param executor the executor to signal the downstream from.
+     * @return Single
+     * @throws NullPointerException if {@code executor} is {@code null}
+     */
+    default Single<T> observeOn(Executor executor) {
+        Objects.requireNonNull(executor, "executor is null");
+        return new SingleObserveOn<>(this, executor);
     }
 
     /**
