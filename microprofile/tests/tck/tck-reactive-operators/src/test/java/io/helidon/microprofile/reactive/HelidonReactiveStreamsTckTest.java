@@ -32,10 +32,11 @@ import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CoupledStageV
 import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CustomCoupledStageVerification;
 import org.eclipse.microprofile.reactive.streams.operators.tck.spi.ReactiveStreamsSpiVerification;
 import org.reactivestreams.tck.TestEnvironment;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.Factory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
+@Test
 public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
     public HelidonReactiveStreamsTckTest() {
@@ -49,16 +50,20 @@ public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonRea
 
     private ExecutorService executor;
 
-    @BeforeSuite(alwaysRun = true)
+    @BeforeClass(alwaysRun = true)
     public void before() {
         executor = Executors.newSingleThreadExecutor();
         HelidonReactiveStreamsEngine.setCoupledExecutor(executor);
     }
 
-    @AfterSuite(alwaysRun = true)
+    @AfterClass(alwaysRun = true)
     public void after() {
         HelidonReactiveStreamsEngine.setCoupledExecutor(null);
         executor.shutdown();
     }
 
+    @Test
+    public void hasExecutor() {
+        org.testng.Assert.assertNotNull(executor);
+    }
 }

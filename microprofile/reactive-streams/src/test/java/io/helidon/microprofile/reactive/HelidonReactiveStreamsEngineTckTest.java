@@ -24,9 +24,11 @@ import org.reactivestreams.tck.TestEnvironment;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
+@Test
 public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
     public HelidonReactiveStreamsEngineTckTest() {
@@ -50,16 +52,20 @@ public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<Heli
 
     private ExecutorService executor;
 
-    @BeforeSuite(alwaysRun = true)
+    @BeforeClass(alwaysRun = true)
     public void before() {
         executor = Executors.newSingleThreadExecutor();
         HelidonReactiveStreamsEngine.setCoupledExecutor(executor);
     }
 
-    @AfterSuite(alwaysRun = true)
+    @AfterClass(alwaysRun = true)
     public void after() {
         HelidonReactiveStreamsEngine.setCoupledExecutor(null);
         executor.shutdown();
     }
 
+    @Test
+    public void hasExecutor() {
+        org.testng.Assert.assertNotNull(executor);
+    }
 }
