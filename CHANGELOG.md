@@ -19,6 +19,7 @@ This is the third milestone release of Helidon 2.0.
 
 ### Backward incompatible changes
 
+- Reactive: io.commons.reactive.Flows removal [1572](https://github.com/oracle/helidon/pull/1572)
 
 ## [2.0.0-M2] 
 
