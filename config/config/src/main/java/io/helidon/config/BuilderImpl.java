@@ -18,7 +18,6 @@ package io.helidon.config;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -455,12 +454,7 @@ class BuilderImpl implements Config.Builder {
         hasEnvVarSource = true;
         hasSystemPropertiesSource = true;
 
-        prioritizedSources.add(new HelidonSourceWithPriority(ConfigSources.systemProperties()
-                                                                     .pollingStrategy(PollingStrategies
-                                                                                              .regular(Duration.ofSeconds(2))
-                                                                                              .build())
-                                                                     .build(),
-                                                             100));
+        prioritizedSources.add(new HelidonSourceWithPriority(ConfigSources.systemProperties().build(), 100));
         prioritizedSources.add(new HelidonSourceWithPriority(ConfigSources.environmentVariables(), 100));
         prioritizedSources.add(new HelidonSourceWithPriority(ConfigSources.classpath("application.yaml")
                                                                      .optional(true)
