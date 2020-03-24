@@ -37,7 +37,7 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotat
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
-import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueries;
+import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
@@ -236,7 +236,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     @Test
     public void testNumberFormats() throws IOException {
-        setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueries.class);
+        setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
         ExecutionResult result = executionContext.execute("query { simpleFormattingQuery { id name age bankBalance value longValue } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -247,7 +247,13 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(mapResults2.get("age"), is("50 years old"));
         assertThat(mapResults2.get("bankBalance"), is("$ 1200.00"));
         assertThat(mapResults2.get("value"), is("10 value"));
-        assertThat(mapResults2.get("longValue"), is("Long-123456789"));
+        assertThat(mapResults2.get("longValue"), is(BigInteger.valueOf(Long.MAX_VALUE)));
+
+        result = executionContext.execute("mutation { generateDoubleValue }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("generateDoubleValue"), is("Double-123456789"));
+
     }
 
     @Test

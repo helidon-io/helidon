@@ -16,29 +16,39 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import java.math.BigDecimal;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import org.eclipse.microprofile.graphql.GraphQLApi;
+import org.eclipse.microprofile.graphql.Mutation;
+import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
- * Class that holds queries that have various formatting types.
+ * Class that holds queries and mutations that have various formatting types.
  */
 @GraphQLApi
 @ApplicationScoped
-public class NumberFormatQueries {
+public class NumberFormatQueriesAndMutations {
 
     @Inject
     private TestDB testDB;
 
-    public NumberFormatQueries() {
+    public NumberFormatQueriesAndMutations() {
     }
 
     @Query("simpleFormattingQuery")
     public SimpleContactWithNumberFormats retrieveFormattedObject() {
-        return new SimpleContactWithNumberFormats(1, "Tim", 50, 1200.0f, 10, 123456789L);
+        return new SimpleContactWithNumberFormats(1, "Tim", 50, 1200.0f, 10, Long.MAX_VALUE);
+    }
+
+    @Mutation("generateDoubleValue")
+    @NumberFormat("Double-###########")
+    public Double generateDouble() {
+        return 123456789d;
     }
 }

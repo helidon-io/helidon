@@ -105,7 +105,7 @@ public class DataFetcherUtils {
      * @param <S>          type of the source
      * @return a new {@link DataFetcher}
      */
-    public static <S> DataFetcher<String> newNumberFormatDataFetcher(String propertyName, String type, String valueFormat, String locale) {
+    public static <S> DataFetcher<String> newNumberFormatPropertyDataFetcher(String propertyName, String type, String valueFormat, String locale) {
         NumberFormat numberFormat = getCorrectFormat(type, locale, valueFormat);
 
         return environment -> {

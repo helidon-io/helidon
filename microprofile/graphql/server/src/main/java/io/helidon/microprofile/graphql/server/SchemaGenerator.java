@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +43,7 @@ import java.util.stream.Stream;
 import javax.json.bind.annotation.JsonbTransient;
 
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetcherFactories;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
@@ -55,9 +57,11 @@ import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
 
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
@@ -263,6 +267,7 @@ public class SchemaGenerator {
                             .forEach(fd::addArgument);
                 }
 
+                // check for existing DataFetcher 
                 fd.setDataFetcher(DataFetcherUtils.newMethodDataFetcher(
                         dm.method.getDeclaringClass(), dm.method, dm.getSource(),
                         fd.getArguments().toArray(new SchemaArgument[0])));
@@ -454,8 +459,23 @@ public class SchemaGenerator {
             }
 
             if (fd != null) {
-                DataFetcher dataFetcher = DataFetcherUtils
-                        .newMethodDataFetcher(clazz, method, null, fd.getArguments().toArray(new SchemaArgument[0]));
+                DataFetcher dataFetcher = null;
+                String[] format = discoveredMethod.format;
+                if (format.length == 2) {
+                    // a format exists on the method return type so format it after returning the value
+                    final String graphQLType = getGraphQLType(fd.getReturnType());
+                    dataFetcher = DataFetcherFactories.wrapDataFetcher(DataFetcherUtils
+                            .newMethodDataFetcher(clazz, method, null, fd.getArguments().toArray(new SchemaArgument[0])),
+                                (d, v) -> {
+                                 NumberFormat numberFormat = getCorrectFormat(graphQLType, format[1], format[0]);
+                                 return v != null ? numberFormat.format(v) : null;
+                                });
+                    fd.setReturnType(STRING);
+                } else {
+                    // no formatting, just call the method
+                    dataFetcher = DataFetcherUtils
+                            .newMethodDataFetcher(clazz, method, null, fd.getArguments().toArray(new SchemaArgument[0]));
+                }
                 fd.setDataFetcher(dataFetcher);
 
                 schemaType.addFieldDefinition(fd);
@@ -602,13 +622,13 @@ public class SchemaGenerator {
             }
         }
 
-        // check for format on the return type of methods
+        // check for format on the property
         String[] format = method.getFormat();
         if (method.getPropertyName() != null && format != null && format.length == 2) {
             if (!isGraphQLType(valueClassName)) {
 
                 dataFetcher = DataFetcherUtils
-                        .newNumberFormatDataFetcher(method.getPropertyName(), graphQLType, format[0], format[1]);
+                        .newNumberFormatPropertyDataFetcher(method.getPropertyName(), graphQLType, format[0], format[1]);
                 // we must change the type of this to a String but keep the above type for the above data fetcher
                 graphQLType = SchemaGeneratorHelper.STRING;
             }
@@ -817,6 +837,16 @@ public class SchemaGenerator {
             }
         }
 
+        // check for method return type number format
+        String[] methodNumberFormat = getFormatAnnotation(method);
+        if (methodNumberFormat.length == 2) {
+            numberFormat = methodNumberFormat;
+        }
+
+        if (numberFormat.length == 2 && ID.equals(returnClazzName)) {
+            throw new RuntimeException("Unable to format an ID type");
+        }
+
         DiscoveredMethod discoveredMethod = new DiscoveredMethod();
         discoveredMethod.setName(varName);
         discoveredMethod.setMethod(method);
@@ -998,14 +1028,14 @@ public class SchemaGenerator {
 
         /**
          * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
-         * If true, then this indicates that a top level query shoudl also be created as well as the field in the type.
+         * If true, then this indicates that a top level query should also be created as well as the field in the type.
          */
         private boolean isQueryAnnotated = false;
 
         /**
          * Defines the format for a number or date.
          */
-        private String[] format;
+        private String[] format = new String[0];
 
         /**
          * Default constructor.

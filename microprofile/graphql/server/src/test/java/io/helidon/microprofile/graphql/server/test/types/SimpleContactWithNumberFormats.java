@@ -58,7 +58,6 @@ public class SimpleContactWithNumberFormats {
     }
 
     @NumberFormat("0 'id'")
-    
     public Integer getId() {
         return id;
     }
@@ -102,8 +101,7 @@ public class SimpleContactWithNumberFormats {
     public void setValue(Integer value) {
         this.value = value;
     }
-
-    @NumberFormat("Long-#############")
+    
     public Long getLongValue() {
         return longValue;
     }
