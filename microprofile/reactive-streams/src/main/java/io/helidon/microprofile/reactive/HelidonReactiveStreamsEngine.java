@@ -20,6 +20,7 @@ package io.helidon.microprofile.reactive;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
@@ -526,17 +527,31 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
     }
 
     static void complete(CompletableFuture<Object> cf) {
-        ForkJoinPool.commonPool().submit(() -> {
+        coupledExecutor.execute(() -> {
             cf.complete(null);
-            return null;
         });
     }
 
     static void fail(CompletableFuture<Object> cf, Throwable ex) {
-        ForkJoinPool.commonPool().submit(() -> {
+        coupledExecutor.execute(() -> {
             cf.completeExceptionally(ex);
-            return null;
         });
+    }
+
+    // Workaround for a TCK bug when calling cancel() from any method named onComplete().
+    private static volatile ExecutorService coupledExecutor = ForkJoinPool.commonPool();
+
+    /**
+     * Override the ExecutorService used by the cross-termination and cross-cancellation
+     * of a Coupled stage.
+     * @param executor the executor to use, null resets it to the default ForkJoinPool
+     */
+    public static void setCoupledExecutor(ExecutorService executor) {
+        if (executor == null) {
+            coupledExecutor = ForkJoinPool.commonPool();
+        } else {
+            coupledExecutor = executor;
+        }
     }
 }
 
