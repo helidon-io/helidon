@@ -107,6 +107,10 @@ public class DataFetcherUtils {
      */
     public static <S> DataFetcher<String> newNumberFormatPropertyDataFetcher(String propertyName, String type, String valueFormat, String locale) {
         NumberFormat numberFormat = getCorrectFormat(type, locale, valueFormat);
+        if (numberFormat == null) {
+            throw new RuntimeException("Unable to find number format for type="
+                                               + type + ", locale=" + locale + ", valueFormat=" + valueFormat);
+        }
 
         return environment -> {
             S source = environment.getSource();

@@ -25,10 +25,14 @@ import java.util.Locale;
 
 import javax.json.bind.annotation.JsonbNumberFormat;
 
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.*;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_LIST;
+
 /**
  * Helper class for number formatting.
  */
 public class FormattingHelper {
+
     /**
      * Returna {@link NumberFormat} for the given type, locale and format.
      *
@@ -38,13 +42,19 @@ public class FormattingHelper {
      * @return The correct {@link NumberFormat} for the given type and locale
      */
     protected static NumberFormat getCorrectFormat(String type, String locale, String format) {
-        Locale actualLocale = SchemaGeneratorHelper.DEFAULT_LOCALE.equals(locale)
+        Locale actualLocale = DEFAULT_LOCALE.equals(locale)
                 ? Locale.getDefault()
                 : Locale.forLanguageTag(locale);
         NumberFormat numberFormat;
-        if (SchemaGeneratorHelper.FLOAT.equals(type) || SchemaGeneratorHelper.BIG_DECIMAL.equals(type)) {
+        if (FLOAT.equals(type) || BIG_DECIMAL.equals(type)
+                || BIG_DECIMAL_OBJECT.equals(type)
+        ) {
             numberFormat = NumberFormat.getNumberInstance(actualLocale);
-        } else if (SchemaGeneratorHelper.INT.equals(type) || SchemaGeneratorHelper.BIG_INTEGER.equals(type)) {
+        } else if (INT.equals(type) || BIG_INTEGER.equals(type)
+                || LONG_OBJECT.equals(type)
+                || BIG_INTEGER_OBJECT.equals(type)
+                || LONG_PRIMITIVE.equals(type)
+                || INTEGER_LIST.contains(type)) {
             numberFormat = NumberFormat.getIntegerInstance(actualLocale);
         } else {
             return null;

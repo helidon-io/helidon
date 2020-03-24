@@ -54,16 +54,6 @@ import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUAR
 public final class SchemaGeneratorHelper {
 
     /**
-     * Defines a {@link BigDecimal} type.
-     */
-    static final String BIG_DECIMAL = "BigDecimal";
-
-    /**
-     * Defines a {@link BigInteger} type.
-     */
-    static final String BIG_INTEGER = "BigInteger";
-
-    /**
      * List of supported scalars keyed by the full class name.
      */
     static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
@@ -154,13 +144,14 @@ public final class SchemaGeneratorHelper {
     }};
 
     /**
-     * List of all Java primitive objects.
+     * Defines a {@link BigDecimal} type.
      */
-    static final List<String> JAVA_PRIMITIVE_OBJECTS = new ArrayList<>() {{
-        addAll(STRING_LIST);
-        addAll(FLOAT_LIST);
-        addAll(INTEGER_LIST);
-    }};
+    static final String BIG_DECIMAL = "BigDecimal";
+
+    /**
+     * Defines a {@link BigInteger} type.
+     */
+    static final String BIG_INTEGER = "BigInteger";
 
     /**
      * Value that indicates that default {@link java.util.Locale}.
@@ -193,14 +184,24 @@ public final class SchemaGeneratorHelper {
     protected static final String BOOLEAN = "Boolean";
 
     /**
-     * Class for long primitive.
+     * Class name for long primitive.
      */
     protected static final String LONG_PRIMITIVE = long.class.getName();
 
     /**
-     * Class for Long object.
+     * Class name for Long object.
      */
     protected static final String LONG_OBJECT = Long.class.getName();
+
+    /**
+     * Class name for {@link BigDecimal}.
+     */
+    protected static final String BIG_DECIMAL_OBJECT = BigDecimal.class.getName();
+
+    /**
+     * Class name for {@link BigInteger}.
+     */
+    protected static final String BIG_INTEGER_OBJECT = BigInteger.class.getName();
 
     /**
      * Private no-args constructor.
@@ -398,7 +399,7 @@ public final class SchemaGeneratorHelper {
     /**
      * Return correct name for a Type or Enum based upon the value of the annotation or the {@link Name}.
      *
-     * @param clazz                     {@link Class} to introspect.
+     * @param clazz {@link Class} to introspect.
      * @return the correct name
      */
     protected static String getTypeName(Class<?> clazz) {
