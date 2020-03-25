@@ -33,7 +33,7 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
     private Optional<BiFunction<Flow.Subscriber<? super R>, Long, Long>> onRequestFunction = Optional.empty();
     private Optional<Function<Flow.Subscriber<? super R>, Flow.Subscriber<? super R>>> whenSubscribeFunction = Optional.empty();
     private Optional<Function<R, R>> onNextFunction = Optional.empty();
-    private Optional<Consumer<Throwable>> onErrorConsumer = Optional.empty();
+    private Optional<Consumer<? super Throwable>> onErrorConsumer = Optional.empty();
     private Optional<Runnable> onCompleteRunnable = Optional.empty();
     private Optional<Consumer<Flow.Subscription>> onCancelConsumer = Optional.empty();
 
@@ -87,7 +87,7 @@ public class MultiTappedProcessor<R> extends BaseProcessor<R, R> implements Mult
      *                 argument is intercepted {@link Throwable}.
      * @return This {@link io.helidon.common.reactive.MultiTappedProcessor}
      */
-    public MultiTappedProcessor<R> onError(Consumer<Throwable> consumer) {
+    public MultiTappedProcessor<R> onError(Consumer<? super Throwable> consumer) {
         onErrorConsumer = Optional.ofNullable(consumer);
         return this;
     }

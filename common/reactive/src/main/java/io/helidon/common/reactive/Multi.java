@@ -66,7 +66,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Multi<U> map(Mapper<T, U> mapper) {
+    default <U> Multi<U> map(Mapper<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new MultiMapperPublisher<>(this, mapper);
     }
@@ -99,7 +99,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param consumer consumer to be invoked
      * @return Multi
      */
-    default Multi<T> peek(Consumer<T> consumer) {
+    default Multi<T> peek(Consumer<? super T> consumer) {
         return new MultiTappedPublisher<>(this, null, consumer,
                 null, null, null, null);
     }
@@ -119,7 +119,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param predicate predicate to filter stream with
      * @return Multi
      */
-    default Multi<T> filter(Predicate<T> predicate) {
+    default Multi<T> filter(Predicate<? super T> predicate) {
         return new MultiFilterPublisher<>(this, predicate);
     }
 
@@ -131,7 +131,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param predicate predicate to filter stream with
      * @return Multi
      */
-    default Multi<T> takeWhile(Predicate<T> predicate) {
+    default Multi<T> takeWhile(Predicate<? super T> predicate) {
         return new MultiTakeWhilePublisher<>(this, predicate);
     }
 
@@ -175,7 +175,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <U>             output item type
      * @return Multi
      */
-    default <U> Multi<U> flatMap(Function<T, Flow.Publisher<U>> publisherMapper) {
+    default <U> Multi<U> flatMap(Function<? super T, ? extends Flow.Publisher<? extends U>> publisherMapper) {
         return new MultiFlatMapPublisher<>(this, publisherMapper, 32, 32, false);
     }
     /**
@@ -192,7 +192,8 @@ public interface Multi<T> extends Subscribable<T> {
      *                 has been delivered
      * @return Multi
      */
-    default <U> Multi<U> flatMap(Function<T, Flow.Publisher<U>> mapper, long maxConcurrency, boolean delayErrors, long prefetch) {
+    default <U> Multi<U> flatMap(Function<? super T, ? extends Flow.Publisher<? extends U>> mapper,
+                                 long maxConcurrency, boolean delayErrors, long prefetch) {
         return new MultiFlatMapPublisher<>(this, mapper, maxConcurrency, prefetch, delayErrors);
     }
 
@@ -256,7 +257,7 @@ public interface Multi<T> extends Subscribable<T> {
      *
      * @param consumer consumer to be invoked for each item
      */
-    default void forEach(Consumer<T> consumer) {
+    default void forEach(Consumer<? super T> consumer) {
         FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer, null, null, null);
         this.subscribe(subscriber);
     }
@@ -292,7 +293,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Single
      * @throws NullPointerException if {@code collectionSupplier} or {@code combiner} is {@code null}
      */
-    default <U> Single<U> collect(Supplier<U> collectionSupplier, BiConsumer<U, T> accumulator) {
+    default <U> Single<U> collect(Supplier<? extends U> collectionSupplier, BiConsumer<U, T> accumulator) {
         Objects.requireNonNull(collectionSupplier, "collectionSupplier is null");
         Objects.requireNonNull(accumulator, "combiner is null");
         return new MultiCollectPublisher<>(this, collectionSupplier, accumulator);
@@ -392,7 +393,6 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      * @throws NullPointerException if source is {@code null}
      */
-    @SuppressWarnings("unchecked")
     static <T> Multi<T> from(Publisher<T> source) {
         if (source instanceof Multi) {
             return (Multi<T>) source;
@@ -564,7 +564,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Multi
      */
-    default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
+    default Multi<T> onError(Consumer<? super Throwable> onErrorConsumer) {
         return new MultiTappedPublisher<>(this,
                 null,
                 null,
@@ -708,7 +708,6 @@ public interface Multi<T> extends Subscribable<T> {
         Objects.requireNonNull(executor, "executor is null");
         return new MultiTimeout<>(this, timeout, unit, executor, null);
     }
-
 
     /**
      * Switches to a fallback single if the upstream doesn't signal the next item, error
