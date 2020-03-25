@@ -19,6 +19,40 @@ This is the third milestone release of Helidon 2.0.
 
 ### Backward incompatible changes
 
+#### Removal of processor-like operators
+The formerly public `Flow.Processor` implementations performing common operations have been removed. 
+Users should use the respective operators from `Single` and `Multi` instead:
+
+```java
+// before
+Flow.Publisher<Integer> source = ...
+MappingProcessor<Integer, String> mapper = new MappingProcessor<>(Integer::toString);
+source.subscribe(mapper);
+mapper.subscribe(subscriber);
+
+// after
+Flow.Publisher<Integer> source = ...
+Multi.from(source)
+     .map(Integer::toString)
+     .subscribe(subscriber)
+```
+
+#### Removal of Flows
+The class was providing basic `Flow.Publisher` implementations. Users should pick one of the static methods of 
+`Single` or `Multi` instead, which provide the additional benefits of having fluent operators available to them for 
+assembling reactive flows conveniently:
+```java
+// before
+Flow.Publisher<Integer> just = Flows.singletonPublisher(1);
+Flow.Publisher<Object> empty = Flows.emptyPublisher();
+
+// after
+Multi<Integer> just1 = Multi.singleton(1);
+Single<Integer> just2 = Single.just(1);
+
+Multi<Object> empty1 = Multi.empty();
+Single<Object> empty2 = Single.empty();
+```
 
 ## [2.0.0-M2] 
 
