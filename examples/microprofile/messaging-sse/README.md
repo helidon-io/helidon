@@ -7,7 +7,7 @@
 
 ## Build and run
 
-With JDK8+
+With JDK11+
 ```bash
 mvn package
 java -jar target/helidon-examples-microprofile-messaging-sse.jar

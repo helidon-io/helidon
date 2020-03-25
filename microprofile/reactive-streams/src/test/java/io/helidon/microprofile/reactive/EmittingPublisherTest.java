@@ -34,7 +34,7 @@ import org.reactivestreams.Subscription;
 public class EmittingPublisherTest {
 
     private static final List<String> TEST_DATA = List.of("first", "second", "third");
-    private static final HelidonReactiveStreamEngine ENGINE = new HelidonReactiveStreamEngine();
+    private static final HelidonReactiveStreamsEngine ENGINE = new HelidonReactiveStreamsEngine();
 
     @Test
     void happyPathWithLongMaxReq() {

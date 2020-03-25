@@ -22,6 +22,9 @@
     <title>Helidon Reactive Messaging</title>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <link rel="stylesheet" type="text/css" href="main.css">
+    <!-- Code snipped highlight -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css">
 </head>
 <body>
 
@@ -43,16 +46,31 @@
     </div>
     <div id="msgBox"></div>
     <div id="snippet">
-        <script src="https://gist.github.com/danielkec/742b02393d0d965fecc3fe5513b6eee1.js"></script>
+        <pre>
+            <code class="java"></code>
+        </pre>
     </div>
 </div>
 
 <script>
+
+    const snippet = $('.java');
     const helidon = $('#helidon');
     const messageBox = $('#msgBox');
     const input = $("#input");
     const submit = $("#submit");
 
+    // Include snippet, strip imports and highlight code
+    $.get('MsgProcessingBean.java', function (data) {
+        snippet.html(data
+            .replace(/[\s\S]*@ApplicationScoped/gm,"@ApplicationScoped")
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+        );
+        snippet.each(function(i, e) {hljs.highlightBlock(e)});
+    }, 'text');
+
+    // Pre-filled example messages
     const templates = ["Fly Helidon!", "We ❤️ microservices!", "Reactive wings are faster!"];
     let template_idx = 1;
 

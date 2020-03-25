@@ -16,7 +16,7 @@
  */
 
 #root {
-    background-image: url('img/background.png');
+    background-color: #36ABF2;
     font-family: Roboto,sans-serif;
     color: #fff;
     position: absolute;
@@ -38,13 +38,13 @@
     position: relative;
     left: -509px;
     z-index: 4;
-    background: url('img/helidon_feature_simple_and_fast.png');
+    background: url('img/frank.png');
 }
 
 #rest-tip {
     position: relative;
     top: -80px;
-    left: 200px;
+    left: 160px;
 }
 
 #rest-tip-arrow {
@@ -60,6 +60,7 @@
     font-size: 18px;
     font-weight: bold;
     z-index: 4;
+    left: -60px;
 }
 
 #sse-tip {
@@ -131,8 +132,8 @@
 }
 
 #msg {
-    background-color: #38a4f6;
-    color: white;
+    background-color: #D2EBFC;
+    color: #1A9BF4;
     border-radius: 10px;
     width: 300px;
     height: 50px;
@@ -159,7 +160,6 @@
 }
 
 #snippet {
-    overflow-y: scroll;
     position: absolute;
     top: 15%;
     left: 30%;
@@ -167,10 +167,7 @@
     z-index: 5;
 }
 
-body .gist .gist-file {
-    position: relative;
-    z-index: 3;
-    margin-bottom: 0;
-    border: 0px dashed #adb5bd;
-    border-radius: 0;
+.hljs {
+    border-radius: 10px;
+    font-size: 12px;
 }
