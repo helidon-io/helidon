@@ -20,19 +20,23 @@ command-timeout: 60
 copyright:
   steps:
     - script:
-        code: etc/scripts/copyright.sh
+        code: |
+            echo "noop"
 
 checkstyle:
   steps:
     - script:
-        code: etc/scripts/checkstyle.sh
+        code: |
+            echo "noop"
 
 build:
   steps:
     - script:
-        code: etc/scripts/build.sh
+        code: |
+            echo "noop"
 
 release:
   steps:
     - script:
-        code: etc/scripts/release.sh release_build
+        code: |
+            echo "noop"
