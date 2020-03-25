@@ -31,8 +31,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import graphql.ExecutionResult;
+import graphql.schema.idl.SchemaPrinter;
 
 /**
  * A resource for servicing GraphQL requests.
@@ -41,12 +41,41 @@ import graphql.ExecutionResult;
 @ApplicationScoped
 public class GraphQLResource {
 
+    /**
+     * Indicates the path to return the GraphQL schema.
+     */
+    protected static final String SCHEMA_URL = "graphql.schema";
+
+    /**
+     * Logger.
+     */
     private static final Logger LOGGER = Logger.getLogger(GraphQLResource.class.getName());
+
+    /**
+     * Options for {@link SchemaPrinter}.
+     */
+    private static final SchemaPrinter.Options OPTIONS = SchemaPrinter.Options
+            .defaultOptions().includeDirectives(false)
+            .includeExtendedScalarTypes(true)
+            .includeScalarTypes(true);
 
     /**
      * {@link ExecutionContext} for this resource.
      */
     private ExecutionContext<String> context;
+
+    /**
+     * {@link SchemaPrinter} to retrieve the schema.
+     */
+    private SchemaPrinter schemaPrinter;
+
+    @Path(SCHEMA_URL)
+    @GET
+    //  @Produces({ MediaType.TEXT_PLAIN })
+    // see https://github.com/eclipse/microprofile-graphql/issues/202
+    public Response getGraphQLSchema() {
+        return Response.ok(schemaPrinter.print(context.getGraphQLSchema())).build();
+    }
 
     /**
      * Process a GET request.
@@ -61,7 +90,7 @@ public class GraphQLResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     public Response processGraphQLQueryGET(@QueryParam("query") String query,
                                            @QueryParam("operationName") String operation,
-                                           @QueryParam("variables") String variables)  {
+                                           @QueryParam("variables") String variables) {
         Map<String, Object> mapVariables = null;
         if (variables != null) {
             mapVariables = JsonUtils.convertJSONtoMap(variables);
@@ -78,7 +107,7 @@ public class GraphQLResource {
     @POST
     @Produces({ MediaType.APPLICATION_JSON })
     @Consumes({ MediaType.APPLICATION_JSON })
-    public Response processGraphQLQueryPOST(String body) throws JsonProcessingException {
+    public Response processGraphQLQueryPOST(String body) {
         Map<String, Object> json = JsonUtils.convertJSONtoMap(body);
         return processRequest(
                 (String) json.get("query"),
@@ -93,6 +122,7 @@ public class GraphQLResource {
     public void init() {
         try {
             context = new ExecutionContext<>("Dummy Context");
+            schemaPrinter = new SchemaPrinter(OPTIONS);
         } catch (Exception e) {
             LOGGER.warning("Unable to build GraphQL Schema: " + e);
             e.printStackTrace();

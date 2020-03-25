@@ -58,6 +58,7 @@ import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectFormat;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
@@ -65,7 +66,6 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRIN
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootArrayClass;
@@ -267,7 +267,7 @@ public class SchemaGenerator {
                             .forEach(fd::addArgument);
                 }
 
-                // check for existing DataFetcher 
+                // check for existing DataFetcher
                 fd.setDataFetcher(DataFetcherUtils.newMethodDataFetcher(
                         dm.method.getDeclaringClass(), dm.method, dm.getSource(),
                         fd.getArguments().toArray(new SchemaArgument[0])));

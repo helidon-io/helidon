@@ -31,6 +31,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.microprofile.graphql.server.GraphQLResource.SCHEMA_URL;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -79,11 +80,16 @@ public class GraphQLIT extends AbstractGraphQLIT {
     public void testUIEndpoint() throws InterruptedException {
         // test /ui endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(UI).path("index.html");
-        System.err.println(webTarget.getUri());
-
         Response response = webTarget.request().get();
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+    }
 
+    @Test
+    public void testGetSchema() {
+        WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL).path(SCHEMA_URL);
+        Response response = webTarget.request().get();
+        assertThat(response, is(notNullValue()));
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
     }
 }

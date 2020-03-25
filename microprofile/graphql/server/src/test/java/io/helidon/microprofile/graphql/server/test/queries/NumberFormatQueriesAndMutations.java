@@ -25,6 +25,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
+import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
 
@@ -50,5 +51,10 @@ public class NumberFormatQueriesAndMutations {
     @NumberFormat("Double-###########")
     public Double generateDouble() {
         return 123456789d;
+    }
+
+    @Mutation("createSimpleContactWithNumberFormats")
+    public SimpleContactWithNumberFormats createContact(@Name("contact") SimpleContactWithNumberFormats contact) {
+        return contact;
     }
 }

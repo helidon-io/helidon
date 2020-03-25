@@ -25,13 +25,27 @@ import java.util.Locale;
 
 import javax.json.bind.annotation.JsonbNumberFormat;
 
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.*;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL_OBJECT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER_OBJECT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAULT_LOCALE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_LIST;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_OBJECT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_PRIMITIVE;
 
 /**
  * Helper class for number formatting.
  */
 public class FormattingHelper {
+
+    /**
+     * No-args constructor.
+     */
+    private FormattingHelper() {
+    }
 
     /**
      * Returna {@link NumberFormat} for the given type, locale and format.
@@ -46,11 +60,13 @@ public class FormattingHelper {
                 ? Locale.getDefault()
                 : Locale.forLanguageTag(locale);
         NumberFormat numberFormat;
-        if (FLOAT.equals(type) || BIG_DECIMAL.equals(type)
+        if (FLOAT.equals(type)
+                || BIG_DECIMAL.equals(type)
                 || BIG_DECIMAL_OBJECT.equals(type)
         ) {
             numberFormat = NumberFormat.getNumberInstance(actualLocale);
-        } else if (INT.equals(type) || BIG_INTEGER.equals(type)
+        } else if (INT.equals(type)
+                || BIG_INTEGER.equals(type)
                 || LONG_OBJECT.equals(type)
                 || BIG_INTEGER_OBJECT.equals(type)
                 || LONG_PRIMITIVE.equals(type)
@@ -120,10 +136,10 @@ public class FormattingHelper {
                                                         org.eclipse.microprofile.graphql.NumberFormat numberFormat) {
         // check @NumberFormat first as this takes precedence
         if (numberFormat != null) {
-            return new String[] { numberFormat.value(), numberFormat.locale() };
+            return new String[] {numberFormat.value(), numberFormat.locale() };
         }
         if (jsonbNumberFormat != null) {
-            return new String[] { jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
+            return new String[] {jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
         }
         return new String[0];
     }

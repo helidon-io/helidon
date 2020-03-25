@@ -156,7 +156,7 @@ public final class SchemaGeneratorHelper {
     /**
      * Value that indicates that default {@link java.util.Locale}.
      */
-    static String DEFAULT_LOCALE = "##default";
+    static final String DEFAULT_LOCALE = "##default";
 
     /**
      * GraphQL Int.
