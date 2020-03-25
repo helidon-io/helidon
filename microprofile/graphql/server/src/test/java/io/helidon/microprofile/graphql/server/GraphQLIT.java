@@ -87,6 +87,8 @@ public class GraphQLIT extends AbstractGraphQLIT {
 
     @Test
     public void testGetSchema() {
+        // see https://github.com/eclipse/microprofile-graphql/issues/202
+        // add text/plain
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL).path(SCHEMA_URL);
         Response response = webTarget.request().get();
         assertThat(response, is(notNullValue()));
