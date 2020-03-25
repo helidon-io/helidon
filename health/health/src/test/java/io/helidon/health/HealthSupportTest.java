@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -151,7 +150,7 @@ class HealthSupportTest {
 
     @Test
     void checksAreSortedByName() {
-        List<HealthCheck> checks = CollectionsHelper.listOf(new GoodHealthCheck("g"),
+        List<HealthCheck> checks = List.of(new GoodHealthCheck("g"),
                                                             new GoodHealthCheck("a"),
                                                             new GoodHealthCheck("v"));
         HealthSupport support = HealthSupport.builder()

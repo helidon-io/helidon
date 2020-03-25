@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 
@@ -73,7 +72,7 @@ public interface ConfigMapperProvider {
      * {@link #mapper(Class)} is used instead
      */
     default Map<GenericType<?>, BiFunction<Config, ConfigMapper, ?>> genericTypeMappers() {
-        return CollectionsHelper.mapOf();
+        return Map.of();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.tracing.TracerBuilder;
 
@@ -155,6 +155,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final String DEFAULT_HTTP_HOST = "localhost";
     static final int DEFAULT_HTTP_PORT = 14268;
     static final String DEFAULT_HTTP_PATH = "/api/traces";
+
+    static {
+        HelidonFeatures.register("Tracing", "Jaeger");
+    }
 
     private final Map<String, String> tags = new HashMap<>();
     private final List<Configuration.Propagation> propagations = new ArrayList<>();
@@ -326,7 +330,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         config.get("tags").detach()
                 .asMap()
-                .orElseGet(CollectionsHelper::mapOf)
+                .orElseGet(Map::of)
                 .forEach(this::addTracerTag);
 
         config.get("boolean-tags")
@@ -458,13 +462,15 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             }
 
             result = jaegerConfig().getTracer();
+            LOGGER.info(() -> "Creating Jaeger tracer for '" + serviceName + "' configured with " + protocol + "://"
+                    + host + ":" + port);
         } else {
             LOGGER.info("Jaeger Tracer is explicitly disabled.");
             result = NoopTracerFactory.create();
         }
 
         if (global) {
-            GlobalTracer.register(result);
+            GlobalTracer.registerIfAbsent(result);
         }
 
         return result;

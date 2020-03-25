@@ -1,0 +1,14 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+        "javax.ws.rs.client.ClientBuilder",
+        "javax.ws.rs.client.ClientRequestFilter",
+        "javax.ws.rs.client.ClientResponseFilter",
+        "javax.ws.rs.client.RxInvokerProvider"
+    ],
+    "classes": [
+    ],
+    "exclude": [
+    ]
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
@@ -52,7 +51,7 @@ class ObjectConfigMapperProviderTest {
     static void initClass() {
         provider = new ObjectConfigMapperProvider();
         empty = Config.empty();
-        Map<String, String> configMap = CollectionsHelper.mapOf(
+        Map<String, String> configMap = Map.of(
                 Configurables.WithCreateConfig.CONFIG_KEY, TEST_MESSAGE
         );
         full = Config.builder(ConfigSources.create(configMap))

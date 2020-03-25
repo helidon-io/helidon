@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.Config.Type;
 import io.helidon.config.ConfigMappingException;
@@ -188,7 +187,7 @@ public class GenericConfigMapperTest {
 
     @Test
     public void testWithDefaultWrongFormat() {
-        Config config = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("numberWithDefaultSupplier", "42")))
+        Config config = Config.builder(ConfigSources.create(Map.of("numberWithDefaultSupplier", "42")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -200,7 +199,7 @@ public class GenericConfigMapperTest {
 
     @Test
     public void testWithDefaultSupplierWrongReturnType() {
-        Config config = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("numberWithDefault", "23")))
+        Config config = Config.builder(ConfigSources.create(Map.of("numberWithDefault", "23")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -212,7 +211,7 @@ public class GenericConfigMapperTest {
 
     @Test
     public void testWrongDefaultsNotUsed() {
-        Config config = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("numberWithDefault", "23",
+        Config config = Config.builder(ConfigSources.create(Map.of("numberWithDefault", "23",
                                                                                     "numberWithDefaultSupplier", "42")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -342,11 +341,11 @@ public class GenericConfigMapperTest {
         private LoggingConfig logging = new LoggingConfig(Config.empty());
         @Value(withDefaultSupplier = DefaultSecurityConfigSupplier.class) //ignored, used on setter
         public SecurityConfig security;
-        public Map<String, String> names = CollectionsHelper.mapOf();
+        public Map<String, String> names = Map.of();
 
         public AppConfig() {
             greetingSetterCalled = false;
-            names = CollectionsHelper.mapOf();
+            names = Map.of();
         }
 
         public Long getUid() {
@@ -442,7 +441,7 @@ public class GenericConfigMapperTest {
             public List<ProviderConfig> providers;
 
             public SecurityConfig() {
-                providers = CollectionsHelper.listOf();
+                providers = List.of();
             }
 
             public List<ProviderConfig> getProviders() {
@@ -477,7 +476,7 @@ public class GenericConfigMapperTest {
         public static class DefaultBasicRangeSupplier implements Supplier<List<Integer>> {
             @Override
             public List<Integer> get() {
-                return CollectionsHelper.listOf(-5, 5);
+                return List.of(-5, 5);
             }
         }
 

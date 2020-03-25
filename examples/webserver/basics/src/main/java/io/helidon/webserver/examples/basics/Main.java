@@ -193,7 +193,7 @@ public class Main {
     }
 
     /**
-     * Request payload (body/entity) is represented by {@link io.helidon.common.reactive.Flow.Publisher Flow.Publisher}
+     * Request payload (body/entity) is represented by {@link java.util.concurrent.Flow.Publisher Flow.Publisher}
      * of {@link DataChunk RequestChunks} to enable reactive processing of the content of any size.
      * But it is more convenient to process entity in some type specific form. WebServer supports few types which can be
      * used te read the whole entity:
@@ -233,7 +233,7 @@ public class Main {
      * It is possible register custom request content {@link Reader Reader}. It collects
      * all {@link DataChunk RequestChunks} into a single entity of the given type.
      * <p>
-     * It is also possible to register filters which can modify original {@link io.helidon.common.reactive.Flow Flow} of
+     * It is also possible to register filters which can modify original {@link java.util.concurrent.Flow Flow} of
      * {@link DataChunk RequestChunks}.
      */
     public void filterAndProcessEntity() {

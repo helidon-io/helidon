@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +27,7 @@ import javax.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
@@ -104,11 +106,14 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    protected void prometheusData(StringBuilder sb, String name, String tags) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String nameUnits;
-
+        String name = metricID.getName();
+        String tags = prometheusTags(metricID.getTags());
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -116,7 +121,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_one_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -124,7 +131,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_five_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -132,7 +141,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_fifteen_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -144,7 +155,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
         Snapshot snap = getSnapshot();
 
         nameUnits = prometheusNameWithUnits(name + "_mean", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -152,7 +165,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name + "_max", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -160,7 +175,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name + "_min", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -168,7 +185,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name + "_stddev", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -176,8 +195,10 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, unit);
-        prometheusType(sb, nameUnits, "summary");
-        prometheusHelp(sb, nameUnits);
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "summary");
+            prometheusHelp(sb, nameUnits);
+        }
         nameUnits = prometheusNameWithUnits(name, unit) + "_count";
         sb.append(nameUnits)
                 .append(tags)
@@ -197,27 +218,31 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
+    public String prometheusValue() {
+        throw new UnsupportedOperationException("Not supported.");
+    }
 
-        myBuilder.add("count", getCount());
-        myBuilder.add("meanRate", getMeanRate());
-        myBuilder.add("oneMinRate", getOneMinuteRate());
-        myBuilder.add("fiveMinRate", getFiveMinuteRate());
-        myBuilder.add("fifteenMinRate", getFifteenMinuteRate());
+    @Override
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
+                .add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("meanRate", metricID), getMeanRate())
+                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
+                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
+                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
         Snapshot snapshot = getSnapshot();
-        myBuilder.add("min", snapshot.getMin());
-        myBuilder.add("max", snapshot.getMax());
-        myBuilder.add("mean", snapshot.getMean());
-        myBuilder.add("stddev", snapshot.getStdDev());
-        myBuilder.add("p50", snapshot.getMedian());
-        myBuilder.add("p75", snapshot.get75thPercentile());
-        myBuilder.add("p95", snapshot.get95thPercentile());
-        myBuilder.add("p98", snapshot.get98thPercentile());
-        myBuilder.add("p99", snapshot.get99thPercentile());
-        myBuilder.add("p999", snapshot.get999thPercentile());
+        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin())
+                .add(jsonFullKey("max", metricID), snapshot.getMax())
+                .add(jsonFullKey("mean", metricID), snapshot.getMean())
+                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev())
+                .add(jsonFullKey("p50", metricID), snapshot.getMedian())
+                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile())
+                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile())
+                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile())
+                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile())
+                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
 
-        builder.add(getName(), myBuilder.build());
+        builder.add(metricID.getName(), myBuilder);
     }
 
     private static final class ContextImpl implements Context {
@@ -255,8 +280,8 @@ final class HelidonTimer extends MetricImpl implements Timer {
         private final Clock clock;
 
         TimerImpl(String repoType, String name, Clock clock) {
-            this.meter = HelidonMeter.create(repoType, new Metadata(name, MetricType.METERED), clock);
-            this.histogram = HelidonHistogram.create(repoType, new Metadata(name, MetricType.HISTOGRAM));
+            this.meter = HelidonMeter.create(repoType, new HelidonMetadata(name, MetricType.METERED), clock);
+            this.histogram = HelidonHistogram.create(repoType, new HelidonMetadata(name, MetricType.HISTOGRAM));
             this.clock = clock;
         }
 
@@ -329,5 +354,38 @@ final class HelidonTimer extends MetricImpl implements Timer {
             }
         }
 
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), meter, histogram);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TimerImpl that = (TimerImpl) o;
+            return meter.equals(that.meter) && histogram.equals(that.histogram);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonTimer that = (HelidonTimer) o;
+        return Objects.equals(delegate, that.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delegate);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,9 +57,7 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
 
     private CompletionStage<AuthenticationResponse> mapSubject(AuthenticationResponse prevResponse) {
         ProviderRequest providerRequest = new ProviderRequest(context,
-                                                              request.resources(),
-                                                              request.requestEntity(),
-                                                              request.responseEntity());
+                                                              request.resources());
 
         if (prevResponse.status() == SecurityResponse.SecurityStatus.SUCCESS) {
             return security.subjectMapper()
@@ -84,9 +82,7 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
     private CompletionStage<AuthenticationResponse> authenticate(AuthenticationProvider providerInstance) {
         // prepare request to provider
         ProviderRequest providerRequest = new ProviderRequest(context,
-                                                              request.resources(),
-                                                              request.requestEntity(),
-                                                              request.responseEntity());
+                                                              request.resources());
 
         return providerInstance.authenticate(providerRequest).thenApply(response -> {
             if (response.status().isSuccess()) {
@@ -100,7 +96,8 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
                 context.audit(SecurityAuditEvent
                                       .success(
                                               AuditEvent.AUTHN_TYPE_PREFIX + ".authenticate",
-                                              "Provider %s. Subject %s")
+                                              "Path %s. Provider %s. Subject %s")
+                                      .addParam(AuditEvent.AuditParam.plain("path", providerRequest.env().path()))
                                       .addParam(AuditEvent.AuditParam
                                                         .plain("provider", providerInstance.getClass().getName()))
                                       .addParam(AuditEvent.AuditParam.plain("subject", response.user())));

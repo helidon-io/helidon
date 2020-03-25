@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,13 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -59,11 +61,17 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  */
 public final class PolicyValidator implements AbacValidator<PolicyValidator.PolicyConfig> {
     private static final Logger LOGGER = Logger.getLogger(PolicyValidator.class.getName());
+
+    static {
+        HelidonFeatures.register("Security", "Authorization", "ABAC", "Policy");
+    }
+
     private final List<PolicyExecutor> executors = new LinkedList<>();
 
     private PolicyValidator(Builder builder) {
         //first find all services
-        ServiceLoader<PolicyExecutorService> services = ServiceLoader.load(PolicyExecutorService.class);
+        HelidonServiceLoader<PolicyExecutorService> services =
+                HelidonServiceLoader.create(ServiceLoader.load(PolicyExecutorService.class));
 
         for (PolicyExecutorService service : services) {
             executors.add(service.instantiate(builder.config.get(service.configKey())));
@@ -106,7 +114,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(PolicyStatement.class);
+        return Set.of(PolicyStatement.class);
     }
 
     @Override
@@ -169,7 +177,8 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
         }
 
         if (!unvalidatedStatements.isEmpty()) {
-            collector.fatal("Some policy statements were not evaluated, cannot continue: " + unvalidatedStatements);
+            throw new SecurityException("Missing a policy executor for policy statement(s). Statements: " + unvalidatedStatements
+                                                + ", known executors: " + executors);
         }
     }
 

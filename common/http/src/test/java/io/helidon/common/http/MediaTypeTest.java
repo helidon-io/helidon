@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package io.helidon.common.http;
 
+import java.util.Map;
 import java.util.Optional;
-
-import io.helidon.common.CollectionsHelper;
 
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
@@ -60,14 +59,14 @@ class MediaTypeTest {
 
         assertThat(mediaType.charset(), not(Optional.empty()));
         assertThat(mediaType.charset().get(), is("utf-8"));
-        assertThat(mediaType.parameters(), is(CollectionsHelper.mapOf("charset", "utf-8")));
+        assertThat(mediaType.parameters(), is(Map.of("charset", "utf-8")));
     }
 
     @Test
     void parseParameters() {
         MediaType mediaType = MediaType.parse("unknown-type/unknown-subtype; option1=value1; option2=value2");
 
-        assertThat(mediaType.parameters(), is(CollectionsHelper.mapOf("option1", "value1",
+        assertThat(mediaType.parameters(), is(Map.of("option1", "value1",
                                                                       "option2", "value2")));
     }
 
@@ -75,7 +74,7 @@ class MediaTypeTest {
     void parseDuplicateParameters() {
         MediaType mediaType = MediaType.parse("unknown-type/unknown-subtype; option=value1; option=value2");
 
-        assertThat(mediaType.parameters(), is(CollectionsHelper.mapOf("option", "value2")));
+        assertThat(mediaType.parameters(), is(Map.of("option", "value2")));
     }
 
     @Test
@@ -99,7 +98,7 @@ class MediaTypeTest {
     @Test
     void jsonPredicate() {
         assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/json")), is(true));
-        assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/javascript")), is(true));
+        assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/javascript")), is(false));
         assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/manifest+json")), is(true));
         assertThat(MediaType.JSON_PREDICATE.test(MediaType.parse("application/manifest")), is(false));
     }
@@ -125,7 +124,7 @@ class MediaTypeTest {
         assertThat(mediaType.type(), is("application"));
         assertThat(mediaType.subtype(), is("json"));
         assertThat(mediaType.charset(), is(Optional.of("ISO-8859-2")));
-        assertThat(mediaType.parameters(), is(CollectionsHelper.mapOf("q", "0.1", "charset", "ISO-8859-2")));
+        assertThat(mediaType.parameters(), is(Map.of("q", "0.1", "charset", "ISO-8859-2")));
         assertThat(mediaType.qualityFactor(), closeTo(0.1, 0.000001));
     }
 }

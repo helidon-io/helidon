@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
-
-import io.helidon.common.CollectionsHelper;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -51,12 +49,11 @@ public class ConfigMappersFailingTest {
     @ParameterizedTest
     @MethodSource("builtInMapperTypes")
     public void testMappingFails(Class<?> type) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
 
         String key = "config.key.with.wrong.format";
         Config config = Config.builder()
-                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, ") bad, bad value ")))
+                .sources(ConfigSources.create(Map.of(key, ") bad, bad value ")))
                 .build();
 
         ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {

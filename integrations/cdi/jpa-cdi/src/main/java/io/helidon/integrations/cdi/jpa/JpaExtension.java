@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -115,12 +116,9 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * @see PersistenceUnitInfoBean
  */
 public class JpaExtension implements Extension {
-
-
     /*
      * Static fields.
      */
-
 
     /**
      * The {@link Logger} for use by all instances of this class.
@@ -540,7 +538,10 @@ public class JpaExtension implements Extension {
                                 new PersistenceUnitInfoBean(persistenceUnitName,
                                                             persistenceUnitRoot,
                                                             null,
-                                                            new BeanManagerBackedDataSourceProvider(beanManager),
+                                                            () -> beanManager
+                                                                .createInstance()
+                                                                .select(DataSourceProvider.class)
+                                                                .get(),
                                                             properties);
                             this.implicitPersistenceUnits.put(persistenceUnitName, persistenceUnit);
                         }
@@ -1024,7 +1025,8 @@ public class JpaExtension implements Extension {
      * #addJpaTransactionScopedEntityManagerBeans(AfterBeanDiscovery,
      * Set)
      */
-    private void addContainerManagedJpaBeans(final AfterBeanDiscovery event, final BeanManager beanManager) {
+    private void addContainerManagedJpaBeans(final AfterBeanDiscovery event, final BeanManager beanManager)
+        throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "addContainerManagedJpaBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1101,7 +1103,11 @@ public class JpaExtension implements Extension {
                                                                                                  qualifiers,
                                                                                                  beanManager);
                     })
-                .disposeWith((emf, instance) -> emf.close());
+                .disposeWith((emf, instance) -> {
+                        if (emf.isOpen()) {
+                            emf.close();
+                        }
+                    });
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1110,7 +1116,8 @@ public class JpaExtension implements Extension {
     }
 
     private void addCdiTransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
-                                                          final Set<Annotation> suppliedQualifiers) {
+                                                           final Set<Annotation> suppliedQualifiers)
+        throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "addCdiTransactionScopedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1127,15 +1134,16 @@ public class JpaExtension implements Extension {
         //   @Inject
         //   @ContainerManaged
         //   @CdiTransactionScoped
-        //   @Synchronized
+        //   @Synchronized // <-- NOTE
         //   @Named("test")
         //   private final EntityManager cdiTransactionScopedEm;
         //
         // ...AND:
+        //
         //   @Inject
         //   @ContainerManaged
         //   @CdiTransactionScoped
-        //   @Unynchronized
+        //   @Unsynchronized // <-- NOTE
         //   @Named("test")
         //   private final EntityManager cdiTransactionScopedEm;
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
@@ -1171,7 +1179,7 @@ public class JpaExtension implements Extension {
 
             qualifiers.add(Synchronized.Literal.INSTANCE);
             final Set<Annotation> synchronizedQualifiers = new HashSet<>(qualifiers);
-            event.addBean()
+            event.<CdiTransactionScopedEntityManager>addBean()
                 .addTransitiveTypeClosure(CdiTransactionScopedEntityManager.class)
                 .scope(scope)
                 .addQualifiers(synchronizedQualifiers)
@@ -1179,12 +1187,12 @@ public class JpaExtension implements Extension {
                         // On its own line to ease debugging.
                         return new CdiTransactionScopedEntityManager(instance, synchronizedQualifiers);
                     })
-                .disposeWith((em, instance) -> em.close());
+                .disposeWith(CdiTransactionScopedEntityManager::dispose);
 
             qualifiers.remove(Synchronized.Literal.INSTANCE);
             qualifiers.add(Unsynchronized.Literal.INSTANCE);
             final Set<Annotation> unsynchronizedQualifiers = new HashSet<>(qualifiers);
-            event.addBean()
+            event.<CdiTransactionScopedEntityManager>addBean()
                 .addTransitiveTypeClosure(CdiTransactionScopedEntityManager.class)
                 .scope(scope)
                 .addQualifiers(unsynchronizedQualifiers)
@@ -1192,7 +1200,7 @@ public class JpaExtension implements Extension {
                         // On its own line to ease debugging.
                         return new CdiTransactionScopedEntityManager(instance, unsynchronizedQualifiers);
                     })
-                .disposeWith((em, instance) -> em.close());
+                .disposeWith(CdiTransactionScopedEntityManager::dispose);
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1237,8 +1245,9 @@ public class JpaExtension implements Extension {
             .produceWith(instance -> {
                     // On its own line to ease debugging.
                     return new JpaTransactionScopedEntityManager(instance, suppliedQualifiers);
-                });
-            // (deliberately no disposeWith())
+                })
+            .disposeWith(JpaTransactionScopedEntityManager::dispose);
+
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1275,7 +1284,17 @@ public class JpaExtension implements Extension {
                         // On its own line to ease debugging.
                         return new NonTransactionalEntityManager(instance, suppliedQualifiers);
                     })
-                .disposeWith((em, instance) -> em.close());
+                // Revisit: ReferenceCountedContext does not
+                // automatically pick up synthetic beans like this
+                // one.  So we have to tell it somehow to "work on"
+                // this bean.  Right now this bean is in what amounts
+                // to a thread-specific singleton scope.  As it
+                // happens, this might actually be OK.
+                .disposeWith((em, instance) -> {
+                        if (em.isOpen()) {
+                            em.close();
+                        }
+                    });
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1338,8 +1357,10 @@ public class JpaExtension implements Extension {
 
         Objects.requireNonNull(event);
 
+        int persistenceUnitCount = 0;
         PersistenceUnitInfoBean solePersistenceUnitInfoBean = null;
         for (final PersistenceUnitInfoBean persistenceUnitInfoBean : this.implicitPersistenceUnits.values()) {
+            assert persistenceUnitInfoBean != null;
             String persistenceUnitName = persistenceUnitInfoBean.getPersistenceUnitName();
             if (persistenceUnitName == null || persistenceUnitName.isEmpty()) {
                 persistenceUnitName = DEFAULT_PERSISTENCE_UNIT_NAME;
@@ -1365,14 +1386,21 @@ public class JpaExtension implements Extension {
                 .scope(ApplicationScoped.class)
                 .addQualifiers(NamedLiteral.of(persistenceUnitName))
                 .createWith(cc -> persistenceUnitInfoBean);
-            if (solePersistenceUnitInfoBean == null) {
+            if (persistenceUnitCount == 0) {
+                assert solePersistenceUnitInfoBean == null;
                 solePersistenceUnitInfoBean = persistenceUnitInfoBean;
-            } else {
+            } else if (solePersistenceUnitInfoBean != null) {
                 solePersistenceUnitInfoBean = null;
             }
             maybeAddPersistenceProviderBean(event, persistenceUnitInfoBean, providers);
+            persistenceUnitCount++;
         }
-        if (solePersistenceUnitInfoBean != null) {
+        switch (persistenceUnitCount) {
+        case 0:
+            break;
+
+        case 1:
+            assert solePersistenceUnitInfoBean != null;
             final String name = solePersistenceUnitInfoBean.getPersistenceUnitName();
             if (name != null && !name.isEmpty()) {
                 this.defaultPersistenceUnitInEffect = true;
@@ -1385,6 +1413,14 @@ public class JpaExtension implements Extension {
                     .addQualifiers(NamedLiteral.of(DEFAULT_PERSISTENCE_UNIT_NAME))
                     .createWith(cc -> instance);
             }
+            break;
+
+        default:
+            assert persistenceUnitCount > 1;
+            assert solePersistenceUnitInfoBean == null
+                : "Unexpected solePersistenceUnitInfoBean: " + solePersistenceUnitInfoBean
+                + " with persistenceUnitCount " + persistenceUnitCount;
+            break;
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1408,12 +1444,14 @@ public class JpaExtension implements Extension {
         Objects.requireNonNull(event);
 
         if (urls != null && urls.hasMoreElements()) {
-            final Supplier<? extends ClassLoader> tempClassLoaderSupplier;
-            if (classLoader instanceof URLClassLoader) {
-                tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
-            } else {
-                tempClassLoaderSupplier = () -> classLoader;
-            }
+            final Supplier<? extends ClassLoader> tempClassLoaderSupplier = () -> {
+                if (classLoader instanceof URLClassLoader) {
+                    return new URLClassLoader(((URLClassLoader) classLoader).getURLs());
+                } else {
+                    return classLoader;
+                }
+            };
+
             // We use StAX for XML loading because it is the same XML
             // parsing strategy used by all known CDI implementations.
             // If the end user wants to customize the StAX
@@ -1445,21 +1483,36 @@ public class JpaExtension implements Extension {
 
             final Unmarshaller unmarshaller =
                 JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
-            final DataSourceProvider dataSourceProvider = new BeanManagerBackedDataSourceProvider(beanManager);
+            final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier =
+              () -> beanManager.createInstance().select(DataSourceProvider.class).get();
             PersistenceUnitInfo solePersistenceUnitInfo = null;
             while (urls.hasMoreElements()) {
                 final URL url = urls.nextElement();
                 assert url != null;
-                Collection<? extends PersistenceUnitInfo> persistenceUnitInfos = null;
+                Collection<PersistenceUnitInfo> persistenceUnitInfos = null;
+                Persistence persistence = null;
                 try (InputStream inputStream = new BufferedInputStream(url.openStream())) {
                     final XMLStreamReader reader = xmlInputFactory.createXMLStreamReader(inputStream);
-                    persistenceUnitInfos =
-                        PersistenceUnitInfoBean.fromPersistence((Persistence) unmarshaller.unmarshal(reader),
-                                                                classLoader,
-                                                                tempClassLoaderSupplier,
-                                                                new URL(url, ".."), // i.e. META-INF/..
-                                                                this.unlistedManagedClassesByPersistenceUnitNames,
-                                                                dataSourceProvider);
+                    try {
+                        persistence = (Persistence) unmarshaller.unmarshal(reader);
+                    } finally {
+                        reader.close();
+                    }
+                }
+                final Collection<? extends Persistence.PersistenceUnit> persistenceUnits = persistence.getPersistenceUnit();
+                if (persistenceUnits != null && !persistenceUnits.isEmpty()) {
+                    persistenceUnitInfos = new ArrayList<>();
+                    for (final Persistence.PersistenceUnit persistenceUnit : persistenceUnits) {
+                        if (persistenceUnit != null) {
+                            persistenceUnitInfos
+                                .add(PersistenceUnitInfoBean.fromPersistenceUnit(persistenceUnit,
+                                                                                 classLoader,
+                                                                                 tempClassLoaderSupplier,
+                                                                                 new URL(url, ".."), // i.e. META-INF/..
+                                                                                 unlistedManagedClassesByPersistenceUnitNames,
+                                                                                 dataSourceProviderSupplier));
+                        }
+                    }
                 }
                 if (persistenceUnitInfos != null && !persistenceUnitInfos.isEmpty()) {
                     for (final PersistenceUnitInfo persistenceUnitInfo : persistenceUnitInfos) {
@@ -1508,11 +1561,9 @@ public class JpaExtension implements Extension {
         }
     }
 
-
     /*
      * Static methods.
      */
-
 
     /**
      * Returns {@code true} if the supplied {@link AnnotatedField} is

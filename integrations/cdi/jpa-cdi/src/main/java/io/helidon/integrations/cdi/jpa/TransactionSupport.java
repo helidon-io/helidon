@@ -27,32 +27,113 @@ import javax.enterprise.context.spi.Context;
  */
 interface TransactionSupport {
 
+
+    /*
+     * Static fields.
+     */
+
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_ACTIVE}.
+     */
+    int STATUS_ACTIVE = 0;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_MARKED_ROLLBACK}.
+     */
+    int STATUS_MARKED_ROLLBACK = 1;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_PREPARED}.
+     */
+    int STATUS_PREPARED = 2;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_COMMITTED}.
+     */
+    int STATUS_COMMITTED = 3;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_ROLLEDBACK}.
+     */
+    int STATUS_ROLLEDBACK = 4;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_UNKNOWN}.
+     */
+    int STATUS_UNKNOWN = 5;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_NO_TRANSACTION}.
+     */
+    int STATUS_NO_TRANSACTION = 6;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_PREPARING}.
+     */
+    int STATUS_PREPARING = 7;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_COMMITTING}.
+     */
+    int STATUS_COMMITTING = 8;
+
+    /**
+     * Equal in value and meaning to {@link
+     * javax.transaction.Status#STATUS_ROLLING_BACK}.
+     */
+    int STATUS_ROLLING_BACK = 9;
+
+
+    /*
+     * Method signatures.
+     */
+
+
     /**
      * Returns {@code true} if JTA facilities are available.
      *
      * @return {@code true} if JTA facilities are available; {@code
      * false} otherwise
      */
-    boolean isActive();
+    boolean isEnabled();
 
     /**
      * Returns the {@linkplain Context#isActive() active} {@link
-     * Context}, if any, that supports JTA facilities, or {@code null}
+     * Context}, if any, that supports JTA facilities at the moment of
+     * invocation, or {@code null}.
      *
-     * <p>Implementations of this method may return {@code null}.</p>
+     * <p>Implementations of this method may, and often do, return
+     * {@code null}.</p>
+     *
+     * <p>The {@link Context} returned by implementations of this
+     * method may become active or inactive at any moment.</p>
      *
      * @return the {@link Context}, if any, that supports JTA
      * facilities, or {@code null}
+     *
+     * @see Context#isActive()
      */
     Context getContext();
 
     /**
-     * Returns {@code true} if a JTA transaction is currently in
-     * effect.
+     * Returns a constant indicating the current transaction status.
      *
-     * @return {@code true} if a JTA transaction is currently in
-     * effect; {@code false} otherwise
+     * <p>Implementations of this method must return {@link
+     * #STATUS_NO_TRANSACTION} ({@code 6}) if JTA is not supported.</p>
+     *
+     * @return a JTA {@link javax.transaction.Status} constant
+     * indicating the current transaction status
      */
-    boolean inTransaction();
+    int getStatus();
 
 }

@@ -20,6 +20,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.client.ClientRequestContext;
@@ -27,7 +28,6 @@ import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.jersey.client.ClientSecurity;
@@ -74,7 +74,7 @@ public class BasicAuthOutboundOverrideTest {
         when(requestContext.getUri()).thenReturn(URI.create("http://localhost:7070/test"));
         when(requestContext.getStringHeaders()).thenReturn(new MultivaluedHashMap<>());
         when(requestContext.getHeaders()).thenReturn(jerseyHeaders);
-        when(requestContext.getPropertyNames()).thenReturn(CollectionsHelper.listOf(
+        when(requestContext.getPropertyNames()).thenReturn(List.of(
                 ClientSecurity.PROPERTY_CONTEXT,
                 ClientSecurity.PROPERTY_PROVIDER,
                 HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER,

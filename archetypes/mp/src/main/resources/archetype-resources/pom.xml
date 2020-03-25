@@ -24,7 +24,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-3.1</artifactId>
+            <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>

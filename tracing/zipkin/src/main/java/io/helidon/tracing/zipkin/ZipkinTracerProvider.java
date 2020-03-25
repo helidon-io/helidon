@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Prioritized;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
@@ -30,8 +29,6 @@ import io.helidon.tracing.spi.TracerProvider;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
-
-import static io.helidon.common.CollectionsHelper.listOf;
 
 /**
  * Zipkin java service.
@@ -50,7 +47,7 @@ public class ZipkinTracerProvider implements TracerProvider {
     private static final Logger LOGGER = Logger.getLogger(ZipkinTracerProvider.class.getName());
 
     private static final List<String> TRACING_CONTEXT_PROPAGATION_HEADERS =
-            listOf(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
+            List.of(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
 
     @Override
     public TracerBuilder<?> createBuilder() {
@@ -113,7 +110,7 @@ public class ZipkinTracerProvider implements TracerProvider {
 
         String result = String.join(";", split);
         LOGGER.fine(() -> X_OT_SPAN_CONTEXT + " header fixed: " + value + " -> " + result);
-        map.put(X_OT_SPAN_CONTEXT, CollectionsHelper.listOf(result));
+        map.put(X_OT_SPAN_CONTEXT, List.of(result));
     }
 
     private static void substitute(Map<String, List<String>> map, String[] split, String key, int i) {

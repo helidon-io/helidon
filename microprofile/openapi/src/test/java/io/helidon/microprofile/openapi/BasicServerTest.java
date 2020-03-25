@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,18 @@
 package io.helidon.microprofile.openapi;
 
 import java.net.HttpURLConnection;
-
-import io.helidon.common.http.MediaType;
-import io.helidon.microprofile.server.Server;
 import java.util.Map;
 
+import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
+import io.helidon.microprofile.openapi.other.TestApp2;
+import io.helidon.microprofile.server.Server;
+
 import org.junit.jupiter.api.AfterAll;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test that MP OpenAPI support works when retrieving the OpenAPI document
@@ -36,6 +39,8 @@ public class BasicServerTest {
     private static final String OPENAPI_PATH = "/openapi";
 
     private static Server server;
+
+    private static HttpURLConnection cnx;
 
     private static Map<String, Object> yaml;
 
@@ -50,8 +55,8 @@ public class BasicServerTest {
      */
     @BeforeAll
     public static void startServer() throws Exception {
-        server = TestUtil.startServer(TestApp.class);
-        HttpURLConnection cnx = TestUtil.getURLConnection(
+        server = TestUtil.startServer(Config.create(), TestApp.class, TestApp3.class);
+        cnx = TestUtil.getURLConnection(
                 server.port(),
                 "GET",
                 OPENAPI_PATH,
@@ -65,10 +70,7 @@ public class BasicServerTest {
      */
     @AfterAll
     public static void stopServer() {
-        if (server != null) {
-            server.stop();
-            server = null;
-        }
+        TestUtil.cleanup(server, cnx);
     }
 
     /**
@@ -82,5 +84,11 @@ public class BasicServerTest {
     public void simpleTest() throws Exception {
         String goSummary = TestUtil.fromYaml(yaml, "paths./testapp/go.get.summary", String.class);
         assertEquals(TestApp.GO_SUMMARY, goSummary);
+    }
+
+    @Test
+    public void testMultipleApps() {
+        String goSummary3 = TestUtil.fromYaml(yaml, "paths./testapp3/go3.get.summary", String.class);
+        assertEquals(TestApp3.GO_SUMMARY, goSummary3);
     }
 }

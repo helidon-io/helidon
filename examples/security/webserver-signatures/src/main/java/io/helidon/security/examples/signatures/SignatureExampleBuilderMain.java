@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.pki.KeyConfig;
@@ -53,9 +52,9 @@ public class SignatureExampleBuilderMain {
     private static WebServer service2Server;
 
     static {
-        addUser("jack", "password", CollectionsHelper.listOf("user", "admin"));
-        addUser("jill", "password", CollectionsHelper.listOf("user"));
-        addUser("john", "password", CollectionsHelper.listOf());
+        addUser("jack", "password", List.of("user", "admin"));
+        addUser("jill", "password", List.of("user"));
+        addUser("john", "password", List.of());
     }
 
     private SignatureExampleBuilderMain() {

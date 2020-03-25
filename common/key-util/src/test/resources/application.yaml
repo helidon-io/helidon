@@ -1,0 +1,107 @@
+#
+# Copyright (c) 2020 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# public key from keystore
+unit-1:
+  keystore:
+    cert.alias: "service_cert"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
+
+# backward compatibility with previous approach
+unit-2:
+  cert-alias: "service_cert"
+  # path to keystore
+  keystore-path: "src/test/resources/keystore/keystore.p12"
+  # Keystore type
+  # PKCS12 or JKS
+  # defaults to jdk default
+  keystore-type: "PKCS12"
+  # password of the keystore
+  keystore-passphrase: "password"
+  # alias of the certificate to get public key from
+
+# private key from keystore
+unit-3:
+  keystore:
+    key:
+      alias: "myPrivateKey"
+      passphrase: "password"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
+
+# keystore from classpath
+unit-4:
+  keystore:
+    key.alias: "myprivatekey"
+    resource.resource-path: "keystore/keystore.p12"
+    passphrase: "password"
+
+# double path - should work fine
+unit-5:
+  keystore:
+    key.alias: "myprivatekey"
+    resource:
+      path: "src/test/resources/keystore/keystore.p12"
+      resource-path: "keystore/keystore.p12"
+    passphrase: "password"
+
+# Certificate chain
+unit-6:
+  keystore:
+    trust-store: true
+    cert-chain.alias: "1"
+    resource.path: "src/test/resources/keystore/keystore-chain.p12"
+    passphrase: "helidon"
+
+# Wrong path
+unit-7:
+  keystore:
+    cert-chain.alias: "service_cert"
+    resource.path: "src/test/resources/keystore/keystore.wrong"
+    passphrase: "password"
+
+# Partially invalid
+unit-8:
+  keystore:
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    passphrase: "password"
+
+# Invalid
+unit-9:
+
+# Content
+unit-10:
+  keystore:
+    key.alias: "myprivatekey"
+    passphrase: "password"
+    resource.content: "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"
+
+# PEM
+unit-11:
+  pem:
+    key:
+      passphrase: "heslo"
+      resource.resource-path: "keystore/id_rsa.p8"
+    cert-chain:
+      resource.resource-path: "keystore/public_key_cert.pem"
+
+# PEM not encrypted
+unit-12:
+  pem.key:
+    resource.resource-path: "keystore/id_rsa_nocrypt.p8"

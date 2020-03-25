@@ -1,0 +1,308 @@
+#
+# Copyright (c) 2018, 2020, Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+engine:
+  asciidoctor:
+    images-dir: "./images"
+    libraries:
+      - "asciidoctor-diagram"
+    attributes:
+      plantumlconfig: "_plantuml-config.txt"
+      javadoc-base-url: "./apidocs/index.html"
+      helidon-version: "${project.version}"
+      microprofile-openapi-version: "${version.lib.microprofile-openapi-api}"
+      jandex-plugin-version: ${version.plugin.jandex}
+      mp-version: "3.2"
+      guides-dir: "${project.basedir}/../examples/guides"
+assets:
+  - target: "/"
+    includes:
+      - "css/*.css"
+  - target: "/"
+    includes:
+      - "images/**/*"
+header:
+  favicon:
+    path: "images/favicon.png"
+    type: "png"
+  stylesheets:
+    - path: "css/styles.css"
+pages:
+    - includes:
+        - "**/*.adoc"
+      excludes:
+        - "se/grpc/09_marshalling.adoc"
+backend:
+    name: "vuetify"
+    homePage: "about/01_overview.adoc"
+    releases:
+        - "${project.version}"
+    navigation:
+      title: "Helidon"
+      glyph:
+        type: "image"
+        value: "images/helidon_logo_dark.svg"
+      items:
+        - title: "Introduction"
+          items:
+            - title: "About"
+              pathprefix: "/about"
+              glyph:
+                type: "icon"
+                value: "assistant"
+              items:
+                - includes:
+                    - "about/*.adoc"
+        - title: "Helidon SE"
+          items:
+            - title: "Introduction"
+              pathprefix: "/se/introduction"
+              glyph:
+                type: "icon"
+                value: "widgets"
+              items:
+                - includes:
+                    - "se/introduction/*.adoc"
+            - title: "Guides"
+              pathprefix: "/se/guides"
+              glyph:
+                type: "icon"
+                value: "explore"
+              items:
+                - includes:
+                    - "se/guides/*.adoc"
+            - title: "Reactive webserver"
+              pathprefix: "/se/webserver"
+              glyph:
+                type: "icon"
+                value: "settings_ethernet"
+              items:
+                - includes:
+                    - "se/webserver/*.adoc"
+            - title: "gRPC server"
+              pathprefix: "/se/grpc"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                - includes:
+                    - "se/grpc/*.adoc"
+            - title: "Config"
+              pathprefix: "/se/config"
+              glyph:
+                type: "icon"
+                value: "settings"
+              items:
+                - includes:
+                    - "se/config/*.adoc"
+            - title: "Security"
+              pathprefix: "/se/security"
+              glyph:
+                type: "icon"
+                value: "security"
+              items:
+                - includes:
+                    - "se/security/*.adoc"
+            - title: "Metrics"
+              pathprefix: "/se/metrics"
+              glyph:
+                type: "icon"
+                value: "av_timer"
+              items:
+                - includes:
+                    - "se/metrics/*.adoc"
+            - title: "Tracing"
+              pathprefix: "/se/tracing"
+              glyph:
+                type: "icon"
+                value: "timeline"
+              items:
+                - includes:
+                    - "se/tracing/*.adoc"
+            - title: "Health Checks"
+              pathprefix: "/se/health"
+              glyph:
+                type: "icon"
+                value: "favorite_outline"
+              items:
+                - includes:
+                    - "se/health/*.adoc"
+            - title: "OpenAPI"
+              pathprefix: "/se/openapi"
+              glyph:
+                type: "icon"
+                value: "donut_large"
+              items:
+                - includes:
+                    - "se/openapi/*.adoc"
+            - title: "DB Client"
+              pathprefix: "/se/dbclient"
+              glyph:
+                type: "icon"
+                value: "donut_large"
+              items:
+                - includes:
+                    - "se/dbclient/*.adoc"
+            - title: "Web Client"
+              pathprefix: "/se/webclient"
+              glyph:
+                type: "icon"
+                value: "donut_large"
+              items:
+                - includes:
+                    - "se/webclient/*.adoc"
+            - title: "Websocket"
+              pathprefix: "/se/websocket"
+              glyph:
+                type: "icon"
+                value: "timeline"
+              items:
+                - includes:
+                    - "se/websocket/*.adoc"
+        - title: "Helidon MP"
+          items:
+            - title: "Introduction"
+              pathprefix: "/mp/introduction"
+              glyph:
+                type: "icon"
+                value: "widgets"
+              items:
+                - includes:
+                    - "mp/introduction/*.adoc"
+            - title: "Guides"
+              pathprefix: "/mp/guides"
+              glyph:
+                type: "icon"
+                value: "explore"
+              items:
+                - includes:
+                    - "mp/guides/*.adoc"
+            - title: "Config"
+              pathprefix: "/mp/config"
+              glyph:
+                type: "icon"
+                value: "settings"
+              items:
+                - includes:
+                    - "mp/config/*.adoc"
+            - title: "CDI Extensions"
+              pathprefix: "/mp/extensions"
+              glyph:
+                type: "icon"
+                value: "extension"
+              items:
+                - includes:
+                    - "mp/extensions/*.adoc"
+            - title: "gRPC server"
+              pathprefix: "/mp/grpc"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                - includes:
+                    - "mp/grpc/*.adoc"
+            - title: "Health Checks"
+              pathprefix: "/mp/health"
+              glyph:
+                type: "icon"
+                value: "favorite_outline"
+              items:
+                - includes:
+                    - "mp/health/*.adoc"
+            - title: "JAX-RS/Jersey"
+              pathprefix: "/mp/jaxrs"
+              glyph:
+                type: "icon"
+                value: "settings_ethernet"
+              items:
+                - includes:
+                    - "mp/jaxrs/*.adoc"
+            - title: "JWT Auth"
+              pathprefix: "/mp/jwtauth"
+              glyph:
+                type: "icon"
+                value: "security"
+              items:
+                - includes:
+                    - "mp/jwtauth/*.adoc"
+            - title: "Metrics"
+              pathprefix: "/mp/metrics"
+              glyph:
+                type: "icon"
+                value: "av_timer"
+              items:
+                - includes:
+                    - "mp/metrics/*.adoc"
+            - title: "OpenAPI"
+              pathprefix: "/mp/openapi"
+              glyph:
+                type: "icon"
+                value: "donut_large"
+              items:
+                - includes:
+                    - "mp/openapi/*.adoc"
+            - title: "JPA/JTA"
+              pathprefix: "/mp/jpa"
+              glyph:
+                type: "icon"
+                value: "security"
+              items:
+                - includes:
+                    - "mp/jpa/*.adoc"
+            - title: "REST Client"
+              pathprefix: "/mp/restclient"
+              glyph:
+                type: "icon"
+                value: "security"
+              items:
+                - includes:
+                    - "mp/restclient/*.adoc"
+            - title: "Security"
+              pathprefix: "/mp/security"
+              glyph:
+                type: "icon"
+                value: "timeline"
+              items:
+                - includes:
+                    - "mp/security/*.adoc"
+            - title: "Tracing"
+              pathprefix: "/mp/tracing"
+              glyph:
+                type: "icon"
+                value: "timeline"
+              items:
+                - includes:
+                    - "mp/tracing/*.adoc"
+            - title: "Websocket"
+              pathprefix: "/mp/websocket"
+              glyph:
+                type: "icon"
+                value: "timeline"
+              items:
+                - includes:
+                    - "mp/websocket/*.adoc"
+        - title: "Additional resources"
+          items:
+            - title: "Javadocs"
+              glyph:
+                type: "icon"
+                value: "library_books"
+              href: "apidocs/index.html?overview-summary.html"
+            - title: "Community"
+              glyph:
+                type: "icon"
+                value: "fa-github"
+              href: "#/community/01_community"

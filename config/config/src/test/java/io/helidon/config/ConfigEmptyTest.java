@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,11 @@ package io.helidon.config;
 import java.util.List;
 import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -82,7 +79,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringListDefault() {
-        List<String> list = CollectionsHelper.listOf("record");
+        List<String> list = List.of("record");
 
         assertThat(Config.empty().asList(String.class).orElse(list), is(empty()));
     }
@@ -94,7 +91,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsIntListDefault() {
-        List<Integer> list = CollectionsHelper.listOf(5);
+        List<Integer> list = List.of(5);
 
         assertThat(Config.empty().asList(Integer.class).orElse(list), is(empty()));
     }
@@ -172,7 +169,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringListDefaultSupplier() {
-        List<String> list = CollectionsHelper.listOf("record");
+        List<String> list = List.of("record");
 
         assertThat(Config.empty()
                            .asList(String.class)
@@ -192,7 +189,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsIntListDefaultSupplier() {
-        List<Integer> list = CollectionsHelper.listOf(5);
+        List<Integer> list = List.of(5);
 
         assertThat(Config.empty()
                            .asList(Integer.class)

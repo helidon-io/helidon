@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.webserver.WebServer;
 
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -94,9 +93,9 @@ public abstract class DigestExampleTest {
         testNotAuthorized(client, url);
 
         //Must be accessible with authentication - to everybody
-        testProtected(url, "jack", "password", CollectionsHelper.setOf("admin", "user"), CollectionsHelper.setOf());
-        testProtected(url, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
-        testProtected(url, "john", "password", CollectionsHelper.setOf(), CollectionsHelper.setOf("admin", "user"));
+        testProtected(url, "jack", "password", Set.of("admin", "user"), Set.of());
+        testProtected(url, "jill", "password", Set.of("user"), Set.of("admin"));
+        testProtected(url, "john", "password", Set.of(), Set.of("admin", "user"));
     }
 
     @Test
@@ -106,8 +105,8 @@ public abstract class DigestExampleTest {
         testNotAuthorized(client, url);
 
         //Jack and Jill allowed (user role)
-        testProtected(url, "jack", "password", CollectionsHelper.setOf("admin", "user"), CollectionsHelper.setOf());
-        testProtected(url, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
+        testProtected(url, "jack", "password", Set.of("admin", "user"), Set.of());
+        testProtected(url, "jill", "password", Set.of("user"), Set.of("admin"));
         testProtectedDenied(url, "john", "password");
     }
 
@@ -118,7 +117,7 @@ public abstract class DigestExampleTest {
         testNotAuthorized(client, url);
 
         //Only jack is allowed - admin role...
-        testProtected(url, "jack", "password", CollectionsHelper.setOf("admin", "user"), CollectionsHelper.setOf());
+        testProtected(url, "jack", "password", Set.of("admin", "user"), Set.of());
         testProtectedDenied(url, "jill", "password");
         testProtectedDenied(url, "john", "password");
     }

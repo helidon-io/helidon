@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-
-import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 
 /**
  * Implementation of {@link Single} that represents an error, raised during
@@ -39,5 +38,13 @@ final class SingleError<T> implements Single<T> {
     public void subscribe(Subscriber<? super T> subscriber) {
         subscriber.onSubscribe(EmptySubscription.INSTANCE);
         subscriber.onError(error);
+    }
+
+    /**
+     * Returns the hosted {@code Throwable} instance.
+     * @return the hosted {@code Throwable} instance
+     */
+    Throwable getError() {
+        return error;
     }
 }

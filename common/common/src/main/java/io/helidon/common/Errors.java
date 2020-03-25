@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Errors utility used to file processing messages (e.g. validation, provider, resource building errors, hint).
@@ -56,7 +57,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("WeakerAccess")
 public final class Errors extends LinkedList<Errors.ErrorMessage> {
     private static final Set<StackWalker.Option> WALKER_OPTIONS =
-            CollectionsHelper.setOf(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
     private final boolean hasFatal;
     private final boolean hasWarning;
@@ -154,6 +155,13 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
             return !hasFatal;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return this.stream()
+                .map(ErrorMessage::toString)
+                .collect(Collectors.joining("\n"));
     }
 
     /**

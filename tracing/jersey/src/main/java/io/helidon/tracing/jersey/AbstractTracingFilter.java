@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.tracing.jersey;
 
 import java.net.URI;
+import java.util.Map;
 
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
@@ -25,7 +26,7 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.PreMatching;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.config.SpanTracingConfig;
@@ -50,6 +51,10 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
     private static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
     private static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
+
+    static {
+        HelidonFeatures.register("Tracing", "Integration", "Jersey");
+    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -83,7 +88,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             configureSpan(spanBuilder);
 
             Span span = spanBuilder.start();
-            Scope spanScope = tracer.scopeManager().activate(span, false);
+            Scope spanScope = tracer.scopeManager().activate(span);
 
             requestContext.setProperty(SPAN_PROPERTY, span);
             requestContext.setProperty(SPAN_SCOPE_PROPERTY, spanScope);
@@ -140,7 +145,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         case CLIENT_ERROR:
         case SERVER_ERROR:
             Tags.ERROR.set(span, true);
-            span.log(CollectionsHelper.mapOf("event", "error"));
+            span.log(Map.of("event", "error"));
             break;
         default:
             break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.util.AbacSupport;
 
 /**
@@ -127,7 +125,7 @@ public final class Subject implements AbacSupport {
      * @return list of grants of the specific type associated with this subject (may be empty)
      */
     public List<Grant> grantsByType(String grantType) {
-        return Collections.unmodifiableList(grantsByType.getOrDefault(grantType, CollectionsHelper.listOf()));
+        return Collections.unmodifiableList(grantsByType.getOrDefault(grantType, List.of()));
     }
 
     @Override
@@ -171,7 +169,7 @@ public final class Subject implements AbacSupport {
         Set<java.security.Principal> principals = new LinkedHashSet<>(this.principals);
 
         for (String key : attributes.abacAttributeNames()) {
-            OptionalHelper.from(attributes.abacAttribute(key))
+            attributes.abacAttribute(key)
                     .stream()
                     .filter(prop -> prop instanceof Principal)
                     .map(Principal.class::cast)
@@ -366,7 +364,7 @@ public final class Subject implements AbacSupport {
          * If {@link #principal(Principal)} was not invoked prior to this method, it will also set the "main" principal.
          *
          * @param principal principal to add to this subject
-         * @return udpated builder instance
+         * @return updated builder instance
          */
         public Builder addPrincipal(Principal principal) {
             if (null == this.principal) {

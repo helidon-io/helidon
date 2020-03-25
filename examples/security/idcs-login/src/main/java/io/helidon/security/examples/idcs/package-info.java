@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 /**
- * Example showcasing integration of both web server and Jersey with IDCS server, using Open ID Connect security provider.
+ * Example showcasing integration of web server with IDCS server, using Open ID Connect security provider.
+ * There is another example in "microprofile" directory that shows the same integration for
+ * a MicroProfile based application.
  */
 package io.helidon.security.examples.idcs;

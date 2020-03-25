@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.CollectionsHelper;
-
 /**
  * Implementation of the {@link FormParams} interface.
  */
@@ -33,7 +31,7 @@ class FormParamsImpl extends ReadOnlyParameters implements FormParams {
      * For form params represented in text/plain (uncommon), newlines appear between name=value
      * assignments. When urlencoded, ampersands separate the name=value assignments.
      */
-    private static final Map<MediaType, Pattern> PATTERNS = CollectionsHelper.mapOf(
+    private static final Map<MediaType, Pattern> PATTERNS = Map.of(
             MediaType.APPLICATION_FORM_URLENCODED, preparePattern("&"),
             MediaType.TEXT_PLAIN, preparePattern("\n"));
 

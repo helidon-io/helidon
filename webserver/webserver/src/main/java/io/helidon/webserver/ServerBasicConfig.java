@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Map<String, SocketConfiguration> socketConfigs;
     private final ExperimentalConfiguration experimental;
     private final ContextualRegistry context;
+    private final boolean printFeatureDetails;
 
     /**
      * Creates new instance.
@@ -51,6 +52,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.tracer = builder.tracer();
         this.experimental = builder.experimental();
         this.context = builder.context();
+        this.printFeatureDetails = builder.printFeatureDetails();
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(ServerConfiguration.DEFAULT_SOCKET_NAME, this.socketConfig);
@@ -115,6 +117,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public Context context() {
         return context;
+    }
+
+    @Override
+    public boolean printFeatureDetails() {
+        return printFeatureDetails;
     }
 
     static class SocketConfig implements SocketConfiguration {

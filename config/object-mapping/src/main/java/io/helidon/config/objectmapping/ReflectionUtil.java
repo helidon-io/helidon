@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package io.helidon.config.objectmapping;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
@@ -76,11 +74,11 @@ final class ReflectionUtil {
         return (Class<T>) REPLACED_TYPES.getOrDefault(type, type);
     }
 
-    static Optional<MethodHandle> findStaticMethod(Class<?> type, String methodName, Class<?>... parameterTypes) {
+    static Optional<HelidonMethodHandle> findStaticMethod(Class<?> type, String methodName, Class<?>... parameterTypes) {
         try {
             Method method = type.getMethod(methodName, parameterTypes);
             if (checkMethod(method, true, type, methodName, parameterTypes.length > 0)) {
-                return unreflect(method);
+                return Optional.of(HelidonMethodHandle.create(type, method));
             } else {
                 LOGGER.log(Level.FINEST,
                            () -> "Class " + type.getName() + " method '" + methodName
@@ -95,11 +93,11 @@ final class ReflectionUtil {
         return Optional.empty();
     }
 
-    static Optional<MethodHandle> findConstructor(Class<?> type, Class<?>... parameterTypes) {
+    static Optional<HelidonMethodHandle> findConstructor(Class<?> type, Class<?>... parameterTypes) {
         try {
             Constructor<?> constructor = type.getConstructor(parameterTypes);
             if (checkConstructor(constructor, parameterTypes.length > 0)) {
-                return Optional.of(MethodHandles.publicLookup().unreflectConstructor(constructor));
+                return Optional.of(HelidonMethodHandle.create(type, constructor));
             } else {
                 LOGGER.log(Level.FINEST,
                            () -> "Class " + type.getName() + " constructor with parameters "
@@ -111,11 +109,6 @@ final class ReflectionUtil {
                        ex,
                        () -> "Class " + type.getName() + " does not have a constructor with parameters "
                                + Arrays.toString(parameterTypes) + ".");
-        } catch (IllegalAccessException ex) {
-            LOGGER.log(Level.FINER,
-                       ex,
-                       () -> "Access checking fails on " + type.getName()
-                               + " class, constructor with parameters " + Arrays.toString(parameterTypes) + ".");
         }
         return Optional.empty();
     }
@@ -125,14 +118,16 @@ final class ReflectionUtil {
      * e.g. Type t = Type.builder().build();
      */
     static <T> Optional<BuilderAccessor<T>> findBuilderMethod(Class<T> type) {
-        return findMethod(type, METHOD_BUILDER, true, null).flatMap(
-                builderMethod -> unreflect(builderMethod).flatMap(
-                        builderHandler -> findBuilderBuildHandler(type, builderMethod.getReturnType()).map(
-                                buildHandler ->
-                                        new BuilderAccessor<>(builderMethod.getReturnType(),
-                                                              builderHandler,
-                                                              type,
-                                                              buildHandler))));
+        return findMethod(type, METHOD_BUILDER, true, null)
+                .flatMap(builderMethod -> {
+                    HelidonMethodHandle builderHandler = HelidonMethodHandle.create(type, builderMethod);
+                    return findBuilderBuildHandler(type, builderMethod.getReturnType()).map(
+                            buildHandler ->
+                                    new BuilderAccessor<>(builderMethod.getReturnType(),
+                                                          builderHandler,
+                                                          type,
+                                                          buildHandler));
+                });
     }
 
     /**
@@ -203,9 +198,9 @@ final class ReflectionUtil {
         }
     }
 
-    static <T> Optional<MethodHandle> findBuilderBuildHandler(Class<T> type, Class<?> builderType) {
+    static <T> Optional<HelidonMethodHandle> findBuilderBuildHandler(Class<T> type, Class<?> builderType) {
         return findMethod(builderType, METHOD_BUILD, false, type)
-                .flatMap(ReflectionUtil::unreflect);
+                .map(it -> HelidonMethodHandle.create(type, it));
     }
 
     /**
@@ -249,18 +244,6 @@ final class ReflectionUtil {
         return Optional.empty();
     }
 
-    private static Optional<MethodHandle> unreflect(Method method) {
-        try {
-            return Optional.of(MethodHandles.publicLookup().unreflect(method));
-        } catch (IllegalAccessException ex) {
-            LOGGER.log(Level.FINER,
-                       ex,
-                       () -> "Access checking fails on " + method.getDeclaringClass() + " class, method '" + method.getName()
-                               + "' with parameters " + Arrays.asList(method.getParameters()) + ".");
-        }
-        return Optional.empty();
-    }
-
     /**
      * The class covers work with factory method.
      *
@@ -268,11 +251,11 @@ final class ReflectionUtil {
      */
     static class FactoryAccessor<T> {
         private final Class<T> type;
-        private final MethodHandle handle;
+        private final HelidonMethodHandle handle;
         private final LinkedHashMap<String, PropertyWrapper<?>> parameterValueProviders;
 
         FactoryAccessor(Class<T> type,
-                        MethodHandle handle,
+                        HelidonMethodHandle handle,
                         Parameter[] parameters) {
             this.type = type;
             this.handle = handle;
@@ -284,7 +267,7 @@ final class ReflectionUtil {
             List<Object> args = createArguments(configNode);
 
             try {
-                Object obj = handle.invokeWithArguments(args);
+                Object obj = handle.invoke(args);
                 return type.cast(obj);
             } catch (ConfigException ex) {
                 throw ex;
@@ -350,15 +333,15 @@ final class ReflectionUtil {
      */
     static class BuilderAccessor<T> {
         private final Class<?> builderType;
-        private final MethodHandle builderHandler;
+        private final HelidonMethodHandle builderHandler;
         private final Class<T> buildType;
-        private final MethodHandle buildHandler;
+        private final HelidonMethodHandle buildHandler;
         private final Collection<PropertyAccessor<?>> builderAccessors;
 
         BuilderAccessor(Class<?> builderType,
-                        MethodHandle builderHandler,
+                        HelidonMethodHandle builderHandler,
                         Class<T> buildType,
-                        MethodHandle buildHandler) {
+                        HelidonMethodHandle buildHandler) {
             this.builderType = builderType;
             this.builderHandler = builderHandler;
             this.buildType = buildType;
@@ -369,13 +352,13 @@ final class ReflectionUtil {
 
         public T create(Config config) {
             try {
-                Object builder = builderType.cast(builderHandler.invoke());
+                Object builder = builderType.cast(builderHandler.invoke(List.of()));
 
                 for (PropertyAccessor<?> builderAccessor : builderAccessors) {
                     builderAccessor.set(builder, config.get(builderAccessor.name()));
                 }
 
-                return buildType.cast(buildHandler.invoke(builder));
+                return buildType.cast(buildHandler.invoke(List.of(builder)));
             } catch (ConfigMappingException ex) {
                 throw ex;
             } catch (Throwable ex) {
@@ -393,14 +376,14 @@ final class ReflectionUtil {
      */
     static class PropertyAccessor<T> {
         private final String name;
-        private final MethodHandle handle;
+        private final HelidonMethodHandle handle;
         private final boolean hasValueAnnotation;
         private final PropertyWrapper<T> propertyWrapper;
 
         PropertyAccessor(String name, Class<T> propertyType,
                          Class<?> configAsType,
                          boolean list,
-                         MethodHandle handle,
+                         HelidonMethodHandle handle,
                          Value value) {
             this.name = name;
             this.handle = handle;
@@ -432,7 +415,7 @@ final class ReflectionUtil {
             }
         }
 
-        MethodHandle handle() {
+        HelidonMethodHandle handle() {
             return handle;
         }
 
@@ -555,30 +538,26 @@ final class ReflectionUtil {
     static <T> PropertyAccessor<T> createPropertyAccessor(Class<T> type,
                                                           String name,
                                                           Method method) {
-        try {
-            final Class<T> propertyType = (Class<T>) method.getParameterTypes()[0];
-            Class<?> configAsType = propertyType;
+        final Class<T> propertyType = (Class<T>) method.getParameterTypes()[0];
+        Class<?> configAsType = propertyType;
 
-            boolean list = List.class.isAssignableFrom(configAsType);
-            if (list) {
-                Type genType = method.getGenericParameterTypes()[0];
-                if (genType instanceof ParameterizedType) {
-                    configAsType = (Class<?>) ((ParameterizedType) genType).getActualTypeArguments()[0];
-                } else {
-                    throw new ConfigException("Unable to find generic type of List on setter parameter: " + method);
-                }
+        boolean list = List.class.isAssignableFrom(configAsType);
+        if (list) {
+            Type genType = method.getGenericParameterTypes()[0];
+            if (genType instanceof ParameterizedType) {
+                configAsType = (Class<?>) ((ParameterizedType) genType).getActualTypeArguments()[0];
+            } else {
+                throw new ConfigException("Unable to find generic type of List on setter parameter: " + method);
             }
-
-            MethodHandle handle = MethodHandles.publicLookup()
-                    .findVirtual(type,
-                                 method.getName(),
-                                 MethodType.methodType(method.getReturnType(), method.getParameterTypes()));
-
-            return new PropertyAccessor<>(name, propertyType, configAsType, list, handle,
-                                          method.getAnnotation(Value.class));
-        } catch (NoSuchMethodException | IllegalAccessException | ClassCastException ex) {
-            throw new ConfigException("Cannot access setter: " + method, ex);
         }
+
+        return new PropertyAccessor<>(name,
+                                      propertyType,
+                                      configAsType,
+                                      list,
+                                      HelidonMethodHandle.create(type, method),
+                                      method.getAnnotation(Value.class));
+
     }
 
     @SuppressWarnings("unchecked")
@@ -599,12 +578,13 @@ final class ReflectionUtil {
                 }
             }
 
-            MethodHandle handle = MethodHandles.publicLookup()
-                    .findSetter(type, field.getName(), field.getType());
-
-            return new PropertyAccessor<>(name, propertyType, configAsType, list, handle,
+            return new PropertyAccessor<>(name,
+                                          propertyType,
+                                          configAsType,
+                                          list,
+                                          HelidonMethodHandle.create(type, field),
                                           field.getAnnotation(Value.class));
-        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException ex) {
+        } catch (ClassCastException ex) {
             throw new ConfigException("Cannot access field: " + field, ex);
         }
     }
@@ -726,6 +706,118 @@ final class ReflectionUtil {
 
         void setDefaultSupplier(BiFunction<Class<T>, Config, T> defaultSupplier) {
             this.defaultSupplier = defaultSupplier;
+        }
+    }
+
+    static class FieldMethodHandle implements HelidonMethodHandle {
+        private final Field field;
+        private final Class<?> type;
+
+        FieldMethodHandle(Class<?> type, Field field) {
+            this.type = type;
+            this.field = field;
+        }
+
+        @Override
+        public Object invoke(List<Object> params) {
+            try {
+                field.set(params.get(0), params.get(1));
+                return null;
+            } catch (IllegalAccessException e) {
+                throw new ConfigException("Field " + field + " is not accessible. Cannot set value", e);
+            }
+        }
+
+        @Override
+        public MethodType type() {
+            return MethodType.methodType(Void.class, type, field.getType());
+        }
+    }
+
+    static class StaticMethodHandle implements HelidonMethodHandle {
+        private final Method method;
+
+        StaticMethodHandle(Method method) {
+            this.method = method;
+        }
+
+        @Override
+        public Object invoke(List<Object> params) {
+            try {
+                return method.invoke(null, params.toArray(new Object[0]));
+            } catch (IllegalAccessException e) {
+                throw new ConfigException("Method " + method + " is not accessible. Cannot invoke", e);
+            } catch (InvocationTargetException e) {
+                throw new ConfigException("Failed to invoke method " + method, e);
+            }
+        }
+
+        @Override
+        public MethodType type() {
+            return MethodType.methodType(method.getReturnType(), method.getParameterTypes());
+        }
+    }
+
+    static class ConstructorMethodHandle implements HelidonMethodHandle {
+        private final Class<?> type;
+        private final Constructor<?> constructor;
+
+        ConstructorMethodHandle(Class<?> type, Constructor<?> constructor) {
+            this.type = type;
+            this.constructor = constructor;
+        }
+
+        @Override
+        public Object invoke(List<Object> params) {
+            try {
+                return constructor.newInstance(params.toArray(new Object[0]));
+            } catch (IllegalAccessException e) {
+                throw new ConfigException("Constructor " + constructor + " is not accessible. Cannot invoke", e);
+            } catch (InvocationTargetException e) {
+                throw new ConfigException("Failed to invoke constructor " + constructor, e);
+            } catch (InstantiationException e) {
+                throw new ConfigException("Failed to instantiate class using constructor " + constructor, e);
+            } catch (IllegalArgumentException e) {
+                throw new ConfigException("Parameters mismatch for constructor " + constructor, e);
+            }
+        }
+
+        @Override
+        public MethodType type() {
+            return MethodType.methodType(type);
+        }
+    }
+
+    public static class InstanceMethodHandle implements HelidonMethodHandle {
+        private Class<?> type;
+        private final Method method;
+
+        InstanceMethodHandle(Class<?> type, Method method) {
+            this.type = type;
+            this.method = method;
+        }
+
+        @Override
+        public Object invoke(List<Object> params) {
+            try {
+                // first is instance
+                Object instance = params.get(0);
+                List<Object> mutableParams = new ArrayList<>(params);
+                mutableParams.remove(0);
+                return method.invoke(params.get(0), mutableParams.toArray(new Object[0]));
+            } catch (IllegalAccessException e) {
+                throw new ConfigException("Method " + method + " is not accessible. Cannot invoke", e);
+            } catch (InvocationTargetException e) {
+                throw new ConfigException("Failed to invoke method " + method, e);
+            }
+        }
+
+        @Override
+        public MethodType type() {
+            List<Class<?>> paramTypes = new ArrayList<>();
+            paramTypes.add(type);
+            paramTypes.addAll(Arrays.asList(method.getParameterTypes()));
+            return MethodType.methodType(method.getReturnType(), paramTypes);
         }
     }
 }

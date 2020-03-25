@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -42,6 +44,9 @@ import io.prometheus.client.CollectorRegistry;
  * It is possible to use
  */
 public final class PrometheusSupport implements Service {
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "Prometheus");
+    }
 
     /**
      * Standard path of Prometheus client resource: {@code /metrics}.
@@ -204,7 +209,8 @@ public final class PrometheusSupport implements Service {
         private CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         private String path;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Sets collector registry to use, default is {@link CollectorRegistry#defaultRegistry}.

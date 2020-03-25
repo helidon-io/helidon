@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,14 +44,9 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBu
         this.ctx = ctx;
     }
 
-    @Override
-    protected void hookOnCancel() {
-        ctx.close();
-    }
-
     /**
      * This method is called whenever
-     * {@link io.helidon.common.reactive.Flow.Subscription#request(long)} is
+     * {@link java.util.concurrent.Flow.Subscription#request(long)} is
      * called on the very one associated subscription with this publisher in
      * order to trigger next channel read on the associated
      * {@link ChannelHandlerContext}.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
 
 package io.helidon.config.hocon;
 
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
-import io.helidon.config.hocon.internal.HoconConfigParser;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -61,7 +62,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabled() {
-        ConfigParser parser = HoconConfigParserBuilder.buildDefault();
+        ConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
                 + "aaa = 1 \n"
                 + "bbb = ${aaa} \n"
@@ -77,7 +78,7 @@ public class HoconConfigParserTest {
     @Test
     public void testResolveDisabled() {
         ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParserBuilder.create().disableResolving().build();
+            ConfigParser parser = HoconConfigParser.builder().disableResolving().build();
             parser.parse((StringContent) () -> ""
                     + "aaa = 1 \n"
                     + "bbb = ${aaa} \n"
@@ -86,7 +87,7 @@ public class HoconConfigParserTest {
         });
 
         assertThat(cpe.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "Cannot read from source",
                            "substitution not resolved",
                            "${aaa}")));
@@ -95,7 +96,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabledEnvVar() {
-        ConfigParser parser = HoconConfigParserBuilder.buildDefault();
+        ConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -105,14 +106,14 @@ public class HoconConfigParserTest {
     @Test
     public void testResolveEnabledEnvVarDisabled() {
         ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParserBuilder.create()
+            ConfigParser parser = HoconConfigParser.builder()
                     .resolveOptions(ConfigResolveOptions.noSystem())
                     .build();
             parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
         });
 
         assertThat(cpe.getMessage(),
-                   stringContainsInOrder(CollectionsHelper.listOf(
+                   stringContainsInOrder(List.of(
                            "Cannot read from source",
                            "not resolve substitution ",
                            "${HOCON_TEST_PROPERTY}")));
@@ -121,7 +122,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testEmpty() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "");
 
         assertThat(node.entrySet(), hasSize(0));
@@ -129,7 +130,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testSingleValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -138,7 +139,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testStringListValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = [ bbb, ccc, ddd ]");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -152,7 +153,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testComplexValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
                 + "aaa =  \"bbb\"\n"
                 + "arr = [ bbb, 13, true, 3.14159 ] \n"
@@ -283,13 +284,18 @@ public class HoconConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends Content {
         @Override
-        default String mediaType() {
-            return HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON;
+        default Optional<String> mediaType() {
+            return Optional.of(HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON);
         }
 
         @Override
-        default Reader asReadable() {
-            return new StringReader(getContent());
+        default InputStream data() {
+            return new ByteArrayInputStream(getContent().getBytes(StandardCharsets.UTF_8));
+        }
+
+        @Override
+        default Charset charset() {
+            return StandardCharsets.UTF_8;
         }
 
         String getContent();
@@ -300,7 +306,7 @@ public class HoconConfigParserTest {
         private static final String GREETING = "Hello";
         private static final String NAME = "Demo";
         private static final int PAGE_SIZE = 20;
-        private static final List<Integer> BASIC_RANGE = CollectionsHelper.listOf(-20, 20);
+        private static final List<Integer> BASIC_RANGE = List.of(-20, 20);
 
         static final String DEF = ""
                 + "app {\n"

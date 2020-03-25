@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,11 +37,12 @@ security:
         atn-token:
           # JWK configuration (where to get keys for verification/signatures)
           # either of the following (as defined in Resource utility):
-          jwk-path: "/filesystem/path/of/jwk"
-          jwk-resource-path: "classpath/resource"
-          jwk-url: "http://url/of/jwk"
-          jwk-content-plain: "{}"
-          jwk-content: "base64"
+          jwk.resource:
+            path: "/filesystem/path/of/jwk"
+            resource-path: "classpath/resource"
+            url: "http://url/of/jwk"
+            content-plain: "{}"
+            content: "base64"
           handler:
             # name of header to extract token from (see providers-common module for all options), defaults to "Authorization"
             header: "Authorization"
@@ -53,14 +54,15 @@ security:
         # Optional - if not defined, atn-token config will be used for identity propagation (and the same token will be
         # propagated)
         sign-token:
-          # JWK configuration (where to get keys for signatures)
-          # This is defined only once, as we can have more keys in a single jwk
-          # either of the following:
-          jwk-path: "/filesystem/path/of/jwk"
-          jwk-resource-path: "classpath/resource"
-          jwk-url: "http://url/of/jwk"
-          jwk-content-plain: "{}"
-          jwk-content: "base64"
+          jwk.resource:
+            # JWK configuration (where to get keys for signatures)
+            # This is defined only once, as we can have more keys in a single jwk
+            # either of the following:
+            path: "/filesystem/path/of/jwk"
+            resource-path: "classpath/resource"
+            url: "http://url/of/jwk"
+            content-plain: "{}"
+            content: "base64"
           jwt-issuer: "issuer.of.JWT"
           # Used by OutboundConfig
           outbound:

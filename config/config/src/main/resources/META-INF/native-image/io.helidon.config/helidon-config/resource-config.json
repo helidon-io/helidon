@@ -1,0 +1,10 @@
+{
+    "resources": [
+        {
+            "pattern": "application.properties"
+        },
+        {
+            "pattern": "meta-config.properties"
+        }
+    ]
+}

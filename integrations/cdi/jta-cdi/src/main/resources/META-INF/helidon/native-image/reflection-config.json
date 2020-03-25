@@ -1,0 +1,13 @@
+{
+    "annotated": [],
+    "class-hierarchy": [
+        "com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase"
+    ],
+    "classes": [
+        "org.jboss.tm.usertx.client.ServerVMClientUserTransactionOperationsProvider",
+        "com.arjuna.ats.arjuna.recovery.ActionStatusService",
+        "com.arjuna.ats.internal.arjuna.objectstore.ShadowingStore",
+        "com.arjuna.ats.internal.arjuna.objectstore.ShadowNoFileLockStore"
+    ],
+    "exclude": []
+}

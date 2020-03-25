@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
@@ -45,11 +45,9 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
-
-import static io.helidon.common.CollectionsHelper.listOf;
 
 /**
  * This filter adds tracing information the the associated JAX-RS client call based on the provided properties.
@@ -138,12 +136,15 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String X_REQUEST_ID = "x-request-id";
 
-
     static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
 
-    private static final List<String> PROPAGATED_HEADERS = listOf(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
+    private static final List<String> PROPAGATED_HEADERS = List.of(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
     private static final int HTTP_STATUS_SERVER_ERROR_THRESHOLD = 500;
+
+    static {
+        HelidonFeatures.register("Tracing", "Integration", "Jersey Client");
+    }
 
     private final Optional<TracerProvider> tracerProvider;
 
@@ -153,7 +154,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      * Required by integrated platform.
      */
     public ClientTracingFilter() {
-        Iterator<TracerProvider> iterator = ServiceLoader.load(TracerProvider.class)
+        Iterator<TracerProvider> iterator = HelidonServiceLoader.create(ServiceLoader.load(TracerProvider.class))
                 .iterator();
 
         if (iterator.hasNext()) {
@@ -231,7 +232,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
 
     private Map<String, List<String>> findInboundHeaders(Optional<TracingContext> tracingContext) {
         return tracingContext.map(TracingContext::inboundHeaders)
-                .orElse(CollectionsHelper.mapOf());
+                .orElse(Map.of());
     }
 
     private Map<String, List<String>> updateOutboundHeaders(Map<String, List<String>> outboundHeaders,
@@ -256,7 +257,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
             Tags.HTTP_STATUS.set(span, status);
             if (status >= HTTP_STATUS_ERROR_THRESHOLD) {
                 Tags.ERROR.set(span, true);
-                span.log(CollectionsHelper.mapOf("event",
+                span.log(Map.of("event",
                                                  "error",
                                                  "message",
                                                  "Response HTTP status: " + status,
@@ -284,39 +285,33 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
 
         // then spans registered in context
-        return OptionalHelper
-                // from injected span context
-                .from(tracingContext.map(TracingContext::parentSpan))
+        return  // from injected span context
+                tracingContext.map(TracingContext::parentSpan)
                 // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
                 // then look for overall span context
-                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)))
-                .asOptional();
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)));
     }
 
     private String findSpanName(ClientRequestContext requestContext, SpanTracingConfig spanConfig) {
-        return OptionalHelper.from(property(requestContext, String.class, SPAN_NAME_PROPERTY_NAME))
+        return property(requestContext, String.class, SPAN_NAME_PROPERTY_NAME)
                 .or(spanConfig::newName)
-                .asOptional()
                 .orElseGet(() -> requestContext.getMethod().toUpperCase());
     }
 
     private Tracer findTracer(ClientRequestContext requestContext,
                               Optional<TracingContext> tracingContext) {
-        return OptionalHelper.from(property(requestContext, Tracer.class, TRACER_PROPERTY_NAME))
+        return property(requestContext, Tracer.class, TRACER_PROPERTY_NAME)
                 .or(() -> tracingContext.map(TracingContext::tracer))
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)))
-                .asOptional()
                 .orElseGet(GlobalTracer::get);
     }
 
     private static <T> Optional<T> property(ClientRequestContext requestContext, Class<T> clazz, String propertyName) {
-        return OptionalHelper.from(Optional.empty())
-                .or(() -> Optional.ofNullable(requestContext.getProperty(propertyName))
-                        .filter(clazz::isInstance))
+        return Optional.ofNullable(requestContext.getProperty(propertyName))
+                        .filter(clazz::isInstance)
                 .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
                         .filter(clazz::isInstance))
-                .asOptional()
                 .map(clazz::cast);
     }
 
@@ -325,13 +320,12 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
 
         tracer.inject(currentSpan.context(),
                       Format.Builtin.HTTP_HEADERS,
-                      new TextMapInjectAdapter(tracerHeaders));
+                      new TextMapAdapter(tracerHeaders));
 
         return new HashMap<>(tracerHeaders.entrySet()
                                      .stream()
                                      .collect(Collectors.toMap(Map.Entry::getKey,
-                                                               entry -> CollectionsHelper
-                                                                       .listOf(entry.getValue()))));
+                                                               entry -> List.of(entry.getValue()))));
     }
 
     private Span createSpan(ClientRequestContext requestContext,

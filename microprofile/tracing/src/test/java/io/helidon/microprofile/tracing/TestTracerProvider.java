@@ -19,7 +19,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -31,11 +30,11 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.util.GlobalTracer;
 
 /**
- * TODO javadoc.
+ * Testing tracer provider.
  */
 public class TestTracerProvider implements TracerProvider {
     @Override
@@ -112,27 +111,24 @@ public class TestTracerProvider implements TracerProvider {
         public ScopeManager scopeManager() {
             return new ScopeManager() {
                 private Scope active;
+                private Span activeSpan;
+
                 @Override
-                public Scope activate(Span span, boolean finishSpanOnClose) {
+                public Scope activate(Span span) {
                     active = new Scope() {
                         @Override
                         public void close() {
-                            if (finishSpanOnClose) {
-                                span.finish();
-                            }
+                            activeSpan = null;
                         }
 
-                        @Override
-                        public Span span() {
-                            return span;
-                        }
                     };
+                    activeSpan = span;
                     return active;
                 }
 
                 @Override
-                public Scope active() {
-                    return active;
+                public Span activeSpan() {
+                    return activeSpan;
                 }
             };
         }
@@ -140,6 +136,16 @@ public class TestTracerProvider implements TracerProvider {
         @Override
         public Span activeSpan() {
             return null;
+        }
+
+        @Override
+        public Scope activateSpan(Span span) {
+            return null;
+        }
+
+        @Override
+        public void close() {
+
         }
 
         @Override
@@ -151,9 +157,9 @@ public class TestTracerProvider implements TracerProvider {
 
         @Override
         public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
-            TestSpan span = ((TestSpanContext)spanContext).testSpan;
+            TestSpan span = ((TestSpanContext) spanContext).testSpan;
 
-            TextMapInjectAdapter adapter = (TextMapInjectAdapter) carrier;
+            TextMapAdapter adapter = (TextMapAdapter) carrier;
             adapter.put(OPERATION_NAME_HEADER, span.operationName);
         }
 
@@ -168,7 +174,6 @@ public class TestTracerProvider implements TracerProvider {
         private final List<Tag<?>> tags = new LinkedList<>();
 
         private SpanContext parent;
-
 
         public TestSpanBuilder(String operationName) {
             this.operationName = operationName;
@@ -220,24 +225,20 @@ public class TestTracerProvider implements TracerProvider {
         }
 
         @Override
-        public Scope startActive(boolean finishSpanOnClose) {
-             return new TestScope((TestSpan) start());
-        }
-
-        @Override
-        public Span startManual() {
-            return start();
-        }
-
-        @Override
         public Span start() {
-            TestSpan result = new TestSpan(this);;
+            TestSpan result = new TestSpan(this);
+            ;
 
             if (null != parent) {
-                ((TestSpanContext)parent).testSpan.addChild(result);
+                ((TestSpanContext) parent).testSpan.addChild(result);
             }
             return result;
 
+        }
+
+        @Override
+        public <T> Tracer.SpanBuilder withTag(io.opentracing.tag.Tag<T> tag, T value) {
+            return this;
         }
     }
 
@@ -260,6 +261,11 @@ public class TestTracerProvider implements TracerProvider {
         @Override
         public SpanContext context() {
             return new TestSpanContext(this);
+        }
+
+        @Override
+        public <T> Span setTag(io.opentracing.tag.Tag<T> tag, T value) {
+            return this;
         }
 
         @Override
@@ -332,26 +338,19 @@ public class TestTracerProvider implements TracerProvider {
 
         @Override
         public Iterable<Map.Entry<String, String>> baggageItems() {
-            Map<String, String> map = CollectionsHelper.mapOf();
+            Map<String, String> map = Map.of();
 
             return map.entrySet();
         }
-    }
 
-    static class TestScope implements Scope {
-        private final TestSpan testSpan;
-
-        TestScope(TestSpan testSpan) {
-            this.testSpan = testSpan;
+        @Override
+        public String toTraceId() {
+            return testSpan.parent.toTraceId();
         }
 
         @Override
-        public void close() {
-        }
-
-        @Override
-        public Span span() {
-            return testSpan;
+        public String toSpanId() {
+            return testSpan.toString();
         }
     }
 }

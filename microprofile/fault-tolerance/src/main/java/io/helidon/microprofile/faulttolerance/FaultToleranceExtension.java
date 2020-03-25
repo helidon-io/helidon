@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,9 @@ import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessSyntheticBean;
 import javax.enterprise.util.AnnotationLiteral;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -54,10 +57,13 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
  * Class FaultToleranceExtension.
  */
 public class FaultToleranceExtension implements Extension {
-
     static final String MP_FT_NON_FALLBACK_ENABLED = "MP_Fault_Tolerance_NonFallback_Enabled";
     static final String MP_FT_METRICS_ENABLED = "MP_Fault_Tolerance_Metrics_Enabled";
     static final String MP_FT_INTERCEPTOR_PRIORITY = "mp.fault.tolerance.interceptor.priority";
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.MP, "FaultTolerance");
+    }
 
     private static boolean isFaultToleranceEnabled = true;
 

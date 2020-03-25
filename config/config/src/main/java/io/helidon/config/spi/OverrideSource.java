@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,15 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 
 /**
  * Source of config override settings.
@@ -51,12 +52,20 @@ import io.helidon.config.Config;
  *
  * @see OverrideData
  */
-public interface OverrideSource extends Source<OverrideSource.OverrideData>, Supplier<OverrideSource> {
+public interface OverrideSource extends Source, Supplier<OverrideSource> {
 
     @Override
     default OverrideSource get() {
         return this;
     }
+
+    /**
+     * Load override data from the underlying source.
+     *
+     * @return override data if present, empty otherwise
+     * @throws ConfigException in case the loading of data failed
+     */
+    Optional<ConfigContent.OverrideContent> load() throws ConfigException;
 
     /**
      * Group of config override settings.
@@ -132,13 +141,15 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
          *
          * @param reader a source
          * @return a new instance
-         * @throws IOException when an error occurred when reading from the
+         * @throws io.helidon.config.ConfigException when an error occurred when reading from the
          * reader
          */
-        public static OverrideData create(Reader reader) throws IOException {
+        public static OverrideData create(Reader reader) {
             OrderedProperties properties = new OrderedProperties();
-            try (Reader autocloseableReader = reader) {
-                properties.load(autocloseableReader);
+            try (Reader autoCloseableReader = reader) {
+                properties.load(autoCloseableReader);
+            } catch (IOException e) {
+                throw new ConfigException("Cannot load data from reader.", e);
             }
             List<Map.Entry<Predicate<Config.Key>, String>> data = properties.orderedMap().entrySet()
                     .stream()
@@ -153,7 +164,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
          * @return an empty object
          */
         public static OverrideData empty() {
-            return new OverrideData(CollectionsHelper.listOf());
+            return new OverrideData(List.of());
         }
 
         /**

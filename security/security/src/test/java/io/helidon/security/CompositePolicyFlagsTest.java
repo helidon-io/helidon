@@ -18,9 +18,9 @@ package io.helidon.security;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.SecurityResponse.SecurityStatus;
 import io.helidon.security.providers.PathBasedProvider;
 import io.helidon.security.providers.ResourceBasedProvider;
@@ -334,7 +334,7 @@ public class CompositePolicyFlagsTest {
         SecurityEnvironment se = Mockito.mock(SecurityEnvironment.class);
 
         when(se.path()).thenReturn(Optional.of(path));
-        when(se.headers()).thenReturn(CollectionsHelper.mapOf());
+        when(se.headers()).thenReturn(Map.of());
         when(se.abacAttribute("resourceType")).thenReturn(Optional.of(resource));
 
         when(mock.env()).thenReturn(se);

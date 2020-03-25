@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 
 /**
  * Security level stores annotations bound to the specific class and method.
@@ -81,11 +80,11 @@ public class SecurityLevel {
     public <T extends Annotation> List<T> filterAnnotations(Class<T> annotationType, EndpointConfig.AnnotationScope scope) {
         switch (scope) {
         case CLASS:
-            return (List<T>) classLevelAnnotations.getOrDefault(annotationType, CollectionsHelper.listOf());
+            return (List<T>) classLevelAnnotations.getOrDefault(annotationType, List.of());
         case METHOD:
-            return (List<T>) methodLevelAnnotations.getOrDefault(annotationType, CollectionsHelper.listOf());
+            return (List<T>) methodLevelAnnotations.getOrDefault(annotationType, List.of());
         default:
-            return CollectionsHelper.listOf();
+            return List.of();
         }
     }
 

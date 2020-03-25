@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.metrics.RegistryFactory;
@@ -94,7 +93,13 @@ public final class TodosHandler implements Service {
     }
 
     private Metadata counterMetadata(String name, String description) {
-        return new Metadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE);
+        return Metadata.builder()
+                .withName(name)
+                .withDisplayName(name)
+                .withDescription(description)
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build();
     }
 
     @Override
@@ -203,7 +208,7 @@ public final class TodosHandler implements Service {
                               final Optional<? extends JsonObject> jsonResponse,
                               final Http.Status failureStatus) {
 
-        OptionalHelper.from(jsonResponse)
+        jsonResponse
                 .ifPresentOrElse(res::send, () -> res.status(failureStatus));
     }
 
@@ -239,8 +244,8 @@ public final class TodosHandler implements Service {
                         final ServerResponse res,
                         final Consumer<SecurityContext> ctx) {
 
-        OptionalHelper.from(req.context()
-                                    .get(SecurityContext.class))
+        req.context()
+                .get(SecurityContext.class)
                 .ifPresentOrElse(ctx, () -> noSecurityContext(res));
     }
 

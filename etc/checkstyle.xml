@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2016, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,9 +37,13 @@
 
 <module name="Checker">
 
-    <!-- exclude module-info.java check - checkstyle can't process it -->
+    <!--
+        exclude files
+         1. module-info.java - checkstyle can't process it
+         2. ProxyFactory.java - sources copied from Weld, does not adhere to Helidon style
+    -->
     <module name="BeforeExecutionExclusionFileFilter">
-        <property name="fileNamePattern" value="module\-info\.java$"/>
+        <property name="fileNamePattern" value="module\-info\.java$|ProxyFactory\.java$"/>
     </module>
 
     <!--
@@ -87,8 +91,15 @@
     <module name="FileLength"/>
 
     <module name="SuppressWarningsFilter" />
+
+    <!-- Checks for Size Violations.                    -->
+    <!-- See http://checkstyle.sf.net/config_sizes.html -->
+    <module name="LineLength">
+        <property name="max" value="130"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://|@see| \* |@link|imp|@todo|@version|^Args=|.*--initialize-at-build-time|^javax.sql.DataSource"/>
+    </module>
+
     <module name="TreeWalker">
-        <property name="cacheFile" value="${checkstyle.cache.file}"/>
 
         <module name="SuppressionCommentFilter">
             <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
@@ -101,7 +112,9 @@
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <module name="JavadocMethod">
             <property name="scope" value="protected"/>
-            <property name="allowUndeclaredRTE" value="true"/>
+            <property name="validateThrows" value="false"/>
+        </module>
+        <module name="MissingJavadocMethod">
             <property name="allowMissingPropertyJavadoc" value="true"/>
         </module>
         <module name="JavadocType">
@@ -170,12 +183,6 @@
             <property name="option" value="EOL"/>
         </module>
 
-        <!-- Checks for Size Violations.                    -->
-        <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="130"/>
-            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://|@see| \* |@link|imp|@todo|@version"/>
-        </module>
         <module name="MethodLength"/>
 
         <!-- Some Netty interfaces need this -->
@@ -270,7 +277,10 @@
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
-        <module name="TodoComment"/>
+        <module name="TodoComment">
+            <!-- TODO - we should add this configuration to remove todos from code -->
+            <!-- <property name="format" value="(TODO)|(FIXME)|(EDIT)"/>-->
+        </module>
         <module name="UpperEll"/>
 
         <module name="OneStatementPerLine"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ final class InterceptorCounted extends InterceptorBase<Counter, Counted> {
         super(registry,
               Counted.class,
               Counted::name,
+              Counted::tags,
               Counted::absolute,
               MetricRegistry::getCounters,
               "counter");
@@ -49,15 +50,5 @@ final class InterceptorCounted extends InterceptorBase<Counter, Counted> {
                                       InvocationContext context) throws Exception {
         counter.inc();
         return context.proceed();
-    }
-
-    @Override
-    protected void postInvoke(Counter counter,
-                              Counted annot,
-                              InvocationContext context,
-                              Exception ex) {
-        if (!annot.monotonic()) {
-            counter.dec();
-        }
     }
 }

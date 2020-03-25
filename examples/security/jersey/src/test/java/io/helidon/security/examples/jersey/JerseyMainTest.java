@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.webserver.WebServer;
 
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -91,13 +90,13 @@ public abstract class JerseyMainTest {
         testProtected(baseUri() + "/protected",
                       "jack",
                       "password",
-                      CollectionsHelper.setOf("user", "admin"),
-                      CollectionsHelper.setOf());
+                      Set.of("user", "admin"),
+                      Set.of());
         testProtected(baseUri() + "/protected",
                       "jill",
                       "password",
-                      CollectionsHelper.setOf("user"),
-                      CollectionsHelper.setOf("admin"));
+                      Set.of("user"),
+                      Set.of("admin"));
     }
 
     @Test
@@ -118,8 +117,8 @@ public abstract class JerseyMainTest {
         testProtected(baseUri() + "/outbound",
                       "jill",
                       "password",
-                      CollectionsHelper.setOf("user"),
-                      CollectionsHelper.setOf("admin"));
+                      Set.of("user"),
+                      Set.of("admin"));
     }
 
     protected abstract int getPort();

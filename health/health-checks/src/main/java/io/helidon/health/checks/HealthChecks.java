@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.health.checks;
 
 import java.lang.management.ManagementFactory;
 
+import io.helidon.common.HelidonFeatures;
+
 import org.eclipse.microprofile.health.HealthCheck;
 
 /**
@@ -26,6 +28,11 @@ import org.eclipse.microprofile.health.HealthCheck;
  */
 public final class HealthChecks {
     private static final boolean IS_GRAAL_VM = Boolean.getBoolean("com.oracle.graalvm.isaot");
+
+    static {
+        HelidonFeatures.register("Health", "Built-ins");
+    }
+
     private HealthChecks() {
     }
 

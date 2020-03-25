@@ -31,7 +31,6 @@ import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.ProducerFactory;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
 
 /**
@@ -109,7 +108,7 @@ public class GrpcClientCdiExtension implements Extension {
 
         BeanAttributes<?> producerAttributes = beanManager.createBeanAttributes(producerMethod);
         ProducerFactory<GrpcProxyProducer> factory = beanManager.getProducerFactory(producerMethod, null);
-        Set<Type> types = CollectionsHelper.setOf(Object.class, type);
+        Set<Type> types = Set.of(Object.class, type);
         BeanAttributes<?> beanAttributes = DelegatingBeanAttributes.create(producerAttributes, types);
         event.addBean(beanManager.createBean(beanAttributes, GrpcProxyProducer.class, factory));
     }

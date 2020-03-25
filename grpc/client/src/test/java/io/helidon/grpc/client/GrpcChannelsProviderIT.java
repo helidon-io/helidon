@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,11 @@
  */
 package io.helidon.grpc.client;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -27,6 +32,8 @@ import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 
+import io.grpc.EquivalentAddressGroup;
+import io.grpc.NameResolver;
 import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -195,6 +202,24 @@ public class GrpcChannelsProviderIT {
         );
     }
 
+    @Test
+    public void shouldUseTarget() throws Exception {
+        FakeNameResolverFactory factory = new FakeNameResolverFactory(portNoSsl);
+        String channelKey = "ChannelKey";
+        GrpcChannelDescriptor.Builder builder = GrpcChannelDescriptor
+                .builder()
+                .target("foo://bar.com")
+                .nameResolverFactory(factory);
+
+        GrpcChannelsProvider provider = GrpcChannelsProvider.builder()
+                .channel(channelKey, builder.build())
+                .build();
+
+        GrpcServiceClient client = GrpcServiceClient.create(provider.channel(channelKey), treeMapSvcDesc);
+        Object result = client.blockingUnary("get", 1);
+        assertThat(result, equalTo(TreeMapService.BILBO));
+    }
+
     // A helper method to invoke a unary method. Calls createClient().
     private Object invokeUnary(int serverPort, int mode) throws Throwable {
         GrpcServiceClient client = createClient(serverPort, mode);
@@ -241,5 +266,66 @@ public class GrpcChannelsProviderIT {
                 .build();
 
         return GrpcServiceClient.create(grpcClientCfg.channel(channelKey), treeMapSvcDesc);
+    }
+
+
+    private static class FakeNameResolverFactory extends NameResolver.Factory {
+        private final int port;
+        private URI targetUri;
+        private NameResolver.Args args;
+
+        public FakeNameResolverFactory(int port) {
+            this.port = port;
+        }
+
+        @Override
+        public String getDefaultScheme() {
+            return "directaddress";
+        }
+
+        @Override
+        public NameResolver newNameResolver(URI targetUri, NameResolver.Args args) {
+            this.targetUri = targetUri;
+            this.args = args;
+            return new FakeNameResolver(port);
+        }
+
+        public URI getTargetUri() {
+            return targetUri;
+        }
+
+        public NameResolver.Args getArgs() {
+            return args;
+        }
+    }
+
+
+    private static class FakeNameResolver extends NameResolver {
+        private final int port;
+
+        public FakeNameResolver(int port) {
+            this.port = port;
+        }
+
+        @Override
+        public void start(Listener2 listener) {
+            SocketAddress address = new InetSocketAddress("localhost", port);
+            EquivalentAddressGroup group = new EquivalentAddressGroup(Collections.singletonList(address));
+            List<EquivalentAddressGroup> addresses = Collections.singletonList(group);
+            listener.onResult(ResolutionResult.newBuilder().setAddresses(addresses).build());
+        }
+
+        @Override
+        public void refresh() {
+        }
+
+        @Override
+        public String getServiceAuthority() {
+            return "";
+        }
+
+        @Override
+        public void shutdown() {
+        }
     }
 }

@@ -30,9 +30,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.server.Server;
-import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -114,7 +112,7 @@ public class TracingTest {
     public static class MyApp extends Application {
         @Override
         public Set<Class<?>> getClasses() {
-            return CollectionsHelper.setOf(
+            return Set.of(
                     HelloWorld.class,
                     MyResource.class);
         }

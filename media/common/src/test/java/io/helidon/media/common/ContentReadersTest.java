@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 
@@ -35,10 +34,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for {@link ContentReaders}.
  */
+@SuppressWarnings("deprecation")
 class ContentReadersTest {
     @Test
     void testStringReader() throws Exception {
-        Multi<DataChunk> chunks = Multi.just(DataChunk.create(new byte[] {(byte) 225, (byte) 226, (byte) 227}));
+        Multi<DataChunk> chunks = Multi.singleton(DataChunk.create(new byte[] {(byte) 225, (byte) 226, (byte) 227}));
 
         CompletableFuture<? extends String> future =
                 ContentReaders.stringReader(Charset.forName("cp1250"))
@@ -55,7 +55,7 @@ class ContentReadersTest {
         byte[] bytes = original.getBytes(StandardCharsets.UTF_8);
 
         CompletableFuture<? extends byte[]> future = ContentReaders.byteArrayReader()
-                .apply(Multi.just(DataChunk.create(bytes)))
+                .apply(Multi.singleton(DataChunk.create(bytes)))
                 .toCompletableFuture();
 
         byte[] actualBytes = future.get(10, TimeUnit.SECONDS);
@@ -68,11 +68,11 @@ class ContentReadersTest {
         byte[] bytes = original.getBytes(StandardCharsets.UTF_8);
 
         CompletableFuture<? extends InputStream> future = ContentReaders.inputStreamReader()
-                .apply(Multi.just(DataChunk.create(bytes)))
+                .apply(Multi.singleton(DataChunk.create(bytes)))
                 .toCompletableFuture();
 
         InputStream inputStream = future.get(10, TimeUnit.SECONDS);
-        byte[] actualBytes = InputStreamHelper.readAllBytes(inputStream);
+        byte[] actualBytes = inputStream.readAllBytes();
         assertThat(actualBytes, is(bytes));
     }
 
@@ -80,7 +80,7 @@ class ContentReadersTest {
     void testURLDecodingReader() throws Exception {
         String original = "myParam=\"Now@is'the/time";
         String encoded = URLEncoder.encode(original, "UTF-8");
-        Multi<DataChunk> chunks = Multi.just(DataChunk.create(encoded.getBytes(StandardCharsets.UTF_8)));
+        Multi<DataChunk> chunks = Multi.singleton(DataChunk.create(encoded.getBytes(StandardCharsets.UTF_8)));
 
         CompletableFuture<? extends String> future =
                 ContentReaders.urlEncodedStringReader(StandardCharsets.UTF_8)

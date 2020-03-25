@@ -23,7 +23,6 @@ import io.helidon.tracing.TracerBuilder;
 
 import io.opentracing.Tracer;
 import io.opentracing.mock.MockTracer;
-import io.opentracing.util.GlobalTracer;
 
 public final class OpentracingJavaMockTracerBuilder implements TracerBuilder<OpentracingJavaMockTracerBuilder> {
 

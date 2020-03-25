@@ -28,5 +28,11 @@
         <Method name="extractJarEntry"/>
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>
+    <Match>
+        <!-- Desired behavior -->
+        <Class name="io.helidon.webserver.NettyWebServer"/>
+        <Method name="started"/>
+        <Bug pattern="DM_EXIT"/>
+    </Match>
 
 </FindBugsFilter>

@@ -1,101 +1,52 @@
-# Helidon Config API design changes proposal
+Helidon Config API
+_____________________
 
-## Summary
+# Helidon Config 2.0
 
-Summary table:
+This section describes API changes between Helidon 1.x and Helidon 2.0 for Config
 
-| Area              | Impact on API | Impact on behavior | Impact on SPI | Urgency |
-| ----------------- | ------------- | ------------------ | ------------- | ------- |
-| Too many methods  | High          | Low or None        | Low           | High    |
-| Source types      | Low or None   | High               | Medium        | Medium  |
-| Change support    | Medium        | Medium             | High          | High    |
-| Polling strategies| Medium        | Low                | Medium        | Low     |
-| Debugging         | None          | None               | None          | Medium  |
-| FileDetector SPI  | None          | None               | None          | High    |
-| Java Beans        | None          | Low                | None          | High    |
-| No reflection as()| None          | High               | None          | High    |
-| Remove ConfigMapper| Medium       | None               | Medium        | High    |
-| Source is Supplier| Compatible    | None               | Low or None   | Medium  |
+## Meta Configuration
+Issue:  https://github.com/oracle/helidon/issues/1101
+PR:     https://github.com/oracle/helidon/pull/1102
 
-### Too Many Methods
-Too many methods are part of public API - this makes it very complicated to test, maintain and (sometimes) use
+### API Changes
 
-This is caused by:
-1. each primitive type has its own method + methods for any type and methods for map, list and nodes 
-    1. boolean
-    2. int
-    3. long
-    4. Double
-    5. String
-    5. Map
-    5. List
-    5. Config
-    5. Class<?>
-1. supporting too many paradigms 
-    1. returning T, Optional<T>, Supplier<T>, Supplier<Optional<T>>
-    1. for each of these methods (except for Optional) supporting a method without and with a default value
-    1. this means that we have 6 methods for each type (using boolean as an example):
-        1. asBoolean()
-        1. asBoolean(boolean default)
-        1. asBooleanSupplier()
-        1. asBooleanSupplier(boolean default)
-        1. asOptionalBoolean()
-        1. asOptionalBooleanSupplier()
-        
-#### Proposal
-Create a typed config value `ConfigValue<T>`.
-This would leave config with the following accessor methods:
-1. Required: 
-    1. `ConfigValue<T> as(Class<? extends T> type) throws ConfigMappingException`
-    2. `ConfigValue<List<T>> asList(Class<? extends T> type) throws ConfigMappingException`
-    3. `ConfigValue<Map<String, String>> asMap()`
-2. Optional (shortcut):
-    2. `ConfigValue<Config> asNode()`
-    3. `ConfigValue<List<Config>> asNodeList()`
-    4. `ConfigValue<Boolean> asBoolean() throws ConfigMappingException`
-    5. other shortcut methods for primitive types
-    
-The `ConfigValue` interface would have the following methods to access typed value (as supported in original API):
-1. `Optional<T> asOptional()` - to get the "real" Optional value
-3. `Supplier<T> asSupplier()` - supplier of current value (if config changes)
-4. `Supplier<T> asSupplier(T defaultValue)` - supplier of current value with default
-5. `Supplier<Optional<T>> asOptionalSupplier()` - supplier of current value as an optional
-2. `T get() throws MissingValueException` - same as in java.util.Optional, just throws a different exception
-6. and all methods of java.util.Optional<T> (unfortunatelly optional is a final class, so we have no choice but to copy 
-    the methods) - including the methods from java9+ (stream(), ifPresentOrElse(), or())
+| Class             | Method            | Type | Description                |
+| ----------------- | ----------------- | ---- | -------------------------- |
+| `Config.Builder`  | `loadSourcesFrom` | remove | Replaced with methods on `MetaConfig` |
+|                   | `builderLoadSourceFrom` | remove | Replaced with methods on `MetaConfig` |
+|                   | `addSource`       | add  | Add a config source        |
+|                   | `config(Config)`  | add  | Use meta configuration to configure the builder |
+|                   | `metaConfig()`    | add  | Use meta configuration (located automatically) to configure the builder |
+| `ConfigSources`   | `file(Path)`      | add  | Create a FileConfigSource builder from Path |
+|                   | `load(Supplier...)` | remove | Replaced with methods on `MetaConfig` |
+|                   | `load(Config)`    | remove | Replaced with methods on `MetaConfig` |
+| `MetaConfig`      |                   | add  | A new class for all things related to meta configuration |
+| `MetaConfigFinder`|                   | add  | Utility class to locate meta configuration and default configuration |
+| `MetaProviders`   |                   | add  | Utility class to gather service loader implementations and to add built-ins |
+| `ClasspathConfigSource`, `ClasspathOverrideSource`, `DirectoryConfigSource`, `FileConfigSource`, `FileOverrideSource`, `PrefixedConfigSource`, `UrlConfigSource`, `UrlOverrideSource`, `etcd.EtcdConfigSource`, `git.GitConfigSource` | | | |
+|                   | `builder()`       | add  | Refactored to support builder pattern as rest of Helidon | 
+| `.Builder`        | constructor       | mod  | No longer public, no parameters, usages replaced with `builder()` |
+|                   | property setter   | add  | For each config source a property setter is added (`url`, `resource` etc.) |
+|                   | `init` -> `config`| rename | Meta configuration method was renamed from `init` to `config` and made public |
+|                   | `build()`         | behavior | Method can now throw an `IllegalArgumentException` - originally the constructor would fail with `NullPointerException` |
+| `MapConfigSource` | constructor       | mod  | No long public |
+|                   | `create`          | add  | Static factory methods |
+| `spi.AbstractConfigSource`, `spi.AbstractParsableConfigSource`, `spi.AbstractSource`  | `init`        | mod  | Renamed to `config` and made public |
+| `spi.ConfigSource`    | `create(Config)`  | remove | Moved to `MetaConfig` |
+| `spi.ConfigSourceProvider`|           | add  | Java service loader service to support custom meta configurable sources |
+| `spi.OverrideSource`  | `create`      | mod  | No longer throws an `IOException`, now throws `ConfigException` |
+| `spi.OverrideSourceProvider` |        | add  | Java service loader service to support custom meta configurable override sources |
+| `spi.PollingStrategyProvider` |       | add  | Java service loader service to support custom meta configurable polling strategies |
+| `spi.RetryPolicy` | `create(Config)`  | remove | Moved to `MetaConfig` |
+|                   | `get`             | remove | No longer implements `Supplier` |
+| `spi.RetryPolicyProvider` |           | add  | Java service loader service to support custom meta configurable retry policies |
 
-Example:
-```java
-// unchanged for String, as Config implements Value<String>
-config.get("client-id").value().ifPresent(this::clientId);
+                    
+# Other proposed features
 
-// current for primitive type
-config.get("proxy-port").asOptionalInt().ifPresent(this::proxyPort);
-// new for primitive type
-config.get("proxy-port").as(Integer.class).ifPresent(this::proxyPort);
-
-// current for type with a mapper
-config.get("identity-uri").asOptional(URI.class).ifPresent(this::identityUri);
-// new for type with a mapper
-config.get("identity-uri").as(URI.class).ifPresent(this::identityUri);
-
-// current for type with a factory method
-config.get("oidc-config").asOptional(OidcConfig.class).ifPresent(this::oidcConfig);
-// new for type with a factory method (part of "No reflection as()" problem
-config.get("oidc-config").as(OidcConfig::create).ifPresent(this::oidcConfig);
-
-// current using response value
-int port = config.get("proxy-port").asInt(7001);
-// new using response value (if we decide to have shortcuts for primitives)
-int port = config.get("proxy-prot").asInt().get(7001);
-// new otherwise
-int port = config.get("proxy-port").as(Integer.class).get(7001);
-
-```
-    
-### Source types
-
-#### Lazy config sources
+## Source types
+### Lazy config sources
 We do not support config sources that require lazy access to values (using term "lazy sources" in the text)
 
 _This may be sources that cannot list the keys, or where listing the keys is not feasible (speed, memory consumption etc.)_
@@ -116,7 +67,7 @@ Other changes:
         2. Weld
 4. Behavior must be clearly documented
 
-#### Mutable sources with no notification support
+## Mutable sources with no notification support
 Some of our config source are mutable, yet do not support notifications.
 We should change all config sources to support notifications if so chosen by the user.
 If need be, these should be polled regularly and compared with previous version. 
@@ -131,43 +82,18 @@ Current change support is too complex and uses APIs not suitable for the purpose
     boolean
 3. Remove dependency on SubmissionPublisher (and on project Reactor transitively)
 
-### Polling strategies
+## Polling strategies
 1. Check if these can be simplified, as current API and SPI is not easy to use.
 2. Make sure one thing can be achieved only one way - e.g why do we have
     polling and watching both available for File config sources?
     
-### Debugging
-Provide better support for debugging:
-1. Keep information about a config source that provided a value of a node
-2. This may be accessible only in a debugger (e.g. no need to change API or SPI)
-
-### File Detector SPI
+## File Detector SPI
 Currently the FileDetector service does not work consistently in all environments.
 Known problems:
 1. when running JDK9+ using maven exec plugin (test with yaml config)
 2. when running in some docker images (need to find the failing image)
 
-### Java Beans
-Separate java beans support into a different module (including annotations @Value and @Transient).
-The current support can build instances from config using reflection. This is complicated
-part of the code that should not be part of SE Config by default.
-Add SPI to allow for such (more complex) config.as(AClass.class) transformation
-
-### No reflection as()
-Do not use reflection in T Config.as(Class<T> type) method. Currently there is a complicated
-code that introspects the class to find suitable constructor or factory method.
-Create a new method `ConfigValue<T> as(Function<Config, T> factoryMethod)`.
-
-We can then use:
-```java
-config.as(OidcConfig::create);
-config.as(SomeClass::new);
-```
-
-### Remove ConfigMapper
-Remove ConfigMapper interface, as it is in fact a Function<Config, T>.
-
-### Source is Supplier
+## Source is Supplier
 Currently the ConfigSource interface extends Supplier and default implementation
 of the `get()` method returns `this`.
 Reason behind this (probably) is to have a single set of methods on `Builder`, that

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,10 @@
 
 package io.helidon.config.spi;
 
-import java.util.Optional;
-
-import io.helidon.config.ConfigException;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests default methods of {@link Source}.
@@ -37,16 +34,12 @@ public class SourceTest {
     }
 
     @Test
-    public void testDescriptionLambda() {
-        Source source = Optional::empty;
+    public void testDescriptionAnonymous() {
+        Source source = new Source() {};
 
         assertThat(source.description(), is(source.getClass().getSimpleName()));
     }
 
-    private class TestSource implements Source {
-        @Override
-        public Optional load() throws ConfigException {
-            return Optional.empty();
-        }
+    private static class TestSource implements Source {
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.demo.todos.frontend;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -25,7 +26,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
+import io.helidon.config.FileSystemWatcher;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -39,7 +40,6 @@ import io.helidon.webserver.accesslog.AccessLogSupport;
 import io.opentracing.Tracer;
 import org.glassfish.jersey.logging.LoggingFeature;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
 import static io.helidon.config.ConfigSources.file;
@@ -59,7 +59,8 @@ public final class Main {
     /**
      * Cannot be instantiated.
      */
-    private Main() { }
+    private Main() {
+    }
 
     /**
      * Application main entry point.
@@ -173,12 +174,12 @@ public final class Main {
      */
     private static Config buildConfig() {
         return Config.builder()
-                .sources(listOf(
+                .sources(List.of(
                         environmentVariables(),
                         // expected on development machine
                         // to override props for dev
                         file("dev.yaml")
-                                .pollingStrategy(PollingStrategies::watch)
+                                .changeWatcher(FileSystemWatcher.create())
                                 .optional(),
                         // expected in k8s runtime
                         // to configure testing/production values

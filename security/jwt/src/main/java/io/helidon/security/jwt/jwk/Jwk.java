@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.jwt.JwtException;
 
 import static io.helidon.security.jwt.JwtUtil.asString;
@@ -305,9 +304,8 @@ public abstract class Jwk {
     abstract byte[] doSign(byte[] bytesToSign);
 
     boolean supports(String use, String operation) {
-        Boolean result = OptionalHelper.from(operations.map(ops -> ops.contains(operation)))
+        Boolean result = operations.map(ops -> ops.contains(operation))
                 .or(() -> usage.map(usage -> usage.equals(use)))
-                .asOptional()
                 .orElse(true);
 
         if (!result && "verify".equals(operation)) {

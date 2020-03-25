@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,15 @@
  */
 package io.helidon.media.jsonp.common;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import javax.json.Json;
-import javax.json.JsonException;
-import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
-import javax.json.JsonStructure;
-import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Reader;
-import io.helidon.common.reactive.Flow;
-import io.helidon.media.common.CharBuffer;
-import io.helidon.media.common.ContentReaders;
-import io.helidon.media.common.ContentWriters;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
- * Support for json processing integration.
+ * Support for JSON Processing integration.
  */
 public final class JsonProcessing {
 
@@ -53,73 +36,19 @@ public final class JsonProcessing {
     }
 
     /**
-     * Returns a function (reader) converting {@link Flow.Publisher Publisher} of {@link java.nio.ByteBuffer}s to
-     * a JSON-P object.
-     * <p>
-     * It is intended for derivation of others, more specific readers.
-     *
-     * @return the byte array content reader that transforms a publisher of byte buffers to a completion stage that
-     * might end exceptionally with a {@link IllegalArgumentException} in case of I/O error or
-     * a {@link javax.json.JsonException}
+     * Create a new JSON-P entity reader.
+     * @return JsonEntityReader
      */
-    public Reader<JsonStructure> reader() {
-        return reader(null);
+    public JsonpBodyReader newReader() {
+        return new JsonpBodyReader(jsonReaderFactory);
     }
 
     /**
-     * Returns a function (reader) converting {@link Flow.Publisher Publisher} of {@link java.nio.ByteBuffer}s to
-     * a JSON-P object.
-     * <p>
-     * It is intended for derivation of others, more specific readers.
-     *
-     * @param charset a charset to use charset
-     * @return the byte array content reader that transforms a publisher of byte buffers to a completion stage that
-     * might end exceptionally with a {@link IllegalArgumentException} in case of I/O error or
-     * a {@link javax.json.JsonException}
+     * Create a new JSON-P entity writer.
+     * @return JsonEntityWriter
      */
-    public Reader<JsonStructure> reader(Charset charset) {
-        return (publisher, clazz) -> ContentReaders.byteArrayReader()
-                .apply(publisher)
-                .thenApply(bytes -> {
-                    InputStream is = new ByteArrayInputStream(bytes);
-
-                    JsonReader reader = (charset == null)
-                            ? jsonReaderFactory.createReader(is)
-                            : jsonReaderFactory.createReader(is, charset);
-
-                    JsonStructure json = reader.read();
-                    if (!clazz.isAssignableFrom(json.getClass())) {
-                        throw new JsonException("Unable to convert " + json.getClass() + " to " + clazz);
-                    }
-                    return json;
-                });
-    }
-
-    /**
-     * Returns a function (writer) converting {@link JsonStructure} to the {@link Flow.Publisher Publisher}
-     * of {@link DataChunk}s.
-     *
-     * @param charset a charset to use or {@code null} for default charset
-     * @return created function
-     */
-    public Function<JsonStructure, Flow.Publisher<DataChunk>> writer(Charset charset) {
-        return json -> {
-            CharBuffer buffer = new CharBuffer();
-            JsonWriter writer = jsonWriterFactory.createWriter(buffer);
-            writer.write(json);
-            writer.close();
-            return ContentWriters.charBufferWriter(charset == null ? UTF_8 : charset).apply(buffer);
-        };
-    }
-
-    /**
-     * Returns a function (writer) converting {@link JsonStructure} to the {@link Flow.Publisher Publisher}
-     * of {@link DataChunk}s.
-     *
-     * @return created function
-     */
-    public Function<JsonStructure, Flow.Publisher<DataChunk>> writer() {
-        return writer(null);
+    public JsonpBodyWriter newWriter() {
+        return new JsonpBodyWriter(jsonWriterFactory);
     }
 
     /**

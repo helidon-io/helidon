@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,7 @@
 
 package io.helidon.microprofile.server;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,16 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ParallelRunTest {
     private Server server;
 
-    @BeforeAll
-    static void initClass() throws IOException {
-        LogManager.getLogManager().readConfiguration(ParallelRunTest.class.getResourceAsStream("/logging.properties"));
-    }
-
     @BeforeEach
     void startFirstServer() {
         server = Server.builder()
                 .port(0)
-                .supportParallel(true)
                 .build();
 
         server.start();
@@ -53,28 +43,7 @@ class ParallelRunTest {
     }
 
     @Test
-    void testParallelRunDisabled() {
-        Server server2 = Server.builder().port(-1).build();
-        assertThrows(IllegalStateException.class, server2::start);
-    }
-
-    @Test
-    void testParallelRunOneEnabled() {
-        Server server2 = Server.builder()
-                .port(0)
-                .supportParallel(false)
-                .build();
-
-        assertThrows(IllegalStateException.class, server2::start);
-    }
-
-    @Test
-    void testParallelRunEnabled() {
-        Server server2 = Server.builder()
-                .port(0)
-                .supportParallel(true)
-                .build();
-        server2.start();
-        server2.stop();
+    void testParallelFails() {
+        assertThrows(IllegalStateException.class, Server::builder);
     }
 }

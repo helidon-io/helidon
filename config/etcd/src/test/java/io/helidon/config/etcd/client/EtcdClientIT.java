@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package io.helidon.config.etcd.client;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 import io.helidon.config.etcd.internal.client.v2.EtcdV2Client;
@@ -48,7 +48,7 @@ public class EtcdClientIT {
     private static final URI uri = URI.create("http://localhost:2379");
 
     private static Stream<Class<? extends EtcdClient>> clients() {
-        return CollectionsHelper.listOf(EtcdV2Client.class, EtcdV3Client.class).stream();
+        return List.of(EtcdV2Client.class, EtcdV3Client.class).stream();
     }
 
     @ParameterizedTest

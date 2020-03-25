@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
@@ -179,7 +178,7 @@ public abstract class CompositePolicyTest {
         ProviderRequest mock = Mockito.mock(ProviderRequest.class);
         SecurityEnvironment se = SecurityEnvironment.builder(SecurityTime.create())
                 .path(path)
-                .headers(CollectionsHelper.mapOf())
+                .headers(Map.of())
                 .addAttribute("resourceType", resource)
                 .build();
 

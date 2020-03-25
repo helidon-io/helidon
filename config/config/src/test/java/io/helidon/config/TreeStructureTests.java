@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package io.helidon.config;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,13 +30,13 @@ public class TreeStructureTests {
     @Test
     void testEmptyLeafAndTreeNodes() {
         Config config = Config.builder(ConfigSources.create(
-                CollectionsHelper.mapOf("a", "rootValue",
-                                        "a.b", "leafTreeNode",
-                                        "a.b.c", "leafNode",
-                                        "b.c", "leafNode",
-                                        "c.a.0", "first",
-                                        "c.a.1", "second",
-                                        "c.a.2", "third")
+                Map.of("a", "rootValue",
+                       "a.b", "leafTreeNode",
+                       "a.b.c", "leafNode",
+                       "b.c", "leafNode",
+                       "c.a.0", "first",
+                       "c.a.1", "second",
+                       "c.a.2", "third")
         )).build();
 
         assertThat(config.get("a").asString(), is(ConfigValues.simpleValue("rootValue")));
@@ -47,13 +48,13 @@ public class TreeStructureTests {
 
         assertThat(config.get("c").asString(), is(ConfigValues.empty()));
         assertThat(config.get("c.a").asString(), is(ConfigValues.empty()));
-        assertThat(config.get("c.a").asList(String.class).get(), is(CollectionsHelper.listOf("first", "second", "third")));
+        assertThat(config.get("c.a").asList(String.class).get(), is(List.of("first", "second", "third")));
     }
 
     @Test
     void testListAndDirectValue() {
         Config config = Config.builder(ConfigSources.create(
-                CollectionsHelper.mapOf("c.a", "treeAndLeafNode",
+                Map.of("c.a", "treeAndLeafNode",
                                         "c.a.0", "first",
                                         "c.a.1", "second",
                                         "c.a.2", "third")
@@ -61,6 +62,6 @@ public class TreeStructureTests {
 
         assertThat(config.get("c").asString(), is(ConfigValues.empty()));
         assertThat(config.get("c.a").asString(), is(ConfigValues.simpleValue("treeAndLeafNode")));
-        assertThat(config.get("c.a").asList(String.class).get(), is(CollectionsHelper.listOf("first", "second", "third")));
+        assertThat(config.get("c.a").asList(String.class).get(), is(List.of("first", "second", "third")));
     }
 }

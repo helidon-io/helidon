@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -23,6 +24,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
@@ -69,8 +71,10 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    protected void prometheusData(StringBuilder sb, String name, String tags) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         Units units = getUnits();
+        String tags = prometheusTags(metricID.getTags());
+        String name = metricID.getName();
 
         String nameUnits;
         Optional<String> unit = units.getPrometheusUnit();
@@ -80,7 +84,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
         nameUnits = prometheusNameWithUnits(name + "_mean", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -90,7 +96,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_max_bytes gauge
         // application:file_sizes_max_bytes 31716
         nameUnits = prometheusNameWithUnits(name + "_max", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -100,7 +108,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_min_bytes gauge
         // application:file_sizes_min_bytes 180
         nameUnits = prometheusNameWithUnits(name + "_min", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -110,7 +120,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # TYPE application:file_sizes_stddev_bytes gauge
         // application:file_sizes_stddev_bytes 1054.7343037063602
         nameUnits = prometheusNameWithUnits(name + "_stddev", unit);
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -121,8 +133,10 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         // # HELP application:file_sizes_bytes Users file size
         // application:file_sizes_bytes_count 2037
         nameUnits = prometheusNameWithUnits(name, unit);
-        prometheusType(sb, nameUnits, "summary");
-        prometheusHelp(sb, nameUnits);
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "summary");
+            prometheusHelp(sb, nameUnits);
+        }
         nameUnits = prometheusNameWithUnits(name, unit) + "_count";
         sb.append(nameUnits)
                 .append(tags)
@@ -141,6 +155,11 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         prometheusQuantile(sb, tags, units, nameUnits, "0.999", snap::get999thPercentile);
     }
 
+    @Override
+    public String prometheusValue() {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
     /**
      * Returns underlying delegate. For testing purposes only.
      *
@@ -153,23 +172,22 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
-
-        myBuilder.add("count", getCount());
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
+                .add(jsonFullKey("count", metricID), getCount());
         Snapshot snapshot = getSnapshot();
-        myBuilder.add("min", snapshot.getMin());
-        myBuilder.add("max", snapshot.getMax());
-        myBuilder.add("mean", snapshot.getMean());
-        myBuilder.add("stddev", snapshot.getStdDev());
-        myBuilder.add("p50", snapshot.getMedian());
-        myBuilder.add("p75", snapshot.get75thPercentile());
-        myBuilder.add("p95", snapshot.get95thPercentile());
-        myBuilder.add("p98", snapshot.get98thPercentile());
-        myBuilder.add("p99", snapshot.get99thPercentile());
-        myBuilder.add("p999", snapshot.get999thPercentile());
+        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin())
+                .add(jsonFullKey("max", metricID), snapshot.getMax())
+                .add(jsonFullKey("mean", metricID), snapshot.getMean())
+                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev())
+                .add(jsonFullKey("p50", metricID), snapshot.getMedian())
+                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile())
+                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile())
+                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile())
+                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile())
+                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
 
-        builder.add(getName(), myBuilder.build());
+        builder.add(metricID.getName(), myBuilder);
     }
 
     static final class HistogramImpl implements Histogram {
@@ -204,5 +222,39 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         public Snapshot getSnapshot() {
             return reservoir.getSnapshot();
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), getCount());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            HistogramImpl that = (HistogramImpl) o;
+            return getCount() == that.getCount();
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonHistogram that = (HelidonHistogram) o;
+        return Objects.equals(delegate, that.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delegate);
     }
 }

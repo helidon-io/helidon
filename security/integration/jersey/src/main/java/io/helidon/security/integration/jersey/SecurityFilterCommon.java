@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,22 @@
 package io.helidon.security.integration.jersey;
 
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
-import io.helidon.security.Entity;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
@@ -51,6 +48,10 @@ import org.glassfish.jersey.server.ContainerRequest;
  */
 abstract class SecurityFilterCommon {
     static final String PROP_FILTER_CONTEXT = "io.helidon.security.jersey.FilterContext";
+
+    static {
+        HelidonFeatures.register("Security", "Integration", "Jersey");
+    }
 
     @Context
     private Security security;
@@ -93,7 +94,7 @@ abstract class SecurityFilterCommon {
             origRequest = requestUri.getPath() + "?" + query;
         }
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
-        allHeaders.put(Security.HEADER_ORIG_URI, CollectionsHelper.listOf(origRequest));
+        allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));
 
         SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
                 .path(filterContext.getResourcePath())
@@ -138,8 +139,6 @@ abstract class SecurityFilterCommon {
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
                         .atnClientBuilder()
                         .optional(methodSecurity.authenticationOptional())
-                        .requestMessage(toRequestMessage(context))
-                        .responseMessage(context.getResponseMessage())
                         .tracingSpan(atnTracing.findParent().orElse(null))
                         // backward compatibility - remove in 2.0
                         .tracingSpan(atnTracing.findParentSpan().orElse(null));
@@ -167,33 +166,6 @@ abstract class SecurityFilterCommon {
         }
     }
 
-    protected Entity toRequestMessage(SecurityFilter.FilterContext context) {
-        switch (context.getMethod().toLowerCase()) {
-        case "get":
-        case "options":
-        case "head":
-        case "delete":
-            return null;
-        default:
-            break;
-        }
-
-        return filterFunction -> {
-            // this is request message (inbound)
-
-            // this will publish bytes coming in from external source (to security provider)
-            Flow.Publisher<ByteBuffer> publisherFromJersey =
-                    new InputStreamPublisher(context.getJerseyRequest().getEntityStream(), 1024);
-
-            SubscriberInputStream subscriberInputStream = new SubscriberInputStream();
-            context.getJerseyRequest().setEntityStream(subscriberInputStream);
-
-            Flow.Publisher<ByteBuffer> publisherToJersey = filterFunction.apply(publisherFromJersey);
-            // this will receive request bytes coming in from security provider (filtered)
-            publisherToJersey.subscribe(subscriberInputStream);
-        };
-    }
-
     protected void processAuthentication(FilterContext context,
                                          SecurityClientBuilder<AuthenticationResponse> clientBuilder,
                                          SecurityDefinition methodSecurity, AtnTracing atnTracing) {
@@ -218,7 +190,7 @@ abstract class SecurityFilterCommon {
                 context.setShouldFinish(true);
 
                 int status = response.statusCode().orElse(Response.Status.UNAUTHORIZED.getStatusCode());
-                abortRequest(context, response, status, CollectionsHelper.mapOf());
+                abortRequest(context, response, status, Map.of());
             }
 
             return;
@@ -226,7 +198,7 @@ abstract class SecurityFilterCommon {
             context.setShouldFinish(true);
 
             int status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
-            abortRequest(context, response, status, CollectionsHelper.mapOf());
+            abortRequest(context, response, status, Map.of());
 
             return;
         case ABSTAIN:
@@ -239,7 +211,7 @@ abstract class SecurityFilterCommon {
                 abortRequest(context,
                              response,
                              Response.Status.UNAUTHORIZED.getStatusCode(),
-                             CollectionsHelper.mapOf());
+                             Map.of());
             }
             return;
         case FAILURE:
@@ -252,7 +224,7 @@ abstract class SecurityFilterCommon {
                 abortRequest(context,
                              response,
                              Response.Status.UNAUTHORIZED.getStatusCode(),
-                             CollectionsHelper.mapOf());
+                             Map.of());
                 context.setShouldFinish(true);
             }
             return;
@@ -320,12 +292,12 @@ abstract class SecurityFilterCommon {
             context.setTraceThrowable(response.throwable().orElse(null));
             context.setShouldFinish(true);
             int status = response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode());
-            abortRequest(context, response, status, CollectionsHelper.mapOf());
+            abortRequest(context, response, status, Map.of());
             return;
         case SUCCESS_FINISH:
             context.setShouldFinish(true);
             status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
-            abortRequest(context, response, status, CollectionsHelper.mapOf());
+            abortRequest(context, response, status, Map.of());
             return;
         case FAILURE:
             context.setTraceSuccess(false);
@@ -335,7 +307,7 @@ abstract class SecurityFilterCommon {
             abortRequest(context,
                          response,
                          response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
-                         CollectionsHelper.mapOf());
+                         Map.of());
             return;
         case ABSTAIN:
             context.setTraceSuccess(false);
@@ -344,7 +316,7 @@ abstract class SecurityFilterCommon {
             abortRequest(context,
                          response,
                          response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
-                         CollectionsHelper.mapOf());
+                         Map.of());
             return;
         default:
             context.setTraceSuccess(false);
@@ -377,7 +349,13 @@ abstract class SecurityFilterCommon {
             response.description().ifPresent(responseBuilder::entity);
         }
 
-        context.getJerseyRequest().abortWith(responseBuilder.build());
+        if (featureConfig.useAbortWith()) {
+            context.getJerseyRequest().abortWith(responseBuilder.build());
+        } else {
+            String description = response.description()
+                    .orElse("Security did not allow this request to proceed.");
+            throw new WebApplicationException(description, responseBuilder.build());
+        }
     }
 
     protected void updateHeaders(Map<String, List<String>> responseHeaders, Response.ResponseBuilder responseBuilder) {
@@ -421,7 +399,6 @@ abstract class SecurityFilterCommon {
     protected abstract SecurityFilter.FilterContext initRequestFiltering(ContainerRequestContext requestContext);
 
     static class FilterContext {
-        private final JerseyResponseEntity responseMessage = new JerseyResponseEntity();
         private String resourceName;
         private String resourcePath;
         private String method;
@@ -436,10 +413,6 @@ abstract class SecurityFilterCommon {
         private boolean traceSuccess = true;
         private String traceDescription;
         private Throwable traceThrowable;
-
-        JerseyResponseEntity getResponseMessage() {
-            return responseMessage;
-        }
 
         String getResourceName() {
             return resourceName;
@@ -541,19 +514,6 @@ abstract class SecurityFilterCommon {
             setTraceSuccess(true);
             setTraceDescription(null);
             setTraceThrowable(null);
-        }
-    }
-
-    protected static class JerseyResponseEntity implements Entity {
-        private volatile Function<Flow.Publisher<ByteBuffer>, Flow.Publisher<ByteBuffer>> filterFunction;
-
-        @Override
-        public void filter(Function<Flow.Publisher<ByteBuffer>, Flow.Publisher<ByteBuffer>> filterFunction) {
-            this.filterFunction = filterFunction;
-        }
-
-        protected Function<Flow.Publisher<ByteBuffer>, Flow.Publisher<ByteBuffer>> filterFunction() {
-            return filterFunction;
         }
     }
 

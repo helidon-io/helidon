@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,16 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link Routing#route(BareRequest, BareResponse)}.
@@ -113,12 +117,13 @@ public class RoutingTest {
     }
 
     static BareRequest mockRequest(String path, Http.Method method) {
-        BareRequest bareRequestMock = Mockito.mock(BareRequest.class);
-        Mockito.doReturn(URI.create("http://0.0.0.0:1234/" + path)).when(bareRequestMock).uri();
-        Mockito.doReturn(method).when(bareRequestMock).method();
-        WebServer serverMock = Mockito.mock(WebServer.class);
-        Mockito.when(serverMock.context()).thenReturn(ContextualRegistry.create());
-        Mockito.doReturn(serverMock).when(bareRequestMock).webServer();
+        BareRequest bareRequestMock = mock(BareRequest.class);
+        doReturn(URI.create("http://0.0.0.0:1234/" + path)).when(bareRequestMock).uri();
+        doReturn(method).when(bareRequestMock).method();
+        doReturn(Single.empty()).when(bareRequestMock).bodyPublisher();
+        WebServer webServerMock = mock(WebServer.class);
+        when(webServerMock.context()).thenReturn(ContextualRegistry.create());
+        doReturn(webServerMock).when(bareRequestMock).webServer();
         return bareRequestMock;
     }
 

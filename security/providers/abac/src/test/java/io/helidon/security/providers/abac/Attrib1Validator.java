@@ -20,8 +20,8 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -35,7 +35,7 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
 public class Attrib1Validator implements AbacValidator<Attrib1Validator.Attrib1Config> {
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(Attrib1.class);
+        return Set.of(Attrib1.class);
     }
 
     @Override

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.grpc.core.MethodHandler;
 
 import com.google.protobuf.Empty;
@@ -163,7 +162,7 @@ public class ServerStreamingMethodHandlerSupplierTest {
     public void shouldSupplyHandlerForMethodWithStreamResponse() {
         ServerStreamingMethodHandlerSupplier supplier = new ServerStreamingMethodHandlerSupplier();
         AnnotatedMethod method = getMethod("streamResponse", String.class);
-        Stream<Long> stream = CollectionsHelper.listOf(19L, 20L).stream();
+        Stream<Long> stream = List.of(19L, 20L).stream();
         Service service = mock(Service.class);
 
         when(service.streamResponse(anyString())).thenReturn(stream);
@@ -193,7 +192,7 @@ public class ServerStreamingMethodHandlerSupplierTest {
     public void shouldSupplyHandlerForMethodWithStreamResponseForClientCall() {
         ServerStreamingMethodHandlerSupplier supplier = new ServerStreamingMethodHandlerSupplier();
         AnnotatedMethod method = getMethod("streamResponse", String.class);
-        Stream<Long> stream = CollectionsHelper.listOf(19L, 20L).stream();
+        Stream<Long> stream = List.of(19L, 20L).stream();
         Service service = mock(Service.class);
 
         when(service.streamResponse(anyString())).thenReturn(stream);
@@ -230,7 +229,7 @@ public class ServerStreamingMethodHandlerSupplierTest {
     public void shouldSupplyHandlerForMethodWithStreamResponseWithNoRequest() {
         ServerStreamingMethodHandlerSupplier supplier = new ServerStreamingMethodHandlerSupplier();
         AnnotatedMethod method = getMethod("streamResponseNoRequest");
-        Stream<Long> stream = CollectionsHelper.listOf(19L, 20L).stream();
+        Stream<Long> stream = List.of(19L, 20L).stream();
         Service service = mock(Service.class);
 
         when(service.streamResponseNoRequest()).thenReturn(stream);
@@ -267,7 +266,7 @@ public class ServerStreamingMethodHandlerSupplierTest {
     public void shouldSupplyHandlerForMethodWithStreamResponseWithNoRequestForClientCall() {
         ServerStreamingMethodHandlerSupplier supplier = new ServerStreamingMethodHandlerSupplier();
         AnnotatedMethod method = getMethod("streamResponseNoRequest");
-        Stream<Long> stream = CollectionsHelper.listOf(19L, 20L).stream();
+        Stream<Long> stream = List.of(19L, 20L).stream();
         Service service = mock(Service.class);
 
         when(service.streamResponseNoRequest()).thenReturn(stream);

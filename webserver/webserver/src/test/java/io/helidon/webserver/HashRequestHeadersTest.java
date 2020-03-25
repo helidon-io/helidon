@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,19 +25,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 
 import org.hamcrest.number.IsCloseTo;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
-import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests {@link HashRequestHeaders}.
@@ -97,12 +96,12 @@ public class HashRequestHeadersTest {
         HashRequestHeaders hs = withHeader(Http.Header.ACCEPT,
                                            "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4");
         assertThat(hs.acceptedTypes().size(), is(4));
-        assertThat(hs.acceptedTypes().get(0), is(createMt("text", "*", CollectionsHelper.mapOf("q", "0.3"))));
+        assertThat(hs.acceptedTypes().get(0), is(createMt("text", "*", Map.of("q", "0.3"))));
         assertThat(hs.acceptedTypes().get(0).qualityFactor(), IsCloseTo.closeTo(0, 0.3));
-        assertThat(hs.acceptedTypes().get(1), is(createMt("text", "html", CollectionsHelper.mapOf("q", "0.7"))));
-        assertThat(hs.acceptedTypes().get(2), is(createMt("text", "html", CollectionsHelper.mapOf("level", "1"))));
+        assertThat(hs.acceptedTypes().get(1), is(createMt("text", "html", Map.of("q", "0.7"))));
+        assertThat(hs.acceptedTypes().get(2), is(createMt("text", "html", Map.of("level", "1"))));
         assertThat(hs.acceptedTypes().get(3),
-                   is(createMt("text", "html", CollectionsHelper.mapOf("level", "2", "q", "0.4"))));
+                   is(createMt("text", "html", Map.of("level", "2", "q", "0.4"))));
     }
 
     @Test
@@ -112,7 +111,7 @@ public class HashRequestHeadersTest {
             assertThat(hs.acceptedTypes().get(0), is(MediaType.TEXT_HTML));
             assertThat(hs.acceptedTypes().get(1), is(createMt("image", "gif")));
             assertThat(hs.acceptedTypes().get(2), is(createMt("image", "jpeg")));
-            assertThat(hs.acceptedTypes().get(3), is(createMt("*", "*", CollectionsHelper.mapOf("q", ".2"))));
+            assertThat(hs.acceptedTypes().get(3), is(createMt("*", "*", Map.of("q", ".2"))));
         } catch(IllegalStateException ex){
             Assertions.fail(ex.getMessage(), ex);
         }

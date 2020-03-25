@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 
 /**
  * Security context to retrieve security information about current user, either injected or obtained from {@link
@@ -342,6 +343,9 @@ public interface SecurityContext {
             }
             if (null == ec) {
                 ec = EndpointConfig.builder().build();
+            }
+            if (null == tracingTracer) {
+                tracingTracer = GlobalTracer.get();
             }
             return new SecurityContextImpl(this);
         }

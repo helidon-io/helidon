@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,70 +16,24 @@
 
 package io.helidon.config;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.nio.CharBuffer;
-import java.nio.file.Path;
-import java.nio.file.spi.FileTypeDetector;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.util.AbstractMap;
+import java.util.Map;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.config.internal.ConfigFileTypeDetector;
+import io.helidon.config.spi.ConfigNode;
 
 /**
  * Common Configuration utilities.
  */
 public final class ConfigHelper {
-    private static final int DEFAULT_BUFFER_CAPACITY = 1024;
-    private static final Logger LOGGER = Logger.getLogger(ConfigFileTypeDetector.class.getName());
-
     private ConfigHelper() {
         throw new AssertionError("Instantiation not allowed.");
-    }
-
-    /**
-     * Creates a {@link Reader} from the given {@link Readable} object.
-     * <p>
-     * Equivalent to {@code createReader(readable, 1024)}. See
-     * {@link #createReader(Readable,int)}.
-     *
-     * @param readable a readable
-     * @return a reader
-     * @throws IOException when {@link Readable#read(CharBuffer)} encounters an error
-     */
-    public static Reader createReader(Readable readable) throws IOException {
-        return createReader(readable, DEFAULT_BUFFER_CAPACITY);
-    }
-
-    /**
-     * Creates a {@link Reader} from the given {@link Readable} object using the
-     * specified buffer size.
-     *
-     * @param readable       a readable
-     * @param bufferCapacity a new buffer capacity, in chars
-     * @return a reader
-     * @throws IOException when {@link Readable#read(CharBuffer)} encounters an error
-     */
-    static Reader createReader(Readable readable, int bufferCapacity) throws IOException {
-        if (readable instanceof Reader) {
-            return (Reader) readable;
-        }
-        CharBuffer cb = CharBuffer.allocate(bufferCapacity);
-        StringBuilder sb = new StringBuilder();
-        while (readable.read(cb) != -1) {
-            cb.flip();
-            sb.append(cb.toString());
-        }
-
-        return new StringReader(sb.toString());
     }
 
     /**
@@ -105,84 +59,35 @@ public final class ConfigHelper {
         return new OnNextFunctionSubscriber<>(onNextFunction);
     }
 
-    /**
-     * Creates a {@link Flow.Publisher} which wraps the provided one and also
-     * supports "active" and "suspended" states.
-     * <p>
-     * The new {@code Publisher} starts in the "suspended" state.
-     * Upon the first subscriber request the {@code Publisher} transitions into the "active" state
-     * and invokes the caller-supplied {@code onFirstSubscriptionRequest} {@code Runnable}.
-     * When the last subscriber cancels the returned {@code Publisher} transitions into the "suspended" state and
-     * invokes the caller-provided {@code onLastSubscriptionCancel} {@code Runnable}.
-     *
-     * @param delegatePublisher          publisher to be wrapped
-     * @param onFirstSubscriptionRequest hook invoked when the first subscriber requests events from the publisher
-     * @param onLastSubscriptionCancel   hook invoked when last remaining subscriber cancels its subscription
-     * @param <T>                        the type of the items provided by the publisher
-     * @return new instance of suspendable {@link Flow.Publisher}
-     */
-    public static <T> Flow.Publisher<T> suspendablePublisher(Flow.Publisher<T> delegatePublisher,
-                                                             Runnable onFirstSubscriptionRequest,
-                                                             Runnable onLastSubscriptionCancel) {
-        return new SuspendablePublisher<T>(delegatePublisher) {
-            @Override
-            protected void onFirstSubscriptionRequest() {
-                onFirstSubscriptionRequest.run();
-            }
+    static Map<ConfigKeyImpl, ConfigNode> createFullKeyToNodeMap(ConfigNode.ObjectNode objectNode) {
+        Map<ConfigKeyImpl, ConfigNode> result;
 
-            @Override
-            protected void onLastSubscriptionCancel() {
-                onLastSubscriptionCancel.run();
-            }
-        };
-    }
-
-    // lazy loading of default and installed file type detectors
-    private static class FileTypeDetectors {
-        static final List<FileTypeDetector> INSTALLED_DETECTORS =
-            loadInstalledDetectors();
-
-        // loads all installed file type detectors
-        private static List<FileTypeDetector> loadInstalledDetectors() {
-            return AccessController
-                    .doPrivileged(new PrivilegedAction<List<FileTypeDetector>>() {
-                        @Override
-                        public List<FileTypeDetector> run() {
-                            List<FileTypeDetector> list = new LinkedList<>();
-                            ServiceLoader<FileTypeDetector> loader = ServiceLoader
-                                    .load(FileTypeDetector.class);
-                            for (FileTypeDetector detector : loader) {
-                                list.add(detector);
-                            }
-                            return list;
-                        }
-                    });
-        }
-    }
-
-    /**
-     * Infers the content type contained in the provided {@code Path}.
-     *
-     * @param path path to check
-     * @return string with content type
-     */
-    public static String detectContentType(Path path) {
-        String result = null;
-
-        try {
-            for (FileTypeDetector detector : FileTypeDetectors.INSTALLED_DETECTORS) {
-                result = detector.probeContentType(path);
-                if (result != null) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.FINEST,
-                       e,
-                       () -> "Failed to find content type for " + path);
-        }
+        Stream<Map.Entry<ConfigKeyImpl, ConfigNode>> flattenNodes = objectNode.entrySet()
+                .stream()
+                .map(node -> flattenNodes(ConfigKeyImpl.of(node.getKey()), node.getValue()))
+                .reduce(Stream.empty(), Stream::concat);
+        result = flattenNodes.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        result.put(ConfigKeyImpl.of(), objectNode);
 
         return result;
+    }
+
+    static Stream<Map.Entry<ConfigKeyImpl, ConfigNode>> flattenNodes(ConfigKeyImpl key, ConfigNode node) {
+        switch (node.nodeType()) {
+        case OBJECT:
+            return ((ConfigNode.ObjectNode) node).entrySet().stream()
+                    .map(e -> flattenNodes(key.child(e.getKey()), e.getValue()))
+                    .reduce(Stream.of(new AbstractMap.SimpleEntry<>(key, node)), Stream::concat);
+        case LIST:
+            return IntStream.range(0, ((ConfigNode.ListNode) node).size())
+                    .boxed()
+                    .map(i -> flattenNodes(key.child(Integer.toString(i)), ((ConfigNode.ListNode) node).get(i)))
+                    .reduce(Stream.of(new AbstractMap.SimpleEntry<>(key, node)), Stream::concat);
+        case VALUE:
+            return Stream.of(new AbstractMap.SimpleEntry<>(key, node));
+        default:
+            throw new IllegalArgumentException("Invalid node type.");
+        }
     }
 
     /**

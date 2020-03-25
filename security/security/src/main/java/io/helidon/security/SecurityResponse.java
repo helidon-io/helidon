@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 
 /**
  * Response from security provider (and security Module).
@@ -152,7 +151,6 @@ public abstract class SecurityResponse {
          *
          * The provider should have:
          * <ul>
-         * <li>Updated entity (through {@link SecurityRequest#responseEntity()}</li>
          * <li>Updated headers (through {@link SecurityResponseBuilder#responseHeader(String, String)}</li>
          * <li>Updated status code (through {@link SecurityResponseBuilder#statusCode(int)}</li>
          * </ul>
@@ -275,7 +273,7 @@ public abstract class SecurityResponse {
          * @return this instance
          */
         public T requestHeader(String header, String value) {
-            requestHeaders.put(header, CollectionsHelper.listOf(value));
+            requestHeaders.put(header, List.of(value));
             return myInstance;
         }
 
@@ -313,7 +311,7 @@ public abstract class SecurityResponse {
          * @return this instance
          */
         public T responseHeader(String header, String value) {
-            responseHeaders.put(header, CollectionsHelper.listOf(value));
+            responseHeaders.put(header, List.of(value));
             return myInstance;
         }
 

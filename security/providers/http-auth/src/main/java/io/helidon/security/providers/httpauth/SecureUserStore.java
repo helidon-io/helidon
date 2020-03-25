@@ -18,8 +18,7 @@ package io.helidon.security.providers.httpauth;
 
 import java.util.Collection;
 import java.util.Optional;
-
-import io.helidon.common.CollectionsHelper;
+import java.util.Set;
 
 /**
  * Store of users for resolving httpauth and digest authentication.
@@ -68,7 +67,7 @@ public interface SecureUserStore {
          * @return roles of this user (or empty if not supported).
          */
         default Collection<String> roles() {
-            return CollectionsHelper.setOf();
+            return Set.of();
         }
 
         /**

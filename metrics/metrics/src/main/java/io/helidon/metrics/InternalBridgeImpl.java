@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package io.helidon.metrics;
 
 import io.helidon.common.metrics.InternalBridge;
+import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 import io.helidon.config.Config;
 
 /**
- * Implements the metrics bridge interface.
+ * Implements the metrics bridge interface based on MP Metrics 2.0.
  */
 public class InternalBridgeImpl implements InternalBridge {
 
@@ -45,7 +46,7 @@ public class InternalBridgeImpl implements InternalBridge {
     }
 
     @Override
-    public Metadata.MetadataBuilder.Factory getMetadataBuilderFactory() {
+    public MetadataBuilder.Factory getMetadataBuilderFactory() {
         return new InternalMetadataBuilderImpl.FactoryImpl();
     }
 

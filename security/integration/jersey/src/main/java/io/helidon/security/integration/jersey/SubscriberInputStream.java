@@ -21,8 +21,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
-import io.helidon.common.reactive.Flow;
+import java.util.concurrent.Flow;
 
 /**
  * An {@link Flow.Subscriber subscriber} that can subscribe to a source of {@code ByteBuffer} data chunks and then make

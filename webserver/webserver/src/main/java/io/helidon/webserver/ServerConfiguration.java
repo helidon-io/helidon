@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.config.Config;
@@ -183,6 +182,13 @@ public interface ServerConfiguration extends SocketConfiguration {
     ExperimentalConfiguration experimental();
 
     /**
+     * Whether to print details of {@link io.helidon.common.HelidonFeatures}.
+     *
+     * @return whether to print details
+     */
+    boolean printFeatureDetails();
+
+    /**
      * Checks if HTTP/2 is enabled in config.
      *
      * @return Outcome of test.
@@ -232,6 +238,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
         private ContextualRegistry context;
+        private boolean printFeatureDetails;
 
         private Builder() {
         }
@@ -446,6 +453,18 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * Set to {@code true} to print detailed feature information on startup.
+         *
+         * @param print whether to print details or not
+         * @return updated builder instance
+         * @see io.helidon.common.HelidonFeatures
+         */
+        public Builder printFeatureDetails(boolean print) {
+            this.printFeatureDetails = print;
+            return this;
+        }
+
+        /**
          * Configure the application scoped context to be used as a parent for webserver request contexts.
          * @param context top level context
          * @return an updated builder
@@ -486,11 +505,12 @@ public interface ServerConfiguration extends SocketConfiguration {
             configureSocket(config, defaultSocketBuilder);
 
             config.get("workers").asInt().ifPresent(this::workersCount);
+            config.get("features.print-details").asBoolean().ifPresent(this::printFeatureDetails);
 
             // sockets
             Config socketsConfig = config.get("sockets");
             if (socketsConfig.exists()) {
-                for (Config socketConfig : socketsConfig.asNodeList().orElse(CollectionsHelper.listOf())) {
+                for (Config socketConfig : socketsConfig.asNodeList().orElse(List.of())) {
                     String socketName = socketConfig.name();
                     sockets.put(socketName, configureSocket(socketConfig, SocketConfiguration.builder()).build());
                 }
@@ -597,6 +617,10 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         ContextualRegistry context() {
             return context;
+        }
+
+        boolean printFeatureDetails() {
+            return printFeatureDetails;
         }
     }
 }

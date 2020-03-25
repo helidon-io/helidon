@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -66,6 +66,10 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     private static final Logger LOGGER = Logger
             .getLogger(IdcsMtRoleMapperProvider.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    static {
+        HelidonFeatures.register("Security", "Role-Mapper", "IDCS-Multitenant");
+    }
 
     private final TokenHandler idcsTenantTokenHandler;
     private final TokenHandler idcsAppNameTokenHandler;
@@ -149,7 +153,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                                                       () -> computeGrants(idcsMtContext.tenantId(),
                                                                           idcsMtContext.appId(),
                                                                           subject))
-                .orElseGet(CollectionsHelper::listOf);
+                .orElseGet(List::of);
 
         List<Grant> grants = new LinkedList<>(serverGrants);
 
@@ -491,7 +495,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return tenant id of the cache record
          */
-        protected String idcsTenantId() {
+        public String idcsTenantId() {
             return idcsMtContext.tenantId();
         }
 
@@ -500,7 +504,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return username of the cache record
          */
-        protected String username() {
+        public String username() {
             return username;
         }
 
@@ -509,7 +513,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return application id of the cache record
          */
-        protected String idcsAppName() {
+        public String idcsAppName() {
             return idcsMtContext.appId();
         }
 
@@ -518,7 +522,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return IDCS multitenancy context of the cache record
          */
-        protected IdcsMtContext idcsMtContext() {
+        public IdcsMtContext idcsMtContext() {
             return idcsMtContext;
         }
 

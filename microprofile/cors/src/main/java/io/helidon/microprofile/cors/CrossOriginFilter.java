@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.cors;
 
-import java.util.List;
-import java.util.Optional;
-
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -28,9 +25,10 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Optional;
 
-import io.helidon.microprofile.config.MpConfig;
-
+import io.helidon.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static io.helidon.microprofile.cors.CrossOriginConfig.CrossOriginConfigMapper;
@@ -54,8 +52,8 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     private List<CrossOriginConfig> crossOriginConfigs;
 
     CrossOriginFilter() {
-        MpConfig config = (MpConfig) ConfigProvider.getConfig();
-        crossOriginConfigs = config.helidonConfig().get("cors").as(new CrossOriginConfigMapper()).get();
+        Config config = (Config) ConfigProvider.getConfig();
+        crossOriginConfigs = config.get("cors").as(new CrossOriginConfigMapper()).get();
     }
 
     @Override

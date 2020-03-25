@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
 import io.helidon.config.objectmapping.ObjectConfigMappers.ConfigMethodHandleConfigMapper;
@@ -51,16 +50,19 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static final String METHOD_PARSE = "parse";
     private static final String METHOD_CREATE = "create";
 
+    static {
+        HelidonFeatures.register("Config", "Object Mapping");
+    }
+
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
-        return CollectionsHelper.mapOf();
+        return Map.of();
     }
 
     @Override
     public <T> Optional<Function<Config, T>> mapper(Class<T> type) {
-        return OptionalHelper
-                // T create(Config)
-                .from(findStaticConfigMethodMapper(type, METHOD_CREATE))
+        return  // T create(Config)
+                findStaticConfigMethodMapper(type, METHOD_CREATE)
                 // T from(Config)
                 .or(() -> findStaticConfigMethodMapper(type, METHOD_FROM))
                 // Config constructor
@@ -96,9 +98,8 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
                 // constructor(param, params...)
                 .or(() -> findConstructorWithParamsMapper(type))
                 // generic mapping support
-                .or(() -> findGenericMapper(type))
+                .or(() -> findGenericMapper(type));
                 // we could not find anything, let config decide what to do
-                .asOptional();
     }
 
     private static <T> Optional<Function<Config, T>> findStaticConfigMethodMapper(Class<T> type,
@@ -112,11 +113,21 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
 
     private static <T> Optional<Function<Config, T>> findStaticStringMethodMapper(Class<T> type,
                                                                                   String methodName) {
-        return findStaticMethod(type, methodName, String.class)
-                .map(handle -> new StringMethodHandleConfigMapper<>(
-                        type,
-                        methodName + "(String) method",
-                        handle));
+
+        Optional<HelidonMethodHandle> method = findStaticMethod(type,
+                                                         methodName,
+                                                         String.class);
+
+        if (method.isEmpty()) {
+            method = findStaticMethod(type,
+                                      methodName,
+                                      CharSequence.class);
+        }
+
+        return method.map(handle -> new StringMethodHandleConfigMapper<>(
+                type,
+                methodName + "(String) method",
+                handle));
     }
 
     private static <T> Optional<Function<Config, T>> findParseCharSequenceMethodMapper(Class<T> type) {
@@ -160,7 +171,7 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static <T> Optional<Function<Config, T>> findGenericMapper(Class<T> type) {
         try {
             return findConstructor(type)
-                .map(methodHandle -> new GenericConfigMapper<>(type, methodHandle));
+                    .map(methodHandle -> new GenericConfigMapper<>(type, methodHandle));
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }

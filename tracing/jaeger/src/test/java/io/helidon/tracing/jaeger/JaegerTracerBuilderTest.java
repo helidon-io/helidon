@@ -16,6 +16,9 @@
 
 package io.helidon.tracing.jaeger;
 
+import java.util.List;
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.tracing.TracerBuilder;
 
@@ -25,8 +28,6 @@ import io.opentracing.noop.NoopTracer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.listOf;
-import static io.helidon.common.CollectionsHelper.mapOf;
 import static io.helidon.tracing.jaeger.JaegerTracerBuilder.DEFAULT_HTTP_HOST;
 import static io.helidon.tracing.jaeger.JaegerTracerBuilder.DEFAULT_HTTP_PATH;
 import static io.helidon.tracing.jaeger.JaegerTracerBuilder.DEFAULT_HTTP_PORT;
@@ -67,7 +68,7 @@ class JaegerTracerBuilderTest {
         JaegerTracerBuilder jBuilder = (JaegerTracerBuilder) builder;
 
         assertThat(jBuilder.serviceName(), is("helidon-service"));
-        assertThat("Tags", jBuilder.tags(), is(mapOf()));
+        assertThat("Tags", jBuilder.tags(), is(Map.of()));
         assertThat("Protocol", jBuilder.protocol(), nullValue());
         assertThat("Host", jBuilder.host(), nullValue());
         assertThat("Port", jBuilder.port(), nullValue());
@@ -143,14 +144,14 @@ class JaegerTracerBuilderTest {
         assertThat("Token", jBuilder.token(), is("token"));
         assertThat("Username", jBuilder.username(), is("user"));
         assertThat("Password", jBuilder.password(), is("pass"));
-        assertThat("Propagations", jBuilder.propagations(), is(listOf(Configuration.Propagation.JAEGER)));
+        assertThat("Propagations", jBuilder.propagations(), is(List.of(Configuration.Propagation.JAEGER)));
         assertThat("Reporter log spans", jBuilder.reporterLogSpans(), is(false));
         assertThat("Reporter max queue size", jBuilder.reporterMaxQueueSize(), is(42));
         assertThat("Reporter flush intervals", jBuilder.reporterFlushIntervalMillis(), is(10001L));
         assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.REMOTE));
         assertThat("Sampler param", jBuilder.samplerParam(), is(0.5));
         assertThat("Sampler manager", jBuilder.samplerManager(), is("localhost:47877"));
-        assertThat("Tags", jBuilder.tags(), is(mapOf(
+        assertThat("Tags", jBuilder.tags(), is(Map.of(
                 "tag1", "tag1-value",
                 "tag2", "tag2-value",
                 "tag3", "true",
@@ -181,7 +182,7 @@ class JaegerTracerBuilderTest {
         assertThat(sampler.getParam(), is(0.5));
         assertThat(sampler.getType(), is("remote"));
 
-        assertThat(jaegerConfig.getTracerTags(), is(mapOf(
+        assertThat(jaegerConfig.getTracerTags(), is(Map.of(
                 "tag1", "tag1-value",
                 "tag2", "tag2-value",
                 "tag3", "true",
@@ -202,6 +203,6 @@ class JaegerTracerBuilderTest {
         assertThat(jBuilder.serviceName(), is("helidon-propagations"));
         assertThat("Propagations",
                    jBuilder.propagations(),
-                   is(listOf(Configuration.Propagation.JAEGER, Configuration.Propagation.B3)));
+                   is(List.of(Configuration.Propagation.JAEGER, Configuration.Propagation.B3)));
     }
 }

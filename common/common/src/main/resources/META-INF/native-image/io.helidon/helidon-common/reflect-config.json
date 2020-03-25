@@ -1,0 +1,7 @@
+[
+    {
+        "name": "io.helidon.common.HelidonConsoleHandler",
+        "allDeclaredConstructors": true,
+        "allPublicMethods": true
+    }
+]

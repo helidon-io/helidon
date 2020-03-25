@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.AlreadyCompletedException;
+import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -111,7 +111,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     @Override
     public OptionalLong contentLength() {
-        return OptionalHelper.from(first(Http.Header.CONTENT_LENGTH)).stream()
+        return first(Http.Header.CONTENT_LENGTH).stream()
                 .mapToLong(Long::parseLong).findFirst();
     }
 

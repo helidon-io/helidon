@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package io.helidon.config.encryption;
 
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -37,10 +38,8 @@ public class SecureConfigFromConfigTest extends AbstractSecureConfigTest {
         config = Config.create().get("aes-current");
 
         configRequiresEncryption = Config.builder()
-                .sources(ConfigSources.create(
-                        //override require encryption
-                        ConfigSources.create(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
-                        ConfigSources.classpath("application.yaml")))
+                .addSource(ConfigSources.create(Map.of(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")))
+                .addSource(ConfigSources.classpath("application.yaml"))
                 .build().get("aes-current");
 
         assertThat("We must have the correct configuration file", config.get("pwd1").type().isLeaf());

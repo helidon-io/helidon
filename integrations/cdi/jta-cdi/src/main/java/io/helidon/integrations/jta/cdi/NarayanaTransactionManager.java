@@ -16,6 +16,7 @@
 package io.helidon.integrations.jta.cdi;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.context.Destroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Event;
@@ -26,7 +27,7 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.TransactionManager; // for javadoc only
+import javax.transaction.TransactionManager;
 import javax.transaction.TransactionScoped;
 
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
@@ -57,6 +58,15 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
      * <p>This field may be {@code null}.</p>
      */
     private final Event<Transaction> transactionScopeInitializedBroadcaster;
+
+    /**
+     * An {@link Event} capable of {@linkplain Event#fire(Object)
+     * firing} an {@link Object} just before {@linkplain TransactionScoped
+     * transaction scope} is about to end.
+     *
+     * <p>This field may be {@code null}.</p>
+     */
+    private final Event<Object> transactionScopeBeforeDestroyedBroadcaster;
 
     /**
      * An {@link Event} capable of {@linkplain Event#fire(Object)
@@ -91,7 +101,7 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
      */
     @Deprecated
     NarayanaTransactionManager() {
-        this(null, null, null);
+        this(null, null, null, null);
     }
 
     /**
@@ -120,10 +130,13 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
     NarayanaTransactionManager(final JTAEnvironmentBean jtaEnvironmentBean,
                                @Initialized(TransactionScoped.class)
                                final Event<Transaction> transactionScopeInitializedBroadcaster,
+                               @BeforeDestroyed(TransactionScoped.class)
+                               final Event<Object> transactionScopeBeforeDestroyedBroadcaster,
                                @Destroyed(TransactionScoped.class)
                                final Event<Object> transactionScopeDestroyedBroadcaster) {
         super(jtaEnvironmentBean == null ? null : jtaEnvironmentBean.getTransactionManager());
         this.transactionScopeInitializedBroadcaster = transactionScopeInitializedBroadcaster;
+        this.transactionScopeBeforeDestroyedBroadcaster = transactionScopeBeforeDestroyedBroadcaster;
         this.transactionScopeDestroyedBroadcaster = transactionScopeDestroyedBroadcaster;
     }
 
@@ -200,7 +213,13 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
     @Override
     public void commit() throws HeuristicMixedException, HeuristicRollbackException, RollbackException, SystemException {
         try {
-            super.commit();
+            try {
+                if (this.transactionScopeBeforeDestroyedBroadcaster != null) {
+                    this.transactionScopeBeforeDestroyedBroadcaster.fire(this.toString());
+                }
+            } finally {
+                super.commit();
+            }
         } finally {
             if (this.transactionScopeDestroyedBroadcaster != null) {
                 this.transactionScopeDestroyedBroadcaster.fire(this.toString());
@@ -234,7 +253,13 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
     @Override
     public void rollback() throws SystemException {
         try {
-            super.rollback();
+            try {
+                if (this.transactionScopeBeforeDestroyedBroadcaster != null) {
+                    this.transactionScopeBeforeDestroyedBroadcaster.fire(this.toString());
+                }
+            } finally {
+                super.rollback();
+            }
         } finally {
             if (this.transactionScopeDestroyedBroadcaster != null) {
                 this.transactionScopeDestroyedBroadcaster.fire(this.toString());

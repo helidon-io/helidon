@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package io.helidon.config;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.internal.AutoLoadedConfigFilter;
-import io.helidon.config.internal.AutoLoadedConfigHighPriority;
-import io.helidon.config.internal.AutoLoadedConfigPriority;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +41,7 @@ public class FilterLoadingTest {
     public void testAutoLoadedFilter() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 UNAFFECTED_KEY, UNAFFECTED_VALUE,
                                 AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING,
                                   ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
@@ -64,7 +61,7 @@ public class FilterLoadingTest {
     public void testSuppressedAutoLoadedFilter() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                                 UNAFFECTED_KEY, "value1",
                                 AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING,
                                   ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
@@ -85,7 +82,7 @@ public class FilterLoadingTest {
     public void testPrioritizedAutoLoadedConfigFilters() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                              UNAFFECTED_KEY, "value1",
                              AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING,
                                ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
@@ -105,7 +102,7 @@ public class FilterLoadingTest {
     public void testSuppressedPrioritizedAutoLoadedConfigFilters() {
         Config config = Config.builder(
                 ConfigSources.create(
-                        CollectionsHelper.mapOf(
+                        Map.of(
                              UNAFFECTED_KEY, "value1",
                              AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING,
                                ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,

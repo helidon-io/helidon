@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package io.helidon.grpc.client;
 
+import java.util.Optional;
+
 import io.helidon.config.objectmapping.Value;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
+
+import io.grpc.NameResolver;
 
 /**
  * GrpcChannelDescriptor contains the configuration for a {@link io.grpc.Channel}.
@@ -26,13 +30,19 @@ public class GrpcChannelDescriptor {
     private boolean inProcessChannel;
     private String host;
     private int port;
+    private String target;
     private GrpcTlsDescriptor tlsDescriptor;
+    private String loadBalancerPolicy;
+    private NameResolver.Factory nameResolver;
 
-    private GrpcChannelDescriptor(boolean inProcessChannel, String host, int port, GrpcTlsDescriptor tlsDescriptor) {
-        this.inProcessChannel = inProcessChannel;
-        this.host = host;
-        this.port = port;
-        this.tlsDescriptor = tlsDescriptor;
+    private GrpcChannelDescriptor(Builder builder) {
+        this.inProcessChannel = builder.inProcessChannel();
+        this.target = builder.target();
+        this.host = builder.host();
+        this.port = builder.port();
+        this.tlsDescriptor = builder.tlsDescriptor();
+        this.loadBalancerPolicy = builder.loadBalancerPolicy();
+        this.nameResolver = builder.nameResolverFactory();
     }
 
     /**
@@ -71,14 +81,47 @@ public class GrpcChannelDescriptor {
     }
 
     /**
+     * Get the optional target string to use to resolve channel addresses.
+     *
+     * @return the optional target string to use to resolve channel addresses
+     */
+    public Optional<String> target() {
+        return Optional.ofNullable(target);
+    }
+
+    /**
+     * Get the default load balancer policy to use.
+     *
+     * @return the optional default load balancer policy to use
+     */
+    public Optional<String> loadBalancerPolicy() {
+        return Optional.ofNullable(loadBalancerPolicy);
+    }
+
+    /**
+     * Get the {@link NameResolver.Factory} to use.
+     *
+     * @return the optional {@link NameResolver.Factory} to use
+     */
+    public Optional<NameResolver.Factory> nameResolverFactory() {
+        return Optional.ofNullable(nameResolver);
+    }
+
+    /**
      * Get the {@link io.helidon.grpc.core.GrpcTlsDescriptor}. If this method returns null or
      * if {@code tlsDescriptor.isEnabled()} is false, then no TLS will be used (and none of the other configuration
      * values from {@code tlsDescriptor} will be used).
+     * <p>
+     * If the {@link GrpcTlsDescriptor} has been set but the value of {@link io.helidon.grpc.core.GrpcTlsDescriptor#isEnabled()}
+     * returns {@code false} then an empty {@link Optional} will be returned.
      *
-     * @return the {@link io.helidon.grpc.core.GrpcTlsDescriptor} instance (or {@code null} if no configuration was specified)
+     * @return the optional {@link io.helidon.grpc.core.GrpcTlsDescriptor}
      */
-    public GrpcTlsDescriptor tlsDescriptor() {
-        return tlsDescriptor;
+    public Optional<GrpcTlsDescriptor> tlsDescriptor() {
+        if (tlsDescriptor != null && tlsDescriptor.isEnabled()) {
+            return Optional.of(tlsDescriptor);
+        }
+        return Optional.empty();
     }
 
     /**
@@ -89,6 +132,9 @@ public class GrpcChannelDescriptor {
         private String host = GrpcChannelsProvider.DEFAULT_HOST;
         private int port = GrpcChannelsProvider.DEFAULT_PORT;
         private GrpcTlsDescriptor tlsDescriptor;
+        private String target;
+        private String loadBalancerPolicy;
+        private NameResolver.Factory nameResolver;
 
         /**
          * Set the host name to connect.
@@ -98,6 +144,22 @@ public class GrpcChannelDescriptor {
         @Value(key = "inProcess", withDefault = GrpcChannelsProvider.DEFAULT_HOST)
         public Builder inProcess() {
             this.inProcessChannel = true;
+            return this;
+        }
+
+        /**
+         * Set the target string, which can be either a valid {@link io.grpc.NameResolver}
+         * compliant URI, or an authority string.
+         *
+         * @param target the target string
+         *
+         * @return this instance for fluent API
+         *
+         * @see io.grpc.ManagedChannelBuilder#forTarget(String)
+         */
+        @Value
+        public Builder target(String target) {
+            this.target = target;
             return this;
         }
 
@@ -139,11 +201,65 @@ public class GrpcChannelDescriptor {
         }
 
         /**
+         * Set the default load balancer policy name.
+         * @param policy the load balancer policy name
+         *
+         * @return this instance for fluent API
+         *
+         * @see io.grpc.ManagedChannelBuilder#defaultLoadBalancingPolicy(String)
+         */
+        public Builder loadBalancerPolicy(String policy) {
+            loadBalancerPolicy = policy;
+            return this;
+        }
+
+        /**
+         * Set the {@link io.grpc.NameResolver.Factory} to use.
+         * @param factory the {@link io.grpc.NameResolver.Factory} to use
+         *
+         * @return this instance for fluent API
+         *
+         * @see io.grpc.ManagedChannelBuilder#nameResolverFactory(io.grpc.NameResolver.Factory)
+         */
+        public Builder nameResolverFactory(NameResolver.Factory factory) {
+            this.nameResolver = factory;
+            return this;
+        }
+
+        boolean inProcessChannel() {
+            return inProcessChannel;
+        }
+
+        String host() {
+            return host;
+        }
+
+        int port() {
+            return port;
+        }
+
+        GrpcTlsDescriptor tlsDescriptor() {
+            return tlsDescriptor;
+        }
+
+        String target() {
+            return target;
+        }
+
+        String loadBalancerPolicy() {
+            return loadBalancerPolicy;
+        }
+
+        NameResolver.Factory nameResolverFactory() {
+            return nameResolver;
+        }
+
+        /**
          * Build and return a new GrpcChannelDescriptor.
          * @return a new GrpcChannelDescriptor
          */
         public GrpcChannelDescriptor build() {
-            return new GrpcChannelDescriptor(this.inProcessChannel, this.host, this.port, this.tlsDescriptor);
+            return new GrpcChannelDescriptor(this);
         }
     }
 }

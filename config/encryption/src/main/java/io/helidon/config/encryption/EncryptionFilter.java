@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.OptionalHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.MissingValueException;
@@ -67,6 +67,10 @@ public final class EncryptionFilter implements ConfigFilter {
     private static final String PREFIX_ALIAS = "${ALIAS=";
     private static final String PREFIX_CLEAR = "${CLEAR=";
 
+    static {
+        HelidonFeatures.register("Config", "Encryption");
+    }
+
     private final PrivateKey privateKey;
     private final char[] masterPassword;
 
@@ -80,10 +84,9 @@ public final class EncryptionFilter implements ConfigFilter {
     private EncryptionFilter(Builder builder, Config config) {
         if (builder.fromConfig) {
 
-            this.requireEncryption = OptionalHelper.from(EncryptionUtil.getEnv(ConfigProperties.REQUIRE_ENCRYPTION_ENV_VARIABLE)
-                                                                 .map(Boolean::parseBoolean))
+            this.requireEncryption = EncryptionUtil.getEnv(ConfigProperties.REQUIRE_ENCRYPTION_ENV_VARIABLE)
+                                                                 .map(Boolean::parseBoolean)
                     .or(() -> config.get(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY).asBoolean().asOptional())
-                    .asOptional()
                     .orElse(true);
 
             this.masterPassword = EncryptionUtil.resolveMasterPassword(requireEncryption, config).orElse(null);

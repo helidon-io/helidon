@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@
 package io.helidon.common.http;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.function.BiFunction;
-
-import io.helidon.common.reactive.Flow;
 
 /**
  * The Reader transforms a {@link DataChunk} publisher into a completion stage of the associated type.
  *
  * @param <R> the requested type
+ * @deprecated use {@code io.helidon.media.common.MessageBodyReader} instead
  */
 @FunctionalInterface
+@Deprecated
 public interface Reader<R> extends BiFunction<Flow.Publisher<DataChunk>, Class<? super R>, CompletionStage<? extends R>> {
 
     /**
@@ -72,6 +73,7 @@ public interface Reader<R> extends BiFunction<Flow.Publisher<DataChunk>, Class<?
      * {@link ClassCastException} if the {@code R} type wasn't possible to cast
      * to {@code T}
      */
+    @SuppressWarnings("unchecked")
     default <T extends R> CompletionStage<? extends T> applyAndCast(Flow.Publisher<DataChunk> publisher, Class<T> type) {
         // if this was implemented as (CompletionStage<? extends T>) apply(publisher, (Class<R>) clazz);
         // the class cast exception might occur outside of the completion stage which might be confusing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import io.helidon.common.InputStreamHelper;
 
 /**
  * Implementation of {@link Resource}.
@@ -100,7 +98,7 @@ class ResourceImpl implements Resource {
     public void cacheBytes() {
         if (cachedBytes == null) {
             try {
-                cachedBytes = InputStreamHelper.readAllBytes(stream);
+                cachedBytes = stream.readAllBytes();
             } catch (IOException e) {
                 throw new ResourceException("Failed to fully read resource bytes for resource: " + source + "("
                                                     + location + ")", e);

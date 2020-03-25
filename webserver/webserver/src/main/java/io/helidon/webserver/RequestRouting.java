@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
@@ -27,10 +28,10 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
@@ -54,7 +55,7 @@ class RequestRouting implements Routing {
      *
      * @param routes                effective route
      * @param errorHandlers         a list of error handlers
-     * @param newWebServerCallbacks a list af callback handlers for registration in new {@link WebServer}. It is copied.
+     * @param newWebServerCallbacks a list of callback handlers for registration in new {@link WebServer}. It is copied.
      */
     RequestRouting(RouteList routes, List<ErrorHandlerRecord<?>> errorHandlers, List<Consumer<WebServer>> newWebServerCallbacks) {
         this.routes = routes;
@@ -64,15 +65,19 @@ class RequestRouting implements Routing {
 
     @Override
     public void route(BareRequest bareRequest, BareResponse bareResponse) {
+
         try {
             WebServer webServer = bareRequest.webServer();
-            RoutedResponse response = new RoutedResponse(webServer, bareResponse);
+            HashRequestHeaders requestHeaders = new HashRequestHeaders(bareRequest.headers());
+            RoutedResponse response = new RoutedResponse(webServer, bareResponse, requestHeaders.acceptedTypes());
+
             // Jersey needs the raw path (not decoded) so we get that too
             String path = canonicalize(bareRequest.uri().normalize().getPath());
             String rawPath = canonicalize(bareRequest.uri().normalize().getRawPath());
 
             Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method());
-            RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers);
+            RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers,
+                    requestHeaders);
 
             Contexts.runInContext(nextRequests.context(), (Runnable) nextRequests::next);
         } catch (Error | RuntimeException e) {
@@ -237,8 +242,9 @@ class RequestRouting implements Routing {
                       RoutedResponse response,
                       WebServer webServer,
                       Crawler crawler,
-                      List<ErrorHandlerRecord<?>> errorHandlers) {
-            super(req, webServer);
+                      List<ErrorHandlerRecord<?>> errorHandlers,
+                      HashRequestHeaders headers) {
+            super(req, webServer, headers);
             this.crawler = crawler;
             this.errorHandlers = new LinkedList<>(errorHandlers);
             this.path = null;
@@ -265,6 +271,7 @@ class RequestRouting implements Routing {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Span span() {
             return context().get(ServerRequest.class, Span.class).orElse(null);
         }
@@ -333,9 +340,9 @@ class RequestRouting implements Routing {
                     ErrorRoutedRequest nextErrorRequest = new ErrorRoutedRequest(errorHandlers, t);
                     Span span = span();
                     if (null != span) {
-                        span.log(CollectionsHelper.mapOf("event", "error-handler",
-                                                                "handler.class", record.errorHandler.getClass().getName(),
-                                                                "handled.error.message", t.toString()));
+                        span.log(Map.of("event", "error-handler",
+                                        "handler.class", record.errorHandler.getClass().getName(),
+                                        "handled.error.message", t.toString()));
                     }
                     try {
                         // there's no way to avoid this cast
@@ -361,10 +368,11 @@ class RequestRouting implements Routing {
         private void defaultHandler(Throwable t) {
             Span span = span();
             if (null != span) {
-                span.log(CollectionsHelper.mapOf("event", "error-handler",
-                                                        "handler.class", "DEFAULT-ERROR-HANDLER",
-                                                        "handled.error.message", t.toString()));
+                span.log(Map.of("event", "error-handler",
+                                "handler.class", "DEFAULT-ERROR-HANDLER",
+                                "handled.error.message", t.toString()));
             }
+            String message = null;
             try {
                 if (t instanceof HttpException) {
                     response.status(((HttpException) t).status());
@@ -380,13 +388,14 @@ class RequestRouting implements Routing {
 
                     response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                 }
+                message = t.getMessage();
             } catch (AlreadyCompletedException e) {
                 LOGGER.log(Level.WARNING,
                            "Cannot perform error handling of the throwable (see cause of this exception) because headers "
                                    + "were already sent",
                            new IllegalStateException("Headers already sent. Cannot handle the cause of this exception.", t));
             }
-            response.send().exceptionally(throwable -> {
+            response.send(message).exceptionally(throwable -> {
                 LOGGER.log(Level.WARNING, "Default error handler: Response wasn't successfully sent.", throwable);
                 return null;
             });
@@ -431,8 +440,8 @@ class RequestRouting implements Routing {
 
     private static class RoutedResponse extends Response {
 
-        RoutedResponse(WebServer webServer, BareResponse bareResponse) {
-            super(webServer, bareResponse);
+        RoutedResponse(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
+            super(webServer, bareResponse, acceptedTypes);
         }
 
         RoutedResponse(RoutedResponse response) {

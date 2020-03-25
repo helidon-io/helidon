@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Objects;
 
+import io.helidon.common.Builder;
+import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMappingException;
-import io.helidon.config.MissingValueException;
-import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ParsableSource;
+import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.eclipse.jgit.transport.CredentialsProvider;
@@ -58,14 +58,15 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
  * A specified directory, that is not empty, must be a valid git repository, otherwise an exception is thrown.
  * If the directory nor the uri is not set, an exception is thrown.
  * <p>
- * If Git ConfigSource is {@code mandatory} and a {@code uri} is not responsive or {@code key} does not exist
- * then {@link ConfigSource#load} throws {@link io.helidon.config.ConfigException}.
- * <p>
  * One of {@code media-type} and {@code parser} properties must be set to be clear how to parse the content. If both of them
  * are set, then {@code parser} has precedence.
  */
 public final class GitConfigSourceBuilder
-        extends AbstractParsableConfigSource.Builder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint> {
+        extends AbstractConfigSourceBuilder<GitConfigSourceBuilder, GitConfigSourceBuilder.GitEndpoint>
+        implements Builder<GitConfigSource>,
+                   PollableSource.Builder<GitConfigSourceBuilder>,
+                   ParsableSource.Builder<GitConfigSourceBuilder> {
+
 
     private static final String PATH_KEY = "path";
     private static final String URI_KEY = "uri";
@@ -73,59 +74,41 @@ public final class GitConfigSourceBuilder
     private static final String DIRECTORY_KEY = "directory";
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
-    private final String path;
+    private String path;
     private URI uri;
     private String branch = "master";
     private Path directory;
     private CredentialsProvider credentialsProvider;
 
-    private GitConfigSourceBuilder(String path) {
-        super(GitEndpoint.class);
-
-        Objects.requireNonNull(path, "path cannot be null");
-
-        this.path = path;
+    GitConfigSourceBuilder() {
         this.credentialsProvider = CredentialsProvider.getDefault();
     }
 
     /**
-     * Creates a builder with mandatory path to the configuration source.
+     * Configure path to use.
      *
-     * @param path a path to the configuration file
-     * @return a new builder
-     * @see #create(Config)
+     * @param path path to the configuration file
+     * @return updated builder instance
      */
-    public static GitConfigSourceBuilder create(String path) {
-        return new GitConfigSourceBuilder(path);
+    public GitConfigSourceBuilder path(String path) {
+        this.path = path;
+        return this;
     }
 
-    /**
-     * Initializes config source instance from meta configuration properties,
-     * see {@link io.helidon.config.ConfigSources#load(Config)}.
-     * <p>
-     * Mandatory {@code properties}, see {@link #create(String)}:
-     * <ul>
-     * <li>{@code path} - type {@code String}</li>
-     * </ul>
-     * Optional {@code properties}: see {@link #init(Config)}.
-     *
-     * @param metaConfig meta-configuration used to initialize returned config source builder instance from.
-     * @return new instance of config source builder described by {@code metaConfig}
-     * @throws MissingValueException  in case the configuration tree does not contain all expected sub-nodes
-     *                                required by the mapper implementation to provide instance of Java type.
-     * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
-     *                                supplied configuration node to an instance of a given Java type.
-     * @see #create(String)
-     * @see #init(Config)
-     */
-    public static GitConfigSourceBuilder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return GitConfigSourceBuilder.create(metaConfig.get(PATH_KEY).asString().get())
-                .init(metaConfig);
+
+    @Override
+    public GitConfigSource build() {
+        if (null == path) {
+            throw new IllegalArgumentException("git path must be defined");
+        }
+
+        return new GitConfigSource(this, target());
     }
 
     /**
      * {@inheritDoc}
      * <ul>
+     * <li>{@code path} - type {@code String}, see {@link #path(String)}</li>
      * <li>{@code uri} - type {@code URI}, see {@link #uri(URI)}</li>
      * <li>{@code branch} - type {@code String}, see {@link #branch(String)}</li>
      * <li>{@code directory} - type {@code Path}, see {@link #directory(Path)}</li>
@@ -135,7 +118,8 @@ public final class GitConfigSourceBuilder
      * @return modified builder instance
      */
     @Override
-    protected GitConfigSourceBuilder init(Config metaConfig) {
+    public GitConfigSourceBuilder config(Config metaConfig) {
+        metaConfig.get(PATH_KEY).asString().ifPresent(this::path);
         //uri
         metaConfig.get(URI_KEY).as(URI.class)
                 .ifPresent(this::uri);
@@ -152,11 +136,25 @@ public final class GitConfigSourceBuilder
                     this.credentialsProvider = new UsernamePasswordCredentialsProvider(user, password);
                 });
 
-        return super.init(metaConfig);
+        return super.config(metaConfig);
     }
 
     @Override
-    protected GitEndpoint target() {
+    public GitConfigSourceBuilder parser(ConfigParser parser) {
+        return super.parser(parser);
+    }
+
+    @Override
+    public GitConfigSourceBuilder mediaType(String mediaType) {
+        return super.mediaType(mediaType);
+    }
+
+    @Override
+    public GitConfigSourceBuilder pollingStrategy(PollingStrategy pollingStrategy) {
+        return super.pollingStrategy(pollingStrategy);
+    }
+
+    GitEndpoint target() {
         return new GitEndpoint(uri, branch, directory, path, credentialsProvider);
     }
 
@@ -215,15 +213,6 @@ public final class GitConfigSourceBuilder
     public GitConfigSourceBuilder credentialsProvider(CredentialsProvider credentialsProvider) {
         this.credentialsProvider = credentialsProvider;
         return this;
-    }
-
-    PollingStrategy pollingStrategyInternal() { //just for testing purposes
-        return super.pollingStrategy();
-    }
-
-    @Override
-    public GitConfigSource build() {
-        return new GitConfigSource(this, target());
     }
 
     /**

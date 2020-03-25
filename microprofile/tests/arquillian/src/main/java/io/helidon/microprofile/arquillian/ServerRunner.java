@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -52,13 +54,10 @@ class ServerRunner {
     }
 
     void start(Config config, HelidonContainerConfiguration containerConfig, Set<String> classNames, ClassLoader cl) {
-        //cl.getResources("beans.xml")
         Server.Builder builder = Server.builder()
                 .port(containerConfig.getPort())
-                .config(MpConfig.builder()
-                                .config(config)
-                                .addDiscoveredSources()
-                                .build());
+                .config(config);
+
 
         handleClasses(cl, classNames, builder, containerConfig.getAddResourcesToApps());
 
@@ -73,6 +72,24 @@ class ServerRunner {
         if (null != server) {
             LOGGER.finest(() -> "Stopping server");
             server.stop();
+        } else {
+            //emergency cleanup see #1446
+            stopCdiContainer();
+        }
+    }
+
+    private static void stopCdiContainer() {
+        try {
+            ServerCdiExtension server = CDI.current()
+                    .getBeanManager()
+                    .getExtension(ServerCdiExtension.class);
+
+            if (server.started()) {
+                SeContainer container = (SeContainer) CDI.current();
+                container.close();
+            }
+        } catch (IllegalStateException e) {
+            //noop container is not running
         }
     }
 

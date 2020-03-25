@@ -20,9 +20,9 @@ import java.util.Objects;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.Entity;
 import javax.persistence.Basic;
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -47,6 +47,7 @@ public class Author implements Serializable {
     @Column(name = "NAME",
             insertable = true,
             nullable = false,
+            unique = true,
             updatable = true)
     private String name;
 
@@ -70,6 +71,32 @@ public class Author implements Serializable {
 
     public void setName(final String name) {
         this.name = Objects.requireNonNull(name);
+    }
+
+    @Override
+    public int hashCode() {
+        final Object name = this.getName();
+        return name == null ? 0 : name.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (other == this) {
+            return true;
+        } else if (other instanceof Author) {
+            final Author her = (Author) other;
+            final Object name = this.getName();
+            if (name == null) {
+                if (her.getName() != null) {
+                    return false;
+                }
+            } else if (!name.equals(her.getName())) {
+                return false;
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
   
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,19 @@ public final class Utils {
             result.add(token.toString());
         }
         return result;
+    }
+
+    /**
+     * Unwrap from double-quotes - if exists.
+     *
+     * @param str string to unwrap.
+     * @return unwrapped string.
+     */
+    public static String unwrap(String str) {
+        if (str.length() >= 2 && '"' == str.charAt(0) && '"' == str.charAt(str.length() - 1)) {
+            return str.substring(1, str.length() - 1);
+        }
+        return str;
     }
 
     /**

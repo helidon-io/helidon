@@ -19,7 +19,6 @@ package io.helidon.webserver.examples.comments;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.HttpException;
@@ -68,9 +67,8 @@ public final class Main {
         return Routing.builder()
                 // Filter that translates user identity header into the contextual "user" information
                 .any((req, res) -> {
-                    String user = OptionalHelper.from(req.headers().first("user-identity"))
+                    String user = req.headers().first("user-identity")
                             .or(() -> acceptAnonymousUsers ? Optional.of("anonymous") : Optional.empty())
-                            .asOptional()
                             .orElseThrow(() -> new HttpException("Anonymous access is forbidden!", Http.Status.FORBIDDEN_403));
 
                     req.context().register("user", user);

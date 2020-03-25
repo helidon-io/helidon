@@ -24,7 +24,7 @@ final class TestMessages {
 
     @Test
     final void testMessages() {
-        final String message = Messages.format("resourceLocalPersistenceUnitDisallowed");
+        final String message = Messages.format("resourceLocalPersistenceUnitWarning");
         assertNotNull(message);
         assertTrue(message.startsWith("The persistence unit "));
     }

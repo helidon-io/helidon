@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ package io.helidon.microprofile.metrics;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
-import io.helidon.config.Config;
+import io.helidon.metrics.HelidonMetadata;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -47,14 +46,13 @@ public class MetricsMpServiceTest {
     public static void initializeServer() throws Exception {
         server = Server.builder()
                 .addResourceClass(HelloWorldResource.class)
-                .config(MpConfig.builder().config(Config.create()).build())
                 .host("localhost")
                 // choose a random available port
                 .port(-1)
                 .build();
         server.start();
 
-        registry = registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
         port = server.port();
         baseUri = "http://localhost:" + port;
@@ -70,7 +68,7 @@ public class MetricsMpServiceTest {
     }
 
     protected static void registerCounter(String name) {
-        Metadata meta = new Metadata(name,
+        Metadata meta = new HelidonMetadata(name,
                                      name,
                                      name,
                                      MetricType.COUNTER,

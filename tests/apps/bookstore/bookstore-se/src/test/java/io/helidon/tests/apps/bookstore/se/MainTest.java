@@ -18,7 +18,7 @@ package io.helidon.tests.apps.bookstore.se;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonReader;;
+import javax.json.JsonReader;
 
 import io.helidon.webserver.WebServer;
 
@@ -26,13 +26,14 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
+
+;
 
 public class MainTest {
 

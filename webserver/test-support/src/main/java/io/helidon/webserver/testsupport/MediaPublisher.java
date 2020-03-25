@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Multi;
 
 /**
@@ -73,7 +73,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
                 .map(Charset::forName)
                 .orElse(StandardCharsets.UTF_8)
                 .encode(charSequence.toString());
-        Flow.Publisher<DataChunk> publisher = Multi.just(DataChunk.create(data));
+        Flow.Publisher<DataChunk> publisher = Multi.singleton(DataChunk.create(data));
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {

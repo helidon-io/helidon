@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import io.helidon.config.Config.Key;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.ConfigSourceTest;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.hamcrest.Matcher;
@@ -112,20 +111,6 @@ public class ConfigTest {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
         assertThat(config.get(ConfigSourceTest.TEST_ENV_VAR_NAME).asString(), is(ConfigValues.simpleValue(ConfigSourceTest.TEST_ENV_VAR_VALUE)));
-    }
-
-    @Test
-    public void testCreateKeyFromEnvVars() {
-        System.setProperty(ConfigSourceTest.TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
-
-        testKeyFromEnvVars(Config.create());
-    }
-
-    @Test
-    public void testBuilderDefaultConfigSourceKeyFromEnvVars() {
-        System.setProperty(ConfigSourceTest.TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
-
-        testKeyFromEnvVars(Config.builder().build());
     }
 
     @Test
@@ -632,7 +617,7 @@ public class ConfigTest {
         assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
         assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
 
-        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_ENV_VAR_VALUE));
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
     }
 
     @Test

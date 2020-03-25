@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.GenericType;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.spi.ConfigMapper;
@@ -50,11 +49,9 @@ import static org.mockito.Mockito.mock;
  * Tests {@link ConfigMapperManager}.
  */
 public class ConfigMapperManagerTest {
-    private static final ConfigMapperManager managerNoServices = BuilderImpl.buildMappers(false,
-                                                                                          MapperProviders.create());
+    private static final ConfigMapperManager managerNoServices = BuilderImpl.buildMappers(MapperProviders.create());
 
-    private static final ConfigMapperManager managerWithServices = BuilderImpl.buildMappers(true,
-                                                                                            MapperProviders.create());
+    private static final ConfigMapperManager managerWithServices = BuilderImpl.buildMappers(MapperProviders.create());
 
     @Test
     public void testUnknownMapper() {
@@ -102,8 +99,8 @@ public class ConfigMapperManagerTest {
             assertThat(map, hasEntry("key1", "42"));
         }
         assertThat(config.as(Integer.class).get(), is(42));
-        assertThat(config.asNodeList().get(), is(CollectionsHelper.listOf(config)));
-        assertThat(config.asList(String.class).get(), is(CollectionsHelper.listOf("42")));
+        assertThat(config.asNodeList().get(), is(List.of(config)));
+        assertThat(config.asList(String.class).get(), is(List.of("42")));
 
         Config.Context context = config.context();
 
@@ -116,26 +113,26 @@ public class ConfigMapperManagerTest {
     void testGenericTypeMapperMap() {
         MapperProviders providers = MapperProviders.create();
         providers.add(new ParametrizedConfigMapper());
-        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(true, providers);
+        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(providers);
 
         Config config = configMapperManager.simpleConfig("test", "1");
 
         ConfigValue<Map<String, Integer>> map = config.as(new GenericType<Map<String, Integer>>() { });
 
-        assertThat(map.get(), is(CollectionsHelper.mapOf("test", 1)));
+        assertThat(map.get(), is(Map.of("test", 1)));
     }
 
     @Test
     void testGenericTypeMapperList() {
         MapperProviders providers = MapperProviders.create();
         providers.add(new ParametrizedConfigMapper());
-        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(true, providers);
+        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(providers);
 
         Config config = configMapperManager.simpleConfig("test", "1");
 
         ConfigValue<Map<String, List<Integer>>> map = config.as(new GenericType<Map<String, List<Integer>>>() { });
 
-        assertThat(map.get(), is(CollectionsHelper.mapOf("test", CollectionsHelper.listOf(1))));
+        assertThat(map.get(), is(Map.of("test", List.of(1))));
     }
 
     // this will not work, as beans are moved away from core
@@ -147,7 +144,7 @@ public class ConfigMapperManagerTest {
     private static class ParametrizedConfigMapper implements ConfigMapperProvider {
         @Override
         public Map<Class<?>, Function<Config, ?>> mappers() {
-            return CollectionsHelper.mapOf();
+            return Map.of();
         }
 
         @Override

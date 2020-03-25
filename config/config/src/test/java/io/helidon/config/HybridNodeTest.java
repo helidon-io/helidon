@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package io.helidon.config;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 
@@ -54,13 +54,13 @@ public class HybridNodeTest {
         map.put("app.port", "8080");
         map.put("app", "app-name");
 
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).lax().build();
+        MapConfigSource mapConfigSource = ConfigSources.create(map).build();
         mapConfigSource.init(mock(ConfigContext.class));
-        ConfigNode.ObjectNode objectNode = mapConfigSource.load().get();
+        ConfigNode.ObjectNode objectNode = mapConfigSource.load().get().data();
 
         assertThat(objectNode.entrySet(), hasSize(1));
-        assertThat(((ConfigNode.ObjectNode) objectNode.get("app")).get("port").get(), is("8080"));
-        assertThat(objectNode.get("app").get(), is("app-name"));
+        assertThat(((ConfigNode.ObjectNode) objectNode.get("app")).get("port").value(), is(Optional.of("8080")));
+        assertThat(objectNode.get("app").value(), is(Optional.of("app-name")));
     }
 
     @Test
@@ -95,6 +95,6 @@ public class HybridNodeTest {
     public void testListValue() {
         assertThat("app1.node1.value should be reachable as list",
                    config.get("app1.node1.value").asList(Integer.class).get(),
-                   is(CollectionsHelper.listOf(14, 15, 16)));
+                   is(List.of(14, 15, 16)));
     }
 }

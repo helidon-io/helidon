@@ -16,28 +16,28 @@
 
 package io.helidon.examples.openapi;
 
-import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.JsonPointer;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonPointer;
 import javax.json.JsonString;
 
-import io.helidon.webserver.WebServer;
 import io.helidon.common.http.MediaType;
 import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
+import io.helidon.webserver.WebServer;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class MainTest {

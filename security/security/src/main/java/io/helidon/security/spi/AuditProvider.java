@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import io.helidon.common.StackWalker;
 import io.helidon.security.AuditEvent;
 
 /**
@@ -101,7 +100,7 @@ public interface AuditProvider extends SecurityProvider {
             StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
             //I want to filter out all methods in the root of security package
             //including security builder
-            Optional<StackTraceElement> frame = walker
+            Optional<StackWalker.StackFrame> frame = walker
                     .walk(stream -> stream
                             .filter(f -> !f.getClassName().startsWith("sun."))
                             .filter(f -> !f.getClassName().startsWith("java."))
@@ -118,7 +117,7 @@ public interface AuditProvider extends SecurityProvider {
             if (!frame.isPresent()) {
                 frame = walker
                         .walk(stream -> {
-                                  List<StackTraceElement> elems = stream
+                                  List<StackWalker.StackFrame> elems = stream
                                           .filter(f -> !f.getClassName().startsWith("sun."))
                                           .filter(f -> !f.getClassName().startsWith("java."))
                                           .collect(Collectors.toList());
@@ -132,7 +131,7 @@ public interface AuditProvider extends SecurityProvider {
             }
 
             if (frame.isPresent()) {
-                StackTraceElement stackFrame = frame.get();
+                StackWalker.StackFrame stackFrame = frame.get();
 
                 return new AuditSource() {
                     @Override
@@ -163,7 +162,7 @@ public interface AuditProvider extends SecurityProvider {
             }
         }
 
-        static boolean isSecurityClass(StackTraceElement element) {
+        static boolean isSecurityClass(StackWalker.StackFrame element) {
             String className = element.getClassName();
             int last = className.lastIndexOf('.');
             String packageName = (last > 0) ? className.substring(0, last) : "";

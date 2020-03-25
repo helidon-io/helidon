@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
-import io.helidon.common.OptionalHelper;
+import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -54,6 +54,10 @@ import io.helidon.security.integration.common.SecurityTracing;
 public class ClientSecurityFilter implements ClientRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
+
+    static {
+        HelidonFeatures.register("Security", "Integration", "Jersey Client");
+    }
 
     /**
      * Create an instance of this filter (used by Jersey or for unit tests, do not use explicitly in your production code).
@@ -121,7 +125,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             switch (status) {
             case FAILURE:
             case FAILURE_FINISH:
-                OptionalHelper.from(providerResponse.throwable())
+                providerResponse.throwable()
                         .ifPresentOrElse(tracing::error,
                                          () -> tracing.error(providerResponse.description().orElse("Failed")));
 
@@ -155,21 +159,17 @@ public class ClientSecurityFilter implements ClientRequestFilter {
     }
 
     private Optional<SecurityContext> findContext(ClientRequestContext requestContext) {
-        return OptionalHelper
-                // from client property
-                .from(property(requestContext, SecurityContext.class, ClientSecurity.PROPERTY_CONTEXT))
-                // then look for security context in context
-                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)))
-                .asOptional();
+        return  // client property
+                property(requestContext, SecurityContext.class, ClientSecurity.PROPERTY_CONTEXT)
+                        // then look for security context in context
+                        .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)));
     }
 
     private static <T> Optional<T> property(ClientRequestContext requestContext, Class<T> clazz, String propertyName) {
-        return OptionalHelper.from(Optional.empty())
-                .or(() -> Optional.ofNullable(requestContext.getProperty(propertyName))
-                        .filter(clazz::isInstance))
+        return Optional.ofNullable(requestContext.getProperty(propertyName))
+                .filter(clazz::isInstance)
                 .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
                         .filter(clazz::isInstance))
-                .asOptional()
                 .map(clazz::cast);
     }
 }

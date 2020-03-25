@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,9 +46,7 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
         this.context = context;
         this.providerName = providerName;
         this.providerRequest = new ProviderRequest(context,
-                                                   request.resources(),
-                                                   request.requestEntity(),
-                                                   request.responseEntity());
+                                                   request.resources());
         this.outboundEnv = outboundEnvironment;
         this.outboundEpConfig = outboundEndpointConfig;
     }
