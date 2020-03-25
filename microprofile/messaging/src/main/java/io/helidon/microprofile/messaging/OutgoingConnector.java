@@ -71,13 +71,9 @@ class OutgoingConnector implements PublishingConnector {
 
     @Override
     public Publisher<?> getPublisher(String channelName) {
-        Publisher<?> publisher = publisherMap.get(channelName);
-        if (publisher == null) {
-            publisher = connectorFactory
-                    .getPublisherBuilder(getConnectorConfig(channelName))
-                    .buildRs();
-            publisherMap.put(channelName, publisher);
-        }
+        Publisher<?> publisher = publisherMap.computeIfAbsent(channelName, cn -> connectorFactory
+                .getPublisherBuilder(getConnectorConfig(channelName))
+                .buildRs());
         return publisher;
     }
 
