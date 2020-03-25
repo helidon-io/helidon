@@ -28,9 +28,9 @@ final class SingleMapperPublisher<T, R> implements Single<R> {
 
     private final Flow.Publisher<T> source;
 
-    private final Mapper<T, R> mapper;
+    private final Mapper<? super T, ? extends R> mapper;
 
-    SingleMapperPublisher(Flow.Publisher<T> source, Mapper<T, R> mapper) {
+    SingleMapperPublisher(Flow.Publisher<T> source, Mapper<? super T, ? extends R> mapper) {
         this.source = source;
         this.mapper = mapper;
     }

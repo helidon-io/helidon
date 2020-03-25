@@ -174,23 +174,10 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
         @Override
         public void request(long n) {
             if (n <= 0L) {
-                doError(new IllegalArgumentException("Rule §3.9 violated: non-positive request amount is forbidded"));
+                doError(new IllegalArgumentException("Rule §3.9 violated: non-positive request amount is forbidden"));
             } else {
-                // FIXME replace with SubscriptionHelper.addRequest
-                for (;;) {
-                    long current = requested.get();
-                    if (current == Long.MAX_VALUE) {
-                        return;
-                    }
-                    long update = current + n;
-                    if (update < 0L) {
-                        update = Long.MAX_VALUE;
-                    }
-                    if (requested.compareAndSet(current, update)) {
-                        drain();
-                        return;
-                    }
-                }
+                SubscriptionHelper.addRequest(requested, n);
+                drain();
             }
         }
 

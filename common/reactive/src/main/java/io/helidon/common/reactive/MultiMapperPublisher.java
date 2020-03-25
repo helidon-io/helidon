@@ -29,9 +29,9 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
 
     private final Flow.Publisher<T> source;
 
-    private final Mapper<T, R> mapper;
+    private final Mapper<? super T, ? extends R> mapper;
 
-    MultiMapperPublisher(Flow.Publisher<T> source, Mapper<T, R> mapper) {
+    MultiMapperPublisher(Flow.Publisher<T> source, Mapper<? super T, ? extends R> mapper) {
         this.source = source;
         this.mapper = mapper;
     }
@@ -45,11 +45,11 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
 
         private final Flow.Subscriber<? super R> downstream;
 
-        private final Mapper<T, R> mapper;
+        private final Mapper<? super T, ? extends R> mapper;
 
         private Flow.Subscription upstream;
 
-        MapperSubscriber(Flow.Subscriber<? super R> downstream, Mapper<T, R> mapper) {
+        MapperSubscriber(Flow.Subscriber<? super R> downstream, Mapper<? super T, ? extends R> mapper) {
             this.downstream = downstream;
             this.mapper = mapper;
         }
@@ -65,7 +65,7 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
         public void onNext(T item) {
             // in case the upstream doesn't stop immediately after a failed mapping
             Flow.Subscription s = upstream;
-            if (s != null) {
+            if (s != SubscriptionHelper.CANCELED) {
                 R result;
 
                 try {
@@ -83,8 +83,8 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
         @Override
         public void onError(Throwable throwable) {
             // if mapper.map fails above, the upstream may still emit an onError without request
-            if (upstream != null) {
-                upstream = null;
+            if (upstream != SubscriptionHelper.CANCELED) {
+                upstream = SubscriptionHelper.CANCELED;
                 downstream.onError(throwable);
             }
         }
@@ -92,27 +92,21 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
         @Override
         public void onComplete() {
             // if mapper.map fails above, the upstream may still emit an onComplete without request
-            if (upstream != null) {
-                upstream = null;
+            if (upstream != SubscriptionHelper.CANCELED) {
+                upstream = SubscriptionHelper.CANCELED;
                 downstream.onComplete();
             }
         }
 
         @Override
         public void request(long n) {
-            Flow.Subscription s = upstream;
-            if (s != null) {
-                s.request(n);
-            }
+            upstream.request(n);
         }
 
         @Override
         public void cancel() {
-            Flow.Subscription s = upstream;
-            upstream = null;
-            if (s != null) {
-                s.cancel();
-            }
+            upstream.cancel();
+            upstream = SubscriptionHelper.CANCELED;
         }
     }
 }

@@ -63,7 +63,7 @@ public interface Single<T> extends Subscribable<T> {
      * @return Single
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Single<U> map(Mapper<T, U> mapper) {
+    default <U> Single<U> map(Mapper<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new SingleMapperPublisher<>(this, mapper);
     }
@@ -100,7 +100,7 @@ public interface Single<T> extends Subscribable<T> {
      * @deprecated Use {@link Single#flatMap}
      */
     @Deprecated
-    default <U> Multi<U> mapMany(Mapper<T, Publisher<U>> mapper) {
+    default <U> Multi<U> mapMany(Mapper<? super T, ? extends Publisher<? extends U>> mapper) {
         return flatMap(mapper::map);
     }
 
@@ -125,7 +125,7 @@ public interface Single<T> extends Subscribable<T> {
      * @return Single
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Single<U> flatMapSingle(Function<T, Single<U>> mapper) {
+    default <U> Single<U> flatMapSingle(Function<? super T, ? extends Single<? extends U>> mapper) {
         return new SingleFlatMapSingle<>(this, mapper);
     }
 
@@ -281,7 +281,6 @@ public interface Single<T> extends Subscribable<T> {
         return SingleNever.<T>instance();
     }
 
-
     /**
      * Signal 0L and complete the sequence after the given time elapsed.
      * @param time the time to wait before signaling 0L and completion
@@ -407,7 +406,7 @@ public interface Single<T> extends Subscribable<T> {
      * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Single
      */
-    default Single<T> onError(Consumer<Throwable> onErrorConsumer) {
+    default Single<T> onError(Consumer<? super Throwable> onErrorConsumer) {
         return new SingleTappedPublisher<>(this,
                 null,
                 null,
@@ -439,7 +438,7 @@ public interface Single<T> extends Subscribable<T> {
      * @param consumer consumer to be invoked
      * @return Single
      */
-    default Single<T> peek(Consumer<T> consumer) {
+    default Single<T> peek(Consumer<? super T> consumer) {
         return new SingleTappedPublisher<>(this, null, consumer,
                 null, null, null, null);
     }
