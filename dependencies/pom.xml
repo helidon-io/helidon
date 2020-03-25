@@ -683,11 +683,6 @@
                 <artifactId>jakarta.json-api</artifactId>
                 <version>${version.lib.jakarta-json}</version>
             </dependency>
-            <dependency>
-                <groupId>jakarta.json</groupId>
-                <artifactId>jakarta.json</artifactId>
-                <version>${version.lib.jakarta-json}</version>
-            </dependency>
 
             <!-- Testing libraries -->
             <dependency>
