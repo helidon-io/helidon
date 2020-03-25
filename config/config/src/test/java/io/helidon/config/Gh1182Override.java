@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.config.spi.ConfigSource;
 
 import org.junit.jupiter.api.Test;
@@ -31,8 +32,8 @@ import static org.junit.Assert.assertThat;
  * <a href="https://github.com/oracle/helidon/issues/1182">Github issue 1182</a>.
  */
 public class Gh1182Override {
-    private static final Map<String, String> VALUE = Map.of("app1.node1.value", "false");
-    private static final Map<String, String> LIST = Map.of(
+    private static final Map<String, String> VALUE = CollectionsHelper.mapOf("app1.node1.value", "false");
+    private static final Map<String, String> LIST = CollectionsHelper.mapOf(
             "app1.node1.value", "true",
             "app1.node1.value.1", "14",
             "app1.node1.value.2", "15",
