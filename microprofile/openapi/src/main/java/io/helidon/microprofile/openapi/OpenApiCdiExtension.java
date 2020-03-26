@@ -69,7 +69,8 @@ public class OpenApiCdiExtension implements Extension {
         HelidonFeatures.register("OpenAPI");
     }
 
-    private final List<URL> indexURLs;
+    private final List<URL> indexURLs; // used only in early processing
+    private final String[] indexPaths;
 
     private final Set<Class<?>> annotatedTypes = new HashSet<>();
 
@@ -86,6 +87,7 @@ public class OpenApiCdiExtension implements Extension {
     }
 
     OpenApiCdiExtension(String... indexPaths) throws IOException {
+        this.indexPaths = indexPaths;
         indexURLs = findIndexFiles(indexPaths);
         if (indexURLs.isEmpty()) {
             LOGGER.log(Level.INFO, () -> String.format(
@@ -155,13 +157,16 @@ public class OpenApiCdiExtension implements Extension {
      */
     private IndexView existingIndexFileReader() throws IOException {
         List<IndexView> indices = new ArrayList<>();
-        for (URL indexURL : indexURLs) {
+        /*
+         * Do not reuse the previously-computed indexURLs; those values will be incorrect with native images.
+         */
+        for (URL indexURL : findIndexFiles(indexPaths)) {
             try (InputStream indexIS = indexURL.openStream()) {
                 LOGGER.log(Level.CONFIG, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
             } catch (IOException ex) {
                 throw new IOException("Attempted to read from previously-located index file "
-                        + indexURL + " but the file cannot be found", ex);
+                        + indexURL + " but the index cannot be found", ex);
             }
         }
         return indices.size() == 1 ? indices.get(0) : CompositeIndex.create(indices);
