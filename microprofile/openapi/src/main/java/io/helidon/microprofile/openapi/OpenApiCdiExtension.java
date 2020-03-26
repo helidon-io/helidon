@@ -69,8 +69,8 @@ public class OpenApiCdiExtension implements Extension {
         HelidonFeatures.register("OpenAPI");
     }
 
-    private final List<URL> indexURLs; // used only in early processing
     private final String[] indexPaths;
+    private final int indexURLCount;
 
     private final Set<Class<?>> annotatedTypes = new HashSet<>();
 
@@ -88,7 +88,8 @@ public class OpenApiCdiExtension implements Extension {
 
     OpenApiCdiExtension(String... indexPaths) throws IOException {
         this.indexPaths = indexPaths;
-        indexURLs = findIndexFiles(indexPaths);
+        List<URL> indexURLs = findIndexFiles(indexPaths);
+        indexURLCount = indexURLs.size();
         if (indexURLs.isEmpty()) {
             LOGGER.log(Level.INFO, () -> String.format(
                     "OpenAPI support could not locate the Jandex index file %s "
@@ -130,7 +131,7 @@ public class OpenApiCdiExtension implements Extension {
      * @param event {@code ProcessAnnotatedType} event
      */
     private <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> event) {
-        if (indexURLs.isEmpty()) {
+        if (indexURLCount == 0) {
             Class<?> c = event.getAnnotatedType()
                     .getJavaClass();
             annotatedTypes.add(c);
@@ -146,7 +147,7 @@ public class OpenApiCdiExtension implements Extension {
      * reading class bytecode from the classpath
      */
     public IndexView indexView() throws IOException {
-        return !indexURLs.isEmpty() ? existingIndexFileReader() : indexFromHarvestedClasses();
+        return indexURLCount > 0 ? existingIndexFileReader() : indexFromHarvestedClasses();
     }
 
     /**
