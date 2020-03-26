@@ -18,8 +18,6 @@ package io.helidon.microprofile.example.messaging.sse;
 
 import io.helidon.microprofile.server.Server;
 
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-
 /**
  * Explicit example.
  */
@@ -33,20 +31,6 @@ public class Main {
      * @param args command line arguments (ignored)
      */
     public static void main(String[] args) {
-        Server server = Server.builder()
-                .addApplication(MessagingSseExampleApplication.class)
-                // using a customized helidon config instance (in this case the default...)
-                .config(ConfigProviderResolver.instance()
-                        .getBuilder()
-                        .build())
-                .host("localhost")
-                .build();
-
-        server.start();
-
-        String endpoint = "http://" + server.host() + ":" + server.port();
-        System.out.println("Try me                     " + endpoint);
-        System.out.println("SSE resource               " + endpoint + "/example/sse");
-        System.out.println("Send messages              " + endpoint + "/example/send/HelloWorld");
+        Server.create().start();
     }
 }
