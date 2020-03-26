@@ -94,13 +94,14 @@ public interface EmployeeRepository {
      * Update an existing employee.
      * @param updatedEmployee The employee object with the values to update
      * @param id The employee ID
-     * @return The employee updated.
+     * @return number of updated records
      */
     CompletionStage<Long> update(Employee updatedEmployee, String id);
 
     /**
      * Delete an employee by ID.
      * @param id The employee ID
+     * @return number of deleted records
      */
     CompletionStage<Long> deleteById(String id);
 
