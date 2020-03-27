@@ -516,4 +516,39 @@ public interface Single<T> extends Subscribable<T> {
         Objects.requireNonNull(whenFunction, "whenFunction is null");
         return new SingleRetry<>(this, whenFunction);
     }
+
+    /**
+     * Apply the given {@code composer} function to the current {@code Single} instance and
+     * return the {@code Single} returned by this function.
+     * <p>
+     *     Note that the {@code composer} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
+     * </p>
+     * @param composer the function that receives the current {@code Single} instance and
+     *                 should return a {@code Single} to be returned by the method
+     * @param <U> the output element type
+     * @return Single
+     * @throws NullPointerException if {@code composer} is {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    default <U> Single<U> compose(Function<? super Single<T>, ? extends Single<? extends U>> composer) {
+        return (Single<U>) to(composer);
+    }
+
+    /**
+     * Apply the given {@code converter} function to the current {@code Single} instance
+     * and return the value returned by this function.
+     * <p>
+     *     Note that the {@code converter} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
+     * </p>
+     * @param converter the function that receives the current {@code Single} instance and
+     *                  should return a value to be returned by the method
+     * @param <U> the output type
+     * @return the value returned by the function
+     * @throws NullPointerException if {@code converter} is {@code null}
+     */
+    default <U> U to(Function<? super Single<T>, ? extends U> converter) {
+        return converter.apply(this);
+    }
 }
