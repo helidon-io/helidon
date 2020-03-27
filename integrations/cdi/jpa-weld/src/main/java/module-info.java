@@ -28,9 +28,9 @@ module io.helidon.integrations.cdi.jpa.weld {
     requires java.annotation;
     requires java.sql;
     requires java.persistence;
-    requires javax.interceptor.api;
-    requires javax.inject;
-    requires cdi.api;
+    requires jakarta.interceptor.api;
+    requires jakarta.inject.api;
+    requires jakarta.enterprise.cdi.api;
     requires weld.spi;
 
     exports io.helidon.integrations.cdi.jpa.weld;

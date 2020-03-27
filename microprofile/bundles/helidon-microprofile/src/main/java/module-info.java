@@ -27,6 +27,6 @@ module io.helidon.microprofile.bundle {
     requires transitive io.helidon.microprofile.tracing;
     requires transitive io.helidon.microprofile.restclient;
     requires transitive io.helidon.microprofile.openapi;
-
+    requires transitive java.json.bind;
     requires io.helidon.health.checks;
 }

@@ -59,13 +59,13 @@
                     <version>${version.plugin.eclipselink}</version>
                     <dependencies>
                         <dependency>
-                            <groupId>javax.annotation</groupId>
-                            <artifactId>javax.annotation-api</artifactId>
+                            <groupId>jakarta.annotation</groupId>
+                            <artifactId>jakarta.annotation-api</artifactId>
                             <version>${version.lib.annotation-api}</version>
                         </dependency>
                         <dependency>
-                            <groupId>javax.xml.bind</groupId>
-                            <artifactId>jaxb-api</artifactId>
+                            <groupId>jakarta.xml.bind</groupId>
+                            <artifactId>jakarta.xml.bind-api</artifactId>
                             <version>${version.lib.jaxb-api}</version>
                         </dependency>
                     </dependencies>

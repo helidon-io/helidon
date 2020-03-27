@@ -39,13 +39,13 @@
             <artifactId>helidon-security-abac-policy</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.el</groupId>
-            <artifactId>javax.el-api</artifactId>
+            <groupId>jakarta.el</groupId>
+            <artifactId>jakarta.el-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
-            <artifactId>javax.el</artifactId>
+            <artifactId>jakarta.el</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

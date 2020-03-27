@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
  */
 module io.helidon.health.common {
 
-    requires static cdi.api;
-    requires static javax.inject;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
 
     exports io.helidon.health.common;
 }

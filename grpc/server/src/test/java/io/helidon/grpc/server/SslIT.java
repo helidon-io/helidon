@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,22 +33,19 @@ import io.helidon.grpc.server.test.EchoServiceGrpc;
 
 import com.oracle.bedrock.runtime.LocalPlatform;
 import com.oracle.bedrock.runtime.network.AvailablePortIterator;
-
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
-
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-
 import org.junit.AfterClass;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
 import services.EchoService;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -57,6 +54,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for gRPC server with SSL connections
  */
+@Disabled("Certificate expired on 27th March 2020")
 public class SslIT {
 
     // ----- data members ---------------------------------------------------

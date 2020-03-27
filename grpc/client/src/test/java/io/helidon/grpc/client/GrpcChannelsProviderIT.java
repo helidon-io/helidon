@@ -37,6 +37,7 @@ import io.grpc.NameResolver;
 import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import services.TreeMapService;
 
@@ -44,6 +45,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Disabled("Certificate expired on 27th March 2020")
 public class GrpcChannelsProviderIT {
 
     private static final String CLIENT_CERT = "ssl/clientCert.pem";

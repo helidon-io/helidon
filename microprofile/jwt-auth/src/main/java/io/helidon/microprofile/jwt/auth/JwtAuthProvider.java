@@ -611,6 +611,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
             URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
             if (url == null) {
+                // if uri starts with "/", remove it
+                if (uri.startsWith("/")) {
+                    url = Thread.currentThread().getContextClassLoader().getResource(uri.substring(1));
+                }
+            }
+
+            if (url == null) {
                 is = JwtAuthProvider.class.getResourceAsStream(uri);
 
                 if (null == is) {

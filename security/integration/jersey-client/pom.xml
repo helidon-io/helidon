@@ -49,8 +49,8 @@
             <artifactId>helidon-jersey-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -71,6 +71,11 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
