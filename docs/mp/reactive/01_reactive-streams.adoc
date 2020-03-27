@@ -17,8 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Reactive Streams Operators
-:description: Helidon MicroProfile Reactive Messaging
-= :keywords: helidon, messaging, reactive, streams
+:description: Helidon MicroProfile Reactive Streams Operators
+= :keywords: helidon, reactive, streams
 
 Since Helidon 2.0
 

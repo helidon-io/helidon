@@ -195,7 +195,7 @@ backend:
                 value: "fa-filter"
               items:
                 - includes:
-                    - "mp/reactive/*.adoc"
+                    - "se/reactive/*.adoc"
         - title: "Helidon MP"
           items:
             - title: "Introduction"
