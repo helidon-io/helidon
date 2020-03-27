@@ -23,11 +23,11 @@
 Since Helidon 2.0
 
 == Message
-
+The Reactive Messaging
 https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message[Message]
-can be used for wrapping data item between methods and connectors,
-wrapping and unwrapping is possible explicitly by `org.eclipse.microprofile.reactive.messaging.Message#of(T)`
-or implicitly by messaging core.
+class can be used to wrap or unwrap data items between methods and connectors.
+The message wrapping and unwrapping can be performed explicitly by using
+`org.eclipse.microprofile.reactive.messaging.Message#of(T)` or implicitly through the messaging core.
 
 [source,java]
 .Example of explicit and implicit wrapping and unwrapping

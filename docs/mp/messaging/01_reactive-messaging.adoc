@@ -24,9 +24,10 @@ Since Helidon 2.0
 
 == Reactive Messaging
 
-MicroProfile Reactive Messaging provides means for CDI beans to be able produce, consume or process messages over Reactive Streams.
+MicroProfile Reactive Messaging uses CDI beans to produce, consume or process messages over Reactive Streams.
 Such messaging bean is expected to be either in `ApplicationScoped` or `Dependent` scope.
-Messages are managed by methods annotated by `@Incoming` and `@Outgoing`, invocation is always driven by messaging core either at assembly time or for every message coming from the stream.
+Messages are managed by methods annotated by `@Incoming` and `@Outgoing`
+and the invocation is always driven by message core - either at assembly time, or for every message coming from the stream.
 
 ⚠️ Messaging methods are not meant to be invoked directly!
 
