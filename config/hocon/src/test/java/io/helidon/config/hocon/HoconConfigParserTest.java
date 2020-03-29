@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,23 @@
 
 package io.helidon.config.hocon;
 
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.hocon.internal.HoconConfigParser;
+import io.helidon.config.MissingValueException;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -36,14 +41,11 @@ import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import com.typesafe.config.ConfigResolveOptions;
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.ConfigMapper;
-import io.helidon.config.ConfigMappingException;
-import io.helidon.config.MissingValueException;
+import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.ConfigValues.simpleValue;
 import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
@@ -51,8 +53,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link HoconConfigParser}.
@@ -61,7 +62,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabled() {
-        ConfigParser parser = HoconConfigParserBuilder.buildDefault();
+        ConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
                 + "aaa = 1 \n"
                 + "bbb = ${aaa} \n"
@@ -76,26 +77,26 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveDisabled() {
-        ConfigParserException cpe = Assertions.assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParserBuilder.create().disableResolving().build();
+        ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
+            ConfigParser parser = HoconConfigParser.builder().disableResolving().build();
             parser.parse((StringContent) () -> ""
-                + "aaa = 1 \n"
-                + "bbb = ${aaa} \n"
-                + "ccc = \"${aaa}\" \n"
-                + "ddd = ${?zzz}");
+                    + "aaa = 1 \n"
+                    + "bbb = ${aaa} \n"
+                    + "ccc = \"${aaa}\" \n"
+                    + "ddd = ${?zzz}");
         });
 
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "Cannot read from source",
-                "substitution not resolved",
-                "${aaa}")).matches(cpe.getMessage()));
-        Assertions.assertTrue(instanceOf(com.typesafe.config.ConfigException.NotResolved.class)
-                .matches(cpe.getCause()));
+        assertThat(cpe.getMessage(),
+                   stringContainsInOrder(List.of(
+                           "Cannot read from source",
+                           "substitution not resolved",
+                           "${aaa}")));
+        assertThat(cpe.getCause(), instanceOf(com.typesafe.config.ConfigException.NotResolved.class));
     }
 
     @Test
     public void testResolveEnabledEnvVar() {
-        ConfigParser parser = HoconConfigParserBuilder.buildDefault();
+        ConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -104,26 +105,24 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabledEnvVarDisabled() {
-        ConfigParserException cpe = Assertions.assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParserBuilder.create()
+        ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
+            ConfigParser parser = HoconConfigParser.builder()
                     .resolveOptions(ConfigResolveOptions.noSystem())
                     .build();
-        parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
+            parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
         });
 
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "Cannot read from source",
-                "not resolve substitution ",
-                "${HOCON_TEST_PROPERTY}")).matches(cpe.getMessage()),
-                "Unexpected exception message: " + cpe.getMessage());
-        Assertions.assertTrue(instanceOf(com.typesafe.config.ConfigException.UnresolvedSubstitution.class)
-                .matches(cpe.getCause()),
-                "Unexpected exception cause type: " + cpe.getCause().getClass().getName());
+        assertThat(cpe.getMessage(),
+                   stringContainsInOrder(List.of(
+                           "Cannot read from source",
+                           "not resolve substitution ",
+                           "${HOCON_TEST_PROPERTY}")));
+        assertThat(cpe.getCause(), instanceOf(com.typesafe.config.ConfigException.UnresolvedSubstitution.class));
     }
 
     @Test
     public void testEmpty() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "");
 
         assertThat(node.entrySet(), hasSize(0));
@@ -131,7 +130,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testSingleValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -140,7 +139,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testStringListValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = [ bbb, ccc, ddd ]");
 
         assertThat(node.entrySet(), hasSize(1));
@@ -154,7 +153,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testComplexValue() {
-        HoconConfigParser parser = new HoconConfigParser();
+        HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
                 + "aaa =  \"bbb\"\n"
                 + "arr = [ bbb, 13, true, 3.14159 ] \n"
@@ -207,7 +206,7 @@ public class HoconConfigParserTest {
                 + "}\n";
 
         Config config = Config
-                .withSources(ConfigSources.from(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
+                .builder(ConfigSources.create(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
                 .addParser(new HoconConfigParser())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -217,10 +216,10 @@ public class HoconConfigParserTest {
                 .build();
 
         //key
-        assertThat(config.get("oracle~1com.prop1").asString(), is("val1"));
-        assertThat(config.get("oracle~1com.prop2").asString(), is("val2"));
-        assertThat(config.get("oracle.com").asString(), is("1"));
-        assertThat(config.get("oracle.cz").asString(), is("2"));
+        assertThat(config.get("oracle~1com.prop1").asString(), is(simpleValue("val1")));
+        assertThat(config.get("oracle~1com.prop2").asString(), is(simpleValue("val2")));
+        assertThat(config.get("oracle.com").asString(), is(simpleValue("1")));
+        assertThat(config.get("oracle.cz").asString(), is(simpleValue("2")));
 
         //name
         assertThat(config.get("oracle~1com").name(), is("oracle.com"));
@@ -231,7 +230,7 @@ public class HoconConfigParserTest {
         assertThat(config.get("oracle.cz").name(), is("cz"));
 
         //child nodes
-        List<Config> children = config.asNodeList();
+        List<Config> children = config.asNodeList().get();
         assertThat(children, hasSize(2));
         assertThat(children.stream().map(Config::name).collect(Collectors.toSet()),
                    containsInAnyOrder("oracle.com", "oracle"));
@@ -243,7 +242,7 @@ public class HoconConfigParserTest {
                                             "oracle", "oracle.com", "oracle.cz"));
 
         //map
-        Map<String, String> map = config.asMap();
+        Map<String, String> map = config.asMap().get();
         assertThat(map.keySet(), hasSize(4));
         assertThat(map.get("oracle~1com.prop1"), is("val1"));
         assertThat(map.get("oracle~1com.prop2"), is("val2"));
@@ -255,13 +254,13 @@ public class HoconConfigParserTest {
     public void testGetSupportedMediaTypes() {
         HoconConfigParser parser = new HoconConfigParser();
 
-        assertThat(parser.getSupportedMediaTypes(), is(not(empty())));
+        assertThat(parser.supportedMediaTypes(), is(not(empty())));
     }
 
     @Test
     public void testCustomTypeMapping() {
         Config config = Config
-                .withSources(ConfigSources.from(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
+                .builder(ConfigSources.create(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
                 .addParser(new HoconConfigParser())
                 .addMapper(AppType.class, new AppTypeMapper())
                 .disableEnvironmentVariablesSource()
@@ -270,7 +269,7 @@ public class HoconConfigParserTest {
                 .disableMapperServices()
                 .disableFilterServices()
                 .build();
-        AppType app = config.get("app").as(AppType.class);
+        AppType app = config.get("app").as(AppType.class).get();
         assertThat("greeting", app.getGreeting(), is(AppType.GREETING));
         assertThat("name", app.getName(), is(AppType.NAME));
         assertThat("page-size", app.getPageSize(), is(AppType.PAGE_SIZE));
@@ -285,13 +284,18 @@ public class HoconConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends Content {
         @Override
-        default String getMediaType() {
-            return HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON;
+        default Optional<String> mediaType() {
+            return Optional.of(HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON);
         }
 
         @Override
-        default Reader asReadable() {
-            return new StringReader(getContent());
+        default InputStream data() {
+            return new ByteArrayInputStream(getContent().getBytes(StandardCharsets.UTF_8));
+        }
+
+        @Override
+        default Charset charset() {
+            return StandardCharsets.UTF_8;
         }
 
         String getContent();
@@ -302,7 +306,7 @@ public class HoconConfigParserTest {
         private static final String GREETING = "Hello";
         private static final String NAME = "Demo";
         private static final int PAGE_SIZE = 20;
-        private static final List<Integer> BASIC_RANGE = CollectionsHelper.listOf(-20, 20);
+        private static final List<Integer> BASIC_RANGE = List.of(-20, 20);
 
         static final String DEF = ""
                 + "app {\n"
@@ -357,16 +361,16 @@ public class HoconConfigParserTest {
         }
     }
 
-    private static class AppTypeMapper implements ConfigMapper<AppType> {
+    private static class AppTypeMapper implements Function<Config, AppType> {
 
         @Override
         public AppType apply(Config config) throws ConfigMappingException, MissingValueException {
             AppType app = new AppType(
-                config.get("name").asString(),
-                config.get("greeting").asString(),
-                config.get("page-size").asInt(),
-                config.get("basic-range").asList(Integer.class),
-                config.get("storagePassphrase").asString()
+                    config.get("name").asString().get(),
+                    config.get("greeting").asString().get(),
+                    config.get("page-size").asInt().get(),
+                    config.get("basic-range").asList(Integer.class).get(),
+                    config.get("storagePassphrase").asString().get()
             );
 
             return app;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
@@ -72,11 +71,11 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @throws IllegalStateException in case of a problem; will wrap either an instance of {@link IOException} or
      *                               a {@link GeneralSecurityException}
      */
-    public static SSLContext fromConfig(Config sslConfig) {
-        return new SSLContextBuilder().privateKeyConfig(KeyConfig.fromConfig(sslConfig.get("private-key")))
-                                      .sessionCacheSize(sslConfig.get("sessionCacheSize").asInt(0))
-                                      .sessionTimeout(sslConfig.get("sessionTimeout").asInt(0))
-                                      .trustConfig(KeyConfig.fromConfig(sslConfig.get("trust")))
+    public static SSLContext create(Config sslConfig) {
+        return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
+                                      .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
+                                      .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
+                                      .trustConfig(KeyConfig.create(sslConfig.get("trust")))
                                       .build();
     }
 
@@ -172,9 +171,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
         ks.setKeyEntry("key",
-                       privateKeyConfig.getPrivateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
+                       privateKeyConfig.privateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
                        password,
-                       privateKeyConfig.getCertChain().toArray(new Certificate[0]));
+                       privateKeyConfig.certChain().toArray(new Certificate[0]));
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
         kmf.init(ks, password);
@@ -187,9 +186,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         List<X509Certificate> certs;
 
         if (trustConfig == null) {
-            certs = CollectionsHelper.listOf();
+            certs = List.of();
         } else {
-            certs = trustConfig.getCerts();
+            certs = trustConfig.certs();
         }
 
         KeyStore ks = KeyStore.getInstance("JKS");

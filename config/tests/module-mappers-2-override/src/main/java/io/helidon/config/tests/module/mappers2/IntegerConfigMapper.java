@@ -16,19 +16,20 @@
 
 package io.helidon.config.tests.module.mappers2;
 
+import java.util.function.Function;
+
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 
 /**
- * {@link ConfigMapper}s implementation for {@link Integer}, but returns a value minus 1.
+ * Config mapper implementation for {@link Integer}, but returns a value minus 1.
  */
-public class IntegerConfigMapper implements ConfigMapper<Integer> {
+public class IntegerConfigMapper implements Function<Config, Integer> {
 
     @Override
     public Integer apply(Config config) throws ConfigMappingException, MissingValueException {
-        return Integer.parseInt(config.asString()) - 1;
+        return Integer.parseInt(config.asString().get()) - 1;
     }
 
 }

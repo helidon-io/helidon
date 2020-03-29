@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonReaderFactory;
 
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.Jwk;
@@ -34,11 +36,12 @@ import io.helidon.security.jwt.jwk.JwkKeys;
  * The JWT used to transfer content across network - e.g. the base64 parts concatenated
  * with a dot.
  */
-public class SignedJwt {
+public final class SignedJwt {
     private static final Pattern JWT_PATTERN = Pattern
             .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final String tokenContent;
     private final JsonObject headerJson;
@@ -66,11 +69,11 @@ public class SignedJwt {
      *                      the algorithms of JWK and JWT do not match, or in case of other mis-matches
      */
     public static SignedJwt sign(Jwt jwt, JwkKeys jwks) throws JwtException {
-        return jwt.getAlgorithm()
+        return jwt.algorithm()
                 .map(alg -> sign(jwt, jwks, alg))
                 .orElseGet(() -> {
                     // If key id is present, but no algorithm is defined, try to use the default alg of the jwk
-                    return jwt.getKeyId()
+                    return jwt.keyId()
                             // key id is defined
                             .map(kid -> jwks.forKeyId(kid)
                                     .map(jwk -> sign(jwt, jwk))
@@ -90,8 +93,8 @@ public class SignedJwt {
      *                      the algorithms of JWK and JWT do not match, or in case of other mis-matches
      */
     public static SignedJwt sign(Jwt jwt, Jwk jwk) throws JwtException {
-        JsonObject headerJson = jwt.getHeaderJson();
-        JsonObject payloadJson = jwt.getPayloadJson();
+        JsonObject headerJson = jwt.headerJson();
+        JsonObject payloadJson = jwt.payloadJson();
 
         // now serialize to string
         String headerJsonString = headerJson.toString();
@@ -112,7 +115,7 @@ public class SignedJwt {
     }
 
     private static SignedJwt sign(Jwt jwt, JwkKeys jwks, String alg) {
-        Jwk jwk = jwt.getKeyId()
+        Jwk jwk = jwt.keyId()
                 // if key id is defined, find it from keys
                 .map(kid -> jwks.forKeyId(kid).orElseThrow(() -> new JwtException("Could not find JWK for kid: " + kid)))
                 // else check that alg is none, if so, use none
@@ -141,7 +144,7 @@ public class SignedJwt {
      *
      * @param tokenContent String with the token
      * @return a signed JWT instance that can be used to obtain the {@link #getJwt() instance}
-     * and to {@link #verifySignature(JwkKeys)} verify} the signature
+     *         and to {@link #verifySignature(JwkKeys)} verify} the signature
      * @throws RuntimeException in case of invalid content, see {@link Errors.ErrorMessagesException}
      */
     public static SignedJwt parseToken(String tokenContent) {
@@ -163,8 +166,8 @@ public class SignedJwt {
 
             String signedContent = headerBase64 + '.' + payloadBase64;
 
-            JsonObject headerJson = parseJson(headerJsonString, collector, "JWT header");
-            JsonObject contentJson = parseJson(payloadJsonString, collector, "JWT payload");
+            JsonObject headerJson = parseJson(headerJsonString, collector, headerBase64, "JWT header");
+            JsonObject contentJson = parseJson(payloadJsonString, collector, payloadBase64, "JWT payload");
 
             collector.collect().checkValid();
 
@@ -179,11 +182,11 @@ public class SignedJwt {
         }
     }
 
-    private static JsonObject parseJson(String jsonString, Errors.Collector collector, String description) {
+    private static JsonObject parseJson(String jsonString, Errors.Collector collector, String base64, String description) {
         try {
-            return Json.createReader(new StringReader(jsonString)).readObject();
+            return JSON.createReader(new StringReader(jsonString)).readObject();
         } catch (Exception e) {
-            collector.fatal(jsonString, description + " is not a valid JSON object");
+            collector.fatal(base64, description + " is not a valid JSON object (value is base64 encoded)");
             return null;
         }
     }
@@ -214,22 +217,47 @@ public class SignedJwt {
         }
     }
 
-    public String getTokenContent() {
+    /**
+     * The full token (header, payload, signature).
+     *
+     * @return token content
+     */
+    public String tokenContent() {
         return tokenContent;
     }
 
-    JsonObject getHeaderJson() {
+    /**
+     * Header JSON.
+     *
+     * @return header json
+     */
+    JsonObject headerJson() {
         return headerJson;
     }
 
-    JsonObject getPayloadJson() {
+    /**
+     * Payload JSON.
+     *
+     * @return payload JSON
+     */
+    JsonObject payloadJson() {
         return payloadJson;
     }
 
+    /**
+     * The bytes that were signed (payload bytes).
+     *
+     * @return signed bytes
+     */
     public byte[] getSignedBytes() {
         return Arrays.copyOf(signedBytes, signedBytes.length);
     }
 
+    /**
+     * Signature bytes.
+     *
+     * @return bytes of the signature
+     */
     public byte[] getSignature() {
         return Arrays.copyOf(signature, signature.length);
     }
@@ -252,41 +280,80 @@ public class SignedJwt {
      * @return Errors with collected messages, see {@link Errors#isValid()} and {@link Errors#checkValid()}
      */
     public Errors verifySignature(JwkKeys keys) {
+        return verifySignature(keys, null);
+    }
+
+    /**
+     * Verify signature against the provided keys (the kid of thisPrincipal
+     * JWT should be present in the {@link JwkKeys} provided).
+     *
+     * @param keys       JwkKeys to obtain a key to verify signature
+     * @param defaultJwk Default value of JWK
+     * @return Errors with collected messages, see {@link Errors#isValid()} and {@link Errors#checkValid()}
+     */
+    public Errors verifySignature(JwkKeys keys, Jwk defaultJwk) {
         Errors.Collector collector = Errors.collector();
 
         String alg = JwtUtil.getString(headerJson, "alg").orElse(null);
         String kid = JwtUtil.getString(headerJson, "kid").orElse(null);
 
-        Jwk jwk;
+        Jwk jwk = null;
+        boolean jwtWithoutKidAndNoneAlg = false;
 
+        // TODO support multiple JWK unders same kid if different alg (see if spec allows this)
         if (null == alg) {
             if (null == kid) {
-                collector.warn("Neither alg nor kid are specified in JWT, assuming none algorithm");
-                jwk = Jwk.NONE_JWK;
-                alg = jwk.getAlgorithm();
+                if (defaultJwk == null) {
+                    jwtWithoutKidAndNoneAlg = true;
+                    jwk = Jwk.NONE_JWK;
+                } else {
+                    jwk = defaultJwk;
+                }
+                alg = jwk.algorithm();
             } else {
                 //null alg, non-null kid - will use alg of jwk
                 jwk = keys.forKeyId(kid).orElse(null);
                 if (null == jwk) {
-                    collector.fatal(keys, "Key for key id: " + kid + " not found");
-                } else {
-                    alg = jwk.getAlgorithm();
+                    if (null == defaultJwk) {
+                        collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    } else {
+                        jwk = defaultJwk;
+                    }
+                }
+                if (null != jwk) {
+                    alg = jwk.algorithm();
                 }
             }
         } else {
             //alg not null
             if (null == kid) {
                 if (Jwk.ALG_NONE.equals(alg)) {
-                    jwk = Jwk.NONE_JWK;
+                    if (null != defaultJwk) {
+                        if (defaultJwk.algorithm().equals(alg)) {
+                            // yes, we expect none algorithm
+                        } else {
+                            collector.fatal("Algorithm is " + alg + ", default jwk requires " + defaultJwk.algorithm());
+                        }
+                    } else {
+                        jwk = Jwk.NONE_JWK;
+                        jwtWithoutKidAndNoneAlg = true;
+                    }
                 } else {
-                    collector.fatal("Algorithm is " + alg + ", yet no kid is defined in JWT header, cannot validate");
-                    jwk = null;
+                    jwk = defaultJwk;
+                    if (null == jwk) {
+                        collector.fatal("Algorithm is " + alg + ", yet no kid is defined in JWT header, cannot validate");
+                    }
                 }
             } else {
                 //both not null
                 jwk = keys.forKeyId(kid).orElse(null);
                 if (null == jwk) {
-                    collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    if ((null != defaultJwk) && alg.equals(defaultJwk.algorithm())) {
+                        jwk = defaultJwk;
+                    }
+                    if (null == jwk) {
+                        collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    }
                 }
             }
         }
@@ -295,17 +362,25 @@ public class SignedJwt {
             return collector.collect();
         }
 
+        if (jwtWithoutKidAndNoneAlg) {
+            collector.fatal(jwk, "None algorithm not allowed, unless specified as the default JWK");
+        }
+
         // now if jwk algorithm is none, alg may be
-
-        if (jwk.getAlgorithm().equals(alg)) {
-
-            if (!jwk.verifySignature(signedBytes, signature)) {
-                collector.fatal(jwk, "Signature of JWT token is not valid, based on alg: " + alg + ", kid: " + kid);
+        if (jwk.algorithm().equals(alg)) {
+            try {
+                if (!jwk.verifySignature(signedBytes, signature)) {
+                    collector.fatal(jwk, "Signature of JWT token is not valid, based on alg: " + alg + ", kid: " + kid);
+                }
+            } catch (Exception e) {
+                collector.fatal(jwk,
+                                "Failed to verify signature due to an exception: " + e.getClass().getName() + ": " + e
+                                        .getMessage());
             }
         } else {
             collector.fatal(jwk,
                             "Algorithm of JWK (" + jwk
-                                    .getAlgorithm() + ") does not match algorithm of this JWT (" + alg + ") for kid: " + kid);
+                                    .algorithm() + ") does not match algorithm of this JWT (" + alg + ") for kid: " + kid);
         }
 
         return collector.collect();

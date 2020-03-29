@@ -16,8 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.Collection;
-
 import io.helidon.security.util.AbacSupport;
 
 /**
@@ -25,27 +23,21 @@ import io.helidon.security.util.AbacSupport;
  *
  * @see java.security.Principal
  */
-public class Principal implements AbacSupport, java.security.Principal {
-    private final AbacSupport properties;
-    private final String name;
-    private final String id;
+public interface Principal extends AbacSupport, java.security.Principal {
 
-    private Principal(Builder builder) {
-        this.name = builder.name;
-        this.id = builder.id;
-        BasicAttributes container = new BasicAttributes(builder.properties);
-
-        container.put("name", name);
-        container.put("id", id);
-        this.properties = container;
-    }
+    /**
+     * Id of this principal.
+     *
+     * @return id if defined, name otherwise
+     */
+    String id();
 
     /**
      * Creates a fluent API builder to build new instances of this class.
      *
      * @return a builder instance
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -55,59 +47,38 @@ public class Principal implements AbacSupport, java.security.Principal {
      * @param id identification used both for name and id attributes of this principal
      * @return a new principal with the specified id (and name)
      */
-    public static Principal create(String id) {
+    static Principal create(String id) {
         return Principal.builder()
                 .id(id)
                 .build();
     }
 
-    @Override
-    public Object getAttributeRaw(String key) {
-        return properties.getAttributeRaw(key);
-    }
-
-    @Override
-    public Collection<String> getAttributeNames() {
-        return properties.getAttributeNames();
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Id of this principal.
-     *
-     * @return id if defined, name otherwise
-     */
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public String toString() {
-        return "Principal{"
-                + "properties=" + properties
-                + ", name='" + name + '\''
-                + ", id='" + id + '\''
-                + '}';
-    }
-
     /**
      * A fluent API builder for {@link Principal}.
      */
-    public static class Builder implements io.helidon.common.Builder<Principal> {
+    final class Builder implements io.helidon.common.Builder<Principal> {
         private String name;
         private String id;
-        private BasicAttributes properties = new BasicAttributes();
+        private BasicAttributes properties = BasicAttributes.create();
 
         private Builder() {
         }
 
+        String name() {
+            return name;
+        }
+
+        String id() {
+            return id;
+        }
+
+        BasicAttributes properties() {
+            return properties;
+        }
+
         @Override
         public Principal build() {
-            return new Principal(this);
+            return new HelidonPrincipal(this);
         }
 
         /**
@@ -145,7 +116,7 @@ public class Principal implements AbacSupport, java.security.Principal {
          * @return updated builder instance
          */
         private Builder attributes(AbacSupport attributes) {
-            this.properties = new BasicAttributes(attributes);
+            this.properties = BasicAttributes.create(attributes);
             return this;
         }
 
@@ -164,4 +135,5 @@ public class Principal implements AbacSupport, java.security.Principal {
             return this;
         }
     }
+
 }

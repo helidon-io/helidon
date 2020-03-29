@@ -1,0 +1,7 @@
+[
+    {
+        "name": "io.netty.channel.socket.nio.NioServerSocketChannel",
+        "allPublicConstructors": true,
+        "allPublicMethods": true
+    }
+]

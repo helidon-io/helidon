@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,43 +20,41 @@ import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.http.ContextualRegistry;
+
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
  */
 class ServerBasicConfig implements ServerConfiguration {
-
-    static final ServerConfiguration DEFAULT_CONFIGURATION = ServerConfiguration.builder().build();
-
     private final SocketConfiguration socketConfig;
     private final int workers;
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
+    private final ExperimentalConfiguration experimental;
+    private final ContextualRegistry context;
+    private final boolean printFeatureDetails;
 
     /**
      * Creates new instance.
      *
-     * @param socketConfig  a default socket configuration values
-     * @param workers       a count of threads in a pool used to tryProcess HTTP requests
-     * @param tracer        an {@code opentracing.io} tracer
-     * @param socketConfigs socket configurations of additional ports to listen on
+     * @param builder configuration builder
      */
-    ServerBasicConfig(SocketConfiguration socketConfig,
-                      int workers,
-                      Tracer tracer,
-                      Map<String, SocketConfiguration> socketConfigs) {
-        this.socketConfig = socketConfig == null ? new SocketConfig() : socketConfig;
-        if (workers <= 0) {
-            workers = Runtime.getRuntime().availableProcessors() * 2;
-        }
-        this.workers = workers;
-        this.tracer = tracer == null ? GlobalTracer.get() : tracer;
-        HashMap<String, SocketConfiguration> map = new HashMap<>(socketConfigs);
+    ServerBasicConfig(ServerConfiguration.Builder builder) {
+        this.socketConfig = builder.defaultSocketBuilder().build();
+        this.workers = builder.workers();
+        this.tracer = builder.tracer();
+        this.experimental = builder.experimental();
+        this.context = builder.context();
+        this.printFeatureDetails = builder.printFeatureDetails();
+
+        HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(ServerConfiguration.DEFAULT_SOCKET_NAME, this.socketConfig);
         this.socketConfigs = Collections.unmodifiableMap(map);
     }
@@ -64,6 +62,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public SSLContext ssl() {
         return socketConfig.ssl();
+    }
+
+    @Override
+    public Set<String> enabledSslProtocols() {
+        return socketConfig.enabledSslProtocols();
     }
 
     @Override
@@ -106,6 +109,21 @@ class ServerBasicConfig implements ServerConfiguration {
         return socketConfigs;
     }
 
+    @Override
+    public ExperimentalConfiguration experimental() {
+        return experimental;
+    }
+
+    @Override
+    public Context context() {
+        return context;
+    }
+
+    @Override
+    public boolean printFeatureDetails() {
+        return printFeatureDetails;
+    }
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -114,6 +132,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int timeoutMillis;
         private final int receiveBufferSize;
         private final SSLContext sslContext;
+        private final Set<String> enabledSslProtocols;
 
         /**
          * Creates new instance.
@@ -128,6 +147,7 @@ class ServerBasicConfig implements ServerConfiguration {
         SocketConfig(int port,
                      InetAddress bindAddress,
                      SSLContext sslContext,
+                     Set<String> sslProtocols,
                      int backlog,
                      int timeoutMillis,
                      int receiveBufferSize) {
@@ -137,13 +157,14 @@ class ServerBasicConfig implements ServerConfiguration {
             this.timeoutMillis = timeoutMillis <= 0 ? 0 : timeoutMillis;
             this.receiveBufferSize = receiveBufferSize <= 0 ? 0 : receiveBufferSize;
             this.sslContext = sslContext;
+            this.enabledSslProtocols = sslProtocols;
         }
 
         /**
          * Creates default values instance.
          */
         SocketConfig() {
-            this(0, null, null, 0, 0, 0);
+            this(0, null, null, null, 0, 0, 0);
         }
 
         @Override
@@ -174,6 +195,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public SSLContext ssl() {
             return sslContext;
+        }
+
+        @Override
+        public Set<String> enabledSslProtocols() {
+            return enabledSslProtocols;
         }
     }
 }

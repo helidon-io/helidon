@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,15 @@
 
 package io.helidon.config;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.time.Instant;
-import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
@@ -46,70 +41,49 @@ final class ConfigFactory {
     private final Map<ConfigKeyImpl, ConfigNode> fullKeyToNodeMap;
     private final ConfigFilter filter;
     private final ProviderImpl provider;
-    private final ConcurrentMap<PrefixedKey, Reference<Config>> configCache;
-    private final Flow.Publisher<ConfigDiff> changesPublisher;
+    private final Function<String, List<String>> aliasGenerator;
+    private final ConcurrentMap<PrefixedKey, AbstractConfigImpl> configCache;
     private final Instant timestamp;
+    private final List<ConfigSourceRuntimeBase> configSources;
+    private final List<org.eclipse.microprofile.config.spi.ConfigSource> mpConfigSources;
 
     /**
      * Create new instance of the factory operating on specified {@link ConfigSource}.
-     *
-     * @param mapperManager manager to be used to map string value to appropriate type
-     * @param node          root configuration node provided by the configuration source to be used to build
-     *                      {@link Config} instances on.
-     * @param filter        config filter used to filter each single value
-     * @param provider      shared config provider
+     * @param mapperManager  manager to be used to map string value to appropriate type
+     * @param node           root configuration node provided by the configuration source to be used to build
+     *                       {@link Config} instances on.
+     * @param filter         config filter used to filter each single value
+     * @param provider       shared config provider
+     * @param aliasGenerator key alias generator (may be {@code null})
      */
     ConfigFactory(ConfigMapperManager mapperManager,
-                  ConfigNode.ObjectNode node,
+                  ObjectNode node,
                   ConfigFilter filter,
-                  ProviderImpl provider) {
+                  ProviderImpl provider,
+                  Function<String, List<String>> aliasGenerator,
+                  List<ConfigSourceRuntimeBase> configSources) {
+
         Objects.requireNonNull(mapperManager, "mapperManager argument is null.");
         Objects.requireNonNull(node, "node argument is null.");
         Objects.requireNonNull(filter, "filter argument is null.");
         Objects.requireNonNull(provider, "provider argument is null.");
 
         this.mapperManager = mapperManager;
-        this.fullKeyToNodeMap = createFullKeyToNodeMap(node);
+        this.fullKeyToNodeMap = ConfigHelper.createFullKeyToNodeMap(node);
         this.filter = filter;
         this.provider = provider;
+        this.aliasGenerator = aliasGenerator;
+        this.configSources = configSources;
 
         configCache = new ConcurrentHashMap<>();
-        changesPublisher = new FilteringConfigChangeEventPublisher(provider.changes());
         timestamp = Instant.now();
+
+        this.mpConfigSources = configSources.stream()
+                .map(ConfigSourceRuntime::asMpSource)
+                .collect(Collectors.toList());
     }
 
-    private static Map<ConfigKeyImpl, ConfigNode> createFullKeyToNodeMap(ObjectNode objectNode) {
-        Map<ConfigKeyImpl, ConfigNode> result;
-
-        Stream<Map.Entry<ConfigKeyImpl, ConfigNode>> flattenNodes = objectNode.entrySet()
-                .stream()
-                .map(node -> flattenNodes(ConfigKeyImpl.of(node.getKey()), node.getValue()))
-                .reduce(Stream.empty(), Stream::concat);
-        result = flattenNodes.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        result.put(ConfigKeyImpl.of(), objectNode);
-
-        return result;
-    }
-
-    static Stream<Map.Entry<ConfigKeyImpl, ConfigNode>> flattenNodes(ConfigKeyImpl key, ConfigNode node) {
-        switch (node.getNodeType()) {
-        case OBJECT:
-            return ((ObjectNode) node).entrySet().stream()
-                    .map(e -> flattenNodes(key.child(e.getKey()), e.getValue()))
-                    .reduce(Stream.of(new AbstractMap.SimpleEntry<>(key, node)), Stream::concat);
-        case LIST:
-            return IntStream.range(0, ((ListNode) node).size())
-                    .boxed()
-                    .map(i -> flattenNodes(key.child(Integer.toString(i)), ((ListNode) node).get(i)))
-                    .reduce(Stream.of(new AbstractMap.SimpleEntry<>(key, node)), Stream::concat);
-        case VALUE:
-            return Stream.of(new AbstractMap.SimpleEntry<>(key, node));
-        default:
-            throw new IllegalArgumentException("Invalid node type.");
-        }
-    }
-
-    public Instant getTimestamp() {
+    Instant timestamp() {
         return timestamp;
     }
 
@@ -118,8 +92,8 @@ final class ConfigFactory {
      *
      * @return root {@link Config}
      */
-    public Config getConfig() {
-        return getConfig(ConfigKeyImpl.of(), ConfigKeyImpl.of());
+    AbstractConfigImpl config() {
+        return config(ConfigKeyImpl.of(), ConfigKeyImpl.of());
     }
 
     /**
@@ -129,16 +103,10 @@ final class ConfigFactory {
      * @param key    config key
      * @return {@code key} specific instance of {@link Config}
      */
-    public Config getConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+    AbstractConfigImpl config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         PrefixedKey prefixedKey = new PrefixedKey(prefix, key);
-        Reference<Config> reference = configCache.compute(prefixedKey, (k, v) -> {
-            if (v == null || v.get() == null) {
-                return new SoftReference<>(createConfig(prefix, key));
-            } else {
-                return v;
-            }
-        });
-        return reference.get();
+
+        return configCache.computeIfAbsent(prefixedKey, it -> createConfig(prefix, key));
     }
 
     /**
@@ -147,27 +115,37 @@ final class ConfigFactory {
      * @param key config key
      * @return new instance of {@link Config} for specified {@code key}
      */
-    private Config createConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
-        ConfigNode value = fullKeyToNodeMap.get(prefix.child(key));
+    private AbstractConfigImpl createConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+        ConfigNode value = findNode(prefix, key);
 
         if (null == value) {
-            return new ConfigMissingImpl(prefix, key, this);
+            return new ConfigMissingImpl(prefix, key, this, mapperManager);
         }
 
-        switch (value.getNodeType()) {
+        switch (value.nodeType()) {
         case OBJECT:
             return new ConfigObjectImpl(prefix, key, (ObjectNode) value, filter, this, mapperManager);
         case LIST:
             return new ConfigListImpl(prefix, key, (ListNode) value, filter, this, mapperManager);
         case VALUE:
-            return new ConfigValueImpl(prefix, key, (ValueNode) value, filter, this, mapperManager);
+            return new ConfigLeafImpl(prefix, key, (ValueNode) value, filter, this, mapperManager);
         default:
-            return new ConfigMissingImpl(prefix, key, this);
+            return new ConfigMissingImpl(prefix, key, this, mapperManager);
         }
     }
 
-    public Flow.Publisher<ConfigDiff> changes() {
-        return changesPublisher;
+    private ConfigNode findNode(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+        ConfigNode node = fullKeyToNodeMap.get(prefix.child(key));
+        if (node == null && aliasGenerator != null) {
+            final String fullKey = key.toString();
+            for (final String keyAlias : aliasGenerator.apply(fullKey)) {
+                node = fullKeyToNodeMap.get(prefix.child(keyAlias));
+                if (node != null) {
+                    break;
+                }
+            }
+        }
+        return node;
     }
 
     /**
@@ -175,74 +153,20 @@ final class ConfigFactory {
      *
      * @return whole configuration context.
      */
-    Config.Context getContext() {
+    Config.Context context() {
         return provider;
     }
 
-    ProviderImpl getProvider() {
+    ProviderImpl provider() {
         return provider;
     }
 
-    /**
-     * {@link Flow.Publisher} implementation that filters original {@link ProviderImpl#changes()} events to be wrapped by
-     * {@link FilteringConfigChangeEventSubscriber} to ignore events about current Config instance.
-     */
-    private class FilteringConfigChangeEventPublisher implements Flow.Publisher<ConfigDiff> {
-
-        private Flow.Publisher<ConfigDiff> delegate;
-
-        private FilteringConfigChangeEventPublisher(Flow.Publisher<ConfigDiff> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super ConfigDiff> subscriber) {
-            delegate.subscribe(new FilteringConfigChangeEventSubscriber(subscriber));
-        }
-
+    List<ConfigSourceRuntimeBase> configSources() {
+        return configSources;
     }
 
-    /**
-     * {@link Flow.Subscriber} wrapper implementation that filters original {@link ProviderImpl#changes()} events
-     * and ignore events about current Config instance.
-     *
-     * @see FilteringConfigChangeEventPublisher
-     */
-    private class FilteringConfigChangeEventSubscriber implements Flow.Subscriber<ConfigDiff> {
-
-        private final Flow.Subscriber<? super ConfigDiff> delegate;
-        private Flow.Subscription subscription;
-
-        private FilteringConfigChangeEventSubscriber(Flow.Subscriber<? super ConfigDiff> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
-
-            delegate.onSubscribe(subscription);
-        }
-
-        @Override
-        public void onNext(ConfigDiff event) {
-            if (ConfigFactory.this.getConfig() == event.getConfig()) { //ignore events about current Config instance
-                //missed event must be requested once more
-                subscription.request(1);
-            } else {
-                delegate.onNext(event);
-            }
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            delegate.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            delegate.onComplete();
-        }
+    List<org.eclipse.microprofile.config.spi.ConfigSource> mpConfigSources() {
+        return mpConfigSources;
     }
 
     /**

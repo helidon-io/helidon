@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 /**
  * Exception representing a specific failures related to a missing configuration value.
  */
-public class MissingValueException extends ConfigException {
+public final class MissingValueException extends ConfigException {
 
     private static final long serialVersionUID = 1L;
 
@@ -40,7 +40,7 @@ public class MissingValueException extends ConfigException {
      * @param key configuration key associated with the expected value.
      * @return new missing value exception associated with a given key.
      */
-    public static MissingValueException forKey(Config.Key key) {
+    public static MissingValueException create(Config.Key key) {
         return new MissingValueException(key);
     }
 
@@ -50,7 +50,7 @@ public class MissingValueException extends ConfigException {
      * @param key configuration key associated with the expected value.
      * @return new supplier of a missing value exception associated with a given key.
      */
-    public static Supplier<MissingValueException> supplierForKey(Config.Key key) {
+    public static Supplier<MissingValueException> createSupplier(Config.Key key) {
         return () -> new MissingValueException(key);
     }
 }

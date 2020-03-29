@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.microprofile.arquillian;
 
+import javax.enterprise.context.control.RequestContextController;
 import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 
@@ -40,14 +42,36 @@ class HelidonContainerExtension implements LoadableExtension {
      */
     static class HelidonCDIInjectionEnricher extends CDIInjectionEnricher {
 
+        private BeanManager beanManager;
+        private RequestContextController requestContextController;
+
         @Override
         public BeanManager getBeanManager() {
-            return CDI.current().getBeanManager();
+            if (beanManager == null) {
+                CDI<Object> cdi = CDI.current();
+                if (cdi != null) {
+                    SeContainer container = (SeContainer) cdi;
+                    if (container.isRunning()) {
+                        beanManager = container.getBeanManager();
+                    }
+                }
+            }
+            return beanManager;
         }
 
         @Override
         public CreationalContext<Object> getCreationalContext() {
-            return getBeanManager().createCreationalContext(null);
+            return getBeanManager() != null ? getBeanManager().createCreationalContext(null) : null;
+        }
+
+        public RequestContextController getRequestContextController() {
+            if (requestContextController == null) {
+                CDI<Object> cdi = CDI.current();
+                if (cdi != null) {
+                    requestContextController = cdi.select(RequestContextController.class).get();
+                }
+            }
+            return requestContextController;
         }
     }
 

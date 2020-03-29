@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,19 @@
 package io.helidon.webserver;
 
 import java.net.URI;
+import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.webserver.spi.BareRequest;
+import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,46 +42,47 @@ public class RequestTest {
     public void createPathTest() throws Exception {
         Request.Path path = Request.Path.create(null,
                                                 "/foo/bar/baz",
-                                                CollectionsHelper.mapOf("a", "va", "b", "vb", "var", "1"));
-        assertEquals("/foo/bar/baz", path.toString());
-        assertEquals("/foo/bar/baz", path.absolute().toString());
-        assertEquals(path.param("a"), "va");
-        assertEquals(path.param("b"), "vb");
-        assertEquals(path.param("var"), "1");
+                                                Map.of("a", "va", "b", "vb", "var", "1"));
+        assertThat(path.toString(), is("/foo/bar/baz"));
+        assertThat(path.absolute().toString(), is("/foo/bar/baz"));
+        assertThat("va", is(path.param("a")));
+        assertThat("vb", is(path.param("b")));
+        assertThat("1", is(path.param("var")));
         assertThat(path.segments(), contains("foo", "bar", "baz"));
         // Sub path
         path = Request.Path.create(path,
                                    "/bar/baz",
-                                   CollectionsHelper.mapOf("c", "vc", "var", "2"));
-        assertEquals("/bar/baz", path.toString());
-        assertEquals("/foo/bar/baz", path.absolute().toString());
-        assertEquals(path.param("c"), "vc");
-        assertEquals(path.param("var"), "2");
-        assertNull(path.param("a"));
-        assertEquals(path.absolute().param("a"), "va");
-        assertEquals(path.absolute().param("b"), "vb");
-        assertEquals(path.absolute().param("var"), "2");
+                                   Map.of("c", "vc", "var", "2"));
+        assertThat(path.toString(), is("/bar/baz"));
+        assertThat(path.absolute().toString(), is("/foo/bar/baz"));
+        assertThat("vc", is(path.param("c")));
+        assertThat("2", is(path.param("var")));
+        assertThat(path.param("a"), nullValue());
+        assertThat("va", is(path.absolute().param("a")));
+        assertThat("vb", is(path.absolute().param("b")));
+        assertThat("2", is(path.absolute().param("var")));
         // Sub Sub Path
         path = Request.Path.create(path,
                                    "/baz",
-                                   CollectionsHelper.mapOf("d", "vd", "a", "a2"));
-        assertEquals("/baz", path.toString());
-        assertEquals("/foo/bar/baz", path.absolute().toString());
-        assertEquals(path.param("d"), "vd");
-        assertEquals(path.param("a"), "a2");
-        assertNull(path.param("c"));
-        assertEquals(path.absolute().param("a"), "a2");
-        assertEquals(path.absolute().param("b"), "vb");
-        assertEquals(path.absolute().param("c"), "vc");
-        assertEquals(path.absolute().param("var"), "2");
+                                   Map.of("d", "vd", "a", "a2"));
+        assertThat(path.toString(), is("/baz"));
+        assertThat(path.absolute().toString(), is("/foo/bar/baz"));
+        assertThat("vd", is(path.param("d")));
+        assertThat("a2", is(path.param("a")));
+        assertThat(path.param("c"), nullValue());
+        assertThat("a2", is(path.absolute().param("a")));
+        assertThat("vb", is(path.absolute().param("b")));
+        assertThat("vc", is(path.absolute().param("c")));
+        assertThat("2", is(path.absolute().param("var")));
     }
 
     @Test
     public void queryEncodingTest() throws Exception {
         BareRequest mock = mock(BareRequest.class);
-        when(mock.getUri()).thenReturn(new URI("http://localhost:123/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment"));
-
-        Request request = new RequestTestStub(mock, mock(WebServer.class));
+        when(mock.uri()).thenReturn(new URI("http://localhost:123/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment"));
+        when(mock.bodyPublisher()).thenReturn(Single.empty());
+        WebServer webServer = mock(WebServer.class);
+        Request request = new RequestTestStub(mock, webServer);
 
         assertThat("The query string must remain encoded otherwise no-one could tell whether a '&' was really a '&' or '%26'",
                           request.query(),

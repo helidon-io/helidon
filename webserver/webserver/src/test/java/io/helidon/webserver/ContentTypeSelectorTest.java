@@ -24,7 +24,8 @@ import io.helidon.common.http.MediaType;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -38,20 +39,20 @@ public class ContentTypeSelectorTest {
     @Test
     public void testContentTypeSelection() throws Exception {
         Map<String, MediaType> map = new HashMap<>();
-        map.put("txt", new MediaType("foo", "bar"));
+        map.put("txt", MediaType.create("foo", "bar"));
         ContentTypeSelector selector = new ContentTypeSelector(map);
         // Empty headers
         RequestHeaders headers = mock(RequestHeaders.class);
         when(headers.isAccepted(any())).thenReturn(true);
         when(headers.acceptedTypes()).thenReturn(Collections.emptyList());
-        assertEquals(MediaType.APPLICATION_XML, selector.determine("foo.xml", headers));
-        assertEquals(new MediaType("foo", "bar"), selector.determine("foo.txt", headers));
-        assertEquals(MediaType.APPLICATION_OCTET_STREAM, selector.determine("foo.undefined", headers));
-        assertEquals(MediaType.APPLICATION_OCTET_STREAM, selector.determine("undefined", headers));
+        assertThat(selector.determine("foo.xml", headers), is(MediaType.APPLICATION_XML));
+        assertThat(selector.determine("foo.txt", headers), is(MediaType.create("foo", "bar")));
+        assertThat(selector.determine("foo.undefined", headers), is(MediaType.APPLICATION_OCTET_STREAM));
+        assertThat(selector.determine("undefined", headers), is(MediaType.APPLICATION_OCTET_STREAM));
         // Accept text/html
         headers = mock(RequestHeaders.class);
         when(headers.acceptedTypes()).thenReturn(Collections.singletonList(MediaType.TEXT_HTML));
-        assertEquals(MediaType.TEXT_HTML, selector.determine("foo.undefined", headers));
+        assertThat(selector.determine("foo.undefined", headers), is(MediaType.TEXT_HTML));
     }
 
     @Test
@@ -61,6 +62,6 @@ public class ContentTypeSelectorTest {
         when(headers.isAccepted(any())).thenReturn(false);
         when(headers.acceptedTypes()).thenReturn(Collections.singletonList(MediaType.TEXT_HTML));
         HttpException ex = assertThrows(HttpException.class, () -> { selector.determine("foo.xml", headers); });
-        assertEquals("Not accepted media-type!", ex.getMessage());
+        assertThat(ex.getMessage(), is("Not accepted media-type!"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,46 +16,37 @@
 
 package io.helidon.config;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
+import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
-import io.helidon.config.internal.ClasspathConfigSource;
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.DirectoryConfigSource;
-import io.helidon.config.internal.FileConfigSource;
-import io.helidon.config.internal.MapConfigSource;
-import io.helidon.config.internal.PrefixedConfigSource;
-import io.helidon.config.internal.UrlConfigSource;
-import io.helidon.config.spi.AbstractConfigSource;
-import io.helidon.config.spi.AbstractParsableConfigSource;
+import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.NodeConfigSource;
 
 /**
- * Provides access to built-in {@link io.helidon.config.spi.ConfigSource} implementations.
+ * Provides access to built-in {@link ConfigSource} implementations.
  *
- * @see io.helidon.config.spi.ConfigSource
+ * @see ConfigSource
  */
 public final class ConfigSources {
 
-    private static final String SOURCES_KEY = "sources";
+    static final String DEFAULT_MAP_NAME = "map";
+    static final String DEFAULT_PROPERTIES_NAME = "properties";
 
     private ConfigSources() {
         throw new AssertionError("Instantiation not allowed.");
@@ -77,16 +68,15 @@ public final class ConfigSources {
      * @param config the original {@code Config}
      * @return {@code ConfigSource} for the same {@code Config} as the original
      */
-    public static ConfigSource from(Config config) {
-        return ConfigSources.from(config.asMap()).get();
+    public static ConfigSource create(Config config) {
+        return ConfigSources.create(config.asMap().get()).get();
     }
 
     /**
-     * Returns a {@link ConfigSource} that wraps the specified {@code objectNode}
-     * and returns it when {@link ConfigSource#load()} is invoked.
+     * Returns a {@link ConfigSource} that wraps the specified {@code objectNode}.
      *
      * @param objectNode hierarchical configuration representation that will be
-     *                   returned by {@link ConfigSource#load()}
+     *                   returned by the created config source
      * @return new instance of {@link ConfigSource}
      * @see ConfigNode.ObjectNode
      * @see ConfigNode.ListNode
@@ -94,80 +84,98 @@ public final class ConfigSources {
      * @see ConfigNode.ObjectNode.Builder
      * @see ConfigNode.ListNode.Builder
      */
-    public static ConfigSource from(ConfigNode.ObjectNode objectNode) {
-        return new ConfigSource() {
-            @Override
-            public String description() {
-                return "InMemoryConfig[ObjectNode]";
-            }
-
-            @Override
-            public Optional<ConfigNode.ObjectNode> load() throws ConfigException {
-                return Optional.of(objectNode);
-            }
-        };
+    public static NodeConfigSource create(ConfigNode.ObjectNode objectNode) {
+        return InMemoryConfigSource.create("ObjectNode", ConfigContent.NodeContent.builder()
+                .node(objectNode)
+                .build());
     }
 
     /**
      * Provides a {@link ConfigSource} from the provided {@link Readable readable content} and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#getStamp() content timestamp}.
+     * {@link Instant#now()} is the {@link io.helidon.config.spi.ConfigContent#stamp() content timestamp}.
      *
-     * @param readable  a {@code Readable} providing the configuration content
+     * @param data  a {@code InputStream} providing the configuration content
      * @param mediaType a configuration media type
      * @return a config source
      */
-    public static ConfigSource from(Readable readable, String mediaType) {
-        return InMemoryConfigSource.builder()
+    public static ConfigSource create(InputStream data, String mediaType) {
+        return InMemoryConfigSource.create("Readable", ConfigParser.Content.builder()
+                .data(data)
                 .mediaType(mediaType)
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
-                .content("Readable", ConfigParser.Content.from(readable, mediaType, Optional.of(Instant.now())))
-                .build();
+                .build());
     }
 
     /**
      * Provides a {@link ConfigSource} from the provided {@code String} content and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#getStamp() content timestamp}.
+     * {@link Instant#now()} is the {@link io.helidon.config.spi.ConfigContent#stamp() content timestamp}.
      *
-     * @param content   a configuration content
+     * @param content a configuration content
      * @param mediaType a configuration media type
      * @return a config source
      */
-    public static ConfigSource from(String content, String mediaType) {
-        return InMemoryConfigSource.builder()
+    public static ConfigSource create(String content, String mediaType) {
+        return InMemoryConfigSource.create("String", ConfigParser.Content.builder()
+                .data(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)))
                 .mediaType(mediaType)
-                .changesExecutor(Runnable::run)
-                .changesMaxBuffer(1)
-                .content("String", ConfigParser.Content.from(new StringReader(content), mediaType, Optional.of(Instant.now())))
-                .build();
+                .build());
     }
 
     /**
-     * Provides a {@link MapBuilder} for creating a {@code ConfigSource}
+     * Provides a {@link MapConfigSource.Builder} for creating a {@code ConfigSource}
      * for a {@code Map}.
      *
      * @param map a map
      * @return new Builder instance
-     * @see #from(Properties)
+     * @see #create(Properties)
      */
-    public static MapBuilder from(Map<String, String> map) {
-        return new MapBuilder(map);
+    public static MapConfigSource.Builder create(Map<String, String> map) {
+        return create(map, DEFAULT_MAP_NAME);
     }
 
     /**
-     * Provides a {@link MapBuilder} for creating a {@code ConfigSource} for a
+     * Provides a {@link MapConfigSource.Builder} for creating a {@code ConfigSource}
+     * for a {@code Map}.
+     *
+     * @param map a map
+     * @param name the name.
+     * @return new Builder instance
+     * @see #create(Properties)
+     */
+    public static MapConfigSource.Builder create(Map<String, String> map, String name) {
+        return MapConfigSource.builder()
+                .map(map)
+                .name(name);
+    }
+
+    /**
+     * Provides a {@link MapConfigSource.Builder} for creating a {@code ConfigSource} for a
      * {@code Map} from a {@code Properties} object.
      *
      * @param properties properties
      * @return new Builder instance
-     * @see #from(Map)
+     * @see #create(Map)
      */
-    public static MapBuilder from(Properties properties) {
-        return new MapBuilder(properties);
+    public static MapConfigSource.Builder create(Properties properties) {
+        return create(properties, DEFAULT_PROPERTIES_NAME);
+    }
+
+    /**
+     * Provides a {@link MapConfigSource.Builder} for creating a {@code ConfigSource} for a
+     * {@code Map} from a {@code Properties} object.
+     *
+     * @param properties properties
+     * @param name the name.
+     * @return new Builder instance
+     * @see #create(Map)
+     */
+    public static MapConfigSource.Builder create(Properties properties, String name) {
+        return MapConfigSource.builder()
+                .properties(properties)
+                .name(name);
     }
 
     /**
@@ -178,8 +186,8 @@ public final class ConfigSources {
      * @param sourceSupplier a config source supplier
      * @return new @{code ConfigSource} for the newly-prefixed content
      */
-    public static ConfigSource prefixed(String key, Supplier<ConfigSource> sourceSupplier) {
-        return new PrefixedConfigSource(key, sourceSupplier.get());
+    public static ConfigSource prefixed(String key, Supplier<? extends ConfigSource> sourceSupplier) {
+        return PrefixedConfigSource.create(key, sourceSupplier.get());
     }
 
     /**
@@ -188,8 +196,9 @@ public final class ConfigSources {
      *
      * @return {@code ConfigSource} for config derived from system properties
      */
-    public static ConfigSource systemProperties() {
-        return from(System.getProperties()).lax().build();
+    public static SystemPropertiesConfigSource.Builder systemProperties() {
+        return new SystemPropertiesConfigSource.Builder()
+                .properties(System.getProperties());
     }
 
     /**
@@ -198,8 +207,8 @@ public final class ConfigSources {
      *
      * @return {@code ConfigSource} for config derived from environment variables
      */
-    public static ConfigSource environmentVariables() {
-        return from(System.getenv()).lax().build();
+    public static MapConfigSource environmentVariables() {
+        return new EnvironmentVariablesConfigSource();
     }
 
     /**
@@ -214,9 +223,29 @@ public final class ConfigSources {
      * @param resource a name of the resource
      * @return builder for a {@code ConfigSource} for the classpath-based resource
      */
-    public static AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> classpath(String resource) {
-        return new ClasspathConfigSource.ClasspathBuilder(resource);
+    public static ClasspathConfigSource.Builder classpath(String resource) {
+        return ClasspathConfigSource.builder().resource(resource);
+    }
+
+    /**
+     * Create builders for each instance of the resource on the current classpath.
+     * @param resource resource to look for
+     * @return a list of classpath config source builders
+     */
+    public static List<UrlConfigSource.Builder> classpathAll(String resource) {
+
+        List<UrlConfigSource.Builder> result = new LinkedList<>();
+        try {
+            Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(resource);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                result.add(url(url));
+            }
+        } catch (IOException e) {
+            throw new ConfigException("Failed to read " + resource + " from classpath", e);
+        }
+
+        return result;
     }
 
     /**
@@ -226,9 +255,19 @@ public final class ConfigSources {
      * @param path a file path
      * @return builder for the file-based {@code ConfigSource}
      */
-    public static AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> file(String path) {
-        return new FileConfigSource.FileBuilder(Paths.get(path));
+    public static FileConfigSource.Builder file(String path) {
+        return FileConfigSource.builder().path(Paths.get(path));
+    }
+
+    /**
+     * Provides a {@code Builder} for creating a {@code ConfigSource} from the specified
+     * file path.
+     *
+     * @param path a file path
+     * @return builder for the file-based {@code ConfigSource}
+     */
+    public static FileConfigSource.Builder file(Path path) {
+        return FileConfigSource.builder().path(path);
     }
 
     /**
@@ -238,9 +277,8 @@ public final class ConfigSources {
      * @param path a directory path
      * @return new Builder instance
      */
-    public static AbstractConfigSource.Builder
-            <? extends AbstractConfigSource.Builder<?, Path>, Path> directory(String path) {
-        return new DirectoryConfigSource.DirectoryBuilder(Paths.get(path));
+    public static DirectoryConfigSource.Builder directory(String path) {
+        return DirectoryConfigSource.builder().path(Paths.get(path));
     }
 
     /**
@@ -251,471 +289,8 @@ public final class ConfigSources {
      * @return new Builder instance
      * @see #url(URL)
      */
-    public static AbstractParsableConfigSource.Builder
-            <? extends AbstractParsableConfigSource.Builder<?, URL>, URL> url(URL url) {
-        return new UrlConfigSource.UrlBuilder(url);
-    }
-
-    /**
-     * Provides a {@link CompositeBuilder} for creating a composite
-     * {@code ConfigSource} based on the specified {@link ConfigSource}s, used
-     * in the order in which they are passed as arguments.
-     * <p>
-     * By default the resulting {@code ConfigSource} combines the various
-     * {@code ConfigSource}s using the system-provided
-     * {@link MergingStrategy#fallback() fallback merging strategy}. The
-     * application can invoke {@link CompositeBuilder#mergingStrategy} to change
-     * how the sources are combined.
-     *
-     * @param configSources original config sources to be treated as one
-     * @return new composite config source builder instance initialized from config sources.
-     * @see CompositeBuilder
-     * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
-     * @see Config#from(Supplier[])
-     * @see Config#withSources(Supplier[])
-     */
-    @SafeVarargs
-    public static CompositeBuilder from(Supplier<ConfigSource>... configSources) {
-        return from(CollectionsHelper.listOf(configSources));
-    }
-
-    /**
-     * Provides a {@link CompositeBuilder} for creating a composite
-     * {@code ConfigSource} based on the {@link ConfigSource}s and their order
-     * in the specified list.
-     * <p>
-     * By default the resulting {@code ConfigSource} combines the various
-     * {@code ConfigSource}s using the system-provided
-     * {@link MergingStrategy#fallback() fallback merging strategy}. The
-     * application can invoke {@link CompositeBuilder#mergingStrategy} to change
-     * how the sources are combined.
-     *
-     * @param configSources original config sources to be treated as one
-     * @return new composite config source builder instance initialized from config sources.
-     * @see CompositeBuilder
-     * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
-     * @see Config#from(Supplier[])
-     * @see Config#withSources(Supplier[])
-     */
-    public static CompositeBuilder from(List<Supplier<ConfigSource>> configSources) {
-        return new CompositeBuilder(configSources);
-    }
-
-    /**
-     * Provides a {@link CompositeBuilder} for creating a composite
-     * {@code ConfigSource} based on the {@code ConfigSource}s returned by the
-     * provided meta-sources.
-     * <p>
-     * Each meta-source must contain the {@code sources} property which is an
-     * array of config sources. See {@link ConfigSource#from(Config)} for more
-     * information about the format of meta-configuration.
-     * <p>
-     * The returned builder is a {@code CompositeBuilder} that combines the
-     * config from all config sources derived from the meta-configuration in the
-     * meta-sources. By default the composite builder uses the
-     * {@link MergingStrategy#fallback() fallback merging strategy}.
-     *
-     * @param metaSources ordered list of meta-sources from which the builder
-     * will read meta-configuration indicating the config sources
-     * @return new composite config source builder initialized from the
-     * specified meta-sources.
-     * @see CompositeBuilder
-     * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
-     * @see Config#loadSources(Supplier[])
-     * @see Config#loadSourcesFrom(Supplier[])
-     */
-    @SafeVarargs
-    public static CompositeBuilder load(Supplier<ConfigSource>... metaSources) {
-
-        return load(Config.withSources(metaSources)
-                            .disableEnvironmentVariablesSource()
-                            .disableSystemPropertiesSource()
-                            .build());
-    }
-
-    /**
-     * Provides a {@link CompositeBuilder} for creating a composite
-     * {@code ConfigSource} based on the {@link ConfigSource}s returned by the
-     * provided meta-configuration.
-     * <p>
-     * The meta-configuration must contain the {@code sources} property which is
-     * an array of config sources. See {@link ConfigSource#from(Config)} for
-     * more information about the format of meta-configuration.
-     * <p>
-     * The returned builder is a {@code CompositeBuilder} that combines the
-     * config from all config sources derived from the meta-configuration. By
-     * default the composite builder uses the
-     * {@link MergingStrategy#fallback() fallback merging strategy}.
-     *
-     * @param metaConfig meta-configuration from which the builder will derive
-     * config sources
-     * @return new composite config source builder initialized from the
-     * specified meta-config
-     * @see CompositeBuilder
-     * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
-     * @see #load(Supplier[])
-     * @see #load(Config)
-     * @see Config#loadSources(Supplier[])
-     * @see Config#loadSourcesFrom(Supplier[])
-     */
-    public static CompositeBuilder load(Config metaConfig) {
-        List<Supplier<ConfigSource>> sources = metaConfig.get(SOURCES_KEY)
-                .asNodeList(CollectionsHelper.listOf()).stream()
-                .map(node -> node.as(ConfigSource.class))
-                .collect(Collectors.toList());
-
-        return ConfigSources.from(sources);
-    }
-
-    /**
-     * Builder of a {@code ConfigSource} based on a {@code Map} containing
-     * config entries.
-     * <p>
-     * The caller constructs a {@code MapBuilder} with either a {@code Map} or a
-     * {@code Properties} object. The builder uses the {@code Map} entries or
-     * {@code Properties} name/value pairs to create config entries:
-     * <ul>
-     * <li>Each {@code Map} key or {@code Properties} property name is the
-     * fully-qualified dotted-name format key for the corresponding
-     * {@code Config} node.
-     * <li>Each {@code Map} value or {@code Properties} property value is the
-     * corresponding value of the corresponding {@code Config} node.
-     * </ul>
-     * By default, if the provided {@code Map} or {@code Properties} object
-     * contains duplicate keys then the {@link ConfigSource#load} on the
-     * returned {@code ConfigSource} will fail. The caller can invoke
-     * {@link MapBuilder#lax} to relax this restriction, in which case the
-     * {@code load} operation will log collision warnings but continue.
-     * <p>
-     * For example, the following properties collide:
-     * <pre>{@code
-     * app.port = 8080
-     * app      = app-name
-     * }</pre>
-     * <p>
-     * The {@code MapConfigSource} returned by {@link #build} and {@link get}
-     * works with an immutable copy of original map; it does
-     * <strong>not</strong> support
-     * {@link ConfigSource#changes() ConfigSource mutability}.
-     */
-    public static final class MapBuilder implements Supplier<ConfigSource> {
-
-        private static final String PROPERTIES_NAME = "properties";
-        private static final String SYS_PROPS_NAME = "sys-props";
-        private static final String MAP_NAME = "map";
-        private static final String ENV_VARS_NAME = "env-vars";
-
-        private Map<String, String> map;
-        private boolean strict;
-        private String mapSourceName;
-        private volatile ConfigSource configSource;
-
-        private MapBuilder(Map<String, String> map) {
-            Objects.requireNonNull(map, "map cannot be null");
-
-            this.map = Collections.unmodifiableMap(map);
-            this.strict = true;
-            // mapSourceName
-            if (map == System.getenv()) {
-                mapSourceName = ENV_VARS_NAME;
-            } else {
-                mapSourceName = MAP_NAME;
-            }
-        }
-
-        private MapBuilder(Properties properties) {
-            Objects.requireNonNull(properties, "properties cannot be null");
-
-            this.map = ConfigUtils.propertiesToMap(properties);
-            this.strict = true;
-            // mapSourceName
-            if (properties == System.getProperties()) {
-                mapSourceName = SYS_PROPS_NAME;
-            } else {
-                mapSourceName = PROPERTIES_NAME;
-            }
-        }
-
-        /**
-         * Switches off strict mode.
-         * <p>
-         * In lax mode {@link ConfigSource#load()} does not fail if config keys
-         * collide; it logs warnings and continues.
-         *
-         * @return updated builder
-         */
-        public MapBuilder lax() {
-            strict = false;
-
-            return this;
-        }
-
-        /**
-         * Builds new instance of {@code MapConfigSource} from the {@code Map}
-         * or {@code Properties} passed to a constructor.
-         *
-         * @return {@link MapConfigSource} based on the specified {@code Map} or {@code Properties}
-         */
-        public ConfigSource build() {
-            return new MapConfigSource(map, strict, mapSourceName);
-        }
-
-        @Override
-        public ConfigSource get() {
-            if (configSource == null) {
-                configSource = build();
-            }
-            return configSource;
-        }
-    }
-
-    /**
-     * Builder of a {@code ConfigSource} that encapsulates multiple separate
-     * {@code ConfigSource}s.
-     * <p>
-     * The caller invokes {@link #add} one or more times to assemble an ordered
-     * list of {@code ConfigSource}s to be combined. The {@link #build} and
-     * {@link #get} methods return a single {@code ConfigSource} that combines
-     * the ordered sequence of {@code ConfigSource}s using a merging strategy
-     * (by default, the
-     * {@link MergingStrategy#fallback() fallback merging strategy}). The caller
-     * can change the merging strategy by passing an alternative strategy to the
-     * {@link #mergingStrategy} method.
-     * <p>
-     * The {@code CompositeBuilder} also supports change monitoring. The
-     * application can control these aspects:
-     * <table>
-     * <caption>Application Control of Change Monitoring</caption>
-     * <tr>
-     * <th>Change Support Behavior</th>
-     * <th>Use</th>
-     * <th>Method</th>
-     * </tr>
-     * <tr>
-     * <td>reload executor</td>
-     * <td>The executor used to reload the configuration upon detection of a change in the
-     * underlying {@code ConfigSource}</td>
-     * <td>{@link #changesExecutor(java.util.concurrent.ScheduledExecutorService)
-     * }</td>
-     * </tr>
-     * <tr>
-     * <td>debounce timeout</td>
-     * <td>Minimum delay between reloads - helps reduce multiple reloads due to
-     * multiple changes in a short period, collecting a group of changes into
-     * one notification</td>
-     * <td>{@link #changesDebounce(java.time.Duration)}</td>
-     * </tr>
-     * <tr>
-     * <td>buffer size</td>
-     * <td>Maximum number of changes allowed in the change flow</td>
-     * <td>{@link #changesMaxBuffer(int) }</td>
-     * </tr>
-     * </table>
-     *
-     * @see ConfigSources#from(Supplier...)
-     * @see MergingStrategy
-     * @see MergingStrategy#fallback() default merging strategy
-     */
-    public static class CompositeBuilder implements Supplier<ConfigSource> {
-
-        private static final long DEFAULT_CHANGES_DEBOUNCE_TIMEOUT = 100;
-
-        private final List<ConfigSource> configSources;
-        private MergingStrategy mergingStrategy;
-        private ScheduledExecutorService changesExecutor;
-        private int changesMaxBuffer;
-        private Duration debounceTimeout;
-        private volatile ConfigSource configSource;
-
-        private CompositeBuilder(List<Supplier<ConfigSource>> configSources) {
-            this.configSources = initConfigSources(configSources);
-
-            changesExecutor = CompositeConfigSource.DEFAULT_CHANGES_EXECUTOR_SERVICE;
-            debounceTimeout = Duration.ofMillis(DEFAULT_CHANGES_DEBOUNCE_TIMEOUT);
-            changesMaxBuffer = Flow.defaultBufferSize();
-        }
-
-        private static List<ConfigSource> initConfigSources(List<Supplier<ConfigSource>> sourceSuppliers) {
-            List<ConfigSource> configSources = new LinkedList<>();
-            for (Supplier<ConfigSource> configSupplier : sourceSuppliers) {
-                configSources.add(configSupplier.get());
-            }
-            return configSources;
-        }
-
-        /**
-         * Adds a {@code ConfigSource} to the ordered list of sources.
-         *
-         * @param source config source
-         * @return updated builder
-         */
-        public CompositeBuilder add(Supplier<ConfigSource> source) {
-            Objects.requireNonNull(source, "source cannot be null");
-
-            configSources.add(source.get());
-            return this;
-        }
-
-        /**
-         * Sets the strategy to be used for merging the root nodes provided by
-         * the list of {@code ConfigSource}s.
-         *
-         * @param mergingStrategy strategy for merging root nodes from the
-         * config sources
-         * @return updated builder
-         * @see MergingStrategy#fallback()
-         */
-        public CompositeBuilder mergingStrategy(MergingStrategy mergingStrategy) {
-            Objects.requireNonNull(mergingStrategy, "mergingStrategy cannot be null");
-
-            this.mergingStrategy = mergingStrategy;
-            return this;
-        }
-
-        /**
-         * Specifies {@link ScheduledExecutorService} on which reloads of the
-         * config source will occur.
-         * <p>
-         * By default, a dedicated thread pool that can schedule reload commands to
-         * run after a given {@link #debounceTimeout timeout} is used.
-         *
-         * @param changesExecutor the executor used for scheduling config source
-         * reloads
-         * @return updated builder
-         * @see #changesDebounce(Duration)
-         */
-        public CompositeBuilder changesExecutor(ScheduledExecutorService changesExecutor) {
-            this.changesExecutor = changesExecutor;
-            return this;
-        }
-
-        /**
-         * Specifies debounce timeout for reloading the config after the
-         * underlying config source(s) change.
-         * <p>
-         * Debouncing reduces the number of change events by collecting any
-         * changes over the debounce timeout interval into a single event.
-         * <p>
-         * The default is {@code 100} milliseconds.
-         *
-         * @param debounceTimeout debounce timeout to process reloading
-         * @return modified builder instance
-         * @see #changesExecutor(ScheduledExecutorService)
-         */
-        public CompositeBuilder changesDebounce(Duration debounceTimeout) {
-            this.debounceTimeout = debounceTimeout;
-            return this;
-        }
-
-        /**
-         * Specifies maximum capacity for each subscriber's buffer to be used to deliver
-         * {@link ConfigSource#changes() config source changes}.
-         * <p>
-         * By default {@link io.helidon.common.reactive.Flow#DEFAULT_BUFFER_SIZE} is used.
-         * <p>
-         * Note: Any events not consumed by a subscriber will be lost.
-         *
-         * @param changesMaxBuffer the maximum capacity for each subscriber's buffer of {@link ConfigSource#changes()} events.
-         * @return modified builder instance
-         * @see #changesExecutor(ScheduledExecutorService)
-         * @see ConfigSource#changes()
-         */
-        public CompositeBuilder changesMaxBuffer(int changesMaxBuffer) {
-            this.changesMaxBuffer = changesMaxBuffer;
-            return this;
-        }
-
-        /**
-         * Builds new instance of Composite ConfigSource.
-         *
-         * @return new instance of Composite ConfigSource.
-         */
-        public ConfigSource build() {
-            final List<ConfigSource> finalConfigSources = new LinkedList<>();
-            finalConfigSources.addAll(configSources);
-
-            final MergingStrategy finalMergingStrategy = mergingStrategy != null
-                    ? mergingStrategy
-                    : new FallbackMergingStrategy();
-
-            return createCompositeConfigSource(finalConfigSources, finalMergingStrategy, changesExecutor, debounceTimeout,
-                                               changesMaxBuffer);
-        }
-
-        @Override
-        public ConfigSource get() {
-            if (configSource == null) {
-                configSource = build();
-            }
-            return configSource;
-        }
-
-        CompositeConfigSource createCompositeConfigSource(List<ConfigSource> finalConfigSources,
-                                                          MergingStrategy finalMergingStrategy,
-                                                          ScheduledExecutorService reloadExecutorService,
-                                                          Duration debounceTimeout,
-                                                          int changesMaxBuffer) {
-            return new CompositeConfigSource(finalConfigSources, finalMergingStrategy, reloadExecutorService, debounceTimeout,
-                                             changesMaxBuffer);
-        }
-
-    }
-
-    /**
-     * An algorithm for combining multiple {@code ConfigNode.ObjectNode} root nodes
-     * into a single {@code ConfigNode.ObjectNode} root node.
-     *
-     * @see ConfigSources#from(Supplier...)
-     * @see CompositeBuilder
-     * @see CompositeBuilder#mergingStrategy(MergingStrategy)
-     * @see #fallback() default merging strategy
-     */
-    public interface MergingStrategy {
-        /**
-         * Merges an ordered list of {@link ConfigNode.ObjectNode}s into a
-         * single instance.
-         * <p>
-         * Typically nodes (object, list or value) from a root earlier in the
-         * list are considered to have a higher priority than nodes from a root
-         * that appears later in the list, but this is not required and is
-         * entirely up to each {@code MergingStrategy} implementation.
-         *
-         * @param rootNodes list of root nodes to combine
-         * @return ObjectNode root node resulting from the merge
-         */
-        ConfigNode.ObjectNode merge(List<ConfigNode.ObjectNode> rootNodes);
-
-        /**
-         * Returns an implementation of {@code MergingStrategy} in which nodes
-         * from a root earlier in the list have higher priority than nodes from
-         * a root later in the list.
-         * <p>
-         * The merged behavior is as if the resulting merged {@code Config},
-         * when resolving a value of a key, consults the {@code Config} roots in
-         * the order they were passed to {@code merge}. As soon as it finds a
-         * {@code Config} tree containing a value for the key is it immediately
-         * returns that value, disregarding other later config roots.
-         *
-         * @return new instance of fallback merging strategy
-         */
-        static ConfigSources.MergingStrategy fallback() {
-            return new FallbackMergingStrategy();
-        }
-
+    public static UrlConfigSource.Builder url(URL url) {
+        return UrlConfigSource.builder().url(url);
     }
 
     /**
@@ -723,7 +298,7 @@ public final class ConfigSources {
      *
      * @see ConfigSources#empty()
      */
-    private static final class EmptyConfigSourceHolder {
+    static final class EmptyConfigSourceHolder {
 
         private EmptyConfigSourceHolder() {
             throw new AssertionError("Instantiation not allowed.");
@@ -732,17 +307,66 @@ public final class ConfigSources {
         /**
          * EMPTY singleton instance.
          */
-        private static final ConfigSource EMPTY = new ConfigSource() {
+        static final ConfigSource EMPTY = new NodeConfigSource() {
             @Override
             public String description() {
                 return "Empty";
             }
 
             @Override
-            public Optional<ConfigNode.ObjectNode> load() throws ConfigException {
+            public Optional<ConfigContent.NodeContent> load() throws ConfigException {
                 return Optional.empty();
+            }
+
+            @Override
+            public String toString() {
+                return "EmptyConfigSource";
+            }
+
+            @Override
+            public boolean optional() {
+                return true;
             }
         };
     }
 
+    /**
+     * Environment variables config source.
+     */
+    static final class EnvironmentVariablesConfigSource extends MapConfigSource {
+        /**
+         * Constructor.
+         */
+        EnvironmentVariablesConfigSource() {
+            super(MapConfigSource.builder().map(EnvironmentVariables.expand()).name(""));
+        }
+    }
+
+    /**
+     * System properties config source.
+     */
+    public static final class SystemPropertiesConfigSource extends MapConfigSource {
+        private SystemPropertiesConfigSource(Builder builder) {
+            super(builder);
+        }
+
+        /**
+         * A fluent API builder for {@link io.helidon.config.ConfigSources.SystemPropertiesConfigSource}.
+         */
+        public static final class Builder extends MapBuilder<Builder> {
+            private Builder() {
+            }
+
+            @Override
+            public MapConfigSource build() {
+                super.name("");
+                return new SystemPropertiesConfigSource(this);
+            }
+
+            @Override
+            public Builder name(String sourceName) {
+                return this;
+            }
+        }
+    }
 }

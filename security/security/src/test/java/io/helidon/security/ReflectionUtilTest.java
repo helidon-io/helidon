@@ -24,10 +24,10 @@ import java.util.Arrays;
 import io.helidon.security.reflection.Tester;
 
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for {@link ReflectionUtil}.
@@ -343,7 +343,7 @@ class ReflectionUtilTest {
         try {
             return clazz.getDeclaredConstructor(paramType);
         } catch (NoSuchMethodException e) {
-            Assertions.fail("Wrong test configuration, constructor does not exist in class: " + clazz
+            fail("Wrong test configuration, constructor does not exist in class: " + clazz
                     .getName() + ", with parameters: " + Arrays.toString(paramType), e);
         }
         return null;
@@ -353,7 +353,7 @@ class ReflectionUtilTest {
         try {
             return clazz.getDeclaredMethod(methodName);
         } catch (NoSuchMethodException e) {
-            Assertions.fail("Wrong test configuration, method does not exist: " + clazz.getName() + "." + methodName, e);
+            fail("Wrong test configuration, method does not exist: " + clazz.getName() + "." + methodName, e);
         }
         return null;
     }
@@ -362,7 +362,7 @@ class ReflectionUtilTest {
         try {
             return clazz.getDeclaredField(fieldName);
         } catch (NoSuchFieldException e) {
-            Assertions.fail("Wrong test configuration, field does not exist: " + clazz.getName() + "." + fieldName, e);
+            fail("Wrong test configuration, field does not exist: " + clazz.getName() + "." + fieldName, e);
         }
         return null;
     }

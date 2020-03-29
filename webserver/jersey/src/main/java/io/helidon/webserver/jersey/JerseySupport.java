@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,17 @@ package io.helidon.webserver.jersey;
 
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import javax.ws.rs.core.Application;
@@ -34,7 +37,15 @@ import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.SecurityContext;
 
+import io.helidon.common.configurable.ServerThreadPoolSupplier;
+import io.helidon.common.configurable.ThreadPool;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpRequest;
+import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.HttpException;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -42,12 +53,16 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
+import org.glassfish.jersey.server.spi.Container;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * The Jersey Support integrates Jersey (JAX-RS RI) into the Web Server.
@@ -68,6 +83,8 @@ import org.glassfish.jersey.server.model.Resource;
  * thread pool which can be configured by one of the JerseySupport constructor.
  */
 public class JerseySupport implements Service {
+
+    private static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
 
     /**
      * The request scoped span qualifier that can be injected into a Jersey resource.
@@ -92,37 +109,59 @@ public class JerseySupport implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(JerseySupport.class.getName());
 
-    private final Type requestType = (new GenericType<Ref<ServerRequest>>() { }).getType();
-    private final Type responseType = (new GenericType<Ref<ServerResponse>>() { }).getType();
-    private final Type spanType = (new GenericType<Ref<Span>>() { }).getType();
-    private final Type spanContextType = (new GenericType<Ref<SpanContext>>() { }).getType();
+    private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
+    private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
+    private static final Type SPAN_TYPE = (new GenericType<Ref<Span>>() { }).getType();
+    private static final Type SPAN_CONTEXT_TYPE = (new GenericType<Ref<SpanContext>>() { }).getType();
+    private static final AtomicReference<ExecutorService> DEFAULT_THREAD_POOL = new AtomicReference<>();
 
     private final ApplicationHandler appHandler;
     private final ExecutorService service;
     private final JerseyHandler handler = new JerseyHandler();
+    private final HelidonJerseyContainer container;
 
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
      *
-     * @param application the JAX-RS application to build the Jersey Support from
-     * @param service     the executor service that is used for a request handling. If {@code null},
-     *                    a thread pool of size
-     *                    {@link Runtime#availableProcessors()} {@code * 2} is used.
+     * @param builder builder with application (the JAX-RS application to build the Jersey Support from),
+     *                executor service (the executor service that is used for a request handling. If {@code null},
+     *                a thread pool of size {@link Runtime#availableProcessors()} {@code * 8} is used),
+     *                and Config
      */
-    private JerseySupport(Application application, ExecutorService service) {
-        this.appHandler = new ApplicationHandler(application, new WebServerBinder());
-        this.service = service != null ? service : Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    private JerseySupport(Builder builder) {
+        ExecutorService executorService = (builder.executorService != null) ? builder.executorService : getDefaultThreadPool();
+        this.service = Contexts.wrap(executorService);
+
+        builder.resourceConfig.register(new AsyncExecutorProvider(builder.config));
+        this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
+        this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
     }
 
     @Override
     public void update(Routing.Rules routingRules) {
         routingRules.any(handler);
+        appHandler.onStartup(container);
+    }
+
+    private static ExecutorService getDefaultThreadPool() {
+        if (DEFAULT_THREAD_POOL.get() == null) {
+            Config executorConfig = ((Config) ConfigProvider.getConfig())
+                    .get("server.executor-service");
+
+            DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
+                                            .name("server")
+                                            .config(executorConfig)
+                                            .build()
+                                            .get());
+        }
+        return DEFAULT_THREAD_POOL.get();
     }
 
     private static URI requestUri(ServerRequest req) {
         try {
-            URI partialUri = new URI(req.isSecure() ? "https" : "http", null, req.localAddress(),
-                                     req.localPort(), req.path().absolute().toString(), null, null);
+            // Use raw string representation and URL to avoid re-encoding chars like '%'
+            URI partialUri = new URL(req.isSecure() ? "https" : "http", req.localAddress(),
+                                     req.localPort(), req.path().absolute().toRawString()).toURI();
             StringBuilder sb = new StringBuilder(partialUri.toString());
             if (req.uri().toString().endsWith("/") && sb.charAt(sb.length() - 1) != '/') {
                 sb.append('/');
@@ -131,31 +170,31 @@ public class JerseySupport implements Service {
             // unfortunately, the URI constructor encodes the 'query' and 'fragment' which is totally silly
             if (req.query() != null && !req.query().isEmpty()) {
                 sb.append("?")
-                  .append(req.query());
+                        .append(req.query());
             }
             if (req.fragment() != null && !req.fragment().isEmpty()) {
                 sb.append("#")
-                  .append(req.fragment());
+                        .append(req.fragment());
             }
             return new URI(sb.toString());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException("Unable to create a request URI from the request info.", e);
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
         }
     }
 
     private static URI baseUri(ServerRequest req) {
         try {
             return new URI(req.isSecure() ? "https" : "http", null, req.localAddress(),
-                           req.localPort(), basePath(req), null, null);
+                           req.localPort(), basePath(req.path()), null, null);
         } catch (URISyntaxException e) {
-            throw new IllegalStateException("Unable to create a base URI from the request info.", e);
+            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
         }
     }
 
-    private static String basePath(ServerRequest req) {
-        String reqPath = req.path().toString();
-        String absPath = req.path().absolute().toString();
-        String basePath = absPath.substring(0, absPath.length() - reqPath.length());
+    static String basePath(HttpRequest.Path path) {
+        String reqPath = path.toString();
+        String absPath = path.absolute().toString();
+        String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);
 
         if (absPath.isEmpty() || basePath.isEmpty()) {
             return "/";
@@ -163,6 +202,30 @@ public class JerseySupport implements Service {
             return basePath + "/";
         } else {
             return basePath;
+        }
+    }
+
+    /**
+     * A WebServerBinder that also supports injection of ThreadPool by name if the executor is one.
+     * This class is explicitly static to avoid field assignment order issues in the outer class.
+     */
+    private static class ServerBinder extends WebServerBinder {
+        private final ExecutorService executorService;
+
+        ServerBinder(ExecutorService executorService) {
+            this.executorService = requireNonNull(executorService);
+        }
+
+        @Override
+        protected void configure() {
+            super.configure();
+
+            // If the executor is a ThreadPool, make it available to inject with its name.
+            Optional<ThreadPool> maybePool = ThreadPool.asThreadPool(executorService);
+            if (maybePool.isPresent()) {
+                ThreadPool pool = maybePool.get();
+                bind(pool).named(pool.getName()).to(ThreadPool.class);
+            }
         }
     }
 
@@ -176,6 +239,22 @@ public class JerseySupport implements Service {
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
+            // Skip this handler if a WebSocket upgrade request
+            Optional<String> secWebSocketKey = req.headers().value(SEC_WEBSOCKET_KEY);
+            if (secWebSocketKey.isPresent()) {
+                req.next();
+                return;
+            }
+
+            // create a new context for jersey, so we do not modify webserver's internals
+            Context parent = Contexts.context()
+                    .orElseThrow(() -> new IllegalStateException("Context must be propagated from server"));
+            Context jerseyContext = Context.create(parent);
+
+            Contexts.runInContext(jerseyContext, () -> doAccept(req, res));
+        }
+
+        private void doAccept(ServerRequest req, ServerResponse res) {
             CompletableFuture<Void> whenHandleFinishes = new CompletableFuture<>();
             ResponseWriter responseWriter = new ResponseWriter(res, req, whenHandleFinishes);
             ContainerRequest requestContext = new ContainerRequest(baseUri(req),
@@ -189,37 +268,46 @@ public class JerseySupport implements Service {
             requestContext.setWriter(responseWriter);
 
             req.content()
-               .as(InputStream.class)
-               .thenAccept(is -> {
-                   requestContext.setEntityStream(is);
+                    .as(InputStream.class)
+                    .thenAccept(is -> {
+                        requestContext.setEntityStream(is);
 
-                   service.submit(() -> {
-                       try {
-                           LOGGER.finer("Handling in Jersey started.");
+                        service.execute(() -> { // No need to use submit() since the future is not used.
+                            try {
+                                LOGGER.finer("Handling in Jersey started.");
 
-                           requestContext.setRequestScopedInitializer(injectionManager -> {
-                               injectionManager.<Ref<ServerRequest>>getInstance(requestType).set(req);
-                               injectionManager.<Ref<ServerResponse>>getInstance(responseType).set(res);
-                               injectionManager.<Ref<Span>>getInstance(spanType).set(req.span());
-                               injectionManager.<Ref<SpanContext>>getInstance(spanContextType).set(req.spanContext());
-                           });
+                                requestContext.setRequestScopedInitializer(injectionManager -> {
+                                    injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
+                                    injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
+                                    injectionManager.<Ref<Span>>getInstance(SPAN_TYPE).set(req.span());
+                                    injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE).set(req.spanContext());
+                                });
 
-                           appHandler.handle(requestContext);
-                           whenHandleFinishes.complete(null);
-                       } catch (Throwable e) {
-                           // this is very unlikely to happen; Jersey will try to call ResponseWriter.failure(Throwable) rather
-                           // than to propagate the exception
-                           req.next(e);
-                       }
-                   });
+                                appHandler.handle(requestContext);
+                                whenHandleFinishes.complete(null);
+                            } catch (Throwable e) {
+                                // this is very unlikely to happen; Jersey will try to call ResponseWriter.failure(Throwable)
+                                // rather
+                                // than to propagate the exception
+                                req.next(e);
+                            }
+                        });
 
-               })
-               .exceptionally(throwable -> {
-                   // this should not happen; but for the sake of completeness ..
-                   req.next(throwable);
-                   return null;
-               });
+                    })
+                    .exceptionally(throwable -> {
+                        // this should not happen; but for the sake of completeness ..
+                        req.next(throwable);
+                        return null;
+                    });
         }
+    }
+
+    /**
+     * Close this integration with Jersey.
+     * Once closed, this instance is no longer usable.
+     */
+    public void close() {
+        appHandler.onShutdown(container);
     }
 
     /**
@@ -259,7 +347,9 @@ public class JerseySupport implements Service {
         }
     }
 
-    /** Just a stub implementation that should be evolved in the future. */
+    /**
+     * Just a stub implementation that should be evolved in the future.
+     */
     private static class WebServerSecurityContext implements SecurityContext {
 
         @Override
@@ -349,10 +439,11 @@ public class JerseySupport implements Service {
     /**
      * Builder for convenient way to create {@link JerseySupport}.
      */
-    public static class Builder implements Configurable<Builder>, io.helidon.common.Builder {
+    public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
+        private Config config = Config.empty();
 
         private Builder() {
             this(null);
@@ -370,8 +461,9 @@ public class JerseySupport implements Service {
          *
          * @return built module
          */
+        @Override
         public JerseySupport build() {
-            return new JerseySupport(resourceConfig, executorService);
+            return new JerseySupport(this);
         }
 
         @Override
@@ -449,12 +541,54 @@ public class JerseySupport implements Service {
          * where the {@link JerseySupport} is registered.
          *
          * @param executorService the executor service to use for a handling of requests that go
-         *                        to the Jersey application
+         * to the Jersey application
          * @return an updated instance
          */
         public Builder executorService(ExecutorService executorService) {
             this.executorService = executorService;
             return this;
+        }
+
+        /**
+         * Update configuration from Config.
+         * Currently used to set up async executor service only.
+         *
+         * @param config configuration at the Jersey configuration node
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            this.config = config;
+            return this;
+        }
+    }
+
+    private static class HelidonJerseyContainer implements Container {
+        private final ApplicationHandler applicationHandler;
+
+        private HelidonJerseyContainer(ApplicationHandler appHandler, ResourceConfig resourceConfig) {
+            this.applicationHandler = appHandler;
+        }
+
+        @Override
+        public ResourceConfig getConfiguration() {
+            return applicationHandler.getConfiguration();
+        }
+
+        @Override
+        public ApplicationHandler getApplicationHandler() {
+            return applicationHandler;
+        }
+
+        @Override
+        public void reload() {
+            // no op
+            throw new UnsupportedOperationException("Reloading is not supported in Helidon");
+        }
+
+        @Override
+        public void reload(ResourceConfig configuration) {
+            // no op
+            throw new UnsupportedOperationException("Reloading is not supported in Helidon");
         }
     }
 }

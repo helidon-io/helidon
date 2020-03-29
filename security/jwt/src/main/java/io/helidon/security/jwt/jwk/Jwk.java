@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.jwt.JwtException;
 
 import static io.helidon.security.jwt.JwtUtil.asString;
@@ -190,16 +189,16 @@ public abstract class Jwk {
      * @param json with definition of a web key (any key type)
      * @return new instance of a descendant of this class constructed from json, based on key type
      */
-    public static Jwk fromJson(JsonObject json) {
+    public static Jwk create(JsonObject json) {
         String keyType = asString(json, PARAM_KEY_TYPE, "JWK Key type");
         // gather key type specific values
         switch (keyType) {
         case KEY_TYPE_EC:
-            return JwkEC.fromJson(json);
+            return JwkEC.create(json);
         case KEY_TYPE_RSA:
-            return JwkRSA.fromJson(json);
+            return JwkRSA.create(json);
         case KEY_TYPE_OCT:
-            return JwkOctet.fromJson(json);
+            return JwkOctet.create(json);
         default:
             throw new JwtException("Unknown JWK type: " + keyType);
         }
@@ -214,7 +213,7 @@ public abstract class Jwk {
      * @see #KEY_TYPE_RSA
      * @see #KEY_TYPE_EC
      */
-    public String getKeyType() {
+    public String keyType() {
         return keyType;
     }
 
@@ -229,7 +228,7 @@ public abstract class Jwk {
      * @return key id of this JWK
      * @see #PARAM_KEY_ID
      */
-    public String getKeyId() {
+    public String keyId() {
         return keyId;
     }
 
@@ -241,7 +240,7 @@ public abstract class Jwk {
      * @return algorithm if present (some types have defaults).
      * @see #PARAM_ALGORITHM
      */
-    public String getAlgorithm() {
+    public String algorithm() {
         return algorithm;
     }
 
@@ -255,7 +254,7 @@ public abstract class Jwk {
      * @see #USE_ENCRYPTION
      * @see #USE_SIGNATURE
      */
-    public Optional<String> getUsage() {
+    public Optional<String> usage() {
         return usage;
     }
 
@@ -266,7 +265,7 @@ public abstract class Jwk {
      *
      * @return list of operations allowed, or empty if not defined
      */
-    public Optional<List<String>> getOperations() {
+    public Optional<List<String>> operations() {
         return operations;
     }
 
@@ -305,9 +304,8 @@ public abstract class Jwk {
     abstract byte[] doSign(byte[] bytesToSign);
 
     boolean supports(String use, String operation) {
-        Boolean result = OptionalHelper.from(operations.map(ops -> ops.contains(operation)))
+        Boolean result = operations.map(ops -> ops.contains(operation))
                 .or(() -> usage.map(usage -> usage.equals(use)))
-                .asOptional()
                 .orElse(true);
 
         if (!result && "verify".equals(operation)) {
@@ -317,12 +315,6 @@ public abstract class Jwk {
 
         return result;
     }
-
-    /*
-    TODO - see security#26 as a follow-up issue
-    public abstract byte[] encrypt(byte[] encryptedBytes);
-    public abstract byte[] decrypt(byte[] plainTextBytes);
-    */
 
     // used from other descendants - if alg is set to "none", the signature must be
     // an empty string and we must support it for current kid
@@ -336,8 +328,8 @@ public abstract class Jwk {
     }
 
     // this builder is not public, as a specific key type must be built
-    abstract static class Builder<T extends Builder> {
-        private T myInstance;
+    abstract static class Builder<T extends Builder<T>> {
+        private final T myInstance;
         private String keyType;
         private String keyId;
         private String algorithm;

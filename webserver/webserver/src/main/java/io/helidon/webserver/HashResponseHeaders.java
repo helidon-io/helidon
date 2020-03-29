@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.AlreadyCompletedException;
+import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.http.Utils;
-import io.helidon.webserver.spi.BareResponse;
 
 /**
  * A {@link ResponseHeaders} implementation on top of {@link HashParameters}.
@@ -79,10 +78,10 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     @Override
     public List<MediaType> acceptPatches() {
         List<MediaType> result = all(Http.Header.ACCEPT_PATCH).stream()
-                    .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
-                    .map(String::trim)
-                    .map(MediaType::parse)
-                    .collect(Collectors.toList());
+                .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
+                .map(String::trim)
+                .map(MediaType::parse)
+                .collect(Collectors.toList());
         return Collections.unmodifiableList(result);
     }
 
@@ -112,7 +111,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     @Override
     public OptionalLong contentLength() {
-        return OptionalHelper.from(first(Http.Header.CONTENT_LENGTH)).stream()
+        return first(Http.Header.CONTENT_LENGTH).stream()
                 .mapToLong(Long::parseLong).findFirst();
     }
 
@@ -185,14 +184,17 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     @Override
     public void addCookie(String name, String value) {
-        add(Http.Header.SET_COOKIE, new SetCookie(name, value).toString());
+        add(Http.Header.SET_COOKIE, SetCookie.create(name, value).toString());
     }
 
     @Override
     public void addCookie(String name, String value, Duration maxAge) {
-        add(Http.Header.SET_COOKIE, new SetCookie(name, value).maxAge(maxAge).toString());
+        add(Http.Header.SET_COOKIE,
+            SetCookie.builder(name, value)
+                    .maxAge(maxAge)
+                    .build()
+                    .toString());
     }
-
 
     @Override
     public void addCookie(SetCookie cookie) {
@@ -360,7 +362,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
         /**
          * If not completed then runs provided {@link Runnable}, otherwise throws {@link AlreadyCompletedException}.
          *
-         * @param runnable to run.
+         * @param runnable         to run.
          * @param exceptionMessage a detail message of potential {@link AlreadyCompletedException}.
          * @throws AlreadyCompletedException if resource is already completed.
          */
@@ -386,7 +388,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
          * If not completed then executes provided {@link Supplier} and returns it's result,
          * otherwise throws {@link AlreadyCompletedException}.
          *
-         * @param supplier to execute.
+         * @param supplier         to execute.
          * @param exceptionMessage a detail message of potential {@link AlreadyCompletedException}.
          * @throws AlreadyCompletedException if resource is already completed.
          */

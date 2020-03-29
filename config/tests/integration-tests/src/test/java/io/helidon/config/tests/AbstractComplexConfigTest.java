@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,18 +24,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValue;
 import io.helidon.config.spi.ConfigParser;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.config.ConfigValues.simpleValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Provides complete Config API test that is supposed to be used to test appropriate config parsers.
@@ -61,14 +65,11 @@ public abstract class AbstractComplexConfigTest {
     // text
     //
 
-    private void testString(Config node, String expected) {
+    private void testString(Config node, String expectedString) {
+        ConfigValue<String> expected = simpleValue(expectedString);
         assertThat(node.asString(), is(expected));
         assertThat(node.as(String.class), is(expected));
-        assertThat(node.map(String::toString), is(expected));
-
-        assertThat(node.value().get(), is(expected));
-        assertThat(node.asOptional(String.class).get(), is(expected));
-        assertThat(node.mapOptional(String::toString).get(), is(expected));
+        assertThat(node.asString().as(String::toString), is(expected));
     }
 
     private void testString(String key, String expected) {
@@ -76,12 +77,8 @@ public abstract class AbstractComplexConfigTest {
     }
 
     private void testStringList(String key, String... expected) {
-        assertThat(getConfig().get(key).asStringList(), contains(expected));
-        assertThat(getConfig().get(key).asList(String.class), contains(expected));
-        assertThat(getConfig().get(key).mapList(String::toString), contains(expected));
-
-        assertThat(getConfig().get(key).asOptionalList(String.class).get(), contains(expected));
-        assertThat(getConfig().get(key).mapOptionalList(String::toString).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(String.class).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(config -> config.asString().get()).get(), contains(expected));
     }
 
     private void testString(String prefix) {
@@ -108,12 +105,12 @@ public abstract class AbstractComplexConfigTest {
     //
 
     private void testBoolean(Config node, Boolean expected) {
-        assertThat(node.asBoolean(), is(expected));
-        assertThat(node.as(Boolean.class), is(expected));
-        assertThat(node.map(ConfigMappers::toBoolean), is(expected));
+        assertThat(node.asBoolean().get(), is(expected));
+        assertThat(node.as(Boolean.class).get(), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toBoolean).get(), is(expected));
 
-        assertThat(node.asOptional(Boolean.class).get(), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toBoolean).get(), is(expected));
+        assertThat(node.as(Boolean.class).asOptional().get(), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toBoolean).asOptional().get(), is(expected));
     }
 
     private void testBoolean(String key, Boolean expected) {
@@ -121,11 +118,7 @@ public abstract class AbstractComplexConfigTest {
     }
 
     private void testBooleanList(String key, Boolean... expected) {
-        assertThat(getConfig().get(key).asList(Boolean.class), contains(expected));
-        assertThat(getConfig().get(key).mapList(ConfigMappers::toBoolean), contains(expected));
-
-        assertThat(getConfig().get(key).asOptionalList(Boolean.class).get(), contains(expected));
-        assertThat(getConfig().get(key).mapOptionalList(ConfigMappers::toBoolean).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(Boolean.class).get(), contains(expected));
     }
 
     private void testBool(String prefix) {
@@ -152,13 +145,9 @@ public abstract class AbstractComplexConfigTest {
     //
 
     private void testInt(Config node, int expected) {
-        assertThat(node.asInt(), is(expected));
-        assertThat(node.as(Integer.class), is(expected));
-        assertThat(node.map(ConfigMappers::toInt), is(expected));
-
-        assertThat(node.asOptionalInt().getAsInt(), is(expected));
-        assertThat(node.asOptional(Integer.class).get(), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toInt).get(), is(expected));
+        assertThat(node.asInt().get(), is(expected));
+        assertThat(node.as(Integer.class).get(), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toInt).get(), is(expected));
     }
 
     private void testInt(String key, int expected) {
@@ -166,11 +155,7 @@ public abstract class AbstractComplexConfigTest {
     }
 
     private void testIntList(String key, Integer... expected) {
-        assertThat(getConfig().get(key).asList(Integer.class), contains(expected));
-        assertThat(getConfig().get(key).mapList(ConfigMappers::toInt), contains(expected));
-
-        assertThat(getConfig().get(key).asOptionalList(Integer.class).get(), contains(expected));
-        assertThat(getConfig().get(key).mapOptionalList(ConfigMappers::toInt).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(Integer.class).get(), contains(expected));
     }
 
     private void testInt(String prefix) {
@@ -199,13 +184,10 @@ public abstract class AbstractComplexConfigTest {
     //
 
     private void testLong(Config node, long expected) {
-        assertThat(node.asLong(), is(expected));
-        assertThat(node.as(Long.class), is(expected));
-        assertThat(node.map(ConfigMappers::toLong), is(expected));
-
-        assertThat(node.asOptionalLong().getAsLong(), is(expected));
-        assertThat(node.asOptional(Long.class).get(), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toLong).get(), is(expected));
+        ConfigValue<Long> expectedValue = simpleValue(expected);
+        assertThat(node.asLong(), is(expectedValue));
+        assertThat(node.as(Long.class), is(expectedValue));
+        assertThat(node.asString().as(ConfigMappers::toLong), is(expectedValue));
     }
 
     private void testLong(String key, long expected) {
@@ -213,11 +195,7 @@ public abstract class AbstractComplexConfigTest {
     }
 
     private void testLongList(String key, Long... expected) {
-        assertThat(getConfig().get(key).asList(Long.class), contains(expected));
-        assertThat(getConfig().get(key).mapList(ConfigMappers::toLong), contains(expected));
-
-        assertThat(getConfig().get(key).asOptionalList(Long.class).get(), contains(expected));
-        assertThat(getConfig().get(key).mapOptionalList(ConfigMappers::toLong).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(Long.class).get(), contains(expected));
     }
 
     private void testLong(String prefix) {
@@ -245,14 +223,12 @@ public abstract class AbstractComplexConfigTest {
     // double
     //
 
-    private void testDouble(Config node, double expected) {
+    private void testDouble(Config node, double expectedDouble) {
+        ConfigValue<Double> expected = simpleValue(expectedDouble);
         assertThat(node.asDouble(), is(expected));
         assertThat(node.as(Double.class), is(expected));
-        assertThat(node.map(ConfigMappers::toDouble), is(expected));
-
-        assertThat(node.asOptionalDouble().getAsDouble(), is(expected));
-        assertThat(node.asOptional(Double.class).get(), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toDouble).get(), is(expected));
+        assertThat(node.as(new GenericType<Double>(){}), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toDouble), is(expected));
     }
 
     private void testDouble(String key, double expected) {
@@ -260,11 +236,7 @@ public abstract class AbstractComplexConfigTest {
     }
 
     private void testDoubleList(String key, Double... expected) {
-        assertThat(getConfig().get(key).asList(Double.class), contains(expected));
-        assertThat(getConfig().get(key).mapList(ConfigMappers::toDouble), contains(expected));
-
-        assertThat(getConfig().get(key).asOptionalList(Double.class).get(), contains(expected));
-        assertThat(getConfig().get(key).mapOptionalList(ConfigMappers::toDouble).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(Double.class).get(), contains(expected));
     }
 
     private void testDouble(String prefix) {
@@ -292,12 +264,11 @@ public abstract class AbstractComplexConfigTest {
     // URI
     //
 
-    private void testUri(Config node, URI expected) {
-        assertThat(node.as(URI.class), is(expected));
-        assertThat(node.map(ConfigMappers::toUri), is(expected));
+    private void testUri(Config node, URI expectedUri) {
+        ConfigValue<URI> expected = simpleValue(expectedUri);
 
-        assertThat(node.asOptional(URI.class).get(), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toUri).get(), is(expected));
+        assertThat(node.as(URI.class), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toUri), is(expected));
     }
 
     private void testUri(String key, URI expected) {
@@ -305,11 +276,7 @@ public abstract class AbstractComplexConfigTest {
     }
 
     private void testUriList(String key, URI... expected) {
-        assertThat(getConfig().get(key).asList(URI.class), contains(expected));
-        assertThat(getConfig().get(key).mapList(ConfigMappers::toUri), contains(expected));
-
-        assertThat(getConfig().get(key).asOptionalList(URI.class).get(), contains(expected));
-        assertThat(getConfig().get(key).mapOptionalList(ConfigMappers::toUri).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(URI.class).get(), contains(expected));
     }
 
     private void testUri(String prefix) {
@@ -336,8 +303,8 @@ public abstract class AbstractComplexConfigTest {
     private void testMixedList(List<Config> list) {
         assertThat(list, hasSize(3));
 
-        testString(list.get(0).asNodeList().get(0), "string value");
-        testBoolean(list.get(0).asNodeList().get(1).get("p"), true);
+        testString(list.get(0).asNodeList().get().get(0), "string value");
+        testBoolean(list.get(0).asNodeList().get().get(1).get("p"), true);
         testInt(list.get(1), Integer.MIN_VALUE);
         testLong(list.get(2).get("o1.p"), Long.MAX_VALUE);
         testDouble(list.get(2).get("o1.o2.n"), -1234.5678);
@@ -345,9 +312,7 @@ public abstract class AbstractComplexConfigTest {
     }
 
     private void testMixedList(String prefix) {
-        testMixedList(getConfig().get(prefix + "array").asNodeList());
-        testMixedList(getConfig().get(prefix + "array").nodeList().get());
-        testMixedList(getConfig().get(prefix + "array").asOptionalList(Config.class).get());
+        testMixedList(getConfig().get(prefix + "array").asNodeList().get());
     }
 
     @Test
@@ -370,13 +335,8 @@ public abstract class AbstractComplexConfigTest {
         String defaultValue = "default-value";
         String expected = defaultValue;
 
-        assertThat(node.asString(defaultValue), is(expected));
-        assertThat(node.as(String.class, defaultValue), is(expected));
-        assertThat(node.map(String::toString, defaultValue), is(expected));
-
-        assertThat(node.value().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(String.class).orElse(defaultValue), is(expected));
-        assertThat(node.mapOptional(String::toString).orElse(defaultValue), is(expected));
+        assertThat(node.asString().orElse(defaultValue), is(expected));
+        assertThat(node.as(String.class).orElse(defaultValue), is(expected));
     }
 
     @Test
@@ -385,12 +345,8 @@ public abstract class AbstractComplexConfigTest {
         List<String> defaultValue = Arrays.asList("def-1", "def-2", "def-3");
         String[] expected = defaultValue.toArray(new String[0]);
 
-        assertThat(node.asStringList(defaultValue), contains(expected));
-        assertThat(node.asList(String.class, defaultValue), contains(expected));
-        assertThat(node.mapList(String::toString, defaultValue), contains(expected));
-
-        assertThat(node.asOptionalList(String.class).orElse(defaultValue), contains(expected));
-        assertThat(node.mapOptionalList(String::toString).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(String.class).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(aConfig -> aConfig.asString().get()).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -399,12 +355,11 @@ public abstract class AbstractComplexConfigTest {
         Boolean defaultValue = true;
         Boolean expected = defaultValue;
 
-        assertThat(node.asBoolean(defaultValue), is(expected));
-        assertThat(node.as(Boolean.class, defaultValue), is(expected));
-        assertThat(node.map(ConfigMappers::toBoolean, defaultValue), is(expected));
+        assertThat(node.asBoolean().orElse(defaultValue), is(expected));
+        assertThat(node.as(Boolean.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toBoolean).orElse(defaultValue), is(expected));
 
-        assertThat(node.asOptional(Boolean.class).orElse(defaultValue), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toBoolean).orElse(defaultValue), is(expected));
+        assertThat(node.as(Boolean.class).orElse(defaultValue), is(expected));
     }
 
     @Test
@@ -413,11 +368,7 @@ public abstract class AbstractComplexConfigTest {
         List<Boolean> defaultValue = Arrays.asList(true, false, true);
         Boolean[] expected = defaultValue.toArray(new Boolean[0]);
 
-        assertThat(node.asList(Boolean.class, defaultValue), contains(expected));
-        assertThat(node.mapList(ConfigMappers::toBoolean, defaultValue), contains(expected));
-
-        assertThat(node.asOptionalList(Boolean.class).orElse(defaultValue), contains(expected));
-        assertThat(node.mapOptionalList(ConfigMappers::toBoolean).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(Boolean.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -426,13 +377,12 @@ public abstract class AbstractComplexConfigTest {
         int expected = 42;
         int defaultValue = expected;
 
-        assertThat(node.asInt(defaultValue), is(expected));
-        assertThat(node.as(Integer.class, defaultValue), is(expected));
-        assertThat(node.map(ConfigMappers::toInt, defaultValue), is(expected));
+        assertThat(node.asInt().orElse(defaultValue), is(expected));
+        assertThat(node.as(Integer.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toInt).orElse(defaultValue), is(expected));
 
-        assertThat(node.asOptionalInt().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(Integer.class).orElse(defaultValue), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toInt).orElse(defaultValue), is(expected));
+        assertThat(node.asInt().orElse(defaultValue), is(expected));
+        assertThat(node.as(Integer.class).orElse(defaultValue), is(expected));
     }
 
     @Test
@@ -441,11 +391,7 @@ public abstract class AbstractComplexConfigTest {
         List<Integer> defaultValue = Arrays.asList(Integer.MIN_VALUE, 0, Integer.MAX_VALUE);
         Integer[] expected = defaultValue.toArray(new Integer[0]);
 
-        assertThat(node.asList(Integer.class, defaultValue), contains(expected));
-        assertThat(node.mapList(ConfigMappers::toInt, defaultValue), contains(expected));
-
-        assertThat(node.asOptionalList(Integer.class).orElse(defaultValue), contains(expected));
-        assertThat(node.mapOptionalList(ConfigMappers::toInt).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(Integer.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -454,13 +400,12 @@ public abstract class AbstractComplexConfigTest {
         long expected = 42;
         long defaultValue = expected;
 
-        assertThat(node.asLong(defaultValue), is(expected));
-        assertThat(node.as(Long.class, defaultValue), is(expected));
-        assertThat(node.map(ConfigMappers::toLong, defaultValue), is(expected));
+        assertThat(node.asLong().orElse(defaultValue), is(expected));
+        assertThat(node.as(Long.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toLong).orElse(defaultValue), is(expected));
 
-        assertThat(node.asOptionalLong().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(Long.class).orElse(defaultValue), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toLong).orElse(defaultValue), is(expected));
+        assertThat(node.asLong().orElse(defaultValue), is(expected));
+        assertThat(node.as(Long.class).orElse(defaultValue), is(expected));
     }
 
     @Test
@@ -469,11 +414,7 @@ public abstract class AbstractComplexConfigTest {
         List<Long> defaultValue = Arrays.asList(Long.MIN_VALUE, 0L, Long.MAX_VALUE);
         Long[] expected = defaultValue.toArray(new Long[0]);
 
-        assertThat(node.asList(Long.class, defaultValue), contains(expected));
-        assertThat(node.mapList(ConfigMappers::toLong, defaultValue), contains(expected));
-
-        assertThat(node.asOptionalList(Long.class).orElse(defaultValue), contains(expected));
-        assertThat(node.mapOptionalList(ConfigMappers::toLong).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(Long.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -482,13 +423,12 @@ public abstract class AbstractComplexConfigTest {
         double expected = -1234.5678;
         double defaultValue = expected;
 
-        assertThat(node.asDouble(defaultValue), is(expected));
-        assertThat(node.as(Double.class, defaultValue), is(expected));
-        assertThat(node.map(ConfigMappers::toDouble, defaultValue), is(expected));
+        assertThat(node.asDouble().orElse(defaultValue), is(expected));
+        assertThat(node.as(Double.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toDouble).orElse(defaultValue), is(expected));
 
-        assertThat(node.asOptionalDouble().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(Double.class).orElse(defaultValue), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toDouble).orElse(defaultValue), is(expected));
+        assertThat(node.asDouble().orElse(defaultValue), is(expected));
+        assertThat(node.as(Double.class).orElse(defaultValue), is(expected));
     }
 
     @Test
@@ -497,11 +437,7 @@ public abstract class AbstractComplexConfigTest {
         List<Double> defaultValue = Arrays.asList(-1234.5678, 0.0, 1234.5678);
         Double[] expected = defaultValue.toArray(new Double[0]);
 
-        assertThat(node.asList(Double.class, defaultValue), contains(expected));
-        assertThat(node.mapList(ConfigMappers::toDouble, defaultValue), contains(expected));
-
-        assertThat(node.asOptionalList(Double.class).orElse(defaultValue), contains(expected));
-        assertThat(node.mapOptionalList(ConfigMappers::toDouble).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(Double.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -510,11 +446,11 @@ public abstract class AbstractComplexConfigTest {
         URI expected = URI.create("http://localhost");
         URI defaultValue = expected;
 
-        assertThat(node.as(URI.class, defaultValue), is(expected));
-        assertThat(node.map(ConfigMappers::toUri, defaultValue), is(expected));
+        assertThat(node.as(URI.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toUri).orElse(defaultValue), is(expected));
 
-        assertThat(node.asOptional(URI.class).orElse(defaultValue), is(expected));
-        assertThat(node.mapOptional(ConfigMappers::toUri).orElse(defaultValue), is(expected));
+        assertThat(node.as(URI.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toUri).orElse(defaultValue), is(expected));
     }
 
     @Test
@@ -523,11 +459,7 @@ public abstract class AbstractComplexConfigTest {
         List<URI> defaultValue = Arrays.asList(URI.create("http://localhost"), URI.create("http://localhost"));
         URI[] expected = defaultValue.toArray(new URI[0]);
 
-        assertThat(node.asList(URI.class, defaultValue), contains(expected));
-        assertThat(node.mapList(ConfigMappers::toUri, defaultValue), contains(expected));
-
-        assertThat(node.asOptionalList(URI.class).orElse(defaultValue), contains(expected));
-        assertThat(node.mapOptionalList(ConfigMappers::toUri).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(URI.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -536,8 +468,8 @@ public abstract class AbstractComplexConfigTest {
         List<Config> defaultValue = Arrays.asList(Config.create(), Config.create());
         Config[] expected = defaultValue.toArray(new Config[0]);
 
-        assertThat(node.asNodeList(defaultValue), contains(expected));
-        assertThat(node.asOptionalList(Config.class).orElse(defaultValue), contains(expected));
+        assertThat(node.asNodeList().orElse(defaultValue), contains(expected));
+        assertThat(node.asList(Config.class).orElse(defaultValue), contains(expected));
     }
 
     //
@@ -551,7 +483,9 @@ public abstract class AbstractComplexConfigTest {
         expectedKeys.add("tree.array1");
         expectedKeys.add("tree.object1");
 
-        List<String> unexpectedKeys = getConfig().get("tree").asNodeList()
+        List<String> unexpectedKeys = getConfig().get("tree")
+                .asNodeList()
+                .get()
                 .stream()
                 .filter(node -> !expectedKeys.remove(node.key().toString()))
                 .map(Config::key)
@@ -603,10 +537,10 @@ public abstract class AbstractComplexConfigTest {
         Config config = getConfig().get("escaped").detach();
 
         //key
-        assertThat(config.get("oracle~1com.prop1").asString(), is("val1"));
-        assertThat(config.get("oracle~1com.prop2").asString(), is("val2"));
-        assertThat(config.get("oracle.com").asString(), is("1"));
-        assertThat(config.get("oracle.cz").asString(), is("2"));
+        assertThat(config.get("oracle~1com.prop1").asString(), is(simpleValue("val1")));
+        assertThat(config.get("oracle~1com.prop2").asString(), is(simpleValue("val2")));
+        assertThat(config.get("oracle.com").asString(), is(simpleValue("1")));
+        assertThat(config.get("oracle.cz").asString(), is(simpleValue("2")));
 
         //name
         assertThat(config.get("oracle~1com").name(), is("oracle.com"));
@@ -617,7 +551,7 @@ public abstract class AbstractComplexConfigTest {
         assertThat(config.get("oracle.cz").name(), is("cz"));
 
         //child nodes
-        List<Config> children = config.asNodeList();
+        List<Config> children = config.asNodeList().get();
         assertThat(children, hasSize(2));
         assertThat(children.stream().map(Config::name).collect(Collectors.toSet()),
                    containsInAnyOrder("oracle.com", "oracle"));
@@ -629,7 +563,7 @@ public abstract class AbstractComplexConfigTest {
                                             "oracle", "oracle.com", "oracle.cz"));
 
         //map
-        Map<String, String> map = config.asMap();
+        Map<String, String> map = config.asMap().get();
         assertThat(map.keySet(), hasSize(4));
         assertThat(map.get("oracle~1com.prop1"), is("val1"));
         assertThat(map.get("oracle~1com.prop2"), is("val2"));

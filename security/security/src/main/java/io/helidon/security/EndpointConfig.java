@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@
 package io.helidon.security;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.AbacSupport;
@@ -49,15 +48,15 @@ import io.helidon.security.util.AbacSupport;
  * @see SecurityProvider#supportedConfigKeys
  * @see SecurityProvider#supportedAttributes
  */
-public final class EndpointConfig implements AbacSupport {
-    private final Map<AnnotationScope, Map<Class<? extends Annotation>, List<Annotation>>> annotations;
+public class EndpointConfig implements AbacSupport {
+    private final List<SecurityLevel> securityLevels;
     private final AbacSupport attributes;
     private final ClassToInstanceStore<Object> customObjects;
     private final Map<String, Config> configMap;
 
     private EndpointConfig(Builder builder) {
-        this.annotations = Collections.unmodifiableMap(new EnumMap<>(builder.annotations));
-        this.attributes = new BasicAttributes(builder.attributes);
+        this.securityLevels = Collections.unmodifiableList(builder.securityLevels);
+        this.attributes = BasicAttributes.create(builder.attributes);
         this.customObjects = new ClassToInstanceStore<>();
         this.customObjects.putAll(builder.customObjects);
         this.configMap = new HashMap<>(builder.configMap);
@@ -82,13 +81,13 @@ public final class EndpointConfig implements AbacSupport {
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return attributes.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return attributes.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return attributes.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return attributes.abacAttributeNames();
     }
 
     /**
@@ -98,7 +97,7 @@ public final class EndpointConfig implements AbacSupport {
      * @param <U>   type of the configuration
      * @return instance of the custom object if present
      */
-    public <U> Optional<U> getInstance(Class<U> clazz) {
+    public <U> Optional<U> instance(Class<U> clazz) {
         return customObjects.getInstance(clazz);
     }
 
@@ -107,7 +106,7 @@ public final class EndpointConfig implements AbacSupport {
      *
      * @return classes that are keys in the custom object store
      */
-    public Collection<Class<?>> getInstanceKeys() {
+    public Collection<Class<?>> instanceKeys() {
         return customObjects.keys();
     }
 
@@ -117,7 +116,7 @@ public final class EndpointConfig implements AbacSupport {
      * @param configKey key of configuration expected
      * @return Config instance if present in this endpoint configuration
      */
-    public Optional<Config> getConfig(String configKey) {
+    public Optional<Config> config(String configKey) {
         return Optional.ofNullable(configMap.get(configKey));
     }
 
@@ -127,12 +126,27 @@ public final class EndpointConfig implements AbacSupport {
      * @param scopes scopes the caller is interested in
      * @return a map of annotation classes to annotation instances
      * @see SecurityProvider#supportedAnnotations()
+     * @deprecated use iteration over security levels instead
      */
-    public Map<Class<? extends Annotation>, List<Annotation>> getAnnotations(AnnotationScope... scopes) {
+    @Deprecated
+    public Map<Class<? extends Annotation>, List<Annotation>> annotations(AnnotationScope... scopes) {
         Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
 
         for (AnnotationScope scope : scopes) {
-            Map<Class<? extends Annotation>, List<Annotation>> map = annotations.get(scope);
+            Map<Class<? extends Annotation>, List<Annotation>> map;
+            switch (scope) {
+            case APPLICATION:
+                map = securityLevels.get(0).getClassLevelAnnotations();
+                break;
+            case CLASS:
+                map = securityLevels.get(securityLevels.size() - 1).getClassLevelAnnotations();
+                break;
+            case METHOD:
+                map = securityLevels.get(securityLevels.size() - 1).getMethodLevelAnnotations();
+                break;
+            default:
+                map = null;
+            }
             if (null != map) {
                 map.forEach((annotClass, annotList) -> result.computeIfAbsent(annotClass, aClass -> new LinkedList<>())
                         .addAll(annotList));
@@ -143,18 +157,31 @@ public final class EndpointConfig implements AbacSupport {
     }
 
     /**
+     * Get all security levels endpoint configuration object registered.
+     * The first level represents {@link AnnotationScope#APPLICATION} level annotations.
+     * Other levels are representations of each resource and method used on path to get to the target method.
+     *
+     * @return all registered security levels
+     */
+    public List<SecurityLevel> securityLevels() {
+        return securityLevels;
+    }
+
+    /**
      * Get all annotations of a specific class declared on any level.
      *
      * @param annotationClass Class of annotation you want
      * @param scopes          scopes the caller is interested in
      * @param <T>             type of annotation wanted
      * @return list of annotations in order specified by methodFirst parameter
+     * @deprecated use iteration over security levels instead
      */
+    @Deprecated
     @SuppressWarnings("unchecked")
     public <T extends Annotation> List<T> combineAnnotations(Class<T> annotationClass, AnnotationScope... scopes) {
         List<T> result = new LinkedList<>();
 
-        result.addAll((Collection<? extends T>) getAnnotations(scopes).getOrDefault(annotationClass, CollectionsHelper.listOf()));
+        result.addAll((Collection<? extends T>) annotations(scopes).getOrDefault(annotationClass, List.of()));
 
         return result;
     }
@@ -168,9 +195,8 @@ public final class EndpointConfig implements AbacSupport {
         Builder result = builder()
                 .attributes(attributes)
                 .customObjects(customObjects)
-                .configMap(configMap);
-
-        annotations.forEach(result::annotations);
+                .configMap(configMap)
+                .securityLevels(securityLevels);
 
         return result;
     }
@@ -206,11 +232,10 @@ public final class EndpointConfig implements AbacSupport {
      * A fluent API builder for {@link EndpointConfig}.
      */
     public static final class Builder implements io.helidon.common.Builder<EndpointConfig> {
-        private final Map<AnnotationScope, Map<Class<? extends Annotation>, List<Annotation>>> annotations =
-                new EnumMap<>(AnnotationScope.class);
         private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
         private final Map<String, Config> configMap = new HashMap<>();
-        private BasicAttributes attributes = new BasicAttributes();
+        private final List<SecurityLevel> securityLevels = new ArrayList<>();
+        private BasicAttributes attributes = BasicAttributes.create();
 
         private Builder() {
         }
@@ -278,11 +303,26 @@ public final class EndpointConfig implements AbacSupport {
          * @param scope       Annotation scope to add annotations for
          * @param annotations Collected annotations based on security provider requirements.
          * @return updated Builder instance
+         * @deprecated Use the {@link #securityLevels(List) securityLevels} method.
          */
+        @Deprecated
         public Builder annotations(AnnotationScope scope,
                                    Map<Class<? extends Annotation>, List<Annotation>> annotations) {
             // here we must switch from a proxy to actual annotation type
             Map<Class<? extends Annotation>, List<Annotation>> newAnnots = new HashMap<>();
+
+            if (securityLevels.isEmpty()) {
+                securityLevels.add(SecurityLevel.create("APPLICATION").build()); //Security level of Application
+                securityLevels.add(SecurityLevel.create("CLASS").build()); // Security level of class and method
+            }
+            SecurityLevel securityLevel;
+            int index;
+            if (scope == AnnotationScope.APPLICATION) {
+                index = 0;
+            } else {
+                index = securityLevels.size() - 1;
+            }
+            securityLevel = securityLevels.get(index);
 
             annotations.forEach((aClass, list) -> {
                 if (!list.isEmpty()) {
@@ -291,7 +331,24 @@ public final class EndpointConfig implements AbacSupport {
                 }
             });
 
-            this.annotations.put(scope, newAnnots);
+            switch (scope) {
+            case APPLICATION:
+            case CLASS:
+                securityLevels.set(index,
+                                   SecurityLevel.create(securityLevel)
+                                           .withClassAnnotations(newAnnots)
+                                           .build());
+                break;
+            case METHOD:
+                securityLevels.set(index,
+                                   SecurityLevel.create(securityLevel)
+                                           .withMethodAnnotations(newAnnots)
+                                           .build());
+                break;
+            default:
+                throw new IllegalStateException("Scope FIELD is not supported here.");
+            }
+
             return this;
         }
 
@@ -302,7 +359,7 @@ public final class EndpointConfig implements AbacSupport {
          * @return updated builder instance
          */
         private Builder attributes(AbacSupport attributes) {
-            this.attributes = new BasicAttributes(attributes);
+            this.attributes = BasicAttributes.create(attributes);
             return this;
         }
 
@@ -315,6 +372,17 @@ public final class EndpointConfig implements AbacSupport {
          */
         public Builder addAtribute(String key, Object value) {
             this.attributes.put(key, value);
+            return this;
+        }
+
+        /**
+         * Sets security levels to this endpoint configuration builder.
+         *
+         * @param securityLevels list of security levels
+         * @return updated builder instance
+         */
+        public Builder securityLevels(List<SecurityLevel> securityLevels) {
+            this.securityLevels.addAll(securityLevels);
             return this;
         }
     }

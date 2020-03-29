@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,28 +43,25 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Properties;
-import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ConfigMappers}.
@@ -79,46 +76,56 @@ public class ConfigMappersTest {
      */
     @Test
     public void testAllToTypeStaticMethodsAreRegistered() {
-        Set<Class<?>> methods = Arrays.asList(ConfigMappers.class.getMethods()).stream()
+
+        Class[] methodArray = Arrays.stream(ConfigMappers.class.getMethods())
                 .filter(method -> Modifier.isPublic(method.getModifiers())) //public
                 .filter(method -> Modifier.isStatic(method.getModifiers())) //static
                 .filter(method -> method.getName().startsWith("to")) //to*
                 .filter(method -> method.getParameterCount() == 1) //single parameter
-                .filter(method -> String.class.equals(method.getParameterTypes()[0]) || //String or Config parameter
-                        Config.class.equals(method.getParameterTypes()[0]))
+                .filter(this::expectedMapperParamType)
                 .map(Method::getReturnType)
-                .collect(Collectors.toSet());
+                .distinct()
+                .toArray(Class[]::new);
 
-        assertThat(ConfigMappers.BUILT_IN_MAPPERS.keySet(), is(methods));
+        assertThat(ConfigMappers.BUILT_IN_MAPPERS.keySet(), hasItems(methodArray));
+    }
+
+    private boolean expectedMapperParamType(Method method) {
+        Class<?> type = method.getParameterTypes()[0];
+
+        //String, CharSequence or Config parameter
+        return String.class.equals(type)
+                || Config.class.equals(type)
+                || CharSequence.class.equals(type);
     }
 
     @Test
     public void testEssentialMappers() {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "text-text", "string value",
                         "int-p", "2147483647",
                         "long-p", "9223372036854775807",
                         "double-p", "1234.5678")))
                 .build();
 
-        assertThat(manager.map(Config.class, config), is(config));
-        assertThat(manager.map(String.class, config.get("text-text")), is("string value"));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(2147483647));
-        assertThat(manager.map(OptionalLong.class, config.get("long-p")).getAsLong(), is(9223372036854775807L));
-        assertThat(manager.map(OptionalDouble.class, config.get("double-p")).getAsDouble(), is(1234.5678));
+        assertThat(manager.map(config, Config.class), is(config));
+        assertThat(manager.map(config.get("text-text"), String.class), is("string value"));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(2147483647));
+        assertThat(manager.map(config.get("long-p"), OptionalLong.class).getAsLong(), is(9223372036854775807L));
+        assertThat(manager.map(config.get("double-p"), OptionalDouble.class).getAsDouble(), is(1234.5678));
     }
 
     private <T> void assertMapper(String stringValue, Class<T> type, T expectedValue) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("key", stringValue)))
+                .sources(ConfigSources.create(Map.of("key", stringValue)))
                 .build();
 
-        assertThat(manager.map(type, config.get("key")), is(expectedValue));
+        assertThat(manager.map(config.get("key"), type), is(expectedValue));
     }
 
     @Test
@@ -199,22 +206,22 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersPattern() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
+                .sources(ConfigSources.create(Map.of("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
                 .build();
 
-        assertThat(manager.map(Pattern.class, config.get("key")).toString(),
+        assertThat(manager.map(config.get("key"), Pattern.class).toString(),
                    is(Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$").toString()));
     }
 
     @Test
     public void testBuiltinMappersRootProperties() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
         Config config = createConfig();
 
-        Properties rootProperties = manager.map(Properties.class, config);
+        Properties rootProperties = manager.map(config, Properties.class);
         assertThat(rootProperties.entrySet(), hasSize(5));
         assertThat(rootProperties, hasEntry("key1", "value1"));
         assertThat(rootProperties, hasEntry("key2.key21", "value21"));
@@ -225,10 +232,10 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersSubNodeProperties() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
         Config config = createConfig().get("key2");
 
-        Properties key2Properties = manager.map(Properties.class, config);
+        Properties key2Properties = manager.map(config, Properties.class);
         assertThat(key2Properties.entrySet(), hasSize(3));
         assertThat(key2Properties, hasEntry("key2.key21", "value21"));
         assertThat(key2Properties, hasEntry("key2.key22", "value22"));
@@ -237,7 +244,7 @@ public class ConfigMappersTest {
 
     private Config createConfig() {
         return Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         "key1", "value1",
                         "key2.key21", "value21",
                         "key2.key22", "value22",

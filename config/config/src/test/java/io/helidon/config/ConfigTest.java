@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,26 @@
 
 package io.helidon.config;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config.Key;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
+import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.config.Config.Type.LIST;
 import static io.helidon.config.Config.Type.OBJECT;
 import static io.helidon.config.Config.Type.VALUE;
-import static io.helidon.config.ConfigSources.from;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
-import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -49,8 +44,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * General {@link Config} tests.
@@ -58,7 +51,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @see ConfigObjectImplTest
  * @see ConfigListImplTest
  * @see ConfigMissingImplTest
- * @see ConfigValueImplTest
+ * @see ConfigLeafImplTest
  */
 @ExtendWith(RestoreSystemPropertiesExt.class)
 public class ConfigTest {
@@ -66,12 +59,19 @@ public class ConfigTest {
     private static final String TEST_SYS_PROP_NAME = "this_is_my_property-ConfigTest";
     private static final String TEST_SYS_PROP_VALUE = "This Is My SYS PROPS Value.";
 
+    private static final String TEST_ENV_VAR_NAME = "FOO_BAR";
+    private static final String TEST_ENV_VAR_VALUE = "mapped-env-value";
+
+    private static final String OVERRIDE_NAME = "simple";
+    private static final String OVERRIDE_ENV_VAR_VALUE = "unmapped-env-value";
+    private static final String OVERRIDE_SYS_PROP_VALUE = "unmapped-sys-prop-value";
+
     private static final boolean LOG = false;
 
     private static final String OBJECT_VALUE_PREFIX = "object-";
     private static final String LIST_VALUE_PREFIX = "list-";
 
-    private void testKeyNotSet(Config config) {
+    private static void testKeyNotSet(Config config) {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
         assertThat(config.get(TEST_SYS_PROP_NAME).type(), is(Config.Type.MISSING));
@@ -90,7 +90,7 @@ public class ConfigTest {
     private void testKeyFromSysProps(Config config) {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
-        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(ConfigValues.simpleValue(TEST_SYS_PROP_VALUE)));
     }
 
     @Test
@@ -110,21 +110,7 @@ public class ConfigTest {
     private void testKeyFromEnvVars(Config config) {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(TEST_ENV_VAR_VALUE));
-    }
-
-    @Test
-    public void testCreateKeyFromEnvVars() {
-        System.setProperty(TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
-
-        testKeyFromEnvVars(Config.create());
-    }
-
-    @Test
-    public void testBuilderDefaultConfigSourceKeyFromEnvVars() {
-        System.setProperty(TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
-
-        testKeyFromEnvVars(Config.builder().build());
+        assertThat(config.get(ConfigSourceTest.TEST_ENV_VAR_NAME).asString(), is(ConfigValues.simpleValue(ConfigSourceTest.TEST_ENV_VAR_VALUE)));
     }
 
     @Test
@@ -253,14 +239,14 @@ public class ConfigTest {
         Config config = createTestConfig(3).get("object-1");
 
         //full map -> count
-        Map<String, String> allLeafs = config.asMap();
+        Map<String, String> allLeafs = config.asMap().get();
         allLeafs.forEach((key, value) -> log(key));
 
         assertThat(allLeafs.keySet(), hasSize(24));
         log("--------");
 
         //sub-map -> assert keys
-        Map<String, String> subLeafs = config.get("object-2").asMap();
+        Map<String, String> subLeafs = config.get("object-2").asMap().get();
         subLeafs.forEach((key, value) -> log("\"" + key + "\","));
         assertThat(subLeafs.keySet(), containsInAnyOrder(
                 "object-1.object-2.bool-3",
@@ -279,14 +265,14 @@ public class ConfigTest {
         Config config = createTestConfig(3).get("list-1");
 
         //full map -> count
-        Map<String, String> allLeafs = config.asMap();
+        Map<String, String> allLeafs = config.asMap().get();
         allLeafs.forEach((key, value) -> log(key));
 
         assertThat(allLeafs.keySet(), hasSize(24));
         log("--------");
 
         //sub-map -> assert keys
-        Map<String, String> subLeafs = config.get("2").asMap();
+        Map<String, String> subLeafs = config.get("2").asMap().get();
         subLeafs.forEach((key, value) -> log("\"" + key + "\","));
         assertThat(subLeafs.keySet(), containsInAnyOrder(
                 "list-1.2.0",
@@ -305,14 +291,14 @@ public class ConfigTest {
         Config config = createTestConfig(3).get("object-1");
 
         //full properties -> count
-        Properties allLeafs = config.as(Properties.class);
+        Properties allLeafs = config.as(Properties.class).get();
         allLeafs.forEach((key, value) -> log(key));
 
         assertThat(allLeafs.keySet(), hasSize(24));
         log("--------");
 
         //sub-properties -> assert keys
-        Properties subLeafs = config.get("object-2").as(Properties.class);
+        Properties subLeafs = config.get("object-2").as(Properties.class).get();
         subLeafs.forEach((key, value) -> log("\"" + key + "\","));
         assertThat(subLeafs.keySet(), containsInAnyOrder(
                 "object-1.object-2.bool-3",
@@ -331,14 +317,14 @@ public class ConfigTest {
         Config config = createTestConfig(3).get("list-1");
 
         //full properties -> count
-        Properties allLeafs = config.as(Properties.class);
+        Properties allLeafs = config.as(Properties.class).get();
         allLeafs.forEach((key, value) -> log(key));
 
         assertThat(allLeafs.keySet(), hasSize(24));
         log("--------");
 
         //sub-properties -> assert keys
-        Properties subLeafs = config.get("2").as(Properties.class);
+        Properties subLeafs = config.get("2").as(Properties.class).get();
         subLeafs.forEach((key, value) -> log("\"" + key + "\","));
         assertThat(subLeafs.keySet(), containsInAnyOrder(
                 "list-1.2.0",
@@ -362,7 +348,7 @@ public class ConfigTest {
             config = config.get("object-1").detach();
             {
                 //detach & map
-                Map<String, String> subLeafs = config.asMap();
+                Map<String, String> subLeafs = config.asMap().get();
                 subLeafs.forEach((key, value) -> log("\"" + key + "\","));
                 //expected size
                 assertThat(subLeafs.keySet(), hasSize(24));
@@ -397,7 +383,7 @@ public class ConfigTest {
             config = config.get("object-2").detach();
             {
                 //detach & map
-                Map<String, String> subLeafs = config.asMap();
+                Map<String, String> subLeafs = config.asMap().get();
                 subLeafs.forEach((key, value) -> log("\"" + key + "\","));
                 assertThat(subLeafs.keySet(), containsInAnyOrder(
                         "bool-3",
@@ -447,7 +433,7 @@ public class ConfigTest {
             config = config.get("list-1").detach();
             {
                 //detach & map
-                Map<String, String> subLeafs = config.asMap();
+                Map<String, String> subLeafs = config.asMap().get();
                 subLeafs.forEach((key, value) -> log("\"" + key + "\","));
                 //expected size
                 assertThat(subLeafs.keySet(), hasSize(24));
@@ -483,7 +469,7 @@ public class ConfigTest {
             config = config.get("2").detach();
             {
                 //detach & map
-                Map<String, String> subLeafs = config.asMap();
+                Map<String, String> subLeafs = config.asMap().get();
                 subLeafs.forEach((key, value) -> log("\"" + key + "\","));
                 assertThat(subLeafs.keySet(), containsInAnyOrder(
                         "0",
@@ -523,204 +509,6 @@ public class ConfigTest {
         }
     }
 
-    @Test
-    public void testAsWithDefaultValueExtendsT() {
-        CharSequence expected = "string value";
-        StringBuilder fallback = new StringBuilder("fallback value");
-        Config config = Config.builder()
-                .sources(from(ObjectNode.builder().addValue("text", "string value").build()))
-                .disableParserServices()
-                .disableMapperServices()
-                .disableFilterServices()
-                .build()
-                .get("text");
-
-        // AS
-        {
-            CharSequence actual = config.as(String.class);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.as(String.class, fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.<CharSequence>asOptional(String.class).orElse(fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.<CharSequence>asOptional(String.class).orElseGet(() -> fallback);
-            assertThat(actual, is(expected));
-        }
-    }
-
-    @Test
-    public void testMapWithDefaultValueExtendsT() {
-        CharSequence expected = "string value";
-        StringBuilder fallback = new StringBuilder("fallback value");
-        Config config = Config.builder()
-                .sources(from(ObjectNode.builder().addValue("text", "string value").build()))
-                .disableParserServices()
-                .disableMapperServices()
-                .disableFilterServices()
-                .build()
-                .get("text");
-
-        // MAP Function<String, T>
-        Function<String, String> functionMapper = new Function<String, String>() {
-            @Override
-            public String apply(String value) {
-                return new String(value);
-            }
-        };
-        {
-            CharSequence actual = config.map(functionMapper);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.map(functionMapper, fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.<CharSequence>mapOptional(functionMapper).orElse(fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.<CharSequence>mapOptional(functionMapper).orElseGet(() -> fallback);
-            assertThat(actual, is(expected));
-        }
-        // MAP ConfigMapper<T>
-        ConfigMapper<String> configMapper = new ConfigMapper<String>() {
-            @Override
-            public String apply(Config config) throws ConfigMappingException, MissingValueException {
-                return config.value().get();
-            }
-        };
-        {
-            CharSequence actual = config.map(configMapper);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.map(configMapper, fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.<CharSequence>mapOptional(configMapper).orElse(fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            CharSequence actual = config.<CharSequence>mapOptional(configMapper).orElseGet(() -> fallback);
-            assertThat(actual, is(expected));
-        }
-    }
-
-    @Test
-    public void testAsListWithDefaultValueExtendsT() {
-        List<CharSequence> expected = CollectionsHelper.listOf("value 1", "value 2");
-        List<CharSequence> fallback = CollectionsHelper.listOf(new StringBuilder("fallback value"));
-        Config config = Config.builder()
-                .sources(from(ObjectNode.builder()
-                                      .addList("list", ListNode.builder()
-                                              .addValue("value 1")
-                                              .addValue("value 2")
-                                              .build())
-                                      .build()))
-                .disableParserServices()
-                .disableMapperServices()
-                .disableFilterServices()
-                .build()
-                .get("list");
-
-        // AS LIST
-        {
-            List<CharSequence> actual = config.asList(String.class);
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.asList(String.class, fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.<CharSequence>asOptionalList(String.class)
-                    .orElse(new LinkedList<>(fallback));
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.<CharSequence>asOptionalList(String.class)
-                    .orElseGet(() -> new LinkedList<>(fallback));
-            assertThat(actual, is(expected));
-        }
-    }
-
-    @Test
-    public void testMapListWithDefaultValueExtendsT() {
-        List<CharSequence> expected = CollectionsHelper.listOf("value 1", "value 2");
-        List<CharSequence> fallback = CollectionsHelper.listOf(new StringBuilder("fallback value"));
-        Config config = Config.builder()
-                .sources(from(ObjectNode.builder()
-                                      .addList("list", ListNode.builder()
-                                              .addValue("value 1")
-                                              .addValue("value 2")
-                                              .build())
-                                      .build()))
-                .disableParserServices()
-                .disableMapperServices()
-                .disableFilterServices()
-                .build()
-                .get("list");
-
-        // MAP LIST Function<String, T>
-        Function<String, String> functionMapper = new Function<String, String>() {
-            @Override
-            public String apply(String value) {
-                return new String(value);
-            }
-        };
-        {
-            List<CharSequence> actual = config.mapList(functionMapper);
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.mapList(functionMapper, fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.<CharSequence>mapOptionalList(functionMapper)
-                    .orElse(new LinkedList<>(fallback));
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.<CharSequence>mapOptionalList(functionMapper)
-                    .orElseGet(() -> new LinkedList<>(fallback));
-            assertThat(actual, is(expected));
-        }
-        // MAP LIST ConfigMapper<T>
-        ConfigMapper<String> configMapper = new ConfigMapper<String>() {
-            @Override
-            public String apply(Config config) throws ConfigMappingException, MissingValueException {
-                return config.value().get();
-            }
-        };
-        {
-            List<CharSequence> actual = config.mapList(configMapper);
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.mapList(configMapper, fallback);
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.<CharSequence>mapOptionalList(configMapper)
-                    .orElse(new LinkedList<>(fallback));
-            assertThat(actual, is(expected));
-        }
-        {
-            List<CharSequence> actual = config.<CharSequence>mapOptionalList(configMapper)
-                    .orElseGet(() -> new LinkedList<>(fallback));
-            assertThat(actual, is(expected));
-        }
-    }
-
     /**
      * Similar test is copied to in {@code config-hocon} module, {@code HoconConfigParserTest} class,
      * method {@code testConfigKeyEscapedNameComplex};
@@ -730,8 +518,8 @@ public class ConfigTest {
     @Test
     public void testConfigKeyEscapedNameComplex() {
         Config config = Config
-                .withSources(
-                        from(ObjectNode
+                .builder(
+                        ConfigSources.create(ObjectNode
                                      .builder()
                                      .addObject(Key.escapeName("oracle.com"), ObjectNode.builder()
                                              .addValue("prop1", "val1")
@@ -750,10 +538,10 @@ public class ConfigTest {
                 .build();
 
         //key
-        assertThat(config.get("oracle~1com.prop1").asString(), is("val1"));
-        assertThat(config.get("oracle~1com.prop2").asString(), is("val2"));
-        assertThat(config.get("oracle.com").asString(), is("1"));
-        assertThat(config.get("oracle.cz").asString(), is("2"));
+        assertThat(config.get("oracle~1com.prop1").asString(), is(ConfigValues.simpleValue("val1")));
+        assertThat(config.get("oracle~1com.prop2").asString(), is(ConfigValues.simpleValue("val2")));
+        assertThat(config.get("oracle.com").asString(), is(ConfigValues.simpleValue("1")));
+        assertThat(config.get("oracle.cz").asString(), is(ConfigValues.simpleValue("2")));
 
         //name
         assertThat(config.get("oracle~1com").name(), is("oracle.com"));
@@ -764,7 +552,7 @@ public class ConfigTest {
         assertThat(config.get("oracle.cz").name(), is("cz"));
 
         //child nodes
-        List<Config> children = config.asNodeList();
+        List<Config> children = config.asNodeList().get();
         assertThat(children, hasSize(2));
         assertThat(children.stream().map(Config::name).collect(Collectors.toSet()),
                    containsInAnyOrder("oracle.com", "oracle"));
@@ -776,7 +564,7 @@ public class ConfigTest {
                                             "oracle", "oracle.com", "oracle.cz"));
 
         //map
-        Map<String, String> map = config.asMap();
+        Map<String, String> map = config.asMap().get();
         assertThat(map.keySet(), hasSize(4));
         assertThat(map.get("oracle~1com.prop1"), is("val1"));
         assertThat(map.get("oracle~1com.prop2"), is("val2"));
@@ -802,7 +590,7 @@ public class ConfigTest {
     @Test
     public void testComplexNodesWithSimpleValues() {
         /*
-        This method uses variants of the methods for creating test configs and 
+        This method uses variants of the methods for creating test configs and
         objects to assign values to the complex nodes (object- and list-type)
         and make sure the values are as expected.
          */
@@ -814,9 +602,80 @@ public class ConfigTest {
 
         testKeyAndTypeAndGet(config);
 
-        assertThat(config.get("object-1").asString(), is(obj1Value));
-        assertThat(config.get("object-1.object-2").asString(), is(obj1_2Value));
-        assertThat(config.get("list-1").asString(), is(LIST_VALUE_PREFIX + valueQual + "-2"));
+        assertThat(config.get("object-1").asString(), is(ConfigValues.simpleValue(obj1Value)));
+        assertThat(config.get("object-1.object-2").asString(), is(ConfigValues.simpleValue(obj1_2Value)));
+        assertThat(config.get("list-1").asString(), is(ConfigValues.simpleValue(LIST_VALUE_PREFIX + valueQual + "-2")));
+    }
+
+    @Test
+    void testImplicitSysPropAndEnvVarPrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.create();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
+    }
+
+    @Test
+    void testExplicitSysPropAndEnvVarPrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.builder()
+                              .sources(ConfigSources.systemProperties(),
+                                       ConfigSources.environmentVariables())
+                              .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
+
+        config = Config.builder()
+                       .sources(ConfigSources.environmentVariables(),
+                                ConfigSources.systemProperties())
+                       .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_ENV_VAR_VALUE));
+    }
+
+    @Test
+    void testExplicitEnvVarSourceAndImplicitSysPropSourcePrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.builder()
+                              .sources(ConfigSources.environmentVariables())
+                              .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        // Implicit sources always take precedence! (??)
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_SYS_PROP_VALUE));
+    }
+
+    @Test
+    void testExplicitSysPropSourceAndImplicitEnvVarSourcePrecedence() {
+        System.setProperty(OVERRIDE_NAME, OVERRIDE_SYS_PROP_VALUE);
+        System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
+
+        Config config = Config.builder()
+                              .sources(ConfigSources.systemProperties())
+                              .build();
+
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        // Implicit sources always take precedence! (??)
+        assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_ENV_VAR_VALUE));
     }
 
     private void testConfigKeyEscapeUnescapeName(String name, String escapedName) {
@@ -834,7 +693,7 @@ public class ConfigTest {
         return createTestConfigBuilder(maxLevels)
                 .build();
     }
-    
+
     public static Config createTestConfig(int maxLevels, String valueQualifier) {
         return createTestConfigBuilder(maxLevels, valueQualifier)
                 .build();
@@ -851,7 +710,7 @@ public class ConfigTest {
 
     private static Config.Builder createTestConfigBuilder(ObjectNode oNode) {
         return Config.builder()
-                .sources(from(oNode))
+                .sources(ConfigSources.create(oNode))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableParserServices()
@@ -866,7 +725,7 @@ public class ConfigTest {
         return createTestObjectBuilder(level, maxLevels)
                 .build();
     }
-    
+
     private static ObjectNode createTestObject(
             int level, int maxLevels, String valueQualifier) {
         if (maxLevels < level) {
@@ -929,7 +788,7 @@ public class ConfigTest {
                 .value(LIST_VALUE_PREFIX + valueQualifier)
                 .build();
     }
-    
+
     private static ListNode.Builder createTestListBuilder(int level, int maxLevels) {
         return ListNode.builder()
                 .addValue("string value " + level)

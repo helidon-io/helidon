@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,11 @@
 package io.helidon.webserver;
 
 import java.net.InetAddress;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -86,6 +91,13 @@ public interface SocketConfiguration {
     SSLContext ssl();
 
     /**
+     * Returns the SSL protocols to enable, or {@code null} to enable the default
+     * protocols.
+     * @return the SSL protocols to enable
+     */
+    Set<String> enabledSslProtocols();
+
+    /**
      * Creates a builder of {@link SocketConfiguration} class.
      *
      * @return a builder
@@ -100,6 +112,7 @@ public interface SocketConfiguration {
         private int port = 0;
         private InetAddress bindAddress = null;
         private SSLContext sslContext = null;
+        private final Set<String> enabledSslProtocols = new HashSet<>();
         private int backlog = 0;
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;
@@ -190,13 +203,39 @@ public interface SocketConfiguration {
          *                          method execution
          * @return this builder
          */
-        public Builder ssl(io.helidon.common.Builder<? extends SSLContext> sslContextBuilder) {
-            return ssl(sslContextBuilder != null ? sslContextBuilder.build() : null);
+        public Builder ssl(Supplier<? extends SSLContext> sslContextBuilder) {
+            return ssl(sslContextBuilder != null ? sslContextBuilder.get() : null);
+        }
+
+        /**
+         * Configures the SSL protocols to enable with the server socket.
+         * @param protocols protocols to enable, if {@code null} enables the
+         * default protocols
+         * @return this builder
+         */
+        public Builder enabledSSlProtocols(String... protocols){
+            this.enabledSslProtocols.addAll(Arrays.asList(protocols));
+            return this;
+        }
+
+        /**
+         * Configures the SSL protocols to enable with the server socket.
+         * @param protocols protocols to enable, if {@code null} or empty enables
+         *  the default protocols
+         * @return this builder
+         */
+        public Builder enabledSSlProtocols(List<String> protocols){
+            if (protocols != null) {
+                this.enabledSslProtocols.addAll(protocols);
+            }
+            return this;
         }
 
         @Override
         public SocketConfiguration build() {
-            return new ServerBasicConfig.SocketConfig(port, bindAddress, sslContext, backlog, timeoutMillis, receiveBufferSize);
+            return new ServerBasicConfig.SocketConfig(port, bindAddress,
+                    sslContext, enabledSslProtocols, backlog, timeoutMillis,
+                    receiveBufferSize);
         }
     }
 }

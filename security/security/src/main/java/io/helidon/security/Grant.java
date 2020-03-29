@@ -35,32 +35,7 @@ public class Grant implements AbacSupport, Principal {
     private final AbacSupport properties;
     private final String type;
     private final String name;
-
-    /**
-     * Create an instance for a type and a name.
-     *
-     * @param type type of the grant (currently in use are "role" and "scope")
-     * @param name name of the grant (e.g. "admin", "calendar-read" etc.)
-     */
-    protected Grant(String type, String name) {
-        this(builder()
-                     .type(type)
-                     .name(name));
-    }
-
-    /**
-     * Create an instance for a type and a name and a set of custom attributes.
-     *
-     * @param type        type of the grant (currently in use are "role" and "scope")
-     * @param name        name of the grant (e.g. "admin", "calendar-read" etc.)
-     * @param abacSupport container of attributes to be available to attribute based access control (e.g. "nickname")
-     */
-    protected Grant(String type, String name, AbacSupport abacSupport) {
-        this(builder()
-                     .type(type)
-                     .name(name)
-                     .attributes(abacSupport));
-    }
+    private final String origin;
 
     /**
      * Create an instance based on a builder.
@@ -70,9 +45,12 @@ public class Grant implements AbacSupport, Principal {
     protected Grant(Builder<?> builder) {
         this.type = builder.type;
         this.name = builder.name;
-        BasicAttributes properties = new BasicAttributes(builder.properties);
+        this.origin = builder.origin;
+
+        BasicAttributes properties = BasicAttributes.create(builder.properties);
         properties.put("type", type);
         properties.put("name", name);
+        properties.put("origin", origin);
         this.properties = properties;
     }
 
@@ -81,18 +59,18 @@ public class Grant implements AbacSupport, Principal {
      *
      * @return builder instance
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder<?> builder() {
+        return new Builder<>();
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return properties.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return properties.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return properties.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return properties.abacAttributeNames();
     }
 
     /**
@@ -105,7 +83,7 @@ public class Grant implements AbacSupport, Principal {
      *
      * @return type of the grant
      */
-    public String getType() {
+    public String type() {
         return type;
     }
 
@@ -120,15 +98,25 @@ public class Grant implements AbacSupport, Principal {
     }
 
     /**
-     * A fluent API builder for {@link Grant}.
+     * Origin of this grant - this may be an arbitrary string, URI, component creating it etc.
+     * @return origin of this grant
+     */
+    public String origin() {
+        return origin;
+    }
+
+    /**
+     * A fluent API builder for {@link Grant} to be extended by other {@link Grant} implementations.
      *
      * @param <T> type of the builder, needed for builder inheritance
      */
-    public static class Builder<T extends Builder> implements io.helidon.common.Builder<Grant> {
-        private BasicAttributes properties = new BasicAttributes();
+    public static class Builder<T extends Builder<T>> implements io.helidon.common.Builder<Grant> {
+        private BasicAttributes properties = BasicAttributes.create();
         private String type;
         private String name;
-        private T instance;
+        private String origin = "builder";
+
+        private final T instance;
 
         /**
          * Create a new instance.
@@ -166,6 +154,17 @@ public class Grant implements AbacSupport, Principal {
         }
 
         /**
+         * Origin of this grant (e.g. name of a system).
+         *
+         * @param origin who granted this grant?
+         * @return updated builder instance
+         */
+        public T origin(String origin) {
+            this.origin = origin;
+            return instance;
+        }
+
+        /**
          * Attributes of this grant.
          *
          * @param attribs Attributes to add to this grant, allowing us to extend the information known (such as "nickname",
@@ -173,7 +172,7 @@ public class Grant implements AbacSupport, Principal {
          * @return updated builder instance
          */
         public T attributes(AbacSupport attribs) {
-            this.properties = new BasicAttributes(attribs);
+            this.properties = BasicAttributes.create(attribs);
             return instance;
         }
 

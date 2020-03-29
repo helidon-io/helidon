@@ -49,7 +49,7 @@ public class SecurityClientBuilder<T extends SecurityResponse>
      */
     @Override
     public SecurityClient<T> build() {
-        return factory.create(security, context, super.buildRequest(), super.getProviderName());
+        return factory.create(security, context, super.buildRequest(), super.providerName());
     }
 
     /**
@@ -57,7 +57,7 @@ public class SecurityClientBuilder<T extends SecurityResponse>
      *
      * @return {@link SecurityResponse} of expected type
      */
-    public T get() {
+    public T buildAndGet() {
         return build().get();
     }
 

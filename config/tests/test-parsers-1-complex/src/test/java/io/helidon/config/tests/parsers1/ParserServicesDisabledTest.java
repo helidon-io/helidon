@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package io.helidon.config.tests.parsers1;
 
-import io.helidon.common.CollectionsHelper;
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.stringContainsInOrder;
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Parser tests with {@link Config.Builder#disableParserServices}.
@@ -39,16 +40,11 @@ public class ParserServicesDisabledTest extends AbstractParserServicesTest {
 
     @Test
     public void testNoSuitableParser() {
-        final ConfigException ce = Assertions.assertThrows(ConfigException.class, () -> {
+        final ConfigException ce = assertThrows(ConfigException.class, () -> {
             configBuilder().build();
         });
-        
-        assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "Cannot load data from mandatory source",
-                "InMemoryConfig[String]",
-                "Cannot find suitable parser for 'text/x-java-properties' media type.")).matches(ce.getMessage()));
-        assertTrue(instanceOf(ConfigException.class).matches(ce.getCause())); //Cannot find suitable parser for 'text/x-java-properties' media type.
 
+        assertThat(ce.getMessage(), stringContainsInOrder(List.of(
+                "Cannot find suitable parser for 'text/x-java-properties' media type for config source ParsableInMemory[String]")));
     }
-
 }

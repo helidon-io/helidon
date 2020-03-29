@@ -20,10 +20,11 @@ import java.util.Locale;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Copy of {@link MapperServicesEnabledTest} that overrides Config Mappers loaded on class/module-path.

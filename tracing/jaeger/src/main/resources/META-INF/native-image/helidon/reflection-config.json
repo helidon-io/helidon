@@ -1,0 +1,10 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+        "org.slf4j.Logger",
+        "io.jaegertracing.spi.Sampler"
+    ],
+    "classes": [
+    ]
+}

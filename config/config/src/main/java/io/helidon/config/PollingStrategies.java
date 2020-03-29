@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,11 @@
 
 package io.helidon.config;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Supplier;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.config.internal.FilesystemWatchPollingStrategy;
-import io.helidon.config.internal.ScheduledPollingStrategy;
-import io.helidon.config.internal.ScheduledPollingStrategy.RegularRecurringPolicy;
+import io.helidon.common.Builder;
+import io.helidon.config.ScheduledPollingStrategy.RegularRecurringPolicy;
 import io.helidon.config.spi.PollingStrategy;
 
 /**
@@ -34,7 +30,6 @@ import io.helidon.config.spi.PollingStrategy;
  * {@link PollingStrategy} implementations.
  *
  * @see #regular(java.time.Duration)
- * @see #watch(java.nio.file.Path)
  * @see #nop()
  * @see io.helidon.config.spi.PollingStrategy
  */
@@ -64,19 +59,9 @@ public final class PollingStrategies {
     }
 
     /**
-     * Provides a filesystem watch polling strategy with a specified watched path.
-     *
-     * @param watchedPath a path which should be watched
-     * @return a filesystem watching polling strategy
-     */
-    public static FilesystemWatchBuilder watch(Path watchedPath) {
-        return new FilesystemWatchBuilder(watchedPath);
-    }
-
-    /**
      * A builder for a scheduled polling strategy.
      */
-    public static final class ScheduledBuilder implements Supplier<PollingStrategy> {
+    public static final class ScheduledBuilder implements Builder<PollingStrategy> {
 
         private static final String INTERVAL_KEY = "interval";
 
@@ -103,8 +88,8 @@ public final class PollingStrategies {
          *                                supplied configuration node to an instance of a given Java type.
          * @see PollingStrategies#regular(Duration)
          */
-        public static ScheduledBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-            return PollingStrategies.regular(metaConfig.get(INTERVAL_KEY).as(Duration.class));
+        public static ScheduledBuilder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
+            return PollingStrategies.regular(metaConfig.get(INTERVAL_KEY).as(Duration.class).get());
         }
 
         /**
@@ -125,49 +110,10 @@ public final class PollingStrategies {
          *
          * @return the new instance
          */
+        @Override
         public PollingStrategy build() {
             ScheduledExecutorService executor = this.executor;
-            return new ScheduledPollingStrategy(recurringPolicy, executor);
-        }
-
-        @Override
-        public PollingStrategy get() {
-            return build();
-        }
-    }
-
-    /**
-     * A builder for a filesystem watch polling strategy.
-     */
-    public static final class FilesystemWatchBuilder implements Supplier<PollingStrategy> {
-
-        private Path path;
-        private ScheduledExecutorService executor;
-
-        /*private*/ FilesystemWatchBuilder(Path path) {
-            this.path = path;
-        }
-
-        /**
-         * Sets a custom {@link ScheduledExecutorService executor} used to watch filesystem changes on.
-         * <p>
-         * By default single-threaded executor is used.
-         *
-         * @param executor the custom scheduled executor service
-         * @return a modified builder instance
-         */
-        public FilesystemWatchBuilder executor(ScheduledExecutorService executor) {
-            this.executor = executor;
-            return this;
-        }
-
-        /**
-         * Builds a new polling strategy.
-         *
-         * @return the new instance
-         */
-        public PollingStrategy build() {
-            return new FilesystemWatchPollingStrategy(path, executor);
+            return ScheduledPollingStrategy.create(recurringPolicy, executor);
         }
 
         @Override
@@ -189,7 +135,8 @@ public final class PollingStrategies {
         /**
          * NOP singleton instance.
          */
-        private static final PollingStrategy NOP = () -> Flow.Subscriber::onComplete;
+        private static final PollingStrategy NOP = polled -> {
+        };
     }
 
 }

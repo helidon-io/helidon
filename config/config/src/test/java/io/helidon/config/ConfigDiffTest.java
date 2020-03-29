@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,45 +19,44 @@ package io.helidon.config;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.common.CollectionsHelper;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ConfigDiff}.
  */
 public class ConfigDiffTest {
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "new value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b.a", "value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_LEAF = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_LEAF = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "value",
             "a.c", "value"
     );
 
-    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_OBJECT = CollectionsHelper.mapOf(
+    private static final Map<String, String> OBJECT_WITH_LEAVES_ADDED_OBJECT = Map.of(
             "o.p.q", "something",
             "a.a", "value",
             "a.b", "value",
@@ -68,20 +67,20 @@ public class ConfigDiffTest {
     public void testNoChange() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThat(diff.changedKeys(), is(empty()));
 
     }
@@ -90,20 +89,20 @@ public class ConfigDiffTest {
     public void testChangeLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b");
 
     }
@@ -112,20 +111,20 @@ public class ConfigDiffTest {
     public void testAddLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.c");
 
     }
@@ -134,20 +133,20 @@ public class ConfigDiffTest {
     public void testRemovedLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.c");
 
     }
@@ -156,20 +155,20 @@ public class ConfigDiffTest {
     public void testChangedAndRemovedLeaves() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.c");
 
     }
@@ -178,20 +177,20 @@ public class ConfigDiffTest {
     public void testLeafChangedToObject() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.b.a");
 
     }
@@ -200,20 +199,20 @@ public class ConfigDiffTest {
     public void testObjectChangedToLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.b.a");
 
     }
@@ -222,20 +221,20 @@ public class ConfigDiffTest {
     public void testAddedObject() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "a.c.a", "a.c", "a", "");
 
     }
@@ -244,20 +243,20 @@ public class ConfigDiffTest {
     public void testRemovedObject() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "a.c.a", "a.c", "a", "");
 
     }

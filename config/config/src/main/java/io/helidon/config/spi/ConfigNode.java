@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,29 @@ package io.helidon.config.spi;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.Optional;
 
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.ListNodeBuilderImpl;
-import io.helidon.config.internal.ObjectNodeBuilderImpl;
-import io.helidon.config.internal.ValueNodeImpl;
+import io.helidon.config.ListNodeBuilderImpl;
+import io.helidon.config.ObjectNodeBuilderImpl;
+import io.helidon.config.ValueNodeImpl;
 
 /**
  * Marker interface identifying a config node implementation.
  */
-public interface ConfigNode extends Supplier<String> {
+public interface ConfigNode {
     /**
      * Get the type of this node.
      *
      * @return NodeType this node represents
      */
-    NodeType getNodeType();
+    NodeType nodeType();
+
+    /**
+     * Get the direct value of this config node. Any node type can have a direct value.
+     *
+     * @return a value if present, {@code empty} otherwise
+     */
+    Optional<String> value();
 
     /**
      * Base types of config nodes.
@@ -57,13 +63,19 @@ public interface ConfigNode extends Supplier<String> {
     /**
      * Single string-based configuration value.
      * <p>
-     * NOTE: Do not implement this interface yourself but rather use {@link #from(String)}.
+     * NOTE: Do not implement this interface yourself but rather use {@link #create(String)}.
      */
     interface ValueNode extends ConfigNode {
         @Override
-        default NodeType getNodeType() {
+        default NodeType nodeType() {
             return NodeType.VALUE;
         }
+
+        /**
+         * Get the value of this value node.
+         * @return string with the node value
+         */
+        String get();
 
         /**
          * Create new instance of the {@link ValueNode} from specified String {@code value}.
@@ -71,8 +83,8 @@ public interface ConfigNode extends Supplier<String> {
          * @param value string value
          * @return new instance of the {@link ValueNode}
          */
-        static ValueNode from(String value) {
-            return new ValueNodeImpl(value);
+        static ValueNode create(String value) {
+            return ValueNodeImpl.create(value);
         }
     }
 
@@ -85,7 +97,7 @@ public interface ConfigNode extends Supplier<String> {
      */
     interface ListNode extends ConfigNode, List<ConfigNode> {
         @Override
-        default NodeType getNodeType() {
+        default NodeType nodeType() {
             return NodeType.LIST;
         }
 
@@ -101,7 +113,7 @@ public interface ConfigNode extends Supplier<String> {
         /**
          * Builder to build {@link ListNode} instance.
          */
-        interface Builder {
+        interface Builder extends io.helidon.common.Builder<ListNode> {
             /**
              * Adds String value to the list.
              *
@@ -109,7 +121,7 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             default Builder addValue(String value) {
-                return addValue(ValueNode.from(value));
+                return addValue(ValueNode.create(value));
             }
 
             /**
@@ -143,14 +155,6 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             Builder value(String value);
-
-            /**
-             * Build new instance of {@link ListNode}.
-             *
-             * @return new instance of {@link ListNode}.
-             */
-            ListNode build();
-
         }
     }
 
@@ -169,7 +173,7 @@ public interface ConfigNode extends Supplier<String> {
      */
     interface ObjectNode extends ConfigNode, Map<String, ConfigNode> {
         @Override
-        default NodeType getNodeType() {
+        default NodeType nodeType() {
             return NodeType.OBJECT;
         }
 
@@ -179,7 +183,20 @@ public interface ConfigNode extends Supplier<String> {
          * @return empty object node.
          */
         static ObjectNode empty() {
-            return ConfigUtils.EmptyObjectNodeHolder.EMPTY;
+            return SpiHelper.EmptyObjectNodeHolder.EMPTY;
+        }
+
+        /**
+         * Returns an object node containing a single simple value.
+         *
+         * @param key key of the value
+         * @param value value
+         * @return a new object node
+         */
+        static ObjectNode simple(String key, String value) {
+            return ObjectNode.builder()
+                    .addValue(key, value)
+                    .build();
         }
 
         /**
@@ -188,7 +205,7 @@ public interface ConfigNode extends Supplier<String> {
          * @return new instance of {@link Builder}.
          */
         static Builder builder() {
-            return new ObjectNodeBuilderImpl();
+            return ObjectNodeBuilderImpl.create();
         }
 
         /**
@@ -204,7 +221,7 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             default Builder addValue(String key, String value) {
-                return addValue(key, ValueNode.from(value));
+                return addValue(key, ValueNode.create(value));
             }
 
             /**
@@ -249,6 +266,15 @@ public interface ConfigNode extends Supplier<String> {
              */
             ObjectNode build();
 
+            /**
+             * Add a config node.
+             * The method will determine the type of the node and add it to builder.
+             *
+             * @param key key of the node
+             * @param node node to be added
+             * @return modified builder
+             */
+            Builder addNode(String key, ConfigNode node);
         }
     }
 

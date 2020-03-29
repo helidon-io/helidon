@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-io.helidon.config.internal.AutoLoadedConfigFilter
+io.helidon.config.AutoLoadedConfigFilter
 
 # The ordering of the next two entries is important, at least as of this writing.
 # It makes sure that the (current) order in which ServiceLoader.load delivers
@@ -22,8 +22,6 @@ io.helidon.config.internal.AutoLoadedConfigFilter
 # This helps make sure that the ordering logic in the config implementation
 # works correctly to process filters in the correct priority order. Of course,
 # the way ServiceLoader.load operates may change as Java evolves.
-io.helidon.config.internal.AutoLoadedConfigHighPriority
-io.helidon.config.internal.AutoLoadedConfigLowPriority
+io.helidon.config.AutoLoadedConfigHighPriority
+io.helidon.config.AutoLoadedConfigLowPriority
 
-# The following is for testing auto-loaded ValueResolvingFilter
-io.helidon.config.internal.ValueResolvingFilter

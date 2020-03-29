@@ -1,0 +1,20 @@
+[
+    {
+        "bean-class": "org.eclipse.microprofile.health.HealthCheck",
+        "ifaces": [
+            "io.helidon.health.checks.HeapMemoryHealthCheck"
+        ]
+    },
+    {
+        "bean-class": "org.eclipse.microprofile.health.HealthCheck",
+        "ifaces": [
+            "io.helidon.health.checks.DeadlockHealthCheck"
+        ]
+    },
+    {
+        "bean-class": "org.eclipse.microprofile.health.HealthCheck",
+        "ifaces": [
+            "io.helidon.health.checks.DiskSpaceHealthCheck"
+        ]
+    }
+]

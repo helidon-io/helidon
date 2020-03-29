@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,109 +18,132 @@ package io.helidon.config;
 
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.common.GenericType;
+import io.helidon.config.ConfigMapperManager.MapperProviders;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+
 /**
- * Tests part of {@link BuilderImpl} related to {@link ConfigMapper}s or {@link io.helidon.config.spi.ConfigMapperProvider}.
+ * Tests part of {@link BuilderImpl} related to mapping functions or {@link io.helidon.config.spi.ConfigMapperProvider}.
  */
 public class BuilderImplMappersTest {
 
     @Test
     public void testUserDefinedHasPrecedenceInteger() {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, CollectionsHelper.mapOf(Integer.class, node -> 42));
+        MapperProviders providers = MapperProviders.create();
+        providers.add(() -> Map.of(Integer.class, config -> 42));
+        ConfigMapperManager manager = BuilderImpl.buildMappers(providers);
+
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("int-p", "2147483647")))
+                .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .build();
 
-        assertThat(manager.map(Integer.class, config.get("int-p")), is(42));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(2147483647));
+        assertThat(manager.map(config.get("int-p"), Integer.class), is(42));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(2147483647));
     }
 
     @Test
     public void testUserDefinedHasPrecedenceOptionalInt() {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, CollectionsHelper.mapOf(OptionalInt.class, node -> OptionalInt.of(42)));
+        MapperProviders providers = MapperProviders.create();
+        providers.add(() -> Map.of(OptionalInt.class, config -> OptionalInt.of(42)));
+        ConfigMapperManager manager = BuilderImpl.buildMappers(providers);
+
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("int-p", "2147483647")))
+                .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .build();
 
-        assertThat(manager.map(Integer.class, config.get("int-p")), is(2147483647));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(42));
+        assertThat(manager.map(config.get("int-p"), Integer.class), is(2147483647));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(42));
     }
 
     @Test
     public void testUserDefinedMapperProviderHasPrecedenceInteger() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("int-p", "2147483647")))
-                .addMapper(() -> CollectionsHelper.mapOf(Integer.class, c -> 43))
+                .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
+                .addMapper(() -> Map.of(Integer.class, c -> 43))
                 .build();
 
-        assertThat(config.get("int-p").asInt(), is(43));
+        assertThat(config.get("int-p").asInt().get(), is(43));
     }
 
     @Test
     public void testUserOverrideMapperFromMapperProvider() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("int-p", "2147483647")))
-                .addMapper(() -> CollectionsHelper.mapOf(Integer.class, c -> 43))
-                .addMapper(Integer.class, (Function<String, Integer>) s -> 44)
+                .sources(ConfigSources.create(Map.of("int-p", "2147483647")))
+                .addMapper(() -> Map.of(Integer.class, c -> 43))
+                .addStringMapper(Integer.class, (Function<String, Integer>) s -> 44)
                 .build();
 
-        assertThat(config.get("int-p").asInt(), is(44));
+        assertThat(config.get("int-p").asInt().get(), is(44));
     }
 
     @Test
     public void testDefaultMapMapper() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf("int-p", "2147483647")));
+        Config config = Config.create(ConfigSources.create(Map.of("int-p", "2147483647")));
 
-        assertThat(config.asMap().get("int-p"), is("2147483647"));
+        assertThat(config.asMap().get().get("int-p"), is("2147483647"));
     }
 
     @Test
     public void testUserDefinedHasPrecedenceStringMapMapper() {
-        Config config = Config.withSources(ConfigSources.from(CollectionsHelper.mapOf("int-p", "2147483647")))
+        Config config = Config.builder(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .addMapper(Map.class, new CustomStringMapMapper())
                 .build();
 
-        assertThat(config.asMap().get("int-p"), is(nullValue()));
-        assertThat(config.asMap().get("prefix-int-p"), is("[2147483647]"));
+        assertThat(config.asMap().get().get("int-p"), is(nullValue()));
+        assertThat(config.asMap().get().get("prefix-int-p"), is("[2147483647]"));
+    }
+
+    @Test
+    public void testGenericTypeMapper() {
+        Config config = Config.builder(ConfigSources.create(Map.of("int-p", "2147483647")))
+                .addMapper(new GenericType<Set<Integer>>() { },
+                           config1 -> config1.asInt().map(Set::of)
+                                   .orElse(Set.of()))
+                .build();
+
+        Set<Integer> integers = config.get("int-p").as(new GenericType<Set<Integer>>() { }).get();
+
+        assertThat(integers, contains(2147483647));
     }
 
     @Test
     public void testUserDefinedHasPrecedenceStringBuilderMapMapper() {
-        Config config = Config.withSources(ConfigSources.from(CollectionsHelper.mapOf("int-p", "2147483647")))
+        Config config = Config.builder(ConfigSources.create(Map.of("int-p", "2147483647")))
                 .addMapper(Map.class, new CustomStringBuilderMapMapper())
                 .build();
 
-        assertThat(config.asMap().get("int-p"), is(nullValue()));
-        assertThat(config.asMap().get("prefix2-int-p"), is("{2147483647}"));
+        assertThat(config.asMap().get().get("int-p"), is(nullValue()));
+        assertThat(config.asMap().get().get("prefix2-int-p"), is("{2147483647}"));
     }
 
-    private static class CustomStringMapMapper implements ConfigMapper<Map> {
+    private static class CustomStringMapMapper implements Function<Config, Map> {
         @Override
         public Map apply(Config config) throws ConfigMappingException, MissingValueException {
             return ConfigMappers.toMap(config)
                     .entrySet().stream()
-                    .map(entry -> CollectionsHelper.mapEntry("prefix-" + entry.getKey(),
-                                            "[" + entry.getValue() + "]"))
+                    .map(entry -> Map.entry("prefix-" + entry.getKey(),
+                                                             "[" + entry.getValue() + "]"))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
     }
 
-    private static class CustomStringBuilderMapMapper implements ConfigMapper<Map> {
+    private static class CustomStringBuilderMapMapper implements Function<Config, Map> {
         @Override
         public Map apply(Config config) throws ConfigMappingException, MissingValueException {
             return ConfigMappers.toMap(config)
                     .entrySet().stream()
-                    .map(entry -> CollectionsHelper.mapEntry(new StringBuilder("prefix2-" + entry.getKey()),
-                                            new StringBuilder("{" + entry.getValue() + "}")))
+                    .map(entry -> Map.entry(new StringBuilder("prefix2-" + entry.getKey()),
+                                                             new StringBuilder("{" + entry.getValue() + "}")))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package io.helidon.webserver.jersey;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.Collections;
+import java.util.List;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Entity;
@@ -28,14 +31,17 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.http.HttpRequest;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.jersey.JerseySupport.basePath;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * The JerseySupportTest.
@@ -178,21 +184,28 @@ public class JerseySupportTest {
     public void errorThrownError() throws Exception {
         Response response = get("jersey/first/error/thrown/error");
 
-        doAssert(response, "", 500);
+        doAssert(response, null, 500);
     }
 
     @Test
     public void errorThrownUnhandled() throws Exception {
         Response response = get("jersey/first/error/thrown/unhandled");
 
-        doAssert(response, "", 500);
+        doAssert(response, null, 500);
     }
 
     @Test
     public void simplePostNotFound() throws Exception {
         Response response = post("jersey/first/non-existent-resource");
 
-        doAssert(response, "", Response.Status.NOT_FOUND);
+        doAssert(response, null, Response.Status.NOT_FOUND);
+    }
+
+    @Test
+    public void notFoundResponse() throws Exception {
+        Response response = delete("jersey/first/notfound");
+
+        doAssert(response, "Not Found", Response.Status.NOT_FOUND);
     }
 
     /**
@@ -212,7 +225,7 @@ public class JerseySupportTest {
             return;
         }
         assertNotNull(response);
-        doAssert(response, "", Response.Status.NOT_FOUND);
+        doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
     /**
@@ -232,7 +245,7 @@ public class JerseySupportTest {
     public void simpleGetNotFound() throws Exception {
         Response response = get("jersey/first/non-existent-resource");
 
-        doAssert(response, "", Response.Status.NOT_FOUND);
+        doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
     @Test
@@ -273,6 +286,90 @@ public class JerseySupportTest {
         assertThat(s, endsWith("/requestUri"));
     }
 
+    @Test
+    public void pathEncoding1() {
+        Response response = webTarget.path("jersey/first/encoding/abc%3F")
+                .request()
+                .get();
+
+        doAssert(response, "abc?");
+    }
+
+    @Test
+    public void pathEncoding2() {
+        Response response = webTarget.path("jersey/first/encoding/abc%3B/done")
+                .request()
+                .get();
+
+        doAssert(response, "abc;");
+    }
+
+    @Test
+    public void streamingOutput() throws IOException {
+        Response response = webTarget.path("jersey/first/streamingOutput")
+                .request()
+                .get();
+        assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
+                "Unexpected error: " + response.getStatus());
+        try (InputStream is = response.readEntity(InputStream.class)) {
+            byte[] buffer = new byte[32];
+            int n = is.read(buffer);        // should read only first chunk
+            assertEquals(new String(buffer, 0, n), "{ value: \"first\" }\n");
+            while ((n = is.read(buffer)) > 0) {
+                // consume rest of stream
+            }
+        }
+    }
+
+    @Test
+    public void testBasePath() {
+        assertThat(basePath(new PathMockup(null, "/")),
+                is("/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/")),
+                is("/my/application/path/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/path")),
+                is("/my/application/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/application/path")),
+                is("/my/"));
+        assertThat(basePath(new PathMockup("/my/application/path", "/my/application/path")),
+                is("/"));
+    }
+
+    static class PathMockup implements HttpRequest.Path {
+        private final String absolutePath;
+        private final String path;
+
+        PathMockup(String absolutePath, String path) {
+            this.absolutePath = absolutePath;
+            this.path = path;
+        }
+
+        @Override
+        public String param(String name) {
+            return "";
+        }
+
+        @Override
+        public List<String> segments() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public String toRawString() {
+            return toString();
+        }
+
+        @Override
+        public HttpRequest.Path absolute() {
+            return absolutePath == null ? this : new PathMockup(null, absolutePath);
+        }
+
+        @Override
+        public String toString() {
+            return path;
+        }
+    }
+
     static StringBuilder longData(int bytes) {
         StringBuilder data = new StringBuilder(bytes);
         int i = 0;
@@ -287,6 +384,12 @@ public class JerseySupportTest {
         return webTarget.path(path)
                         .request()
                         .post(Entity.entity("my-entity", MediaType.TEXT_PLAIN_TYPE));
+    }
+
+    private Response delete(String path) {
+        return webTarget.path(path)
+                        .request()
+                        .delete();
     }
 
     private void doAssert(Response response, String expected) {
@@ -307,7 +410,9 @@ public class JerseySupportTest {
         try {
             assertEquals(expectedStatusCode, response.getStatus(),
                     "Unexpected error: " + response.getStatus());
-            assertEquals(expectedContent, response.readEntity(String.class));
+            if (expectedContent != null) {
+                assertEquals(expectedContent, response.readEntity(String.class));
+            }
         } finally {
             response.close();
         }

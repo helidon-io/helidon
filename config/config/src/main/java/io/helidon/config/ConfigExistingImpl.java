@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package io.helidon.config;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
-import io.helidon.config.internal.ConfigKeyImpl;
+import io.helidon.common.GenericType;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
 
@@ -42,7 +43,7 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
                        ConfigFilter filter,
                        ConfigFactory factory,
                        ConfigMapperManager mapperManager) {
-        super(type, prefix, key, factory);
+        super(type, prefix, key, factory, mapperManager);
         this.filter = filter;
 
         Objects.requireNonNull(node, "node argument is null.");
@@ -54,45 +55,38 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
 
     @Override
     public final Optional<String> value() throws ConfigMappingException {
-        String value = getNode().get();
-        if (null != value) {
-            return Optional.ofNullable(filter.apply(realKey(), value));
-        } else {
-            switch (type()) {
-            case VALUE:
-                return Optional.empty();
-            case OBJECT:
-            case MISSING:
-            case LIST:
-            default:
-                throw new ConfigMappingException(key(),
-                                                 "The Config node represents complex value and does not have a direct value .");
-
-            }
-        }
+        return node.value()
+                .map(it -> filter.apply(realKey(), it));
     }
 
     @Override
     public boolean hasValue() {
-        return null != getNode().get();
+        return node().value().isPresent();
     }
 
     @Override
-    public final <T> Optional<T> asOptional(Class<? extends T> type) throws ConfigMappingException {
-        return Optional.ofNullable(mapperManager.map(type, this));
+    public <T> ConfigValue<T> as(GenericType<T> genericType) {
+        return ConfigValues.create(this, genericType, mapperManager);
     }
 
     @Override
-    public final Optional<Map<String, String>> asOptionalMap() {
-        Map map = mapperManager.map(Map.class, this);
-        if (map instanceof ConfigMappers.StringMap) {
-            return Optional.of((ConfigMappers.StringMap) map);
-        }
-        return Optional.of(new ConfigMappers.StringMap(map));
+    public <T> ConfigValue<T> as(Class<T> type) {
+        return ConfigValues.create(this, type, mapperManager);
     }
 
-    protected final N getNode() {
+    @Override
+    public <T> ConfigValue<T> as(Function<Config, T> mapper) {
+        return ConfigValues.create(this, mapper);
+    }
+
+    @Override
+    public ConfigValue<Map<String, String>> asMap() {
+        return ConfigValues.createMap(this, mapperManager);
+    }
+
+    protected final N node() {
         return node;
     }
+
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package io.helidon.webserver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
 
 /**
  * Routing represents composition of HTTP request-response handlers with routing rules. It is together with
@@ -73,11 +72,18 @@ public interface Routing {
     /**
      * An API to define HTTP request routing rules.
      *
-     * @param <T> the type to be returned by the subclasses (to support fluent API style)
-     *
      * @see Builder
      */
-    interface Rules<T extends Rules> {
+    interface Rules {
+        /**
+         * Configuration of tracing for this routing.
+         * The configuration may control whether to log specific components,
+         *  spans and span logs, either globally, or for a specific path and method combinations.
+         *
+         * @param webTracingConfig WebServer tracing configuration
+         * @return Updated routing configuration
+         */
+        Rules register(WebTracingConfig webTracingConfig);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -85,7 +91,7 @@ public interface Routing {
          * @param services services to register
          * @return Updated routing configuration
          */
-        T register(Service... services);
+        Rules register(Service... services);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -94,7 +100,7 @@ public interface Routing {
          *                        method execution
          * @return Updated routing configuration
          */
-        T register(io.helidon.common.Builder<? extends Service>... serviceBuilders);
+        Rules register(Supplier<? extends Service>... serviceBuilders);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -103,7 +109,7 @@ public interface Routing {
          * @param services    services to register
          * @return Updated routing configuration
          */
-        T register(String pathPattern, Service... services);
+        Rules register(String pathPattern, Service... services);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -113,7 +119,7 @@ public interface Routing {
          *                        method execution
          * @return an updated routing configuration
          */
-        T register(String pathPattern, io.helidon.common.Builder<? extends Service>... serviceBuilders);
+        Rules register(String pathPattern, Supplier<? extends Service>... serviceBuilders);
 
         /**
          * Routes all GET requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -122,7 +128,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T get(Handler... requestHandlers);
+        Rules get(Handler... requestHandlers);
 
         /**
          * Routes GET requests with corresponding path to provided handler(s). Request handler can call
@@ -132,7 +138,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T get(String pathPattern, Handler... requestHandlers);
+        Rules get(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes GET requests with corresponding path to provided handler(s). Request handler can call
@@ -142,7 +148,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T get(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules get(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all PUT requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -151,7 +157,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T put(Handler... requestHandlers);
+        Rules put(Handler... requestHandlers);
 
         /**
          * Routes PUT requests with corresponding path to provided handler(s). Request handler can call
@@ -161,7 +167,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T put(String pathPattern, Handler... requestHandlers);
+        Rules put(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes PUT requests with corresponding path to provided handler(s). Request handler can call
@@ -171,7 +177,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T put(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules put(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all POST requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -180,7 +186,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T post(Handler... requestHandlers);
+        Rules post(Handler... requestHandlers);
 
         /**
          * Routes POST requests with corresponding path to provided handler(s). Request handler can call
@@ -190,7 +196,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T post(String pathPattern, Handler... requestHandlers);
+        Rules post(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes POST requests with corresponding path to provided handler(s). Request handler can call
@@ -200,7 +206,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T post(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules post(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all DELETE requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -209,7 +215,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T delete(Handler... requestHandlers);
+        Rules delete(Handler... requestHandlers);
 
         /**
          * Routes DELETE requests with corresponding path to provided handler(s). Request handler can call
@@ -219,7 +225,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T delete(String pathPattern, Handler... requestHandlers);
+        Rules delete(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes DELETE requests with corresponding path to provided handler(s). Request handler can call
@@ -229,7 +235,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T delete(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules delete(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all OPTIONS requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -238,7 +244,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T options(Handler... requestHandlers);
+        Rules options(Handler... requestHandlers);
 
         /**
          * Routes OPTIONS requests with corresponding path to provided handler(s). Request handler can call
@@ -248,7 +254,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T options(String pathPattern, Handler... requestHandlers);
+        Rules options(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes OPTIONS requests with corresponding path to provided handler(s). Request handler can call
@@ -258,7 +264,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T options(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules options(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all HEAD requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -267,7 +273,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T head(Handler... requestHandlers);
+        Rules head(Handler... requestHandlers);
 
         /**
          * Routes HEAD requests with corresponding path to provided handler(s). Request handler can call
@@ -277,7 +283,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T head(String pathPattern, Handler... requestHandlers);
+        Rules head(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes HEAD requests with corresponding path to provided handler(s). Request handler can call
@@ -287,7 +293,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T head(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules head(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all TRACE requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -296,7 +302,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T trace(Handler... requestHandlers);
+        Rules trace(Handler... requestHandlers);
 
         /**
          * Routes TRACE requests with corresponding path to provided handler(s). Request handler can call
@@ -306,7 +312,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T trace(String pathPattern, Handler... requestHandlers);
+        Rules trace(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes TRACE requests with corresponding path to provided handler(s). Request handler can call
@@ -316,7 +322,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T trace(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules trace(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -325,7 +331,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T any(Handler... requestHandlers);
+        Rules any(Handler... requestHandlers);
 
         /**
          * Routes all requests with corresponding path to provided handler(s). Request handler can call
@@ -335,7 +341,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T any(String pathPattern, Handler... requestHandlers);
+        Rules any(String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes all requests with corresponding path to provided handler(s). Request handler can call
@@ -345,7 +351,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T any(PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules any(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes requests any specified method to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -355,7 +361,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers);
+        Rules anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers);
 
         /**
          * Routes requests with any specified method and corresponding path to provided handler(s). Request handler can call
@@ -366,7 +372,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers);
+        Rules anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes requests with any specified method and corresponding path to provided handler(s). Request handler can call
@@ -377,7 +383,7 @@ public interface Routing {
          * @param requestHandlers handlers to tryProcess HTTP request
          * @return an updated routing configuration
          */
-        T anyOf(Iterable<Http.RequestMethod> methods, PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules anyOf(Iterable<Http.RequestMethod> methods, PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Registers callback on created new {@link WebServer} instance with this routing.
@@ -385,16 +391,17 @@ public interface Routing {
          * @param webServerConsumer a WebServer creation callback
          * @return updated routing configuration
          */
-        T onNewWebServer(Consumer<WebServer> webServerConsumer);
+        Rules onNewWebServer(Consumer<WebServer> webServerConsumer);
     }
 
     /**
      * A {@link Routing} builder.
      */
-    class Builder implements Rules<Builder>, io.helidon.common.Builder<Routing> {
+    class Builder implements Rules, io.helidon.common.Builder<Routing> {
 
         private final RouteListRoutingRules delegate = new RouteListRoutingRules();
         private final List<RequestRouting.ErrorHandlerRecord<?>> errorHandlerRecords = new ArrayList<>();
+        private boolean tracingRegistered;
 
         /**
          * Creates new instance.
@@ -405,7 +412,14 @@ public interface Routing {
         // --------------- ROUTING API
 
         @Override
-        public Builder register(io.helidon.common.Builder<? extends Service>... serviceBuilders) {
+        public Builder register(WebTracingConfig webTracingConfig) {
+            this.tracingRegistered = true;
+            delegate.register(webTracingConfig);
+            return this;
+        }
+
+        @Override
+        public Builder register(Supplier<? extends Service>... serviceBuilders) {
             delegate.register(serviceBuilders);
             return this;
         }
@@ -423,7 +437,7 @@ public interface Routing {
         }
 
         @Override
-        public Builder register(String pathPattern, io.helidon.common.Builder<? extends Service>... serviceBuilders) {
+        public Builder register(String pathPattern, Supplier<? extends Service>... serviceBuilders) {
             delegate.register(pathPattern, serviceBuilders);
             return this;
         }
@@ -626,8 +640,11 @@ public interface Routing {
          * @return a new instance
          */
         public Routing build() {
+            if (!tracingRegistered) {
+                register(WebTracingConfig.create());
+            }
             RouteListRoutingRules.Aggregation aggregate = delegate.aggregate();
-            return new RequestRouting(aggregate.getRouteList(), errorHandlerRecords, aggregate.getNewWebServerCallbacks());
+            return new RequestRouting(aggregate.routeList(), errorHandlerRecords, aggregate.newWebServerCallbacks());
         }
 
         /**

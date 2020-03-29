@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,20 @@
 package io.helidon.microprofile.server;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.core.Application;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.server.spi.MpService;
+import io.helidon.common.configurable.ServerThreadPoolSupplier;
+import io.helidon.common.context.Contexts;
+import io.helidon.microprofile.cdi.HelidonContainer;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -96,13 +91,6 @@ public interface Server {
     }
 
     /**
-     * Get CDI container in use.
-     *
-     * @return CDI container instance (standard edition)
-     */
-    SeContainer getContainer();
-
-    /**
      * Start this server (can only be used once).
      * This is a blocking call.
      *
@@ -125,7 +113,7 @@ public interface Server {
      *
      * @return host name
      */
-    String getHost();
+    String host();
 
     /**
      * Get the port this server listens on or {@code -1} if the server is not
@@ -133,36 +121,36 @@ public interface Server {
      *
      * @return port
      */
-    int getPort();
+    int port();
 
     /**
      * Builder to build {@link Server} instance.
      */
     final class Builder {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
+
+        // this constant is to ensure we initialize Helidon CDI at build time
+        private static final HelidonContainer CONTAINER = HelidonContainer.instance();
+
+        static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
-        private final List<MpService> extensions = new LinkedList<>();
         private final List<JaxRsApplication> applications = new LinkedList<>();
-        private ResourceConfig resourceConfig;
-        private SeContainer cdiContainer;
-        private MpConfig config;
+        private Config config;
         private String host;
+        private String basePath;
         private int port = -1;
-        private boolean containerCreated;
         private Supplier<? extends ExecutorService> defaultExecutorService;
+        private JaxRsCdiExtension jaxRs;
+        private boolean retainDiscovered = false;
 
         private Builder() {
-        }
-
-        private static ResourceConfig configForResourceClasses(List<Class<?>> resourceClasses) {
-            return ResourceConfig.forApplication(new Application() {
-                @Override
-                public Set<Class<?>> getClasses() {
-                    return new HashSet<>(resourceClasses);
-                }
-            });
+            if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
+                throw new IllegalStateException("There is another builder in progress, or another Server running. "
+                                                        + "You cannot run more than one in parallel");
+            }
+            LOGGER.finest(() -> "Container context id: " + CONTAINER.context().id());
         }
 
         /**
@@ -172,43 +160,91 @@ public interface Server {
          * @throws MpException in case the server fails to be created
          */
         public Server build() {
+            // make sure server is not already running
+            try {
+                ServerCdiExtension server = CDI.current()
+                        .getBeanManager()
+                        .getExtension(ServerCdiExtension.class);
+
+                if (server.started()) {
+                    SeContainer container = (SeContainer) CDI.current();
+                    container.close();
+                    throw new MpException("Server is already started. Maybe you have initialized CDI yourself? "
+                                                  + "If you do so, then you cannot use Server.builder() to set up your server. "
+                                                  + "Config is initialized with defaults or using "
+                                                  + "meta-config.yaml; applications are discovered using CDI. "
+                                                  + "To use custom configuration, you can use "
+                                                  + "ConfigProviderResolver.instance().registerConfig(config, "
+                                                  + "classLoader);");
+                }
+            } catch (IllegalStateException ignored) {
+                // container is not running - server cannot be started in such a case
+                // ignore this
+            }
+
+            // we may have shutdown the original instance, this is to ensure we use the current CDI.
+            HelidonContainer instance = HelidonContainer.instance();
+            // now run the build within context already
+            return Contexts.runInContext(instance.context(), this::doBuild);
+        }
+
+        private Server doBuild() {
             STARTUP_LOGGER.entering(Builder.class.getName(), "build");
 
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
             if (null == config) {
-                config = (MpConfig) ConfigProviderResolver.instance().getConfig(classLoader);
-            } else {
-                ConfigProviderResolver.instance().registerConfig(config, classLoader);
+                this.config = ConfigProviderResolver.instance().getConfig(classLoader);
             }
 
+            // make sure the config is available to application
+            ConfigProviderResolver.instance().registerConfig(config, classLoader);
+
+            ServerCdiExtension server = CDI.current()
+                    .getBeanManager()
+                    .getExtension(ServerCdiExtension.class);
+
             if (null == defaultExecutorService) {
-                defaultExecutorService = ThreadPoolSupplier.from(config.getConfig());
+                defaultExecutorService = ServerThreadPoolSupplier.builder()
+                        .name("server")
+                        .config(((io.helidon.config.Config) config)
+                                        .get("server.executor-service"))
+                        .build();
+            }
+
+            server.defaultExecutorService(defaultExecutorService);
+            if (null != basePath) {
+                server.basePath(basePath);
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");
 
-            if (null == cdiContainer) {
-                cdiContainer = getCurrentContainter()
-                        .orElseGet(() -> {
-                            containerCreated = true;
-                            return createContainter(classLoader);
-                        });
+            // explicit application configuration
+            // if there are any resource classes explicitly added, create an application for them
+            this.jaxRs = CDI.current()
+                    .getBeanManager()
+                    .getExtension(JaxRsCdiExtension.class);
+
+            if (!applications.isEmpty() || !resourceClasses.isEmpty()) {
+                // only use applications from container if none explicitly configured
+                if (!retainDiscovered) {
+                    jaxRs.removeApplications();
+                }
             }
 
-            STARTUP_LOGGER.finest("CDI Container obtained");
+            if (!resourceClasses.isEmpty()) {
+                jaxRs.removeResourceClasses();
 
-            if (applications.isEmpty()) {
-                if (!resourceClasses.isEmpty()) {
-                    resourceConfig = configForResourceClasses(resourceClasses);
-                }
-                if (null == resourceConfig) {
-                    resourcesFromContainer();
-                }
+                // if resource classes are configured, use them as defaults
+                jaxRs.addResourceClasses(resourceClasses);
+            }
 
-                if (null != resourceConfig) {
-                    applications.add(JaxRsApplication.create(resourceConfig));
-                }
+            // add all explicit applications
+            jaxRs.addApplications(applications);
+
+            // and add a synthetic app (last)
+            if (!resourceClasses.isEmpty()) {
+                jaxRs.addSyntheticApplication(resourceClasses);
             }
 
             STARTUP_LOGGER.finest("Jersey resource configuration");
@@ -224,63 +260,6 @@ public interface Server {
             return new ServerImpl(this);
         }
 
-        private void resourcesFromContainer() {
-            ServerCdiExtension extension = cdiContainer.getBeanManager().getExtension(ServerCdiExtension.class);
-            if (null == extension) {
-                throw new RuntimeException("Failed to find JAX-RS resource to use, extension not registered with container");
-            }
-
-            List<Class<? extends Application>> applications = extension.getApplications();
-
-            if (applications.isEmpty()) {
-                List<Class<?>> resourceClasses = extension.getResourceClasses();
-                if (resourceClasses.isEmpty()) {
-                    LOGGER.warning("Failed to find JAX-RS resource to use");
-                }
-                resourceConfig = configForResourceClasses(resourceClasses);
-            } else {
-                applications.forEach(this::addApplication);
-            }
-        }
-
-        private Optional<SeContainer> getCurrentContainter() {
-            try {
-                CDI<Object> current = CDI.current();
-                STARTUP_LOGGER.finest("CDI.current()");
-                if (null == current) {
-                    return Optional.empty();
-                }
-                if (current instanceof SeContainer) {
-                    SeContainer currentSe = (SeContainer) current;
-                    if (currentSe.isRunning()) {
-                        return Optional.of(currentSe);
-                    } else {
-                        return Optional.empty();
-                    }
-                } else {
-                    throw new MpException("Running in a non-SE CDI Container: " + current.getClass().getName());
-                }
-            } catch (IllegalStateException e) {
-                return Optional.empty();
-            }
-        }
-
-        private SeContainer createContainter(ClassLoader classLoader) {
-            // not in CDI
-            SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-            initializer.setClassLoader(classLoader);
-            Map<String, Object> props = new HashMap<>(config.getConfig()
-                                                              .get("cdi")
-                                                              .detach()
-                                                              .asOptionalMap()
-                                                              .orElse(CollectionsHelper.mapOf()));
-            initializer.setProperties(props);
-            STARTUP_LOGGER.finest("Initializer");
-            SeContainer container = initializer.initialize();
-            STARTUP_LOGGER.finest("Initalizer.initialize()");
-            return container;
-        }
-
         /**
          * Configure listen host.
          *
@@ -292,8 +271,18 @@ public interface Server {
             return this;
         }
 
-        public Builder addExtension(MpService service) {
-            extensions.add(service);
+        /**
+         * Configure a path to which the server would redirect when a root path is requested.
+         * E.g. when static content is available at "/static" and you want to start there on index.html,
+         * you may want to configure this to "/static/index.html".
+         * When user requests "http://host:port" or "http://host:port/", the user would be redirected to
+         * "http://host:port/static/index.html"
+         *
+         * @param basePath path to redirect user from root path
+         * @return updated builder instance
+         */
+        public Builder basePath(String basePath) {
+            this.basePath = basePath;
             return this;
         }
 
@@ -305,7 +294,7 @@ public interface Server {
          *                 service
          * @return updated builder instance
          */
-        public Builder setDefaultExecutorServiceSupplier(Supplier<? extends ExecutorService> supplier) {
+        public Builder defaultExecutorServiceSupplier(Supplier<? extends ExecutorService> supplier) {
             this.defaultExecutorService = supplier;
             return this;
         }
@@ -328,7 +317,7 @@ public interface Server {
          * @return modified builder
          */
         public Builder config(io.helidon.config.Config config) {
-            this.config = (MpConfig) MpConfig.builder().config(config).build();
+            this.config = (Config) config;
             return this;
         }
 
@@ -339,41 +328,31 @@ public interface Server {
          * @return modified builder
          */
         public Builder config(Config config) {
-            this.config = (MpConfig) config;
+            this.config = config;
             return this;
         }
 
         /**
-         * Configure CDI container to use.
-         * Use this method if you need to manually configure the CDI container.
-         * Also understand, that whatever happens during container initialization is already done and cannot be undone, such
-         * as when microprofile configuration is used. If you use this method and then set explicit config using
-         * {@link #config(Config)}, you may end up with some classes configured from default MP config.
-         *
-         * @param cdiContainer container to use, currently this requires Weld, as Jersey CDI integration depends on it;
-         *                     not other CDI provider is tested
-         * @return modified builder
-         */
-        public Builder cdiContainer(SeContainer cdiContainer) {
-            this.cdiContainer = cdiContainer;
-            return this;
-        }
-
-        /**
-         * JAX-RS resource configuration to use.
+         * JAX-RS resource configuration to use. This will add the provided resource config
+         * as an additional application.
          * <p>
-         * Order is (e.g. if application is defined, resource classes are ignored):
-         * <ul>
-         * <li>All Applications and Application classes</li>
-         * <li>Resource classes</li>
-         * <li>Resource config</li>
-         * </ul>
          *
          * @param config configuration to bootstrap Jersey
          * @return modified builder
          */
         public Builder resourceConfig(ResourceConfig config) {
-            this.resourceConfig = config;
+            Application application = config.getApplication();
+
+            JaxRsApplication.Builder builder = JaxRsApplication.builder()
+                    .appName(config.getApplicationName())
+                    .config(config);
+
+            if (null != application) {
+                builder.applicationClass(application.getClass());
+            }
+
+            this.applications.add(builder.build());
+
             return this;
         }
 
@@ -407,6 +386,39 @@ public interface Server {
          */
         public Builder addApplication(Application application) {
             this.applications.add(JaxRsApplication.create(application));
+            return this;
+        }
+
+        /**
+         * If any application or resource class is added through this builder, applications discovered by CDI are ignored.
+         * You can change this behavior by setting the retain discovered applications to {@code true}.
+         *
+         * <p>
+         * If you use {@link Server.Builder} and explicitly add a JAX-RS application or JAX-RS resource class to it,
+         * then classes discovered via CDI mechanisms will be ignored (e.g. all JAX-RS applications with bean defining
+         * annotations and all JAX-RS resources in bean archives).
+         * If you set the flag to true, we will retain both the "discovered" and "explicitly configured" applications and
+         * resource classes.
+         *
+         * @param retain whether to keep applications discovered by CDI even if any are explicitly added
+         * @return updated builder instance
+         */
+        public Builder retainDiscoveredApplications(boolean retain) {
+            this.retainDiscovered = retain;
+            return this;
+        }
+
+        /**
+         * Replace existing applications with the ones provided.
+         *
+         * @param applications new applications to use with this server builder
+         * @return updated builder instance
+         */
+        public Builder applications(Application... applications) {
+            this.applications.clear();
+            for (Application application : applications) {
+                addApplication(application);
+            }
             return this;
         }
 
@@ -495,36 +507,12 @@ public interface Server {
             return this;
         }
 
-        public List<JaxRsApplication> getApplications() {
-            return new LinkedList<>(applications);
-        }
-
-        SeContainer getCdiContainer() {
-            return cdiContainer;
-        }
-
-        Config getConfig() {
-            return config;
-        }
-
-        String getHost() {
+        String host() {
             return host;
         }
 
-        int getPort() {
+        int port() {
             return port;
-        }
-
-        List<MpService> getExtensions() {
-            return extensions;
-        }
-
-        boolean getContainerCreated() {
-            return containerCreated;
-        }
-
-        ExecutorService getDefaultExecutorService() {
-            return defaultExecutorService.get();
         }
     }
 }

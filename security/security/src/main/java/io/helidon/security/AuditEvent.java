@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public interface AuditEvent {
      *
      * @return the type of this {@code AuditEvent} represented as String.
      */
-    String getEventType();
+    String eventType();
 
     /**
      * Gets an {@code Throwable} object from which additional audit information
@@ -70,7 +70,7 @@ public interface AuditEvent {
      *
      * @return an {@code Throwable} with additional information if available.
      */
-    Optional<Throwable> getThrowable();
+    Optional<Throwable> throwable();
 
     /**
      * Parameters of this audit event, used in {@link String#format(String, Object...)}
@@ -78,22 +78,22 @@ public interface AuditEvent {
      *
      * @return parameters of this audit message
      */
-    List<AuditParam> getParams();
+    List<AuditParam> params();
 
     /**
      * Gets the message format of this {@code AuditEvent} to be used with
      * {@link String#format(String, Object...)}.
      *
-     * @return English message format (this is a fallback if internationalization is not configured.
+     * @return English message format (this is a fallback if internationalization is not configured).
      */
-    String getMessageFormat();
+    String messageFormat();
 
     /**
      * Gets the severity of this {@code AuditEvent}.
      *
      * @return severity
      */
-    AuditSeverity getSeverity();
+    AuditSeverity severity();
 
     /**
      * Severity of {@code AuditEvent}.
@@ -164,14 +164,27 @@ public interface AuditEvent {
             return new AuditParam(name, parameter, true);
         }
 
-        public String getName() {
+        /**
+         * Name of this parameter.
+         * @return name
+         */
+        public String name() {
             return name;
         }
 
-        public Optional<Object> getValue() {
+        /**
+         * Value of this parameter.
+         * @return value or empty if not defined (null).
+         */
+        public Optional<Object> value() {
             return Optional.ofNullable(parameter);
         }
 
+        /**
+         * Whether this is sensitive information (such as passwords).
+         * Handle sensitive information carefully - e.g. do not log it.
+         * @return {@code true} if this is a sensitive value
+         */
         public boolean isSensitive() {
             return sensitive;
         }

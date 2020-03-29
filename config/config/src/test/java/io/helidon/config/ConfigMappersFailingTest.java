@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,16 @@ package io.helidon.config;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
-
-import static org.hamcrest.Matchers.containsString;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ConfigMappers} with focus on failing mapping.
@@ -50,17 +49,17 @@ public class ConfigMappersFailingTest {
     @ParameterizedTest
     @MethodSource("builtInMapperTypes")
     public void testMappingFails(Class<?> type) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
 
         String key = "config.key.with.wrong.format";
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, ") bad, bad value ")))
+                .sources(ConfigSources.create(Map.of(key, ") bad, bad value ")))
                 .build();
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
-            manager.map(type, config.get(key));
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
+            manager.map(config.get(key), type);
         });
-        Assertions.assertTrue(containsString(key).matches(ex.getMessage()));
+        assertThat(ex.getMessage(), containsString(key));
     }
 
 }

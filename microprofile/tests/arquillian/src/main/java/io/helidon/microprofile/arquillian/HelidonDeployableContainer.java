@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -23,22 +24,33 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.inject.spi.DefinitionException;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigSource;
+import io.helidon.microprofile.server.Server;
 
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -81,6 +93,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      */
     private final Map<String, RunContext> contexts = new HashMap<>();
 
+    private static ConcurrentLinkedQueue<Runnable> stopCalls = new ConcurrentLinkedQueue<>();
+    private Server dummyServer = null;
+
     @Override
     public Class<HelidonContainerConfiguration> getConfigurationClass() {
         return HelidonContainerConfiguration.class;
@@ -93,7 +108,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     @Override
     public void start() {
-        // No-op
+        dummyServer = Server.builder().build();
     }
 
     @Override
@@ -104,6 +119,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public ProtocolDescription getDefaultProtocol() {
         return new ProtocolDescription(HelidonLocalProtocol.PROTOCOL_NAME);
+        // return new ProtocolDescription(LocalProtocol.NAME);
     }
 
     @Override
@@ -117,7 +133,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
         try {
             // Create the temporary deployment directory.
-            context.deployDir = Files.createTempDirectory("helidon-arquillian-test");
+            if (containerConfig.getUseRelativePath()) {
+                context.deployDir = Paths.get("target/helidon-arquillian-test");
+            } else {
+                context.deployDir = Files.createTempDirectory("helidon-arquillian-test");
+            }
             LOGGER.info("Running Arquillian tests in directory: " + context.deployDir.toAbsolutePath());
 
             // Copy the archive into deployDir. Save off the class names for all classes included in the
@@ -126,7 +146,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             final Set<String> classNames = new TreeSet<>();
             copyArchiveToDeployDir(archive, context.deployDir, p -> {
                 if (p.endsWith(".class")) {
-                    final int prefixLength = isJavaArchive ? 1 :  "/WEB-INF/classes/".length();
+                    final int prefixLength = isJavaArchive ? 1 : "/WEB-INF/classes/".length();
                     classNames.add(p.substring(prefixLength, p.lastIndexOf(".class")).replace('/', '.'));
                 }
             });
@@ -145,11 +165,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
             URL[] classPath;
 
+            Path rootDir = context.deployDir.resolve("");
             if (isJavaArchive) {
-                Path rootDir = context.deployDir.resolve("");
                 ensureBeansXml(rootDir);
                 classPath = new URL[] {
-                    rootDir.toUri().toURL()
+                        rootDir.toUri().toURL()
                 };
             } else {
                 // Prepare the launcher files
@@ -157,68 +177,110 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 Path classesDir = webInfDir.resolve("classes");
                 Path libDir = webInfDir.resolve("lib");
                 ensureBeansXml(classesDir);
-                classPath = getServerClasspath(classesDir, libDir);
+                classPath = getServerClasspath(classesDir, libDir, rootDir);
             }
 
             startServer(context, classPath, classNames);
         } catch (IOException e) {
+            LOGGER.log(Level.INFO, "Failed to start container", e);
             throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
-        } catch (Exception e) {
-            throw new DeploymentException("Unable to start server", e);
+        } catch (ReflectiveOperationException e) {
+            LOGGER.log(Level.INFO, "Failed to start container", e);
+            throw new DefinitionException(e.getCause());        // validation exceptions
         }
 
         // Server has started, so we're done.
+        //        ProtocolMetaData pm = new ProtocolMetaData();
+        //        pm.addContext(new HTTPContext("Helidon", "localhost", containerConfig.getPort()));
+        //        return pm;
         return new ProtocolMetaData();
     }
 
     void startServer(RunContext context, URL[] classPath, Set<String> classNames)
             throws ReflectiveOperationException {
-        context.classLoader = (URLClassLoader) ((PrivilegedAction<ClassLoader>) () -> new URLClassLoader(classPath))
-                .run();
 
-        ClassLoader current = Thread.currentThread().getContextClassLoader();
+        Optional.ofNullable((SeContainer) CDI.current())
+                .ifPresent(SeContainer::close);
+        stopAll();
+
+        context.classLoader = new MyClassloader(new URLClassLoader(classPath));
+
+        context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
 
-        try {
-            final Config config = Config.builder()
-                    .sources(CollectionsHelper.listOf(
-                            ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional(),
-                            ConfigSources.file(context.deployDir.resolve("/application.properties").toString()).optional(),
-                            ConfigSources.file(context.deployDir.resolve("/application.yaml").toString()).optional()))
-                    .build();
+        List<Supplier<? extends ConfigSource>> configSources = new LinkedList<>();
+        configSources.add(ConfigSources.file(context.deployDir.resolve("META-INF/microprofile-config.properties").toString())
+                                  .optional());
+        // The following line supports MP OpenAPI, which allows an alternate
+        // location for the config file.
+        configSources.add(ConfigSources.file(
+                context.deployDir.resolve("WEB-INF/classes/META-INF/microprofile-config.properties").toString())
+                                  .optional());
+        configSources.add(ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional());
+        configSources.add(ConfigSources.file(context.deployDir.resolve("application.properties").toString()).optional());
+        configSources.add(ConfigSources.file(context.deployDir.resolve("application.yaml").toString()).optional());
+        configSources.add(ConfigSources.classpath("tck-application.yaml").optional());
 
-            context.runnerClass = context.classLoader
-                    .loadClass("io.helidon.microprofile.arquillian.ServerRunner");
-
-            context.runner = context.runnerClass
-                    .getDeclaredConstructor()
-                    .newInstance();
-
-            context.runnerClass
-                    .getDeclaredMethod("start", Config.class, HelidonContainerConfiguration.class, Set.class, ClassLoader.class)
-                    .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
-        } finally {
-            Thread.currentThread().setContextClassLoader(current);
+        // workaround for tck-fault-tolerance
+        if (containerConfig.getReplaceConfigSourcesWithMp()) {
+            URL mpConfigProps = context.classLoader.getResource("META-INF/microprofile-config.properties");
+            if (mpConfigProps != null) {
+                try {
+                    Properties props = new Properties();
+                    props.load(mpConfigProps.openStream());
+                    configSources.clear();
+                    configSources.add(ConfigSources.create(props));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
+
+        Config config = Config.builder()
+                .sources(configSources)
+                .build();
+
+        context.runnerClass = context.classLoader
+                .loadClass("io.helidon.microprofile.arquillian.ServerRunner");
+
+        context.runner = context.runnerClass
+                .getDeclaredConstructor()
+                .newInstance();
+
+        stopCalls.add(() -> {
+            try {
+                context.runnerClass.getDeclaredMethod("stop").invoke(context.runner);
+            } catch (ReflectiveOperationException e) {
+                LOGGER.log(Level.WARNING, "Can't stop embedded Helidon", e);
+            }
+        });
+
+        context.runnerClass
+                .getDeclaredMethod("start", Config.class, HelidonContainerConfiguration.class, Set.class, ClassLoader.class)
+                .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
     }
 
-    URL[] getServerClasspath(Path classesDir, Path libDir) throws IOException {
+    URL[] getServerClasspath(Path classesDir, Path libDir, Path rootDir) throws IOException {
         List<URL> urls = new ArrayList<>();
 
         // classes directory
         urls.add(classesDir.toUri().toURL());
 
         // lib directory - need to find each jar file
-        Files.list(libDir)
-                .filter(path -> path.getFileName().toString().endsWith(".jar"))
-                .forEach(path -> {
-                    try {
-                        urls.add(path.toUri().toURL());
-                    } catch (MalformedURLException e) {
-                        throw new HelidonArquillianException("Failed to get URL from library on path: " + path.toAbsolutePath(),
-                                                             e);
-                    }
-                });
+        if (Files.exists(libDir)) {
+            Files.list(libDir)
+                    .filter(path -> path.getFileName().toString().endsWith(".jar"))
+                    .forEach(path -> {
+                        try {
+                            urls.add(path.toUri().toURL());
+                        } catch (MalformedURLException e) {
+                            throw new HelidonArquillianException("Failed to get URL from library on path: "
+                                                                         + path.toAbsolutePath(), e);
+                        }
+                    });
+        }
+
+        urls.add(rootDir.toUri().toURL());
 
         return urls.toArray(new URL[0]);
     }
@@ -261,13 +323,14 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 context.classLoader.close();
             } catch (IOException ignore) {
             }
+            // Restore original context class loader
+            Thread.currentThread().setContextClassLoader(context.oldClassLoader);
         }
 
         if (containerConfig.getDeleteTmp()) {
             // Try to clean up the deploy directory
             if (context.deployDir != null) {
                 try {
-                    //noinspection ResultOfMethodCallIgnored
                     Files.walk(context.deployDir)
                             .sorted(Comparator.reverseOrder())
                             .forEach(path -> {
@@ -283,6 +346,15 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 context.deployDir = null;
             }
         }
+    }
+
+    void stopAll() {
+        Runnable polled = stopCalls.poll();
+        while (Objects.nonNull(polled)) {
+            polled.run();
+            polled = stopCalls.poll();
+        }
+        dummyServer.stop();
     }
 
     @Override
@@ -345,11 +417,35 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
          */
         private Path deployDir;
         // class loader of this server instance
-        private URLClassLoader classLoader;
+        private MyClassloader classLoader;
         // class of the runner - loaded once per each run
         private Class<?> runnerClass;
         // runner used to run this server instance
         private Object runner;
+        // existing class loader
+        private ClassLoader oldClassLoader;
     }
 
+    static class MyClassloader extends ClassLoader implements Closeable {
+        private final URLClassLoader wrapped;
+
+        MyClassloader(URLClassLoader wrapped) {
+            super(wrapped);
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public InputStream getResourceAsStream(String name) {
+            InputStream stream = wrapped.getResourceAsStream(name);
+            if ((null == stream) && name.startsWith("/")) {
+                return wrapped.getResourceAsStream(name.substring(1));
+            }
+            return stream;
+        }
+
+        @Override
+        public void close() throws IOException {
+            this.wrapped.close();
+        }
+    }
 }

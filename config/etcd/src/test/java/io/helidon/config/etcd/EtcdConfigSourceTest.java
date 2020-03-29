@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package io.helidon.config.etcd;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.StringReader;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -32,14 +34,14 @@ import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 import io.helidon.config.spi.ConfigParser;
 
-import com.google.common.io.Files;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -62,8 +64,9 @@ public class EtcdConfigSourceTest {
 
     @Test
     public void testConfigSourceBuilder() {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(DEFAULT_URI, "key", EtcdApi.v2)
+        EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                .key("key")
+                .api(EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 
@@ -72,25 +75,29 @@ public class EtcdConfigSourceTest {
 
     @Test
     public void testBadUri() {
-        Assertions.assertThrows(ConfigException.class, () -> {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
-                .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                .build();
+        assertThrows(ConfigException.class, () -> {
+            EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                    .uri(URI.create("http://localhost:1111"))
+                    .key("configuration")
+                    .api(EtcdApi.v2)
+                    .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                    .build();
 
-        etcdConfigSource.content();
+            etcdConfigSource.load();
         });
     }
 
     @Test
     public void testBadKey() {
-        Assertions.assertThrows(ConfigException.class, () -> {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
-                .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                .build();
+        assertThrows(ConfigException.class, () -> {
+            EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
+                    .uri(DEFAULT_URI)
+                    .key("non-existing-key-23323423424234")
+                    .api(EtcdApi.v2)
+                    .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                    .build();
 
-        etcdConfigSource.content();
+            etcdConfigSource.load();
         });
     }
 
@@ -98,45 +105,52 @@ public class EtcdConfigSourceTest {
     public void testConfig() {
         final AtomicLong revision = new AtomicLong(0);
 
-        EtcdConfigSource configSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(DEFAULT_URI, "configuration", EtcdApi.v2)
+        EtcdConfigSource configSource = EtcdConfigSource.builder()
+                .uri(DEFAULT_URI)
+                .key("configuration")
+                .api(EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 
         EtcdConfigSource mockedConfigSource = spy(configSource);
-        when(mockedConfigSource.getEtcdClient()).thenReturn(etcdClient);
-        when(mockedConfigSource.content()).thenReturn(new ConfigParser.Content<Long>() {
+        when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
+        when(mockedConfigSource.load()).thenReturn(Optional.of(new ConfigParser.Content() {
             @Override
-            public String getMediaType() {
-                return MEDIA_TYPE_APPLICATION_HOCON;
+            public Optional<String> mediaType() {
+                return Optional.of(MEDIA_TYPE_APPLICATION_HOCON);
             }
 
             @Override
-            public Readable asReadable() {
+            public InputStream data() {
                 try {
-                    return new StringReader(etcdClient.get("configuration"));
+                    return new ByteArrayInputStream(etcdClient.get("configuration").getBytes(StandardCharsets.UTF_8));
                 } catch (EtcdClientException e) {
-                    Assertions.fail(e);
+                    fail(e);
                     return null;
                 }
             }
 
             @Override
-            public Optional<Long> getStamp() {
+            public Charset charset() {
+                return StandardCharsets.UTF_8;
+            }
+
+            @Override
+            public Optional<Object> stamp() {
                 return Optional.of(revision.getAndIncrement());
             }
-        });
+        }));
 
         Config config = Config.builder()
                 .sources(mockedConfigSource)
                 .build();
 
-        assertThat(config.get("security").asNodeList().size(), is(1));
+        assertThat(config.get("security").asNodeList().get(), hasSize(1));
     }
 
     private void putConfiguration(String resourcePath) throws Exception {
-        File file = new File(EtcdConfigSourceTest.class.getResource(resourcePath).getFile());
+        File file = new File(EtcdConfigSourceTest.class.getResource(resourcePath).toURI());
         etcdClient.put("configuration",
-                       Files.readLines(file, Charset.defaultCharset()).stream().collect(Collectors.joining("\n")));
+                       String.join("\n", Files.readAllLines(file.toPath(), Charset.defaultCharset())));
     }
 }

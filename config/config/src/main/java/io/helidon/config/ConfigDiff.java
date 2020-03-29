@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -75,10 +76,21 @@ class ConfigDiff {
     }
 
     private static boolean notEqual(Config left, Config right) {
-        return left.type() != right.type()
-                || (
-                left.isLeaf()
-                        && !left.value().equals(right.value()));
+        if (left.type() != right.type()) {
+            return true;
+        }
+        if (left.isLeaf()) {
+            return !value(left).equals(value(right));
+        }
+
+        return false;
+    }
+
+    private static Optional<String> value(Config node) {
+        if (node instanceof AbstractConfigImpl) {
+            return ((AbstractConfigImpl) node).value();
+        }
+        return node.asString().asOptional();
     }
 
     /**
@@ -102,7 +114,7 @@ class ConfigDiff {
      *
      * @return the newer {@code Config} used in the comparison
      */
-    Config getConfig() {
+    Config config() {
         return config;
     }
 

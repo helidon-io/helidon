@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,20 +24,23 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>helidon-security-project</artifactId>
-        <version>0.10.0-SNAPSHOT</version>
+        <version>2.0.0-SNAPSHOT</version>
     </parent>
+    <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-project</artifactId>
     <name>Helidon Security Providers</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>providers-common</module>
-        <module>http-auth-provider</module>
-        <module>http-signature-provider</module>
+        <module>common</module>
+        <module>http-auth</module>
+        <module>http-sign</module>
         <module>google-login</module>
-        <module>header-atn-provider</module>
-        <module>jwt-provider</module>
-        <module>abac-provider</module>
-        <module>oidc-provider</module>
+        <module>header</module>
+        <module>jwt</module>
+        <module>abac</module>
+        <module>oidc</module>
+        <module>idcs-mapper</module>
+        <module>oidc-common</module>
     </modules>
 </project>

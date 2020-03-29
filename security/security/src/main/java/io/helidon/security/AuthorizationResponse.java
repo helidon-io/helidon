@@ -78,7 +78,7 @@ public final class AuthorizationResponse extends SecurityResponse {
      * @return true if permitted, false if denied or abstained.
      */
     public boolean isPermitted() {
-        return getStatus().isSuccess();
+        return status().isSuccess();
     }
 
     /**

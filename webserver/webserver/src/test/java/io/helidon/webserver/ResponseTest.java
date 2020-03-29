@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,41 @@
 
 package io.helidon.webserver;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
+import java.util.function.Function;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.spi.BareResponse;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 import io.opentracing.SpanContext;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Mono;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
+import static org.hamcrest.core.AllOf.allOf;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link Response}.
@@ -55,24 +66,24 @@ public class ResponseTest {
         StringBuffer sb = new StringBuffer();
         NoOpBareResponse br = new NoOpBareResponse(sb);
         // Close all
-        Response response = new ResponseImpl(null, br);
+        Response response = new ResponseImpl(br);
         close(response);
-        assertEquals("h200c", sb.toString());
+        assertThat(sb.toString(), is("h200c"));
         // Close first headers and then al
         sb.setLength(0);
-        response = new ResponseImpl(null, br);
+        response = new ResponseImpl(br);
         response.status(300);
         response.headers().send().toCompletableFuture().get();
-        assertEquals("h300", sb.toString());
+        assertThat(sb.toString(), is("h300"));
         close(response);
-        assertEquals("h300c", sb.toString());
+        assertThat(sb.toString(), is("h300c"));
     }
 
     @Test
     public void headersAreCaseInsensitive() throws Exception {
         StringBuffer sb = new StringBuffer();
         NoOpBareResponse br = new NoOpBareResponse(sb);
-        Response response = new ResponseImpl(null, br);
+        Response response = new ResponseImpl(br);
 
         ResponseHeaders headers = response.headers();
         headers.addCookie("cookie1", "cookie-value-1");
@@ -110,114 +121,130 @@ public class ResponseTest {
         assertThat("Content does not match for header: " + headerName, actualValues, containsInAnyOrder(expectedValues));
     }
 
+    @SuppressWarnings("unchecked")
+    private static <T> void marshall(Response rsp, T entity)
+            throws InterruptedException, ExecutionException, TimeoutException {
+
+        marshall(rsp, Single.just(entity), (Class<T>)entity.getClass());
+    }
+
+    private static <T> void marshall(Response rsp, Single<T> entity, Class<T> clazz)
+            throws InterruptedException, ExecutionException, TimeoutException {
+
+        Multi.from(rsp.writerContext().marshall(entity, GenericType.create(clazz), null))
+                .collectList()
+                .get(10, TimeUnit.SECONDS);
+    }
+
     @Test
     public void classRelatedWriters() throws Exception {
         StringBuilder sb = new StringBuilder();
-        Response response = new ResponseImpl(null, new NoOpBareResponse(null));
-        assertNotNull(response.createPublisherUsingWriter("foo")); // Default
-        assertNotNull(response.createPublisherUsingWriter("foo".getBytes())); // Default
-        assertNull(response.createPublisherUsingWriter(Duration.of(1, ChronoUnit.MINUTES)));
+        Response response = new ResponseImpl(new NoOpBareResponse(null));
+        marshall(response, "foo".getBytes()); // default
+        try {
+            marshall(response, "foo");
+            fail("Should not be called");
+        } catch(ExecutionException e) {
+            assertThat(e.getCause(), allOf(instanceOf(IllegalStateException.class),
+                    hasProperty("message", containsString("No writer found for type"))));
+        }
+        try {
+            marshall(response, Duration.of(1, ChronoUnit.MINUTES));
+            fail("Should not be called");
+        } catch(ExecutionException e) {
+            assertThat(e.getCause(), allOf(instanceOf(IllegalStateException.class),
+                    hasProperty("message", containsString("No writer found for type"))));
+        }
         response.registerWriter(CharSequence.class, o -> {
             sb.append("1");
-            return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            return Single.empty();
         });
-        assertNotNull(response.createPublisherUsingWriter("foo"));
-        assertEquals("1", sb.toString());
+
+        marshall(response, "foo");
+        assertThat(sb.toString(), is("1"));
 
         sb.setLength(0);
-        assertNotNull(response.createPublisherUsingWriter(null));
-        assertEquals("", sb.toString());
+        marshall(response, Single.empty(),String.class);
+        assertThat(sb.toString(), is(""));
 
         sb.setLength(0);
         response.registerWriter(String.class, o -> {
             sb.append("2");
-            return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            return Single.empty();
         });
-        assertNotNull(response.createPublisherUsingWriter("foo"));
-        assertEquals("2", sb.toString());
+        marshall(response, "foo");
+        assertThat(sb.toString(), is("2"));
 
         sb.setLength(0);
-        assertNotNull(response.createPublisherUsingWriter(new StringBuilder()));
-        assertEquals("1", sb.toString());
+        marshall(response, new StringBuilder());
+        assertThat(sb.toString(), is("1"));
 
         sb.setLength(0);
-        response.registerWriter((Class<Object>) null, o -> {
+        response.registerWriter(Object.class, o -> {
             sb.append("3");
-            return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            return Single.empty();
         });
-        assertNotNull(response.createPublisherUsingWriter(1));
-        assertEquals("3", sb.toString());
+        marshall(response, 1);
+        assertThat(sb.toString(), is("3"));
     }
 
     @Test
     public void writerByPredicate() throws Exception {
         StringBuilder sb = new StringBuilder();
-        Response response = new ResponseImpl(null, new NoOpBareResponse(null));
-        response.registerWriter(o -> "1".equals(String.valueOf(o)),
+        Response response = new ResponseImpl(new NoOpBareResponse(null));
+        response.registerWriter(o -> Integer.class.isAssignableFrom((Class<?>)o),
                                 o -> {
                                     sb.append("1");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+                                    return Single.empty();
                                 });
-        response.registerWriter(o -> "2".equals(String.valueOf(o)),
+        response.registerWriter(o -> Long.class.isAssignableFrom((Class<?>)o),
                                 o -> {
                                     sb.append("2");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+                                    return Single.empty();
                                 });
-        assertNotNull(response.createPublisherUsingWriter(1));
-        assertEquals("1", sb.toString());
+        marshall(response, 1);
+        assertThat(sb.toString(), is("1"));
 
         sb.setLength(0);
-        assertNotNull(response.createPublisherUsingWriter(2));
-        assertEquals("2", sb.toString());
+        marshall(response, 2L);
+        assertThat(sb.toString(), is("2"));
 
         sb.setLength(0);
-        assertNull(response.createPublisherUsingWriter(3));
-        assertEquals("", sb.toString());
+        marshall(response, "3".getBytes());
+        assertThat(sb.toString(), is(""));
     }
 
     @Test
     public void writerWithMediaType() throws Exception {
         StringBuilder sb = new StringBuilder();
-        Response response = new ResponseImpl(null, new NoOpBareResponse(null));
-        response.registerWriter(CharSequence.class,
-                                MediaType.TEXT_PLAIN,
-                                o -> {
-                                    sb.append("A");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
-                                });
-        response.registerWriter(o -> o instanceof Number,
-                                MediaType.APPLICATION_JSON,
-                                o -> {
-                                    sb.append("B");
-                                    return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
-                                });
-        assertNotNull(response.createPublisherUsingWriter("foo"));
-        assertEquals("A", sb.toString());
-        assertEquals(MediaType.TEXT_PLAIN, response.headers().contentType().orElse(null));
+        Function<? extends CharSequence, Publisher<DataChunk>> stringWriter = o -> {
+            sb.append("A");
+            return Single.empty();
+        };
+        Function<? extends Number, Publisher<DataChunk>> numberWriter = o -> {
+            sb.append("B");
+            return Single.empty();
+        };
+        Response response = new ResponseImpl(new NoOpBareResponse(null));
+        response.registerWriter(CharSequence.class, MediaType.TEXT_PLAIN, stringWriter);
+        response.registerWriter(Number.class, MediaType.APPLICATION_JSON, numberWriter);
+        marshall(response, "foo");
+        assertThat(sb.toString(), is("A"));
+        assertThat(response.headers().contentType().orElse(null), is(MediaType.TEXT_PLAIN));
 
         sb.setLength(0);
-        response.headers().remove(Http.Header.CONTENT_TYPE);
-        assertNotNull(response.createPublisherUsingWriter(1));
-        assertEquals("B", sb.toString());
-        assertEquals(MediaType.APPLICATION_JSON, response.headers().contentType().orElse(null));
-
-        sb.setLength(0);
-        response.headers().put(Http.Header.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString());
-        assertNotNull(response.createPublisherUsingWriter(1));
-        assertEquals("B", sb.toString());
-        assertEquals(MediaType.APPLICATION_JSON, response.headers().contentType().orElse(null));
-
-        sb.setLength(0);
-        response.headers().put(Http.Header.CONTENT_TYPE, MediaType.TEXT_HTML.toString());
-        assertNull(response.createPublisherUsingWriter(1));
-        assertEquals("", sb.toString());
-        assertEquals(MediaType.TEXT_HTML, response.headers().contentType().orElse(null));
+        response = new ResponseImpl(new NoOpBareResponse(null));
+        response.registerWriter(CharSequence.class, MediaType.TEXT_PLAIN, stringWriter);
+        response.registerWriter(Number.class, MediaType.APPLICATION_JSON, numberWriter);
+        marshall(response, 1);
+        assertThat(sb.toString(), is("B"));
+        assertThat(response.headers().contentType().orElse(null), is(MediaType.APPLICATION_JSON));
     }
 
     @Test
     public void filters() throws Exception {
         StringBuilder sb = new StringBuilder();
-        Response response = new ResponseImpl(null, new NoOpBareResponse(null));
+        Response response = new ResponseImpl(new NoOpBareResponse(null));
         response.registerFilter(p -> {
             sb.append("A");
             return p;
@@ -230,19 +257,19 @@ public class ResponseTest {
             sb.append("C");
             return p;
         });
-        assertNotNull(response.applyFilters(ReactiveStreamsAdapter.publisherToFlow(Mono.empty()), null));
-        assertEquals("ABC", sb.toString());
+        assertThat(response.writerContext().applyFilters(Single.just(DataChunk.create("foo".getBytes()))), notNullValue());
+        assertThat(sb.toString(), is("ABC"));
     }
 
     static class ResponseImpl extends Response {
 
-        public ResponseImpl(WebServer webServer, BareResponse bareResponse) {
-            super(webServer, bareResponse);
+        public ResponseImpl(BareResponse bareResponse) {
+            super(mock(WebServer.class), bareResponse, List.of());
         }
 
         @Override
-        SpanContext spanContext() {
-            return null;
+        Optional<SpanContext> spanContext() {
+            return Optional.empty();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 
 package io.helidon.config.tests.module.meta2;
 
+import io.helidon.common.Builder;
+import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.spi.AbstractSource;
 import io.helidon.config.spi.ConfigSource;
 
 /**
  * Testing implementation of config source builder.
  */
 public class MyConfigSourceBuilder2
-        extends AbstractSource.Builder<MyConfigSourceBuilder2, MyEndpoint2, ConfigSource> {
+        extends AbstractConfigSourceBuilder<MyConfigSourceBuilder2, MyEndpoint2>
+        implements Builder<ConfigSource> {
 
     private final MyEndpoint2 endpoint;
     private boolean myProp3;
@@ -35,7 +37,6 @@ public class MyConfigSourceBuilder2
      * @param endpoint endpoint
      */
     private MyConfigSourceBuilder2(MyEndpoint2 endpoint) {
-        super(MyEndpoint2.class);
         this.endpoint = endpoint;
     }
 
@@ -57,15 +58,15 @@ public class MyConfigSourceBuilder2
      * @return new builder instance
      */
     public static MyConfigSourceBuilder2 from(Config metaConfig) {
-        return from(metaConfig.get("myProp1").asString(),
-                    metaConfig.get("myProp2").asInt())
-                .init(metaConfig);
+        return from(metaConfig.get("myProp1").asString().get(),
+                    metaConfig.get("myProp2").asInt().get())
+                .config(metaConfig);
     }
 
     @Override
-    protected MyConfigSourceBuilder2 init(Config metaConfig) {
-        metaConfig.get("myProp3").asOptionalBoolean().ifPresent(this::myProp3);
-        return super.init(metaConfig);
+    public MyConfigSourceBuilder2 config(Config metaConfig) {
+        metaConfig.get("myProp3").asBoolean().ifPresent(this::myProp3);
+        return super.config(metaConfig);
     }
 
     /**
@@ -77,11 +78,6 @@ public class MyConfigSourceBuilder2
     public MyConfigSourceBuilder2 myProp3(boolean myProp3) {
         this.myProp3 = myProp3;
         return this;
-    }
-
-    @Override
-    protected MyEndpoint2 getTarget() {
-        return endpoint;
     }
 
     /**

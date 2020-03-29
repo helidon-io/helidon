@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.common.SpiHelper;
-import io.helidon.common.http.ContextualRegistry;
-import io.helidon.webserver.spi.WebServerFactory;
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
+import io.helidon.media.common.MediaSupport;
 
 /**
  * Represents a immutably configured WEB server.
@@ -81,7 +82,14 @@ public interface WebServer {
      *
      * @return a server context
      */
-    ContextualRegistry context();
+    @SuppressWarnings("deprecation")
+    io.helidon.common.http.ContextualRegistry context();
+
+    /**
+     * Get the parent media support configuration.
+     * @return media support configuration
+     */
+    MediaSupport mediaSupport();
 
     /**
      * Returns a port number the default server socket is bound to and is listening on;
@@ -114,8 +122,8 @@ public interface WebServer {
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException if 'routing' parameter is {@code null}
      */
-    static WebServer create(io.helidon.common.Builder<? extends ServerConfiguration> configurationBuilder, Routing routing) {
-        return create(configurationBuilder != null ? configurationBuilder.build() : null, routing);
+    static WebServer create(Supplier<? extends ServerConfiguration> configurationBuilder, Routing routing) {
+        return create(configurationBuilder != null ? configurationBuilder.get() : null, routing);
     }
 
     /**
@@ -128,10 +136,10 @@ public interface WebServer {
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException  if 'routingBuilder' parameter is {@code null}
      */
-    static WebServer create(io.helidon.common.Builder<? extends ServerConfiguration> configurationBuilder,
-                            io.helidon.common.Builder<? extends Routing> routingBuilder) {
+    static WebServer create(Supplier<? extends ServerConfiguration> configurationBuilder,
+                            Supplier<? extends Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return create(configurationBuilder != null ? configurationBuilder.build() : null, routingBuilder.build());
+        return create(configurationBuilder != null ? configurationBuilder.get() : null, routingBuilder.get());
     }
 
     /**
@@ -144,9 +152,9 @@ public interface WebServer {
      * @throws NullPointerException  if 'routingBuilder' parameter is {@code null}
      */
     static WebServer create(ServerConfiguration configuration,
-                            io.helidon.common.Builder<? extends Routing> routingBuilder) {
+                            Supplier<? extends Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return create(configuration, routingBuilder.build());
+        return create(configuration, routingBuilder.get());
     }
 
     /**
@@ -173,7 +181,7 @@ public interface WebServer {
     static WebServer create(ServerConfiguration configuration, Routing routing) {
         Objects.requireNonNull(routing, "Parameter 'routing' is null!");
 
-        return builder(routing).configuration(configuration)
+        return builder(routing).config(configuration)
                                .build();
     }
 
@@ -186,9 +194,9 @@ public interface WebServer {
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException  if 'routing' parameter is {@code null}
      */
-    static WebServer create(io.helidon.common.Builder<? extends Routing> routingBuilder) {
+    static WebServer create(Supplier<? extends Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return create(routingBuilder.build());
+        return create(routingBuilder.get());
     }
 
     /**
@@ -197,9 +205,9 @@ public interface WebServer {
      * @param routingBuilder the routing builder; must not be {@code null}
      * @return the builder
      */
-    static Builder builder(io.helidon.common.Builder<? extends Routing> routingBuilder) {
+    static Builder builder(Supplier<? extends Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return builder(routingBuilder.build());
+        return builder(routingBuilder.get());
     }
 
     /**
@@ -217,11 +225,14 @@ public interface WebServer {
      * sockets and optional multiple routings.
      */
     final class Builder implements io.helidon.common.Builder<WebServer> {
+        static {
+            HelidonFeatures.register(HelidonFlavor.SE, "WebServer");
+        }
 
         private final Map<String, Routing> routings = new HashMap<>();
         private final Routing defaultRouting;
-
         private ServerConfiguration configuration;
+        private MediaSupport mediaSupport;
 
         private Builder(Routing defaultRouting) {
             Objects.requireNonNull(defaultRouting, "Parameter 'default routing' must not be null!");
@@ -235,7 +246,7 @@ public interface WebServer {
          * @param configuration the configuration
          * @return an updated builder
          */
-        public Builder configuration(ServerConfiguration configuration) {
+        public Builder config(ServerConfiguration configuration) {
             this.configuration = configuration;
             return this;
         }
@@ -246,8 +257,8 @@ public interface WebServer {
          * @param configurationBuilder the configuration builder
          * @return an updated builder
          */
-        public Builder configuration(io.helidon.common.Builder<ServerConfiguration> configurationBuilder) {
-            this.configuration = configurationBuilder != null ? configurationBuilder.build() : null;
+        public Builder config(Supplier<ServerConfiguration> configurationBuilder) {
+            this.configuration = configurationBuilder != null ? configurationBuilder.get() : null;
             return this;
         }
 
@@ -285,11 +296,31 @@ public interface WebServer {
          *                       configuration; will be built as a first step of this method execution
          * @return an updated builder
          */
-        public Builder addNamedRouting(String name, io.helidon.common.Builder<Routing> routingBuilder) {
+        public Builder addNamedRouting(String name, Supplier<Routing> routingBuilder) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
             Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
 
-            return addNamedRouting(name, routingBuilder.build());
+            return addNamedRouting(name, routingBuilder.get());
+        }
+
+        /**
+         * Set the server wide media support configuration.
+         * @param mediaSupport media support configuration
+         * @return an updated builder
+         */
+        public Builder mediaSupport(MediaSupport mediaSupport) {
+            this.mediaSupport = mediaSupport;
+            return this;
+        }
+
+        /**
+         * Set the server wide media support configuration.
+         * @param mediaSupportBuilder media support builder
+         * @return an updated builder
+         */
+        public Builder mediaSupport(Supplier<MediaSupport> mediaSupportBuilder) {
+            this.mediaSupport = mediaSupportBuilder != null ? mediaSupportBuilder.get() : null;
+            return this;
         }
 
         /**
@@ -311,11 +342,16 @@ public interface WebServer {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
-            WebServer result = SpiHelper.loadSpi(WebServerFactory.class)
-                                    .newWebServer(configuration == null
-                                                          ? ServerBasicConfig.DEFAULT_CONFIGURATION
+            if (mediaSupport == null) {
+                mediaSupport = MediaSupport.createWithDefaults();
+            }
+            WebServer result = new NettyWebServer(configuration == null
+                                                          // this is happening once per microservice, no need to store in
+                                                          // a constant; also the configuration creates instances of context etc.
+                                                          // that should not be initialized unless needed
+                                                          ? ServerConfiguration.builder().build()
                                                           : configuration,
-                                                  defaultRouting, routings);
+                                                  defaultRouting, routings, mediaSupport);
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }

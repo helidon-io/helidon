@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
 
 package io.helidon.webserver.jersey;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -32,8 +29,8 @@ import javax.ws.rs.core.MediaType;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.OutputStreamPublisher;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.ConnectionClosedException;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -80,6 +77,7 @@ class ResponseWriter implements ContainerResponseWriter {
         @Override
         public void close() throws IOException {
             try {
+                super.signalCloseComplete(null);
                 super.close();
             } catch (ConnectionClosedException e) {
                 throw new IOException("Cannot close the connection because it's already closed.", e);
@@ -113,7 +111,7 @@ class ResponseWriter implements ContainerResponseWriter {
         //
         // TODO also check that nothing was written an nothing was read
         //
-        if (context.getStatus() == 404) {
+        if (context.getStatus() == 404 && contentLength == 0) {
             whenHandleFinishes.thenRun(() -> {
                 LOGGER.finer("Skipping the handling and forwarding to downstream WebServer filters.");
 
@@ -127,43 +125,18 @@ class ResponseWriter implements ContainerResponseWriter {
             };
         }
 
-        res.status(Http.ResponseStatus.from(context.getStatus(), context.getStatusInfo().getReasonPhrase()));
+        res.status(Http.ResponseStatus.create(context.getStatus(), context.getStatusInfo().getReasonPhrase()));
 
         if (contentLength >= 0) {
             res.headers().put(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
-        } else {
-            res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
         }
 
         for (Map.Entry<String, List<String>> entry : context.getStringHeaders().entrySet()) {
             res.headers().put(entry.getKey(), entry.getValue());
         }
 
-        // in case of SSE every response chunk needs to be flushed
-        boolean doFlush = MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType());
-
-        res.send(
-                ReactiveStreamsAdapter.publisherToFlow(
-                        ReactiveStreamsAdapter.publisherFromFlow(publisher)
-                                      /*
-                                      The problem is that Jersey reuses the byte[] array it uses for writing
-                                      to the OutputStream.write() method. As such we must duplicate the array
-                                      because we need to return from the 'write()' method sooner than when
-                                      the underlying TCP server flushes the bytes.
-
-                                      Following fails when writing large amount of data to the response:
-                                      .map(byteBuffer -> new ResponseChunk(false, byteBuffer))));
-                                       */
-                                      .map(byteBuffer -> {
-                                          try {
-                                              ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                                              WritableByteChannel ch = Channels.newChannel(stream);
-                                              ch.write(byteBuffer);
-                                              return DataChunk.create(doFlush, ByteBuffer.wrap(stream.toByteArray()));
-                                          } catch (IOException e) {
-                                              throw new IllegalStateException("this never happens", e);
-                                          }
-                                      })));
+        res.send(Multi.from(publisher)
+                .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), byteBuffer, true)));
 
         return publisher;
     }
@@ -205,5 +178,19 @@ class ResponseWriter implements ContainerResponseWriter {
     public boolean enableResponseBuffering() {
         // Jersey should not try to do the buffering
         return false;
+    }
+
+    /**
+     * Flush buffer if using SSE or if an empty buffer is received for writing. See
+     * {@link OutputStreamPublisher#flush()}. Manual flushing is required to support
+     * {@link javax.ws.rs.core.StreamingOutput} in MP.
+     *
+     * @param context The container response.
+     * @param byteBuffer The byte buffer to write.
+     * @return Outcome of test.
+     */
+    private static boolean doFlush(ContainerResponse context, ByteBuffer byteBuffer) {
+        return MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType())
+                || byteBuffer.hasArray() && byteBuffer.array().length == 0;
     }
 }

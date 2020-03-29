@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.common.http;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * The DataChunk represents a part of the HTTP body content.
@@ -66,7 +68,19 @@ public interface DataChunk {
      * @return a reusable data chunk with no release callback
      */
     static DataChunk create(boolean flush, ByteBuffer data) {
-        return create(flush, data, Utils.EMPTY_RUNNABLE);
+        return create(flush, data, Utils.EMPTY_RUNNABLE, false);
+    }
+
+    /**
+     * Creates a reusable data chunk.
+     *
+     * @param flush a signal that chunk should be written and flushed from any cache if possible
+     * @param data  a data chunk. Should not be reused until {@code releaseCallback} is used
+     * @param readOnly indicates underlying buffer is not reused
+     * @return a reusable data chunk with no release callback
+     */
+    static DataChunk create(boolean flush, ByteBuffer data, boolean readOnly) {
+        return create(flush, data, Utils.EMPTY_RUNNABLE, readOnly);
     }
 
     /**
@@ -78,8 +92,22 @@ public interface DataChunk {
      * @return a reusable data chunk with a release callback
      */
     static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback) {
+        return create(flush, data, releaseCallback, false);
+    }
+
+    /**
+     * Creates a reusable data chunk.
+     *
+     * @param flush           a signal that chunk should be written and flushed from any cache if possible
+     * @param data            a data chunk. Should not be reused until {@code releaseCallback} is used
+     * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
+     * @param readOnly       indicates underlying buffer is not reused
+     * @return a reusable data chunk with a release callback
+     */
+    static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback, boolean readOnly) {
         return new DataChunk() {
             private boolean isReleased = false;
+            private CompletableFuture<DataChunk> writeFuture;
 
             @Override
             public ByteBuffer data() {
@@ -100,6 +128,21 @@ public interface DataChunk {
             @Override
             public boolean isReleased() {
                 return isReleased;
+            }
+
+            @Override
+            public boolean isReadOnly() {
+                return readOnly;
+            }
+
+            @Override
+            public void writeFuture(CompletableFuture<DataChunk> writeFuture) {
+                this.writeFuture = writeFuture;
+            }
+
+            @Override
+            public Optional<CompletableFuture<DataChunk>> writeFuture() {
+                return Optional.ofNullable(writeFuture);
             }
         };
     }
@@ -193,5 +236,58 @@ public interface DataChunk {
      */
     default boolean flush() {
         return false;
+    }
+
+    /**
+     * Makes a copy of this data chunk including its underlying {@link ByteBuffer}. This
+     * may be necessary for caching in case {@link ByteBuffer#rewind()} is called to
+     * reuse a byte buffer. Note that only the actual bytes used in the data chunk are
+     * copied, the resulting data chunk's capacity may be less than the original.
+     *
+     * @return A copy of this data chunk.
+     */
+    default DataChunk duplicate() {
+        byte[] bytes = new byte[data().limit()];
+        DataChunk dup = DataChunk.create(data().get(bytes));
+        dup.data().position(0);
+        return dup;
+    }
+
+    /**
+     * Returns {@code true} if the underlying byte buffer of this chunk is read
+     * only or {@code false} otherwise.
+     *
+     * @return Immutability outcome.
+     */
+    default boolean isReadOnly() {
+        return false;
+    }
+
+    /**
+     * An empty data chunk with a flush flag can be used to force a connection
+     * flush. This method determines if this chunk is used for that purpose.
+     *
+     * @return Outcome of test.
+     */
+    default boolean isFlushChunk() {
+        return flush() && data().limit() == 0;
+    }
+
+    /**
+     * Set a write future that will complete when data chunk has been
+     * written to a connection.
+     *
+     * @param writeFuture Write future.
+     */
+    default void writeFuture(CompletableFuture<DataChunk> writeFuture) {
+    }
+
+    /**
+     * Returns a write future associated with this chunk.
+     *
+     * @return Write future if one has ben set.
+     */
+    default Optional<CompletableFuture<DataChunk>> writeFuture() {
+        return Optional.empty();
     }
 }

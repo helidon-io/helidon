@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.Builder;
-import io.helidon.common.CollectionsHelper;
 
 /**
  * Response from security provider (and security Module).
@@ -75,7 +74,7 @@ public abstract class SecurityResponse {
      *
      * @return SecurityStatus as the provider responded
      */
-    public SecurityStatus getStatus() {
+    public SecurityStatus status() {
         return status;
     }
 
@@ -84,7 +83,7 @@ public abstract class SecurityResponse {
      *
      * @return HTTP status code the provider wants to use, or empty if not set
      */
-    public OptionalInt getStatusCode() {
+    public OptionalInt statusCode() {
         return (statusCode == -1 ? OptionalInt.empty() : OptionalInt.of(statusCode));
     }
 
@@ -93,7 +92,7 @@ public abstract class SecurityResponse {
      *
      * @return Description of current status (optional)
      */
-    public Optional<String> getDescription() {
+    public Optional<String> description() {
         return Optional.ofNullable(description);
     }
 
@@ -102,7 +101,7 @@ public abstract class SecurityResponse {
      *
      * @return Exception causing current failure (optional)
      */
-    public Optional<Throwable> getThrowable() {
+    public Optional<Throwable> throwable() {
         return Optional.ofNullable(throwable);
     }
 
@@ -112,7 +111,7 @@ public abstract class SecurityResponse {
      *
      * @return Map of headers to merge with existing headers
      */
-    public Map<String, List<String>> getRequestHeaders() {
+    public Map<String, List<String>> requestHeaders() {
         return requestHeaders;
     }
 
@@ -122,7 +121,7 @@ public abstract class SecurityResponse {
      *
      * @return Map of headers to merge with existing headers
      */
-    public Map<String, List<String>> getResponseHeaders() {
+    public Map<String, List<String>> responseHeaders() {
         return responseHeaders;
     }
 
@@ -152,7 +151,6 @@ public abstract class SecurityResponse {
          *
          * The provider should have:
          * <ul>
-         * <li>Updated entity (through {@link SecurityRequest#getResponseEntity()}</li>
          * <li>Updated headers (through {@link SecurityResponseBuilder#responseHeader(String, String)}</li>
          * <li>Updated status code (through {@link SecurityResponseBuilder#statusCode(int)}</li>
          * </ul>
@@ -275,7 +273,7 @@ public abstract class SecurityResponse {
          * @return this instance
          */
         public T requestHeader(String header, String value) {
-            requestHeaders.put(header, CollectionsHelper.listOf(value));
+            requestHeaders.put(header, List.of(value));
             return myInstance;
         }
 
@@ -313,7 +311,7 @@ public abstract class SecurityResponse {
          * @return this instance
          */
         public T responseHeader(String header, String value) {
-            responseHeaders.put(header, CollectionsHelper.listOf(value));
+            responseHeaders.put(header, List.of(value));
             return myInstance;
         }
 

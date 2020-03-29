@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.logging.Logger;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
 
@@ -83,31 +82,31 @@ abstract class JwkPki extends Jwk {
         this.sha256Thumbprint = Optional.ofNullable(builder.sha256Thumbprint);
     }
 
-    public Optional<PrivateKey> getPrivateKey() {
+    public Optional<PrivateKey> privateKey() {
         return privateKey;
     }
 
-    public PublicKey getPublicKey() {
+    public PublicKey publicKey() {
         return publicKey;
     }
 
-    public Optional<List<X509Certificate>> getCertificateChain() {
+    public Optional<List<X509Certificate>> certificateChain() {
         return certificateChain;
     }
 
-    public Optional<byte[]> getSha1Thumbprint() {
+    public Optional<byte[]> sha1Thumbprint() {
         return sha1Thumbprint;
     }
 
-    public Optional<byte[]> getSha256Thumbprint() {
+    public Optional<byte[]> sha256Thumbprint() {
         return sha256Thumbprint;
     }
 
-    abstract String getSignatureAlgorithm();
+    abstract String signatureAlgorithm();
 
     @Override
     public boolean doVerify(byte[] signedBytes, byte[] signatureToVerify) {
-        String alg = getSignatureAlgorithm();
+        String alg = signatureAlgorithm();
 
         if (ALG_NONE.equals(alg)) {
             return verifyNoneAlg(signatureToVerify);
@@ -126,7 +125,7 @@ abstract class JwkPki extends Jwk {
 
     @Override
     public byte[] doSign(byte[] bytesToSign) {
-        String alg = getSignatureAlgorithm();
+        String alg = signatureAlgorithm();
         if (ALG_NONE.equals(alg)) {
             return EMPTY_BYTES;
         }
@@ -145,8 +144,8 @@ abstract class JwkPki extends Jwk {
     }
 
     // this builder is not public, as a specific key type must be built
-    static class Builder<T extends Builder> extends Jwk.Builder<T> {
-        private T myInstance;
+    static class Builder<T extends Builder<T>> extends Jwk.Builder<T> {
+        private final T myInstance;
         private List<X509Certificate> certificateChain;
         private byte[] sha1Thumbprint;
         private byte[] sha256Thumbprint;
@@ -180,7 +179,6 @@ abstract class JwkPki extends Jwk {
         }
 
         private static List<X509Certificate> processCertChain(URI uri) {
-            // TODO see security#26 as a follow up issue
             LOGGER.log(Level.SEVERE, "Certificate chain from URL is not (yet) supported");
             return new LinkedList<>();
         }
@@ -246,13 +244,12 @@ abstract class JwkPki extends Jwk {
         T fromJson(JsonObject json) {
             super.fromJson(json);
             // get cert chain from URL or from fields if present
-            OptionalHelper.from(JwtUtil.getString(json, PARAM_X509_CHAIN_URL)
+            JwtUtil.getString(json, PARAM_X509_CHAIN_URL)
                                         .map(URI::create)
-                                        .map(Builder::processCertChain))
+                                        .map(Builder::processCertChain)
                     .or(() -> JwtUtil.getStrings(json, PARAM_X509_CHAIN)
                             // certificate chain as base64 encoded array
                             .map(Builder::processCertChain))
-                    .asOptional()
                     .ifPresent(this::certificateChain);
 
             // thumbprints

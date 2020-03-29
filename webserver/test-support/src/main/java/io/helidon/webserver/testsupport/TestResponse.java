@@ -91,7 +91,7 @@ public class TestResponse {
     public CompletableFuture<String> asString() {
         Charset charset = headers.first(Http.Header.CONTENT_TYPE)
                                  .map(MediaType::parse)
-                                 .flatMap(MediaType::getCharset)
+                .flatMap(MediaType::charset)
                                  .map(s -> {
                                      try {
                                          return Charset.forName(s);
@@ -109,6 +109,6 @@ public class TestResponse {
      * @return a web server associated with this test call.
      */
     public WebServer webServer() {
-        return bareResponse.getWebServer();
+        return bareResponse.webServer();
     }
 }

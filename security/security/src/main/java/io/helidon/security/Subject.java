@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.util.AbacSupport;
 
 /**
@@ -46,13 +45,13 @@ public final class Subject implements AbacSupport {
     private final ClassToInstanceStore<Object> publicCredentials = new ClassToInstanceStore<>();
 
     private Subject(Builder builder) {
-        BasicAttributes properties = new BasicAttributes(builder.properties);
+        BasicAttributes properties = BasicAttributes.create(builder.properties);
         this.principal = builder.principal;
         this.principals.addAll(builder.principals);
 
         builder.grants.forEach(grant -> {
             grants.add(grant);
-            grantsByType.computeIfAbsent(grant.getType(), key -> new LinkedList<>()).add(grant);
+            grantsByType.computeIfAbsent(grant.type(), key -> new LinkedList<>()).add(grant);
         });
 
         properties.put("principal", principal);
@@ -92,16 +91,16 @@ public final class Subject implements AbacSupport {
      *
      * @return principal
      */
-    public Principal getPrincipal() {
+    public Principal principal() {
         return principal;
     }
 
     /**
-     * Get all principals of this subject (including the one returned by {@link #getPrincipal()}).
+     * Get all principals of this subject (including the one returned by {@link #principal()}).
      *
      * @return all principals of this subject
      */
-    public List<Principal> getPrincipals() {
+    public List<Principal> principals() {
         return Collections.unmodifiableList(principals);
     }
 
@@ -112,7 +111,7 @@ public final class Subject implements AbacSupport {
      * @param <T>       type of the grant's type (e.g. {@link Role Role}
      * @return list of grants of the specific type associated with this subject (may be empty)
      */
-    public <T extends Grant> List<T> getGrants(Class<T> grantType) {
+    public <T extends Grant> List<T> grants(Class<T> grantType) {
         return grants.stream()
                 .filter(grantType::isInstance)
                 .map(grantType::cast)
@@ -125,18 +124,18 @@ public final class Subject implements AbacSupport {
      * @param grantType type of grant (e.g. "role" or "scope")
      * @return list of grants of the specific type associated with this subject (may be empty)
      */
-    public List<Grant> getGrantsByType(String grantType) {
-        return Collections.unmodifiableList(grantsByType.get(grantType));
+    public List<Grant> grantsByType(String grantType) {
+        return Collections.unmodifiableList(grantsByType.getOrDefault(grantType, List.of()));
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return attributes.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return attributes.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return attributes.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return attributes.abacAttributeNames();
     }
 
     /**
@@ -146,7 +145,7 @@ public final class Subject implements AbacSupport {
      * @param <T>        credential type
      * @return optional of public credential of the type defined
      */
-    public <T> Optional<T> getPublicCredential(Class<T> credential) {
+    public <T> Optional<T> publicCredential(Class<T> credential) {
         return publicCredentials.getInstance(credential);
     }
 
@@ -157,7 +156,7 @@ public final class Subject implements AbacSupport {
      * @param <T>        credential type
      * @return optional of private credential of the type defined
      */
-    public <T> Optional<T> getPrivateCredential(Class<T> credential) {
+    public <T> Optional<T> privateCredential(Class<T> credential) {
         return privateCredentials.getInstance(credential);
     }
 
@@ -169,8 +168,8 @@ public final class Subject implements AbacSupport {
     public javax.security.auth.Subject toJavaSubject() {
         Set<java.security.Principal> principals = new LinkedHashSet<>(this.principals);
 
-        for (String key : attributes.getAttributeNames()) {
-            OptionalHelper.from(attributes.getAttribute(key))
+        for (String key : attributes.abacAttributeNames()) {
+            attributes.abacAttribute(key)
                     .stream()
                     .filter(prop -> prop instanceof Principal)
                     .map(Principal.class::cast)
@@ -192,7 +191,7 @@ public final class Subject implements AbacSupport {
     }
 
     /**
-     * Will add all principals and credentials from another subject to this subject, will not replace {@link #getPrincipals()}.
+     * Will add all principals and credentials from another subject to this subject, will not replace {@link #principals()}.
      *
      * @param another the other subject to combine with this subject
      * @return a new subject that is a combination of this subject and the other subject, this subject is more significant
@@ -206,7 +205,7 @@ public final class Subject implements AbacSupport {
         privateCredentials.keys().forEach(key -> builder.addPrivateCredential(key, privateCredentials.getInstance(key)));
         publicCredentials.keys().forEach(key -> builder.addPublicCredential(key, publicCredentials.getInstance(key)));
         grants.forEach(builder::addGrant);
-        attributes.getAttributeNames().forEach(key -> builder.addAttribute(key, attributes.getAttribute(key)));
+        attributes.abacAttributeNames().forEach(key -> builder.addAttribute(key, attributes.abacAttribute(key)));
 
         // add the other subject
         another.principals.forEach(builder::addPrincipal);
@@ -215,7 +214,7 @@ public final class Subject implements AbacSupport {
         another.publicCredentials.keys()
                 .forEach(key -> builder.addPublicCredential(key, another.publicCredentials.getInstance(key)));
         another.grants.forEach(builder::addGrant);
-        another.attributes.getAttributeNames().forEach(key -> builder.addAttribute(key, another.attributes.getAttribute(key)));
+        another.attributes.abacAttributeNames().forEach(key -> builder.addAttribute(key, another.attributes.abacAttribute(key)));
 
         return builder.build();
     }
@@ -233,7 +232,7 @@ public final class Subject implements AbacSupport {
         private final List<Principal> principals = new LinkedList<>();
         private final ClassToInstanceStore<Object> privateCredentials = new ClassToInstanceStore<>();
         private final ClassToInstanceStore<Object> publicCredentials = new ClassToInstanceStore<>();
-        private BasicAttributes properties = new BasicAttributes();
+        private BasicAttributes properties = BasicAttributes.create();
         private Principal principal;
 
         private Builder() {
@@ -252,12 +251,13 @@ public final class Subject implements AbacSupport {
          * @return updated builder instance
          */
         public Builder update(Subject subject) {
+            principal = subject.principal;
             grants.addAll(subject.grants);
             principals.addAll(subject.principals);
             privateCredentials.putAll(subject.privateCredentials);
             publicCredentials.putAll(subject.publicCredentials);
-            for (String name : subject.attributes.getAttributeNames()) {
-                subject.attributes.getAttribute(name).ifPresent(attrib -> properties.put(name, attrib));
+            for (String name : subject.attributes.abacAttributeNames()) {
+                subject.attributes.abacAttribute(name).ifPresent(attrib -> properties.put(name, attrib));
             }
             return this;
         }
@@ -343,7 +343,7 @@ public final class Subject implements AbacSupport {
          * @return updated builder instance
          */
         public Builder attributes(AbacSupport attributes) {
-            this.properties = new BasicAttributes(attributes);
+            this.properties = BasicAttributes.create(attributes);
             return this;
         }
 
@@ -364,7 +364,7 @@ public final class Subject implements AbacSupport {
          * If {@link #principal(Principal)} was not invoked prior to this method, it will also set the "main" principal.
          *
          * @param principal principal to add to this subject
-         * @return udpated builder instance
+         * @return updated builder instance
          */
         public Builder addPrincipal(Principal principal) {
             if (null == this.principal) {

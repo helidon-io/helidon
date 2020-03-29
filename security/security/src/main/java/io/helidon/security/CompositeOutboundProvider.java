@@ -66,7 +66,7 @@ final class CompositeOutboundProvider implements OutboundSecurityProvider {
 
         for (OutboundSecurityProvider provider : providers) {
             previous = previous.thenCompose(call -> {
-                if (call.response.getStatus() == SecurityResponse.SecurityStatus.ABSTAIN) {
+                if (call.response.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
                     // previous call(s) did not care, I don't have to update request
                     if (provider.isOutboundSupported(call.inboundContext, call.outboundEnv, call.outboundConfig)) {
                         return provider.outboundSecurity(call.inboundContext, call.outboundEnv, call.outboundConfig)
@@ -80,7 +80,7 @@ final class CompositeOutboundProvider implements OutboundSecurityProvider {
                     }
                 }
                 // construct a new request
-                if (call.response.getStatus().isSuccess()) {
+                if (call.response.status().isSuccess()) {
                     // invoke current
                     return provider.outboundSecurity(call.inboundContext, call.outboundEnv, call.outboundConfig)
                             .thenApply(thisResponse -> {
@@ -88,13 +88,13 @@ final class CompositeOutboundProvider implements OutboundSecurityProvider {
 
                                 // combine
                                 OutboundSecurityResponse.Builder builder = OutboundSecurityResponse.builder();
-                                prevResponse.getRequestHeaders().forEach(builder::requestHeader);
-                                prevResponse.getResponseHeaders().forEach(builder::responseHeader);
-                                thisResponse.getRequestHeaders().forEach(builder::requestHeader);
-                                thisResponse.getResponseHeaders().forEach(builder::responseHeader);
+                                prevResponse.requestHeaders().forEach(builder::requestHeader);
+                                prevResponse.responseHeaders().forEach(builder::responseHeader);
+                                thisResponse.requestHeaders().forEach(builder::requestHeader);
+                                thisResponse.responseHeaders().forEach(builder::responseHeader);
                                 SecurityEnvironment nextEnv = updateRequestHeaders(call.outboundEnv, thisResponse);
 
-                                builder.status(thisResponse.getStatus());
+                                builder.status(thisResponse.status());
                                 return new OutboundCall(builder.build(), call.inboundContext, nextEnv, call.outboundConfig);
                             });
                 } else {
@@ -110,7 +110,7 @@ final class CompositeOutboundProvider implements OutboundSecurityProvider {
     private SecurityEnvironment updateRequestHeaders(SecurityEnvironment env, OutboundSecurityResponse response) {
         SecurityEnvironment.Builder builder = env.derive();
 
-        response.getRequestHeaders().forEach(builder::header);
+        response.requestHeaders().forEach(builder::header);
 
         return builder.build();
     }

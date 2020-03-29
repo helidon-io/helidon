@@ -20,7 +20,8 @@ import io.helidon.common.http.Http;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The StatusTypeTest.
@@ -29,14 +30,13 @@ public class StatusTypeTest {
 
     @Test
     public void adHocStatusTypeObjectPropertiesTest() throws Exception {
-        assertTrue(Http.ResponseStatus.from(200) == Http.Status.OK_200);
-        assertTrue(Http.ResponseStatus.from(200).hashCode() == Http.Status.OK_200.hashCode());
-        assertTrue(Http.ResponseStatus.from(200).equals(Http.Status.OK_200));
+        assertThat(Http.ResponseStatus.create(200) == Http.Status.OK_200, is(true));
+        assertThat(Http.ResponseStatus.create(200).hashCode() == Http.Status.OK_200.hashCode(), is(true));
+        assertThat(Http.ResponseStatus.create(200).equals(Http.Status.OK_200), is(true));
 
-
-        assertTrue(Http.ResponseStatus.from(999).equals(Http.ResponseStatus.from(999)));
+        assertThat(Http.ResponseStatus.create(999).equals(Http.ResponseStatus.create(999)), is(true));
         // TODO if we were able to maintain even the '==' property, it would be awesome (cache the created ones?)
-        assertTrue(Http.ResponseStatus.from(999) != Http.ResponseStatus.from(999));
-        assertTrue(Http.ResponseStatus.from(999).hashCode() == Http.ResponseStatus.from(999).hashCode());
+        assertThat(Http.ResponseStatus.create(999) != Http.ResponseStatus.create(999), is(true));
+        assertThat(Http.ResponseStatus.create(999).hashCode() == Http.ResponseStatus.create(999).hashCode(), is(true));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
@@ -58,27 +57,27 @@ public abstract class CompositePolicyTest {
     @Test
     public void testSuccessSecurity() {
         SecurityContext context = getSecurity().contextBuilder("testSuccessSecurity").build();
-        SecurityEnvironment.Builder envBuilder = context.getEnv().derive()
+        SecurityEnvironment.Builder envBuilder = context.env().derive()
                 .path("/jack")
                 .addAttribute("resourceType", "service");
-        context.setEnv(envBuilder);
+        context.env(envBuilder);
 
         AuthenticationResponse atnResponse = context.authenticate();
 
         assertThat(atnResponse, notNullValue());
-        assertThat(atnResponse.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(atnResponse.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        Subject subject = atnResponse.getService().get();
-        assertThat(subject.getPrincipal().getName(), is("resource-aService"));
+        Subject subject = atnResponse.service().get();
+        assertThat(subject.principal().getName(), is("resource-aService"));
 
         OutboundSecurityResponse outboundResponse = context.outboundClientBuilder()
                 .outboundEnvironment(envBuilder)
                 .outboundEndpointConfig(EndpointConfig.create())
-                .get();
+                .buildAndGet();
 
-        assertThat(outboundResponse.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(outboundResponse.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        Map<String, List<String>> headers = outboundResponse.getRequestHeaders();
+        Map<String, List<String>> headers = outboundResponse.requestHeaders();
         assertThat(headers.size(), is(2));
 
         List<String> path = headers.get("path");
@@ -102,19 +101,19 @@ public abstract class CompositePolicyTest {
                 .get(getAuthorization().authorize((context("/atz/permit", "atz/permit"))));
 
         assertThat(response, notNullValue());
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
         response = SecurityResponse
                 .get(getAuthorization().authorize((context("/atz/abstain", "atz/permit"))));
 
         assertThat(response, notNullValue());
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
         response = SecurityResponse
                 .get(getAuthorization().authorize((context("/atz/abstain", "atz/abstain"))));
 
         assertThat(response, notNullValue());
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
 
     @Test
@@ -123,12 +122,12 @@ public abstract class CompositePolicyTest {
                 .toCompletableFuture()
                 .get();
         assertThat(response, notNullValue());
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        Subject user = response.getUser().get();
-        assertThat(user.getPrincipal().getName(), is("path-jack"));
-        Subject service = response.getService().get();
-        assertThat(service.getPrincipal().getName(), is("resource-aService"));
+        Subject user = response.user().get();
+        assertThat(user.principal().getName(), is("path-jack"));
+        Subject service = response.service().get();
+        assertThat(service.principal().getName(), is("resource-aService"));
     }
 
     @Test
@@ -137,27 +136,27 @@ public abstract class CompositePolicyTest {
                 .toCompletableFuture()
                 .get();
         assertThat(response, notNullValue());
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        Subject user = response.getUser().get();
-        assertThat(user.getPrincipal().getName(), is("resource-jack"));
-        Subject service = response.getService().get();
-        assertThat(service.getPrincipal().getName(), is("path-aService"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        Subject user = response.user().get();
+        assertThat(user.principal().getName(), is("resource-jack"));
+        Subject service = response.service().get();
+        assertThat(service.principal().getName(), is("path-aService"));
     }
 
     @Test
     public void testOutboundSuccess() throws ExecutionException, InterruptedException {
         ProviderRequest context = context("/jack", "service");
 
-        assertThat(getOutbound().isOutboundSupported(context, context.getEnv(), context.getEndpointConfig()), is(true));
+        assertThat(getOutbound().isOutboundSupported(context, context.env(), context.endpointConfig()), is(true));
 
         OutboundSecurityResponse response = getOutbound().outboundSecurity(context,
-                                                                           context.getEnv(),
-                                                                           context.getEndpointConfig()).toCompletableFuture()
+                                                                           context.env(),
+                                                                           context.endpointConfig()).toCompletableFuture()
                 .get();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        Map<String, List<String>> headers = response.getRequestHeaders();
+        Map<String, List<String>> headers = response.requestHeaders();
         assertThat(headers.size(), is(2));
 
         List<String> path = headers.get("path");
@@ -179,11 +178,11 @@ public abstract class CompositePolicyTest {
         ProviderRequest mock = Mockito.mock(ProviderRequest.class);
         SecurityEnvironment se = SecurityEnvironment.builder(SecurityTime.create())
                 .path(path)
-                .headers(CollectionsHelper.mapOf())
+                .headers(Map.of())
                 .addAttribute("resourceType", resource)
                 .build();
 
-        when(mock.getEnv()).thenReturn(se);
+        when(mock.env()).thenReturn(se);
 
         return mock;
     }

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -96,6 +96,7 @@ for ((i=0;i<${#ARGS[@]};i++))
 
 if [ -z "${COMMAND}" ] ; then
   echo "ERROR: no command provided"
+  usage
   exit 1
 fi
 
@@ -110,14 +111,14 @@ fi
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 # Hooks for version substitution work
-readonly PREPARE_HOOKS=( ${WS_DIR}/examples/archetypes/set-version.sh )
+readonly PREPARE_HOOKS=( )
 
 # Hooks for deployment work
-readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
+readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-if [ "${WERCKER}" = "true" ] ; then
+if [ "${WERCKER}" = "true" -o "${GITLAB}" = "true" ] ; then
   apt-get update && apt-get -y install graphviz
 fi
 
@@ -166,12 +167,29 @@ printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 
 update_version(){
   # Update version
-  mvn -f ${WS_DIR}/pom.xml versions:set versions:set-property \
+  mvn -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
     -DgenerateBackupPoms=false \
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
-    -DprocessAllModules=true \
-    -Pexamples,docs
+    -DprocessAllModules=true
+
+  # Hack to update helidon.version
+  for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
+  do
+      cat ${pom} | \
+          sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
+          > ${pom}.tmp
+      mv ${pom}.tmp ${pom}
+  done
+
+  # Hack to update helidon.version in build.gradle files
+  for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
+  do
+      cat ${bfile} | \
+          sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
+          > ${bfile}.tmp
+      mv ${bfile}.tmp ${bfile}
+  done
 
   # Invoke prepare hook
   if [ -n "${PREPARE_HOOKS}" ]; then
@@ -181,53 +199,33 @@ update_version(){
   fi
 }
 
-inject_credentials(){
-  # Add private_key from IDENTITY_FILE
-  if [ -n "${IDENTITY_FILE}" ] && [ ! -e ~/.ssh ]; then
-    mkdir ~/.ssh/ 2>/dev/null || true
-    echo -e "${IDENTITY_FILE}" > ~/.ssh/id_rsa
-    chmod og-rwx ~/.ssh/id_rsa
-    echo -e "Host *" >> ~/.ssh/config
-    echo -e "\tStrictHostKeyChecking no" >> ~/.ssh/config
-    echo -e "\tUserKnownHostsFile /dev/null" >> ~/.ssh/config
-  fi
+release_site(){
+    if [ -n "${STAGING_REPO_ID}" ] ; then
+        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deployByRepositoryId/${STAGING_REPO_ID}/"
+    else
+        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+    fi
 
- # Add GPG key pair
- if [ -n "${GPG_PUBLIC_KEY}" ] && [ -n "${GPG_PRIVATE_KEY}" ] ; then
-    mkdir ~/.gnupg 2>/dev/null || true
-    chmod 700 ~/.gnupg
-    echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
-    echo -e "${GPG_PUBLIC_KEY}" > ~/.gnupg/helidon_pub.gpg
-    gpg --import --no-tty --batch ~/.gnupg/helidon_pub.gpg
-    echo -e "${GPG_PRIVATE_KEY}" > ~/.gnupg/helidon_sec.gpg
-    gpg --allow-secret-key-import --import --no-tty --batch ~/.gnupg/helidon_sec.gpg
- fi
+    # Generate site
+    mvn -B site
 
-  # Add docker config from DOCKER_CONFIG_FILE
-  if [ -n "${DOCKER_CONFIG_FILE}" ] && [ ! -e ~/.docker ]; then
-    mkdir ~/.docker/ 2>/dev/null || true
-    printf "${DOCKER_CONFIG_FILE}" > ~/.docker/config.json
-    chmod og-rwx ~/.docker/config.json
-  fi
+    # Sign site jar
+    gpg --pinentry-mode loopback --passphrase "${GPG_PASSPHRASE}" -ab ${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar
 
-  # Add maven settings from MAVEN_SETTINGS_FILE
-  if [ -n "${MAVEN_SETTINGS_FILE}" ] ; then
-    mkdir ~/.m2/ 2>/dev/null || true
-    echo -e "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
-  fi
-
-  # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
-  if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] ; then
-    mkdir ~/.m2/ 2>/dev/null || true
-    echo -e "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
-  fi
-
-  # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
-  # Only if none exist on the system
-  if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] && [ ! -e ~/.m2/settings-security.xml ]; then
-    mkdir ~/.m2/ 2>/dev/null || true
-    echo "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
-  fi
+    # Deploy site.jar and signature file explicitly using deploy-file
+    mvn -B deploy:deploy-file \
+      -Dfile=${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar \
+      -Dfiles=${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar.asc \
+      -Dclassifier=site \
+      -Dclassifiers=site \
+      -Dtypes=jar.asc \
+      -DgeneratePom=false \
+      -DgroupId=io.helidon \
+      -DartifactId=helidon-project \
+      -Dversion=${FULL_VERSION} \
+      -Durl=${MAVEN_REPO_URL} \
+      -DrepositoryId=ossrh \
+      -DretryFailedDeploymentCount=10
 }
 
 release_build(){
@@ -242,6 +240,12 @@ release_build(){
     # Invoke update_version
     update_version
 
+    # Update scm/tag entry in the parent pom
+    cat parent/pom.xml | \
+        sed -e s@'<tag>HEAD</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
+        > parent/pom.xml.tmp
+    mv parent/pom.xml.tmp parent/pom.xml
+
     # Git user info
     git config user.email || git config --global user.email "info@helidon.io"
     git config user.name || git config --global user.name "Helidon Robot"
@@ -254,13 +258,14 @@ release_build(){
     mvn nexus-staging:rc-open \
       -DstagingProfileId=6026dab46eed94 \
       -DstagingDescription="${STAGING_DESC}"
+
     export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
-      egrep "^\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-      awk '{print $2}' | head -1)
+      egrep "\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+      sed -E s@'.*(iohelidon-[0-9]*).*'@'\1'@g | head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
-    mvn -B clean deploy -Prelease,ossrh-releases -DskipTests \
+    mvn -B clean deploy -Prelease,archetypes -DskipTests \
       -Dgpg.passphrase="${GPG_PASSPHRASE}" \
       -DstagingRepositoryId=${STAGING_REPO_ID} \
       -DretryFailedDeploymentCount=10
@@ -271,6 +276,9 @@ release_build(){
         bash "${perform_hook}"
       done
     fi
+
+    # Release site (documentation, javadocs)
+    release_site
 
     # Close the nexus staging repository
     mvn nexus-staging:rc-close \

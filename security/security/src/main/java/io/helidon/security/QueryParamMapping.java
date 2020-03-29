@@ -23,7 +23,7 @@ import io.helidon.security.util.TokenHandler;
 
 /**
  * Definition of a map to bind a query param to a header.
- * Uses the {@link TokenHandler#setHeader(Map, String)} to create a new header for
+ * Uses the {@link TokenHandler#header(Map, String)} to create a new header for
  * the extracted parameter.
  */
 public final class QueryParamMapping {
@@ -65,17 +65,25 @@ public final class QueryParamMapping {
      * @param config configuration instance
      * @return new query parameter handler instance
      */
-    public static QueryParamMapping from(Config config) {
-        String name = config.get("name").asString();
-        TokenHandler handler = config.as(TokenHandler.class);
+    public static QueryParamMapping create(Config config) {
+        String name = config.get("name").asString().get();
+        TokenHandler handler = config.as(TokenHandler::create).get();
         return create(name, handler);
     }
 
-    public String getQueryParamName() {
+    /**
+     * Name of the query parameter to map.
+     * @return parameter name
+     */
+    public String queryParamName() {
         return queryParamName;
     }
 
-    public TokenHandler getTokenHandler() {
+    /**
+     * Token handler used to create a header from the parameter.
+     * @return header token handler
+     */
+    public TokenHandler tokenHandler() {
         return tokenHandler;
     }
 }

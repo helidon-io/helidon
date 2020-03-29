@@ -17,16 +17,16 @@
 package io.helidon.config.tests.module.mappers2;
 
 import java.util.OptionalInt;
+import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 
 /**
- * {@link ConfigMapper}s implementation for {@link OptionalInt}, but returns a value minus 1.
+ * Config mapper implementation for {@link OptionalInt}, but returns a value minus 1.
  */
-public class OptionalIntConfigMapper implements ConfigMapper<OptionalInt> {
+public class OptionalIntConfigMapper implements Function<Config, OptionalInt> {
 
     @Override
     public OptionalInt apply(Config config) throws ConfigMappingException, MissingValueException {
@@ -34,7 +34,7 @@ public class OptionalIntConfigMapper implements ConfigMapper<OptionalInt> {
             return OptionalInt.empty();
         }
 
-        return OptionalInt.of(Integer.parseInt(config.asString()) - 1);
+        return OptionalInt.of(Integer.parseInt(config.asString().get()) - 1);
     }
 
 }

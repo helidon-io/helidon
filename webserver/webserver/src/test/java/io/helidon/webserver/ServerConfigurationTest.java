@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ import io.opentracing.util.GlobalTracer;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 
 /**
  * Tests {@link ServerConfiguration.Builder}.
@@ -45,22 +46,22 @@ public class ServerConfigurationTest {
                                                 .timeout(-1)
                                                 .workersCount(-1)
                                                 .build();
-        assertEquals(1024, config.backlog());
-        assertEquals(0, config.receiveBufferSize());
-        assertEquals(0, config.timeoutMillis());
-        assertTrue(config.workersCount() > 0);
+        assertThat(config.backlog(), is(1024));
+        assertThat(config.receiveBufferSize(), is(0));
+        assertThat(config.timeoutMillis(), is(0));
+        assertThat(config.workersCount() > 0, is(true));
     }
 
     @Test
     public void expectedDefaults() throws Exception {
         ServerConfiguration config = ServerConfiguration.builder().build();
-        assertEquals(0, config.port());
-        assertEquals(1024, config.backlog());
-        assertEquals(0, config.receiveBufferSize());
-        assertEquals(0, config.timeoutMillis());
-        assertTrue(config.workersCount() > 0);
+        assertThat(config.port(), is(0));
+        assertThat(config.backlog(), is(1024));
+        assertThat(config.receiveBufferSize(), is(0));
+        assertThat(config.timeoutMillis(), is(0));
+        assertThat(config.workersCount() > 0, is(true));
         assertThat(config.tracer(), IsInstanceOf.instanceOf(GlobalTracer.class));
-        assertNull(config.bindAddress());
+        assertThat(config.bindAddress(), nullValue());
     }
 
     @Test
@@ -73,52 +74,56 @@ public class ServerConfigurationTest {
                 .workersCount(50)
                 .bindAddress(InetAddress.getLocalHost())
                 .build();
-        assertEquals(10, config.port());
-        assertEquals(20, config.backlog());
-        assertEquals(30, config.receiveBufferSize());
-        assertEquals(40, config.timeoutMillis());
-        assertEquals(50, config.workersCount());
-        assertEquals(InetAddress.getLocalHost(), config.bindAddress());
+        assertThat(config.port(), is(10));
+        assertThat(config.backlog(), is(20));
+        assertThat(config.receiveBufferSize(), is(30));
+        assertThat(config.timeoutMillis(), is(40));
+        assertThat(config.workersCount(), is(50));
+        assertThat(config.bindAddress(), is(InetAddress.getLocalHost()));
     }
 
     @Test
     public void fromConfig() throws Exception {
         Config config = Config.builder().sources(ConfigSources.classpath("config1.conf")).build();
-        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration.class);
-        assertNotNull(sc);
-        assertEquals(10, sc.port());
-        assertEquals(20, sc.backlog());
-        assertEquals(30, sc.receiveBufferSize());
-        assertEquals(40, sc.timeoutMillis());
-        assertEquals(InetAddress.getByName("127.0.0.1"), sc.bindAddress());
-        assertNull(sc.ssl());
+        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
+        assertThat(sc, notNullValue());
+        assertThat(sc.port(), is(10));
+        assertThat(sc.backlog(), is(20));
+        assertThat(sc.receiveBufferSize(), is(30));
+        assertThat(sc.timeoutMillis(), is(40));
+        assertThat(sc.bindAddress(), is(InetAddress.getByName("127.0.0.1")));
+        assertThat(sc.enabledSslProtocols(), hasSize(0));
+        assertThat(sc.ssl(), nullValue());
 
-        assertEquals(50, sc.workersCount());
+        assertThat(sc.workersCount(), is(50));
 
-        assertEquals(11, sc.socket("secure").port());
-        assertEquals(21, sc.socket("secure").backlog());
-        assertEquals(31, sc.socket("secure").receiveBufferSize());
-        assertEquals(41, sc.socket("secure").timeoutMillis());
-        assertEquals(InetAddress.getByName("127.0.0.2"), sc.socket("secure").bindAddress());
-        assertNull(sc.socket("secure").ssl());
+        assertThat(sc.socket("secure").port(), is(11));
+        assertThat(sc.socket("secure").backlog(), is(21));
+        assertThat(sc.socket("secure").receiveBufferSize(), is(31));
+        assertThat(sc.socket("secure").timeoutMillis(), is(41));
+        assertThat(sc.socket("secure").bindAddress(), is(InetAddress.getByName("127.0.0.2")));
+        assertThat(sc.socket("secure").enabledSslProtocols(), hasSize(0));
+        assertThat(sc.socket("secure").ssl(), nullValue());
 
-        assertEquals(12, sc.socket("other").port());
-        assertEquals(22, sc.socket("other").backlog());
-        assertEquals(32, sc.socket("other").receiveBufferSize());
-        assertEquals(42, sc.socket("other").timeoutMillis());
-        assertEquals(InetAddress.getByName("127.0.0.3"), sc.socket("other").bindAddress());
-        assertNull(sc.socket("other").ssl());
+        assertThat(sc.socket("other").port(), is(12));
+        assertThat(sc.socket("other").backlog(), is(22));
+        assertThat(sc.socket("other").receiveBufferSize(), is(32));
+        assertThat(sc.socket("other").timeoutMillis(), is(42));
+        assertThat(sc.socket("other").bindAddress(), is(InetAddress.getByName("127.0.0.3")));
+        assertThat(sc.socket("other").enabledSslProtocols(), hasSize(0));
+        assertThat(sc.socket("other").ssl(), nullValue());
     }
 
     @Test
     public void sslFromConfig() throws Exception {
         Config config = Config.builder().sources(ConfigSources.classpath("config-with-ssl.conf")).build();
-        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration.class);
-        assertNotNull(sc);
-        assertEquals(10, sc.port());
-        assertNotNull(sc.ssl());
+        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
+        assertThat(sc, notNullValue());
+        assertThat(sc.port(), is(10));
+        assertThat(sc.ssl(), notNullValue());
 
-        assertEquals(11, sc.socket("secure").port());
-        assertNotNull(sc.socket("secure").ssl());
+        assertThat(sc.socket("secure").port(), is(11));
+        assertThat(sc.socket("secure").enabledSslProtocols(), contains("TLSv1.2"));
+        assertThat(sc.socket("secure").ssl(), notNullValue());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.security.internal.SecurityAuditEvent;
@@ -45,29 +46,61 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
         return security.resolveAtnProvider(providerName)
                 .map(this::authenticate)
                 .orElseThrow(() -> new SecurityException("Could not find any authentication provider. Security is not "
-                                                                 + "configured"));
+                                                                 + "configured"))
+                .thenCompose(authenticationResponse -> {
+                    CompletionStage<AuthenticationResponse> response = mapSubject(
+                            authenticationResponse);
+                    return response;
+                });
 
+    }
+
+    private CompletionStage<AuthenticationResponse> mapSubject(AuthenticationResponse prevResponse) {
+        ProviderRequest providerRequest = new ProviderRequest(context,
+                                                              request.resources());
+
+        if (prevResponse.status() == SecurityResponse.SecurityStatus.SUCCESS) {
+            return security.subjectMapper()
+                    .map(mapper -> mapper.map(providerRequest, prevResponse))
+                    .orElseGet(() -> CompletableFuture.completedFuture(prevResponse))
+                    .thenApply(newResponse -> {
+                        // intentionally checking for instance equality, as that means we are guaranteed no changes
+                        if (newResponse == prevResponse) {
+                            // no changes were done, response as is
+                            return prevResponse;
+                        } else {
+                            newResponse.user().ifPresent(context::setUser);
+                            newResponse.service().ifPresent(context::setService);
+                            return newResponse;
+                        }
+                    });
+        } else {
+            return CompletableFuture.completedFuture(prevResponse);
+        }
     }
 
     private CompletionStage<AuthenticationResponse> authenticate(AuthenticationProvider providerInstance) {
         // prepare request to provider
-        ProviderRequest ac = new ProviderRequest(context,
-                                                 request.getResources(),
-                                                 request.getRequestEntity(),
-                                                 request.getResponseEntity());
+        ProviderRequest providerRequest = new ProviderRequest(context,
+                                                              request.resources());
 
-        return providerInstance.authenticate(ac).thenApply(response -> {
-            if (response.getStatus().isSuccess()) {
-                response.getUser().ifPresent(context::setUser);
-                response.getService().ifPresent(context::setService);
+        return providerInstance.authenticate(providerRequest).thenApply(response -> {
+            if (response.status().isSuccess()) {
+                response.user()
+                        .ifPresent(context::setUser);
+
+                response.service()
+                        .ifPresent(context::setService);
+
                 //Audit success
                 context.audit(SecurityAuditEvent
                                       .success(
                                               AuditEvent.AUTHN_TYPE_PREFIX + ".authenticate",
-                                              "Provider %s. Subject %s")
+                                              "Path %s. Provider %s. Subject %s")
+                                      .addParam(AuditEvent.AuditParam.plain("path", providerRequest.env().path()))
                                       .addParam(AuditEvent.AuditParam
                                                         .plain("provider", providerInstance.getClass().getName()))
-                                      .addParam(AuditEvent.AuditParam.plain("subject", response.getUser())));
+                                      .addParam(AuditEvent.AuditParam.plain("subject", response.user())));
                 return response;
             }
 
@@ -75,10 +108,10 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
             SecurityAuditEvent event = SecurityAuditEvent
                     .failure(AuditEvent.AUTHN_TYPE_PREFIX + ".authenticate", "Provider %s. Message: %s")
                     .addParam(AuditEvent.AuditParam.plain("provider", providerInstance.getClass().getName()))
-                    .addParam(AuditEvent.AuditParam.plain("message", response.getDescription().orElse(null)));
+                    .addParam(AuditEvent.AuditParam.plain("message", response.description().orElse(null)));
 
-            response.getThrowable()
-                    .map(e -> event.addParam(AuditEvent.AuditParam.plain("exception", response.getThrowable())));
+            response.throwable()
+                    .map(e -> event.addParam(AuditEvent.AuditParam.plain("exception", response.throwable())));
             context.audit(event);
             return response;
         }).exceptionally(throwable -> {

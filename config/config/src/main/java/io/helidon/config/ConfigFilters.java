@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.config;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.config.internal.ValueResolvingFilter;
 import io.helidon.config.spi.ConfigFilter;
 
 /**
@@ -27,7 +26,7 @@ import io.helidon.config.spi.ConfigFilter;
  *
  * @see io.helidon.config.spi.ConfigFilter
  */
-public class ConfigFilters {
+public final class ConfigFilters {
 
     private ConfigFilters() {
         throw new AssertionError("Instantiation not allowed.");
@@ -52,7 +51,7 @@ public class ConfigFilters {
      * {@link #build()}.
      * <p>
      * Alternatively, if you create the builder using the
-     * {@link #from(io.helidon.config.Config)} method, in the {@code Config}
+     * {@link #create(io.helidon.config.Config)} method, in the {@code Config}
      * instance you pass set the config key
      * {@value FAIL_ON_MISSING_REFERENCE_KEY_NAME} to {@code true}.
      */
@@ -87,9 +86,9 @@ public class ConfigFilters {
          *                                supplied configuration node to an instance of a given Java type.
          * @see ConfigFilters#valueResolving()
          */
-        public static ValueResolvingBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+        public static ValueResolvingBuilder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
             ValueResolvingBuilder builder = new ValueResolvingBuilder();
-            builder.failOnMissingReference(metaConfig.get(FAIL_ON_MISSING_REFERENCE_KEY_NAME).asBoolean(false));
+            builder.failOnMissingReference(metaConfig.get(FAIL_ON_MISSING_REFERENCE_KEY_NAME).asBoolean().orElse(false));
             return builder;
         }
 

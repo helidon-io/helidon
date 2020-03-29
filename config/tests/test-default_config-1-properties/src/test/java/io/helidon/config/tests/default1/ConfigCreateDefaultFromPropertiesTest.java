@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package io.helidon.config.tests.default1;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests {@link Config#create()} with just built-in Properties Parser available, missing other parsers.
@@ -38,7 +40,7 @@ public class ConfigCreateDefaultFromPropertiesTest {
     public void testCreate() {
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(CONFIG_VALUE));
+        assertThat(config.get(KEY).asString().get(), is(CONFIG_VALUE));
     }
 
     @Test
@@ -48,7 +50,7 @@ public class ConfigCreateDefaultFromPropertiesTest {
 
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(PROP_VALUE));
+        assertThat(config.get(KEY).asString(), is(ConfigValues.simpleValue(PROP_VALUE)));
     }
 
 }

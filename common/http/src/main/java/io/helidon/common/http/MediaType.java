@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,19 @@
 
 package io.helidon.common.http;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * An abstraction for a media type. Instances are immutable.
  *
  * @see <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7">HTTP/1.1 section 3.7</a>
  */
-public class MediaType implements AcceptPredicate<MediaType> {
+public final class MediaType implements AcceptPredicate<MediaType> {
     // must be first, as this is used to create instances of media types
     private static final Map<MediaType, MediaType> KNOWN_TYPES = new HashMap<>();
 
@@ -66,6 +64,10 @@ public class MediaType implements AcceptPredicate<MediaType> {
      */
     public static final MediaType APPLICATION_JSON = createMediaType("application", "json");
     /**
+     * A {@link MediaType} constant representing {@code application/stream+json} media type.
+     */
+    public static final MediaType APPLICATION_STREAM_JSON = createMediaType("application", "stream+json");
+    /**
      * A {@link MediaType} constant representing {@code application/x-www-form-urlencoded} media type.
      */
     public static final MediaType APPLICATION_FORM_URLENCODED = createMediaType("application", "x-www-form-urlencoded");
@@ -89,6 +91,36 @@ public class MediaType implements AcceptPredicate<MediaType> {
      * A {@link MediaType} constant representing {@code text/html} media type.
      */
     public static final MediaType TEXT_HTML = createMediaType("text", "html");
+    /**
+     * A {@link MediaType} constant representing OpenAPI yaml.
+     * <p>
+     * See https://github.com/opengeospatial/WFS_FES/issues/117#issuecomment-402188280
+     */
+    public static final MediaType APPLICATION_OPENAPI_YAML = createMediaType("application", "vnd.oai.openapi");
+    /**
+     * A {@link MediaType} constant representing OpenAPI json.
+     */
+    public static final MediaType APPLICATION_OPENAPI_JSON = createMediaType("application", "vnd.oai.openapi+json");
+
+    /**
+     * A {@link MediaType} constant representing "x" YAML as application.
+     */
+    public static final MediaType APPLICATION_X_YAML = createMediaType("application", "x-yaml");
+
+    /**
+     * A {@link MediaType} constant representing pseudo-registered YAML. (It is not actually registered.)
+     */
+    public static final MediaType APPLICATION_YAML = createMediaType("application", "yaml");
+
+    /**
+     * A {@link MediaType} constant representing "x" YAML as text.
+     */
+    public static final MediaType TEXT_X_YAML = createMediaType("text", "x-yaml");
+
+    /**
+     * A {@link MediaType} constant representing pseudo-registered YAML as text.
+     */
+    public static final MediaType TEXT_YAML = createMediaType("text", "yaml");
 
     private static final MediaType APPLICATION_JAVASCRIPT = createMediaType("application", "javascript");
 
@@ -102,8 +134,8 @@ public class MediaType implements AcceptPredicate<MediaType> {
      * Predicate to test if {@link MediaType} is {@code application/json} or has {@code json} suffix.
      */
     public static final Predicate<MediaType> JSON_PREDICATE = APPLICATION_JSON
-            .or(APPLICATION_JAVASCRIPT)
             .or(mt -> mt.hasSuffix("json"));
+
     /**
      * Matcher for type, subtype and attributes.
      */
@@ -119,23 +151,19 @@ public class MediaType implements AcceptPredicate<MediaType> {
      */
     private static final CharMatcher LINEAR_WHITE_SPACE = CharMatcher.anyOf(" \t\r\n");
     private static final String CHARSET_ATTRIBUTE = "charset";
-    private String type;
-    private String subtype;
-    private Map<String, String> parameters;
+    private final String type;
+    private final String subtype;
+    private final Map<String, String> parameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-    /**
-     * Creates a new instance of {@code MediaType} with the supplied type, subtype and
-     * parameters.
-     *
-     * @param type       the primary type, {@code null} is equivalent to
-     *                   {@link #WILDCARD_VALUE}.
-     * @param subtype    the subtype, {@code null} is equivalent to
-     *                   {@link #WILDCARD_VALUE}.
-     * @param parameters a map of media type parameters, {@code null} is the same as an
-     *                   empty map.
-     */
-    public MediaType(String type, String subtype, Map<String, String> parameters) {
-        this(type, subtype, null, createParametersMap(parameters));
+    private MediaType(Builder builder) {
+
+        this.type = builder.type;
+        this.subtype = builder.subtype;
+        this.parameters.putAll(builder.parameters);
+
+        if ((builder.charset != null) && !builder.charset.isEmpty()) {
+            this.parameters.put(CHARSET_PARAMETER, builder.charset);
+        }
     }
 
     /**
@@ -145,66 +173,13 @@ public class MediaType implements AcceptPredicate<MediaType> {
      *                {@link #WILDCARD_VALUE}
      * @param subtype the subtype, {@code null} is equivalent to
      *                {@link #WILDCARD_VALUE}
+     * @return a new media type for the specified type and subtype
      */
-    public MediaType(String type, String subtype) {
-        this(type, subtype, null, null);
-    }
-
-    /**
-     * Creates a new instance of {@code MediaType} with the supplied type, subtype and {@value #CHARSET_PARAMETER} parameter.
-     *
-     * @param type    the primary type, {@code null} is equivalent to {@link #WILDCARD_VALUE}
-     * @param subtype the subtype, {@code null} is equivalent to {@link #WILDCARD_VALUE}
-     * @param charset the {@value #CHARSET_PARAMETER} parameter value. If {@code null} or empty
-     *                the {@value #CHARSET_PARAMETER} parameter will not be set.
-     */
-    public MediaType(String type, String subtype, String charset) {
-        this(type, subtype, charset, null);
-    }
-
-    /**
-     * Creates a new instance of {@code MediaType}, both type and subtype are wildcards.
-     * Consider using the constant {@link #WILDCARD_VALUE} instead.
-     */
-    public MediaType() {
-        this(AcceptPredicate.WILDCARD_VALUE, AcceptPredicate.WILDCARD_VALUE, null, null);
-    }
-
-    private MediaType(String type, String subtype, String charset, Map<String, String> parameterMap) {
-
-        this.type = type == null ? AcceptPredicate.WILDCARD_VALUE : type;
-        this.subtype = subtype == null ? AcceptPredicate.WILDCARD_VALUE : subtype;
-
-        if (parameterMap == null) {
-            parameterMap = new TreeMap<>(String::compareToIgnoreCase);
-        }
-
-        if (charset != null && !charset.isEmpty()) {
-            parameterMap.put(CHARSET_PARAMETER, charset);
-        }
-        this.parameters = Collections.unmodifiableMap(parameterMap);
-    }
-
-    private static MediaType createMediaType() {
-        MediaType mediaType = new MediaType();
-        KNOWN_TYPES.put(mediaType, mediaType);
-        return mediaType;
-    }
-
-    private static MediaType createMediaType(String type, String subtype) {
-        MediaType mediaType = new MediaType(type, subtype);
-        KNOWN_TYPES.put(mediaType, mediaType);
-        return mediaType;
-    }
-
-    private static TreeMap<String, String> createParametersMap(Map<String, String> initialValues) {
-        final TreeMap<String, String> map = new TreeMap<>(String::compareToIgnoreCase);
-        if (initialValues != null) {
-            for (Map.Entry<String, String> e : initialValues.entrySet()) {
-                map.put(e.getKey().toLowerCase(), e.getValue());
-            }
-        }
-        return map;
+    public static MediaType create(String type, String subtype) {
+        return builder()
+                .type(type)
+                .subtype(subtype)
+                .build();
     }
 
     /**
@@ -217,7 +192,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      */
     public static MediaType parse(String input) {
         Objects.requireNonNull(input, "Parameter 'input' is null!");
-        MediaType.Tokenizer tokenizer = new MediaType.Tokenizer(input);
+        Tokenizer tokenizer = new Tokenizer(input);
         try {
             String type = tokenizer.consumeToken(TOKEN_MATCHER);
             tokenizer.consumeCharacter('/');
@@ -255,60 +230,59 @@ public class MediaType implements AcceptPredicate<MediaType> {
     }
 
     /**
-     * Ensures the truth of an expression involving the state of the calling instance, but not
-     * involving any parameters to the calling method.
+     * A fluent API builder for creating customized Media type instances.
      *
-     * @param expression a boolean expression
-     * @param message    a message to pass to the {@link IllegalStateException} that is possibly thrown
-     * @throws IllegalStateException if {@code expression} is false
+     * @return a new builder
      */
-    static void checkState(boolean expression, String message) {
-        checkState(expression, () -> message);
+    public static Builder builder() {
+        return new Builder();
     }
 
-    /**
-     * Ensures the truth of an expression involving the state of the calling instance, but not
-     * involving any parameters to the calling method.
-     *
-     * @param expression      a boolean expression
-     * @param messageSupplier a message to pass to the {@link IllegalStateException} that is possibly thrown
-     * @throws IllegalStateException if {@code expression} is false
-     */
-    static void checkState(boolean expression, Supplier<String> messageSupplier) {
-        if (!expression) {
-            throw new IllegalStateException(messageSupplier.get());
-        }
+    private static MediaType createMediaType() {
+        MediaType mediaType = MediaType.builder().build();
+        KNOWN_TYPES.put(mediaType, mediaType);
+        return mediaType;
     }
 
-    private static MediaType create(
-            String type, String subtype, Map<String, String> parameters) {
-        Objects.requireNonNull(type, "Parameter 'type' is null!");
-        Objects.requireNonNull(subtype, "Parameter 'subtype' is null!");
-        Objects.requireNonNull(parameters, "Parameter 'parameters' is null!");
-        String normalizedType = normalizeToken(type);
-        String normalizedSubtype = normalizeToken(subtype);
-        checkState(
-                !WILDCARD.type.equals(normalizedType) || WILDCARD.type.equals(normalizedSubtype),
-                "A wildcard type cannot be used with a non-wildcard subtype");
-        Map<String, String> builder = new HashMap<>();
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            String attribute = normalizeToken(entry.getKey());
-            builder.put(attribute, normalizeParameterValue(attribute, entry.getValue()));
-        }
-        MediaType mediaType = new MediaType(normalizedType, normalizedSubtype, builder);
-
-        // Return one of the constants if the media type is a known type.
-        return Optional.ofNullable(KNOWN_TYPES.get(mediaType)).orElse(mediaType);
-    }
-
-    private static String normalizeToken(String token) {
-        checkState(TOKEN_MATCHER.matchesAllOf(token), () ->
-                String.format("Parameter '%s' doesn't match token matcher: %s", token, TOKEN_MATCHER));
-        return Ascii.toLowerCase(token);
+    private static MediaType createMediaType(String type, String subtype) {
+        MediaType mediaType = MediaType.create(type, subtype);
+        KNOWN_TYPES.put(mediaType, mediaType);
+        return mediaType;
     }
 
     private static String normalizeParameterValue(String attribute, String value) {
         return CHARSET_ATTRIBUTE.equals(attribute) ? Ascii.toLowerCase(value) : value;
+    }
+
+    private static MediaType create(String type, String subtype,
+            Map<String, String> parameters) {
+
+        Objects.requireNonNull(type, "Parameter 'type' is null!");
+        Objects.requireNonNull(subtype, "Parameter 'subtype' is null!");
+        Objects.requireNonNull(parameters, "Parameter 'parameters' is null!");
+
+        String normalizedType = Tokenizer.normalize(TOKEN_MATCHER, type);
+        String normalizedSubtype = Tokenizer.normalize(TOKEN_MATCHER, subtype);
+        if (WILDCARD.type.equals(normalizedType)
+                && !WILDCARD.type.equals(normalizedSubtype)) {
+            throw new IllegalStateException(
+                    "A wildcard type cannot be used with a non-wildcard subtype");
+        }
+        Map<String, String> builder = new HashMap<>();
+        for (Map.Entry<String, String> entry : parameters.entrySet()) {
+            String attribute = Tokenizer.normalize(TOKEN_MATCHER, entry.getKey());
+            builder.put(attribute, normalizeParameterValue(attribute, entry.getValue()));
+        }
+
+        MediaType mediaType = MediaType.builder()
+                .type(normalizedType)
+                .subtype(normalizedSubtype)
+                .parameters(builder)
+                .build();
+
+        // Return one of the constants if the media type is a known type.
+        //TODO or else get?
+        return Optional.ofNullable(KNOWN_TYPES.get(mediaType)).orElse(mediaType);
     }
 
     /**
@@ -316,7 +290,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      *
      * @return value of primary type.
      */
-    public String getType() {
+    public String type() {
         return this.type;
     }
 
@@ -326,7 +300,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      * @return true if the primary type is a wildcard.
      */
     public boolean isWildcardType() {
-        return this.getType().equals(AcceptPredicate.WILDCARD_VALUE);
+        return this.type().equals(AcceptPredicate.WILDCARD_VALUE);
     }
 
     /**
@@ -334,7 +308,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      *
      * @return value of subtype.
      */
-    public String getSubtype() {
+    public String subtype() {
         return this.subtype;
     }
 
@@ -344,7 +318,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      * @return true if the subtype is a wildcard.
      */
     public boolean isWildcardSubtype() {
-        return this.getSubtype().equals(AcceptPredicate.WILDCARD_VALUE);
+        return this.subtype().equals(AcceptPredicate.WILDCARD_VALUE);
     }
 
     /**
@@ -352,7 +326,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      *
      * @return an immutable map of parameters.
      */
-    public Map<String, String> getParameters() {
+    public Map<String, String> parameters() {
         return parameters;
     }
 
@@ -367,7 +341,12 @@ public class MediaType implements AcceptPredicate<MediaType> {
      * @since 2.0
      */
     public MediaType withCharset(String charset) {
-        return new MediaType(this.type, this.subtype, charset, createParametersMap(this.parameters));
+        return MediaType.builder()
+                .type(this.type)
+                .subtype(this.subtype)
+                .charset(charset)
+                .parameters(this.parameters)
+                .build();
     }
 
     /**
@@ -375,7 +354,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      *
      * @return Charset parameter.
      */
-    public Optional<String> getCharset() {
+    public Optional<String> charset() {
         return Optional.ofNullable(parameters.get(CHARSET_PARAMETER));
     }
 
@@ -394,6 +373,7 @@ public class MediaType implements AcceptPredicate<MediaType> {
      * @return true if the types are compatible, false otherwise.
      */
     // fixme: Bidirectional wildcard compatibility
+    @Override
     public boolean test(MediaType other) {
         return other != null && // return false if other is null, else
                 (
@@ -492,53 +472,82 @@ public class MediaType implements AcceptPredicate<MediaType> {
         }
     }
 
-    @SuppressWarnings("checkstyle:VisibilityModifier")
-    private static final class Tokenizer {
-        final String input;
-        int position = 0;
+    /**
+     * A fluent API builder to create instances of {@link MediaType}.
+     */
+    public static final class Builder implements io.helidon.common.Builder<MediaType> {
+        private String type = AcceptPredicate.WILDCARD_VALUE;
+        private String subtype = AcceptPredicate.WILDCARD_VALUE;
+        private String charset;
+        private TreeMap<String, String> parameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        Tokenizer(String input) {
-            this.input = input;
+        private Builder() {
         }
 
-        String consumeTokenIfPresent(CharMatcher matcher) {
-            checkState(hasMore(), "No more elements!");
-            int startPosition = position;
-            position = matcher.negate().indexIn(input, startPosition);
-            return hasMore() ? input.substring(startPosition, position) : input.substring(startPosition);
+        @Override
+        public MediaType build() {
+            return new MediaType(this);
         }
 
-        String consumeToken(CharMatcher matcher) {
-            int startPosition = position;
-            String token = consumeTokenIfPresent(matcher);
-            checkState(position != startPosition, () ->
-                    String.format("Position '%d' should not be '%d'!", position, startPosition));
-            return token;
+        /**
+         * Type of the new media type.
+         *
+         * @param type the primary type, default is {@value #WILDCARD_VALUE}
+         * @return updated builder instance
+         */
+        public Builder type(String type) {
+            this.type = type;
+            return this;
         }
 
-        char consumeCharacter(CharMatcher matcher) {
-            checkState(hasMore(), "No more elements!");
-            char c = previewChar();
-            checkState(matcher.matches(c), "Unexpected character matched: " + c);
-            position++;
-            return c;
+        /**
+         * Subtype of the new media type.
+         *
+         * @param subtype the secondary type, default is {@value #WILDCARD_VALUE}
+         * @return updated builder instance
+         */
+        public Builder subtype(String subtype) {
+            this.subtype = subtype;
+            return this;
         }
 
-        char consumeCharacter(char c) {
-            checkState(hasMore(), "No more elements!");
-            checkState(previewChar() == c, () -> "Unexpected character: " + c);
-            position++;
-            return c;
+        /**
+         * Character set of the media type.
+         *
+         * @param charset the {@value #CHARSET_PARAMETER} parameter value. By default
+         *                the {@value #CHARSET_PARAMETER} parameter will not be set.
+         * @return updated builder instance
+         */
+        public Builder charset(String charset) {
+            this.charset = charset;
+            return this;
         }
 
-        char previewChar() {
-            checkState(hasMore(), "No more elements!");
-            return input.charAt(position);
+        /**
+         * Add a new parameter to the parameter map.
+         *
+         * @param parameter name of the parameter to add
+         * @param value     value of the parameter to add
+         * @return updated builder instance
+         */
+        public Builder addParameter(String parameter, String value) {
+            parameters.put(parameter.toLowerCase(), value);
+            return this;
         }
 
-        boolean hasMore() {
-            return (position >= 0) && (position < input.length());
+        /**
+         * Parameters of the media type.
+         *
+         * @param parameters a map of media type parameters, default is empty
+         * @return updated builder instance
+         */
+        public Builder parameters(Map<String, String> parameters) {
+            this.parameters.clear();
+            parameters.forEach((key, value) -> {
+                this.parameters.put(key.toLowerCase(), value);
+            });
+
+            return this;
         }
     }
-
 }

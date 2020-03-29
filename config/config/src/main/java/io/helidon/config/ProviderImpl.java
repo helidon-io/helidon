@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,23 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.SubmissionPublisher;
-import io.helidon.config.internal.ConfigKeyImpl;
-import io.helidon.config.internal.ConfigUtils;
-import io.helidon.config.internal.ObjectNodeBuilderImpl;
-import io.helidon.config.internal.OverrideConfigFilter;
-import io.helidon.config.internal.ValueNodeImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.spi.OverrideSource;
 
 /**
  * Config provider represents initialization context used to create new instance of Config again and again.
@@ -52,33 +45,31 @@ class ProviderImpl implements Config.Context {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigFactory.class.getName());
 
+    private final List<Consumer<ConfigDiff>> listeners = new LinkedList<>();
+
     private final ConfigMapperManager configMapperManager;
-    private final ConfigSource configSource;
-    private final OverrideSource overrideSource;
+    private final ConfigSourcesRuntime configSource;
+    private final OverrideSourceRuntime overrideSource;
     private final List<Function<Config, ConfigFilter>> filterProviders;
     private final boolean cachingEnabled;
 
     private final Executor changesExecutor;
-    private final SubmissionPublisher<ConfigDiff> changesSubmitter;
-    private final Flow.Publisher<ConfigDiff> changesPublisher;
     private final boolean keyResolving;
-    private ConfigSourceChangeEventSubscriber configSourceChangeEventSubscriber;
+    private final Function<String, List<String>> aliasGenerator;
 
     private ConfigDiff lastConfigsDiff;
-    private Config lastConfig;
-    private OverrideSourceChangeEventSubscriber overrideSourceChangeEventSubscriber;
-    private volatile boolean overrideChangeComplete;
-    private volatile boolean configChangeComplete;
+    private AbstractConfigImpl lastConfig;
+    private boolean listening;
 
     @SuppressWarnings("ParameterNumber")
     ProviderImpl(ConfigMapperManager configMapperManager,
-                 ConfigSource configSource,
-                 OverrideSource overrideSource,
+                 ConfigSourcesRuntime configSource,
+                 OverrideSourceRuntime overrideSource,
                  List<Function<Config, ConfigFilter>> filterProviders,
                  boolean cachingEnabled,
                  Executor changesExecutor,
-                 int changesMaxBuffer,
-                 boolean keyResolving) {
+                 boolean keyResolving,
+                 Function<String, List<String>> aliasGenerator) {
         this.configMapperManager = configMapperManager;
         this.configSource = configSource;
         this.overrideSource = overrideSource;
@@ -87,57 +78,64 @@ class ProviderImpl implements Config.Context {
         this.changesExecutor = changesExecutor;
 
         this.lastConfigsDiff = null;
-        this.lastConfig = Config.empty();
+        this.lastConfig = (AbstractConfigImpl) Config.empty();
 
         this.keyResolving = keyResolving;
-
-        changesSubmitter = new RepeatLastEventPublisher<>(changesExecutor, changesMaxBuffer);
-        changesPublisher = ConfigHelper.suspendablePublisher(changesSubmitter,
-                                                             this::subscribeSources,
-                                                             this::cancelSourcesSubscriptions);
-
-        configSourceChangeEventSubscriber = null;
+        this.aliasGenerator = aliasGenerator;
     }
 
-    public Config newConfig() {
+    public synchronized AbstractConfigImpl newConfig() {
         lastConfig = build(configSource.load());
+
+        if (!listening) {
+            // only start listening for changes once the first config is built
+            configSource.changeListener(objectNode -> rebuild(objectNode, false));
+            configSource.startChanges();
+            overrideSource.changeListener(() -> rebuild(configSource.latest(), false));
+            overrideSource.startChanges();
+            listening = true;
+        }
+
         return lastConfig;
     }
 
     @Override
-    public Config reload() {
-        rebuild(configSource.load(), true);
+    public synchronized Config reload() {
+        rebuild(configSource.latest(), true);
         return lastConfig;
     }
 
     @Override
-    public Instant timestamp() {
+    public synchronized Instant timestamp() {
         return lastConfig.timestamp();
     }
 
     @Override
-    public Config last() {
+    public synchronized Config last() {
         return lastConfig;
     }
 
-    private synchronized Config build(Optional<ObjectNode> rootNode) {
+    void onChange(Consumer<ConfigDiff> listener) {
+        this.listeners.add(listener);
+    }
+
+    private synchronized AbstractConfigImpl build(Optional<ObjectNode> rootNode) {
 
         // resolve tokens
         rootNode = rootNode.map(this::resolveKeys);
         // filtering
         ChainConfigFilter targetFilter = new ChainConfigFilter();
         // add override filter
-        if (!overrideSource.equals(OverrideSources.empty())) {
-            OverrideConfigFilter filter = new OverrideConfigFilter(
-                    () -> overrideSource.load().orElse(OverrideSource.OverrideData.empty()).data());
-            targetFilter.addFilter(filter);
-        }
+        overrideSource.addFilter(targetFilter);
+
         // factory
         ConfigFactory factory = new ConfigFactory(configMapperManager,
                                                   rootNode.orElseGet(ObjectNode::empty),
                                                   targetFilter,
-                                                  this);
-        Config config = factory.getConfig();
+                                                  this,
+                                                  aliasGenerator,
+                                                  configSource.allSources());
+        AbstractConfigImpl config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);
         // caching
@@ -165,11 +163,11 @@ class ProviderImpl implements Config.Context {
                 return token;
             };
         }
-        return ObjectNodeBuilderImpl.from(rootNode, resolveTokenFunction).build();
+        return ObjectNodeBuilderImpl.create(rootNode, resolveTokenFunction).build();
     }
 
     private Map<String, String> flattenNodes(ConfigNode node) {
-        return ConfigFactory.flattenNodes(ConfigKeyImpl.of(), node)
+        return ConfigHelper.flattenNodes(ConfigKeyImpl.of(), node)
                 .filter(e -> e.getValue() instanceof ValueNodeImpl)
                 .collect(Collectors.toMap(
                         e -> e.getKey().toString(),
@@ -199,7 +197,7 @@ class ProviderImpl implements Config.Context {
     }
 
     private Stream<String> tokensFromKey(String s) {
-        String[] tokens = s.split("\\.+(?![^(\\$\\{)]*\\})");
+        String[] tokens = s.split("\\.+(?![^(${)]*})");
         return Arrays.stream(tokens).filter(t -> t.startsWith("$")).map(ProviderImpl::parseTokenReference);
     }
 
@@ -214,7 +212,7 @@ class ProviderImpl implements Config.Context {
 
     private synchronized void rebuild(Optional<ObjectNode> objectNode, boolean force) {
         // 1. build new Config
-        Config newConfig = build(objectNode);
+        AbstractConfigImpl newConfig = build(objectNode);
         // 2. for each subscriber fire event on specific node/key - see AbstractConfigImpl.FilteringConfigChangeEventSubscriber
         // 3. fire event
         ConfigDiff configsDiff = ConfigDiff.from(lastConfig, newConfig);
@@ -233,50 +231,20 @@ class ProviderImpl implements Config.Context {
     }
 
     private void fireLastChangeEvent() {
-        if (lastConfigsDiff != null) {
-            LOGGER.log(Level.FINER, String.format("Firing last event %s (again)", lastConfigsDiff));
-            changesSubmitter.offer(lastConfigsDiff,
-                                   (subscriber, event) -> {
-                                       LOGGER.log(Level.FINER,
-                                                  String.format("Event %s has not been delivered to %s.", event, subscriber));
-                                       return false;
-                                   });
+        ConfigDiff configDiffs;
+
+        synchronized (this) {
+            configDiffs = this.lastConfigsDiff;
         }
-    }
 
-    private void subscribeSources() {
-        subscribeConfigSource();
-        subscribeOverrideSource();
-        //check if source has changed - reload
-        rebuild(configSource.load(), false);
-    }
+        if (configDiffs != null) {
+            LOGGER.log(Level.FINER, String.format("Firing last event %s (again)", configDiffs));
 
-    private void cancelSourcesSubscriptions() {
-        cancelConfigSource();
-        cancelOverrideSource();
-    }
-
-    private void subscribeConfigSource() {
-        configSourceChangeEventSubscriber = new ConfigSourceChangeEventSubscriber();
-        configSource.changes().subscribe(configSourceChangeEventSubscriber);
-    }
-
-    private void cancelConfigSource() {
-        if (configSourceChangeEventSubscriber != null) {
-            configSourceChangeEventSubscriber.cancelSubscription();
-            configSourceChangeEventSubscriber = null;
-        }
-    }
-
-    private void subscribeOverrideSource() {
-        overrideSourceChangeEventSubscriber = new OverrideSourceChangeEventSubscriber();
-        overrideSource.changes().subscribe(overrideSourceChangeEventSubscriber);
-    }
-
-    private void cancelOverrideSource() {
-        if (overrideSourceChangeEventSubscriber != null) {
-            overrideSourceChangeEventSubscriber.cancelSubscription();
-            overrideSourceChangeEventSubscriber = null;
+            changesExecutor.execute(() -> {
+                for (Consumer<ConfigDiff> listener : listeners) {
+                    listener.accept(configDiffs);
+                }
+            });
         }
     }
 
@@ -291,23 +259,6 @@ class ProviderImpl implements Config.Context {
         chain.filterProviders.stream()
                 .map(providerFunction -> providerFunction.apply(config))
                 .forEachOrdered(filter -> filter.init(config));
-   }
-
-    /**
-     * Allows to subscribe on changes of specified ConfigSource that causes creation of new Config instances.
-     * <p>
-     * The publisher repeats the last change event with any new subscriber.
-     *
-     * @return {@link Flow.Publisher} to be subscribed in. Never returns {@code null}.
-     * @see Config#changes()
-     * @see Config#onChange(Function)
-     */
-    public Flow.Publisher<ConfigDiff> changes() {
-        return changesPublisher;
-    }
-
-    SubmissionPublisher<ConfigDiff> getChangesSubmitter() {
-        return changesSubmitter;
     }
 
     /**
@@ -339,17 +290,10 @@ class ProviderImpl implements Config.Context {
             filterProviders.add((config) -> filter);
         }
 
-        void addFilter(Function<Config, ConfigFilter> filterProvider) {
-            if (cachingEnabled) {
-                throw new IllegalStateException("Cannot add new filter provider to the chain when cache is already enabled.");
-            }
-            filterProviders.add(filterProvider);
-        }
-
         @Override
         public String apply(Config.Key key, String stringValue) {
             if (cachingEnabled) {
-                if (!valueCache.containsKey(key)){
+                if (!valueCache.containsKey(key)) {
                     String value = proceedFilters(key, stringValue);
                     valueCache.put(key, value);
                     return value;
@@ -373,161 +317,4 @@ class ProviderImpl implements Config.Context {
             this.valueCache = new ConcurrentHashMap<>();
         }
     }
-
-    /**
-     * {@link Flow.Subscriber} implementation to listen on {@link ConfigSource#changes()}.
-     */
-    private class ConfigSourceChangeEventSubscriber implements Flow.Subscriber<Optional<ObjectNode>> {
-
-        private Flow.Subscription subscription;
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
-            subscription.request(Long.MAX_VALUE);
-        }
-
-        @Override
-        public void onNext(Optional<ObjectNode> objectNode) {
-            ProviderImpl.this.changesExecutor.execute(() -> ProviderImpl.this.rebuild(objectNode, false));
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            ProviderImpl.this.changesSubmitter
-                    .closeExceptionally(new ConfigException(
-                            String.format("'%s' config source changes support has failed. %s",
-                                          ProviderImpl.this.configSource.description(),
-                                          throwable.getLocalizedMessage()),
-                            throwable));
-        }
-
-        @Override
-        public void onComplete() {
-            LOGGER.fine(String.format("'%s' config source changes support has completed.",
-                                      ProviderImpl.this.configSource.description()));
-
-            ProviderImpl.this.configChangeComplete = true;
-
-            if (ProviderImpl.this.overrideChangeComplete) {
-                ProviderImpl.this.changesSubmitter.close();
-            }
-        }
-
-        private void cancelSubscription() {
-            subscription.cancel();
-        }
-    }
-
-    /**
-     * {@link Flow.Subscriber} implementation to listen on {@link OverrideSource#changes()}.
-     */
-    private class OverrideSourceChangeEventSubscriber
-            implements Flow.Subscriber<Optional<OverrideSource.OverrideData>> {
-
-        private Flow.Subscription subscription;
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
-            subscription.request(Long.MAX_VALUE);
-        }
-
-        @Override
-        public void onNext(Optional<OverrideSource.OverrideData> overrideData) {
-            ProviderImpl.this.changesExecutor.execute(ProviderImpl.this::reload);
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            ProviderImpl.this.changesSubmitter
-                    .closeExceptionally(new ConfigException(
-                            String.format("'%s' override source changes support has failed. %s",
-                                          ProviderImpl.this.overrideSource.description(),
-                                          throwable.getLocalizedMessage()),
-                            throwable));
-        }
-
-        @Override
-        public void onComplete() {
-            LOGGER.fine(String.format("'%s' override source changes support has completed.",
-                                      ProviderImpl.this.overrideSource.description()));
-
-            ProviderImpl.this.overrideChangeComplete = true;
-
-            if (ProviderImpl.this.configChangeComplete) {
-                ProviderImpl.this.changesSubmitter.close();
-            }
-        }
-
-        private void cancelSubscription() {
-            if (subscription != null) {
-                subscription.cancel();
-            }
-        }
-    }
-
-    /**
-     * {@link Flow.Publisher} implementation that allows to repeat the last event for new-subscribers.
-     */
-    private class RepeatLastEventPublisher<T> extends SubmissionPublisher<T> {
-
-        private RepeatLastEventPublisher(Executor executor, int maxBufferCapacity) {
-            super(executor, maxBufferCapacity);
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super T> subscriber) {
-            super.subscribe(new RepeatLastEventSubscriber<>(subscriber));
-            // repeat the last event for new-subscribers
-            ProviderImpl.this.fireLastChangeEvent();
-        }
-
-    }
-
-    /**
-     * {@link Flow.Subscriber} wrapper implementation that allows to repeat the last event for new-subscribers
-     * and do NOT repeat same event more than once to same Subscriber.
-     *
-     * @see RepeatLastEventPublisher
-     */
-    private static class RepeatLastEventSubscriber<T> implements Flow.Subscriber<T> {
-
-        private final Flow.Subscriber<? super T> delegate;
-        private Flow.Subscription subscription;
-        private T lastEvent;
-
-        private RepeatLastEventSubscriber(Flow.Subscriber<? super T> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
-            delegate.onSubscribe(subscription);
-        }
-
-        @Override
-        public void onNext(T event) {
-            if (lastEvent == event) { // do NOT repeat same event more than once to same Subscriber
-                //missed event must be requested once more
-                subscription.request(1);
-            } else {
-                lastEvent = event;
-                delegate.onNext(event);
-            }
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            delegate.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            delegate.onComplete();
-        }
-
-    }
-
 }

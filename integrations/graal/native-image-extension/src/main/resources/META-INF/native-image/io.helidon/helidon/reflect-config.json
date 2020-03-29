@@ -1,0 +1,17 @@
+[
+    {
+        "name": "java.util.logging.ConsoleHandler",
+        "allDeclaredConstructors": true,
+        "allPublicMethods": true
+    },
+    {
+        "name": "java.util.logging.SimpleFormatter",
+        "allDeclaredConstructors": true,
+        "allPublicMethods": true
+    },
+    {
+        "name": "java.util.logging.FileHandler",
+        "allDeclaredConstructors": true,
+        "allPublicMethods": true
+    }
+]

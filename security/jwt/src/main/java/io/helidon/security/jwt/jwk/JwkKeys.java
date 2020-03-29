@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ package io.helidon.security.jwt.jwk;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,6 +31,7 @@ import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonReaderFactory;
 
 import io.helidon.common.configurable.Resource;
 
@@ -45,17 +49,20 @@ import io.helidon.common.configurable.Resource;
  * .forKeyId("cc34c0a0-bd5a-4a3c-a50d-a2a7db7643df");
  * </pre>
  */
-public class JwkKeys {
+public final class JwkKeys {
     private static final Logger LOGGER = Logger.getLogger(JwkKeys.class.getName());
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
-    private final Map<String, Jwk> keyMap;
+    private final Map<String, Jwk> keyMap = new HashMap<>();
+    private final List<Jwk> noKeyIdKeys = new LinkedList<>();
 
-    private JwkKeys(Map<String, Jwk> keyMap) {
-        this.keyMap = keyMap;
+    private JwkKeys(Builder builder) {
+        this.keyMap.putAll(builder.keyMap);
+        this.noKeyIdKeys.addAll(builder.noKeyIdKeys);
     }
 
     /**
-     * Create a new builder for {@link JwkKeys}.
+     * Create a new builder for this class.
      *
      * @return builder instance
      */
@@ -74,10 +81,26 @@ public class JwkKeys {
     }
 
     /**
+     * List of keys in this instance.
+     *
+     * @return all keys configured
+     */
+    public List<Jwk> keys() {
+        List<Jwk> result = new LinkedList<>();
+        result.addAll(noKeyIdKeys);
+        result.addAll(keyMap.values());
+        return result;
+    }
+
+    /**
      * Builder of {@link JwkKeys}.
      */
-    public static class Builder implements io.helidon.common.Builder<JwkKeys> {
-        private Map<String, Jwk> keyMap = new HashMap<>();
+    public static final class Builder implements io.helidon.common.Builder<JwkKeys> {
+        private final List<Jwk> noKeyIdKeys = new LinkedList<>();
+        private final Map<String, Jwk> keyMap = new HashMap<>();
+
+        private Builder() {
+        }
 
         /**
          * Build a new keys instance.
@@ -86,7 +109,7 @@ public class JwkKeys {
          */
         @Override
         public JwkKeys build() {
-            return new JwkKeys(new HashMap<>(keyMap));
+            return new JwkKeys(this);
         }
 
         /**
@@ -97,9 +120,11 @@ public class JwkKeys {
          */
         public Builder addKey(Jwk key) {
             Objects.requireNonNull(key, "Key must not be null");
-            Objects.requireNonNull(key.getKeyId(), "Key id must not be null for key: " + key);
-
-            keyMap.put(key.getKeyId(), key);
+            if (null == key.keyId()) {
+                noKeyIdKeys.add(key);
+            } else {
+                keyMap.put(key.keyId(), key);
+            }
             return this;
         }
 
@@ -112,8 +137,8 @@ public class JwkKeys {
          */
         public Builder resource(Resource resource) {
             Objects.requireNonNull(resource, "Json resource must not be null");
-            try (InputStream is = resource.getStream()) {
-                JsonObject jsonObject = Json.createReader(is).readObject();
+            try (InputStream is = resource.stream()) {
+                JsonObject jsonObject = JSON.createReader(is).readObject();
                 addKeys(jsonObject);
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Failed to close input stream on resource: " + resource);
@@ -126,7 +151,7 @@ public class JwkKeys {
             JsonArray keyArray = jsonObject.getJsonArray("keys");
             keyArray.forEach(it -> {
                 JsonObject aKey = (JsonObject) it;
-                addKey(Jwk.fromJson(aKey));
+                addKey(Jwk.create(aKey));
             });
         }
     }

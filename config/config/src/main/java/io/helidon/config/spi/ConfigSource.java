@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,233 +16,53 @@
 
 package io.helidon.config.spi;
 
-import java.net.URL;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.MissingValueException;
-import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
  * {@link Source} of configuration.
  *
- * @see io.helidon.config.Config.Builder#sources(Supplier)
- * @see io.helidon.config.Config.Builder#sources(Supplier, Supplier)
- * @see io.helidon.config.Config.Builder#sources(Supplier, Supplier, Supplier)
- * @see io.helidon.config.Config.Builder#sources(java.util.List)
- * @see io.helidon.config.spi.AbstractConfigSource
- * @see io.helidon.config.spi.AbstractParsableConfigSource
+ * There is a set of interfaces that you can implement to support various aspect of a config source.
+ * <p>
+ * Config sources by "eagerness" of loading of data. The config source either loads all data when asked to (and this is
+ * the preferred way for Helidon Config), or loads each key separately.
+ * <ul>
+ *     <li>{@link io.helidon.config.spi.ParsableSource} - an eager source that provides an input stream with data to be
+ *          parsed based on its content type</li>
+ *     <li>{@link io.helidon.config.spi.NodeConfigSource} - an eager source that provides a
+ *     {@link io.helidon.config.spi.ConfigNode.ObjectNode} with its configuration tree</li>
+ *     <li>{@link io.helidon.config.spi.LazyConfigSource} - a lazy source that provides values key by key</li>
+ * </ul>
+ *
+ * <p>
+ * Config sources by "mutability" of data. The config source may be immutable (default), or provide a means for
+ * change support
+ * <ul>
+ *     <li>{@link io.helidon.config.spi.PollableSource} - a source that can generate a "stamp" of the data that can
+ *      be used to check for possible changes in underlying data (such as file digest, a timestamp, data version)</li>
+ *     <li>{@link io.helidon.config.spi.WatchableSource} - a source that is based on data that have a specific change
+ *     watcher that can notify the config framework of changes without the need for regular polling (such as file)</li>
+ *     <li>{@link io.helidon.config.spi.EventConfigSource} - a source that can directly notify about changes</li>
+ * </ul>
+ *
+ * Each of the interfaces mentioned above also has an inner class with a builder interface, if any configuration is needed.
+ * The {@link io.helidon.config.AbstractConfigSource} implements a super set of all the configuration methods from all interfaces
+ * as {@code protected}, so you can use them in your implementation.
+ * <p>
+ * {@link io.helidon.config.AbstractConfigSourceBuilder} implements the configuration methods, so you can simply extend it with
+ * your builder and implement all the builders that make sense for your config source type.
+ *
+ *
+ * @see Config.Builder#sources(Supplier)
+ * @see Config.Builder#sources(Supplier, Supplier)
+ * @see Config.Builder#sources(Supplier, Supplier, Supplier)
+ * @see Config.Builder#sources(java.util.List)
+ * @see io.helidon.config.AbstractConfigSource
  * @see ConfigSources ConfigSources - access built-in implementations.
  */
-@FunctionalInterface
-public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource> {
-
-    /**
-     * Initializes a {@link ConfigSource} from meta-configuration.
-     * <p>
-     * Meta-config can contain the following top level properties to define one
-     * or more {@code ConfigSource}s:
-     * <ul>
-     * <li>{@code type} - specifies the built-in configuration type
-     * (environment-variables, system-properties, directory, file, url,
-     * prefixed, classpath) or the <a href="#customSourcesAndTypes">custom
-     * config types</a> of the {@code ConfigSource} being defined.
-     * </li>
-     * <li>{@code class} - fully-qualified class name of one of:
-     * <ul>
-     * <li>a {@link ConfigSource} implementation,</li>
-     * <li>a {@link Config.Builder} implementation with a {@code build()} method
-     * that returns a {@code ConfigSource} instance.</li>
-     * </ul>
-     * See the section below on <a href="#customSourcesAndTypes">custom source
-     * types</a>.
-     * </ul>
-     * The meta-config for a source should specify either {@code type} or
-     * {@code class} but not both. If the meta-config specifies both the config
-     * system ignores the {@code class} information.
-     * <p>
-     * As the config system loads configuration it uses mappers to convert the
-     * raw data into Java types. See {@link io.helidon.config.ConfigMapper} for
-     * details about mapping.
-     * <p>
-     * The meta-config can modify a {@code type} or {@code class} source
-     * declaration using {@code properties}. See
-     * {@link AbstractParsableConfigSource.Builder#init(Config)} for the
-     * available properties for types other than {@code system-properties} and
-     * {@code environment-variables} (which do not support {@code properties}
-     * settings).
-     * <table>
-     * <caption>Predefined Configuration Source Types</caption>
-     * <tr>
-     * <th>Source Type</th>
-     * <th>Further Information</th>
-     * <th>Mandatory Properties</th>
-     * </tr>
-     * <tr>
-     * <td>{@code system-properties}</td>
-     * <td>{@link ConfigSources#systemProperties()}</td>
-     * <td>none</td>
-     * </tr>
-     * <tr>
-     * <td>{@code environment-variables}</td>
-     * <td>{@link ConfigSources#environmentVariables()}</td>
-     * <td>none</td>
-     * </tr>
-     * <tr>
-     * <td>{@code classpath}</td>
-     * <td>{@link ConfigSources#classpath(String)}</td>
-     * <td>{@code resource}</td>
-     * </tr>
-     * <tr>
-     * <td>{@code file}</td>
-     * <td>{@link ConfigSources#file(String)}</td>
-     * <td>{@code path}</td>
-     * </tr>
-     * <tr>
-     * <td>{@code directory}</td>
-     * <td>{@link ConfigSources#directory(String)}</td>
-     * <td>{@code path}</td>
-     * </tr>
-     * <tr>
-     * <td>{@code url}</td>
-     * <td>{@link ConfigSources#url(URL)}</td>
-     * <td>{@code url}</td>
-     * </tr>
-     * <tr>
-     * <td>{@code prefixed}</td>
-     * <td>{@link ConfigSources#prefixed(String, Supplier)}</td>
-     * <td> {@code key}<br> {@code type} or {@code class}<br> {@code properties}
-     * </td>
-     * <td></td>
-     * </tr>
-     * </table>
-     *
-     * Example configuration in HOCON format:
-     * <pre>
-     * sources = [
-     *     {
-     *         type = "environment-variables"
-     *     }
-     *     {
-     *         type = "system-properties"
-     *     }
-     *     {
-     *         type = "directory"
-     *         properties {
-     *             path = "conf/secrets"
-     *             media-type-mapping {
-     *                 yaml = "application/x-yaml"
-     *                 password = "application/base64"
-     *             }
-     *             polling-strategy {
-     *                 type = "regular"
-     *                 properties {
-     *                     interval = "PT15S"
-     *                 }
-     *             }
-     *         }
-     *     }
-     *     {
-     *         type = "url"
-     *         properties {
-     *             url = "http://config-service/my-config"
-     *             media-type = "application/hocon"
-     *             optional = true
-     *             retry-policy {
-     *                 type = "repeat"
-     *                 properties {
-     *                     retries = 3
-     *                 }
-     *             }
-     *         }
-     *     }
-     *     {
-     *         type = "file"
-     *         properties {
-     *             path = "conf/config.yaml"
-     *             polling-strategy {
-     *                 type = "watch"
-     *             }
-     *         }
-     *     }
-     *     {
-     *         type = "prefixed"
-     *         properties {
-     *             key = "app"
-     *             type = "classpath"
-     *             properties {
-     *                 resource = "app.yaml"
-     *             }
-     *         }
-     *     }
-     *     {
-     *         type = "classpath"
-     *         properties {
-     *             resource = "default.yaml"
-     *         }
-     *     }
-     * ]
-     * </pre> The example refers to the built-in {@code polling-strategy} types
-     * {@code regular} and {@code watch}. See {@link PollingStrategy} for
-     * details about all supported properties and custom implementation support.
-     * It also shows the built-in {@code retry-policy} type {@code repeat}. See
-     * {@link RetryPolicy#from(Config) RetryPolicy} for more information.
-     *
-     * <h2><a name="customSourcesAndTypes">Custom Sources and Source
-     * Types</a></h2>
-     * <h3>Custom Configuration Sources</h3>
-     * The application can define a custom config source using {@code class}
-     * instead of {@code type} in the meta-configuration. The referenced class
-     * must implement either {@link ConfigSource} or {@link Config.Builder}. If
-     * the custom implementation extends
-     * {@link AbstractParsableConfigSource.Builder} then the config system will
-     * invoke its {@code init} method passing a {@code Config} object
-     * representing the information from the meta-configuration for that custom
-     * source. The implementation can then use the relevant properties to load
-     * and manage the configuration from the origin.
-     * <h3>Custom Configuration Source Types</h3>
-     * The application can also add a custom source type to the list of built-in
-     * source types. The config system looks for the resource
-     * {@code META-INF/resources/meta-config-sources.properties} on the
-     * classpath and uses its contents to define custom source types. For each
-     * property the name is a new custom source type and the value is the
-     * fully-qualified class name of the custom {@code ConfigSource} or a
-     * builder for a custom {@code ConfigSource}.
-     * <p>
-     * For example, the module {@code helidon-config-git} includes the resource
-     * {@code META-INF/resources/meta-config-sources.properties} containing
-     * <pre>
-     * git = io.helidon.config.git.GitConfigSourceBuilder
-     * </pre> This defines the new source type {@code git} which can then be
-     * referenced from meta-configuration this way:
-     * <pre>
-     * {
-     *     type = "git"
-     *     properties {
-     *         path = "application.conf"
-     *         directory = "/app-config/"
-     *     }
-     * }
-     * </pre>
-     *
-     * @param metaConfig meta-configuration used to initialize the
-     * {@code ConfigSource}
-     * @return {@code ConfigSource} described by {@code metaConfig}
-     * @throws MissingValueException if the configuration tree does not contain
-     * all expected sub-nodes required by the mapper implementation to provide
-     * an instance of the corresponding Java type.
-     * @throws ConfigMappingException if the mapper fails to map the (existing)
-     * configuration tree represented by the supplied configuration node to an
-     * instance of the given Java type
-     * @see ConfigSources#load(Supplier[])
-     * @see ConfigSources#load(Config)
-     */
-    static ConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return ConfigSourceConfigMapper.instance().apply(metaConfig);
-    }
-
+public interface ConfigSource extends Supplier<ConfigSource>, Source {
     @Override
     default ConfigSource get() {
         return this;
@@ -251,11 +71,10 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
     /**
      * Initialize the config source with a {@link ConfigContext}.
      * <p>
-     * The method is executed during {@link io.helidon.config.Config} bootstrapping by {@link io.helidon.config.Config.Builder}.
+     * The method is executed during {@link Config} bootstrapping by {@link Config.Builder}.
      *
      * @param context a config context
      */
     default void init(ConfigContext context) {
     }
-
 }

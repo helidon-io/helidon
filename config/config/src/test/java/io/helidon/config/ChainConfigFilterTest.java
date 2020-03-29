@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,18 @@
 package io.helidon.config;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.ProviderImpl.ChainConfigFilter;
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests {@link ChainConfigFilter}.
@@ -45,7 +45,7 @@ public class ChainConfigFilterTest {
 
     @Test
     public void testAddFilterAfterEnablingCache() {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             ChainConfigFilter chain = new ChainConfigFilter();
             chain.enableCaching();
             chain.addFilter((key, value) -> value);
@@ -96,13 +96,13 @@ public class ChainConfigFilterTest {
         final String defaultValue = "default value";
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(new HashMap<String,String>() {{
+                .sources(ConfigSources.create(new HashMap<String,String>() {{
                     put(key, originalValue);
                 }}))
                 .build();
 
-        assertThat(config.get(key).asString(), is(originalValue));
-        assertThat(config.get("missing-key").asString(defaultValue), is(defaultValue));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue)));
+        assertThat(config.get("missing-key").asString().orElse(defaultValue), is(defaultValue));
     }
 
     @Test
@@ -113,15 +113,15 @@ public class ChainConfigFilterTest {
         final String defaultValue = "default value";
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(Map.of(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,
                         () -> newValue))
                 .build();
 
-        assertThat(config.get(key).asString(), is(newValue));
-        assertThat(config.get("missing-key").asString(defaultValue), is(defaultValue));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(newValue)));
+        assertThat(config.get("missing-key").asString().orElse(defaultValue), is(defaultValue));
     }
 
     /**
@@ -135,25 +135,25 @@ public class ChainConfigFilterTest {
      * expected value resulting from applying <em>all</em> filters, not just
      * the filters that were added before the current one.
      */
-    private static class Quad {
-        final static String key = "app.key1";
-        final static String originalValue = "string value";
-        final static String secondValue = "second value";
-        final static String thirdValue = "third value";
-        final static String lastValue = "the last value";
-        final static String defaultValue = "default value";
-        final static String referenceKey = "app.key-reference";
-        final static String referenceValue = "$app.key1";
+    private static final class Quad {
+        static final String key = "app.key1";
+        static final String originalValue = "string value";
+        static final String secondValue = "second value";
+        static final String thirdValue = "third value";
+        static final String lastValue = "the last value";
+        static final String defaultValue = "default value";
+        static final String referenceKey = "app.key-reference";
+        static final String referenceValue = "$app.key1";
 
-        final static AssertingFilter.Provider firstFilter = new AssertingFilter.Provider(
+        static final AssertingFilter.Provider firstFilter = new AssertingFilter.Provider(
                         key,
                         originalValue,
                         () -> secondValue);
-        final static AssertingFilter.Provider secondFilter = new AssertingFilter.Provider(
+        static final AssertingFilter.Provider secondFilter = new AssertingFilter.Provider(
                         key,
                         secondValue,
                         () -> thirdValue);
-        final static AssertingFilter.Provider thirdFilter = new AssertingFilter.Provider(
+        static final AssertingFilter.Provider thirdFilter = new AssertingFilter.Provider(
                         key,
                         thirdValue,
                         () -> lastValue);
@@ -179,7 +179,7 @@ public class ChainConfigFilterTest {
     private final void runQuadTest(boolean useCaching, String expectedValue,
             AssertingFilter.Provider... filterProviders) {
         Config.Builder builder = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         Quad.key, Quad.originalValue, Quad.referenceKey, Quad.referenceValue)));
         if (! useCaching) {
             builder.disableCaching();
@@ -192,7 +192,7 @@ public class ChainConfigFilterTest {
             lastProvider = filterProvider;
         }
         if (lastProvider == null) {
-            Assertions.fail("Attempt to run 'quad' test with no AssertingFilters");
+            fail("Attempt to run 'quad' test with no AssertingFilters");
             return; // suppresses warning about possible null dereference in next line
         }
 
@@ -203,9 +203,9 @@ public class ChainConfigFilterTest {
 
         Config config = builder.build();
 
-        assertThat(config.get(Quad.key).asString(), is(expectedValue));
-        assertThat(config.get(Quad.referenceKey).asString(), is(expectedValue));
-        assertThat(config.get("missing-key").asString(Quad.defaultValue), is(Quad.defaultValue));
+        assertThat(config.get(Quad.key).asString(), is(ConfigValues.simpleValue(expectedValue)));
+        assertThat(config.get(Quad.referenceKey).asString(), is(ConfigValues.simpleValue(expectedValue)));
+        assertThat(config.get("missing-key").asString().orElse(Quad.defaultValue), is(Quad.defaultValue));
     }
 
     @Test
@@ -216,7 +216,7 @@ public class ChainConfigFilterTest {
         AtomicInteger counter = new AtomicInteger();
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(Map.of(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,
@@ -224,10 +224,10 @@ public class ChainConfigFilterTest {
                 .build();
 
         //first call -> value cached cached
-        assertThat(config.get(key).asString(), is(originalValue + ":1"));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":1")));
         assertThat(counter.get(), is(1));
         //second call <- used cached value
-        assertThat(config.get(key).asString(), is(originalValue + ":1"));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":1")));
         assertThat(counter.get(), is(1));
     }
 
@@ -239,7 +239,7 @@ public class ChainConfigFilterTest {
         AtomicInteger counter = new AtomicInteger();
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(Map.of(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,
@@ -248,10 +248,10 @@ public class ChainConfigFilterTest {
                 .build();
 
         //first call
-        assertThat(config.get(key).asString(), is(originalValue + ":1"));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":1")));
         assertThat(counter.get(), is(1));
         //second call
-        assertThat(config.get(key).asString(), is(originalValue + ":2"));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":2")));
         assertThat(counter.get(), is(2));
     }
 
@@ -267,7 +267,7 @@ public class ChainConfigFilterTest {
         public String apply(Config.Key key, String stringValue) {
             if (stringValue.startsWith("$")) {
                 String ref = stringValue.substring(1);
-                return configRoot.get(ref).asString();
+                return configRoot.get(ref).asString().get();
             }
             return stringValue;
         }

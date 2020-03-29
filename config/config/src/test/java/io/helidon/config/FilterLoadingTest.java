@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.helidon.config;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.internal.AutoLoadedConfigFilter;
-import io.helidon.config.internal.AutoLoadedConfigHighPriority;
-import io.helidon.config.internal.AutoLoadedConfigPriority;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test checking that auto-loaded filter service and filter provider service works.
@@ -40,9 +39,9 @@ public class FilterLoadingTest {
 
     @Test
     public void testAutoLoadedFilter() {
-        Config config = Config.withSources(
-                ConfigSources.from(
-                        CollectionsHelper.mapOf(
+        Config config = Config.builder(
+                ConfigSources.create(
+                        Map.of(
                                 UNAFFECTED_KEY, UNAFFECTED_VALUE,
                                 AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING,
                                   ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
@@ -52,17 +51,17 @@ public class FilterLoadingTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(AutoLoadedConfigFilter.EXPECTED_FILTERED_VALUE,
-                config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(AutoLoadedConfigFilter.EXPECTED_FILTERED_VALUE)));
     }
 
     @Test
     public void testSuppressedAutoLoadedFilter() {
-        Config config = Config.withSources(
-                ConfigSources.from(
-                        CollectionsHelper.mapOf(
+        Config config = Config.builder(
+                ConfigSources.create(
+                        Map.of(
                                 UNAFFECTED_KEY, "value1",
                                 AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING,
                                   ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
@@ -73,17 +72,17 @@ public class FilterLoadingTest {
                 .disableFilterServices()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
-                config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
     }
 
     @Test
     public void testPrioritizedAutoLoadedConfigFilters() {
-        Config config = Config.withSources(
-                ConfigSources.from(
-                        CollectionsHelper.mapOf(
+        Config config = Config.builder(
+                ConfigSources.create(
+                        Map.of(
                              UNAFFECTED_KEY, "value1",
                              AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING,
                                ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
@@ -93,17 +92,17 @@ public class FilterLoadingTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(AutoLoadedConfigHighPriority.EXPECTED_FILTERED_VALUE,
-                config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(AutoLoadedConfigHighPriority.EXPECTED_FILTERED_VALUE)));
     }
 
     @Test
     public void testSuppressedPrioritizedAutoLoadedConfigFilters() {
-        Config config = Config.withSources(
-                ConfigSources.from(
-                        CollectionsHelper.mapOf(
+        Config config = Config.builder(
+                ConfigSources.create(
+                        Map.of(
                              UNAFFECTED_KEY, "value1",
                              AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING,
                                ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
@@ -114,9 +113,9 @@ public class FilterLoadingTest {
                 .disableFilterServices()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
-                config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
     }
 }

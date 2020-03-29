@@ -33,7 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests {@link io.helidon.webserver.FileSystemContentHandler}.
@@ -46,7 +47,7 @@ public class FileSystemContentHandlerTest {
     @BeforeEach
     public void createContent() throws IOException {
         // root
-        Path root = folder.getRoot().toPath();
+        Path root = folder.root().toPath();
         Files.write(root.resolve("index.html"), "Index HTML".getBytes(StandardCharsets.UTF_8));
         Files.write(root.resolve("foo.txt"), "Foo TXT".getBytes(StandardCharsets.UTF_8));
         // css
@@ -70,37 +71,37 @@ public class FileSystemContentHandlerTest {
     public void serveFile() throws Exception {
         try {
         Routing routing = Routing.builder()
-                                 .register("/some", StaticContentSupport.create(folder.getRoot().toPath()))
+                                 .register("/some", StaticContentSupport.create(folder.root().toPath()))
                                  .build();
         // /some/foo.txt
         TestResponse response = TestClient.create(routing)
                                           .path("/some/foo.txt")
                                           .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("Foo TXT", responseToString(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(responseToString(response), is("Foo TXT"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_PLAIN.toString()));
         // /some/css/b.css
         response = TestClient.create(routing)
                 .path("/some/css/b.css")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("B CSS", responseToString(response));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(responseToString(response), is("B CSS"));
         // /some/css/not.exists
         response = TestClient.create(routing)
                 .path("/some/css/not.exists")
                 .get();
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
         // /some/css
         response = TestClient.create(routing)
                 .path("/some/css")
                 .get();
-        assertEquals(Http.Status.MOVED_PERMANENTLY_301, response.status());
-        assertEquals("/some/css/", response.headers().first(Http.Header.LOCATION).orElse(null));
+        assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+        assertThat(response.headers().first(Http.Header.LOCATION).orElse(null), is("/some/css/"));
         // /some/css/
         response = TestClient.create(routing)
                 .path("/some/css/")
                 .get();
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
         } catch(Throwable ex){
             ex.printStackTrace();
         }
@@ -109,7 +110,7 @@ public class FileSystemContentHandlerTest {
     @Test
     public void serveIndex() throws Exception {
         Routing routing = Routing.builder()
-                .register(StaticContentSupport.builder(folder.getRoot().toPath())
+                .register(StaticContentSupport.builder(folder.root().toPath())
                                               .welcomeFileName("index.html")
                                               .contentType("css", MediaType.TEXT_PLAIN)
                                               .build())
@@ -118,33 +119,33 @@ public class FileSystemContentHandlerTest {
         TestResponse response = TestClient.create(routing)
                 .path("/")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("Index HTML", responseToString(response));
-        assertEquals(MediaType.TEXT_HTML.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(responseToString(response), is("Index HTML"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_HTML.toString()));
         // /other
         response = TestClient.create(routing)
                 .path("/other")
                 .get();
-        assertEquals(Http.Status.MOVED_PERMANENTLY_301, response.status());
-        assertEquals("/other/", response.headers().first(Http.Header.LOCATION).orElse(null));
+        assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+        assertThat(response.headers().first(Http.Header.LOCATION).orElse(null), is("/other/"));
         // /other/
         response = TestClient.create(routing)
                 .path("/other/")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("Index HTML", responseToString(response));
-        assertEquals(MediaType.TEXT_HTML.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(responseToString(response), is("Index HTML"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_HTML.toString()));
         // /css/
         response = TestClient.create(routing)
                 .path("/css/")
                 .get();
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
         // /css/a.css
         response = TestClient.create(routing)
                 .path("/css/a.css")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("A CSS", responseToString(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(responseToString(response), is("A CSS"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_PLAIN.toString()));
     }
 }

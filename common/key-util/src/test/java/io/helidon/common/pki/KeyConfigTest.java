@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.helidon.common.pki;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 
@@ -47,134 +47,144 @@ class KeyConfigTest {
 
     @Test
     void testConfigPublicKey() {
-        KeyConfig publicKey = KeyConfig.fromConfig(config.get("public-key"));
+        KeyConfig publicKey = KeyConfig.create(config.get("unit-1"));
 
-        assertThat(publicKey.getCertChain().size(), is(0));
-        assertThat(publicKey.getPrivateKey().isPresent(), is(false));
-        assertThat(publicKey.getPublicCert().isPresent(), is(true));
-        assertThat(publicKey.getPublicKey().isPresent(), is(true));
+        assertThat(publicKey.certChain().size(), is(0));
+        assertThat(publicKey.privateKey().isPresent(), is(false));
+        assertThat(publicKey.publicCert().isPresent(), is(true));
+        assertThat(publicKey.publicKey().isPresent(), is(true));
+    }
+
+    @Test
+    void testOldPublicKey() {
+        KeyConfig publicKey = KeyConfig.create(config.get("unit-2"));
+
+        assertThat("Certificate chain should be empty", publicKey.certChain().size(), is(0));
+        assertThat("Private key should be empty", publicKey.privateKey().isPresent(), is(false));
+        assertThat("Public certificate should be present", publicKey.publicCert().isPresent(), is(true));
+        assertThat("Public key should be present", publicKey.publicKey().isPresent(), is(true));
     }
 
     @Test
     void testConfigPrivateKey() {
-        KeyConfig keyConfig = KeyConfig.fromConfig(config.get("private-key"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-3"));
 
-        assertThat(keyConfig.getCertChain().size(), is(0));
-        assertThat(keyConfig.getPrivateKey().isPresent(), is(true));
-        assertThat(keyConfig.getPublicCert().isPresent(), is(false));
-        assertThat(keyConfig.getPublicKey().isPresent(), is(false));
+        assertThat(keyConfig.certChain().size(), is(0));
+        assertThat(keyConfig.privateKey().isPresent(), is(true));
+        assertThat(keyConfig.publicCert().isPresent(), is(false));
+        assertThat(keyConfig.publicKey().isPresent(), is(false));
     }
 
     @Test
     void testConfigCertChain() {
-        KeyConfig publicKey = KeyConfig.fromConfig(config.get("cert-chain"));
+        KeyConfig publicKey = KeyConfig.create(config.get("unit-6"));
 
-        assertThat(publicKey.getCertChain().size(), is(1));
+        assertThat(publicKey.certChain().size(), is(1));
         // private key is loaded by default, as it uses the alias "1"
-        assertThat(publicKey.getPrivateKey().isPresent(), is(true));
+        assertThat(publicKey.privateKey().isPresent(), is(true));
         // public cert is loaded by default from cert chain
-        assertThat(publicKey.getPublicCert().isPresent(), is(true));
-        assertThat(publicKey.getPublicKey().isPresent(), is(true));
+        assertThat(publicKey.publicCert().isPresent(), is(true));
+        assertThat(publicKey.publicKey().isPresent(), is(true));
     }
 
     @Test
     void testConfigWrongPath() {
-        assertThrows(PkiException.class, () -> KeyConfig.fromConfig(config.get("wrong-path")));
+        assertThrows(PkiException.class, () -> KeyConfig.create(config.get("unit-7")));
     }
 
     @Test
     void testConfigPartInvalid() {
-        KeyConfig invalid = KeyConfig.fromConfig(config.get("partially-invalid"));
-        assertThat(invalid.getPrivateKey().isPresent(), is(false));
-        assertThat(invalid.getPublicCert().isPresent(), is(false));
-        assertThat(invalid.getPublicKey().isPresent(), is(false));
-        assertThat(invalid.getCertChain().isEmpty(), is(true));
+        KeyConfig invalid = KeyConfig.create(config.get("unit-8"));
+        assertThat(invalid.privateKey().isPresent(), is(false));
+        assertThat(invalid.publicCert().isPresent(), is(false));
+        assertThat(invalid.publicKey().isPresent(), is(false));
+        assertThat(invalid.certChain().isEmpty(), is(true));
     }
 
     @Test
     void testConfigInvalid() {
-        KeyConfig invalid = KeyConfig.fromConfig(config.get("invalid"));
-        assertThat(invalid.getPrivateKey().isPresent(), is(false));
-        assertThat(invalid.getPublicCert().isPresent(), is(false));
-        assertThat(invalid.getPublicKey().isPresent(), is(false));
-        assertThat(invalid.getCertChain().isEmpty(), is(true));
+        KeyConfig invalid = KeyConfig.create(config.get("unit-9"));
+        assertThat(invalid.privateKey().isPresent(), is(false));
+        assertThat(invalid.publicCert().isPresent(), is(false));
+        assertThat(invalid.publicKey().isPresent(), is(false));
+        assertThat(invalid.certChain().isEmpty(), is(true));
     }
 
     @Test
     void testResourcePath() {
-        KeyConfig keyConfig = KeyConfig.fromConfig(config.get("resource-path"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-4"));
 
-        assertThat(keyConfig.getCertChain().size(), is(0));
-        assertThat(keyConfig.getPrivateKey().isPresent(), is(true));
-        assertThat(keyConfig.getPublicCert().isPresent(), is(false));
-        assertThat(keyConfig.getPublicKey().isPresent(), is(false));
+        assertThat(keyConfig.certChain().size(), is(0));
+        assertThat(keyConfig.privateKey().isPresent(), is(true));
+        assertThat(keyConfig.publicCert().isPresent(), is(false));
+        assertThat(keyConfig.publicKey().isPresent(), is(false));
     }
 
     @Test
     void testContent() {
-        KeyConfig keyConfig = KeyConfig.fromConfig(config.get("content"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-10"));
 
-        assertThat(keyConfig.getCertChain().size(), is(0));
-        assertThat(keyConfig.getPrivateKey().isPresent(), is(true));
-        assertThat(keyConfig.getPublicCert().isPresent(), is(false));
-        assertThat(keyConfig.getPublicKey().isPresent(), is(false));
+        assertThat(keyConfig.certChain().size(), is(0));
+        assertThat(keyConfig.privateKey().isPresent(), is(true));
+        assertThat(keyConfig.publicCert().isPresent(), is(false));
+        assertThat(keyConfig.publicKey().isPresent(), is(false));
     }
 
     @Test
     void testDoublePath() {
-        KeyConfig keyConfig = KeyConfig.fromConfig(config.get("double-path"));
+        KeyConfig keyConfig = KeyConfig.create(config.get("unit-5"));
 
-        assertThat(keyConfig.getCertChain().size(), is(0));
-        assertThat(keyConfig.getPrivateKey().isPresent(), is(true));
-        assertThat(keyConfig.getPublicCert().isPresent(), is(false));
-        assertThat(keyConfig.getPublicKey().isPresent(), is(false));
+        assertThat(keyConfig.certChain().size(), is(0));
+        assertThat(keyConfig.privateKey().isPresent(), is(true));
+        assertThat(keyConfig.publicCert().isPresent(), is(false));
+        assertThat(keyConfig.publicKey().isPresent(), is(false));
     }
 
     @Test
     void testPem() {
         KeyConfig conf = KeyConfig.pemBuilder()
-                .certChain(Resource.from("keystore/public_key_cert.pem"))
-                .key(Resource.from("keystore/id_rsa.p8"))
+                .certChain(Resource.create("keystore/public_key_cert.pem"))
+                .key(Resource.create("keystore/id_rsa.p8"))
                 .keyPassphrase("heslo".toCharArray())
                 .build();
 
-        assertThat("Private key should not be empty", conf.getPrivateKey(), not(Optional.empty()));
-        assertThat("Public key should not be empty", conf.getPublicKey(), not(Optional.empty()));
-        assertThat("Public cert should not be empty", conf.getPublicCert(), not(Optional.empty()));
+        assertThat("Private key should not be empty", conf.privateKey(), not(Optional.empty()));
+        assertThat("Public key should not be empty", conf.publicKey(), not(Optional.empty()));
+        assertThat("Public cert should not be empty", conf.publicCert(), not(Optional.empty()));
 
-        conf.getPrivateKey().ifPresent(it -> assertThat(it, instanceOf(RSAPrivateKey.class)));
-        conf.getPublicKey().ifPresent(it -> assertThat(it, instanceOf(RSAPublicKey.class)));
-        conf.getPublicCert().ifPresent(it -> assertThat(it, instanceOf(X509Certificate.class)));
-        assertThat(conf.getCertChain().isEmpty(), is(false));
-        assertThat(conf.getCertChain().size(), is(1));
-        assertThat(conf.getCertChain().get(0), instanceOf(X509Certificate.class));
+        conf.privateKey().ifPresent(it -> assertThat(it, instanceOf(RSAPrivateKey.class)));
+        conf.publicKey().ifPresent(it -> assertThat(it, instanceOf(RSAPublicKey.class)));
+        conf.publicCert().ifPresent(it -> assertThat(it, instanceOf(X509Certificate.class)));
+        assertThat(conf.certChain().isEmpty(), is(false));
+        assertThat(conf.certChain().size(), is(1));
+        assertThat(conf.certChain().get(0), instanceOf(X509Certificate.class));
     }
 
     @Test
     void testPemConfig() {
-        KeyConfig conf = KeyConfig.fromConfig(config.get("pem"));
+        KeyConfig conf = KeyConfig.create(config.get("unit-11"));
 
-        assertThat("Private key should not be empty", conf.getPrivateKey(), not(Optional.empty()));
-        assertThat("Public key should not be empty", conf.getPublicKey(), not(Optional.empty()));
-        assertThat("Public cert should not be empty", conf.getPublicCert(), not(Optional.empty()));
+        assertThat("Private key should not be empty", conf.privateKey(), not(Optional.empty()));
+        assertThat("Public key should not be empty", conf.publicKey(), not(Optional.empty()));
+        assertThat("Public cert should not be empty", conf.publicCert(), not(Optional.empty()));
 
-        conf.getPrivateKey().ifPresent(it -> assertThat(it, instanceOf(RSAPrivateKey.class)));
-        conf.getPublicKey().ifPresent(it -> assertThat(it, instanceOf(RSAPublicKey.class)));
-        conf.getPublicCert().ifPresent(it -> assertThat(it, instanceOf(X509Certificate.class)));
-        assertThat(conf.getCertChain().isEmpty(), is(false));
-        assertThat(conf.getCertChain().size(), is(1));
-        assertThat(conf.getCertChain().get(0), instanceOf(X509Certificate.class));
+        conf.privateKey().ifPresent(it -> assertThat(it, instanceOf(RSAPrivateKey.class)));
+        conf.publicKey().ifPresent(it -> assertThat(it, instanceOf(RSAPublicKey.class)));
+        conf.publicCert().ifPresent(it -> assertThat(it, instanceOf(X509Certificate.class)));
+        assertThat(conf.certChain().isEmpty(), is(false));
+        assertThat(conf.certChain().size(), is(1));
+        assertThat(conf.certChain().get(0), instanceOf(X509Certificate.class));
     }
 
     @Test
     void testPemConfigNoPasswordNoChain() {
-        KeyConfig conf = KeyConfig.fromConfig(config.get("pem-not-encrypted"));
+        KeyConfig conf = KeyConfig.create(config.get("unit-12"));
 
-        assertThat("Private key should not be empty", conf.getPrivateKey(), not(Optional.empty()));
-        conf.getPrivateKey().ifPresent(it -> assertThat(it, instanceOf(RSAPrivateKey.class)));
+        assertThat("Private key should not be empty", conf.privateKey(), not(Optional.empty()));
+        conf.privateKey().ifPresent(it -> assertThat(it, instanceOf(RSAPrivateKey.class)));
 
-        assertThat(conf.getPublicKey(), is(Optional.empty()));
-        assertThat(conf.getPublicCert(), is(Optional.empty()));
-        assertThat("Cert chain must be empty", conf.getCertChain(), is(CollectionsHelper.listOf()));
+        assertThat(conf.publicKey(), is(Optional.empty()));
+        assertThat(conf.publicCert(), is(Optional.empty()));
+        assertThat("Cert chain must be empty", conf.certChain(), is(List.of()));
     }
 }

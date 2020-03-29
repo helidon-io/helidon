@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -58,7 +59,7 @@ public class StaticContentHandlerTest {
     @Test
     public void etag_InNonMatch_NotAccept() throws Exception {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(CollectionsHelper.listOf("\"ccc\"", "\"ddd\""));
+        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
         when(req.values(Http.Header.IF_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
@@ -68,7 +69,7 @@ public class StaticContentHandlerTest {
     @Test
     public void etag_InNonMatch_Accept() throws Exception {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(CollectionsHelper.listOf("\"ccc\"", "W/\"aaa\""));
+        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "W/\"aaa\""));
         when(req.values(Http.Header.IF_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.NOT_MODIFIED_304);
@@ -78,7 +79,7 @@ public class StaticContentHandlerTest {
     @Test
     public void etag_InMatch_NotAccept() throws Exception {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(CollectionsHelper.listOf("\"ccc\"", "\"ddd\""));
+        when(req.values(Http.Header.IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
         when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.PRECONDITION_FAILED_412);
@@ -88,7 +89,7 @@ public class StaticContentHandlerTest {
     @Test
     public void etag_InMatch_Accept() throws Exception {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(CollectionsHelper.listOf("\"ccc\"", "\"aaa\""));
+        when(req.values(Http.Header.IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"aaa\""));
         when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
@@ -133,7 +134,7 @@ public class StaticContentHandlerTest {
         Mockito.doReturn(Optional.of(modified.minusSeconds(60))).when(req).ifUnmodifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
         ResponseHeaders res = mock(ResponseHeaders.class);
-        assertHttpException(() ->  StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
+        assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
                             Http.Status.PRECONDITION_FAILED_412);
     }
 
@@ -155,7 +156,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler(null, selector, Paths.get("/root"), false);
         RequestHeaders req = mock(RequestHeaders.class);
         ResponseHeaders res = mock(ResponseHeaders.class);
-        handler.processContentType(Paths.get("/root/index.html"), req, res);
+        StaticContentHandler.processContentType(StaticContentHandler.fileName(Paths.get("/root/index.html")), req, res, selector);
         verify(res).contentType(MediaType.TEXT_HTML);
     }
 
@@ -174,7 +175,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertEquals(Paths.get("/root"), handler.path);
+        assertThat(handler.path, is(Paths.get("/root").toAbsolutePath().normalize()));
     }
 
     @Test
@@ -184,7 +185,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.POST, request, response);
         verify(request).next();
-        assertEquals(0, handler.counter.get());
+        assertThat(handler.counter.get(), is(0));
     }
 
     @Test
@@ -194,7 +195,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertEquals(Paths.get("/root/foo/some.txt"), handler.path);
+        assertThat(handler.path, is(Paths.get("/root/foo/some.txt").toAbsolutePath().normalize()));
     }
 
     @Test
@@ -204,7 +205,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request).next();
-        assertEquals(0, handler.counter.get());
+        assertThat(handler.counter.get(), is(0));
     }
 
     @Test
@@ -214,10 +215,10 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", false);
         handler.handle(Http.Method.GET, request, response);
         verify(request).next();
-        assertEquals(1, handler.counter.get());
+        assertThat(handler.counter.get(), is(1));
     }
 
-    static class TestContentHandler extends StaticContentHandler {
+    static class TestContentHandler extends FileSystemContentHandler {
 
         final AtomicInteger counter = new AtomicInteger(0);
         final boolean returnValue;

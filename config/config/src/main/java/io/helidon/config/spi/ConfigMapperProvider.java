@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,44 +17,95 @@
 package io.helidon.config.spi;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
-import io.helidon.config.ConfigMapper;
+import io.helidon.common.GenericType;
+import io.helidon.config.Config;
 
 /**
- * Provides {@link ConfigMapper}s each of which converts a {@code Config}
- * subtree to a specific Java type.
+ * Provides mapping functions that convert a {@code Config}
+ * subtree to specific Java types.
  * <p>
  * The config system automatically loads {@code ConfigMapperProvider}s using the
  * Java {@link java.util.ServiceLoader} mechanism, and by default the config
  * system automatically registers all {@code ConfigMapper}s from all such
  * providers with every {@code Config.Builder}. The application can suppress
  * auto-registration of loaded mappers by invoking
- * {@link io.helidon.config.Config.Builder#disableMapperServices()}.
+ * {@link Config.Builder#disableMapperServices()}.
  * <p>
  * Each {@code ConfigMapperProvider} can specify a
  * {@link javax.annotation.Priority}. The default priority is {@value PRIORITY}.
  *
- * @see ConfigMapper
- * @see io.helidon.config.Config.Builder#addMapper(Class, ConfigMapper)
- * @see io.helidon.config.Config.Builder#disableMapperServices()
+ * @see Config.Builder#addStringMapper(Class, Function)
+ * @see Config.Builder#addMapper(ConfigMapperProvider)
+ * @see Config.Builder#disableMapperServices()
  */
 @FunctionalInterface
 public interface ConfigMapperProvider {
-
     /**
-     * Default priority of the mapper provider if registered by {@link io.helidon.config.Config.Builder} automatically.
+     * Default priority of the mapper provider if registered by {@link Config.Builder} automatically.
      */
     int PRIORITY = 100;
 
     /**
-     * Returns a map of {@link ConfigMapper} instances associated with appropriate target type ({@code Class<?>}.
+     * Returns a map of mapper functions associated with appropriate target type ({@code Class<?>}.
      * <p>
-     * Mappers will by automatically registered by {@link io.helidon.config.Config.Builder} during {@link io.helidon.config.Config}
-     * bootstrap
-     * if not {@link io.helidon.config.Config.Builder#disableMapperServices() disabled}.
+     * Mappers will by automatically registered by {@link Config.Builder} during
+     * bootstrapping of {@link Config} unless
+     * {@link Config.Builder#disableMapperServices() disableld}.
      *
-     * @return a map of {@link ConfigMapper}s, never {@code null}
+     * @return a map of config mapper functions, never {@code null}, though this may return an empty map if
+     * {@link #mapper(Class)} is used instead
      */
-    Map<Class<?>, ConfigMapper<?>> getMappers();
+    Map<Class<?>, Function<Config, ?>> mappers();
 
+    /**
+     * Returns a map of mapper functions associated with appropriate target type ({@code GenericType<?>}.
+     * <p>
+     * Mappers will by automatically registered by {@link Config.Builder} during
+     * bootstrapping of {@link Config} unless
+     * {@link Config.Builder#disableMapperServices() disableld}.
+     *
+     * @return a map of config mapper functions, never {@code null}, though this may return an empty map if
+     * {@link #mapper(Class)} is used instead
+     */
+    default Map<GenericType<?>, BiFunction<Config, ConfigMapper, ?>> genericTypeMappers() {
+        return Map.of();
+    }
+
+    /**
+     * A simple mapping function from config node to a typed value based on the expected class.
+     * If more complex type handling or conversion is needed, use {@link #mapper(GenericType)}.
+     *
+     * @param type type of the expected mapping result
+     * @param <T>  type returned from conversion
+     * @return function to convert config node to the expected type, or empty if the type is not supported by this provider
+     */
+    default <T> Optional<Function<Config, T>> mapper(Class<T> type) {
+        return Optional.empty();
+    }
+
+    /**
+     * Mapper for a specific generic type.
+     * If your mapper only supports simple classes, get it using {@link GenericType#rawType()}.
+     * Otherwise you have access to the (possibly) generics type of the expected result using
+     * {@link GenericType#type()}.
+     * <p>
+     * The mapping function has two parameters:
+     * <ul>
+     * <li>{@link Config} - config node to convert to the expected type
+     * <li>{@link ConfigMapper} - mapper to help with conversion of sub-nodes if needed</li>
+     * </ul>
+     * and returns a typed value.
+     *
+     * @param type type providing information what is the mapped type
+     * @param <T>  type to map to
+     * @return a function that would convert the provided Config instance into the expected type if
+     *         supported by this provider, empty otherwise.
+     */
+    default <T> Optional<BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
+        return Optional.empty();
+    }
 }

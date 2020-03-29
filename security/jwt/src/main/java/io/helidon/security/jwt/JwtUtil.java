@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,11 +41,13 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
 
 /**
  * Utilities for JWT and JWK parsing.
@@ -55,6 +59,10 @@ public final class JwtUtil {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
     private static final Pattern LOCALE_PATTERN = Pattern.compile("(\\w+)_(\\w+)");
+
+    // Avoid reloading JSON providers. See https://github.com/eclipse-ee4j/jsonp/issues/154
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+    private static final JsonProvider JSON_PROVIDER = JsonProvider.provider();
 
     private JwtUtil() {
     }
@@ -242,22 +250,22 @@ public final class JwtUtil {
 
     private static JsonValue toJson(Object object) {
         if (object instanceof String) {
-            return Json.createValue((String) object);
+            return JSON_PROVIDER.createValue((String) object);
         }
         if (object instanceof Integer) {
-            return Json.createValue((Integer) object);
+            return JSON_PROVIDER.createValue((Integer) object);
         }
         if (object instanceof Double) {
-            return Json.createValue((Double) object);
+            return JSON_PROVIDER.createValue((Double) object);
         }
         if (object instanceof Long) {
-            return Json.createValue((Long) object);
+            return JSON_PROVIDER.createValue((Long) object);
         }
         if (object instanceof BigDecimal) {
-            return Json.createValue((BigDecimal) object);
+            return JSON_PROVIDER.createValue((BigDecimal) object);
         }
         if (object instanceof BigInteger) {
-            return Json.createValue((BigInteger) object);
+            return JSON_PROVIDER.createValue((BigInteger) object);
         }
         if (object instanceof Boolean) {
             return ((Boolean) object) ? JsonValue.TRUE : JsonValue.FALSE;
@@ -265,7 +273,10 @@ public final class JwtUtil {
         if (object instanceof Address) {
             return ((Address) object).getJson();
         }
-        return Json.createValue(String.valueOf(object));
+        if (object instanceof Collection) {
+            return JSON.createArrayBuilder((Collection) object).build();
+        }
+        return JSON_PROVIDER.createValue(String.valueOf(object));
     }
 
     private static Locale toLocale(String locale) {
@@ -415,8 +426,13 @@ public final class JwtUtil {
             return country;
         }
 
-        JsonObject getJson() {
-            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+        /**
+         * Create a json representation of this address.
+         *
+         * @return Address as a Json object
+         */
+        public JsonObject getJson() {
+            JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
 
             formatted.ifPresent(it -> objectBuilder.add("formatted", it));
             streetAddress.ifPresent(it -> objectBuilder.add("street_address", it));

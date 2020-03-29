@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,23 @@
 
 package io.helidon.config;
 
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static io.helidon.config.ConfigSourceTest.TEST_ENV_VAR_NAME;
+import static io.helidon.config.ConfigSourceTest.TEST_ENV_VAR_VALUE;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -47,22 +51,23 @@ public class BuilderImplTest {
 
     @Test
     public void testBuildDefault() {
-        Config.Builder builder = Config.withSources(ConfigSources.empty());
+        Config.Builder builder = Config.builder(ConfigSources.empty());
         BuilderImpl spyBuilder = spy((BuilderImpl) builder);
         spyBuilder
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
+                .disableValueResolving()
                 .build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(ConfigSources.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(ConfigSourcesRuntime.empty()), //ConfigSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
-                                          eq(BuilderImpl.DEFAULT_CHANGES_EXECUTOR), //changesExecutor
-                                          eq(Flow.defaultBufferSize()), //changesMaxBuffer
-                                          eq(true) //keyResolving
+                                          notNull(), //changesExecutor
+                                          eq(true), //keyResolving
+                                          isNull() //aliasGenerator
         );
     }
 
@@ -71,22 +76,22 @@ public class BuilderImplTest {
         Executor myExecutor = Runnable::run;
         Config.Builder builder = Config.builder()
                 .sources(ConfigSources.empty())
+                .disableValueResolving()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
-                .changesExecutor(myExecutor)
-                .changesMaxBuffer(1);
+                .changesExecutor(myExecutor);
         BuilderImpl spyBuilder = spy((BuilderImpl) builder);
         spyBuilder.build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(ConfigSources.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(ConfigSourcesRuntime.empty()), //ConfigSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
-                                          eq(1), //changesMaxBuffer
-                                          eq(true) //keyResolving
+                                          eq(true), //keyResolving
+                                          isNull() //aliasGenerator
         );
     }
 
@@ -100,36 +105,41 @@ public class BuilderImplTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
-                .changesExecutor(myExecutor)
-                .changesMaxBuffer(1);
+                .changesExecutor(myExecutor);
         BuilderImpl spyBuilder = spy((BuilderImpl) builder);
         spyBuilder.build();
 
         verify(spyBuilder).createProvider(notNull(), //ConfigMapperManager
-                                          eq(ConfigSources.empty()), //ConfigSource
-                                          eq(OverrideSources.empty()), //OverrideSource
-                                          eq(CollectionsHelper.listOf()), //filterProviders
+                                          eq(ConfigSourcesRuntime.empty()), //ConfigSource
+                                          eq(OverrideSourceRuntime.empty()), //OverrideSource
+                                          eq(List.of()), //filterProviders
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
-                                          eq(1), //changesMaxBuffer
-                                          eq(false) //keyResolving
+                                          eq(false), //keyResolving
+                                          isNull() //aliasGenerator
         );
     }
 
     @Test
     public void testBuildWithDefaultStrategy() {
+        String expected = "This value should override the environment variable";
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
-        System.setProperty(TEST_ENV_VAR_NAME, "This value is not used, but from Env Vars, see pom.xml!");
+        // system properties now have priority over environment variables
+        System.setProperty(TEST_ENV_VAR_NAME, expected);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
-        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(TEST_SYS_PROP_VALUE));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(TEST_ENV_VAR_VALUE));
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(expected));
+
+        // once we do the replacement, we hit the environment variable only (as there is no replacement for other sources)
+        String envVarName = TEST_ENV_VAR_NAME.toLowerCase().replace("_", ".");
+        assertThat(config.get(envVarName).asString().get(), is(TEST_ENV_VAR_VALUE));
     }
 
     @Test
@@ -137,18 +147,14 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
-        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(TEST_SYS_PROP_VALUE));
-        Config c = config.get(TEST_ENV_VAR_NAME);
-        System.err.println("BuilderImplTest: envVar type is " + c.type().toString());
-        System.err.println("  and value is " + (c.value().isPresent() ? c.value().toString() : "value not present"));
-        
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
         assertThat(config.get(TEST_ENV_VAR_NAME).type(), is(Config.Type.MISSING));
     }
 
@@ -157,15 +163,15 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
         assertThat(config.get(TEST_SYS_PROP_NAME).type(), is(Config.Type.MISSING));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(TEST_ENV_VAR_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
     }
 
     @Test
@@ -173,16 +179,30 @@ public class BuilderImplTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         Config config = Config.builder()
-                .sources(CompositeConfigSourceTest.initBuilder().build())
+                .sources(sources())
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
         assertThat(config.get(TEST_SYS_PROP_NAME).type(), is(Config.Type.MISSING));
         assertThat(config.get(TEST_ENV_VAR_NAME).type(), is(Config.Type.MISSING));
     }
 
+    static List<Supplier<? extends ConfigSource>> sources() {
+        return List.of(
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-1")
+                                             .build()),
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-2")
+                                             .addValue("prop2", "source-2")
+                                             .build()),
+                ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                             .addValue("prop1", "source-3")
+                                             .addValue("prop3", "source-3")
+                                             .build()));
+    }
 }

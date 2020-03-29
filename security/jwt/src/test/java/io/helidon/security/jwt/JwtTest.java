@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
@@ -33,7 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link Jwt}
+ * Unit test for {@link Jwt}.
  */
 public class JwtTest {
     private static final Logger LOGGER = Logger.getLogger(JwtTest.class.getName());
@@ -49,9 +48,9 @@ public class JwtTest {
                 .audience(audience)
                 .build();
 
-        assertThat(jwt.getJwtId(), is(Optional.of(id)));
-        assertThat(jwt.getAlgorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
-        assertThat(jwt.getAudience(), is(Optional.of(CollectionsHelper.listOf(audience))));
+        assertThat(jwt.jwtId(), is(Optional.of(id)));
+        assertThat(jwt.algorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
+        assertThat(jwt.audience(), is(Optional.of(List.of(audience))));
     }
 
     @Test
@@ -80,12 +79,12 @@ public class JwtTest {
                 .notBefore(notBefore)
                 .build();
 
-        assertThat(jwt.getScopes(), is(Optional.of(CollectionsHelper.listOf("link", "lank", "lunk"))));
-        assertThat(jwt.getSubject(), is(Optional.of(subject)));
-        assertThat(jwt.getPreferredUsername(), is(Optional.of(username)));
-        assertThat(jwt.getIssueTime(), is(Optional.of(now)));
-        assertThat(jwt.getExpirationTime(), is(Optional.of(expiration)));
-        assertThat(jwt.getNotBefore(), is(Optional.of(notBefore)));
+        assertThat(jwt.scopes(), is(Optional.of(List.of("link", "lank", "lunk"))));
+        assertThat(jwt.subject(), is(Optional.of(subject)));
+        assertThat(jwt.preferredUsername(), is(Optional.of(username)));
+        assertThat(jwt.issueTime(), is(Optional.of(now)));
+        assertThat(jwt.expirationTime(), is(Optional.of(expiration)));
+        assertThat(jwt.notBefore(), is(Optional.of(notBefore)));
 
         //and this one should be valid
         List<Validator<Jwt>> vals = Jwt.defaultTimeValidators();

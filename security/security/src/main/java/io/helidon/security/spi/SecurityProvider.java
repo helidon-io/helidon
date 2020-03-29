@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.security.spi;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.Set;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.SecurityContext;
 
@@ -27,20 +27,20 @@ import io.helidon.security.SecurityContext;
  * Base interface for all security providers.
  *
  * @see EndpointConfig
- * @see SecurityContext#getEndpointConfig()
+ * @see SecurityContext#endpointConfig()
  */
 public interface SecurityProvider {
     /**
-     * Provide extension annotations supported by this provider (e.g. {@link javax.annotation.security.RolesAllowed}).
+     * Provide extension annotations supported by this provider (e.g. {@code javax.annotation.security.RolesAllowed}).
      * Annotations will be collected according to framework in use. For JAX-RS, annotations from application class, resource
      * class and resource methods will be collected.
      *
      * @return Collection of annotations this provider expects.
-     * @see EndpointConfig#getAnnotations(EndpointConfig.AnnotationScope...)
+     * @see EndpointConfig#annotations(EndpointConfig.AnnotationScope...)
      * @see EndpointConfig#combineAnnotations(Class, EndpointConfig.AnnotationScope...)
      */
     default Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     /**
@@ -50,10 +50,10 @@ public interface SecurityProvider {
      * is to be used by this provider to evaluate security.
      *
      * @return name of the configuration key or empty (default)
-     * @see EndpointConfig#getConfig(String)
+     * @see EndpointConfig#config(String)
      */
     default Collection<String> supportedConfigKeys() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     /**
@@ -63,10 +63,10 @@ public interface SecurityProvider {
      * of such a class to configure that provider.
      *
      * @return class of the type or empty (default)
-     * @see EndpointConfig#getInstance(Class)
+     * @see EndpointConfig#instance(Class)
      */
     default Collection<Class<? extends ProviderConfig>> supportedCustomObjects() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
 
     /**
@@ -74,9 +74,10 @@ public interface SecurityProvider {
      * configuration.
      *
      * @return collection of supported attribute names
-     * @see EndpointConfig#getAttribute(String)
+     * @see EndpointConfig#abacAttribute(String)
      */
     default Collection<String> supportedAttributes() {
-        return CollectionsHelper.setOf();
+        return Set.of();
     }
+
 }

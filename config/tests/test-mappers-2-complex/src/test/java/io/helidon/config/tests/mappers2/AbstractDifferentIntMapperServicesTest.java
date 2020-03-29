@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 package io.helidon.config.tests.mappers2;
 
-import io.helidon.common.CollectionsHelper;
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.OptionalInt;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Module {@code module-mappers-2-override} overrides built-in mappers for {@link Integer}, {@link OptionalInt}
@@ -39,7 +40,7 @@ public abstract class AbstractDifferentIntMapperServicesTest {
 
     protected Config.Builder configBuilder() {
         return Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(KEY, CONFIGURED_VALUE)));
+                .sources(ConfigSources.create(Map.of(KEY, CONFIGURED_VALUE)));
     }
 
     abstract protected int expected();
@@ -48,14 +49,14 @@ public abstract class AbstractDifferentIntMapperServicesTest {
     public void testDifferentInts() {
         Config config = configBuilder().build().get(KEY);
 
-        assertThat(config.asInt(), is(expected()));
-        assertThat(config.as(Integer.class), is(expected()));
-        assertThat(config.as(BigInteger.class), is(BigInteger.valueOf(expected())));
+        assertThat(config.asInt().get(), is(expected()));
+        assertThat(config.as(Integer.class).get(), is(expected()));
+        assertThat(config.as(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
 
-        assertThat(config.as(OptionalInt.class).getAsInt(), is(expected()));
-        assertThat(config.asOptionalInt().getAsInt(), is(expected()));
-        assertThat(config.asOptional(Integer.class).get(), is(expected()));
-        assertThat(config.asOptional(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
+        assertThat(config.as(OptionalInt.class).get(), is(OptionalInt.of(expected())));
+        assertThat(config.asInt().get(), is(expected()));
+        assertThat(config.as(Integer.class).get(), is(expected()));
+        assertThat(config.as(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
     }
 
 }

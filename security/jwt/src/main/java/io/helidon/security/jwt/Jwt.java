@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,14 +35,13 @@ import java.util.function.Function;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.jwt.jwk.Jwk;
 
 /**
@@ -52,6 +51,8 @@ import io.helidon.security.jwt.jwk.Jwk;
  */
 @SuppressWarnings("WeakerAccess") // getters should be public
 public class Jwt {
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     /*
     Header claims
     */
@@ -118,6 +119,21 @@ public class Jwt {
     */
     // "sub":"106482221621567111461",
     private final Optional<String> subject;
+
+    /*
+     Microprofile specification JWT Auth:
+     A human readable claim that uniquely identifies the subject or user principal of the token, across the MicroProfile
+     services the token will be accessed with.
+     */
+    // "upn":"john.doe@example.org"
+    private final Optional<String> userPrincipal;
+    /*
+    Microprofile specification JWT Auth:
+    The token subject’s group memberships that will be mapped to Java EE style application level roles in the MicroProfile
+    service container.
+     */
+    // "groups": ["normalUsers", "abnormalUsers"]
+    private final Optional<List<String>> userGroups;
     // "aud":"1048216952820-6a6ke9vrbjlhngbc0al0dkj9qs9tqbk2.apps.googleusercontent.com",
     /*
    The "aud" (audience) claim identifies the recipients that the JWT is
@@ -211,7 +227,7 @@ public class Jwt {
      * @param headerJson  headers
      * @param payloadJson payload
      */
-    public Jwt(JsonObject headerJson, JsonObject payloadJson) {
+    Jwt(JsonObject headerJson, JsonObject payloadJson) {
         // generic stuff
         this.headerClaims = getClaims(headerJson);
         this.payloadClaims = getClaims(payloadJson);
@@ -228,12 +244,19 @@ public class Jwt {
         this.issueTime = JwtUtil.toInstant(payloadJson, "iat");
         this.notBefore = JwtUtil.toInstant(payloadJson, "nbf");
         this.subject = JwtUtil.getString(payloadJson, "sub");
+        JsonValue groups = payloadJson.get("groups");
+        if (groups instanceof JsonArray) {
+            this.userGroups = JwtUtil.getStrings(payloadJson, "groups");
+        } else {
+            this.userGroups = JwtUtil.getString(payloadJson, "groups").map(List::of);
+        }
+
         JsonValue aud = payloadJson.get("aud");
         // support both a single string and an array
         if (aud instanceof JsonArray) {
             this.audience = JwtUtil.getStrings(payloadJson, "aud");
         } else {
-            this.audience = JwtUtil.getString(payloadJson, "aud").map(CollectionsHelper::listOf);
+            this.audience = JwtUtil.getString(payloadJson, "aud").map(List::of);
         }
 
         this.jwtId = JwtUtil.getString(payloadJson, "jti");
@@ -260,6 +283,9 @@ public class Jwt {
         this.cHash = JwtUtil.getByteArray(payloadJson, "c_hash", "c_hash value");
         this.nonce = JwtUtil.getString(payloadJson, "nonce");
         this.scopes = JwtUtil.toScopes(payloadJson);
+        this.userPrincipal = JwtUtil.getString(payloadJson, "upn")
+                .or(() -> preferredUsername)
+                .or(() -> subject);
     }
 
     private Jwt(Builder builder) {
@@ -270,48 +296,39 @@ public class Jwt {
         this.payloadClaims.putAll(JwtUtil.transformToJson(builder.payloadClaims));
 
         // known headers
-        this.algorithm = OptionalHelper.from(builder.algorithm).or(() -> toOptionalString(builder.payloadClaims, "alg"))
-                .asOptional();
-        this.keyId = OptionalHelper.from(builder.keyId).or(() -> toOptionalString(builder.payloadClaims, "kid")).asOptional();
-        this.type = OptionalHelper.from(builder.type).or(() -> toOptionalString(builder.payloadClaims, "typ")).asOptional();
-        this.contentType = OptionalHelper.from(builder.contentType).or(() -> toOptionalString(builder.payloadClaims, "cty"))
-                .asOptional();
+        this.algorithm = builder.algorithm.or(() -> toOptionalString(builder.payloadClaims, "alg"));
+        this.keyId = builder.keyId.or(() -> toOptionalString(builder.payloadClaims, "kid"));
+        this.type = builder.type.or(() -> toOptionalString(builder.payloadClaims, "typ"));
+        this.contentType = builder.contentType.or(() -> toOptionalString(builder.payloadClaims, "cty"));
 
         // known payload
         this.issuer = builder.issuer;
         this.expirationTime = builder.expirationTime;
         this.issueTime = builder.issueTime;
         this.notBefore = builder.notBefore;
-        this.subject = OptionalHelper.from(builder.subject).or(() -> toOptionalString(builder.payloadClaims, "sub")).asOptional();
+        this.subject = builder.subject.or(() -> toOptionalString(builder.payloadClaims, "sub"));
         this.audience = builder.audience;
         this.jwtId = builder.jwtId;
-        this.email = OptionalHelper.from(builder.email).or(() -> toOptionalString(builder.payloadClaims, "email")).asOptional();
-        this.emailVerified = OptionalHelper.from(builder.emailVerified)
-                .or(() -> getClaim(builder.payloadClaims, "email_verified")).asOptional();
-        this.fullName = OptionalHelper.from(builder.fullName).or(() -> toOptionalString(builder.payloadClaims, "name"))
-                .asOptional();
-        this.givenName = OptionalHelper.from(builder.givenName).or(() -> toOptionalString(builder.payloadClaims, "given_name"))
-                .asOptional();
-        this.middleName = OptionalHelper.from(builder.middleName).or(() -> toOptionalString(builder.payloadClaims, "middle_name"))
-                .asOptional();
-        this.familyName = OptionalHelper.from(builder.familyName).or(() -> toOptionalString(builder.payloadClaims, "family_name"))
-                .asOptional();
-        this.locale = OptionalHelper.from(builder.locale).or(() -> getClaim(builder.payloadClaims, "locale")).asOptional();
-        this.nickname = OptionalHelper.from(builder.nickname).or(() -> toOptionalString(builder.payloadClaims, "nickname"))
-                .asOptional();
-        this.preferredUsername = OptionalHelper.from(builder.preferredUsername)
-                .or(() -> toOptionalString(builder.payloadClaims, "preferred_username")).asOptional();
-        this.profile = OptionalHelper.from(builder.profile).or(() -> getClaim(builder.payloadClaims, "profile")).asOptional();
-        this.picture = OptionalHelper.from(builder.picture).or(() -> getClaim(builder.payloadClaims, "picture")).asOptional();
-        this.website = OptionalHelper.from(builder.website).or(() -> getClaim(builder.payloadClaims, "website")).asOptional();
-        this.gender = OptionalHelper.from(builder.gender).or(() -> toOptionalString(builder.payloadClaims, "gender"))
-                .asOptional();
-        this.birthday = OptionalHelper.from(builder.birthday).or(() -> getClaim(builder.payloadClaims, "birthday")).asOptional();
-        this.timeZone = OptionalHelper.from(builder.timeZone).or(() -> getClaim(builder.payloadClaims, "zoneinfo")).asOptional();
-        this.phoneNumber = OptionalHelper.from(builder.phoneNumber)
-                .or(() -> toOptionalString(builder.payloadClaims, "phone_number")).asOptional();
-        this.phoneNumberVerified = OptionalHelper.from(builder.phoneNumberVerified)
-                .or(() -> getClaim(builder.payloadClaims, "phone_number_verified")).asOptional();
+        this.email = builder.email.or(() -> toOptionalString(builder.payloadClaims, "email"));
+        this.emailVerified = builder.emailVerified.or(() -> getClaim(builder.payloadClaims, "email_verified"));
+        this.fullName = builder.fullName.or(() -> toOptionalString(builder.payloadClaims, "name"));
+        this.givenName = builder.givenName.or(() -> toOptionalString(builder.payloadClaims, "given_name"));
+        this.middleName = builder.middleName.or(() -> toOptionalString(builder.payloadClaims, "middle_name"));
+        this.familyName = builder.familyName.or(() -> toOptionalString(builder.payloadClaims, "family_name"));
+        this.locale = builder.locale.or(() -> getClaim(builder.payloadClaims, "locale"));
+        this.nickname = builder.nickname.or(() -> toOptionalString(builder.payloadClaims, "nickname"));
+        this.preferredUsername = builder.preferredUsername
+                .or(() -> toOptionalString(builder.payloadClaims, "preferred_username"));
+        this.profile = builder.profile.or(() -> getClaim(builder.payloadClaims, "profile"));
+        this.picture = builder.picture.or(() -> getClaim(builder.payloadClaims, "picture"));
+        this.website = builder.website.or(() -> getClaim(builder.payloadClaims, "website"));
+        this.gender = builder.gender.or(() -> toOptionalString(builder.payloadClaims, "gender"));
+        this.birthday = builder.birthday.or(() -> getClaim(builder.payloadClaims, "birthday"));
+        this.timeZone = builder.timeZone.or(() -> getClaim(builder.payloadClaims, "zoneinfo"));
+        this.phoneNumber = builder.phoneNumber
+                .or(() -> toOptionalString(builder.payloadClaims, "phone_number"));
+        this.phoneNumberVerified = builder.phoneNumberVerified
+                .or(() -> getClaim(builder.payloadClaims, "phone_number_verified"));
 
         this.updatedAt = builder.updatedAt;
         this.address = builder.address;
@@ -319,6 +336,13 @@ public class Jwt {
         this.cHash = builder.cHash;
         this.nonce = builder.nonce;
         this.scopes = builder.scopes;
+
+        this.userPrincipal = builder.userPrincipal
+                .or(() -> toOptionalString(builder.payloadClaims, "upn"))
+                .or(() -> preferredUsername)
+                .or(() -> subject);
+
+        this.userGroups = builder.userGroups;
     }
 
     @SuppressWarnings("unchecked")
@@ -382,7 +406,7 @@ public class Jwt {
      * @param mandatory  whether issuer field is mandatory in the token (true - mandatory, false - optional)
      */
     public static void addIssuerValidator(Collection<Validator<Jwt>> validators, String issuer, boolean mandatory) {
-        validators.add(FieldValidator.create(Jwt::getIssuer, "Issuer", issuer, mandatory));
+        validators.add(FieldValidator.create(Jwt::issuer, "Issuer", issuer, mandatory));
     }
 
     /**
@@ -394,7 +418,7 @@ public class Jwt {
      */
     public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
         validators.add((jwt, collector) -> {
-            Optional<List<String>> jwtAudiences = jwt.getAudience();
+            Optional<List<String>> jwtAudiences = jwt.audience();
             if (jwtAudiences.isPresent()) {
                 if (jwtAudiences.get().contains(audience)) {
                     return;
@@ -422,7 +446,12 @@ public class Jwt {
         return Collections.unmodifiableMap(headerJson);
     }
 
-    public Optional<List<String>> getScopes() {
+    /**
+     * Scopes of this token.
+     *
+     * @return list of scopes or empty if claim is not defined
+     */
+    public Optional<List<String>> scopes() {
         return scopes.map(Collections::unmodifiableList);
     }
 
@@ -432,7 +461,7 @@ public class Jwt {
      * @param claim name of a claim
      * @return claim value if present
      */
-    public Optional<JsonValue> getHeaderClaim(String claim) {
+    public Optional<JsonValue> headerClaim(String claim) {
         return Optional.ofNullable(headerClaims.get(claim));
     }
 
@@ -442,143 +471,348 @@ public class Jwt {
      * @param claim name of a claim
      * @return claim value if present
      */
-    public Optional<JsonValue> getPayloadClaim(String claim) {
-        return Optional.ofNullable(payloadClaims.get(claim));
+    public Optional<JsonValue> payloadClaim(String claim) {
+        JsonValue rawValue = payloadClaims.get(claim);
+
+        switch (claim) {
+        case "aud":
+            return Optional.ofNullable(ensureJsonArray(rawValue));
+        default:
+            return Optional.ofNullable(rawValue);
+        }
     }
 
-    public Map<String, JsonValue> getPayloadClaims() {
+    private JsonValue ensureJsonArray(JsonValue rawValue) {
+        if (rawValue instanceof JsonArray) {
+            return rawValue;
+        }
+
+        return JSON.createArrayBuilder()
+                .add(rawValue)
+                .build();
+    }
+
+    /**
+     * All payload claims in raw json form.
+     *
+     * @return map of payload names to claims
+     */
+    public Map<String, JsonValue> payloadClaims() {
         return Collections.unmodifiableMap(payloadClaims);
     }
 
-    public Optional<String> getAlgorithm() {
+    /**
+     * Algorithm claim.
+     *
+     * @return algorithm or empty if claim is not defined
+     */
+    public Optional<String> algorithm() {
         return algorithm;
     }
 
-    public Optional<String> getKeyId() {
+    /**
+     * Key id claim.
+     *
+     * @return key id or empty if claim is not defined
+     */
+    public Optional<String> keyId() {
         return keyId;
     }
 
-    public Optional<String> getType() {
+    /**
+     * Type claim.
+     *
+     * @return type or empty if claim is not defined
+     */
+    public Optional<String> type() {
         return type;
     }
 
-    public Optional<String> getContentType() {
+    /**
+     * Content type claim.
+     *
+     * @return content type or empty if claim is not defined
+     */
+    public Optional<String> contentType() {
         return contentType;
     }
 
-    public Optional<String> getIssuer() {
+    /**
+     * Issuer claim.
+     *
+     * @return Issuer or empty if claim is not defined
+     */
+    public Optional<String> issuer() {
         return issuer;
     }
 
-    public Optional<Instant> getExpirationTime() {
+    /**
+     * Expiration time claim.
+     *
+     * @return expiration time or empty if claim is not defined
+     */
+    public Optional<Instant> expirationTime() {
         return expirationTime;
     }
 
-    public Optional<Instant> getIssueTime() {
+    /**
+     * Issue time claim.
+     *
+     * @return issue time or empty if claim is not defined
+     */
+    public Optional<Instant> issueTime() {
         return issueTime;
     }
 
-    public Optional<Instant> getNotBefore() {
+    /**
+     * Not before claim.
+     *
+     * @return not before or empty if claim is not defined
+     */
+    public Optional<Instant> notBefore() {
         return notBefore;
     }
 
-    public Optional<String> getSubject() {
+    /**
+     * Subject claim.
+     *
+     * @return subject or empty if claim is not defined
+     */
+    public Optional<String> subject() {
         return subject;
     }
 
-    public Optional<List<String>> getAudience() {
+    /**
+     * User principal claim ("upn" from microprofile specification).
+     *
+     * @return user principal or empty if claim is not defined
+     */
+    public Optional<String> userPrincipal() {
+        return userPrincipal;
+    }
+
+    /**
+     * User groups claim ("groups" from microprofile specification).
+     *
+     * @return groups or empty if claim is not defined
+     */
+    public Optional<List<String>> userGroups() {
+        return userGroups.map(Collections::unmodifiableList);
+    }
+
+    /**
+     * Audience claim.
+     *
+     * @return audience or empty if claim is not defined
+     */
+    public Optional<List<String>> audience() {
         return audience;
     }
 
-    public Optional<String> getJwtId() {
+    /**
+     * Jwt id claim.
+     *
+     * @return jwt id or empty if claim is not defined
+     */
+    public Optional<String> jwtId() {
         return jwtId;
     }
 
-    public Optional<String> getEmail() {
+    /**
+     * Email claim.
+     *
+     * @return email or empty if claim is not defined
+     */
+    public Optional<String> email() {
         return email;
     }
 
-    public Optional<Boolean> getEmailVerified() {
+    /**
+     * Email verified claim.
+     *
+     * @return email verified or empty if claim is not defined
+     */
+    public Optional<Boolean> emailVerified() {
         return emailVerified;
     }
 
-    public Optional<String> getFullName() {
+    /**
+     * Full name claim.
+     *
+     * @return full name or empty if claim is not defined
+     */
+    public Optional<String> fullName() {
         return fullName;
     }
 
-    public Optional<String> getGivenName() {
+    /**
+     * Given name claim.
+     *
+     * @return given name or empty if claim is not defined
+     */
+    public Optional<String> givenName() {
         return givenName;
     }
 
-    public Optional<String> getMiddleName() {
+    /**
+     * Middle name claim.
+     *
+     * @return middle name or empty if claim is not defined
+     */
+    public Optional<String> middleName() {
         return middleName;
     }
 
-    public Optional<String> getFamilyName() {
+    /**
+     * Family name claim.
+     *
+     * @return family name or empty if claim is not defined
+     */
+    public Optional<String> familyName() {
         return familyName;
     }
 
-    public Optional<Locale> getLocale() {
+    /**
+     * Locale claim.
+     *
+     * @return locale or empty if claim is not defined
+     */
+    public Optional<Locale> locale() {
         return locale;
     }
 
-    public Optional<String> getNickname() {
+    /**
+     * Nickname claim.
+     *
+     * @return nickname or empty if claim is not defined
+     */
+    public Optional<String> nickname() {
         return nickname;
     }
 
-    public Optional<String> getPreferredUsername() {
+    /**
+     * Preferred username claim.
+     *
+     * @return preferred username or empty if claim is not defined
+     */
+    public Optional<String> preferredUsername() {
         return preferredUsername;
     }
 
-    public Optional<URI> getProfile() {
+    /**
+     * Profile URI claim.
+     *
+     * @return profile URI or empty if claim is not defined
+     */
+    public Optional<URI> profile() {
         return profile;
     }
 
-    public Optional<URI> getPicture() {
+    /**
+     * Picture URI claim.
+     *
+     * @return picture URI or empty if claim is not defined
+     */
+    public Optional<URI> picture() {
         return picture;
     }
 
-    public Optional<URI> getWebsite() {
+    /**
+     * Website URI claim.
+     *
+     * @return website URI or empty if claim is not defined
+     */
+    public Optional<URI> website() {
         return website;
     }
 
-    public Optional<String> getGender() {
+    /**
+     * Gender claim.
+     *
+     * @return gender or empty if claim is not defined
+     */
+    public Optional<String> gender() {
         return gender;
     }
 
-    public Optional<LocalDate> getBirthday() {
+    /**
+     * Birthday claim.
+     *
+     * @return birthday or empty if claim is not defined
+     */
+    public Optional<LocalDate> birthday() {
         return birthday;
     }
 
-    public Optional<ZoneId> getTimeZone() {
+    /**
+     * Time Zone claim.
+     *
+     * @return time zone or empty if claim is not defined
+     */
+    public Optional<ZoneId> timeZone() {
         return timeZone;
     }
 
-    public Optional<String> getPhoneNumber() {
+    /**
+     * Phone number claim.
+     *
+     * @return phone number or empty if claim is not defined
+     */
+    public Optional<String> phoneNumber() {
         return phoneNumber;
     }
 
-    public Optional<Boolean> getPhoneNumberVerified() {
+    /**
+     * Phone number verified claim.
+     *
+     * @return phone number verified or empty if claim is not defined
+     */
+    public Optional<Boolean> phoneNumberVerified() {
         return phoneNumberVerified;
     }
 
-    public Optional<Instant> getUpdatedAt() {
+    /**
+     * Updated at claim.
+     *
+     * @return updated at or empty if claim is not defined
+     */
+    public Optional<Instant> updatedAt() {
         return updatedAt;
     }
 
-    public Optional<JwtUtil.Address> getAddress() {
+    /**
+     * Address claim.
+     *
+     * @return address or empty if claim is not defined
+     */
+    public Optional<JwtUtil.Address> address() {
         return address;
     }
 
-    public Optional<byte[]> getAtHash() {
+    /**
+     * AtHash claim.
+     *
+     * @return atHash or empty if claim is not defined
+     */
+    public Optional<byte[]> atHash() {
         return atHash;
     }
 
-    public Optional<byte[]> getCHash() {
+    /**
+     * CHash claim.
+     *
+     * @return cHash or empty if claim is not defined
+     */
+    public Optional<byte[]> cHash() {
         return cHash;
     }
 
-    public Optional<String> getNonce() {
+    /**
+     * Nonce claim.
+     *
+     * @return nonce or empty if claim is not defined
+     */
+    public Optional<String> nonce() {
         return nonce;
     }
 
@@ -587,8 +821,8 @@ public class Jwt {
      *
      * @return JsonObject for header
      */
-    public JsonObject getHeaderJson() {
-        JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+    public JsonObject headerJson() {
+        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
         headerClaims.forEach(objectBuilder::add);
 
         algorithm.ifPresent(it -> objectBuilder.add("alg", it));
@@ -604,8 +838,8 @@ public class Jwt {
      *
      * @return JsonObject for payload
      */
-    public JsonObject getPayloadJson() {
-        JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+    public JsonObject payloadJson() {
+        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
         payloadClaims.forEach(objectBuilder::add);
 
         // known payload
@@ -614,8 +848,14 @@ public class Jwt {
         this.issueTime.ifPresent(it -> objectBuilder.add("iat", it.getEpochSecond()));
         this.notBefore.ifPresent(it -> objectBuilder.add("nbf", it.getEpochSecond()));
         this.subject.ifPresent(it -> objectBuilder.add("sub", it));
+        this.userPrincipal.ifPresent(it -> objectBuilder.add("upn", it));
+        this.userGroups.ifPresent(it -> {
+            JsonArrayBuilder jab = JSON.createArrayBuilder();
+            it.forEach(jab::add);
+            objectBuilder.add("groups", jab);
+        });
         this.audience.ifPresent(it -> {
-            JsonArrayBuilder jab = Json.createArrayBuilder();
+            JsonArrayBuilder jab = JSON.createArrayBuilder();
             it.forEach(jab::add);
             objectBuilder.add("aud", jab);
         });
@@ -643,6 +883,11 @@ public class Jwt {
         this.cHash.ifPresent(it -> objectBuilder.add("c_hash", JwtUtil.base64Url(it)));
         this.nonce.ifPresent(it -> objectBuilder.add("nonce", it));
 
+        this.scopes.ifPresent(it -> {
+            String scopesString = String.join(" ", it);
+            objectBuilder.add("scope", scopesString);
+        });
+
         return objectBuilder.build();
     }
 
@@ -664,11 +909,11 @@ public class Jwt {
      * Validates all default values.
      * Values validated:
      * <ul>
-     * <li>{@link #getExpirationTime() Expiration time} if defined</li>
-     * <li>{@link #getIssueTime() Issue time} if defined</li>
-     * <li>{@link #getNotBefore() Not before time} if defined</li>
-     * <li>{@link #getIssuer()} Issuer} if defined</li>
-     * <li>{@link #getAudience() Audience} if defined</li>
+     * <li>{@link #expirationTime() Expiration time} if defined</li>
+     * <li>{@link #issueTime() Issue time} if defined</li>
+     * <li>{@link #notBefore() Not before time} if defined</li>
+     * <li>{@link #issuer()} Issuer} if defined</li>
+     * <li>{@link #audience() Audience} if defined</li>
      * </ul>
      *
      * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
@@ -738,10 +983,10 @@ public class Jwt {
     /**
      * Validator of a string field obtained from a JWT.
      */
-    public static class FieldValidator extends OptionalValidator implements Validator<Jwt> {
+    public static final class FieldValidator extends OptionalValidator implements Validator<Jwt> {
         private final Function<Jwt, Optional<String>> fieldAccessor;
-        private String expectedValue;
-        private String fieldName;
+        private final String expectedValue;
+        private final String fieldName;
 
         private FieldValidator(Function<Jwt, Optional<String>> fieldAccessor,
                                String fieldName,
@@ -814,7 +1059,7 @@ public class Jwt {
                                                      String expectedValue,
                                                      boolean mandatory) {
 
-            return create(jwt -> jwt.getHeaderClaim(fieldKey)
+            return create(jwt -> jwt.headerClaim(fieldKey)
                                   .map(it -> ((JsonString) it).getString()),
                           name,
                           expectedValue,
@@ -849,7 +1094,7 @@ public class Jwt {
                                                       String name,
                                                       String expectedValue,
                                                       boolean mandatory) {
-            return create(jwt -> jwt.getPayloadClaim(fieldKey)
+            return create(jwt -> jwt.payloadClaim(fieldKey)
                                   .map(it -> ((JsonString) it).getString()),
                           name,
                           expectedValue,
@@ -872,11 +1117,23 @@ public class Jwt {
     /**
      * Validator of issue time claim.
      */
-    public static class IssueTimeValidator extends InstantValidator implements Validator<Jwt> {
+    public static final class IssueTimeValidator extends InstantValidator implements Validator<Jwt> {
+
+        private IssueTimeValidator() {
+        }
+
+        private IssueTimeValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
+            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
+        }
+
+
         /**
          * New instance with default values (allowed time skew 5 seconds, optional).
+         *
+         * @return issue time validator with defaults
          */
-        public IssueTimeValidator() {
+        public static IssueTimeValidator create() {
+            return new IssueTimeValidator();
         }
 
         /**
@@ -886,14 +1143,18 @@ public class Jwt {
          * @param allowedTimeSkew     allowed time skew amount (such as 5)
          * @param allowedTimeSkewUnit allowed time skew unit (such as {@link ChronoUnit#SECONDS}
          * @param mandatory           true for mandatory, false for optional
+         * @return configured issue time validator
          */
-        public IssueTimeValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
-            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
+        public static IssueTimeValidator create(Instant now,
+                                                int allowedTimeSkew,
+                                                TemporalUnit allowedTimeSkewUnit,
+                                                boolean mandatory) {
+            return new IssueTimeValidator(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
         }
 
         @Override
         public void validate(Jwt token, Errors.Collector collector) {
-            token.getIssueTime().ifPresent(it -> {
+            token.issueTime().ifPresent(it -> {
                 // must be issued in the past
                 if (latest().isBefore(it)) {
                     collector.fatal(token, "Token was not issued in the past: " + it);
@@ -905,11 +1166,21 @@ public class Jwt {
     /**
      * Validator of expiration claim.
      */
-    public static class ExpirationValidator extends InstantValidator implements Validator<Jwt> {
+    public static final class ExpirationValidator extends InstantValidator implements Validator<Jwt> {
+        private ExpirationValidator() {
+        }
+
+        private ExpirationValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
+            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
+        }
+
         /**
          * New instance with default values (allowed time skew 5 seconds, optional).
+         *
+         * @return expiration time validator with defaults
          */
-        public ExpirationValidator() {
+        public static ExpirationValidator create() {
+            return new ExpirationValidator();
         }
 
         /**
@@ -919,14 +1190,18 @@ public class Jwt {
          * @param allowedTimeSkew     allowed time skew amount (such as 5)
          * @param allowedTimeSkewUnit allowed time skew unit (such as {@link ChronoUnit#SECONDS}
          * @param mandatory           true for mandatory, false for optional
+         * @return expiration time validator
          */
-        public ExpirationValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
-            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
+        public static ExpirationValidator create(Instant now,
+                                                int allowedTimeSkew,
+                                                TemporalUnit allowedTimeSkewUnit,
+                                                boolean mandatory) {
+            return new ExpirationValidator(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
         }
 
         @Override
         public void validate(Jwt token, Errors.Collector collector) {
-            token.getExpirationTime().ifPresent(it -> {
+            token.expirationTime().ifPresent(it -> {
                 if (earliest().isAfter(it)) {
                     collector.fatal(token, "Token no longer valid, expiration: " + it);
                 }
@@ -937,11 +1212,21 @@ public class Jwt {
     /**
      * Validator of not before claim.
      */
-    public static class NotBeforeValidator extends InstantValidator implements Validator<Jwt> {
+    public static final class NotBeforeValidator extends InstantValidator implements Validator<Jwt> {
+        private NotBeforeValidator() {
+        }
+
+        private NotBeforeValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
+            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
+        }
+
         /**
          * New instance with default values (allowed time skew 5 seconds, optional).
+         *
+         * @return not before time validator with defaults
          */
-        public NotBeforeValidator() {
+        public static NotBeforeValidator create() {
+            return new NotBeforeValidator();
         }
 
         /**
@@ -951,14 +1236,18 @@ public class Jwt {
          * @param allowedTimeSkew     allowed time skew amount (such as 5)
          * @param allowedTimeSkewUnit allowed time skew unit (such as {@link ChronoUnit#SECONDS}
          * @param mandatory           true for mandatory, false for optional
+         * @return not before time validator
          */
-        public NotBeforeValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
-            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
+        public static NotBeforeValidator create(Instant now,
+                                                 int allowedTimeSkew,
+                                                 TemporalUnit allowedTimeSkewUnit,
+                                                 boolean mandatory) {
+            return new NotBeforeValidator(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
         }
 
         @Override
         public void validate(Jwt token, Errors.Collector collector) {
-            token.getNotBefore().ifPresent(it -> {
+            token.notBefore().ifPresent(it -> {
                 if (latest().isBefore(it)) {
                     collector.fatal(token, "Token not yet valid, not before: " + it);
                 }
@@ -969,7 +1258,7 @@ public class Jwt {
     /**
      * Builder of a {@link Jwt}.
      */
-    public static class Builder implements io.helidon.common.Builder<Jwt> {
+    public static final class Builder implements io.helidon.common.Builder<Jwt> {
         private final Map<String, Object> headerClaims = new HashMap<>();
         private final Map<String, Object> payloadClaims = new HashMap<>();
         private Optional<String> algorithm = Optional.empty();
@@ -981,6 +1270,8 @@ public class Jwt {
         private Optional<Instant> issueTime = Optional.empty();
         private Optional<Instant> notBefore = Optional.empty();
         private Optional<String> subject = Optional.empty();
+        private Optional<String> userPrincipal = Optional.empty();
+        private Optional<List<String>> userGroups = Optional.empty();
         private Optional<List<String>> audience = Optional.empty();
         private Optional<String> jwtId = Optional.empty();
         private Optional<String> email = Optional.empty();
@@ -1051,8 +1342,21 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder addScope(String scope) {
-            this.scopes = OptionalHelper.from(this.scopes).or(() -> Optional.of(new LinkedList<>())).asOptional();
+            this.scopes = this.scopes.or(() -> Optional.of(new LinkedList<>()));
             this.scopes.ifPresent(it -> it.add(scope));
+            return this;
+        }
+
+        /**
+         * A user group claim to add.
+         * Based on Microprofile JWT Auth specification, uses claim "groups".
+         *
+         * @param group group name to add to the list of groups
+         * @return updated builder instance
+         */
+        public Builder addUserGroup(String group) {
+            this.userGroups = this.userGroups.or(() -> Optional.of(new LinkedList<>()));
+            this.userGroups.ifPresent(it -> it.add(group));
             return this;
         }
 
@@ -1171,6 +1475,19 @@ public class Jwt {
          */
         public Builder subject(String subject) {
             this.subject = Optional.ofNullable(subject);
+            return this;
+        }
+
+        /**
+         * User principal claim as defined by Microprofile JWT Auth spec.
+         * Uses "upn" claim.
+         *
+         * @param principal name of the principal, falls back to {@link #preferredUsername(String)} and then to
+         *                  {@link #subject(String)}
+         * @return updated builder instance
+         */
+        public Builder userPrincipal(String principal) {
+            this.userPrincipal = Optional.ofNullable(principal);
             return this;
         }
 

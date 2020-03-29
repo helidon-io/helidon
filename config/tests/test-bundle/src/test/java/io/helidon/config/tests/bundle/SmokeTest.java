@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package io.helidon.config.tests.bundle;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.hocon.HoconConfigParserBuilder;
+import io.helidon.config.ConfigValues;
+import io.helidon.config.hocon.HoconConfigParser;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.yaml.YamlConfigParserBuilder;
+import io.helidon.config.yaml.YamlConfigParser;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import org.junit.jupiter.api.Test;
 
 /**
  * Test that all dependencies are included and basic use-case is running.
@@ -34,14 +36,14 @@ public class SmokeTest {
     @Test
     public void testPropertiesParser() {
         Config config = Config.builder()
-                .sources(ConfigSources.from("key=value", "text/x-java-properties"))
+                .sources(ConfigSources.create("key=value", "text/x-java-properties"))
                 .build();
-        assertThat(config.get("key").asString(), is("value"));
+        assertThat(config.get("key").asString(), is(ConfigValues.simpleValue("value")));
     }
 
     @Test
     public void testRequiredModulesIncluded() {
-        ConfigParser hoconConfigParser = HoconConfigParserBuilder.buildDefault();
-        ConfigParser yamlConfigParser = YamlConfigParserBuilder.buildDefault();
+        ConfigParser hoconConfigParser = HoconConfigParser.create();
+        ConfigParser yamlConfigParser = YamlConfigParser.create();
     }
 }

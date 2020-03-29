@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 
@@ -53,7 +53,7 @@ public class EtcdV2Client implements EtcdClient {
      *
      * @param uri target Etcd uri
      */
-    public EtcdV2Client(URI uri) {
+    EtcdV2Client(URI uri) {
         etcd = new mousio.etcd4j.EtcdClient(uri);
         etcd.setRetryHandler(new RetryWithTimeout(100, 2000));
     }
@@ -93,7 +93,7 @@ public class EtcdV2Client implements EtcdClient {
         try {
             etcd.put(key, value).timeout(1, TimeUnit.SECONDS).send().get();
         } catch (IOException | EtcdException | TimeoutException | EtcdAuthenticationException e) {
-            throw new EtcdClientException("Cannot put KV pair under " + key);
+            throw new EtcdClientException("Cannot put KV pair under " + key, e);
         }
     }
 
@@ -153,7 +153,6 @@ public class EtcdV2Client implements EtcdClient {
 
         private void waitForChange() throws EtcdClientException {
             try {
-                //TODO customize executor used by EtcdClient to process waitForChange operation - Issue #21
                 etcd.get(key).waitForChange().send().addListener(this);
             } catch (IOException e) {
                 throw new EtcdClientException("Cannot register listener on key " + key, e);
@@ -162,7 +161,6 @@ public class EtcdV2Client implements EtcdClient {
 
         private void waitForChange(long waitIndex) throws EtcdClientException {
             try {
-                //TODO customize executor used by EtcdClient to process waitForChange operation - Issue #21
                 etcd.get(key).waitForChange(waitIndex).send().addListener(this);
             } catch (IOException e) {
                 throw new EtcdClientException("Cannot register listener on key " + key + " and index " + waitIndex + ".", e);

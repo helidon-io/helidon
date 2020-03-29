@@ -41,71 +41,71 @@ public class SecurityFromConfigTest {
                 .sources(ConfigSources.classpath("security.conf"))
                 .build();
 
-        this.security = Security.fromConfig(config);
+        this.security = Security.create(config.get("security"));
     }
 
     @Test
-    public void testSecurityProviderAuthn() throws ExecutionException, InterruptedException {
+    public void testSecurityProviderAuthn() {
         SecurityContext context = security.contextBuilder("unitTest").build();
 
         assertThat(context.isAuthenticated(), is(false));
 
-        SecurityEnvironment.Builder envBuilder = context.getEnv()
+        SecurityEnvironment.Builder envBuilder = context.env()
                 .derive()
                 .method("GET")
                 .path("/test")
                 .addAttribute("resourceType", "TEST")
                 .targetUri(URI.create("http://localhost/test"));
 
-        context.setEnv(envBuilder);
+        context.env(envBuilder);
 
-        AuthenticationResponse authenticate = context.atnClientBuilder().get();
+        AuthenticationResponse authenticate = context.atnClientBuilder().buildAndGet();
 
         // current thread should have the correct subject
-        assertThat(authenticate.getUser(), is(Optional.of(SecurityTest.SYSTEM)));
+        assertThat(authenticate.user(), is(Optional.of(SecurityTest.SYSTEM)));
 
         // should work from context
-        assertThat(context.getUser(), is(Optional.of(SecurityTest.SYSTEM)));
+        assertThat(context.user(), is(Optional.of(SecurityTest.SYSTEM)));
 
         context.runAs(SecurityContext.ANONYMOUS, () -> assertThat(context.isAuthenticated(), is(false)));
 
         // and correct once again
-        assertThat(context.getUser(), is(Optional.of(SecurityTest.SYSTEM)));
+        assertThat(context.user(), is(Optional.of(SecurityTest.SYSTEM)));
     }
 
     @Test
     public void testSecurityProviderAuthz() throws ExecutionException, InterruptedException {
         SecurityContext context = security.contextBuilder("unitTest").build();
-        SecurityEnvironment.Builder envBuilder = context.getEnv()
+        SecurityEnvironment.Builder envBuilder = context.env()
                 .derive()
                 .method("GET")
                 .path("/test")
                 .targetUri(URI.create("http://localhost/test"));
 
-        context.setEnv(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
+        context.env(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
         // default authorizationClient
-        AuthorizationResponse response = context.atzClientBuilder().get();
+        AuthorizationResponse response = context.atzClientBuilder().buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(false));
+        assertThat(response.status().isSuccess(), is(false));
 
-        context.setEnv(envBuilder.addAttribute("resourceType", "PERMIT"));
-        response = context.atzClientBuilder().get();
+        context.env(envBuilder.addAttribute("resourceType", "PERMIT"));
+        response = context.atzClientBuilder().buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(true));
+        assertThat(response.status().isSuccess(), is(true));
 
-        context.setEnv(envBuilder.addAttribute("resourceType", "DENY"));
+        context.env(envBuilder.addAttribute("resourceType", "DENY"));
         // non-default authorizationClient
         response = context.atzClientBuilder()
                 .explicitProvider("FirstInstance")
-                .get();
+                .buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(false));
+        assertThat(response.status().isSuccess(), is(false));
 
-        context.setEnv(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
+        context.env(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
         response = context.atzClientBuilder()
                 .explicitProvider("FirstInstance")
-                .get();
+                .buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(true));
+        assertThat(response.status().isSuccess(), is(true));
     }
 }

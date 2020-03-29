@@ -42,18 +42,18 @@ public class SynchronousProviderTest {
 
         SecurityContext context = security.contextBuilder("unit_test").build();
 
-        AuthenticationResponse authenticationResponse = context.atnClientBuilder().get();
+        AuthenticationResponse authenticationResponse = context.atnClientBuilder().buildAndGet();
         checkResponse(authenticationResponse);
-        AuthorizationResponse authorizationResponse = context.atzClientBuilder().get();
+        AuthorizationResponse authorizationResponse = context.atzClientBuilder().buildAndGet();
         checkResponse(authorizationResponse);
-        OutboundSecurityResponse outboundSecurityResponse = context.outboundClientBuilder().get();
+        OutboundSecurityResponse outboundSecurityResponse = context.outboundClientBuilder().buildAndGet();
         checkResponse(outboundSecurityResponse);
     }
 
     private void checkResponse(SecurityResponse response) {
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.ABSTAIN));
-        assertThat(response.getDescription().isPresent(), is(true));
-        assertThat(response.getDescription().get(), is("unit.test"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.description().isPresent(), is(true));
+        assertThat(response.description().get(), is("unit.test"));
     }
 
     private class Atn extends SynchronousProvider implements AuthenticationProvider {

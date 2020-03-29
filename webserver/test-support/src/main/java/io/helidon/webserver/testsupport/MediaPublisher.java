@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
-
-import reactor.core.publisher.Flux;
+import io.helidon.common.reactive.Multi;
 
 /**
  * Represents a {@link Flow.Publisher publisher} of specific media type.
@@ -47,7 +45,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
      * @param publisher a publisher.
      * @return new instance.
      */
-    static MediaPublisher of(MediaType publishedType, Flow.Publisher<DataChunk> publisher) {
+    static MediaPublisher create(MediaType publishedType, Flow.Publisher<DataChunk> publisher) {
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {
@@ -69,13 +67,13 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
      * @param charSequence A sequence to publish.
      * @return new publisher.
      */
-    static MediaPublisher of(MediaType publishedType, CharSequence charSequence) {
+    static MediaPublisher create(MediaType publishedType, CharSequence charSequence) {
         ByteBuffer data = Optional.ofNullable(publishedType)
-                .flatMap(MediaType::getCharset)
+                .flatMap(MediaType::charset)
                 .map(Charset::forName)
                 .orElse(StandardCharsets.UTF_8)
                 .encode(charSequence.toString());
-        Flow.Publisher<DataChunk> publisher = ReactiveStreamsAdapter.publisherToFlow(Flux.just(DataChunk.create(data)));
+        Flow.Publisher<DataChunk> publisher = Multi.singleton(DataChunk.create(data));
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {

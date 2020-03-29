@@ -19,9 +19,9 @@ package io.helidon.security;
 /**
  * A security role used in RBAC (role based access control) schemes.
  */
-public class Role extends Grant {
+public final class Role extends Grant {
     /**
-     * Type of grant used in {@link Grant#getType()}.
+     * Type of grant used in {@link Grant#type()}.
      */
     public static final String ROLE_TYPE = "role";
 

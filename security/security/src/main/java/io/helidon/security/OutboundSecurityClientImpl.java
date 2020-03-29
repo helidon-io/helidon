@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,9 +46,7 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
         this.context = context;
         this.providerName = providerName;
         this.providerRequest = new ProviderRequest(context,
-                                                   request.getResources(),
-                                                   request.getRequestEntity(),
-                                                   request.getResponseEntity());
+                                                   request.resources());
         this.outboundEnv = outboundEnvironment;
         this.outboundEpConfig = outboundEndpointConfig;
     }
@@ -62,7 +60,7 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
         }
 
         return providerInstance.outboundSecurity(providerRequest, outboundEnv, outboundEpConfig).thenApply(response -> {
-            if (response.getStatus().isSuccess()) {
+            if (response.status().isSuccess()) {
                 //Audit success
                 context.audit(SecurityAuditEvent.success(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
                                                          "Provider %s. Request %s. Subject %s")
@@ -70,7 +68,7 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
                                                         .plain("provider", providerInstance.getClass().getName()))
                                       .addParam(AuditEvent.AuditParam.plain("request", this))
                                       .addParam(AuditEvent.AuditParam
-                                                        .plain("subject", context.getUser().orElse(SecurityContext.ANONYMOUS))));
+                                                        .plain("subject", context.user().orElse(SecurityContext.ANONYMOUS))));
             } else {
                 context.audit(SecurityAuditEvent.failure(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
                                                          "Provider %s, Description %s, Request %s. Subject %s")
@@ -78,11 +76,11 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
                                                         .plain("provider", providerInstance.getClass().getName()))
                                       .addParam(AuditEvent.AuditParam.plain("request", this))
                                       .addParam(AuditEvent.AuditParam
-                                                        .plain("message", response.getDescription().orElse(null)))
+                                                        .plain("message", response.description().orElse(null)))
                                       .addParam(AuditEvent.AuditParam
-                                                        .plain("exception", response.getThrowable().orElse(null)))
+                                                        .plain("exception", response.throwable().orElse(null)))
                                       .addParam(AuditEvent.AuditParam
-                                                        .plain("subject", context.getUser().orElse(SecurityContext.ANONYMOUS))));
+                                                        .plain("subject", context.user().orElse(SecurityContext.ANONYMOUS))));
             }
 
             return response;
@@ -94,7 +92,7 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
                                   .addParam(AuditEvent.AuditParam.plain("message", e.getMessage()))
                                   .addParam(AuditEvent.AuditParam.plain("exception", e))
                                   .addParam(AuditEvent.AuditParam
-                                                    .plain("subject", context.getUser().orElse(SecurityContext.ANONYMOUS))));
+                                                    .plain("subject", context.user().orElse(SecurityContext.ANONYMOUS))));
             throw new SecurityException("Failed to process security", e);
         });
     }

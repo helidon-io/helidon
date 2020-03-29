@@ -24,11 +24,10 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The PathTemplateTest.
@@ -50,19 +49,25 @@ public class PathPatternTest {
     private void assertMatch(String path, String pattern) {
         PathMatcher matcher = PathPattern.compile(pattern);
         String nPath = normalize(path);
-        assertTrue(matcher.match(nPath).matches(), "Pattern '" + pattern + "' doesn't match path '" + nPath + "'!");
+        assertThat("Pattern '" + pattern + "' doesn't match path '" + nPath + "'!",
+                   matcher.match(nPath).matches(),
+                   is(true));
     }
 
     private void assertNotMatch(String path, String pattern) {
         PathMatcher matcher = PathPattern.compile(pattern);
         String nPath = normalize(path);
-        assertFalse(matcher.match(nPath).matches(), "Pattern '" + pattern + "' match path '" + nPath + "'!");
+        assertThat("Pattern '" + pattern + "' match path '" + nPath + "'!",
+                   matcher.match(nPath).matches(),
+                   is(false));
     }
 
     private void assertNotPrefixMatch(String path, String pattern) {
         PathMatcher matcher = PathPattern.compile(pattern);
         String nPath = normalize(path);
-        assertFalse(matcher.match(nPath).matches(), "Pattern '" + pattern + "' left-match path '" + nPath + "'!");
+        assertThat("Pattern '" + pattern + "' left-match path '" + nPath + "'!",
+                   matcher.match(nPath).matches(),
+                   is(false));
     }
 
     private void doAssertMatchWithParams(boolean prefixMatch,
@@ -83,16 +88,19 @@ public class PathPatternTest {
         } else {
             result = matcher.match(nPath);
         }
-        assertTrue(result.matches(), "Pattern '" + nPath + "' doesn't match path '" + nPath + "'!");
+        assertThat("Pattern '" + nPath + "' doesn't match path '" + nPath + "'!",
+                   result.matches(),
+                   is(true));
         Map<String, String> params = new HashMap<>(result.params());
         for (int i = 0; i < nameValue.length; i = i + 2) {
             String paramName = nameValue[i];
             String expectedValue = nameValue[i + 1];
             String value = params.remove(paramName);
-            assertNotNull("Missing expected pattern parameter '" + paramName + "'!", value);
-            assertEquals("Parameter '" + paramName + "' value isn't expected '" + expectedValue + "' but '" + value + "'!"
-                    + " Pattern: '" + pattern + "', path: '" + nPath + "'.",
-                         expectedValue, value);
+            assertThat("Missing expected pattern parameter '" + paramName + "'!", value, notNullValue());
+            assertThat("Parameter '" + paramName + "' value isn't expected '" + expectedValue + "' but '" + value + "'!"
+                               + " Pattern: '" + pattern + "', path: '" + nPath + "'.",
+                       value,
+                       is(expectedValue));
         }
         if (!params.isEmpty()) {
             String collected = params.keySet().stream().collect(Collectors.joining(", "));
@@ -102,9 +110,10 @@ public class PathPatternTest {
         if (prefixMatch) {
             PathMatcher.PrefixResult lres = (PathMatcher.PrefixResult) result;
             String rp = lres.remainingPart();
-            assertEquals("Right part isn't expected '" + remainingPart + "' but '" + rp + "'!"
-                                 + " Pattern: '" + pattern + "', path: '" + nPath + "'.",
-                         remainingPart, rp);
+            assertThat("Right part isn't expected '" + remainingPart + "' but '" + rp + "'!"
+                               + " Pattern: '" + pattern + "', path: '" + nPath + "'.",
+                       rp,
+                       is(remainingPart));
         }
     }
 

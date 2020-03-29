@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.config.tests.mappers1;
 
-import io.helidon.common.CollectionsHelper;
 import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -33,7 +33,7 @@ public abstract class AbstractMapperServicesTest {
 
     protected Config.Builder configBuilder() {
         return Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(Map.of(
                         LOGGER_KEY, this.getClass().getName(),
                         LOCALE_KEY + ".language", "cs",
                         LOCALE_KEY + ".country", "CZ",
@@ -43,13 +43,17 @@ public abstract class AbstractMapperServicesTest {
     protected Logger getLogger() {
         return configBuilder()
                 .build()
-                .get(LOGGER_KEY).as(Logger.class);
+                .get(LOGGER_KEY)
+                .as(Logger.class)
+                .get();
     }
 
     protected Locale getLocale() {
         return configBuilder()
                 .build()
-                .get(LOCALE_KEY).as(Locale.class);
+                .get(LOCALE_KEY)
+                .as(Locale.class)
+                .get();
     }
 
 }

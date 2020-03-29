@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,16 +29,14 @@ import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.SetCookie;
-import io.helidon.webserver.spi.BareResponse;
 
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.utils.TestUtils.assertException;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
@@ -62,9 +60,9 @@ public class HashResponseHeadersTest {
     public void contentType() throws Exception {
         HashResponseHeaders h = new HashResponseHeaders(null);
         h.contentType(MediaType.APPLICATION_JSON);
-        assertEquals(MediaType.APPLICATION_JSON, h.contentType().orElse(null));
+        assertThat(h.contentType().orElse(null), is(MediaType.APPLICATION_JSON));
         h.contentType(null);
-        assertFalse(h.contentType().isPresent());
+        assertThat(h.contentType().isPresent(), is(false));
     }
 
     @Test
@@ -72,12 +70,12 @@ public class HashResponseHeadersTest {
         HashResponseHeaders h = new HashResponseHeaders(null);
         ZonedDateTime now = ZonedDateTime.now();
         h.expires(now);
-        assertEquals(now.truncatedTo(ChronoUnit.SECONDS).withFixedOffsetZone(), h.expires().orElse(null));
+        assertThat(h.expires().orElse(null), is(now.truncatedTo(ChronoUnit.SECONDS).withFixedOffsetZone()));
         h.expires((ZonedDateTime) null);
-        assertFalse(h.expires().isPresent());
+        assertThat(h.expires().isPresent(), is(false));
         Instant instant = Instant.now();
         h.expires(instant);
-        assertEquals(instant.truncatedTo(ChronoUnit.SECONDS), h.expires().map(ZonedDateTime::toInstant).orElse(null));
+        assertThat(h.expires().map(ZonedDateTime::toInstant).orElse(null), is(instant.truncatedTo(ChronoUnit.SECONDS)));
     }
 
     @Test
@@ -85,12 +83,12 @@ public class HashResponseHeadersTest {
         HashResponseHeaders h = new HashResponseHeaders(null);
         ZonedDateTime now = ZonedDateTime.now();
         h.lastModified(now);
-        assertEquals(now.truncatedTo(ChronoUnit.SECONDS).withFixedOffsetZone(), h.lastModified().orElse(null));
+        assertThat(h.lastModified().orElse(null), is(now.truncatedTo(ChronoUnit.SECONDS).withFixedOffsetZone()));
         h.lastModified((ZonedDateTime) null);
-        assertFalse(h.lastModified().isPresent());
+        assertThat(h.lastModified().isPresent(), is(false));
         Instant instant = Instant.now();
         h.lastModified(instant);
-        assertEquals(instant.truncatedTo(ChronoUnit.SECONDS), h.lastModified().map(ZonedDateTime::toInstant).orElse(null));
+        assertThat(h.lastModified().map(ZonedDateTime::toInstant).orElse(null), is(instant.truncatedTo(ChronoUnit.SECONDS)));
     }
 
     @Test
@@ -98,28 +96,30 @@ public class HashResponseHeadersTest {
         HashResponseHeaders h = new HashResponseHeaders(null);
         URI uri = URI.create("http://www.oracle.com");
         h.location(uri);
-        assertEquals(uri, h.location().orElse(null));
+        assertThat(h.location().orElse(null), is(uri));
         h.location(null);
-        assertFalse(h.location().isPresent());
+        assertThat(h.location().isPresent(), is(false));
     }
 
     @Test
-    public void addCookie() throws Exception {
+    public void addCookie() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         h.addCookie("foo", "bar");
 
         h.addCookie("aaa", "bbbb", Duration.ofMinutes(10));
         h.addCookie("who", "me", Duration.ofMinutes(0));
 
-        h.addCookie(new SetCookie("itis", "cool")
-                    .domainAndPath(URI.create("http://oracle.com/foo"))
-                    .expires(ZonedDateTime.of(2080, 1, 1, 0, 0, 0, 0, ZoneId.of("Z")))
-                    .secure(true));
+        h.addCookie(SetCookie.builder("itis", "cool")
+                            .domainAndPath(URI.create("http://oracle.com/foo"))
+                            .expires(ZonedDateTime.of(2080, 1, 1, 0, 0, 0, 0, ZoneId.of("Z")))
+                            .secure(true)
+                            .build());
 
         assertThat(h.all(Http.Header.SET_COOKIE), contains("foo=bar",
                                                            "aaa=bbbb; Max-Age=600",
                                                            "who=me",
-                                                           "itis=cool; Expires=Mon, 1 Jan 2080 00:00:00 GMT; Domain=oracle.com; Path=/foo; Secure"));
+                                                           "itis=cool; Expires=Mon, 1 Jan 2080 00:00:00 GMT; Domain=oracle.com;"
+                                                                   + " Path=/foo; Secure"));
     }
 
     @Test
@@ -156,12 +156,12 @@ public class HashResponseHeadersTest {
         StringBuffer sb = new StringBuffer();
         HashResponseHeaders h = new HashResponseHeaders(mockBareResponse());
         h.beforeSend(headers -> sb.append("B:" + (h == headers)));
-        assertEquals("", sb.toString());
+        assertThat(sb.toString(), is(""));
         h.send();
         h.send();
         h.send();
         h.send().toCompletableFuture().get();
-        assertEquals("B:true", sb.toString());
+        assertThat(sb.toString(), is("B:true"));
     }
 
     @Test

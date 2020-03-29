@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,25 @@
 package io.helidon.common.configurable;
 
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 
 /**
  * A representation of a resource that can be
- * loaded from URL ({@link #from(URI)}), classpath ({@link #from(String)}), filesystem ({@link #from(Path)},
- * {@link #fromPath(String)}), content in config ({@link #from(Config, String)}, input stream({@link #from(InputStream, String)},
- * or direct value ({@link #fromContent(String, byte[])}, {@link #fromContent(String, String)}.
+ * loaded from URL ({@link #create(URI)}), classpath ({@link #create(String)}), filesystem ({@link #create(Path)},
+ * content in config ({@link #create(Config)}, input stream({@link #create(String, InputStream)},
+ * or direct value ({@link #create(String, byte[])}, {@link #create(String, String)}.
  *
  * The resource bytes can then be accessed by various methods, depending on the type required - either you can access bytes
- * ({@link #getBytes()}, {@link #getStream()}) or String ({@link #getString()}, {@link #getString(Charset)}).
+ * ({@link #bytes()}, {@link #stream()}) or String ({@link #string()}, {@link #string(Charset)}).
  *
  * This class is not thread safe. If you want to use it across multiple threads,
  * there is an option: call {@link #cacheBytes()} before accessing it by other threads.
@@ -48,64 +45,54 @@ public interface Resource {
     /**
      * Load resource from URI provided.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param uri Resource location
      * @return resource instance
      */
-    static Resource from(URI uri) {
+    static Resource create(URI uri) {
         return ResourceUtil.from(ResourceUtil.toIs(uri), uri.toString(), Source.URL);
     }
 
     /**
      * Load resource from URI provided with an explicit proxy server.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param uri   Resource location
      * @param proxy HTTP proxy to use when accessing the URI
      * @return resource instance
      */
-    static Resource from(URI uri, Proxy proxy) {
+    static Resource create(URI uri, Proxy proxy) {
         return ResourceUtil.from(ResourceUtil.toIs(uri, proxy), uri.toString(), Source.URL);
     }
 
     /**
      * Load resource from classpath.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param resourcePath classpath path
      * @return resource instance
      */
-    static Resource from(String resourcePath) {
+    static Resource create(String resourcePath) {
         return ResourceUtil.from(ResourceUtil.toIs(resourcePath), resourcePath, Source.CLASSPATH);
     }
 
     /**
      * Load resource from file system.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param fsPath path of file system
      * @return resource instance
      */
-    static Resource from(Path fsPath) {
+    static Resource create(Path fsPath) {
         return ResourceUtil.from(ResourceUtil.toIs(fsPath), fsPath.toAbsolutePath().toString(), Source.FILE);
-    }
-
-    /**
-     * Helper method for {@link #from(Path)} so you do not have to create the path yourself.
-     *
-     * @param fsPath String path to file system
-     * @return resource instance
-     */
-    static Resource fromPath(String fsPath) {
-        return from(Paths.get(fsPath));
     }
 
     /**
@@ -115,19 +102,19 @@ public interface Resource {
      * @param bytes       raw bytes of this resource
      * @return resource instance
      */
-    static Resource fromContent(String description, byte[] bytes) {
+    static Resource create(String description, byte[] bytes) {
         Objects.requireNonNull(bytes, "Resource bytes must not be null");
         return new ResourceImpl(Source.BINARY_CONTENT, description, bytes);
     }
 
     /**
-     * Load resource from text content (e.g. this must not be base64 - use {@link #fromContent(String, byte[])} for binary).
+     * Load resource from text content (e.g. this must not be base64 - use {@link #create(String, byte[])} for binary).
      *
      * @param description description of this resource (e.g. "JWK-private")
      * @param string      string content of this resource, will be transformed to bytes using UTF-8 encoding
      * @return resource instance
      */
-    static Resource fromContent(String description, String string) {
+    static Resource create(String description, String string) {
         Objects.requireNonNull(string, "Resource content must not be null");
         return new ResourceImpl(Source.CONTENT, description, string.getBytes(StandardCharsets.UTF_8));
     }
@@ -135,64 +122,87 @@ public interface Resource {
     /**
      * Load resource from binary content from an input stream, using {@link Source#UNKNOWN} type.
      *
-     * @param inputStream input stream to raw bytes of this resource
      * @param description description of this resource (e.g. "keystore")
+     * @param inputStream input stream to raw bytes of this resource
      * @return resource instance
      */
-    static Resource from(InputStream inputStream, String description) {
+    static Resource create(String description, InputStream inputStream) {
         return ResourceUtil.from(inputStream, description, Source.UNKNOWN);
     }
 
     /**
      * Loads the resource from appropriate location based
-     * on configuration and a key prefix.
+     * on configuration.
      *
      * Keys supported (in this order):
      * <ul>
-     * <li>prefix-path: File system path</li>
-     * <li>prefix-resource-path: Class-path resource</li>
-     * <li>prefix-url: URL to resource</li>
-     * <li>prefix-content: actual content (base64 encoded bytes)</li>
-     * <li>prefix-content-plain: actual content (string)</li>
-     * <li>prefix-use-proxy: set to false not to go through a proxy; will only use proxy if it is defined used
-     * "proxy-host" and optional "proxy-port" (defaults to 80); ignored unless URL is
-     * used</li>
+     * <li>path: File system path</li>
+     * <li>resource-path: Class-path resource</li>
+     * <li>url: URL to resource</li>
+     * <li>content: actual content (base64 encoded bytes)</li>
+     * <li>content-plain: actual content (string)</li>
+     * <li>use-proxy: set to false not to go through a proxy; will only use proxy if it is defined used
+     * "proxy-host" and optional "proxy-port" (defaults to 80); ignored unless URL is used</li>
      * </ul>
      *
-     * @param config    configuration
-     * @param keyPrefix prefix of keys that may contain the location of resource
-     * @return a resource ready to load from one of the locations or empty if neither is defined
+     * @param resourceConfig    configuration current node must be the node containing the location of the resource, by
+     *                          convention in helidon, this should be on key named {@code resource}
+     * @return a resource ready to load from one of the locations
+     * @throws io.helidon.config.ConfigException in case this config does not define a resource configuration
      */
-    static Optional<Resource> from(Config config, String keyPrefix) {
-        return OptionalHelper.from(config.get(keyPrefix + "-path")
-                                           .asOptionalString()
-                                           .map(Paths::get)
-                                           .map(Resource::from))
-                .or(() -> config.get(keyPrefix + "-resource-path")
-                        .asOptionalString()
-                        .map(Resource::from))
-                .or(() -> config.get(keyPrefix + "-url")
-                        .asOptional(URI.class)
-                        .map(uri -> config.get("proxy-host").value()
-                                .map(proxyHost -> {
-                                    if (config.get(keyPrefix + "-use-proxy").asBoolean(true)) {
-                                        Proxy proxy = new Proxy(Proxy.Type.HTTP,
-                                                                new InetSocketAddress(proxyHost,
-                                                                                      config.get("proxy-port").asInt(80)));
-                                        return Resource.from(uri, proxy);
-                                    } else {
-                                        return Resource.from(uri);
-                                    }
-                                })
-                                .orElseGet(() -> Resource.from(uri))))
-                .or(() -> config.get(keyPrefix + "-content-plain")
-                        .asOptionalString()
-                        .map(content -> Resource.fromContent("config:" + keyPrefix + "-content", content)))
-                .or(() -> config.get(keyPrefix + "-content")
-                        .asOptionalString()
-                        .map(Base64.getDecoder()::decode)
-                        .map(content -> Resource.fromContent("config:" + keyPrefix + "-content-b64", content)))
-                .asOptional();
+    static Resource create(Config resourceConfig) {
+        return ResourceUtil.fromConfigPath(resourceConfig.get("path"))
+                .or(() -> ResourceUtil.fromConfigResourcePath(resourceConfig.get("resource-path")))
+                .or(() -> ResourceUtil.fromConfigUrl(resourceConfig.get("url")))
+                .or(() -> ResourceUtil.fromConfigContent(resourceConfig.get("content-plain")))
+                .or(() -> ResourceUtil.fromConfigB64Content(resourceConfig.get("content")))
+                .orElseThrow(() -> new ConfigException("Config is not a resource configuration on key: " + resourceConfig.key()
+                                                               + ". The config must contain one of "
+                                                               + "(path,resource-path,url,content-plain,content)"));
+    }
+
+    /**
+     * Support for old API and configuration.
+     *
+     * @param config configuration
+     * @param prefix prefix of the resource
+     * @return resource if configured
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead (and change the configuration to use
+     *  {@code .resource.type} instead of prefixes
+     */
+    @Deprecated
+    static Optional<Resource> create(Config config, String prefix) {
+        Optional<Resource> result = ResourceUtil.fromConfigPath(config.get(prefix + "-path"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "path");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigResourcePath(config.get(prefix + "-resource-path"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "resource-path");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigUrl(config.get(prefix + "-url"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "url");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigContent(config.get(prefix + "-content-plain"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "content-plain");
+            return result;
+        }
+
+        result = ResourceUtil.fromConfigB64Content(config.get(prefix + "-content"));
+        if (result.isPresent()) {
+            ResourceUtil.logPrefixed(config, prefix, "content");
+            return result;
+        }
+
+        return result;
     }
 
     /**
@@ -203,14 +213,14 @@ public interface Resource {
      * If you create the resource with byte content (e.g. from string), the content
      * will be pre-buffered.
      *
-     * If you first call another method (such as {@link #getBytes()}, or explicitly buffer
+     * If you first call another method (such as {@link #bytes()}, or explicitly buffer
      * this resource {@link #cacheBytes()}, you will get a new input stream to the
      * buffered bytes and may call this method multiple times.
      *
      * @return input stream ready to read bytes
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    InputStream getStream();
+    InputStream stream();
 
     /**
      * Get bytes of this resource.
@@ -219,7 +229,7 @@ public interface Resource {
      * @return bytes of this resource
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    byte[] getBytes();
+    byte[] bytes();
 
     /**
      * Get string content of this resource.
@@ -228,7 +238,7 @@ public interface Resource {
      * @return string content of this instance, using UTF-8 encoding to decode bytes
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    String getString();
+    String string();
 
     /**
      * Get string content of this resource.
@@ -238,14 +248,14 @@ public interface Resource {
      * @return string content of this instance, using your encoding to decode bytes
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    String getString(Charset charset);
+    String string(Charset charset);
 
     /**
      * Type of this resource, depends on the original source.
      *
      * @return type
      */
-    Source getSourceType();
+    Source sourceType();
 
     /**
      * Location (or description) of this resource, depends on original source.
@@ -254,14 +264,14 @@ public interface Resource {
      * <li>FILE - absolute path to the file</li>
      * <li>CLASSPATH - resource path</li>
      * <li>URL - string of the URI</li>
-     * <li>CONTENT - either config key or description provided to method {@link #fromContent(String, String)}</li>
-     * <li>BINARY_CONTENT - either config key or description provided to {@link #fromContent(String, byte[])}</li>
-     * <li>UNKNOWN - whatever description was provided to {@link #from(InputStream, String)}</li>
+     * <li>CONTENT - either config key or description provided to method {@link #create(String, String)}</li>
+     * <li>BINARY_CONTENT - either config key or description provided to {@link #create(String, byte[])}</li>
+     * <li>UNKNOWN - whatever description was provided to {@link #create(String, InputStream)}</li>
      * </ul>
      *
      * @return location of this resource (or other description of where it comes from)
      */
-    String getLocation();
+    String location();
 
     /**
      * Caches the resource bytes in memory, so they can be repeatedly

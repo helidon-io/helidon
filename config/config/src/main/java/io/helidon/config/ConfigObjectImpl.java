@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
@@ -39,18 +38,19 @@ class ConfigObjectImpl extends ConfigComplexImpl<ObjectNode> {
     }
 
     @Override
-    public Optional<List<Config>> nodeList() {
-        return Optional.of(
-                getNode().entrySet()
-                        .stream()
-                        .map(e -> get(e.getKey()))
-                        .collect(Collectors.toList())
-        );
+    public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
+        return ConfigValues.create(this,
+                                   () -> Optional.of(
+                                           node().entrySet()
+                                                   .stream()
+                                                   .map(e -> get(e.getKey()))
+                                                   .collect(Collectors.toList())),
+                                   Config::asNodeList);
     }
 
     @Override
     public String toString() {
-        return "[" + realKey() + "] OBJECT (members: " + getNode().size() + ")";
+        return "[" + realKey() + "] OBJECT (members: " + node().size() + ")";
     }
 
 }

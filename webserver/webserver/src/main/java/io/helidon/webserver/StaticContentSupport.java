@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import io.helidon.common.http.MediaType;
  * <pre>{@code
  * // Server content of attached '/static/pictures' on '/pictures'
  * Routing.builder()
- *        .register("/pics", StaticContent.create("/static/pictures"))
+ *        .register("/pics", StaticContentSupport.create("/static/pictures"))
  *        .build()
  * }</pre>
  * <p>
@@ -158,7 +158,7 @@ public class StaticContentSupport implements Service {
     /**
      * Fluent builder of the StaticContent detailed parameters.
      */
-    public static class Builder implements io.helidon.common.Builder {
+    public static class Builder implements io.helidon.common.Builder<StaticContentSupport> {
 
         private final Path fsRoot;
         private final String clRoot;
@@ -223,13 +223,14 @@ public class StaticContentSupport implements Service {
          *
          * @return a new instance
          */
+        @Override
         public StaticContentSupport build() {
             ContentTypeSelector selector = new ContentTypeSelector(specificContentTypes);
             StaticContentHandler handler;
             if (fsRoot != null) {
-                handler = new FileSystemContentHandler(welcomeFileName, selector, fsRoot);
+                handler = FileSystemContentHandler.create(welcomeFileName, selector, fsRoot);
             } else if (clRoot != null) {
-                handler = new ClassPathContentHandler(welcomeFileName, selector, clRoot, classLoader);
+                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, classLoader);
             } else {
                 throw new IllegalArgumentException("Builder was created without specified static content root!");
             }
