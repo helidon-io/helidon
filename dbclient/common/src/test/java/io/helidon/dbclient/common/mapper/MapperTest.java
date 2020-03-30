@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.util.Calendar;
@@ -32,11 +31,11 @@ import io.helidon.common.mapper.MapperManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Test database types {@link Mapper}s. 
+ * Test database types {@link io.helidon.common.mapper.Mapper}s.
  */
 public class MapperTest {
 
@@ -93,7 +92,8 @@ public class MapperTest {
         OffsetDateTime dt = currentTime();
         java.sql.Time source = new java.sql.Time(dt.toInstant().toEpochMilli());
         LocalTime target = mm.map(source, java.sql.Time.class, LocalTime.class);
-        assertThat(target.toEpochSecond(LocalDate.EPOCH, dt.getOffset()), is(source.getTime()/1000));
+
+        assertThat(target, is(source.toLocalTime()));
     }    
 
     @Test
