@@ -16,12 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Reactive Streams
+= Reactive Streams Operators
 :toc:
 :toc-placement: preamble
-:flawor: MP
-:helidon: Helidon {flawor}
-:description: Reactive Streams support in {helidon}
+:spec-name: MicroProfile Reactive Streams Operators
+:description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, reactivestreams
 
-include::../../se/reactivestreams/01_introduction.adoc[lines=27..]
+include::../../se/reactivestreams/03_rsoperators.adoc[lines=26..]

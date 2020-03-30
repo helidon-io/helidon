@@ -16,12 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Reactive Streams
-:toc:
-:toc-placement: preamble
-:flawor: MP
-:helidon: Helidon {flawor}
-:description: Reactive Streams support in {helidon}
-:keywords: helidon, mp, microprofile, reactivestreams
+= Helidon Reactive Engine
+:description: Dependecy-less reactive operators
+:keywords: helidon, reactive, streams, multi, single
 
-include::../../se/reactivestreams/01_introduction.adoc[lines=27..]
+include::../../se/reactivestreams/02_engine.adoc[lines=23..]

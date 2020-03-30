@@ -17,10 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Connector
-:description: Helidon MicroProfile Reactive Messaging Connector
-= :keywords: helidon, messaging, reactive, streams
-
-Since Helidon 2.0
 
 == Connector Bean
 

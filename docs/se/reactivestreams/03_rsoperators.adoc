@@ -17,10 +17,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Reactive Streams Operators
-:description: Helidon MicroProfile Reactive Streams Operators
-= :keywords: helidon, reactive, streams
-
-Since Helidon 2.0
+:toc:
+:toc-placement: preamble
+:spec-name: MicroProfile Reactive Streams Operators
+:description: {spec-name} support in Helidon SE
+:keywords: helidon, se, microprofile, reactivestreams
 
 == Reactive Streams Operators
 https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-1.0.1/microprofile-reactive-streams-operators-spec.html[MicroProfile Reactive Streams Operators]

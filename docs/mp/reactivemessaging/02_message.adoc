@@ -17,10 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Message
-:description: Helidon MicroProfile Reactive Messaging
-= :keywords: helidon, messaging, reactive, streams
-
-Since Helidon 2.0
 
 == Message
 The Reactive Messaging
