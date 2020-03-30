@@ -44,16 +44,14 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
  * Implementation of Kafka Connector as described in the MicroProfile Reactive Messaging Specification.
  */
 @ApplicationScoped
-@Connector(KafkaConnectorFactory.CONNECTOR_NAME)
-public class KafkaConnectorFactory implements IncomingConnectorFactory, OutgoingConnectorFactory {
+@Connector(KafkaConnector.CONNECTOR_NAME)
+public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
 
     /**
      * Microprofile messaging Kafka connector name.
      */
     static final String CONNECTOR_NAME = "helidon-kafka";
-    private static final Logger LOGGER = Logger.getLogger(KafkaConnectorFactory.class.getName());
-    private static final String BACKPRESSURE_SIZE_KEY = "backpressure.size";
-    private static final long BACKPRESSURE_SIZE_DEFAULT = 5;
+    private static final Logger LOGGER = Logger.getLogger(KafkaConnector.class.getName());
     private final ScheduledExecutorService scheduler;
     private final Queue<Closeable> resourcesToClose = new LinkedList<>();
 
@@ -63,7 +61,7 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
      * @param config Helidon {@link io.helidon.config.Config config}
      */
     @Inject
-    public KafkaConnectorFactory(Config config) {
+    KafkaConnector(Config config) {
         scheduler = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("kafka-")
                 .config(config)
@@ -109,20 +107,15 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(org.eclipse.microprofile.config.Config config) {
         Config helidonConfig = (Config) config;
-        BasicKafkaConsumer<Object, Object> basicKafkaConsumer = BasicKafkaConsumer.create(helidonConfig, scheduler);
-        resourcesToClose.add(basicKafkaConsumer);
-        return basicKafkaConsumer.createPushPublisherBuilder();
+        KafkaPublisher<Object, Object> publisher = KafkaPublisher.build(scheduler, helidonConfig);
+        resourcesToClose.add(publisher);
+        return ReactiveStreams.fromPublisher(publisher);
     }
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(org.eclipse.microprofile.config.Config config) {
         Config helidonConfig = (Config) config;
-        long backpressure = helidonConfig.get(BACKPRESSURE_SIZE_KEY)
-                .asLong()
-                .orElse(BACKPRESSURE_SIZE_DEFAULT);
-
-        BasicKafkaProducer<Object, Object> basicKafkaProducer = BasicKafkaProducer.create(helidonConfig);
-        resourcesToClose.add(basicKafkaProducer);
-        return ReactiveStreams.fromSubscriber(new BasicSubscriber<>(basicKafkaProducer, backpressure));
+        KafkaSubscriber<Object> subscriber = KafkaSubscriber.build(helidonConfig);
+        return ReactiveStreams.fromSubscriber(subscriber);
     }
 }

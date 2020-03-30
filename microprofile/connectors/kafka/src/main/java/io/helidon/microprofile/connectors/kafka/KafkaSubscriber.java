@@ -16,10 +16,15 @@
 
 package io.helidon.microprofile.connectors.kafka;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -28,32 +33,34 @@ import org.reactivestreams.Subscription;
  *
  * @param <T> kafka record value type
  */
-class BasicSubscriber<T> implements Subscriber<Message<T>> {
+class KafkaSubscriber<T> implements Subscriber<Message<T>> {
 
-    private static final Logger LOGGER = Logger.getLogger(BasicSubscriber.class.getName());
-    private final long backpresure;
+    private static final Logger LOGGER = Logger.getLogger(KafkaSubscriber.class.getName());
+    private static final String BACKPRESSURE_SIZE_KEY = "backpressure.size";
+    private static final long BACKPRESSURE_SIZE_DEFAULT = 5;
+    private final long backpressure;
     private final AtomicLong backpressureCounter = new AtomicLong();
     private final BasicKafkaProducer<?, T> producer;
     private Subscription subscription;
 
-    BasicSubscriber(BasicKafkaProducer<?, T> producer, long backpresure){
-        this.backpresure = backpresure;
+    private KafkaSubscriber(BasicKafkaProducer<?, T> producer, long backpressure){
+        this.backpressure = backpressure;
         this.producer = producer;
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
         this.subscription = subscription;
-        subscription.request(backpresure);
+        subscription.request(backpressure);
     }
 
     @Override
     public void onNext(Message<T> message) {
         producer.produceAsync(message.getPayload());
         message.ack();
-        if (backpressureCounter.incrementAndGet() == backpresure) {
+        if (backpressureCounter.incrementAndGet() == backpressure) {
             backpressureCounter.set(0);
-            subscription.request(backpresure);
+            subscription.request(backpressure);
         }
     }
 
@@ -67,6 +74,25 @@ class BasicSubscriber<T> implements Subscriber<Message<T>> {
     public void onComplete() {
         LOGGER.fine("Subscriber has finished");
         producer.close();
+    }
+
+    /**
+     * Creates a new instance of KafkaSubscriber given the configuration.
+     * Note: Every new instance of this type opens Kafka resources and it will be opened
+     * till onComplete() or onError() is invoked.
+     *
+     * @param <T> The type to push
+     * @param config With the KafkaSubscriber required parameters
+     * @return A new KafkaSubscriber instance
+     */
+    static <T> KafkaSubscriber<T> build(Config config) {
+        Map<String, Object> kafkaConfig = HelidonToKafkaConfigParser.toMap(config);
+        List<String> topics = HelidonToKafkaConfigParser.topicNameList(kafkaConfig);
+        if (topics.isEmpty()) {
+            throw new IllegalArgumentException("The topic is a required configuration value");
+        }
+        long backpressure = config.get(BACKPRESSURE_SIZE_KEY).asLong().orElse(BACKPRESSURE_SIZE_DEFAULT);
+        return new KafkaSubscriber<T>(new BasicKafkaProducer<>(topics, new KafkaProducer<>(kafkaConfig)), backpressure);
     }
 
 }

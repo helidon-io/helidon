@@ -19,13 +19,11 @@ package io.helidon.microprofile.connectors.kafka;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-import io.helidon.config.Config;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
@@ -43,33 +41,17 @@ class BasicKafkaProducer<K, V> implements Closeable {
 
     private static final Logger LOGGER = Logger.getLogger(BasicKafkaProducer.class.getName());
     private final List<String> topics;
-    private final KafkaProducer<K, V> producer;
+    private final Producer<K, V> producer;
 
-    private BasicKafkaProducer(List<String> topics, KafkaProducer<K, V> producer) {
+    BasicKafkaProducer(List<String> topics, KafkaProducer<K, V> producer) {
         this.topics = topics;
         this.producer = producer;
     }
 
     /**
-     * Kafka producer created from {@link io.helidon.config.Config config} under kafka-producerId,
-     * see configuration {@link HelidonToKafkaConfigParser example}.
+     * Send record to all provided topics, doesn't wait for server acknowledgement.
      *
-     * @param config Helidon {@link io.helidon.config.Config config}
-     */
-    static <K, V> BasicKafkaProducer<K, V> create(Config config){
-        Map<String, Object> kafkaConfig = HelidonToKafkaConfigParser.toMap(config);
-        List<String> topics = HelidonToKafkaConfigParser.topicNameList(kafkaConfig);
-        if (topics.isEmpty()) {
-            throw new IllegalArgumentException("The topic is a required configuration value");
-        } else {
-            return new BasicKafkaProducer<K, V>(topics, new KafkaProducer<>(kafkaConfig));
-        }
-    }
-
-    /**
-     * Send record to all provided topics, don't wait for server acknowledgement.
-     *
-     * @param value        Will be serialized by value.serializer class defined in configuration
+     * @param value Will be serialized by value.serializer class defined in configuration
      * @return Futures of server acknowledged metadata about sent topics
      */
     List<Future<RecordMetadata>> produceAsync(V value) {

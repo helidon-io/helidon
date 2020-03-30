@@ -52,6 +52,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.MpConfigProviderResolver;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -77,7 +78,7 @@ class KafkaCdiExtensionTest {
 
         @Override
         public String value() {
-            return KafkaConnectorFactory.CONNECTOR_NAME;
+            return KafkaConnector.CONNECTOR_NAME;
         }
     };
 
@@ -94,14 +95,14 @@ class KafkaCdiExtensionTest {
         p.putAll(Map.of(
                 "mp.messaging.incoming.test-channel-1.poll.timeout", "10",
                 "mp.messaging.incoming.test-channel-1.period.executions", "10",
-                "mp.messaging.incoming.test-channel-1.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-1.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-1.bootstrap.servers", kafkaResource.getKafkaConnectString(),
                 "mp.messaging.incoming.test-channel-1.topic", TEST_TOPIC_1,
                 "mp.messaging.incoming.test-channel-1.group.id", "group1",
                 "mp.messaging.incoming.test-channel-1.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-1.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
-                "mp.messaging.incoming.test-channel-2.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-2.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-2.bootstrap.servers", kafkaResource.getKafkaConnectString(),
                 "mp.messaging.incoming.test-channel-2.topic", TEST_TOPIC_2,
                 "mp.messaging.incoming.test-channel-2.group.id", "group2",
@@ -109,7 +110,7 @@ class KafkaCdiExtensionTest {
                 "mp.messaging.incoming.test-channel-2.value.deserializer", StringDeserializer.class.getName())
         );
         p.putAll(Map.of(
-                "mp.messaging.outgoing.test-channel-3.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.outgoing.test-channel-3.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.outgoing.test-channel-3.bootstrap.servers", kafkaResource.getKafkaConnectString(),
                 "mp.messaging.outgoing.test-channel-3.topic", TEST_TOPIC_1,
                 "mp.messaging.outgoing.test-channel-3.backpressure.size", "5",
@@ -117,7 +118,7 @@ class KafkaCdiExtensionTest {
                 "mp.messaging.outgoing.test-channel-3.value.serializer", StringSerializer.class.getName())
         );
         p.putAll(Map.of(
-                "mp.messaging.incoming.test-channel-error.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-error.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-error.bootstrap.servers", kafkaResource.getKafkaConnectString(),
                 "mp.messaging.incoming.test-channel-error.topic", TEST_TOPIC_3,
                 "mp.messaging.incoming.test-channel-error.group.id", "group3",
@@ -127,14 +128,14 @@ class KafkaCdiExtensionTest {
         p.putAll(Map.of(
                 "mp.messaging.incoming.test-channel-4.poll.timeout", "10",
                 "mp.messaging.incoming.test-channel-4.period.executions", "10",
-                "mp.messaging.incoming.test-channel-4.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-4.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-4.bootstrap.servers", kafkaResource.getKafkaConnectString(),
                 "mp.messaging.incoming.test-channel-4.topic", TEST_TOPIC_4,
                 "mp.messaging.incoming.test-channel-4.group.id", "group4",
                 "mp.messaging.incoming.test-channel-4.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-4.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
-                "mp.messaging.incoming.test-channel-5.connector", KafkaConnectorFactory.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-5.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-5.bootstrap.servers", kafkaResource.getKafkaConnectString(),
                 "mp.messaging.incoming.test-channel-5.topic", TEST_TOPIC_5,
                 "mp.messaging.incoming.test-channel-5.group.id", "group4",
@@ -155,7 +156,7 @@ class KafkaCdiExtensionTest {
     @BeforeEach
     void setUp() {
         Set<Class<?>> classes = new HashSet<>();
-        classes.add(KafkaConnectorFactory.class);
+        classes.add(KafkaConnector.class);
         classes.add(KafkaSampleBean.class);
         classes.add(KafkaNoFullAck1Bean.class);
         classes.add(KafkaNoFullAck2Bean.class);
@@ -166,12 +167,12 @@ class KafkaCdiExtensionTest {
         assertTrue(cdiContainer.isRunning());
         
         //Wait till consumers are ready
-        getInstance(KafkaConnectorFactory.class, KAFKA_CONNECTOR_LITERAL).stream()
+        getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).stream()
         .flatMap(factory -> factory.resources().stream())
-        .filter(closeable -> closeable instanceof BasicKafkaConsumer).forEach(c -> {
+        .filter(closeable -> closeable instanceof KafkaPublisher).forEach(c -> {
             try {
                 LOGGER.log(Level.FINE, "Waiting for Kafka topic");
-                ((BasicKafkaConsumer)c).waitForPartitionAssigment(10, TimeUnit.SECONDS);
+                ((KafkaPublisher)c).waitForPartitionAssigment(10, TimeUnit.SECONDS);
             } catch (InterruptedException | TimeoutException e) {
                 fail(e);
             }
@@ -181,7 +182,7 @@ class KafkaCdiExtensionTest {
 
     @AfterEach
     void tearDown() {
-        KafkaConnectorFactory factory = getInstance(KafkaConnectorFactory.class, KAFKA_CONNECTOR_LITERAL).get();
+        KafkaConnector factory = getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).get();
         Collection<Closeable> resources = factory.resources();
         assertFalse(resources.isEmpty());
         cdiContainer.close();
@@ -285,17 +286,12 @@ class KafkaCdiExtensionTest {
 
     private void produceAndCheck(AbstractSampleBean kafkaConsumingBean, List<String> testData, String topic,
             CountDownLatch testChannelLatch, List<String> expected) {
-        // Producer
-        Map<String, String> p = Map.of(
-                "bootstrap.servers", kafkaResource.getKafkaConnectString(),
-                "topic", topic,
-                "key.serializer", LongSerializer.class.getName(),
-                "value.serializer", StringSerializer.class.getName()
-        );
-        Config config = Config.builder()
-                .sources(ConfigSources.create(p))
-                .build();
-        try (BasicKafkaProducer<Long, String> producer = BasicKafkaProducer.create(config)) {
+        Map<String, Object> config = new HashMap<>();
+        config.put("bootstrap.servers", kafkaResource.getKafkaConnectString());
+        config.put("key.serializer", LongSerializer.class.getName());
+        config.put("value.serializer", StringSerializer.class.getName());
+        try (BasicKafkaProducer<Long, String> producer =
+                new BasicKafkaProducer<>(Arrays.asList(topic), new KafkaProducer<>(config))) {
             LOGGER.fine("Producing " + testData.size() + " events");
             //Send all test messages(async send means order is not guaranteed) and in parallel
             testData.parallelStream().forEach(msg -> producer.produceAsync(msg));

@@ -17,7 +17,6 @@
 package io.helidon.microprofile.connectors.kafka;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,9 +40,9 @@ class EmittingPublisher<T> implements Publisher<T> {
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
     private final AtomicLong requested = new AtomicLong();
     private final AtomicBoolean terminated = new AtomicBoolean();
-    private final Optional<Callback<Long>> requestsCallback;
+    private final Callback<Long> requestsCallback;
 
-    protected EmittingPublisher(Optional<Callback<Long>> requestsCallback) {
+    protected EmittingPublisher(Callback<Long> requestsCallback) {
         this.requestsCallback = requestsCallback;
     }
 
@@ -60,7 +59,7 @@ class EmittingPublisher<T> implements Publisher<T> {
                 LOGGER.fine(String.format("Request %s events", n));
                 requested.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE);
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.READY_TO_EMIT);
-                requestsCallback.ifPresent(callback -> callback.nofity(n));
+                requestsCallback.nofity(n);
             }
 
             @Override
@@ -111,6 +110,10 @@ class EmittingPublisher<T> implements Publisher<T> {
         return this.state.get().emit(this, item);
     }
 
+    boolean isTerminated() {
+        return terminated.get();
+    }
+
     /**
      * Check if publisher is in terminal state CANCELLED.
      *
@@ -146,6 +149,7 @@ class EmittingPublisher<T> implements Publisher<T> {
                     publisher.subscriber.onNext(item);
                     return true;
                 } catch (Throwable t) {
+                    // We need to catch the error here because emit is invoked in other context
                     publisher.fail(t);
                     return false;
                 }
